@@ -56,7 +56,8 @@
                 "end": 43
               },
               "resolves_to": [ "maximum_trace_length.sink_distance_one" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "44:4-44:44"
             }
           }
         ]
@@ -129,7 +130,8 @@
                 "end": 44
               },
               "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "40:4-40:45"
             }
           }
         ]
@@ -202,7 +204,8 @@
                 "end": 45
               },
               "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "36:4-36:46"
             }
           }
         ]
@@ -297,7 +300,8 @@
                 "end": 24
               },
               "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "27:4-27:25"
             }
           }
         ]
@@ -327,7 +331,8 @@
               "line": 23,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "23:4-23:17"
           }
         ]
       }

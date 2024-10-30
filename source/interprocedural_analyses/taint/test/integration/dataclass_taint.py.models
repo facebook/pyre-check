@@ -57,7 +57,8 @@
                 "end": 40
               },
               "resolves_to": [ "dataclass_taint.DataClassWIthInit.__init__" ],
-              "port": "formal(bad, position=1)"
+              "port": "formal(bad, position=1)",
+              "call_site": "39:4-39:41"
             }
           }
         ]
@@ -141,7 +142,8 @@
               "line": 62,
               "start": 15,
               "end": 22
-            }
+            },
+            "call_site": "62:4-62:23"
           }
         ]
       }
@@ -284,7 +286,8 @@
               "line": 99,
               "start": 51,
               "end": 65
-            }
+            },
+            "call_site": "99:4-99:78"
           }
         ]
       }
@@ -356,7 +359,8 @@
               "line": 118,
               "start": 56,
               "end": 70
-            }
+            },
+            "call_site": "118:4-118:83"
           }
         ]
       }
@@ -575,7 +579,8 @@
               "end": 22
             },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "35:8-35:23"
           }
         ]
       }
@@ -803,7 +808,8 @@
               "end": 31
             },
             "caller_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "51:4-53:53"
           }
         ]
       }
@@ -1001,7 +1007,8 @@
               "line": 19,
               "start": 15,
               "end": 22
-            }
+            },
+            "call_site": "19:4-19:23"
           }
         ]
       }
@@ -1127,7 +1134,8 @@
               "line": 146,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "146:4-146:22"
           }
         ]
       }
@@ -1177,7 +1185,8 @@
               "line": 145,
               "start": 34,
               "end": 47
-            }
+            },
+            "call_site": "145:0-146:22"
           }
         ]
       },
@@ -1197,7 +1206,8 @@
               "line": 146,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "146:4-146:22"
           }
         ]
       }
@@ -1241,7 +1251,8 @@
               "line": 150,
               "start": 15,
               "end": 30
-            }
+            },
+            "call_site": "150:4-150:31"
           }
         ]
       },
@@ -1267,7 +1278,8 @@
               "line": 150,
               "start": 15,
               "end": 30
-            }
+            },
+            "call_site": "150:4-150:31"
           }
         ]
       }
@@ -1297,7 +1309,8 @@
               "line": 86,
               "start": 15,
               "end": 34
-            }
+            },
+            "call_site": "86:4-86:35"
           }
         ]
       },
@@ -1317,7 +1330,8 @@
               "line": 85,
               "start": 15,
               "end": 30
-            }
+            },
+            "call_site": "85:4-85:31"
           }
         ]
       }
@@ -1376,7 +1390,8 @@
               "line": 85,
               "start": 15,
               "end": 30
-            }
+            },
+            "call_site": "85:4-85:31"
           }
         ]
       }
@@ -1414,7 +1429,8 @@
               "line": 74,
               "start": 15,
               "end": 34
-            }
+            },
+            "call_site": "74:4-74:35"
           }
         ]
       },
@@ -1434,7 +1450,8 @@
               "line": 73,
               "start": 15,
               "end": 30
-            }
+            },
+            "call_site": "73:4-73:31"
           }
         ]
       }
@@ -1493,7 +1510,8 @@
               "line": 73,
               "start": 15,
               "end": 30
-            }
+            },
+            "call_site": "73:4-73:31"
           }
         ]
       }

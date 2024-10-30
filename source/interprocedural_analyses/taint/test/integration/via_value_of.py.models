@@ -65,7 +65,8 @@
               "line": 100,
               "start": 15,
               "end": 24
-            }
+            },
+            "call_site": "100:4-100:25"
           }
         ]
       }
@@ -219,7 +220,8 @@
               "line": 72,
               "start": 22,
               "end": 31
-            }
+            },
+            "call_site": "72:4-72:39"
           }
         ]
       }
@@ -254,7 +256,8 @@
               "line": 76,
               "start": 22,
               "end": 41
-            }
+            },
+            "call_site": "76:4-76:42"
           }
         ]
       }
@@ -289,7 +292,8 @@
               "line": 80,
               "start": 22,
               "end": 52
-            }
+            },
+            "call_site": "80:4-80:53"
           }
         ]
       }
@@ -527,7 +531,8 @@
                 "end": 28
               },
               "resolves_to": [ "via_value_of.attach_to_sink" ],
-              "port": "formal(parameter, position=0)"
+              "port": "formal(parameter, position=0)",
+              "call_site": "104:4-104:49"
             }
           }
         ]
@@ -1011,7 +1016,8 @@
               "line": 64,
               "start": 29,
               "end": 36
-            }
+            },
+            "call_site": "64:11-64:47"
           }
         ]
       }
@@ -1046,7 +1052,8 @@
                 "end": 23
               },
               "resolves_to": [ "via_value_of.meta_sink" ],
-              "port": "formal(parameter, position=0)"
+              "port": "formal(parameter, position=0)",
+              "call_site": "88:4-88:41"
             }
           }
         ]

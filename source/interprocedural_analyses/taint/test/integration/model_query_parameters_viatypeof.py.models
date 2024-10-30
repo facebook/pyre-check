@@ -54,7 +54,8 @@
               "line": 16,
               "start": 13,
               "end": 14
-            }
+            },
+            "call_site": "16:4-16:23"
           }
         ]
       }
@@ -126,7 +127,8 @@
               "line": 21,
               "start": 18,
               "end": 19
-            }
+            },
+            "call_site": "21:4-21:23"
           }
         ]
       }
@@ -201,7 +203,8 @@
               "line": 26,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "26:4-26:25"
           }
         ]
       }
@@ -278,7 +281,8 @@
               "end": 10
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "47:4-47:19"
           }
         ]
       }
@@ -354,7 +358,8 @@
               "end": 15
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "52:4-52:19"
           }
         ]
       }
@@ -433,7 +438,8 @@
               "end": 20
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "57:4-57:21"
           }
         ]
       }
@@ -511,7 +517,8 @@
               "end": 10
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "62:4-62:19"
           }
         ]
       }
@@ -592,7 +599,8 @@
               "end": 15
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "67:4-67:19"
           }
         ]
       }
@@ -670,7 +678,8 @@
               "end": 20
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "72:4-72:21"
           }
         ]
       }
@@ -744,7 +753,8 @@
               "line": 89,
               "start": 13,
               "end": 14
-            }
+            },
+            "call_site": "89:4-89:23"
           }
         ]
       }
@@ -816,7 +826,8 @@
               "line": 94,
               "start": 18,
               "end": 19
-            }
+            },
+            "call_site": "94:4-94:23"
           }
         ]
       }
@@ -891,7 +902,8 @@
               "line": 99,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "99:4-99:25"
           }
         ]
       }

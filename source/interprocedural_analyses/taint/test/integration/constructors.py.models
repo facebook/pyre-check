@@ -130,7 +130,8 @@
               "line": 115,
               "start": 15,
               "end": 40
-            }
+            },
+            "call_site": "115:4-115:41"
           }
         ]
       }
@@ -202,7 +203,8 @@
               "line": 125,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "125:4-125:17"
           }
         ]
       }
@@ -269,7 +271,8 @@
               "line": 123,
               "start": 15,
               "end": 43
-            }
+            },
+            "call_site": "123:4-123:44"
           }
         ]
       }
@@ -336,7 +339,8 @@
               "line": 141,
               "start": 15,
               "end": 66
-            }
+            },
+            "call_site": "141:4-141:67"
           }
         ]
       }
@@ -411,7 +415,8 @@
               "line": 156,
               "start": 15,
               "end": 69
-            }
+            },
+            "call_site": "156:4-156:70"
           }
         ]
       }
@@ -484,7 +489,8 @@
               "line": 95,
               "start": 15,
               "end": 49
-            }
+            },
+            "call_site": "95:4-95:50"
           }
         ]
       }
@@ -555,7 +561,8 @@
               "line": 105,
               "start": 15,
               "end": 48
-            }
+            },
+            "call_site": "105:4-105:49"
           }
         ]
       }
@@ -628,7 +635,8 @@
                 "end": 35
               },
               "resolves_to": [ "constructors.ChildWithNew.__new__" ],
-              "port": "formal(input, position=1)"
+              "port": "formal(input, position=1)",
+              "call_site": "61:8-61:36"
             }
           }
         ]
@@ -700,7 +708,8 @@
               "line": 186,
               "start": 15,
               "end": 58
-            }
+            },
+            "call_site": "186:4-186:59"
           }
         ]
       }
@@ -774,7 +783,8 @@
               "line": 185,
               "start": 15,
               "end": 58
-            }
+            },
+            "call_site": "185:4-185:59"
           }
         ]
       }
@@ -848,7 +858,8 @@
               "line": 172,
               "start": 15,
               "end": 63
-            }
+            },
+            "call_site": "172:4-172:64"
           }
         ]
       }
@@ -922,7 +933,8 @@
               "line": 171,
               "start": 15,
               "end": 63
-            }
+            },
+            "call_site": "171:4-171:64"
           }
         ]
       }
@@ -1000,7 +1012,8 @@
               "line": 45,
               "start": 15,
               "end": 18
-            }
+            },
+            "call_site": "45:4-45:19"
           }
         ]
       }
@@ -1129,7 +1142,8 @@
               "end": 27
             },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "71:8-71:28"
           }
         ]
       }
@@ -1191,7 +1205,8 @@
               "line": 56,
               "start": 19,
               "end": 24
-            }
+            },
+            "call_site": "56:8-56:25"
           }
         ]
       }
@@ -1322,7 +1337,8 @@
                 "end": 15
               },
               "resolves_to": [ "constructors.BaseConstructor.__init__" ],
-              "port": "formal(self, position=0)[x]"
+              "port": "formal(self, position=0)[x]",
+              "call_site": "85:8-85:26"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 5 } ],
@@ -1851,7 +1867,8 @@
               "end": 34
             },
             "caller_interval": [ { "lower": 48, "upper": 49 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "23:8-23:35"
           }
         ]
       }

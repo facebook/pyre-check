@@ -63,7 +63,8 @@
               "line": 141,
               "start": 15,
               "end": 34
-            }
+            },
+            "call_site": "141:4-141:35"
           }
         ]
       }
@@ -137,7 +138,8 @@
                 "end": 33
               },
               "resolves_to": [ "decorator_location.handle_request" ],
-              "port": "formal(request, position=0)"
+              "port": "formal(request, position=0)",
+              "call_site": "164:4-164:42"
             }
           }
         ]
@@ -215,7 +217,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "146:4-146:46"
             }
           }
         ]
@@ -296,7 +299,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_ignore_this_decorator"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "160:4-160:59"
             }
           }
         ]
@@ -377,7 +381,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging2_skip_this_decorator"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "150:4-150:58"
             }
           }
         ]
@@ -458,7 +463,8 @@
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator_factory"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "154:4-154:59"
             }
           }
         ]
@@ -539,7 +545,8 @@
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator_class"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "156:4-156:57"
             }
           }
         ]
@@ -620,7 +627,8 @@
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "152:4-152:51"
             }
           }
         ]
@@ -754,7 +762,8 @@
               "line": 80,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "80:4-80:17"
           }
         ]
       }
@@ -787,7 +796,8 @@
               "line": 90,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "90:4-90:17"
           }
         ]
       }
@@ -820,7 +830,8 @@
               "line": 85,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "85:4-85:17"
           }
         ]
       }
@@ -862,7 +873,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging2_skip_this_decorator._inlined_with_logging2"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "74:0-75:17"
             }
           }
         ]
@@ -896,7 +908,8 @@
               "line": 28,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "28:8-28:21"
           },
           {
             "kinds": [
@@ -923,7 +936,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging2_skip_this_decorator._original_function"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "29:8-29:12"
             }
           }
         ]
@@ -957,7 +971,8 @@
               "line": 75,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "75:4-75:17"
           }
         ]
       }
@@ -999,7 +1014,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_ignore_this_decorator._inlined_with_logging"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "101:0-102:17"
             }
           }
         ]
@@ -1033,7 +1049,8 @@
               "line": 19,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "19:8-19:21"
           },
           {
             "kinds": [
@@ -1060,7 +1077,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_ignore_this_decorator._original_function"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "20:8-20:12"
             }
           },
           {
@@ -1088,7 +1106,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_ignore_this_decorator._inlined_with_logging.some_helper"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "21:8-21:22"
             }
           }
         ]
@@ -1122,7 +1141,8 @@
               "line": 16,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "16:8-16:21"
           }
         ]
       }
@@ -1155,7 +1175,8 @@
               "line": 102,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "102:4-102:17"
           }
         ]
       }
@@ -1197,7 +1218,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2._inlined_with_logging"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "63:0-64:17"
             }
           }
         ]
@@ -1231,7 +1253,8 @@
               "line": 19,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "19:8-19:21"
           },
           {
             "kinds": [
@@ -1258,7 +1281,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2._inlined_with_logging2"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "20:8-20:12"
             }
           },
           {
@@ -1286,7 +1310,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2._inlined_with_logging.some_helper"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "21:8-21:22"
             }
           }
         ]
@@ -1320,7 +1345,8 @@
               "line": 16,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "16:8-16:21"
           }
         ]
       }
@@ -1353,7 +1379,8 @@
               "line": 28,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "28:8-28:21"
           },
           {
             "kinds": [
@@ -1380,7 +1407,8 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2._original_function"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "29:8-29:12"
             }
           }
         ]
@@ -1414,7 +1442,8 @@
               "line": 64,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "64:4-64:17"
           }
         ]
       }
@@ -1449,7 +1478,8 @@
               "resolves_to": [
                 "decorator_location.handle_request._inlined_pass_local_variable_to_x"
               ],
-              "port": "formal(request, position=0)"
+              "port": "formal(request, position=0)",
+              "call_site": "116:0-117:17"
             }
           }
         ]
@@ -1480,7 +1510,8 @@
               "line": 108,
               "start": 19,
               "end": 26
-            }
+            },
+            "call_site": "108:8-108:27"
           }
         ]
       }
@@ -1513,7 +1544,8 @@
               "line": 117,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "117:4-117:17"
           }
         ]
       }
@@ -1628,7 +1660,8 @@
               "line": 108,
               "start": 19,
               "end": 26
-            }
+            },
+            "call_site": "108:8-108:27"
           }
         ]
       }
@@ -1661,7 +1694,8 @@
               "line": 36,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "36:8-36:21"
           }
         ]
       }
@@ -1694,7 +1728,8 @@
               "line": 19,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "19:8-19:21"
           },
           {
             "kinds": [
@@ -1721,7 +1756,8 @@
               "resolves_to": [
                 "decorator_location.with_logging.some_helper"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "21:8-21:22"
             }
           }
         ]
@@ -1755,7 +1791,8 @@
               "line": 16,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "16:8-16:21"
           }
         ]
       }
@@ -1788,7 +1825,8 @@
               "line": 28,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "28:8-28:21"
           }
         ]
       }

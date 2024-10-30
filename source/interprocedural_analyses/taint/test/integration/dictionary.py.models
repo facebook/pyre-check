@@ -49,7 +49,8 @@
               "line": 452,
               "start": 21,
               "end": 22
-            }
+            },
+            "call_site": "452:10-452:23"
           }
         ]
       }
@@ -120,7 +121,8 @@
               "line": 223,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "223:4-223:17"
           }
         ]
       }
@@ -194,7 +196,8 @@
               "line": 229,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "229:4-229:17"
           }
         ]
       }
@@ -267,7 +270,8 @@
               "line": 480,
               "start": 15,
               "end": 19
-            }
+            },
+            "call_site": "480:4-480:20"
           }
         ]
       }
@@ -340,7 +344,8 @@
               "line": 473,
               "start": 15,
               "end": 19
-            }
+            },
+            "call_site": "473:4-473:20"
           }
         ]
       }
@@ -420,7 +425,8 @@
               "line": 502,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "502:4-502:22"
           }
         ]
       }
@@ -505,7 +511,8 @@
               "line": 501,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "501:4-501:22"
           }
         ]
       }
@@ -590,7 +597,8 @@
               "line": 500,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "500:4-500:22"
           }
         ]
       }
@@ -675,7 +683,8 @@
               "line": 496,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "496:4-496:22"
           }
         ]
       }
@@ -760,7 +769,8 @@
               "line": 495,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "495:4-495:22"
           }
         ]
       }
@@ -843,7 +853,8 @@
               "line": 488,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "488:4-488:22"
           }
         ]
       }
@@ -922,7 +933,8 @@
               "line": 486,
               "start": 15,
               "end": 26
-            }
+            },
+            "call_site": "486:4-486:27"
           }
         ]
       }
@@ -996,7 +1008,8 @@
               "line": 170,
               "start": 15,
               "end": 31
-            }
+            },
+            "call_site": "170:4-170:32"
           }
         ]
       }
@@ -1075,7 +1088,8 @@
                 "end": 54
               },
               "resolves_to": [ "dictionary.update_dictionary_indirectly" ],
-              "port": "formal(arg, position=0)[*]"
+              "port": "formal(arg, position=0)[*]",
+              "call_site": "87:4-87:55"
             }
           }
         ]
@@ -1147,7 +1161,8 @@
                 "end": 26
               },
               "resolves_to": [ "dictionary.backward_weak_update" ],
-              "port": "formal(d, position=0).**keys"
+              "port": "formal(d, position=0).**keys",
+              "call_site": "463:4-463:27"
             }
           }
         ]
@@ -1219,7 +1234,8 @@
               "line": 464,
               "start": 15,
               "end": 23
-            }
+            },
+            "call_site": "464:4-464:24"
           }
         ]
       }
@@ -1292,7 +1308,8 @@
               "line": 204,
               "start": 19,
               "end": 39
-            }
+            },
+            "call_site": "204:8-204:40"
           }
         ]
       }
@@ -1364,7 +1381,8 @@
               "line": 524,
               "start": 15,
               "end": 52
-            }
+            },
+            "call_site": "524:4-524:53"
           }
         ]
       }
@@ -1437,7 +1455,8 @@
               "line": 530,
               "start": 15,
               "end": 27
-            }
+            },
+            "call_site": "530:4-530:28"
           }
         ]
       }
@@ -1510,7 +1529,8 @@
               "line": 539,
               "start": 37,
               "end": 45
-            }
+            },
+            "call_site": "539:26-539:46"
           }
         ]
       }
@@ -1583,7 +1603,8 @@
               "line": 539,
               "start": 15,
               "end": 23
-            }
+            },
+            "call_site": "539:4-539:24"
           }
         ]
       }
@@ -1655,7 +1676,8 @@
               "line": 328,
               "start": 15,
               "end": 33
-            }
+            },
+            "call_site": "328:4-328:34"
           }
         ]
       }
@@ -1724,7 +1746,8 @@
               "line": 344,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "344:8-344:21"
           }
         ]
       }
@@ -1791,7 +1814,8 @@
               "line": 336,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "336:8-336:21"
           }
         ]
       }
@@ -1861,7 +1885,8 @@
               "line": 273,
               "start": 19,
               "end": 25
-            }
+            },
+            "call_site": "273:8-273:26"
           }
         ]
       }
@@ -1935,7 +1960,8 @@
               "line": 266,
               "start": 15,
               "end": 34
-            }
+            },
+            "call_site": "266:4-266:35"
           }
         ]
       }
@@ -2009,7 +2035,8 @@
               "line": 258,
               "start": 15,
               "end": 38
-            }
+            },
+            "call_site": "258:4-258:39"
           }
         ]
       }
@@ -2083,7 +2110,8 @@
               "line": 313,
               "start": 15,
               "end": 53
-            }
+            },
+            "call_site": "313:4-313:54"
           }
         ]
       }
@@ -2157,7 +2185,8 @@
               "line": 318,
               "start": 15,
               "end": 56
-            }
+            },
+            "call_site": "318:4-318:57"
           }
         ]
       }
@@ -2227,7 +2256,8 @@
               "line": 290,
               "start": 43,
               "end": 44
-            }
+            },
+            "call_site": "290:32-290:45"
           }
         ]
       }
@@ -2612,7 +2642,8 @@
               "end": 22
             },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "175:8-175:23"
           }
         ]
       }
@@ -2642,7 +2673,8 @@
               "line": 457,
               "start": 21,
               "end": 22
-            }
+            },
+            "call_site": "457:10-457:23"
           }
         ]
       }
@@ -2672,7 +2704,8 @@
               "line": 431,
               "start": 15,
               "end": 23
-            }
+            },
+            "call_site": "431:4-431:24"
           }
         ]
       }
@@ -2726,7 +2759,8 @@
                 "end": 41
               },
               "resolves_to": [ "dictionary.sink_dictionary_through_keys" ],
-              "port": "formal(d, position=0).**keys"
+              "port": "formal(d, position=0).**keys",
+              "call_site": "252:4-252:42"
             }
           }
         ]
@@ -2849,7 +2883,8 @@
               "line": 163,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "163:4-163:17"
           },
           {
             "kinds": [
@@ -2868,7 +2903,8 @@
               "line": 164,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "164:4-164:22"
           }
         ]
       }
@@ -3037,7 +3073,8 @@
               "line": 111,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "111:4-111:22"
           }
         ]
       },
@@ -3060,7 +3097,8 @@
               "line": 110,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "110:4-110:22"
           }
         ]
       }
@@ -3190,7 +3228,8 @@
               "line": 26,
               "start": 30,
               "end": 33
-            }
+            },
+            "call_site": "26:19-26:34"
           }
         ]
       }
@@ -3391,7 +3430,8 @@
               "line": 198,
               "start": 20,
               "end": 21
-            }
+            },
+            "call_site": "198:9-198:22"
           }
         ]
       }
@@ -3453,7 +3493,8 @@
               "line": 194,
               "start": 25,
               "end": 26
-            }
+            },
+            "call_site": "194:14-194:27"
           }
         ]
       }
@@ -3658,7 +3699,8 @@
               "line": 233,
               "start": 16,
               "end": 17
-            }
+            },
+            "call_site": "233:5-233:18"
           }
         ]
       }
@@ -3738,7 +3780,8 @@
                 "end": 20
               },
               "resolves_to": [ "dictionary.SpecialSetitemDict.__setitem__" ],
-              "port": "formal(key, position=1)"
+              "port": "formal(key, position=1)",
+              "call_site": "179:4-179:25"
             },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
@@ -3787,7 +3830,8 @@
               "line": 373,
               "start": 15,
               "end": 36
-            }
+            },
+            "call_site": "373:4-373:37"
           }
         ]
       }
@@ -3820,7 +3864,8 @@
               "line": 377,
               "start": 15,
               "end": 32
-            }
+            },
+            "call_site": "377:4-377:33"
           }
         ]
       }
@@ -3850,7 +3895,8 @@
               "line": 351,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "351:8-351:21"
           }
         ]
       }
@@ -3880,7 +3926,8 @@
               "line": 364,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "364:8-364:21"
           }
         ]
       }
@@ -3916,7 +3963,8 @@
               "line": 381,
               "start": 15,
               "end": 36
-            }
+            },
+            "call_site": "381:4-381:37"
           }
         ]
       }
@@ -3949,7 +3997,8 @@
               "line": 385,
               "start": 15,
               "end": 32
-            }
+            },
+            "call_site": "385:4-385:33"
           }
         ]
       }
@@ -4135,7 +4184,8 @@
               "line": 79,
               "start": 15,
               "end": 33
-            }
+            },
+            "call_site": "79:4-79:34"
           }
         ]
       }

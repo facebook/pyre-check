@@ -53,7 +53,8 @@
               "line": 38,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "38:4-38:17"
           }
         ]
       }
@@ -137,7 +138,8 @@
               "line": 244,
               "start": 8,
               "end": 8
-            }
+            },
+            "call_site": "243:4-247:5"
           }
         ]
       }
@@ -221,7 +223,8 @@
               "line": 22,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "22:4-22:22"
           }
         ]
       }
@@ -325,7 +328,8 @@
               "line": 82,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "82:8-82:37"
           },
           {
             "kinds": [
@@ -347,7 +351,8 @@
               "line": 83,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "83:8-83:37"
           },
           {
             "kinds": [
@@ -369,7 +374,8 @@
               "line": 84,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "84:8-84:37"
           },
           {
             "kinds": [
@@ -391,7 +397,8 @@
               "line": 85,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "85:8-85:37"
           },
           {
             "kinds": [
@@ -413,7 +420,8 @@
               "line": 86,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "86:8-86:37"
           },
           {
             "kinds": [
@@ -435,7 +443,8 @@
               "line": 87,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "87:8-87:37"
           },
           {
             "kinds": [
@@ -457,7 +466,8 @@
               "line": 88,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "88:8-88:37"
           },
           {
             "kinds": [
@@ -479,7 +489,8 @@
               "line": 89,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "89:8-89:37"
           },
           {
             "kinds": [
@@ -501,7 +512,8 @@
               "line": 90,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "90:8-90:37"
           },
           {
             "kinds": [
@@ -523,7 +535,8 @@
               "line": 91,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "91:8-91:38"
           },
           {
             "kinds": [
@@ -545,7 +558,8 @@
               "line": 92,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "92:8-92:38"
           },
           {
             "kinds": [
@@ -567,7 +581,8 @@
               "line": 93,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "93:8-93:38"
           },
           {
             "kinds": [
@@ -589,7 +604,8 @@
               "line": 94,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "94:8-94:38"
           },
           {
             "kinds": [
@@ -611,7 +627,8 @@
               "line": 95,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "95:8-95:38"
           },
           {
             "kinds": [
@@ -633,7 +650,8 @@
               "line": 96,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "96:8-96:38"
           },
           {
             "kinds": [
@@ -655,7 +673,8 @@
               "line": 98,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "98:8-98:37"
           },
           {
             "kinds": [
@@ -677,7 +696,8 @@
               "line": 99,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "99:8-99:37"
           },
           {
             "kinds": [
@@ -699,7 +719,8 @@
               "line": 100,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "100:8-100:37"
           },
           {
             "kinds": [
@@ -721,7 +742,8 @@
               "line": 101,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "101:8-101:37"
           },
           {
             "kinds": [
@@ -743,7 +765,8 @@
               "line": 102,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "102:8-102:37"
           },
           {
             "kinds": [
@@ -765,7 +788,8 @@
               "line": 103,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "103:8-103:37"
           },
           {
             "kinds": [
@@ -787,7 +811,8 @@
               "line": 104,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "104:8-104:37"
           },
           {
             "kinds": [
@@ -809,7 +834,8 @@
               "line": 105,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "105:8-105:37"
           },
           {
             "kinds": [
@@ -831,7 +857,8 @@
               "line": 106,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "106:8-106:37"
           },
           {
             "kinds": [
@@ -853,7 +880,8 @@
               "line": 107,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "107:8-107:38"
           },
           {
             "kinds": [
@@ -875,7 +903,8 @@
               "line": 108,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "108:8-108:38"
           },
           {
             "kinds": [
@@ -897,7 +926,8 @@
               "line": 109,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "109:8-109:38"
           },
           {
             "kinds": [
@@ -919,7 +949,8 @@
               "line": 110,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "110:8-110:38"
           },
           {
             "kinds": [
@@ -941,7 +972,8 @@
               "line": 111,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "111:8-111:38"
           },
           {
             "kinds": [
@@ -963,7 +995,8 @@
               "line": 112,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "112:8-112:38"
           }
         ]
       }
@@ -1671,7 +1704,8 @@
               "line": 362,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "362:8-362:37"
           }
         ]
       },
@@ -1694,7 +1728,8 @@
               "line": 371,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "371:8-371:38"
           }
         ]
       },
@@ -1717,7 +1752,8 @@
               "line": 372,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "372:8-372:38"
           }
         ]
       },
@@ -1740,7 +1776,8 @@
               "line": 373,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "373:8-373:38"
           }
         ]
       },
@@ -1763,7 +1800,8 @@
               "line": 374,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "374:8-374:38"
           }
         ]
       },
@@ -1786,7 +1824,8 @@
               "line": 375,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "375:8-375:38"
           }
         ]
       },
@@ -1809,7 +1848,8 @@
               "line": 376,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "376:8-376:38"
           }
         ]
       },
@@ -1832,7 +1872,8 @@
               "line": 363,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "363:8-363:37"
           }
         ]
       },
@@ -1855,7 +1896,8 @@
               "line": 364,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "364:8-364:37"
           }
         ]
       },
@@ -1878,7 +1920,8 @@
               "line": 365,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "365:8-365:37"
           }
         ]
       },
@@ -1901,7 +1944,8 @@
               "line": 366,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "366:8-366:37"
           }
         ]
       },
@@ -1924,7 +1968,8 @@
               "line": 367,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "367:8-367:37"
           }
         ]
       },
@@ -1947,7 +1992,8 @@
               "line": 368,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "368:8-368:37"
           }
         ]
       },
@@ -1970,7 +2016,8 @@
               "line": 369,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "369:8-369:37"
           }
         ]
       },
@@ -1993,7 +2040,8 @@
               "line": 370,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "370:8-370:37"
           }
         ]
       },
@@ -2016,7 +2064,8 @@
               "line": 378,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "378:8-378:37"
           }
         ]
       },
@@ -2039,7 +2088,8 @@
               "line": 387,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "387:8-387:38"
           }
         ]
       },
@@ -2062,7 +2112,8 @@
               "line": 388,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "388:8-388:38"
           }
         ]
       },
@@ -2085,7 +2136,8 @@
               "line": 389,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "389:8-389:38"
           }
         ]
       },
@@ -2108,7 +2160,8 @@
               "line": 390,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "390:8-390:38"
           }
         ]
       },
@@ -2131,7 +2184,8 @@
               "line": 391,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "391:8-391:38"
           }
         ]
       },
@@ -2154,7 +2208,8 @@
               "line": 392,
               "start": 19,
               "end": 37
-            }
+            },
+            "call_site": "392:8-392:38"
           }
         ]
       },
@@ -2177,7 +2232,8 @@
               "line": 379,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "379:8-379:37"
           }
         ]
       },
@@ -2200,7 +2256,8 @@
               "line": 380,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "380:8-380:37"
           }
         ]
       },
@@ -2223,7 +2280,8 @@
               "line": 381,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "381:8-381:37"
           }
         ]
       },
@@ -2246,7 +2304,8 @@
               "line": 382,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "382:8-382:37"
           }
         ]
       },
@@ -2269,7 +2328,8 @@
               "line": 383,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "383:8-383:37"
           }
         ]
       },
@@ -2292,7 +2352,8 @@
               "line": 384,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "384:8-384:37"
           }
         ]
       },
@@ -2315,7 +2376,8 @@
               "line": 385,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "385:8-385:37"
           }
         ]
       },
@@ -2338,7 +2400,8 @@
               "line": 386,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "386:8-386:37"
           }
         ]
       }
@@ -3043,7 +3106,8 @@
               "line": 138,
               "start": 19,
               "end": 53
-            }
+            },
+            "call_site": "138:8-138:54"
           }
         ]
       },
@@ -3066,7 +3130,8 @@
               "line": 140,
               "start": 19,
               "end": 53
-            }
+            },
+            "call_site": "140:8-140:54"
           }
         ]
       }
@@ -3196,7 +3261,8 @@
               "line": 154,
               "start": 19,
               "end": 22
-            }
+            },
+            "call_site": "154:8-154:23"
           },
           {
             "kinds": [
@@ -3224,7 +3290,8 @@
                 "end": 40
               },
               "resolves_to": [ "taint_broadening.recursive_sink_parent" ],
-              "port": "formal(obj, position=0)"
+              "port": "formal(obj, position=0)",
+              "call_site": "152:8-152:41"
             }
           }
         ]
@@ -3255,7 +3322,8 @@
               "line": 161,
               "start": 19,
               "end": 32
-            }
+            },
+            "call_site": "161:8-161:33"
           }
         ]
       },
@@ -3280,7 +3348,8 @@
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
-              "port": "formal(obj, position=0)[attribute]"
+              "port": "formal(obj, position=0)[attribute]",
+              "call_site": "159:8-159:51"
             }
           }
         ]
@@ -3306,7 +3375,8 @@
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
-              "port": "formal(obj, position=0)[parent][attribute]"
+              "port": "formal(obj, position=0)[parent][attribute]",
+              "call_site": "159:8-159:51"
             }
           }
         ]
@@ -3332,7 +3402,8 @@
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
-              "port": "formal(obj, position=0)[parent][parent][attribute]"
+              "port": "formal(obj, position=0)[parent][parent][attribute]",
+              "call_site": "159:8-159:51"
             }
           }
         ]
@@ -3361,7 +3432,8 @@
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
-              "port": "formal(obj, position=0)[parent][parent][parent][attribute]"
+              "port": "formal(obj, position=0)[parent][parent][parent][attribute]",
+              "call_site": "159:8-159:51"
             }
           },
           {
@@ -3389,7 +3461,8 @@
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
-              "port": "formal(obj, position=0)[parent][parent][parent][parent]"
+              "port": "formal(obj, position=0)[parent][parent][parent][parent]",
+              "call_site": "159:8-159:51"
             }
           }
         ]
@@ -3423,7 +3496,8 @@
               "line": 15,
               "start": 15,
               "end": 29
-            }
+            },
+            "call_site": "15:4-15:30"
           }
         ]
       }
@@ -3459,7 +3533,8 @@
               "line": 145,
               "start": 19,
               "end": 33
-            }
+            },
+            "call_site": "145:8-145:34"
           }
         ]
       },
@@ -3482,7 +3557,8 @@
               "line": 145,
               "start": 19,
               "end": 33
-            }
+            },
+            "call_site": "145:8-145:34"
           }
         ]
       },
@@ -3505,7 +3581,8 @@
               "line": 145,
               "start": 19,
               "end": 33
-            }
+            },
+            "call_site": "145:8-145:34"
           }
         ]
       },
@@ -3528,7 +3605,8 @@
               "line": 145,
               "start": 19,
               "end": 33
-            }
+            },
+            "call_site": "145:8-145:34"
           }
         ]
       },
@@ -3551,7 +3629,8 @@
               "line": 145,
               "start": 19,
               "end": 33
-            }
+            },
+            "call_site": "145:8-145:34"
           }
         ]
       }
@@ -4012,7 +4091,8 @@
               "line": 27,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "27:4-27:22"
           }
         ]
       }

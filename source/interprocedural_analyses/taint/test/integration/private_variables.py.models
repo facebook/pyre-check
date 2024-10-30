@@ -55,7 +55,8 @@
               "line": 70,
               "start": 15,
               "end": 60
-            }
+            },
+            "call_site": "70:4-70:61"
           }
         ]
       }
@@ -138,7 +139,8 @@
               "resolves_to": [
                 "private_variables.Simple.expand_subexpression"
               ],
-              "port": "formal(values, position=0)[0][_Simple__value]"
+              "port": "formal(values, position=0)[0][_Simple__value]",
+              "call_site": "50:4-50:65"
             }
           }
         ]
@@ -220,7 +222,8 @@
               "line": 66,
               "start": 15,
               "end": 62
-            }
+            },
+            "call_site": "66:4-66:63"
           }
         ]
       }
@@ -302,7 +305,8 @@
               "line": 64,
               "start": 15,
               "end": 62
-            }
+            },
+            "call_site": "64:4-64:63"
           }
         ]
       }
@@ -384,7 +388,8 @@
               "line": 62,
               "start": 15,
               "end": 61
-            }
+            },
+            "call_site": "62:4-62:62"
           }
         ]
       }
@@ -466,7 +471,8 @@
               "line": 60,
               "start": 15,
               "end": 63
-            }
+            },
+            "call_site": "60:4-60:64"
           }
         ]
       }
@@ -548,7 +554,8 @@
               "line": 58,
               "start": 15,
               "end": 63
-            }
+            },
+            "call_site": "58:4-58:64"
           }
         ]
       }
@@ -630,7 +637,8 @@
               "line": 56,
               "start": 15,
               "end": 62
-            }
+            },
+            "call_site": "56:4-56:63"
           }
         ]
       }
@@ -712,7 +720,8 @@
               "resolves_to": [
                 "private_variables.PrivateAttributeSinkModels.set_model_unmangled"
               ],
-              "port": "formal(value, position=1)"
+              "port": "formal(value, position=1)",
+              "call_site": "136:4-136:68"
             },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
@@ -790,7 +799,8 @@
               "resolves_to": [
                 "private_variables.PrivateAttributeSinkModels.set_model_query"
               ],
-              "port": "formal(value, position=1)"
+              "port": "formal(value, position=1)",
+              "call_site": "138:4-138:64"
             },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
@@ -868,7 +878,8 @@
               "resolves_to": [
                 "private_variables.PrivateAttributeSinkModels.set_model_mangled"
               ],
-              "port": "formal(value, position=1)"
+              "port": "formal(value, position=1)",
+              "call_site": "134:4-134:66"
             },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
@@ -947,7 +958,8 @@
               "line": 112,
               "start": 15,
               "end": 63
-            }
+            },
+            "call_site": "112:4-112:64"
           }
         ]
       }
@@ -1023,7 +1035,8 @@
               "line": 110,
               "start": 15,
               "end": 67
-            }
+            },
+            "call_site": "110:4-110:68"
           }
         ]
       }
@@ -1099,7 +1112,8 @@
               "line": 108,
               "start": 15,
               "end": 65
-            }
+            },
+            "call_site": "108:4-108:66"
           }
         ]
       }
@@ -1170,7 +1184,8 @@
                 "end": 33
               },
               "resolves_to": [ "private_variables.Simple.public_into_sink" ],
-              "port": "formal(self, position=0)[value]"
+              "port": "formal(self, position=0)[value]",
+              "call_site": "46:4-46:52"
             },
             "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false
@@ -1248,7 +1263,8 @@
                 "end": 34
               },
               "resolves_to": [ "private_variables.Simple.private_into_sink" ],
-              "port": "formal(self, position=0)[_Simple__value]"
+              "port": "formal(self, position=0)[_Simple__value]",
+              "call_site": "43:4-43:54"
             },
             "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false
@@ -1326,7 +1342,8 @@
                 "end": 34
               },
               "resolves_to": [ "private_variables.Simple.private_into_sink" ],
-              "port": "formal(self, position=0)[_Simple__value]"
+              "port": "formal(self, position=0)[_Simple__value]",
+              "call_site": "39:4-39:54"
             },
             "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false
@@ -1493,7 +1510,8 @@
               "line": 82,
               "start": 19,
               "end": 28
-            }
+            },
+            "call_site": "82:8-82:29"
           }
         ]
       }
@@ -1813,7 +1831,8 @@
               "line": 24,
               "start": 19,
               "end": 36
-            }
+            },
+            "call_site": "24:8-24:37"
           }
         ]
       }
@@ -1941,7 +1960,8 @@
               "end": 31
             },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "16:8-16:32"
           }
         ]
       }
@@ -1973,7 +1993,8 @@
               "end": 29
             },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "19:8-19:30"
           }
         ]
       }

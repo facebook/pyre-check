@@ -136,7 +136,8 @@
                 "end": 24
               },
               "resolves_to": [ "nested_callables.outer" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "28:4-28:25"
             }
           }
         ]
@@ -207,7 +208,8 @@
               "line": 14,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "14:8-14:21"
           }
         ]
       }
@@ -283,7 +285,8 @@
               "resolves_to": [
                 "nested_callables.access_parameter_in_inner_scope_sink"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "103:4-103:56"
             }
           }
         ]
@@ -357,7 +360,8 @@
               "line": 114,
               "start": 15,
               "end": 67
-            }
+            },
+            "call_site": "114:4-114:68"
           }
         ]
       }
@@ -438,7 +442,8 @@
               "line": 92,
               "start": 15,
               "end": 55
-            }
+            },
+            "call_site": "92:4-92:56"
           }
         ]
       }
@@ -788,7 +793,8 @@
               "line": 97,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "97:8-97:21"
           }
         ]
       }
@@ -868,7 +874,8 @@
               "line": 77,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "77:8-77:21"
           }
         ]
       }
@@ -1067,7 +1074,8 @@
                 "end": 18
               },
               "resolves_to": [ "nested_callables.outer.inner" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "24:11-24:19"
             }
           }
         ]
@@ -1101,7 +1109,8 @@
               "line": 22,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "22:8-22:21"
           }
         ]
       }
@@ -1143,7 +1152,8 @@
               "resolves_to": [
                 "nested_callables.outer_calling_other_function.inner_calling_other_function"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "39:4-39:35"
             }
           }
         ]
@@ -1184,7 +1194,8 @@
                 "end": 19
               },
               "resolves_to": [ "nested_callables.some_sink" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "37:8-37:20"
             }
           }
         ]
@@ -1289,7 +1300,8 @@
               "line": 32,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "32:4-32:17"
           }
         ]
       }

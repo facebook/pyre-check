@@ -53,7 +53,8 @@
                 "end": 40
               },
               "resolves_to": [ "decorator.Foo.some_class_method" ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "228:4-228:41"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -127,7 +128,8 @@
                 "end": 53
               },
               "resolves_to": [ "decorator.Foo.self_has_generic_type" ],
-              "port": "formal(x, position=2)"
+              "port": "formal(x, position=2)",
+              "call_site": "226:4-226:54"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -201,7 +203,8 @@
                 "end": 28
               },
               "resolves_to": [ "decorator.Foo.foo" ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "222:4-222:29"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -275,7 +278,8 @@
                 "end": 28
               },
               "resolves_to": [ "decorator.Foo.bar" ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "224:4-224:29"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -353,7 +357,8 @@
                 "end": 32
               },
               "resolves_to": [ "decorator.foo_with_sink" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "204:4-204:33"
             }
           }
         ]
@@ -432,7 +437,8 @@
                 "end": 43
               },
               "resolves_to": [ "decorator.foo_with_helper_function" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "220:4-220:53"
             }
           }
         ]
@@ -507,7 +513,8 @@
                 "end": 46
               },
               "resolves_to": [ "decorator.foo_using_decorator_factory" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "216:4-216:47"
             }
           }
         ]
@@ -583,7 +590,8 @@
                 "end": 42
               },
               "resolves_to": [ "decorator.foo_log_first_parameter" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "218:4-218:52"
             }
           }
         ]
@@ -658,7 +666,8 @@
                 "end": 34
               },
               "resolves_to": [ "decorator.foo_async" ],
-              "port": "formal(y, position=0)"
+              "port": "formal(y, position=0)",
+              "call_site": "205:10-205:35"
             }
           }
         ]
@@ -734,7 +743,8 @@
                 "end": 53
               },
               "resolves_to": [ "decorator.foo_args_kwargs_with_sink" ],
-              "port": "formal(y, position=1)"
+              "port": "formal(y, position=1)",
+              "call_site": "212:4-212:54"
             }
           }
         ]
@@ -809,7 +819,8 @@
                 "end": 34
               },
               "resolves_to": [ "decorator.foo_args_kwargs" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "207:4-207:35"
             }
           }
         ]
@@ -885,7 +896,8 @@
                 "end": 22
               },
               "resolves_to": [ "decorator.foo" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "203:4-203:23"
             }
           }
         ]
@@ -984,7 +996,8 @@
               "resolves_to": [
                 "decorator.Foo.bar._inlined_with_logging_args_kwargs_no_sink2"
               ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "189:4-190:16"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1012,7 +1025,8 @@
               "resolves_to": [
                 "decorator.Foo.bar._inlined_with_logging_args_kwargs_no_sink2"
               ],
-              "port": "formal(self, position=0)"
+              "port": "formal(self, position=0)",
+              "call_site": "189:4-190:16"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1045,7 +1059,8 @@
               "line": 62,
               "start": 19,
               "end": 25
-            }
+            },
+            "call_site": "62:8-62:26"
           }
         ]
       },
@@ -1065,7 +1080,8 @@
               "line": 62,
               "start": 19,
               "end": 25
-            }
+            },
+            "call_site": "62:8-62:26"
           }
         ]
       }
@@ -1100,7 +1116,8 @@
               "resolves_to": [
                 "decorator.Foo.bar._inlined_with_logging_args_kwargs"
               ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "75:8-75:26"
             }
           }
         ]
@@ -1126,7 +1143,8 @@
               "resolves_to": [
                 "decorator.Foo.bar._inlined_with_logging_args_kwargs"
               ],
-              "port": "formal(self, position=0)"
+              "port": "formal(self, position=0)",
+              "call_site": "75:8-75:26"
             }
           }
         ]
@@ -1162,7 +1180,8 @@
               "resolves_to": [
                 "decorator.Foo.foo._inlined_with_logging_args_kwargs_no_sink"
               ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "183:4-184:27"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1198,7 +1217,8 @@
                 "end": 9
               },
               "resolves_to": [ "decorator.Foo.foo._original_function" ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "75:8-75:26"
             }
           }
         ]
@@ -1232,7 +1252,8 @@
                 "end": 26
               },
               "resolves_to": [ "decorator.Foo.sink_method" ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "184:8-184:27"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
@@ -1271,7 +1292,8 @@
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type._inlined_with_logging_args_kwargs_no_sink"
               ],
-              "port": "formal(x, position=2)"
+              "port": "formal(x, position=2)",
+              "call_site": "193:4-194:20"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1299,7 +1321,8 @@
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type._inlined_with_logging_args_kwargs_no_sink"
               ],
-              "port": "formal(other, position=1)"
+              "port": "formal(other, position=1)",
+              "call_site": "193:4-194:20"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1337,7 +1360,8 @@
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type._original_function"
               ],
-              "port": "formal(x, position=2)"
+              "port": "formal(x, position=2)",
+              "call_site": "75:8-75:26"
             }
           }
         ]
@@ -1363,7 +1387,8 @@
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type._original_function"
               ],
-              "port": "formal(other, position=1)"
+              "port": "formal(other, position=1)",
+              "call_site": "75:8-75:26"
             }
           }
         ]
@@ -1397,7 +1422,8 @@
                 "end": 19
               },
               "resolves_to": [ "decorator.Foo.bar" ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "194:8-194:20"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1423,7 +1449,8 @@
                 "end": 13
               },
               "resolves_to": [ "decorator.Foo.bar" ],
-              "port": "formal(self, position=0)"
+              "port": "formal(self, position=0)",
+              "call_site": "194:8-194:20"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1458,7 +1485,8 @@
               "end": 20
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "180:8-180:21"
           }
         ]
       }
@@ -1493,7 +1521,8 @@
               "resolves_to": [
                 "decorator.Foo.some_class_method._inlined_with_logging_args_kwargs_no_sink"
               ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "198:4-199:28"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1531,7 +1560,8 @@
               "resolves_to": [
                 "decorator.Foo.some_class_method._original_function"
               ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "75:8-75:26"
             }
           }
         ]
@@ -1565,7 +1595,8 @@
                 "end": 27
               },
               "resolves_to": [ "decorator.Foo.sink_method" ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "199:8-199:28"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1627,7 +1658,8 @@
                 "end": 13
               },
               "resolves_to": [ "decorator.foo._inlined_with_logging" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "26:0-27:12"
             }
           }
         ]
@@ -1661,7 +1693,8 @@
               "line": 19,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "19:8-19:21"
           }
         ]
       }
@@ -1696,7 +1729,8 @@
               "resolves_to": [
                 "decorator.foo_args_kwargs._inlined_with_logging_args_kwargs"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "69:0-70:12"
             }
           }
         ]
@@ -1727,7 +1761,8 @@
               "line": 62,
               "start": 19,
               "end": 25
-            }
+            },
+            "call_site": "62:8-62:26"
           }
         ]
       }
@@ -1769,7 +1804,8 @@
               "resolves_to": [
                 "decorator.foo_args_kwargs_with_sink._inlined_with_logging_args_kwargs_no_sink"
               ],
-              "port": "formal(y, position=1)"
+              "port": "formal(y, position=1)",
+              "call_site": "81:0-82:17"
             }
           }
         ]
@@ -1812,7 +1848,8 @@
               "resolves_to": [
                 "decorator.foo_args_kwargs_with_sink._original_function"
               ],
-              "port": "formal(y, position=1)"
+              "port": "formal(y, position=1)",
+              "call_site": "75:8-75:26"
             }
           }
         ]
@@ -1846,7 +1883,8 @@
               "line": 82,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "82:4-82:17"
           }
         ]
       }
@@ -1912,7 +1950,8 @@
               "line": 50,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "50:12-50:25"
           }
         ]
       }
@@ -1954,7 +1993,8 @@
               "resolves_to": [
                 "decorator.foo_log_first_parameter._inlined_with_logging_first_parameter"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "144:0-145:15"
             }
           }
         ]
@@ -1988,7 +2028,8 @@
               "line": 135,
               "start": 23,
               "end": 38
-            }
+            },
+            "call_site": "135:12-135:39"
           }
         ]
       }
@@ -2023,7 +2064,8 @@
               "resolves_to": [
                 "decorator.foo_using_decorator_factory._inlined_with_named_logger"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "126:0-127:12"
             }
           }
         ]
@@ -2054,7 +2096,8 @@
               "line": 117,
               "start": 23,
               "end": 27
-            }
+            },
+            "call_site": "117:12-117:28"
           }
         ]
       }
@@ -2158,7 +2201,8 @@
               "resolves_to": [
                 "decorator.foo_with_helper_function._inlined_with_logging_helper_functions.after"
               ],
-              "port": "formal(*args, position=0)"
+              "port": "formal(*args, position=0)",
+              "call_site": "155:12-155:34"
             }
           }
         ]
@@ -2187,7 +2231,8 @@
               "resolves_to": [
                 "decorator.foo_with_helper_function._inlined_with_logging_helper_functions.after"
               ],
-              "port": "formal(*args, position=0)"
+              "port": "formal(*args, position=0)",
+              "call_site": "155:12-155:34"
             }
           }
         ]
@@ -2218,7 +2263,8 @@
               "line": 164,
               "start": 19,
               "end": 23
-            }
+            },
+            "call_site": "164:8-164:24"
           }
         ]
       }
@@ -2255,7 +2301,8 @@
               "resolves_to": [
                 "decorator.foo_with_shady_decorators._inlined_with_logging_source"
               ],
-              "port": "formal(y, position=0)"
+              "port": "formal(y, position=0)",
+              "call_site": "109:0-110:12"
             }
           }
         ]
@@ -2286,7 +2333,8 @@
               "line": 87,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "87:8-87:21"
           }
         ]
       }
@@ -2323,7 +2371,8 @@
               "resolves_to": [
                 "decorator.foo_with_shady_decorators._inlined_with_logging_sink"
               ],
-              "port": "formal(y, position=0)"
+              "port": "formal(y, position=0)",
+              "call_site": "95:8-95:36"
             }
           }
         ]
@@ -2389,7 +2438,8 @@
               "resolves_to": [
                 "decorator.foo_with_shady_decorators._inlined_with_logging_sink"
               ],
-              "port": "formal(y, position=0)"
+              "port": "formal(y, position=0)",
+              "call_site": "95:8-95:36"
             }
           }
         ]
@@ -2444,7 +2494,8 @@
               "resolves_to": [
                 "decorator.foo_with_sink._inlined_with_logging_no_sink"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "38:0-40:12"
             }
           }
         ]
@@ -2485,7 +2536,8 @@
                 "end": 11
               },
               "resolves_to": [ "decorator.foo_with_sink._original_function" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "32:8-32:12"
             }
           }
         ]
@@ -2519,7 +2571,8 @@
               "line": 39,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "39:4-39:17"
           }
         ]
       }
@@ -2554,7 +2607,8 @@
               "resolves_to": [
                 "decorator.second_parameter_source_inlineable_decorator._inlined_no_op_decorator"
               ],
-              "port": "formal(arg2, position=1)"
+              "port": "formal(arg2, position=1)",
+              "call_site": "255:0-256:20"
             }
           }
         ]
@@ -2600,7 +2654,8 @@
               "line": 255,
               "start": 60,
               "end": 69
-            }
+            },
+            "call_site": "255:0-256:20"
           }
         ]
       },
@@ -2626,7 +2681,8 @@
               "resolves_to": [
                 "decorator.second_parameter_source_inlineable_decorator._inlined_no_op_decorator"
               ],
-              "port": "formal(arg2, position=1)"
+              "port": "formal(arg2, position=1)",
+              "call_site": "255:0-256:20"
             }
           }
         ]
@@ -2670,7 +2726,8 @@
               "resolves_to": [
                 "decorator.second_parameter_source_inlineable_decorator._original_function"
               ],
-              "port": "formal(arg2, position=1)"
+              "port": "formal(arg2, position=1)",
+              "call_site": "249:8-249:26"
             }
           }
         ]
@@ -2701,7 +2758,8 @@
               "line": 256,
               "start": 15,
               "end": 19
-            }
+            },
+            "call_site": "256:4-256:20"
           }
         ]
       }
@@ -2739,7 +2797,8 @@
               "resolves_to": [
                 "decorator.second_parameter_source_inlineable_decorator_with_inner._inlined_no_op_decorator"
               ],
-              "port": "formal(arg2, position=1)"
+              "port": "formal(arg2, position=1)",
+              "call_site": "260:0-266:11"
             }
           }
         ]
@@ -2785,7 +2844,8 @@
               "line": 261,
               "start": 15,
               "end": 24
-            }
+            },
+            "call_site": "260:0-266:11"
           }
         ]
       },
@@ -2814,7 +2874,8 @@
               "resolves_to": [
                 "decorator.second_parameter_source_inlineable_decorator_with_inner._inlined_no_op_decorator"
               ],
-              "port": "formal(arg2, position=1)"
+              "port": "formal(arg2, position=1)",
+              "call_site": "260:0-266:11"
             }
           }
         ]
@@ -2863,7 +2924,8 @@
               "resolves_to": [
                 "decorator.second_parameter_source_inlineable_decorator_with_inner._original_function"
               ],
-              "port": "formal(arg2, position=1)"
+              "port": "formal(arg2, position=1)",
+              "call_site": "249:8-249:26"
             }
           }
         ]
@@ -2934,7 +2996,8 @@
               "line": 264,
               "start": 19,
               "end": 23
-            }
+            },
+            "call_site": "264:8-264:24"
           }
         ]
       }
@@ -2987,7 +3050,8 @@
               "line": 243,
               "start": 69,
               "end": 78
-            }
+            },
+            "call_site": "243:0-244:20"
           }
         ]
       },
@@ -3007,7 +3071,8 @@
               "line": 244,
               "start": 15,
               "end": 19
-            }
+            },
+            "call_site": "244:4-244:20"
           }
         ]
       }
@@ -3048,7 +3113,8 @@
               "line": 19,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "19:8-19:21"
           }
         ]
       }
@@ -3078,7 +3144,8 @@
               "line": 62,
               "start": 19,
               "end": 25
-            }
+            },
+            "call_site": "62:8-62:26"
           }
         ]
       }
@@ -3108,7 +3175,8 @@
               "line": 50,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "50:12-50:25"
           }
         ]
       }
@@ -3141,7 +3209,8 @@
               "line": 135,
               "start": 23,
               "end": 38
-            }
+            },
+            "call_site": "135:12-135:39"
           }
         ]
       }
@@ -3171,7 +3240,8 @@
               "line": 164,
               "start": 19,
               "end": 23
-            }
+            },
+            "call_site": "164:8-164:24"
           }
         ]
       }
@@ -3206,7 +3276,8 @@
               "resolves_to": [
                 "decorator.with_logging_helper_functions.after"
               ],
-              "port": "formal(*args, position=0)"
+              "port": "formal(*args, position=0)",
+              "call_site": "155:12-155:34"
             }
           }
         ]
@@ -3237,7 +3308,8 @@
               "line": 87,
               "start": 19,
               "end": 20
-            }
+            },
+            "call_site": "87:8-87:21"
           }
         ]
       }
@@ -3267,7 +3339,8 @@
               "line": 117,
               "start": 23,
               "end": 27
-            }
+            },
+            "call_site": "117:12-117:28"
           }
         ]
       }

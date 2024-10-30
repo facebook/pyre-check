@@ -58,7 +58,8 @@
                 "end": 7
               },
               "resolves_to": [ "class_attribute.A.sink_d" ],
-              "port": "formal(self, position=0)[d]"
+              "port": "formal(self, position=0)[d]",
+              "call_site": "77:4-77:16"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -325,7 +326,8 @@
               "end": 25
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "30:8-30:26"
           }
         ]
       }
@@ -357,7 +359,8 @@
               "end": 25
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "35:8-35:26"
           }
         ]
       }

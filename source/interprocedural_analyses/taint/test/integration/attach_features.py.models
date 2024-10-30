@@ -92,7 +92,8 @@
               "end": 20
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "59:8-59:21"
           }
         ]
       }
@@ -122,7 +123,8 @@
               "line": 87,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "87:4-87:17"
           }
         ]
       }
@@ -182,7 +184,8 @@
               "line": 86,
               "start": 31,
               "end": 32
-            }
+            },
+            "call_site": "86:0-87:17"
           }
         ]
       },
@@ -202,7 +205,8 @@
               "line": 87,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "87:4-87:17"
           }
         ]
       }
@@ -520,7 +524,8 @@
               "line": 25,
               "start": 15,
               "end": 36
-            }
+            },
+            "call_site": "25:4-25:37"
           }
         ]
       },
@@ -550,7 +555,8 @@
               "line": 24,
               "start": 15,
               "end": 26
-            }
+            },
+            "call_site": "24:4-24:27"
           }
         ]
       },
@@ -580,7 +586,8 @@
               "line": 23,
               "start": 15,
               "end": 25
-            }
+            },
+            "call_site": "23:4-23:26"
           }
         ]
       }
@@ -628,7 +635,8 @@
               "line": 54,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "54:4-54:17"
           }
         ]
       }
@@ -664,7 +672,8 @@
                 "end": 26
               },
               "resolves_to": [ "attach_features.inferred_sink" ],
-              "port": "formal(taint_left, position=0)"
+              "port": "formal(taint_left, position=0)",
+              "call_site": "29:4-29:45"
             }
           }
         ]
@@ -789,7 +798,8 @@
               "line": 37,
               "start": 15,
               "end": 18
-            }
+            },
+            "call_site": "37:4-37:19"
           }
         ]
       }

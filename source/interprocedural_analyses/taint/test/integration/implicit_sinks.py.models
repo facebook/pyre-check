@@ -478,7 +478,8 @@
               "resolves_to": [
                 "implicit_sinks.string_literal_arguments_sink"
               ],
-              "port": "formal(template, position=0)"
+              "port": "formal(template, position=0)",
+              "call_site": "103:4-103:49"
             }
           }
         ]

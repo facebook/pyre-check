@@ -53,7 +53,8 @@
                 "end": 72
               },
               "resolves_to": [ "partial.a_flows_to_sink" ],
-              "port": "formal(a, position=0)"
+              "port": "formal(a, position=0)",
+              "call_site": "38:4-38:77"
             }
           }
         ]
@@ -125,7 +126,8 @@
                 "end": 42
               },
               "resolves_to": [ "partial.a_flows_to_sink" ],
-              "port": "formal(a, position=0)"
+              "port": "formal(a, position=0)",
+              "call_site": "29:4-29:43"
             }
           }
         ]
@@ -197,7 +199,8 @@
                 "end": 40
               },
               "resolves_to": [ "partial.a_flows_to_sink" ],
-              "port": "formal(a, position=0)"
+              "port": "formal(a, position=0)",
+              "call_site": "19:4-19:41"
             }
           }
         ]
@@ -895,7 +898,8 @@
               "line": 14,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "14:4-14:17"
           }
         ]
       }

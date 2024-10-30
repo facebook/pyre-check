@@ -14349,7 +14349,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][a]"
+              "port": "formal(self, position=0)[a][a][a]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14378,7 +14379,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][a][x]"
+              "port": "formal(self, position=0)[a][a][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14412,7 +14414,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][b]"
+              "port": "formal(self, position=0)[a][a][b]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14441,7 +14444,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][b][x]"
+              "port": "formal(self, position=0)[a][a][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14475,7 +14479,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][c]"
+              "port": "formal(self, position=0)[a][a][c]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14504,7 +14509,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][c][x]"
+              "port": "formal(self, position=0)[a][a][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14531,7 +14537,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][x]"
+              "port": "formal(self, position=0)[a][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14558,7 +14565,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][x]"
+              "port": "formal(self, position=0)[a][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14597,7 +14605,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][a]"
+              "port": "formal(self, position=0)[a][b][a]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14626,7 +14635,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][a][x]"
+              "port": "formal(self, position=0)[a][b][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14660,7 +14670,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][b]"
+              "port": "formal(self, position=0)[a][b][b]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14689,7 +14700,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][b][x]"
+              "port": "formal(self, position=0)[a][b][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14723,7 +14735,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][c]"
+              "port": "formal(self, position=0)[a][b][c]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14752,7 +14765,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][c][x]"
+              "port": "formal(self, position=0)[a][b][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14779,7 +14793,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][x]"
+              "port": "formal(self, position=0)[a][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14806,7 +14821,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][x]"
+              "port": "formal(self, position=0)[a][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14845,7 +14861,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][a]"
+              "port": "formal(self, position=0)[a][c][a]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14874,7 +14891,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][a][x]"
+              "port": "formal(self, position=0)[a][c][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14908,7 +14926,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][b]"
+              "port": "formal(self, position=0)[a][c][b]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14937,7 +14956,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][b][x]"
+              "port": "formal(self, position=0)[a][c][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -14971,7 +14991,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][c]"
+              "port": "formal(self, position=0)[a][c][c]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15000,7 +15021,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][c][x]"
+              "port": "formal(self, position=0)[a][c][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15027,7 +15049,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][x]"
+              "port": "formal(self, position=0)[a][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15054,7 +15077,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][x]"
+              "port": "formal(self, position=0)[a][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15081,7 +15105,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][x]"
+              "port": "formal(self, position=0)[a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15120,7 +15145,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][a]"
+              "port": "formal(self, position=0)[b][a][a]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15149,7 +15175,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][a][x]"
+              "port": "formal(self, position=0)[b][a][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15183,7 +15210,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][b]"
+              "port": "formal(self, position=0)[b][a][b]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15212,7 +15240,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][b][x]"
+              "port": "formal(self, position=0)[b][a][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15246,7 +15275,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][c]"
+              "port": "formal(self, position=0)[b][a][c]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15275,7 +15305,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][c][x]"
+              "port": "formal(self, position=0)[b][a][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15302,7 +15333,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][x]"
+              "port": "formal(self, position=0)[b][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15329,7 +15361,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][x]"
+              "port": "formal(self, position=0)[b][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15368,7 +15401,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][a]"
+              "port": "formal(self, position=0)[b][b][a]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15397,7 +15431,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][a][x]"
+              "port": "formal(self, position=0)[b][b][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15431,7 +15466,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][b]"
+              "port": "formal(self, position=0)[b][b][b]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15460,7 +15496,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][b][x]"
+              "port": "formal(self, position=0)[b][b][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15494,7 +15531,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][c]"
+              "port": "formal(self, position=0)[b][b][c]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15523,7 +15561,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][c][x]"
+              "port": "formal(self, position=0)[b][b][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15550,7 +15589,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][x]"
+              "port": "formal(self, position=0)[b][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15577,7 +15617,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][x]"
+              "port": "formal(self, position=0)[b][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15616,7 +15657,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][a]"
+              "port": "formal(self, position=0)[b][c][a]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15645,7 +15687,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][a][x]"
+              "port": "formal(self, position=0)[b][c][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15679,7 +15722,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][b]"
+              "port": "formal(self, position=0)[b][c][b]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15708,7 +15752,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][b][x]"
+              "port": "formal(self, position=0)[b][c][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15742,7 +15787,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][c]"
+              "port": "formal(self, position=0)[b][c][c]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15771,7 +15817,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][c][x]"
+              "port": "formal(self, position=0)[b][c][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15798,7 +15845,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][x]"
+              "port": "formal(self, position=0)[b][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15825,7 +15873,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][x]"
+              "port": "formal(self, position=0)[b][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15852,7 +15901,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][x]"
+              "port": "formal(self, position=0)[b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15891,7 +15941,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][a]"
+              "port": "formal(self, position=0)[c][a][a]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15920,7 +15971,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][a][x]"
+              "port": "formal(self, position=0)[c][a][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15954,7 +16006,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][b]"
+              "port": "formal(self, position=0)[c][a][b]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -15983,7 +16036,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][b][x]"
+              "port": "formal(self, position=0)[c][a][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16017,7 +16071,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][c]"
+              "port": "formal(self, position=0)[c][a][c]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16046,7 +16101,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][c][x]"
+              "port": "formal(self, position=0)[c][a][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16073,7 +16129,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][x]"
+              "port": "formal(self, position=0)[c][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16100,7 +16157,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][x]"
+              "port": "formal(self, position=0)[c][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16139,7 +16197,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][a]"
+              "port": "formal(self, position=0)[c][b][a]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16168,7 +16227,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][a][x]"
+              "port": "formal(self, position=0)[c][b][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16202,7 +16262,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][b]"
+              "port": "formal(self, position=0)[c][b][b]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16231,7 +16292,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][b][x]"
+              "port": "formal(self, position=0)[c][b][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16265,7 +16327,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][c]"
+              "port": "formal(self, position=0)[c][b][c]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16294,7 +16357,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][c][x]"
+              "port": "formal(self, position=0)[c][b][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16321,7 +16385,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][x]"
+              "port": "formal(self, position=0)[c][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16348,7 +16413,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][x]"
+              "port": "formal(self, position=0)[c][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16387,7 +16453,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][a]"
+              "port": "formal(self, position=0)[c][c][a]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16416,7 +16483,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][a][x]"
+              "port": "formal(self, position=0)[c][c][a][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16450,7 +16518,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][b]"
+              "port": "formal(self, position=0)[c][c][b]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16479,7 +16548,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][b][x]"
+              "port": "formal(self, position=0)[c][c][b][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16513,7 +16583,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][c]"
+              "port": "formal(self, position=0)[c][c][c]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16542,7 +16613,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][c][x]"
+              "port": "formal(self, position=0)[c][c][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16569,7 +16641,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][x]"
+              "port": "formal(self, position=0)[c][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16596,7 +16669,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][x]"
+              "port": "formal(self, position=0)[c][c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16623,7 +16697,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][x]"
+              "port": "formal(self, position=0)[c][x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16650,7 +16725,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[x]"
+              "port": "formal(self, position=0)[x]",
+              "call_site": "28:8-28:23"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16723,7 +16799,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][a]"
+              "port": "formal(self, position=0)[a][a][a]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16752,7 +16829,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][a][x]"
+              "port": "formal(self, position=0)[a][a][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16786,7 +16864,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][b]"
+              "port": "formal(self, position=0)[a][a][b]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16815,7 +16894,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][b][x]"
+              "port": "formal(self, position=0)[a][a][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16849,7 +16929,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][c]"
+              "port": "formal(self, position=0)[a][a][c]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16878,7 +16959,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][c][x]"
+              "port": "formal(self, position=0)[a][a][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16905,7 +16987,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][x]"
+              "port": "formal(self, position=0)[a][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16932,7 +17015,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][x]"
+              "port": "formal(self, position=0)[a][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -16971,7 +17055,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][a]"
+              "port": "formal(self, position=0)[a][b][a]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17000,7 +17085,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][a][x]"
+              "port": "formal(self, position=0)[a][b][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17034,7 +17120,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][b]"
+              "port": "formal(self, position=0)[a][b][b]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17063,7 +17150,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][b][x]"
+              "port": "formal(self, position=0)[a][b][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17097,7 +17185,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][c]"
+              "port": "formal(self, position=0)[a][b][c]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17126,7 +17215,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][c][x]"
+              "port": "formal(self, position=0)[a][b][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17153,7 +17243,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][x]"
+              "port": "formal(self, position=0)[a][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17180,7 +17271,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][x]"
+              "port": "formal(self, position=0)[a][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17219,7 +17311,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][a]"
+              "port": "formal(self, position=0)[a][c][a]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17248,7 +17341,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][a][x]"
+              "port": "formal(self, position=0)[a][c][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17282,7 +17376,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][b]"
+              "port": "formal(self, position=0)[a][c][b]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17311,7 +17406,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][b][x]"
+              "port": "formal(self, position=0)[a][c][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17345,7 +17441,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][c]"
+              "port": "formal(self, position=0)[a][c][c]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17374,7 +17471,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][c][x]"
+              "port": "formal(self, position=0)[a][c][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17401,7 +17499,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][x]"
+              "port": "formal(self, position=0)[a][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17428,7 +17527,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][x]"
+              "port": "formal(self, position=0)[a][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17455,7 +17555,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][x]"
+              "port": "formal(self, position=0)[a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17494,7 +17595,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][a]"
+              "port": "formal(self, position=0)[b][a][a]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17523,7 +17625,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][a][x]"
+              "port": "formal(self, position=0)[b][a][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17557,7 +17660,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][b]"
+              "port": "formal(self, position=0)[b][a][b]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17586,7 +17690,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][b][x]"
+              "port": "formal(self, position=0)[b][a][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17620,7 +17725,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][c]"
+              "port": "formal(self, position=0)[b][a][c]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17649,7 +17755,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][c][x]"
+              "port": "formal(self, position=0)[b][a][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17676,7 +17783,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][x]"
+              "port": "formal(self, position=0)[b][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17703,7 +17811,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][x]"
+              "port": "formal(self, position=0)[b][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17742,7 +17851,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][a]"
+              "port": "formal(self, position=0)[b][b][a]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17771,7 +17881,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][a][x]"
+              "port": "formal(self, position=0)[b][b][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17805,7 +17916,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][b]"
+              "port": "formal(self, position=0)[b][b][b]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17834,7 +17946,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][b][x]"
+              "port": "formal(self, position=0)[b][b][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17868,7 +17981,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][c]"
+              "port": "formal(self, position=0)[b][b][c]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17897,7 +18011,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][c][x]"
+              "port": "formal(self, position=0)[b][b][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17924,7 +18039,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][x]"
+              "port": "formal(self, position=0)[b][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17951,7 +18067,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][x]"
+              "port": "formal(self, position=0)[b][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -17990,7 +18107,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][a]"
+              "port": "formal(self, position=0)[b][c][a]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18019,7 +18137,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][a][x]"
+              "port": "formal(self, position=0)[b][c][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18053,7 +18172,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][b]"
+              "port": "formal(self, position=0)[b][c][b]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18082,7 +18202,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][b][x]"
+              "port": "formal(self, position=0)[b][c][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18116,7 +18237,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][c]"
+              "port": "formal(self, position=0)[b][c][c]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18145,7 +18267,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][c][x]"
+              "port": "formal(self, position=0)[b][c][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18172,7 +18295,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][x]"
+              "port": "formal(self, position=0)[b][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18199,7 +18323,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][x]"
+              "port": "formal(self, position=0)[b][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18226,7 +18351,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][x]"
+              "port": "formal(self, position=0)[b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18265,7 +18391,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][a]"
+              "port": "formal(self, position=0)[c][a][a]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18294,7 +18421,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][a][x]"
+              "port": "formal(self, position=0)[c][a][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18328,7 +18456,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][b]"
+              "port": "formal(self, position=0)[c][a][b]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18357,7 +18486,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][b][x]"
+              "port": "formal(self, position=0)[c][a][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18391,7 +18521,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][c]"
+              "port": "formal(self, position=0)[c][a][c]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18420,7 +18551,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][c][x]"
+              "port": "formal(self, position=0)[c][a][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18447,7 +18579,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][x]"
+              "port": "formal(self, position=0)[c][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18474,7 +18607,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][x]"
+              "port": "formal(self, position=0)[c][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18513,7 +18647,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][a]"
+              "port": "formal(self, position=0)[c][b][a]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18542,7 +18677,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][a][x]"
+              "port": "formal(self, position=0)[c][b][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18576,7 +18712,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][b]"
+              "port": "formal(self, position=0)[c][b][b]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18605,7 +18742,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][b][x]"
+              "port": "formal(self, position=0)[c][b][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18639,7 +18777,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][c]"
+              "port": "formal(self, position=0)[c][b][c]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18668,7 +18807,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][c][x]"
+              "port": "formal(self, position=0)[c][b][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18695,7 +18835,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][x]"
+              "port": "formal(self, position=0)[c][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18722,7 +18863,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][x]"
+              "port": "formal(self, position=0)[c][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18761,7 +18903,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][a]"
+              "port": "formal(self, position=0)[c][c][a]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18790,7 +18933,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][a][x]"
+              "port": "formal(self, position=0)[c][c][a][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18824,7 +18968,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][b]"
+              "port": "formal(self, position=0)[c][c][b]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18853,7 +18998,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][b][x]"
+              "port": "formal(self, position=0)[c][c][b][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18887,7 +19033,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][c]"
+              "port": "formal(self, position=0)[c][c][c]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18916,7 +19063,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][c][x]"
+              "port": "formal(self, position=0)[c][c][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18943,7 +19091,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][x]"
+              "port": "formal(self, position=0)[c][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18970,7 +19119,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][x]"
+              "port": "formal(self, position=0)[c][c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -18997,7 +19147,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][x]"
+              "port": "formal(self, position=0)[c][x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19024,7 +19175,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[x]"
+              "port": "formal(self, position=0)[x]",
+              "call_site": "36:8-36:23"
             },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19111,7 +19263,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][a]"
+              "port": "formal(self, position=0)[a][a][a]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19140,7 +19293,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][a][x]"
+              "port": "formal(self, position=0)[a][a][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19174,7 +19328,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][b]"
+              "port": "formal(self, position=0)[a][a][b]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19203,7 +19358,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][b][x]"
+              "port": "formal(self, position=0)[a][a][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19237,7 +19393,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][c]"
+              "port": "formal(self, position=0)[a][a][c]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19266,7 +19423,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][c][x]"
+              "port": "formal(self, position=0)[a][a][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19293,7 +19451,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][x]"
+              "port": "formal(self, position=0)[a][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19320,7 +19479,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][a][x]"
+              "port": "formal(self, position=0)[a][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19359,7 +19519,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][a]"
+              "port": "formal(self, position=0)[a][b][a]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19388,7 +19549,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][a][x]"
+              "port": "formal(self, position=0)[a][b][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19422,7 +19584,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][b]"
+              "port": "formal(self, position=0)[a][b][b]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19451,7 +19614,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][b][x]"
+              "port": "formal(self, position=0)[a][b][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19485,7 +19649,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][c]"
+              "port": "formal(self, position=0)[a][b][c]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19514,7 +19679,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][c][x]"
+              "port": "formal(self, position=0)[a][b][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19541,7 +19707,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][x]"
+              "port": "formal(self, position=0)[a][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19568,7 +19735,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][b][x]"
+              "port": "formal(self, position=0)[a][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19607,7 +19775,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][a]"
+              "port": "formal(self, position=0)[a][c][a]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19636,7 +19805,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][a][x]"
+              "port": "formal(self, position=0)[a][c][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19670,7 +19840,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][b]"
+              "port": "formal(self, position=0)[a][c][b]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19699,7 +19870,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][b][x]"
+              "port": "formal(self, position=0)[a][c][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19733,7 +19905,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][c]"
+              "port": "formal(self, position=0)[a][c][c]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19762,7 +19935,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][c][x]"
+              "port": "formal(self, position=0)[a][c][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19789,7 +19963,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][x]"
+              "port": "formal(self, position=0)[a][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19816,7 +19991,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][c][x]"
+              "port": "formal(self, position=0)[a][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19843,7 +20019,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.A.method" ],
-              "port": "formal(self, position=0)[a][x]"
+              "port": "formal(self, position=0)[a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19882,7 +20059,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][a]"
+              "port": "formal(self, position=0)[b][a][a]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19911,7 +20089,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][a][x]"
+              "port": "formal(self, position=0)[b][a][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19945,7 +20124,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][b]"
+              "port": "formal(self, position=0)[b][a][b]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -19974,7 +20154,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][b][x]"
+              "port": "formal(self, position=0)[b][a][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20008,7 +20189,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][c]"
+              "port": "formal(self, position=0)[b][a][c]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20037,7 +20219,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][c][x]"
+              "port": "formal(self, position=0)[b][a][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20064,7 +20247,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][x]"
+              "port": "formal(self, position=0)[b][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20091,7 +20275,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][a][x]"
+              "port": "formal(self, position=0)[b][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20130,7 +20315,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][a]"
+              "port": "formal(self, position=0)[b][b][a]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20159,7 +20345,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][a][x]"
+              "port": "formal(self, position=0)[b][b][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20193,7 +20380,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][b]"
+              "port": "formal(self, position=0)[b][b][b]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20222,7 +20410,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][b][x]"
+              "port": "formal(self, position=0)[b][b][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20256,7 +20445,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][c]"
+              "port": "formal(self, position=0)[b][b][c]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20285,7 +20475,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][c][x]"
+              "port": "formal(self, position=0)[b][b][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20312,7 +20503,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][x]"
+              "port": "formal(self, position=0)[b][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20339,7 +20531,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][b][x]"
+              "port": "formal(self, position=0)[b][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20378,7 +20571,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][a]"
+              "port": "formal(self, position=0)[b][c][a]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20407,7 +20601,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][a][x]"
+              "port": "formal(self, position=0)[b][c][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20441,7 +20636,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][b]"
+              "port": "formal(self, position=0)[b][c][b]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20470,7 +20666,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][b][x]"
+              "port": "formal(self, position=0)[b][c][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20504,7 +20701,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][c]"
+              "port": "formal(self, position=0)[b][c][c]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20533,7 +20731,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][c][x]"
+              "port": "formal(self, position=0)[b][c][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20560,7 +20759,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][x]"
+              "port": "formal(self, position=0)[b][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20587,7 +20787,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][c][x]"
+              "port": "formal(self, position=0)[b][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20614,7 +20815,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.B.method" ],
-              "port": "formal(self, position=0)[b][x]"
+              "port": "formal(self, position=0)[b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20653,7 +20855,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][a]"
+              "port": "formal(self, position=0)[c][a][a]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20682,7 +20885,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][a][x]"
+              "port": "formal(self, position=0)[c][a][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20716,7 +20920,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][b]"
+              "port": "formal(self, position=0)[c][a][b]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20745,7 +20950,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][b][x]"
+              "port": "formal(self, position=0)[c][a][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20779,7 +20985,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][c]"
+              "port": "formal(self, position=0)[c][a][c]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20808,7 +21015,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][c][x]"
+              "port": "formal(self, position=0)[c][a][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20835,7 +21043,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][x]"
+              "port": "formal(self, position=0)[c][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20862,7 +21071,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][a][x]"
+              "port": "formal(self, position=0)[c][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20901,7 +21111,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][a]"
+              "port": "formal(self, position=0)[c][b][a]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20930,7 +21141,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][a][x]"
+              "port": "formal(self, position=0)[c][b][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20964,7 +21176,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][b]"
+              "port": "formal(self, position=0)[c][b][b]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -20993,7 +21206,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][b][x]"
+              "port": "formal(self, position=0)[c][b][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21027,7 +21241,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][c]"
+              "port": "formal(self, position=0)[c][b][c]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21056,7 +21271,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][c][x]"
+              "port": "formal(self, position=0)[c][b][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21083,7 +21299,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][x]"
+              "port": "formal(self, position=0)[c][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21110,7 +21327,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][b][x]"
+              "port": "formal(self, position=0)[c][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21149,7 +21367,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][a]"
+              "port": "formal(self, position=0)[c][c][a]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21178,7 +21397,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][a][x]"
+              "port": "formal(self, position=0)[c][c][a][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21212,7 +21432,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][b]"
+              "port": "formal(self, position=0)[c][c][b]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21241,7 +21462,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][b][x]"
+              "port": "formal(self, position=0)[c][c][b][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21275,7 +21497,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][c]"
+              "port": "formal(self, position=0)[c][c][c]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21304,7 +21527,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][c][x]"
+              "port": "formal(self, position=0)[c][c][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21331,7 +21555,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][x]"
+              "port": "formal(self, position=0)[c][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21358,7 +21583,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][c][x]"
+              "port": "formal(self, position=0)[c][c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21385,7 +21611,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[c][x]"
+              "port": "formal(self, position=0)[c][x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21412,7 +21639,8 @@
                 "end": 14
               },
               "resolves_to": [ "combinatory_ports.C.method" ],
-              "port": "formal(self, position=0)[x]"
+              "port": "formal(self, position=0)[x]",
+              "call_site": "46:8-46:23"
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "receiver_interval": [ { "lower": 2, "upper": 9 } ],
@@ -21438,7 +21666,8 @@
               "end": 25
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "45:8-45:26"
           }
         ]
       }

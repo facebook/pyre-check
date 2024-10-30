@@ -21,6 +21,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 460, "start": 23, "end": 28 },
+                    "call_site": "460:11-460:29",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -71,7 +72,8 @@
               "line": 461,
               "start": 11,
               "end": 15
-            }
+            },
+            "call_site": "461:4-461:16"
           }
         ]
       }
@@ -157,7 +159,8 @@
               "resolves_to": [
                 "taint_transform.sink_taint_with_transform_x"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "466:4-466:38"
             }
           }
         ]
@@ -239,7 +242,8 @@
               "line": 478,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "478:4-478:17"
           }
         ]
       }
@@ -278,6 +282,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 436, "start": 24, "end": 28 },
+                    "call_site": "436:12-436:29",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -325,7 +330,8 @@
               "line": 437,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "437:4-437:17"
           }
         ]
       }
@@ -368,7 +374,8 @@
                       "resolves_to": [
                         "taint_transform.sanitize_b_transform_x_tito"
                       ],
-                      "port": "formal(arg, position=0)"
+                      "port": "formal(arg, position=0)",
+                      "call_site": "448:11-448:45"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -414,7 +421,8 @@
               "line": 449,
               "start": 11,
               "end": 15
-            }
+            },
+            "call_site": "449:4-449:16"
           }
         ]
       }
@@ -494,7 +502,8 @@
               "resolves_to": [
                 "taint_transform.transform_x_sanitize_a_sink_b_taint"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "331:4-331:46"
             }
           }
         ]
@@ -538,7 +547,8 @@
                       "resolves_to": [
                         "taint_transform.transform_x_sanitize_a_tito"
                       ],
-                      "port": "formal(arg, position=0)"
+                      "port": "formal(arg, position=0)",
+                      "call_site": "303:11-303:45"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -584,7 +594,8 @@
               "line": 304,
               "start": 11,
               "end": 15
-            }
+            },
+            "call_site": "304:4-304:16"
           }
         ]
       }
@@ -623,6 +634,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 88, "start": 23, "end": 28 },
+                    "call_site": "88:11-88:29",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -667,7 +679,8 @@
               "line": 89,
               "start": 11,
               "end": 15
-            }
+            },
+            "call_site": "89:4-89:16"
           }
         ]
       }
@@ -706,6 +719,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 314, "start": 23, "end": 28 },
+                    "call_site": "314:11-314:29",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -755,7 +769,8 @@
                 "end": 32
               },
               "resolves_to": [ "taint_transform.sanitize_a_sink_b_taint" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "315:4-315:33"
             }
           }
         ]
@@ -795,6 +810,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 290, "start": 23, "end": 28 },
+                    "call_site": "290:11-290:29",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -842,7 +858,8 @@
               "line": 292,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "292:4-292:17"
           }
         ]
       }
@@ -881,12 +898,14 @@
                   {
                     "message": "TransformY",
                     "origin": { "line": 119, "start": 23, "end": 28 },
+                    "call_site": "119:11-119:29",
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
                   },
                   {
                     "message": "TransformZ",
                     "origin": { "line": 120, "start": 24, "end": 28 },
+                    "call_site": "120:12-120:29",
                     "leaf_kind": "TransformZ:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -934,7 +953,8 @@
               "line": 121,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "121:4-121:17"
           }
         ]
       }
@@ -973,6 +993,7 @@
                   {
                     "message": "TransformY",
                     "origin": { "line": 221, "start": 23, "end": 28 },
+                    "call_site": "221:11-221:29",
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -1027,7 +1048,8 @@
               "resolves_to": [
                 "taint_transform.sink_taint_with_transform_z"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "222:4-222:37"
             }
           }
         ]
@@ -1071,7 +1093,8 @@
                       "resolves_to": [
                         "taint_transform.tito_with_transform_yz"
                       ],
-                      "port": "formal(arg, position=0)"
+                      "port": "formal(arg, position=0)",
+                      "call_site": "203:11-203:40"
                     },
                     "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -1117,7 +1140,8 @@
               "line": 204,
               "start": 11,
               "end": 15
-            }
+            },
+            "call_site": "204:4-204:16"
           }
         ]
       }
@@ -1197,7 +1221,8 @@
               "resolves_to": [
                 "taint_transform.sink_taint_with_transform_yz"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "176:4-176:39"
             }
           }
         ]
@@ -1282,7 +1307,8 @@
                 "end": 33
               },
               "resolves_to": [ "taint_transform.sanitize_a_sink_b_taint" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "320:4-320:34"
             }
           }
         ]
@@ -1372,7 +1398,8 @@
               "resolves_to": [
                 "taint_transform.sanitize_a_to_y_to_z_to_b_taint"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "376:4-376:42"
             }
           }
         ]
@@ -1412,6 +1439,7 @@
                   {
                     "message": "TransformZ",
                     "origin": { "line": 197, "start": 23, "end": 28 },
+                    "call_site": "197:11-197:29",
                     "leaf_kind": "TransformZ:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -1467,7 +1495,8 @@
               "line": 198,
               "start": 11,
               "end": 15
-            }
+            },
+            "call_site": "198:4-198:16"
           }
         ]
       }
@@ -1558,7 +1587,8 @@
               "resolves_to": [
                 "taint_transform.sink_taint_with_transform_z"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "192:4-192:38"
             }
           }
         ]
@@ -1640,7 +1670,8 @@
               "line": 171,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "171:4-171:17"
           }
         ]
       }
@@ -1710,7 +1741,8 @@
               "line": 101,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "101:4-101:17"
           }
         ]
       }
@@ -1797,7 +1829,8 @@
               "resolves_to": [
                 "taint_transform.sink_taint_with_transform_yz"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "232:4-232:39"
             }
           }
         ]
@@ -1835,7 +1868,8 @@
                 "end": 37
               },
               "resolves_to": [ "taint_transform.tito_with_transform_x" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "154:12-154:38"
             }
           }
         ]
@@ -1888,7 +1922,8 @@
               "line": 309,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "309:4-309:17"
           }
         ]
       }
@@ -1912,12 +1947,14 @@
                   {
                     "message": "TransformY",
                     "origin": { "line": 364, "start": 23, "end": 28 },
+                    "call_site": "364:11-364:29",
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
                   },
                   {
                     "message": "TransformZ",
                     "origin": { "line": 365, "start": 24, "end": 28 },
+                    "call_site": "365:12-365:29",
                     "leaf_kind": "TransformZ:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -1942,7 +1979,8 @@
               "line": 366,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "366:4-366:17"
           }
         ]
       }
@@ -1978,7 +2016,8 @@
               "line": 265,
               "start": 23,
               "end": 28
-            }
+            },
+            "call_site": "265:11-265:29"
           }
         ]
       }
@@ -2028,7 +2067,8 @@
                       "resolves_to": [
                         "taint_transform.sanitize_a_transform_x"
                       ],
-                      "port": "formal(arg, position=0)"
+                      "port": "formal(arg, position=0)",
+                      "call_site": "270:12-270:39"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -2056,7 +2096,8 @@
               "line": 272,
               "start": 24,
               "end": 28
-            }
+            },
+            "call_site": "272:12-272:29"
           },
           {
             "kinds": [
@@ -2074,7 +2115,8 @@
                 "end": 38
               },
               "resolves_to": [ "taint_transform.sanitize_a_transform_x" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "270:12-270:39"
             }
           }
         ]
@@ -2134,7 +2176,8 @@
               "line": 346,
               "start": 23,
               "end": 28
-            }
+            },
+            "call_site": "346:11-346:29"
           }
         ]
       }
@@ -2207,7 +2250,8 @@
               "line": 442,
               "start": 23,
               "end": 28
-            }
+            },
+            "call_site": "442:11-442:29"
           }
         ]
       }
@@ -2399,7 +2443,8 @@
                       "resolves_to": [
                         "taint_transform.tito_with_transform_yz"
                       ],
-                      "port": "formal(arg, position=0)"
+                      "port": "formal(arg, position=0)",
+                      "call_site": "165:12-165:39"
                     },
                     "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -2421,7 +2466,8 @@
               "line": 166,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "166:4-166:17"
           }
         ]
       }
@@ -2445,6 +2491,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 125, "start": 24, "end": 27 },
+                    "call_site": "125:12-125:28",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -2465,7 +2512,8 @@
               "line": 126,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "126:4-126:17"
           }
         ]
       }
@@ -2489,12 +2537,14 @@
                   {
                     "message": "TransformY",
                     "origin": { "line": 137, "start": 24, "end": 27 },
+                    "call_site": "137:12-137:28",
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
                   },
                   {
                     "message": "TransformZ",
                     "origin": { "line": 138, "start": 23, "end": 28 },
+                    "call_site": "138:11-138:29",
                     "leaf_kind": "TransformZ:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -2518,7 +2568,8 @@
               "line": 139,
               "start": 11,
               "end": 15
-            }
+            },
+            "call_site": "139:4-139:16"
           }
         ]
       }
@@ -2542,6 +2593,7 @@
                   {
                     "message": "TransformZ",
                     "origin": { "line": 186, "start": 24, "end": 27 },
+                    "call_site": "186:12-186:28",
                     "leaf_kind": "TransformZ:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -2562,7 +2614,8 @@
               "line": 187,
               "start": 11,
               "end": 16
-            }
+            },
+            "call_site": "187:4-187:17"
           }
         ]
       }
@@ -2639,6 +2692,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 472, "start": 24, "end": 28 },
+                    "call_site": "472:12-472:29",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -2689,6 +2743,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 412, "start": 23, "end": 28 },
+                    "call_site": "412:11-412:29",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -2760,7 +2815,8 @@
                       "resolves_to": [
                         "taint_transform.tito_with_transform_yz"
                       ],
-                      "port": "formal(arg, position=0)"
+                      "port": "formal(arg, position=0)",
+                      "call_site": "160:11-160:40"
                     },
                     "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -2809,6 +2865,7 @@
                   {
                     "message": "TransformY",
                     "origin": { "line": 181, "start": 23, "end": 28 },
+                    "call_site": "181:11-181:29",
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -2856,6 +2913,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 37, "start": 23, "end": 28 },
+                    "call_site": "37:11-37:29",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -2912,6 +2970,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 47, "start": 31, "end": 36 },
+                    "call_site": "47:11-47:37",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -2961,6 +3020,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 57, "start": 36, "end": 41 },
+                    "call_site": "57:11-57:42",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -3008,12 +3068,14 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 63, "start": 23, "end": 28 },
+                    "call_site": "63:11-63:29",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   },
                   {
                     "message": "TransformY",
                     "origin": { "line": 64, "start": 24, "end": 28 },
+                    "call_site": "64:12-64:29",
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -3068,7 +3130,8 @@
                       "resolves_to": [
                         "taint_transform.tito_with_transform_x"
                       ],
-                      "port": "formal(arg, position=0)"
+                      "port": "formal(arg, position=0)",
+                      "call_site": "238:12-238:36"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -3128,7 +3191,8 @@
               "resolves_to": [
                 "taint_transform.sanitize_b_transform_x_tito"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "552:12-552:44"
             }
           }
         ]
@@ -3188,7 +3252,8 @@
               "resolves_to": [
                 "taint_transform.sanitize_b_transform_x_tito"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "559:11-559:45"
             }
           }
         ]
@@ -3240,7 +3305,8 @@
               "resolves_to": [
                 "taint_transform.transform_x_sanitize_b_tito"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "564:12-564:44"
             }
           }
         ]
@@ -3294,7 +3360,8 @@
               "resolves_to": [
                 "taint_transform.transform_x_sanitize_b_tito"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "571:11-571:45"
             }
           }
         ]
@@ -3352,7 +3419,8 @@
               "resolves_to": [
                 "taint_transform.sanitize_a_transform_x_tito"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "528:12-528:44"
             }
           }
         ]
@@ -3412,7 +3480,8 @@
               "resolves_to": [
                 "taint_transform.sanitize_a_transform_x_tito"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "535:11-535:45"
             }
           }
         ]
@@ -3464,7 +3533,8 @@
               "resolves_to": [
                 "taint_transform.transform_x_sanitize_a_tito"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "540:12-540:44"
             }
           }
         ]
@@ -3518,7 +3588,8 @@
               "resolves_to": [
                 "taint_transform.transform_x_sanitize_a_tito"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "547:11-547:45"
             }
           }
         ]
@@ -3576,7 +3647,8 @@
               "resolves_to": [
                 "taint_transform.sanitize_a_transform_x_tito"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "582:12-582:44"
             }
           },
           {
@@ -3590,7 +3662,8 @@
                       "resolves_to": [
                         "taint_transform.sanitize_a_transform_x_tito"
                       ],
-                      "port": "formal(arg, position=0)"
+                      "port": "formal(arg, position=0)",
+                      "call_site": "582:12-582:44"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -3619,7 +3692,8 @@
               "resolves_to": [
                 "taint_transform.transform_y_sanitize_b_tito"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "585:12-585:46"
             }
           }
         ]
@@ -3678,7 +3752,8 @@
               "line": 143,
               "start": 24,
               "end": 27
-            }
+            },
+            "call_site": "143:12-143:28"
           }
         ]
       }
@@ -3731,7 +3806,8 @@
               "line": 148,
               "start": 24,
               "end": 27
-            }
+            },
+            "call_site": "148:12-148:28"
           },
           {
             "kinds": [
@@ -3740,6 +3816,7 @@
                   {
                     "message": "TransformY",
                     "origin": { "line": 148, "start": 24, "end": 27 },
+                    "call_site": "148:12-148:28",
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -3763,7 +3840,8 @@
               "line": 149,
               "start": 23,
               "end": 28
-            }
+            },
+            "call_site": "149:11-149:29"
           }
         ]
       }
@@ -3874,6 +3952,7 @@
                   {
                     "message": "TransformX",
                     "origin": { "line": 324, "start": 24, "end": 27 },
+                    "call_site": "324:12-324:28",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -3897,7 +3976,8 @@
               "line": 326,
               "start": 11,
               "end": 15
-            }
+            },
+            "call_site": "326:4-326:16"
           }
         ]
       }
@@ -3931,7 +4011,8 @@
               "line": 296,
               "start": 24,
               "end": 27
-            }
+            },
+            "call_site": "296:12-296:28"
           }
         ]
       }
@@ -3987,7 +4068,8 @@
               "line": 399,
               "start": 24,
               "end": 27
-            }
+            },
+            "call_site": "399:12-399:28"
           }
         ]
       }
@@ -4076,7 +4158,8 @@
               "line": 505,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "505:11-505:25"
           }
         ]
       }
@@ -4130,7 +4213,8 @@
               "line": 485,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "485:11-485:25"
           }
         ]
       }
@@ -4186,7 +4270,8 @@
               "line": 495,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "495:11-495:25"
           }
         ]
       }
@@ -4243,7 +4328,8 @@
               "line": 515,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "515:11-515:25"
           }
         ]
       }
@@ -4312,7 +4398,8 @@
               "line": 576,
               "start": 24,
               "end": 27
-            }
+            },
+            "call_site": "576:12-576:28"
           }
         ]
       }

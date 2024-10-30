@@ -63,7 +63,8 @@
               "line": 68,
               "start": 15,
               "end": 19
-            }
+            },
+            "call_site": "68:4-68:20"
           }
         ]
       }
@@ -147,7 +148,8 @@
               "line": 22,
               "start": 15,
               "end": 20
-            }
+            },
+            "call_site": "22:4-22:21"
           }
         ]
       }
@@ -229,7 +231,8 @@
               "line": 57,
               "start": 15,
               "end": 20
-            }
+            },
+            "call_site": "57:4-57:21"
           }
         ]
       }
@@ -310,7 +313,8 @@
               "resolves_to": [
                 "named_tuples.NamedTupleWithTaintedAttribute.__init__"
               ],
-              "port": "formal(bad, position=2)"
+              "port": "formal(bad, position=2)",
+              "call_site": "92:4-92:64"
             }
           }
         ]
@@ -387,7 +391,8 @@
               "line": 39,
               "start": 15,
               "end": 20
-            }
+            },
+            "call_site": "39:4-39:21"
           }
         ]
       }
@@ -641,7 +646,8 @@
               "line": 79,
               "start": 15,
               "end": 19
-            }
+            },
+            "call_site": "79:4-79:20"
           }
         ]
       },
@@ -661,7 +667,8 @@
               "line": 78,
               "start": 15,
               "end": 23
-            }
+            },
+            "call_site": "78:4-78:24"
           }
         ]
       }
@@ -694,7 +701,8 @@
               "line": 83,
               "start": 15,
               "end": 19
-            }
+            },
+            "call_site": "83:4-83:20"
           }
         ]
       }

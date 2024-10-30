@@ -61,7 +61,8 @@
                 "end": 25
               },
               "resolves_to": [ "supers.B.f5" ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "53:8-53:26"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
@@ -141,7 +142,8 @@
                 "end": 7
               },
               "resolves_to": [ "supers.B.g1" ],
-              "port": "formal(self, position=0)[attribute]"
+              "port": "formal(self, position=0)[attribute]",
+              "call_site": "81:4-81:12"
             },
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
             "is_self_call": false
@@ -220,7 +222,8 @@
                 "end": 7
               },
               "resolves_to": [ "supers.C.g1", "supers.D.g1" ],
-              "port": "formal(self, position=0)[attribute]"
+              "port": "formal(self, position=0)[attribute]",
+              "call_site": "106:4-106:12"
             },
             "receiver_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false
@@ -299,7 +302,8 @@
                 "end": 5
               },
               "resolves_to": [ "supers.D.g1" ],
-              "port": "formal(self, position=0)[attribute]"
+              "port": "formal(self, position=0)[attribute]",
+              "call_site": "117:4-117:10"
             },
             "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false
@@ -772,7 +776,8 @@
               "end": 33
             },
             "caller_interval": [ { "lower": 2, "upper": 11 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "14:8-14:34"
           }
         ]
       }
@@ -804,7 +809,8 @@
               "end": 20
             },
             "caller_interval": [ { "lower": 2, "upper": 11 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "17:8-17:21"
           }
         ]
       }
@@ -904,7 +910,8 @@
               "end": 27
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "37:15-37:28"
           }
         ]
       }
@@ -961,7 +968,8 @@
                 "end": 22
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self, position=0)[attribute]"
+              "port": "formal(self, position=0)[attribute]",
+              "call_site": "40:8-40:27"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 11 } ],
@@ -983,7 +991,8 @@
                 "end": 15
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self, position=0)[attribute]"
+              "port": "formal(self, position=0)[attribute]",
+              "call_site": "41:8-41:20"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 11 } ],
@@ -1056,7 +1065,8 @@
                 "end": 31
               },
               "resolves_to": [ "supers.A.f2" ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "42:8-42:32"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 11 } ],
@@ -1103,7 +1113,8 @@
                 "end": 22
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self, position=0)[attribute]"
+              "port": "formal(self, position=0)[attribute]",
+              "call_site": "61:15-61:27"
             },
             "caller_interval": [ { "lower": 7, "upper": 10 } ],
             "receiver_interval": [ { "lower": 2, "upper": 11 } ],
@@ -1140,7 +1151,8 @@
                 "end": 15
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self, position=0)[attribute]"
+              "port": "formal(self, position=0)[attribute]",
+              "call_site": "66:8-66:20"
             },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "receiver_interval": [ { "lower": 7, "upper": 10 } ],

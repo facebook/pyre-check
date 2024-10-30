@@ -54,7 +54,8 @@
               "line": 51,
               "start": 15,
               "end": 19
-            }
+            },
+            "call_site": "51:4-51:20"
           }
         ]
       }
@@ -159,7 +160,8 @@
               "line": 78,
               "start": 25,
               "end": 26
-            }
+            },
+            "call_site": "78:4-78:30"
           }
         ]
       }
@@ -339,7 +341,8 @@
               "line": 24,
               "start": 32,
               "end": 41
-            }
+            },
+            "call_site": "24:11-24:45"
           }
         ]
       }
@@ -374,7 +377,8 @@
               "line": 63,
               "start": 33,
               "end": 46
-            }
+            },
+            "call_site": "63:8-63:47"
           }
         ]
       },
@@ -399,7 +403,8 @@
               "line": 61,
               "start": 29,
               "end": 42
-            }
+            },
+            "call_site": "61:8-61:46"
           }
         ]
       }
@@ -472,7 +477,8 @@
               "line": 44,
               "start": 25,
               "end": 34
-            }
+            },
+            "call_site": "44:4-44:39"
           },
           {
             "kinds": [
@@ -488,7 +494,8 @@
               "line": 45,
               "start": 15,
               "end": 24
-            }
+            },
+            "call_site": "45:4-45:25"
           }
         ]
       }
@@ -523,7 +530,8 @@
               "line": 55,
               "start": 54,
               "end": 63
-            }
+            },
+            "call_site": "55:33-55:67"
           },
           {
             "kinds": [
@@ -539,7 +547,8 @@
               "line": 56,
               "start": 15,
               "end": 24
-            }
+            },
+            "call_site": "56:4-56:25"
           }
         ]
       }
@@ -572,7 +581,8 @@
               "line": 68,
               "start": 15,
               "end": 24
-            }
+            },
+            "call_site": "68:4-68:25"
           }
         ]
       },
@@ -597,7 +607,8 @@
               "resolves_to": [
                 "add_feature_to_argument.propagate_multiple_add_feature"
               ],
-              "port": "formal(parameter, position=0)[bar]"
+              "port": "formal(parameter, position=0)[bar]",
+              "call_site": "67:4-67:45"
             }
           }
         ]
@@ -623,7 +634,8 @@
               "resolves_to": [
                 "add_feature_to_argument.propagate_multiple_add_feature"
               ],
-              "port": "formal(parameter, position=0)[foo]"
+              "port": "formal(parameter, position=0)[foo]",
+              "call_site": "67:4-67:45"
             }
           }
         ]

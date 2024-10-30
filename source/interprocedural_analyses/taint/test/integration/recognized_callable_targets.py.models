@@ -55,7 +55,8 @@
               "resolves_to": [
                 "recognized_callable_targets.callable_target"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "16:4-16:37"
             }
           }
         ]
@@ -363,7 +364,8 @@
               "line": 11,
               "start": 15,
               "end": 18
-            }
+            },
+            "call_site": "11:4-11:19"
           }
         ]
       }

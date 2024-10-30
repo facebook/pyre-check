@@ -49,7 +49,8 @@
               "line": 234,
               "start": 19,
               "end": 33
-            }
+            },
+            "call_site": "234:8-234:34"
           }
         ]
       }
@@ -122,7 +123,8 @@
               "line": 162,
               "start": 15,
               "end": 29
-            }
+            },
+            "call_site": "162:4-162:30"
           }
         ]
       }
@@ -202,7 +204,8 @@
               "line": 161,
               "start": 15,
               "end": 20
-            }
+            },
+            "call_site": "161:4-161:21"
           }
         ]
       }
@@ -279,7 +282,8 @@
               "resolves_to": [
                 "properties.DerivedTaintedSetter.my_property@setter"
               ],
-              "port": "formal(value, position=1)"
+              "port": "formal(value, position=1)",
+              "call_site": "97:4-97:17"
             }
           }
         ]
@@ -352,7 +356,8 @@
               "line": 119,
               "start": 15,
               "end": 18
-            }
+            },
+            "call_site": "119:4-119:19"
           }
         ]
       }
@@ -424,7 +429,8 @@
               "line": 129,
               "start": 15,
               "end": 46
-            }
+            },
+            "call_site": "129:4-129:47"
           }
         ]
       }
@@ -495,7 +501,8 @@
                 "end": 39
               },
               "resolves_to": [ "properties.PropertyCallableReturn.__call__" ],
-              "port": "formal(y, position=1)"
+              "port": "formal(y, position=1)",
+              "call_site": "187:11-187:40"
             },
             "receiver_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false
@@ -1222,7 +1229,8 @@
               "end": 24
             },
             "caller_interval": [ { "lower": 27, "upper": 30 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "83:8-83:25"
           }
         ]
       }
@@ -1400,7 +1408,8 @@
               "end": 25
             },
             "caller_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "181:8-181:26"
           }
         ]
       }
@@ -1432,7 +1441,8 @@
               "end": 20
             },
             "caller_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "171:8-171:21"
           }
         ]
       },
@@ -1454,7 +1464,8 @@
               "end": 25
             },
             "caller_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "170:8-170:26"
           }
         ]
       }
@@ -1660,7 +1671,8 @@
               "end": 23
             },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "282:8-282:24"
           }
         ]
       }
@@ -1725,7 +1737,8 @@
               "end": 23
             },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "282:8-282:24"
           }
         ]
       }
@@ -1800,7 +1813,8 @@
               "end": 35
             },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "270:8-270:36"
           }
         ]
       }
@@ -1866,7 +1880,8 @@
               "end": 35
             },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "270:8-270:36"
           }
         ]
       }
@@ -1983,7 +1998,8 @@
               "end": 23
             },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "62:8-62:24"
           }
         ]
       }
@@ -2019,7 +2035,8 @@
               "end": 24
             },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "66:4-67:12"
           }
         ]
       }
@@ -2105,7 +2122,8 @@
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
-              "port": "formal(self, position=0)"
+              "port": "formal(self, position=0)",
+              "call_site": "70:15-70:31"
             },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": true
@@ -2160,7 +2178,8 @@
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property@setter"
               ],
-              "port": "formal(self, position=0)"
+              "port": "formal(self, position=0)",
+              "call_site": "73:8-73:24"
             },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": true
@@ -2228,7 +2247,8 @@
               "resolves_to": [
                 "properties.DerivedTaintedSetter.my_property@setter"
               ],
-              "port": "formal(value, position=1)"
+              "port": "formal(value, position=1)",
+              "call_site": "73:8-73:24"
             },
             "caller_interval": [ { "lower": 27, "upper": 30 } ],
             "is_self_call": true
@@ -2276,7 +2296,8 @@
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
-              "port": "formal(self, position=0)"
+              "port": "formal(self, position=0)",
+              "call_site": "214:15-214:44"
             }
           }
         ]
@@ -2336,7 +2357,8 @@
               "line": 214,
               "start": 15,
               "end": 44
-            }
+            },
+            "call_site": "214:4-214:45"
           }
         ]
       }
@@ -2403,7 +2425,8 @@
               "line": 210,
               "start": 15,
               "end": 30
-            }
+            },
+            "call_site": "210:4-210:31"
           },
           {
             "kinds": [
@@ -2425,7 +2448,8 @@
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
-              "port": "formal(self, position=0)"
+              "port": "formal(self, position=0)",
+              "call_site": "210:15-210:30"
             }
           }
         ]
@@ -2485,7 +2509,8 @@
               "line": 210,
               "start": 15,
               "end": 30
-            }
+            },
+            "call_site": "210:4-210:31"
           }
         ]
       }
@@ -2619,7 +2644,8 @@
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
-              "port": "formal(self, position=0)"
+              "port": "formal(self, position=0)",
+              "call_site": "201:11-201:26"
             }
           }
         ]

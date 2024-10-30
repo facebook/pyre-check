@@ -463,7 +463,8 @@
               "resolves_to": [
                 "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db"
               ],
-              "port": "formal(locale, position=1)"
+              "port": "formal(locale, position=1)",
+              "call_site": "79:4-79:78"
             },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
@@ -539,7 +540,8 @@
               "resolves_to": [
                 "class_flows.HasDecoratedClassmethod.to_sink"
               ],
-              "port": "formal(x, position=1)"
+              "port": "formal(x, position=1)",
+              "call_site": "90:4-90:51"
             },
             "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false
@@ -661,7 +663,8 @@
               "resolves_to": [
                 "class_flows.HasClassmethods._get_multi_word_results"
               ],
-              "port": "formal(locale, position=1)"
+              "port": "formal(locale, position=1)",
+              "call_site": "66:21-66:56"
             },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
@@ -697,7 +700,8 @@
               "end": 25
             },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "70:8-70:26"
           }
         ]
       }
@@ -729,7 +733,8 @@
               "end": 20
             },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "86:8-86:21"
           }
         ]
       }

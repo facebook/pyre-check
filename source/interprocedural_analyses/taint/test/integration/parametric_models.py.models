@@ -65,7 +65,8 @@
               "line": 30,
               "start": 9,
               "end": 10
-            }
+            },
+            "call_site": "30:4-30:11"
           }
         ]
       }
@@ -147,7 +148,8 @@
                 "end": 19
               },
               "resolves_to": [ "parametric_models.inferred_sink" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "50:4-50:20"
             }
           }
         ]
@@ -239,7 +241,8 @@
               "line": 43,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "43:8-43:25"
           },
           {
             "kinds": [
@@ -258,7 +261,8 @@
               "line": 45,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "45:8-45:25"
           }
         ]
       }

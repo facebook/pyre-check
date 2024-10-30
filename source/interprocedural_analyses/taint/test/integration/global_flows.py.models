@@ -124,7 +124,8 @@
                 "end": 34
               },
               "resolves_to": [ "global_flows.append_argument" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "73:4-73:35"
             }
           }
         ]
@@ -194,7 +195,8 @@
               "line": 80,
               "start": 15,
               "end": 22
-            }
+            },
+            "call_site": "80:4-80:23"
           }
         ]
       }
@@ -403,7 +405,8 @@
                 "end": 43
               },
               "resolves_to": [ "global_flows.indirectly_update_x_arg1" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "41:4-41:44"
             }
           }
         ]
@@ -477,7 +480,8 @@
                 "end": 43
               },
               "resolves_to": [ "global_flows.indirectly_update_x_arg2" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "53:4-53:44"
             }
           }
         ]

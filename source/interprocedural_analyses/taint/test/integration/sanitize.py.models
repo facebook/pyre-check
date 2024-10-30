@@ -51,7 +51,8 @@
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "795:4-795:64"
             }
           }
         ]
@@ -123,7 +124,8 @@
               "line": 684,
               "start": 9,
               "end": 10
-            }
+            },
+            "call_site": "684:4-684:11"
           }
         ]
       }
@@ -190,7 +192,8 @@
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_parameter_no_user_controlled"
               ],
-              "port": "formal(b, position=1)"
+              "port": "formal(b, position=1)",
+              "call_site": "592:4-592:62"
             }
           }
         ]
@@ -259,7 +262,8 @@
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "648:4-648:78"
             }
           }
         ]
@@ -330,7 +334,8 @@
               "line": 760,
               "start": 9,
               "end": 10
-            }
+            },
+            "call_site": "760:4-760:11"
           }
         ]
       }
@@ -401,7 +406,8 @@
               "line": 726,
               "start": 9,
               "end": 10
-            }
+            },
+            "call_site": "726:4-726:11"
           }
         ]
       }
@@ -476,7 +482,8 @@
               "line": 466,
               "start": 11,
               "end": 12
-            }
+            },
+            "call_site": "466:4-466:13"
           }
         ]
       }
@@ -550,7 +557,8 @@
               "resolves_to": [
                 "sanitize.sanitize_test_a_source_attribute_in_sink_trace"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "371:4-371:53"
             }
           }
         ]
@@ -623,7 +631,8 @@
                 "end": 25
               },
               "resolves_to": [ "sanitize.partial_issue_sinks" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "347:4-347:26"
             }
           }
         ]
@@ -691,7 +700,8 @@
                 "end": 44
               },
               "resolves_to": [ "sanitize.sanitize_a_sink_attribute" ],
-              "port": "formal(c, position=0)[attribute]"
+              "port": "formal(c, position=0)[attribute]",
+              "call_site": "523:4-523:45"
             }
           }
         ]
@@ -759,7 +769,8 @@
                 "end": 43
               },
               "resolves_to": [ "sanitize.sanitize_a_sink_instance" ],
-              "port": "formal(c, position=0)[instance]"
+              "port": "formal(c, position=0)[instance]",
+              "call_site": "541:4-541:44"
             }
           }
         ]
@@ -829,7 +840,8 @@
               "line": 356,
               "start": 15,
               "end": 26
-            }
+            },
+            "call_site": "356:4-356:27"
           }
         ]
       }
@@ -902,7 +914,8 @@
               "line": 414,
               "start": 15,
               "end": 25
-            }
+            },
+            "call_site": "414:4-414:26"
           }
         ]
       }
@@ -972,7 +985,8 @@
               "line": 394,
               "start": 15,
               "end": 26
-            }
+            },
+            "call_site": "394:4-394:27"
           }
         ]
       }
@@ -1038,7 +1052,8 @@
               "line": 432,
               "start": 15,
               "end": 25
-            }
+            },
+            "call_site": "432:4-432:26"
           }
         ]
       }
@@ -1239,7 +1254,8 @@
                 "end": 44
               },
               "resolves_to": [ "sanitize.sanitize_b_sink_attribute" ],
-              "port": "formal(c, position=0)[attribute]"
+              "port": "formal(c, position=0)[attribute]",
+              "call_site": "527:4-527:45"
             }
           }
         ]
@@ -1307,7 +1323,8 @@
                 "end": 43
               },
               "resolves_to": [ "sanitize.sanitize_b_sink_instance" ],
-              "port": "formal(c, position=0)[instance]"
+              "port": "formal(c, position=0)[instance]",
+              "call_site": "545:4-545:44"
             }
           }
         ]
@@ -1377,7 +1394,8 @@
               "line": 385,
               "start": 15,
               "end": 26
-            }
+            },
+            "call_site": "385:4-385:27"
           }
         ]
       }
@@ -1450,7 +1468,8 @@
               "line": 423,
               "start": 15,
               "end": 25
-            }
+            },
+            "call_site": "423:4-423:26"
           }
         ]
       }
@@ -1521,7 +1540,8 @@
                 "end": 42
               },
               "resolves_to": [ "sanitize.sanitize_a_source_tito_with_sink" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "293:8-293:43"
             }
           }
         ]
@@ -2395,7 +2415,8 @@
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_a_source_in_sink_trace"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "228:4-228:53"
             }
           }
         ]
@@ -2425,7 +2446,8 @@
               "line": 313,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "313:8-313:17"
           },
           {
             "kinds": [
@@ -2441,7 +2463,8 @@
               "line": 316,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "316:8-316:17"
           }
         ]
       }
@@ -2524,7 +2547,8 @@
               "line": 337,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "337:8-337:17"
           },
           {
             "kinds": [
@@ -2540,7 +2564,8 @@
               "line": 340,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "340:8-340:17"
           }
         ]
       }
@@ -2620,7 +2645,8 @@
               "line": 242,
               "start": 11,
               "end": 12
-            }
+            },
+            "call_site": "242:4-242:13"
           }
         ]
       }
@@ -2746,7 +2772,8 @@
               "line": 885,
               "start": 9,
               "end": 10
-            }
+            },
+            "call_site": "885:4-885:11"
           }
         ]
       }
@@ -2777,7 +2804,8 @@
               "line": 848,
               "start": 9,
               "end": 10
-            }
+            },
+            "call_site": "848:4-848:11"
           }
         ]
       }
@@ -2808,7 +2836,8 @@
               "line": 665,
               "start": 9,
               "end": 10
-            }
+            },
+            "call_site": "665:4-665:11"
           }
         ]
       }
@@ -2872,7 +2901,8 @@
               "line": 210,
               "start": 11,
               "end": 12
-            }
+            },
+            "call_site": "210:4-210:13"
           }
         ]
       }
@@ -2930,7 +2960,8 @@
               "resolves_to": [
                 "sanitize.sanitize_all_parameters_no_user_controlled"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "785:4-785:49"
             }
           }
         ]
@@ -3039,7 +3070,8 @@
               "resolves_to": [
                 "sanitize.sanitize_parameter_no_user_controlled"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "582:4-582:47"
             }
           }
         ]
@@ -3059,7 +3091,8 @@
               "resolves_to": [
                 "sanitize.sanitize_parameter_no_user_controlled"
               ],
-              "port": "formal(y, position=1)"
+              "port": "formal(y, position=1)",
+              "call_site": "582:4-582:47"
             }
           }
         ]
@@ -3135,7 +3168,8 @@
               "line": 638,
               "start": 9,
               "end": 10
-            }
+            },
+            "call_site": "638:4-638:11"
           }
         ]
       }
@@ -3292,7 +3326,8 @@
               "line": 834,
               "start": 9,
               "end": 10
-            }
+            },
+            "call_site": "834:4-834:11"
           }
         ]
       }
@@ -3385,7 +3420,8 @@
               "line": 165,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "165:8-165:17"
           }
         ]
       }
@@ -3415,7 +3451,8 @@
               "line": 450,
               "start": 15,
               "end": 26
-            }
+            },
+            "call_site": "450:8-450:27"
           }
         ]
       }
@@ -3481,7 +3518,8 @@
               "line": 496,
               "start": 15,
               "end": 25
-            }
+            },
+            "call_site": "496:8-496:26"
           }
         ]
       }
@@ -3560,7 +3598,8 @@
               "line": 279,
               "start": 11,
               "end": 12
-            }
+            },
+            "call_site": "279:4-279:13"
           }
         ]
       }
@@ -3725,7 +3764,8 @@
               "line": 775,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "775:4-775:17"
           }
         ]
       },
@@ -3744,7 +3784,8 @@
               "line": 774,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "774:4-774:17"
           }
         ]
       }
@@ -3801,7 +3842,8 @@
               "line": 809,
               "start": 13,
               "end": 14
-            }
+            },
+            "call_site": "809:8-809:15"
           }
         ]
       }
@@ -3847,7 +3889,8 @@
               "line": 802,
               "start": 13,
               "end": 14
-            }
+            },
+            "call_site": "802:8-802:15"
           }
         ]
       }
@@ -3918,7 +3961,8 @@
               "line": 780,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "780:4-780:17"
           }
         ]
       }
@@ -4020,7 +4064,8 @@
               "line": 170,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "170:8-170:17"
           }
         ]
       }
@@ -4050,7 +4095,8 @@
               "line": 471,
               "start": 15,
               "end": 26
-            }
+            },
+            "call_site": "471:8-471:27"
           }
         ]
       }
@@ -4079,7 +4125,8 @@
               "line": 501,
               "start": 15,
               "end": 25
-            }
+            },
+            "call_site": "501:8-501:26"
           }
         ]
       }
@@ -4211,7 +4258,8 @@
               "line": 560,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "560:4-560:17"
           }
         ]
       }
@@ -4326,7 +4374,8 @@
               "line": 566,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "566:4-566:17"
           }
         ]
       },
@@ -4345,7 +4394,8 @@
               "line": 565,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "565:4-565:17"
           }
         ]
       }
@@ -4405,7 +4455,8 @@
               "line": 606,
               "start": 13,
               "end": 14
-            }
+            },
+            "call_site": "606:8-606:15"
           }
         ]
       }
@@ -4453,7 +4504,8 @@
               "line": 599,
               "start": 13,
               "end": 14
-            }
+            },
+            "call_site": "599:8-599:15"
           }
         ]
       }
@@ -4535,7 +4587,8 @@
               "line": 578,
               "start": 13,
               "end": 14
-            }
+            },
+            "call_site": "578:8-578:15"
           }
         ]
       },
@@ -4554,7 +4607,8 @@
               "line": 576,
               "start": 13,
               "end": 14
-            }
+            },
+            "call_site": "576:8-576:15"
           }
         ]
       }
@@ -4667,7 +4721,8 @@
               "line": 692,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "692:4-692:17"
           }
         ]
       }
@@ -4957,7 +5012,8 @@
               "line": 107,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "107:4-107:17"
           }
         ]
       }
@@ -5040,7 +5096,8 @@
               "line": 361,
               "start": 15,
               "end": 26
-            }
+            },
+            "call_site": "361:4-361:27"
           }
         ]
       }
@@ -5179,7 +5236,8 @@
               "line": 117,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "117:4-117:17"
           }
         ]
       }
@@ -5241,7 +5299,8 @@
               "line": 897,
               "start": 9,
               "end": 12
-            }
+            },
+            "call_site": "897:4-897:13"
           }
         ]
       }
@@ -5276,7 +5335,8 @@
                 "end": 29
               },
               "resolves_to": [ "sanitize.sink_taint_sanitize_a" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "902:4-902:30"
             }
           }
         ]
@@ -5312,7 +5372,8 @@
                 "end": 40
               },
               "resolves_to": [ "sanitize.sink_taint_sanitize_a_sanitize_b" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "907:4-907:41"
             }
           }
         ]
@@ -5344,7 +5405,8 @@
               "line": 912,
               "start": 9,
               "end": 12
-            }
+            },
+            "call_site": "912:4-912:13"
           }
         ]
       }
@@ -5379,7 +5441,8 @@
                 "end": 29
               },
               "resolves_to": [ "sanitize.sink_taint_sanitize_b" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "917:4-917:30"
             }
           }
         ]
@@ -5415,7 +5478,8 @@
                 "end": 40
               },
               "resolves_to": [ "sanitize.sink_taint_sanitize_b_sanitize_a" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "922:4-922:41"
             }
           }
         ]

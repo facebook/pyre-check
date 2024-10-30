@@ -72,7 +72,8 @@
                 "end": 16
               },
               "resolves_to": [ "multi_subkind.multi_sink" ],
-              "port": "formal(d, position=0)[a]"
+              "port": "formal(d, position=0)[a]",
+              "call_site": "32:4-32:17"
             }
           },
           {
@@ -96,7 +97,8 @@
                 "end": 16
               },
               "resolves_to": [ "multi_subkind.multi_sink" ],
-              "port": "formal(d, position=0)[b]"
+              "port": "formal(d, position=0)[b]",
+              "call_site": "32:4-32:17"
             }
           }
         ]
@@ -143,7 +145,8 @@
               "line": 24,
               "start": 11,
               "end": 17
-            }
+            },
+            "call_site": "24:4-24:18"
           }
         ]
       },
@@ -167,7 +170,8 @@
               "line": 25,
               "start": 11,
               "end": 17
-            }
+            },
+            "call_site": "25:4-25:18"
           }
         ]
       }

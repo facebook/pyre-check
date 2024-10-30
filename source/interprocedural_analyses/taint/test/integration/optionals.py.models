@@ -53,7 +53,8 @@
                 "end": 46
               },
               "resolves_to": [ "optionals.Client.offer" ],
-              "port": "formal(message, position=1)"
+              "port": "formal(message, position=1)",
+              "call_site": "24:4-24:47"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -365,7 +366,8 @@
               "end": 26
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "12:8-12:27"
           }
         ]
       }

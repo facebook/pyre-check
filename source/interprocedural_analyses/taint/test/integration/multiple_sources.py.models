@@ -63,7 +63,8 @@
               "line": 269,
               "start": 44,
               "end": 54
-            }
+            },
+            "call_site": "269:4-269:55"
           }
         ]
       }
@@ -142,7 +143,8 @@
               "line": 268,
               "start": 44,
               "end": 54
-            }
+            },
+            "call_site": "268:4-268:55"
           }
         ]
       }
@@ -220,7 +222,8 @@
               "end": 24
             },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "31:4-31:25"
           }
         ]
       }
@@ -299,7 +302,8 @@
               "line": 118,
               "start": 34,
               "end": 54
-            }
+            },
+            "call_site": "118:4-118:55"
           }
         ]
       }
@@ -378,7 +382,8 @@
               "line": 77,
               "start": 43,
               "end": 63
-            }
+            },
+            "call_site": "77:4-77:64"
           }
         ]
       }
@@ -457,7 +462,8 @@
               "line": 76,
               "start": 43,
               "end": 63
-            }
+            },
+            "call_site": "76:4-76:64"
           }
         ]
       }
@@ -534,7 +540,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_c_from_d"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "243:4-243:46"
             }
           }
         ]
@@ -612,7 +619,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_c_from_d_and_e"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "234:4-234:52"
             }
           }
         ]
@@ -690,7 +698,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_c_from_d_and_e"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "234:4-234:52"
             }
           }
         ]
@@ -768,7 +777,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_c_from_d_or_e"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "255:4-255:51"
             }
           }
         ]
@@ -846,7 +856,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_c_from_d_or_e"
               ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "255:4-255:51"
             }
           }
         ]
@@ -921,7 +932,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_context"
               ],
-              "port": "formal(vc, position=0)"
+              "port": "formal(vc, position=0)",
+              "call_site": "51:4-51:37"
             }
           }
         ]
@@ -996,7 +1008,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_context_more_hops"
               ],
-              "port": "formal(vc, position=0)"
+              "port": "formal(vc, position=0)",
+              "call_site": "138:4-138:47"
             }
           }
         ]
@@ -1074,7 +1087,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_d_and_e"
               ],
-              "port": "formal(y, position=0)"
+              "port": "formal(y, position=0)",
+              "call_site": "264:4-264:45"
             }
           }
         ]
@@ -1152,7 +1166,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_d_and_e"
               ],
-              "port": "formal(y, position=0)"
+              "port": "formal(y, position=0)",
+              "call_site": "263:4-263:45"
             }
           }
         ]
@@ -1235,7 +1250,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_input"
               ],
-              "port": "formal(id, position=0)"
+              "port": "formal(id, position=0)",
+              "call_site": "46:4-46:35"
             }
           }
         ]
@@ -1320,7 +1336,8 @@
                 "end": 32
               },
               "resolves_to": [ "multiple_sources.wrapper_node_get_send" ],
-              "port": "formal(vc, position=1)"
+              "port": "formal(vc, position=1)",
+              "call_site": "176:4-176:33"
             }
           }
         ]
@@ -1395,7 +1412,8 @@
               "resolves_to": [
                 "multiple_sources.wrapper_node_get_send_triggered_context"
               ],
-              "port": "formal(vc, position=0)"
+              "port": "formal(vc, position=0)",
+              "call_site": "187:4-187:47"
             }
           }
         ]
@@ -1477,7 +1495,8 @@
               "end": 67
             },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "153:4-153:68"
           }
         ]
       }
@@ -1558,7 +1577,8 @@
               "end": 67
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "153:4-153:68"
           }
         ]
       }
@@ -1632,7 +1652,8 @@
               "resolves_to": [
                 "multiple_sources.multiple_triggered_context"
               ],
-              "port": "formal(vc, position=0)"
+              "port": "formal(vc, position=0)",
+              "call_site": "159:4-159:34"
             }
           }
         ]
@@ -1932,7 +1953,8 @@
               "line": 238,
               "start": 32,
               "end": 33
-            }
+            },
+            "call_site": "238:4-238:46"
           }
         ]
       }
@@ -1974,7 +1996,8 @@
               "line": 228,
               "start": 32,
               "end": 33
-            }
+            },
+            "call_site": "228:4-228:46"
           },
           {
             "kinds": [
@@ -2001,7 +2024,8 @@
               "line": 229,
               "start": 32,
               "end": 33
-            }
+            },
+            "call_site": "229:4-229:46"
           }
         ]
       }
@@ -2043,7 +2067,8 @@
               "line": 248,
               "start": 36,
               "end": 37
-            }
+            },
+            "call_site": "248:8-248:50"
           },
           {
             "kinds": [
@@ -2070,7 +2095,8 @@
               "line": 250,
               "start": 36,
               "end": 37
-            }
+            },
+            "call_site": "250:8-250:50"
           }
         ]
       }
@@ -2111,7 +2137,8 @@
               "end": 24
             },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "36:4-36:25"
           }
         ]
       }
@@ -2158,7 +2185,8 @@
               "end": 24
             },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "133:4-133:25"
           }
         ]
       }
@@ -2200,7 +2228,8 @@
               "line": 259,
               "start": 44,
               "end": 45
-            }
+            },
+            "call_site": "259:4-259:46"
           }
         ]
       }
@@ -2250,7 +2279,8 @@
               "end": 16
             },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "41:4-41:25"
           }
         ]
       }
@@ -2337,7 +2367,8 @@
               "end": 25
             },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "164:4-164:26"
           },
           {
             "kinds": [
@@ -2363,7 +2394,8 @@
               "end": 25
             },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "166:4-166:26"
           }
         ]
       }
@@ -2578,7 +2610,8 @@
               "end": 24
             },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "170:4-170:25"
           }
         ]
       },
@@ -2610,7 +2643,8 @@
               "end": 16
             },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "170:4-170:25"
           }
         ]
       }
@@ -2650,7 +2684,8 @@
                 "end": 32
               },
               "resolves_to": [ "multiple_sources.wrapper_node_get_send" ],
-              "port": "formal(vc, position=1)"
+              "port": "formal(vc, position=1)",
+              "call_site": "182:4-182:33"
             }
           }
         ]

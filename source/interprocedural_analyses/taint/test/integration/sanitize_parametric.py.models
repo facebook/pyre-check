@@ -64,7 +64,8 @@
                 "end": 25
               },
               "resolves_to": [ "sanitize_parametric.partial_issue_sinks" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "51:4-51:26"
             }
           }
         ]
@@ -175,7 +176,8 @@
               "line": 41,
               "start": 17,
               "end": 18
-            }
+            },
+            "call_site": "41:8-41:19"
           },
           {
             "kinds": [
@@ -196,7 +198,8 @@
               "line": 44,
               "start": 17,
               "end": 18
-            }
+            },
+            "call_site": "44:8-44:19"
           }
         ]
       }

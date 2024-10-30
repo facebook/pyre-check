@@ -175,6 +175,13 @@ module CallSite = struct
 
   module Hashable = Core.Hashable.Make (T)
   module Map = Hashable.Table
+
+  (* No output if this is redundant w.r.t. other locations in `CallInfo`. *)
+  let to_json ~location call_site =
+    if equal call_site (Location.strip_module location) then
+      []
+    else
+      ["call_site", `String (show call_site)]
 end
 
 (* Represents the link between frames. *)
@@ -293,26 +300,27 @@ module CallInfo = struct
     match trace with
     | Declaration _ -> ["declaration", `Null]
     | Tito { class_intervals } -> ["tito", `Assoc (class_intervals_to_json class_intervals)]
-    | Origin { location; class_intervals; call_site = _ } ->
+    | Origin { location; class_intervals; call_site } ->
         let location_json = location_with_module_to_json ~resolve_module_path location in
         let class_intervals_json_list = class_intervals_to_json class_intervals in
-        ("origin", `Assoc location_json) :: class_intervals_json_list
-    | CallSite { location; callees; port; path; class_intervals; call_site = _ } ->
+        (("origin", `Assoc location_json) :: class_intervals_json_list)
+        @ CallSite.to_json ~location call_site
+    | CallSite { location; callees; port; path; class_intervals; call_site } ->
         let callee_json =
           callees |> List.map ~f:(fun callable -> `String (Target.external_name callable))
         in
         let location_json = location_with_module_to_json ~resolve_module_path location in
         let full_port = AccessPath.create port path in
         let call_json =
-          `Assoc
-            [
-              "position", `Assoc location_json;
-              "resolves_to", `List callee_json;
-              "port", `String (AccessPath.show full_port);
-            ]
+          [
+            "position", `Assoc location_json;
+            "resolves_to", `List callee_json;
+            "port", `String (AccessPath.show full_port);
+          ]
+          @ CallSite.to_json ~location call_site
         in
         let class_intervals_json_list = class_intervals_to_json class_intervals in
-        ("call", call_json) :: class_intervals_json_list
+        ("call", `Assoc call_json) :: class_intervals_json_list
 
 
   let replace_location ~location call_info =

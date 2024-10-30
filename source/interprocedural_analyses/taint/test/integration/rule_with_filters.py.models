@@ -58,7 +58,8 @@
                 "end": 43
               },
               "resolves_to": [ "rule_with_filters.sink_distance_one" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "30:4-30:44"
             }
           }
         ]
@@ -135,7 +136,8 @@
                 "end": 43
               },
               "resolves_to": [ "rule_with_filters.sink_distance_two" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "39:4-39:44"
             }
           }
         ]
@@ -226,7 +228,8 @@
               "line": 18,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "18:4-18:17"
           }
         ]
       }
@@ -259,7 +262,8 @@
                 "end": 23
               },
               "resolves_to": [ "rule_with_filters.sink_distance_two" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "26:4-26:24"
             }
           }
         ]
@@ -293,7 +297,8 @@
                 "end": 23
               },
               "resolves_to": [ "rule_with_filters.sink_distance_one" ],
-              "port": "formal(x, position=0)"
+              "port": "formal(x, position=0)",
+              "call_site": "22:4-22:24"
             }
           }
         ]

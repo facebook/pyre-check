@@ -295,7 +295,8 @@
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
               ],
-              "port": "formal(arg2, position=1)"
+              "port": "formal(arg2, position=1)",
+              "call_site": "103:4-103:72"
             }
           }
         ]
@@ -375,7 +376,8 @@
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
               ],
-              "port": "formal(arg1, position=0)"
+              "port": "formal(arg1, position=0)",
+              "call_site": "102:4-102:72"
             }
           }
         ]
@@ -452,7 +454,8 @@
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_triggered_sql"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "93:4-93:38"
             }
           }
         ]
@@ -532,7 +535,8 @@
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_triggered_user_controlled"
               ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "83:4-83:60"
             }
           }
         ]

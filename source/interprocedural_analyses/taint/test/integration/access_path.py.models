@@ -52,7 +52,8 @@
               "line": 29,
               "start": 15,
               "end": 29
-            }
+            },
+            "call_site": "29:4-29:30"
           }
         ]
       }
@@ -125,7 +126,8 @@
               "line": 35,
               "start": 15,
               "end": 38
-            }
+            },
+            "call_site": "35:4-35:39"
           }
         ]
       }
@@ -198,7 +200,8 @@
               "line": 13,
               "start": 15,
               "end": 21
-            }
+            },
+            "call_site": "13:4-13:22"
           }
         ]
       }
@@ -272,7 +275,8 @@
                 "end": 48
               },
               "resolves_to": [ "access_path.positional_and_variadic2" ],
-              "port": "formal(y, position=1)"
+              "port": "formal(y, position=1)",
+              "call_site": "50:4-50:49"
             }
           }
         ]
@@ -344,7 +348,8 @@
                 "end": 46
               },
               "resolves_to": [ "access_path.positional_and_variadic2" ],
-              "port": "formal(y, position=1)"
+              "port": "formal(y, position=1)",
+              "call_site": "49:4-49:47"
             }
           }
         ]
@@ -416,7 +421,8 @@
                 "end": 49
               },
               "resolves_to": [ "access_path.positional_and_variadic1" ],
-              "port": "formal(*args, position=2)"
+              "port": "formal(*args, position=2)",
+              "call_site": "47:4-47:50"
             }
           }
         ]
@@ -567,7 +573,8 @@
               "line": 39,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "39:4-39:17"
           }
         ]
       }
@@ -597,7 +604,8 @@
               "line": 43,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "43:4-43:17"
           }
         ]
       }

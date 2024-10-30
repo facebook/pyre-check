@@ -53,7 +53,8 @@
                 "end": 23
               },
               "resolves_to": [ "static_methods.test" ],
-              "port": "formal(source, position=0)"
+              "port": "formal(source, position=0)",
+              "call_site": "20:4-20:24"
             }
           }
         ]
@@ -361,7 +362,8 @@
               "line": 12,
               "start": 19,
               "end": 23
-            }
+            },
+            "call_site": "12:8-12:24"
           }
         ]
       }
@@ -394,7 +396,8 @@
                 "end": 34
               },
               "resolves_to": [ "static_methods.StaticClass.sink" ],
-              "port": "formal(oops, position=0)"
+              "port": "formal(oops, position=0)",
+              "call_site": "16:11-16:35"
             }
           }
         ]

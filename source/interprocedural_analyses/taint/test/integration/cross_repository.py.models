@@ -53,7 +53,8 @@
               "line": 23,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "23:4-23:17"
           }
         ]
       }
@@ -124,7 +125,8 @@
               "line": 32,
               "start": 33,
               "end": 39
-            }
+            },
+            "call_site": "32:4-32:40"
           }
         ]
       }
@@ -453,7 +455,8 @@
               "line": 10,
               "start": 15,
               "end": 31
-            }
+            },
+            "call_site": "10:4-10:32"
           }
         ]
       }
@@ -517,7 +520,8 @@
               "line": 9,
               "start": 28,
               "end": 44
-            }
+            },
+            "call_site": "9:0-10:32"
           }
         ]
       },
@@ -537,7 +541,8 @@
               "line": 10,
               "start": 15,
               "end": 31
-            }
+            },
+            "call_site": "10:4-10:32"
           }
         ]
       }
@@ -645,7 +650,8 @@
               "line": 44,
               "start": 23,
               "end": 24
-            }
+            },
+            "call_site": "44:4-44:25"
           }
         ]
       }
@@ -680,7 +686,8 @@
               "resolves_to": [
                 "cross_repository.test_propagate_cross_repository_sink_once"
               ],
-              "port": "formal(y, position=0)"
+              "port": "formal(y, position=0)",
+              "call_site": "48:4-48:48"
             }
           }
         ]

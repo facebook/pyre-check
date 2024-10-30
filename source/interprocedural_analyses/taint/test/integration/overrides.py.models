@@ -60,7 +60,8 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg, position=1)"
+              "port": "formal(arg, position=1)",
+              "call_site": "111:4-111:16"
             },
             "receiver_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
@@ -141,7 +142,8 @@
                 "end": 21
               },
               "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg, position=1)"
+              "port": "formal(arg, position=1)",
+              "call_site": "112:4-112:22"
             },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "receiver_interval": [ { "lower": 13, "upper": 20 } ],
@@ -223,7 +225,8 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
-              "port": "formal(arg, position=1)"
+              "port": "formal(arg, position=1)",
+              "call_site": "79:4-79:16"
             },
             "receiver_interval": [ { "lower": 10, "upper": 21 } ],
             "is_self_call": false
@@ -304,7 +307,8 @@
                 "end": 21
               },
               "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg, position=1)"
+              "port": "formal(arg, position=1)",
+              "call_site": "80:4-80:22"
             },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "receiver_interval": [ { "lower": 10, "upper": 21 } ],
@@ -410,7 +414,8 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg, position=1)"
+              "port": "formal(arg, position=1)",
+              "call_site": "127:4-127:16"
             },
             "receiver_interval": [ { "lower": 14, "upper": 19 } ],
             "is_self_call": false
@@ -491,7 +496,8 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg, position=1)"
+              "port": "formal(arg, position=1)",
+              "call_site": "143:4-143:16"
             },
             "receiver_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false
@@ -572,7 +578,8 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg, position=1)"
+              "port": "formal(arg, position=1)",
+              "call_site": "117:4-117:20"
             },
             "receiver_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
@@ -650,7 +657,8 @@
               "line": 247,
               "start": 15,
               "end": 32
-            }
+            },
+            "call_site": "247:4-247:33"
           }
         ]
       }
@@ -1274,7 +1282,8 @@
               "end": 22
             },
             "caller_interval": [ { "lower": 11, "upper": 12 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "35:8-35:23"
           }
         ]
       }
@@ -1370,7 +1379,8 @@
               "end": 22
             },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "49:8-49:23"
           }
         ]
       }
@@ -1534,7 +1544,8 @@
               "end": 22
             },
             "caller_interval": [ { "lower": 15, "upper": 18 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "71:8-71:23"
           }
         ]
       }
@@ -1614,7 +1625,8 @@
               "end": 22
             },
             "caller_interval": [ { "lower": 27, "upper": 28 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "181:8-181:23"
           }
         ]
       }

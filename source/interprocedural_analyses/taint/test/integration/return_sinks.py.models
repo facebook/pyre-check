@@ -50,7 +50,8 @@
                 "end": 31
               },
               "resolves_to": [ "return_sinks.sink_on_return_and_tito" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "30:4-30:32"
             }
           }
         ]

@@ -58,7 +58,8 @@
                 "end": 12
               },
               "resolves_to": [ "source_sink_flow.bad" ],
-              "port": "formal(arg, position=1)"
+              "port": "formal(arg, position=1)",
+              "call_site": "27:4-27:13"
             }
           }
         ]
@@ -369,7 +370,8 @@
                 "end": 11
               },
               "resolves_to": [ "source_sink_flow.qux" ],
-              "port": "formal(arg, position=0)"
+              "port": "formal(arg, position=0)",
+              "call_site": "18:4-18:12"
             }
           }
         ]
@@ -432,7 +434,8 @@
               "line": 14,
               "start": 15,
               "end": 18
-            }
+            },
+            "call_site": "14:4-14:19"
           }
         ]
       }

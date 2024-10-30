@@ -55,7 +55,8 @@
               "line": 89,
               "start": 15,
               "end": 16
-            }
+            },
+            "call_site": "89:4-89:17"
           }
         ]
       }
@@ -132,7 +133,8 @@
               "line": 118,
               "start": 15,
               "end": 62
-            }
+            },
+            "call_site": "118:4-118:63"
           }
         ]
       }
@@ -209,7 +211,8 @@
               "line": 117,
               "start": 15,
               "end": 61
-            }
+            },
+            "call_site": "117:4-117:62"
           }
         ]
       }
@@ -286,7 +289,8 @@
               "line": 115,
               "start": 15,
               "end": 62
-            }
+            },
+            "call_site": "115:4-115:63"
           }
         ]
       }
@@ -363,7 +367,8 @@
               "line": 113,
               "start": 15,
               "end": 61
-            }
+            },
+            "call_site": "113:4-113:62"
           }
         ]
       }
@@ -512,7 +517,8 @@
               "resolves_to": [
                 "higher_order_functions.higher_order_function_and_sink"
               ],
-              "port": "formal(arg, position=1)"
+              "port": "formal(arg, position=1)",
+              "call_site": "52:4-52:64"
             }
           }
         ]
@@ -659,7 +665,8 @@
                 "end": 43
               },
               "resolves_to": [ "higher_order_functions.higher_order_method" ],
-              "port": "formal(arg, position=1)"
+              "port": "formal(arg, position=1)",
+              "call_site": "38:4-38:44"
             }
           }
         ]
@@ -733,7 +740,8 @@
                 "end": 27
               },
               "resolves_to": [ "higher_order_functions.C.self_to_sink" ],
-              "port": "formal(self, position=0)"
+              "port": "formal(self, position=0)",
+              "call_site": "43:26-43:40"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1045,7 +1053,8 @@
               "end": 22
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "27:8-27:23"
           }
         ]
       }
@@ -1077,7 +1086,8 @@
               "end": 23
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
+            "is_self_call": false,
+            "call_site": "30:8-30:24"
           }
         ]
       }
@@ -1210,7 +1220,8 @@
               "line": 10,
               "start": 15,
               "end": 18
-            }
+            },
+            "call_site": "10:4-10:19"
           }
         ]
       }
@@ -1259,7 +1270,8 @@
               "line": 48,
               "start": 15,
               "end": 18
-            }
+            },
+            "call_site": "48:4-48:19"
           }
         ]
       }
@@ -1326,7 +1338,8 @@
               "line": 94,
               "start": 19,
               "end": 22
-            }
+            },
+            "call_site": "94:8-94:23"
           }
         ]
       }
@@ -1554,7 +1567,8 @@
                 "end": 21
               },
               "resolves_to": [ "higher_order_functions.sink_args" ],
-              "port": "formal(*args, position=0)[*]"
+              "port": "formal(*args, position=0)[*]",
+              "call_site": "98:4-98:22"
             }
           }
         ]
@@ -1578,7 +1592,8 @@
                 "end": 18
               },
               "resolves_to": [ "higher_order_functions.sink_args" ],
-              "port": "formal(*args, position=0)[*]"
+              "port": "formal(*args, position=0)[*]",
+              "call_site": "98:4-98:22"
             }
           }
         ]
@@ -1605,7 +1620,8 @@
                 "end": 15
               },
               "resolves_to": [ "higher_order_functions.sink_args" ],
-              "port": "formal(*args, position=0)[*]"
+              "port": "formal(*args, position=0)[*]",
+              "call_site": "98:4-98:22"
             }
           }
         ]
