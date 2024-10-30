@@ -2012,7 +2012,74 @@ let test_handle_references_used_by_file_query context =
     [
       ( "references_used_by_file(path='test.py')",
         fun _ ->
-          {|["Query", {"error": "Type `other_module.GenericType` was not found in the type order."}]|}
+          {|
+            [
+              "Query",
+              {
+                "response": {
+                  "path": "test.py",
+                  "types": [
+                    {
+                      "location": {
+                        "start": { "line": 2, "column": 19 },
+                        "stop": { "line": 2, "column": 27 }
+                      },
+                      "annotation": "typing.Type[typing.Optional]"
+                    },
+                    {
+                      "location": {
+                        "start": { "line": 5, "column": 4 },
+                        "stop": { "line": 5, "column": 23 }
+                      },
+                      "annotation": "typing.Callable(test.return_generic_type)[[], typing.Optional[other_module.GenericType[int]]]"
+                    },
+                    {
+                      "location": {
+                        "start": { "line": 5, "column": 29 },
+                        "stop": { "line": 5, "column": 55 }
+                      },
+                      "annotation": "typing.Type[typing.Optional[other_module.GenericType[int]]]"
+                    },
+                    {
+                      "location": {
+                        "start": { "line": 6, "column": 11 },
+                        "stop": { "line": 6, "column": 27 }
+                      },
+                      "annotation": "typing.Any"
+                    },
+                    {
+                      "location": {
+                        "start": { "line": 6, "column": 11 },
+                        "stop": { "line": 6, "column": 29 }
+                      },
+                      "annotation": "typing.Any"
+                    },
+                    {
+                      "location": {
+                        "start": { "line": 6, "column": 23 },
+                        "stop": { "line": 6, "column": 26 }
+                      },
+                      "annotation": "typing.Type[int]"
+                    },
+                    {
+                      "location": {
+                        "start": { "line": 8, "column": 4 },
+                        "stop": { "line": 8, "column": 7 }
+                      },
+                      "annotation": "typing.Callable(test.foo)[[], None]"
+                    },
+                    {
+                      "location": {
+                        "start": { "line": 8, "column": 13 },
+                        "stop": { "line": 8, "column": 17 }
+                      },
+                      "annotation": "typing.Type[None]"
+                    }
+                  ]
+                }
+              }
+            ]
+          |}
       );
     ]
 

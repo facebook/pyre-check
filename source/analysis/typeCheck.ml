@@ -9162,11 +9162,14 @@ let compute_local_annotations
     let resolution = resolution global_resolution (module Context) in
     exit_state ~resolution (module Context)
   in
-  GlobalResolution.get_define_body_in_project global_resolution name
-  >>| exit_state_of_define
-  >>= (fun { local_annotations; _ } -> local_annotations)
-  >>| TypeInfo.ForFunctionBody.read_only
-  >>| fun local_annotation_map -> local_annotation_map, expressions_with_types
+  try
+    GlobalResolution.get_define_body_in_project global_resolution name
+    >>| exit_state_of_define
+    >>= (fun { local_annotations; _ } -> local_annotations)
+    >>| TypeInfo.ForFunctionBody.read_only
+    >>| fun local_annotation_map -> local_annotation_map, expressions_with_types
+  with
+  | ClassHierarchy.Untracked _ -> None
 
 
 let errors_from_other_analyses
