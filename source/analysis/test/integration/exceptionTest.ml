@@ -163,9 +163,18 @@ let test_exception_handlers =
               try:
                 pass
               except* ValueError as e:
-                pass
+                reveal_type(e)
             |}
-           [];
+           ["Revealed type [-1]: Revealed type for `e` is `ValueError`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              try:
+                pass
+              except* (ValueError, NameError) as e:
+                reveal_type(e)
+            |}
+           ["Revealed type [-1]: Revealed type for `e` is `typing.Union[NameError, ValueError]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -261,71 +270,77 @@ let test_exception_group_handlers =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              class MyExceptionGroup(ExceptionGroup[ValueError]): ...
               try:
                 pass
-              except ExceptionGroup as e:
+              except MyExceptionGroup as e:
                 pass
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              class MyExceptionGroup(ExceptionGroup[ValueError]): ...
               try:
                 pass
-              except* ExceptionGroup as e:
+              except* MyExceptionGroup as e:
                 pass
             |}
            [
              "Invalid except* clause [67]: Exception group handler type annotation \
-              `ExceptionGroup` may not extend BaseExceptionGroup.";
+              `MyExceptionGroup` may not extend BaseExceptionGroup.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              class MyExceptionGroup(ExceptionGroup[ValueError]): ...
               try:
                 pass
-              except ExceptionGroup:
+              except MyExceptionGroup:
                 pass
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              class MyExceptionGroup(ExceptionGroup[ValueError]): ...
               try:
                 pass
-              except* ExceptionGroup:
+              except* MyExceptionGroup:
                 pass
             |}
            [
              "Invalid except* clause [67]: Exception group handler type annotation \
-              `ExceptionGroup` may not extend BaseExceptionGroup.";
+              `MyExceptionGroup` may not extend BaseExceptionGroup.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              class MyExceptionGroup(ExceptionGroup[ValueError]): ...
               try:
                 pass
-              except (Exception, ExceptionGroup):
+              except (Exception, MyExceptionGroup):
                 pass
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              class MyExceptionGroup(ExceptionGroup[ValueError]): ...
               try:
                 pass
-              except* (Exception, ExceptionGroup):
+              except* (Exception, MyExceptionGroup):
                 pass
             |}
            [
              "Invalid except* clause [67]: Exception group handler type annotation \
-              `ExceptionGroup` may not extend BaseExceptionGroup.";
+              `MyExceptionGroup` may not extend BaseExceptionGroup.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               from typing import Type
-              exception_type: Type[ExceptionGroup] = ...
+              exception_type: Type[ExceptionGroup[ValueError]] = ...
               try:
                 pass
               except exception_type:
@@ -336,7 +351,7 @@ let test_exception_group_handlers =
       @@ assert_type_errors
            {|
               from typing import Type
-              exception_type: Type[ExceptionGroup] = ...
+              exception_type: Type[ExceptionGroup[ValueError]] = ...
               try:
                 pass
               except* exception_type:
@@ -344,13 +359,13 @@ let test_exception_group_handlers =
             |}
            [
              "Invalid except* clause [67]: Exception group handler type annotation \
-              `ExceptionGroup` may not extend BaseExceptionGroup.";
+              `ExceptionGroup[ValueError]` may not extend BaseExceptionGroup.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               from typing import Type, Tuple
-              exception_type: Tuple[Type[ExceptionGroup]] = ...
+              exception_type: Tuple[Type[ExceptionGroup[ValueError]]] = ...
               try:
                 pass
               except exception_type:
@@ -361,7 +376,7 @@ let test_exception_group_handlers =
       @@ assert_type_errors
            {|
               from typing import Type, Tuple
-              exception_type: Tuple[Type[ExceptionGroup]] = ...
+              exception_type: Tuple[Type[ExceptionGroup[ValueError]]] = ...
               try:
                 pass
               except* exception_type:
@@ -369,13 +384,13 @@ let test_exception_group_handlers =
             |}
            [
              "Invalid except* clause [67]: Exception group handler type annotation \
-              `ExceptionGroup` may not extend BaseExceptionGroup.";
+              `ExceptionGroup[ValueError]` may not extend BaseExceptionGroup.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               from typing import Type, Tuple
-              exception_type: Tuple[Type[ExceptionGroup], ...] = ...
+              exception_type: Tuple[Type[ExceptionGroup[ValueError]], ...] = ...
               try:
                 pass
               except exception_type:
@@ -386,7 +401,7 @@ let test_exception_group_handlers =
       @@ assert_type_errors
            {|
               from typing import Type, Tuple
-              exception_type: Tuple[Type[ExceptionGroup], ...] = ...
+              exception_type: Tuple[Type[ExceptionGroup[ValueError]], ...] = ...
               try:
                 pass
               except* exception_type:
@@ -394,13 +409,13 @@ let test_exception_group_handlers =
             |}
            [
              "Invalid except* clause [67]: Exception group handler type annotation \
-              `ExceptionGroup` may not extend BaseExceptionGroup.";
+              `ExceptionGroup[ValueError]` may not extend BaseExceptionGroup.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               from typing import Type
-              exception_type: Type[ExceptionGroup] = ...
+              exception_type: Type[ExceptionGroup[ValueError]] = ...
               try:
                 pass
               except exception_type:
@@ -411,7 +426,7 @@ let test_exception_group_handlers =
       @@ assert_type_errors
            {|
               from typing import Type
-              exception_type: Type[ExceptionGroup] = ...
+              exception_type: Type[ExceptionGroup[ValueError]] = ...
               try:
                 pass
               except* exception_type:
@@ -419,7 +434,7 @@ let test_exception_group_handlers =
             |}
            [
              "Invalid except* clause [67]: Exception group handler type annotation \
-              `ExceptionGroup` may not extend BaseExceptionGroup.";
+              `ExceptionGroup[ValueError]` may not extend BaseExceptionGroup.";
            ];
     ]
 

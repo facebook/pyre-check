@@ -4,7 +4,7 @@
   "data": {
     "callable": "_test_sink",
     "filename": "builtins.pyi",
-    "callable_line": 617,
+    "callable_line": 618,
     "sinks": [
       {
         "port": "formal(arg, position=0)",

@@ -229,7 +229,7 @@
   "data": {
     "callable": "_cookies",
     "filename": "builtins.pyi",
-    "callable_line": 624,
+    "callable_line": 625,
     "sources": [
       {
         "port": "result",
@@ -246,7 +246,7 @@
   "data": {
     "callable": "_rce",
     "filename": "builtins.pyi",
-    "callable_line": 625,
+    "callable_line": 626,
     "sinks": [
       {
         "port": "formal(argument, position=0)",
@@ -266,7 +266,7 @@
   "data": {
     "callable": "_sql",
     "filename": "builtins.pyi",
-    "callable_line": 626,
+    "callable_line": 627,
     "sinks": [
       {
         "port": "formal(argument, position=0)",
@@ -281,7 +281,7 @@
   "data": {
     "callable": "_test_sink",
     "filename": "builtins.pyi",
-    "callable_line": 617,
+    "callable_line": 618,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -306,7 +306,7 @@
   "data": {
     "callable": "_test_source",
     "filename": "builtins.pyi",
-    "callable_line": 618,
+    "callable_line": 619,
     "sources": [
       {
         "port": "result",
@@ -331,7 +331,7 @@
   "data": {
     "callable": "_tito",
     "filename": "builtins.pyi",
-    "callable_line": 622,
+    "callable_line": 623,
     "tito": [
       {
         "port": "formal(**kwargs)",
@@ -360,7 +360,7 @@
   "data": {
     "callable": "_user_controlled",
     "filename": "builtins.pyi",
-    "callable_line": 623,
+    "callable_line": 624,
     "sources": [
       {
         "port": "result",
@@ -505,7 +505,7 @@
   "data": {
     "callable": "copy",
     "filename": "builtins.pyi",
-    "callable_line": 628,
+    "callable_line": 629,
     "tito": [
       {
         "port": "formal(obj, position=0)",
@@ -531,7 +531,7 @@
   "data": {
     "callable": "eval",
     "filename": "builtins.pyi",
-    "callable_line": 473,
+    "callable_line": 474,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -551,7 +551,7 @@
   "data": {
     "callable": "getattr",
     "filename": "builtins.pyi",
-    "callable_line": 475,
+    "callable_line": 476,
     "sinks": [
       {
         "port": "formal(name, position=1)",

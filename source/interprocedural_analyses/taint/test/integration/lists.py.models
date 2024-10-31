@@ -390,7 +390,7 @@
   "data": {
     "callable": "_test_sink",
     "filename": "builtins.pyi",
-    "callable_line": 617,
+    "callable_line": 618,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -415,7 +415,7 @@
   "data": {
     "callable": "_test_source",
     "filename": "builtins.pyi",
-    "callable_line": 618,
+    "callable_line": 619,
     "sources": [
       {
         "port": "result",
@@ -440,7 +440,7 @@
   "data": {
     "callable": "list.append",
     "filename": "builtins.pyi",
-    "callable_line": 421,
+    "callable_line": 422,
     "tito": [
       {
         "port": "formal(__element, position=1, positional_only)",

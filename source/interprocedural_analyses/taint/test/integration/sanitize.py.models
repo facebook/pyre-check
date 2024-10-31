@@ -1698,7 +1698,7 @@
   "data": {
     "callable": "_cookies",
     "filename": "builtins.pyi",
-    "callable_line": 624,
+    "callable_line": 625,
     "sources": [
       {
         "port": "result",
@@ -1715,7 +1715,7 @@
   "data": {
     "callable": "_rce",
     "filename": "builtins.pyi",
-    "callable_line": 625,
+    "callable_line": 626,
     "sinks": [
       {
         "port": "formal(argument, position=0)",
@@ -1735,7 +1735,7 @@
   "data": {
     "callable": "_sql",
     "filename": "builtins.pyi",
-    "callable_line": 626,
+    "callable_line": 627,
     "sinks": [
       {
         "port": "formal(argument, position=0)",
@@ -1750,7 +1750,7 @@
   "data": {
     "callable": "_test_sink",
     "filename": "builtins.pyi",
-    "callable_line": 617,
+    "callable_line": 618,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1765,7 +1765,7 @@
   "data": {
     "callable": "_test_source",
     "filename": "builtins.pyi",
-    "callable_line": 618,
+    "callable_line": 619,
     "sources": [
       {
         "port": "result",
@@ -1780,7 +1780,7 @@
   "data": {
     "callable": "_user_controlled",
     "filename": "builtins.pyi",
-    "callable_line": 623,
+    "callable_line": 624,
     "sources": [
       {
         "port": "result",
