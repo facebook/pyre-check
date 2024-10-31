@@ -826,17 +826,22 @@ module State (Context : Context) = struct
       expression: Expression.t;
       resolved_base: Type.t;
     }
+    [@@deriving show]
 
     type attribute = {
       name: Identifier.t;
       resolved: Type.t;
     }
+    [@@deriving show]
 
     type callee_attribute = {
       base: base;
       attribute: attribute;
       expression: Expression.t;
     }
+    [@@deriving show]
+
+    [@@@warning "-unused-value-declaration"]
 
     type t =
       | Attribute of callee_attribute
@@ -844,6 +849,7 @@ module State (Context : Context) = struct
           expression: Expression.t;
           resolved: Type.t;
         }
+    [@@deriving show]
 
     let resolved = function
       | Attribute { attribute = { resolved; _ }; _ }
@@ -869,6 +875,9 @@ module State (Context : Context) = struct
       is_inverted_operator: bool;
       selected_return_annotation: 'return_annotation;
     }
+    [@@deriving show]
+
+    [@@@warning "-unused-value-declaration"]
 
     type ('return_annotation, 'arguments) t =
       | KnownCallable of ('return_annotation, 'arguments) callable_data
@@ -876,6 +885,7 @@ module State (Context : Context) = struct
           callable_attribute: Callee.callee_attribute;
           arguments: 'arguments;
         }
+    [@@deriving show]
 
     let unknown_callable_attribute_before_application callable_attribute =
       UnknownCallableAttribute { callable_attribute; arguments = () }

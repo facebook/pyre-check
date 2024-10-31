@@ -15,6 +15,7 @@ module Argument = struct
     kind: Ast.Expression.Call.Argument.kind;
     resolved: 'argument_type;
   }
+  [@@deriving show]
 
   module WithPosition = struct
     type 'argument_type t = {

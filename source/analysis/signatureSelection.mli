@@ -13,6 +13,7 @@ module Argument : sig
     kind: Ast.Expression.Call.Argument.kind;
     resolved: 'argument_type;
   }
+  [@@deriving show]
 
   module WithPosition : sig
     type 'argument_type t = {
