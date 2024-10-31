@@ -14,6 +14,72 @@ open Test
 open Interprocedural
 open CallGraph
 
+let parse_define_call_graph =
+  let parse_location location =
+    let parse_position position =
+      let line_and_column = String.split ~on:':' position in
+      {
+        Location.line = Int.of_string (List.nth_exn line_and_column 0);
+        column = Int.of_string (List.nth_exn line_and_column 1);
+      }
+    in
+    let positions = String.split ~on:'-' location in
+    {
+      Location.start = parse_position (List.nth_exn positions 0);
+      stop = parse_position (List.nth_exn positions 1);
+    }
+  in
+  List.fold ~init:DefineCallGraph.empty ~f:(fun call_graph_of_define (location, callees) ->
+      DefineCallGraph.add call_graph_of_define ~location:(parse_location location) ~callees)
+
+
+let setup ~context ~test_qualifier ~define_name ~source =
+  let find_define = function
+    | { Node.value = define; _ }
+      when String.equal
+             (FunctionDefinition.qualified_name_of_define ~module_name:test_qualifier define
+             |> Reference.show)
+             define_name ->
+        Some define
+    | _ -> None
+  in
+  let project = Test.ScratchProject.setup ~context ["test.py", source] in
+  let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
+    ScratchProject.build_type_environment project
+  in
+  let test_source =
+    List.find_map_exn
+      sources
+      ~f:(fun ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) ->
+        Option.some_if (Reference.equal qualifier test_qualifier) source)
+  in
+  ( List.find_map_exn
+      (Preprocessing.defines ~include_nested:true ~include_toplevels:true test_source)
+      ~f:find_define,
+    test_source,
+    ScratchProject.pyre_pysa_read_only_api project,
+    ScratchProject.configuration_of project )
+
+
+let create_call_graph_of_define ~define ~test_source ~pyre_api ~configuration ~object_targets =
+  let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
+  let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source:test_source in
+  let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
+  let call_graph =
+    CallGraph.call_graph_of_define
+      ~static_analysis_configuration
+      ~pyre_api
+      ~override_graph:
+        (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
+      ~attribute_targets:
+        (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
+      ~qualifier:(Reference.create "test")
+      ~define
+  in
+  let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
+  call_graph
+
+
 let assert_call_graph_of_define
     ?(object_targets = [])
     ~source
@@ -23,75 +89,54 @@ let assert_call_graph_of_define
     ()
     context
   =
+  let expected = parse_define_call_graph expected in
+  let define, test_source, pyre_api, configuration =
+    setup ~context ~test_qualifier:(Reference.create "test") ~define_name ~source
+  in
+  let actual =
+    create_call_graph_of_define ~define ~test_source ~pyre_api ~configuration ~object_targets
+  in
+  assert_equal ~cmp ~printer:DefineCallGraph.show expected actual
+
+
+let assert_higher_order_call_graph_of_define
+    ?(object_targets = [])
+    ~source
+    ~define_name
+    ~expected_call_graph
+    ~expected_returned_callables
+    ?(cmp = HigherOrderCallGraph.equal)
+    ()
+    context
+  =
   let expected =
-    let parse_location location =
-      let parse_position position =
-        let line_and_column = String.split ~on:':' position in
-        {
-          Location.line = Int.of_string (List.nth_exn line_and_column 0);
-          column = Int.of_string (List.nth_exn line_and_column 1);
-        }
-      in
-      let positions = String.split ~on:'-' location in
-      {
-        Location.start = parse_position (List.nth_exn positions 0);
-        stop = parse_position (List.nth_exn positions 1);
-      }
-    in
-    List.fold
-      expected
-      ~init:DefineCallGraph.empty
-      ~f:(fun call_graph_of_define (location, callees) ->
-        DefineCallGraph.add call_graph_of_define ~location:(parse_location location) ~callees)
+    {
+      CallGraph.HigherOrderCallGraph.call_graph = parse_define_call_graph expected_call_graph;
+      returned_callables = CallTarget.Set.of_list expected_returned_callables;
+    }
   in
   let test_qualifier = Reference.create "test" in
   let define, test_source, pyre_api, configuration =
-    let find_define = function
-      | { Node.value = define; _ }
-        when String.equal
-               (FunctionDefinition.qualified_name_of_define ~module_name:test_qualifier define
-               |> Reference.show)
-               define_name ->
-          Some define
-      | _ -> None
-    in
-    let project = Test.ScratchProject.setup ~context ["test.py", source] in
-    let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
-      ScratchProject.build_type_environment project
-    in
-    let test_source =
-      List.find_map_exn
-        sources
-        ~f:(fun ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) ->
-          Option.some_if (Reference.equal qualifier test_qualifier) source)
-    in
-    ( List.find_map_exn
-        (Preprocessing.defines ~include_nested:true ~include_toplevels:true test_source)
-        ~f:find_define,
-      test_source,
-      ScratchProject.pyre_pysa_read_only_api project,
-      ScratchProject.configuration_of project )
+    setup ~context ~test_qualifier ~define_name ~source
   in
-  let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-  let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source:test_source in
-  let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
-  let () =
-    assert_equal
-      ~cmp
-      ~printer:DefineCallGraph.show
-      expected
-      (CallGraph.call_graph_of_define
-         ~static_analysis_configuration
-         ~pyre_api
-         ~override_graph:
-           (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
-         ~attribute_targets:
-           (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
-         ~qualifier:(Reference.create "test")
-         ~define)
+  let actual =
+    CallGraph.higher_order_call_graph_of_define
+      ~pyre_api
+      ~define_call_graph:
+        (create_call_graph_of_define ~define ~test_source ~pyre_api ~configuration ~object_targets)
+      ~qualifier:test_qualifier
+      ~define
+      ~initial_state:CallGraph.HigherOrderCallGraph.State.empty
   in
-  let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
-  ()
+  assert_equal ~cmp ~printer:HigherOrderCallGraph.show expected actual
+
+
+let create_parameterized_target ~regular ~parameters =
+  Target.Parameterized { regular; parameters = Target.ParameterMap.of_alist_exn parameters }
+
+
+let create_positional_parameter ?(positional_only = false) position name =
+  AccessPath.Root.PositionalParameter { position; name; positional_only }
 
 
 let test_call_graph_of_define =
@@ -6007,6 +6052,100 @@ let test_call_graph_of_define_foo_and_bar =
                          ])) );
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:{|
+     def foo():
+       return bar
+     def bar(): ...
+  |}
+           ~define_name:"test.foo"
+           ~expected:
+             [
+               ( "3:9-3:12",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:{|
+     def foo():
+       yield bar
+     def bar(): ...
+  |}
+           ~define_name:"test.foo"
+           ~expected:
+             [
+               ( "3:8-3:11",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+     def foo(x):
+       ... # stub
+     def bar():
+       pass
+     def baz():
+       foo(bar)
+  |}
+           ~define_name:"test.baz"
+           ~expected:
+             [
+               ( "7:2-7:10",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.bar"; kind = Normal });
+                                    ];
+                                  unresolved = false;
+                                };
+                              ])
+                         ())) );
+               ( "7:6-7:9",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ();
     ]
 
 
@@ -6148,11 +6287,272 @@ let test_return_type_from_annotation =
     ]
 
 
+let test_higher_order_call_graph_of_define =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:{|
+     def foo():
+       raise bar
+     def bar():
+       pass
+  |}
+           ~define_name:"test.foo"
+           ~expected_call_graph:[]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:{|
+     async def foo():
+       yield bar
+     def bar():
+       pass
+  |}
+           ~define_name:"test.foo"
+           ~expected_call_graph:[]
+           ~expected_returned_callables:
+             [
+               CallTarget.create_regular
+                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:{|
+     async def foo():
+       return bar
+     def bar():
+       pass
+  |}
+           ~define_name:"test.foo"
+           ~expected_call_graph:[]
+           ~expected_returned_callables:
+             [
+               CallTarget.create_regular
+                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     async def foo():
+       return await bar
+     async def bar():
+       pass
+  |}
+           ~define_name:"test.foo"
+           ~expected_call_graph:[]
+           ~expected_returned_callables:
+             [
+               CallTarget.create_regular
+                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     def foo():
+       bar(foo, baz)
+     def bar(x, y):
+       pass
+     def baz():
+       pass
+  |}
+           ~define_name:"test.foo"
+           ~expected_call_graph:
+             [
+               ( "3:2-3:15",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create
+                               (create_parameterized_target
+                                  ~regular:
+                                    (Target.Regular.Function { name = "test.bar"; kind = Normal })
+                                  ~parameters:
+                                    [
+                                      ( create_positional_parameter 0 "x",
+                                        Target.Regular.Function { name = "test.foo"; kind = Normal }
+                                        |> Target.from_regular );
+                                      ( create_positional_parameter 1 "y",
+                                        Target.Regular.Function { name = "test.baz"; kind = Normal }
+                                        |> Target.from_regular );
+                                    ]);
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     def foo():
+       bar(bar, 0)
+       bar(1, 2)
+     def bar(x, y):
+       pass
+  |}
+           ~define_name:"test.foo"
+           ~expected_call_graph:
+             [
+               ( "3:2-3:13",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create
+                               (create_parameterized_target
+                                  ~regular:
+                                    (Target.Regular.Function { name = "test.bar"; kind = Normal })
+                                  ~parameters:
+                                    [
+                                      ( create_positional_parameter 0 "x",
+                                        Target.Regular.Function { name = "test.bar"; kind = Normal }
+                                        |> Target.from_regular );
+                                    ]);
+                           ]
+                         ())) );
+               ( "4:2-4:11",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               ~index:1
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     def foo(x):
+       ... # stub
+     def bar():
+       pass
+     def baz():
+       foo(bar)
+  |}
+           ~define_name:"test.baz"
+           ~expected_call_graph:
+             [
+               ( "7:2-7:10",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create
+                               (create_parameterized_target
+                                  ~regular:
+                                    (Target.Regular.Function { name = "test.foo"; kind = Normal })
+                                  ~parameters:
+                                    [
+                                      ( create_positional_parameter 0 "x",
+                                        Target.Regular.Function { name = "test.bar"; kind = Normal }
+                                        |> Target.from_regular );
+                                    ]);
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     def decorator(f):
+       def inner(x, y):
+         return f(y, x)
+       return inner
+     @decorator
+     def foo(x, y):
+       y()
+     def baz():
+       pass
+     def bar():
+        foo(baz, 0)
+  |}
+           ~define_name:"test.bar"
+           ~expected_call_graph:
+             [
+               ( "12:3-12:14",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             (* TODO(T206271514): It is incorrect to create targets for the
+                                undecorated version of the functions that have decorators. Instead,
+                                we should create targets for the decorated version. *)
+                             CallTarget.create
+                               (create_parameterized_target
+                                  ~regular:
+                                    (Target.Regular.Function { name = "test.foo"; kind = Normal })
+                                  ~parameters:
+                                    [
+                                      ( create_positional_parameter 0 "x",
+                                        Target.Regular.Function { name = "test.baz"; kind = Normal }
+                                        |> Target.from_regular );
+                                    ]);
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:{|
+     def bar(x, y):
+       pass
+     def foo():
+       bar(y=bar, x=0)
+  |}
+           ~define_name:"test.foo"
+           ~expected_call_graph:
+             [
+               ( "5:2-5:17",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create
+                               (create_parameterized_target
+                                  ~regular:
+                                    (Target.Regular.Function { name = "test.bar"; kind = Normal })
+                                  ~parameters:
+                                    [
+                                      ( create_positional_parameter 1 "y",
+                                        Target.Regular.Function { name = "test.bar"; kind = Normal }
+                                        |> Target.from_regular );
+                                    ]);
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+    ]
+
+
 let () =
   "interproceduralCallGraph"
   >::: [
          test_call_graph_of_define;
          test_call_graph_of_define_foo_and_bar;
          test_return_type_from_annotation;
+         test_higher_order_call_graph_of_define;
        ]
   |> Test.run

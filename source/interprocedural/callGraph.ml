@@ -52,7 +52,7 @@ module ReturnType = struct
     is_float: bool;
     is_enumeration: bool;
   }
-  [@@deriving compare, eq]
+  [@@deriving compare, eq, sexp, hash]
 
   let pp formatter { is_boolean; is_integer; is_float; is_enumeration } =
     let add_if condition tag tags =
@@ -157,26 +157,49 @@ end
 
 (** A specific target of a given call, with extra information. *)
 module CallTarget = struct
-  type t = {
-    target: Target.t;
-    (* True if the call has an implicit receiver, such as calling an instance or a class method. For
-       instance, `x.foo(0)` should be treated as `C.foo(x, 0)`. As another example, `C.foo(0)`
-       should be treated as `C.foo(C, 0)`. *)
-    implicit_receiver: bool;
-    (* True if this is an implicit call to the `__call__` method. *)
-    implicit_dunder_call: bool;
-    (* The textual order index of the call in the function. *)
-    index: int;
-    (* The return type of the call expression, or `None` for object targets. *)
-    return_type: ReturnType.t option;
-    (* The class of the receiver object at this call site, if any. *)
-    receiver_class: string option;
-    (* True if calling a class method. *)
-    is_class_method: bool;
-    (* True if calling a static method. *)
-    is_static_method: bool;
-  }
-  [@@deriving compare, eq, show { with_path = false }]
+  module T = struct
+    type t = {
+      target: Target.t;
+      (* True if the call has an implicit receiver, such as calling an instance or a class method.
+         For instance, `x.foo(0)` should be treated as `C.foo(x, 0)`. As another example, `C.foo(0)`
+         should be treated as `C.foo(C, 0)`. *)
+      implicit_receiver: bool;
+      (* True if this is an implicit call to the `__call__` method. *)
+      implicit_dunder_call: bool;
+      (* The textual order index of the call in the function. *)
+      index: int;
+      (* The return type of the call expression, or `None` for object targets. *)
+      return_type: ReturnType.t option;
+      (* The class of the receiver object at this call site, if any. *)
+      receiver_class: string option;
+      (* True if calling a class method. *)
+      is_class_method: bool;
+      (* True if calling a static method. *)
+      is_static_method: bool;
+    }
+    [@@deriving compare, eq, show { with_path = false }, sexp, hash]
+  end
+
+  include T
+
+  module Set = struct
+    type call_target = T.t
+
+    include Abstract.SetDomain.MakeWithSet (struct
+      module Element = T
+      (* TODO: Use `CallCallees` instead of `CallTarget` to distinguish new and init targets. *)
+
+      include Data_structures.SerializableSet.Make (Element)
+
+      type element = Element.t
+
+      let show_element = Element.show
+
+      let element_name = "target"
+    end)
+
+    let to_sorted_list set = set |> elements |> List.dedup_and_sort ~compare:T.compare
+  end
 
   let target { target; _ } = target
 
@@ -1085,6 +1108,32 @@ module UnprocessedLocationCallees = struct
         | Some existing_callees -> Some (ExpressionCallees.join existing_callees callees)
         | None -> Some callees)
       map
+end
+
+module UnprocessedCalleesMap = struct
+  type t = UnprocessedLocationCallees.t Location.Table.t
+
+  let create = Location.Table.create
+
+  let add_callees ~expression_identifier ~location ~callees callees_at_location =
+    Hashtbl.update callees_at_location location ~f:(function
+        | None -> UnprocessedLocationCallees.singleton ~expression_identifier ~callees
+        | Some existing_callees ->
+            UnprocessedLocationCallees.add existing_callees ~expression_identifier ~callees)
+
+
+  let to_location_callees callees_at_location =
+    callees_at_location
+    |> Hashtbl.to_alist
+    |> List.map ~f:(fun (location, unprocessed_callees) ->
+           match SerializableStringMap.to_alist unprocessed_callees with
+           | [] -> failwith "unreachable"
+           | [(_, callees)] ->
+               location, LocationCallees.Singleton (ExpressionCallees.deduplicate callees)
+           | _ ->
+               ( location,
+                 LocationCallees.Compound
+                   (SerializableStringMap.map ExpressionCallees.deduplicate unprocessed_callees) ))
 end
 
 let call_identifier { Call.callee; _ } =
@@ -2574,7 +2623,7 @@ module DefineCallGraphFixpoint (Context : sig
 
   val debug : bool
 
-  val callees_at_location : UnprocessedLocationCallees.t Location.Table.t
+  val callees_at_location : UnprocessedCalleesMap.t
 
   val override_graph : OverrideGraph.SharedMemory.ReadOnly.t option
 
@@ -2767,10 +2816,11 @@ struct
           expression
           ExpressionCallees.pp
           callees;
-        Hashtbl.update Context.callees_at_location location ~f:(function
-            | None -> UnprocessedLocationCallees.singleton ~expression_identifier ~callees
-            | Some existing_callees ->
-                UnprocessedLocationCallees.add existing_callees ~expression_identifier ~callees)
+        UnprocessedCalleesMap.add_callees
+          ~expression_identifier
+          ~location
+          ~callees
+          Context.callees_at_location
       in
       let value = redirect_expressions ~pyre_in_context ~location value in
       let () =
@@ -3144,6 +3194,334 @@ struct
   end)
 end
 
+(* The result of finding higher order function callees inside a callable. *)
+module HigherOrderCallGraph = struct
+  type t = {
+    returned_callables: CallTarget.Set.t;
+    call_graph: DefineCallGraph.t;
+        (* Higher order function callees (i.e., parameterized targets) and potentially regular
+           callees. *)
+  }
+  [@@deriving eq, show]
+
+  module State = struct
+    include
+      Abstract.MapDomain.Make
+        (struct
+          include TaintAccessPath.Root
+
+          let name = "variables"
+
+          let absence_implicitly_maps_to_bottom = true
+        end)
+        (CallTarget.Set)
+
+    let empty = bottom
+
+    let from_callable = function
+      | Target.Regular _ -> bottom
+      | Target.Parameterized { parameters; _ } ->
+          parameters
+          |> Target.ParameterMap.to_alist
+          |> List.map ~f:(fun (parameter, target) ->
+                 parameter, target |> CallTarget.create |> CallTarget.Set.singleton)
+          |> of_list
+  end
+
+  module MakeFixpoint (Context : sig
+    (* Inputs. *)
+    val define_call_graph : DefineCallGraph.t
+
+    val qualifier : Reference.t
+
+    val pyre_api : PyrePysaEnvironment.ReadOnly.t
+
+    (* Outputs. *)
+    val callees_at_location : UnprocessedCalleesMap.t
+  end) =
+  struct
+    let get_result = State.get TaintAccessPath.Root.LocalResult
+
+    module Fixpoint = Analysis.Fixpoint.Make (struct
+      type t = State.t [@@deriving show]
+
+      let bottom = State.bottom
+
+      let less_or_equal = State.less_or_equal
+
+      let join = State.join
+
+      let widen ~previous ~next ~iteration = State.widen ~prev:previous ~next ~iteration
+
+      let store_callees ~weak ~root ~callees state =
+        State.update state root ~f:(function
+            | None -> callees
+            | Some existing_callees ->
+                if weak then CallTarget.Set.join existing_callees callees else callees)
+
+
+      let register_targets ~expression_identifier ~location ~callees =
+        if not (CallTarget.Set.is_bottom callees) then
+          UnprocessedCalleesMap.add_callees
+            ~expression_identifier
+            ~location
+            ~callees:
+              (CallCallees.create ~call_targets:(CallTarget.Set.to_sorted_list callees) ()
+              |> ExpressionCallees.from_call)
+            Context.callees_at_location
+
+
+      let rec analyze_call ~location ~call ~arguments ~state =
+        let formal_arguments target =
+          match Target.get_module_and_definition ~pyre_api:Context.pyre_api target with
+          | None -> []
+          | Some
+              (_, { Node.value = { Define.signature = { Define.Signature.parameters; _ }; _ }; _ })
+            ->
+              parameters
+              |> TaintAccessPath.normalize_parameters
+              |> List.map ~f:(fun { TaintAccessPath.NormalizedParameter.root; _ } -> root)
+        in
+        let create_parameter_target (parameter_target, (_, argument_matches)) =
+          match argument_matches, parameter_target with
+          | { TaintAccessPath.root; _ } :: _, Some parameter_target ->
+              Some (root, parameter_target.CallTarget.target)
+          | _ -> (* TODO: Consider the remaining `argument_matches`. *) None
+        in
+        let analyze_arguments
+            ~higher_order_parameters
+            index
+            state_so_far
+            { Call.Argument.value = argument; _ }
+          =
+          let callees, new_state = analyze_expression ~state:state_so_far ~expression:argument in
+          let call_targets_from_higher_order_parameters =
+            match HigherOrderParameterMap.Map.find_opt index higher_order_parameters with
+            | Some { HigherOrderParameter.call_targets; _ } -> call_targets
+            | None -> []
+          in
+          ( new_state,
+            call_targets_from_higher_order_parameters
+            |> CallTarget.Set.of_list
+            |> CallTarget.Set.join callees )
+        in
+        let { CallCallees.call_targets; higher_order_parameters; _ } =
+          Context.define_call_graph
+          |> DefineCallGraph.resolve_call ~location ~call
+          |> Option.value_exn
+               ~message:
+                 (Format.asprintf
+                    "Could not find callees for `%a` at `%a:%a` in the call graph."
+                    Expression.pp
+                    (Expression.Call call
+                    |> Node.create_with_default_location
+                    |> Ast.Expression.delocalize)
+                    Reference.pp
+                    Context.qualifier
+                    Location.pp
+                    location)
+        in
+        let state, argument_callees =
+          List.fold_mapi arguments ~f:(analyze_arguments ~higher_order_parameters) ~init:state
+        in
+        let create_call_target = function
+          | Some callee_target :: parameter_targets ->
+              let parameters =
+                callee_target.CallTarget.target
+                |> formal_arguments
+                |> TaintAccessPath.match_actuals_to_formals arguments
+                |> List.zip_exn parameter_targets
+                |> List.filter_map ~f:create_parameter_target
+                |> Target.ParameterMap.of_alist_exn
+              in
+              if Target.ParameterMap.is_empty parameters then
+                Some
+                  {
+                    callee_target with
+                    CallTarget.target =
+                      Target.Regular (Target.as_regular_exn callee_target.CallTarget.target);
+                  }
+              else
+                Some
+                  {
+                    callee_target with
+                    CallTarget.target =
+                      Target.Parameterized
+                        {
+                          regular = Target.as_regular_exn callee_target.CallTarget.target;
+                          parameters;
+                        };
+                  }
+          | _ -> None
+        in
+        (* Treat an empty list as a single element list so that in each result of the cartesian
+           product, there is still one element for the empty list, which preserves the indices of
+           arguments. *)
+        let to_option_list = function
+          | [] -> [None]
+          | list -> List.map ~f:(fun target -> Some target) list
+        in
+        let call_targets =
+          argument_callees
+          |> List.map ~f:(fun call_targets ->
+                 call_targets |> CallTarget.Set.elements |> to_option_list)
+          |> List.cons (to_option_list call_targets)
+          |> Algorithms.cartesian_product
+          |> List.filter_map ~f:create_call_target
+          |> CallTarget.Set.of_list
+        in
+        (* TODO: Return the summaries of calling `call_targets`. *)
+        CallTarget.Set.bottom, state, call_targets
+
+
+      (* Return possible callees and the new state. *)
+      and analyze_expression ~state ~expression:{ Node.value; location } =
+        match value with
+        | Expression.Await expression -> analyze_expression ~state ~expression
+        | BinaryOperator _ -> CallTarget.Set.bottom, state
+        | BooleanOperator _ -> CallTarget.Set.bottom, state
+        | ComparisonOperator _ -> CallTarget.Set.bottom, state
+        | Call ({ callee = _; arguments } as call) ->
+            let call_results, state, call_targets =
+              analyze_call ~location ~call ~arguments ~state
+            in
+            register_targets
+              ~expression_identifier:(call_identifier call)
+              ~location
+              ~callees:call_targets;
+            call_results, state
+        | Constant _ -> CallTarget.Set.bottom, state
+        | Dictionary _ -> CallTarget.Set.bottom, state
+        | DictionaryComprehension _ -> CallTarget.Set.bottom, state
+        | Generator _ -> CallTarget.Set.bottom, state
+        | Lambda { parameters = _; body = _ } -> CallTarget.Set.bottom, state
+        | List _ -> CallTarget.Set.bottom, state
+        | ListComprehension _ -> CallTarget.Set.bottom, state
+        | Name (Name.Identifier identifier) ->
+            let global_callables =
+              Context.define_call_graph
+              |> DefineCallGraph.resolve_identifier ~location ~identifier
+              |> Option.map ~f:(fun { IdentifierCallees.callable_targets; _ } ->
+                     CallTarget.Set.of_list callable_targets)
+              |> Option.value ~default:CallTarget.Set.bottom
+            in
+            let callables_from_variable =
+              State.get (TaintAccessPath.Root.Variable identifier) state
+            in
+            CallTarget.Set.join global_callables callables_from_variable, state
+        | Name (Name.Attribute { base = _; attribute; special = _ }) ->
+            let callables =
+              Context.define_call_graph
+              |> DefineCallGraph.resolve_attribute_access ~location ~attribute
+              |> Option.map ~f:(fun { AttributeAccessCallees.callable_targets; _ } ->
+                     CallTarget.Set.of_list callable_targets)
+              |> Option.value ~default:CallTarget.Set.bottom
+            in
+            callables, state
+        | Set _ -> CallTarget.Set.bottom, state
+        | SetComprehension _ -> CallTarget.Set.bottom, state
+        | Starred (Starred.Once _)
+        | Starred (Starred.Twice _) ->
+            CallTarget.Set.bottom, state
+        | Slice _ -> CallTarget.Set.bottom, state
+        | Subscript _ -> CallTarget.Set.bottom, state
+        | FormatString _ -> CallTarget.Set.bottom, state
+        | Ternary { target = _; test = _; alternative = _ } -> CallTarget.Set.bottom, state
+        | Tuple _ -> CallTarget.Set.bottom, state
+        | UnaryOperator _ -> CallTarget.Set.bottom, state
+        | WalrusOperator { target = _; value = _ } -> CallTarget.Set.bottom, state
+        | Yield None -> CallTarget.Set.bottom, state
+        | Yield (Some expression)
+        | YieldFrom expression ->
+            let callees, state = analyze_expression ~state ~expression in
+            callees, store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
+
+
+      let analyze_statement ~state ~statement =
+        match Node.value statement with
+        | Statement.Assign { Assign.target = _; value = Some _; _ } -> state
+        | Assign { Assign.target = _; value = None; _ } -> state
+        | AugmentedAssign _ -> state
+        | Assert _ -> state
+        | Break
+        | Class _
+        | Continue ->
+            state
+        | Define _ -> state
+        | Delete _ -> state
+        | Expression expression -> analyze_expression ~state ~expression |> Core.snd
+        | For _
+        | Global _
+        | If _
+        | Import _
+        | Match _
+        | Nonlocal _
+        | Pass
+        | Raise { expression = None; _ } ->
+            state
+        | Raise { expression = Some _; _ } -> state
+        | Return { expression = Some expression; _ } ->
+            let callees, state = analyze_expression ~state ~expression in
+            store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
+        | Return { expression = None; _ }
+        | Try _
+        | TypeAlias _
+        | With _
+        | While _ ->
+            state
+
+
+      let forward ~statement_key:_ state ~statement = analyze_statement ~state ~statement
+
+      let backward ~statement_key:_ _ ~statement:_ = failwith "unused"
+    end)
+  end
+end
+
+let higher_order_call_graph_of_define ~define_call_graph ~pyre_api ~qualifier ~define ~initial_state
+  =
+  let callees_at_location = UnprocessedCalleesMap.create () in
+  let module Fixpoint = HigherOrderCallGraph.MakeFixpoint (struct
+    let define_call_graph = define_call_graph
+
+    let qualifier = qualifier
+
+    let pyre_api = pyre_api
+
+    let callees_at_location = callees_at_location
+  end)
+  in
+  let returned_callables =
+    Fixpoint.Fixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:initial_state
+    |> Fixpoint.Fixpoint.exit
+    >>| Fixpoint.get_result
+    |> Option.value ~default:CallTarget.Set.bottom
+  in
+  {
+    HigherOrderCallGraph.returned_callables;
+    call_graph =
+      callees_at_location
+      |> UnprocessedCalleesMap.to_location_callees
+      |> Location.Map.Tree.of_alist_exn;
+  }
+
+
+let higher_order_call_graph_of_callable ~pyre_api ~define_call_graph ~callable =
+  let qualifier, define =
+    match Target.get_module_and_definition ~pyre_api callable with
+    | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
+    | Some (qualifier, define) -> qualifier, define.Node.value
+  in
+  higher_order_call_graph_of_define
+    ~define_call_graph
+    ~pyre_api
+    ~qualifier
+    ~define
+    ~initial_state:(HigherOrderCallGraph.State.from_callable callable)
+
+
+(* TODO(T206240754): Re-index `CallTarget`s after building the higher order call graphs. *)
+
 let call_graph_of_define
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
     ~pyre_api
@@ -3198,16 +3576,8 @@ let call_graph_of_define
 
   DefineFixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:() |> ignore;
   let call_graph =
-    Hashtbl.to_alist Context.callees_at_location
-    |> List.map ~f:(fun (location, unprocessed_callees) ->
-           match SerializableStringMap.to_alist unprocessed_callees with
-           | [] -> failwith "unreachable"
-           | [(_, callees)] ->
-               location, LocationCallees.Singleton (ExpressionCallees.deduplicate callees)
-           | _ ->
-               ( location,
-                 LocationCallees.Compound
-                   (SerializableStringMap.map ExpressionCallees.deduplicate unprocessed_callees) ))
+    Context.callees_at_location
+    |> UnprocessedCalleesMap.to_location_callees
     |> List.filter ~f:(fun (_, callees) ->
            match callees with
            | LocationCallees.Singleton singleton ->

@@ -54,6 +54,14 @@ module CallTarget : sig
   }
   [@@deriving eq, show, compare]
 
+  module Set : sig
+    type call_target = t
+
+    type t
+
+    val of_list : call_target list -> t
+  end
+
   val target : t -> Target.t
 
   val create
@@ -340,6 +348,39 @@ val call_graph_of_callable
   attribute_targets:Target.HashSet.t ->
   callable:Target.t ->
   DefineCallGraph.t
+
+(* The result of finding higher order function callees inside a callable. *)
+module HigherOrderCallGraph : sig
+  type t = {
+    returned_callables: CallTarget.Set.t;
+    call_graph: DefineCallGraph.t;
+        (* Higher order function callees (i.e., parameterized targets) and potentially regular
+           callees. *)
+  }
+  [@@deriving eq, show]
+
+  module State : sig
+    type t
+
+    val empty : t
+
+    val from_callable : Target.t -> t
+  end
+end
+
+val higher_order_call_graph_of_define
+  :  define_call_graph:DefineCallGraph.t ->
+  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  qualifier:Reference.t ->
+  define:Ast.Statement.Define.t ->
+  initial_state:HigherOrderCallGraph.State.t ->
+  HigherOrderCallGraph.t
+
+val higher_order_call_graph_of_callable
+  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  define_call_graph:DefineCallGraph.t ->
+  callable:Target.t ->
+  HigherOrderCallGraph.t
 
 (** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
     `DefineCallGraph.t`. *)
