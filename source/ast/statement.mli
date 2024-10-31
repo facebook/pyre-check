@@ -418,7 +418,7 @@ and Try : sig
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  val preamble : Handler.t -> Statement.t list
+  val preamble : handles_exception_group:bool -> Handler.t -> Statement.t list
 
   val location_insensitive_compare : t -> t -> int
 end

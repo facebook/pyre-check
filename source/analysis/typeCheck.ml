@@ -6528,6 +6528,9 @@ module State (Context : Context) = struct
                             |> Option.value ~default:type_;
                           ]
                       | Union types -> List.map types ~f:extract_handler_types |> List.concat
+                      | Parametric { name = "ExceptionGroup"; arguments = [Single type_] }
+                        when handles_exception_group ->
+                          [type_]
                       | _ -> [type_]
                     in
                     let parsed_annotation =
@@ -6552,10 +6555,11 @@ module State (Context : Context) = struct
                       (* all handlers must extend BaseException *)
                       let errors =
                         if
-                          GlobalResolution.less_or_equal
-                            ~left:exception_type
-                            ~right:base_exception_type
-                            global_resolution
+                          Type.is_any exception_type
+                          || GlobalResolution.less_or_equal
+                               ~left:exception_type
+                               ~right:base_exception_type
+                               global_resolution
                         then
                           errors
                         else
@@ -6567,6 +6571,7 @@ module State (Context : Context) = struct
                       (* except* may not extend BaseExceptionGroup *)
                       if
                         handles_exception_group
+                        && (not (Type.is_any exception_type))
                         && GlobalResolution.less_or_equal
                              ~left:exception_type
                              ~right:base_exception_group_type

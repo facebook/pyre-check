@@ -1385,7 +1385,7 @@ and Try : sig
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  val preamble : Handler.t -> Statement.t list
+  val preamble : handles_exception_group:bool -> Handler.t -> Statement.t list
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -1418,7 +1418,7 @@ end = struct
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  let preamble { Handler.kind; name; _ } =
+  let preamble ~handles_exception_group { Handler.kind; name; _ } =
     let open Expression in
     let assume ~location ~target ~annotation =
       [
@@ -1464,6 +1464,18 @@ end = struct
     match kind, name with
     | ( Some ({ Node.location; value = Expression.Name _ | Expression.Tuple _; _ } as annotation),
         Some { Node.location = name_location; value = name } ) ->
+        let annotation =
+          if handles_exception_group then
+            let exception_group_type =
+              match annotation with
+              | { Node.value = Expression.Tuple _; _ } ->
+                  Node.create ~location (subscript "typing.Union" [annotation] ~location)
+              | _ -> annotation
+            in
+            Node.create ~location (subscript "ExceptionGroup" [exception_group_type] ~location)
+          else
+            annotation
+        in
         assume
           ~location
           ~target:

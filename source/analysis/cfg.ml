@@ -539,10 +539,8 @@ let create define =
         let final_else = List.fold cases ~init:predecessor ~f:from_case in
         if match_cases_refutable cases then Node.connect final_else join;
         create statements jumps join
-    | ({
-         Ast.Node.value = Try { Try.body; orelse; finally; handlers; handles_exception_group = _ };
-         _;
-       } as block)
+    | ({ Ast.Node.value = Try { Try.body; orelse; finally; handlers; handles_exception_group }; _ }
+      as block)
       :: statements ->
         (* We need to add edges to the "finally" block for all paths, because that block is always
            executed, regardless of the exit path (normal, return, or error), and we need to
@@ -579,7 +577,7 @@ let create define =
 
         (* Exception handling. *)
         let handler ({ Try.Handler.body; _ } as handler) =
-          let preamble = Try.preamble handler in
+          let preamble = Try.preamble ~handles_exception_group handler in
           create (preamble @ body) jumps dispatch |> (Fn.flip Node.connect_option) finally_entry
         in
         List.iter handlers ~f:handler;

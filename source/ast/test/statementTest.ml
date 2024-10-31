@@ -336,7 +336,7 @@ let test_try_block_preamble _ =
            (List.equal (fun left right -> Statement.location_insensitive_compare left right = 0)))
       ~printer
       preambles
-      (List.map handlers ~f:Try.preamble)
+      (List.map handlers ~f:(Try.preamble ~handles_exception_group:false))
   in
   assert_preamble
     {|
@@ -386,7 +386,7 @@ let test_try_block_preamble _ =
       ~cmp:[%compare.equal: Statement.t list]
       ~printer:(fun statements -> [%sexp_of: Statement.t list] statements |> Sexp.to_string_hum)
       expected_preambles
-      (List.concat_map handlers ~f:Try.preamble)
+      (List.concat_map handlers ~f:(Try.preamble ~handles_exception_group:false))
   in
   let ( ~@ ) = parse_location in
   assert_preamble_with_locations

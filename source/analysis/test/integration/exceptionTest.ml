@@ -63,6 +63,7 @@ let test_exception_handlers =
            [
              "Invalid except clause [66]: Exception handler type annotation `int` must extend \
               BaseException.";
+             "Undefined attribute [16]: `ExceptionGroup` has no attribute `__getitem__`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -165,7 +166,7 @@ let test_exception_handlers =
               except* ValueError as e:
                 reveal_type(e)
             |}
-           ["Revealed type [-1]: Revealed type for `e` is `ValueError`."];
+           ["Revealed type [-1]: Revealed type for `e` is `ExceptionGroup[ValueError]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -174,7 +175,10 @@ let test_exception_handlers =
               except* (ValueError, NameError) as e:
                 reveal_type(e)
             |}
-           ["Revealed type [-1]: Revealed type for `e` is `typing.Union[NameError, ValueError]`."];
+           [
+             "Revealed type [-1]: Revealed type for `e` is `ExceptionGroup[typing.Union[NameError, \
+              ValueError]]`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
