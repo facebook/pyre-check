@@ -29,4 +29,45 @@ let test_fold_correctness _ =
   ()
 
 
-let () = "file" >::: ["fold_correctness" >:: test_fold_correctness] |> Test.run
+let test_cartesian_product _ =
+  let module ListOfIntList = struct
+    type t = int list list [@@deriving show]
+  end
+  in
+  let assert_equal ~input ~expected =
+    assert_equal ~printer:ListOfIntList.show expected (Algorithms.cartesian_product input)
+  in
+  assert_equal ~input:[] ~expected:[];
+  assert_equal ~input:[[1; 2; 3]] ~expected:[[1]; [2]; [3]];
+  assert_equal ~input:[[1]; [2]] ~expected:[[1; 2]];
+  assert_equal ~input:[[1; 2]; [3]] ~expected:[[1; 3]; [2; 3]];
+  assert_equal ~input:[[1; 2]; [3; 4]] ~expected:[[1; 3]; [2; 3]; [1; 4]; [2; 4]];
+  assert_equal
+    ~input:[[1; 2]; [3; 4]; [5; 6; 7]]
+    ~expected:
+      [
+        [1; 3; 5];
+        [2; 3; 5];
+        [1; 4; 5];
+        [2; 4; 5];
+        [1; 3; 6];
+        [2; 3; 6];
+        [1; 4; 6];
+        [2; 4; 6];
+        [1; 3; 7];
+        [2; 3; 7];
+        [1; 4; 7];
+        [2; 4; 7];
+      ];
+  assert_equal ~input:[[3]; [1; 2]] ~expected:[[3; 1]; [3; 2]];
+  assert_equal ~input:[[1; 2]; []; []] ~expected:[];
+  assert_equal ~input:[[]; []; [1; 2]] ~expected:[];
+  assert_equal ~input:[[]; [1; 2]; []; [3; 4]; []] ~expected:[]
+
+
+let () =
+  "file"
+  >::: [
+         "fold_correctness" >:: test_fold_correctness; "cartesian_product" >:: test_cartesian_product;
+       ]
+  |> Test.run

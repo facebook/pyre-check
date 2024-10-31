@@ -11,3 +11,13 @@ open Core
 
 let fold_balanced list ~f ~init =
   Option.value (List.reduce_balanced ~f (init :: list)) ~default:init
+
+
+let rec cartesian_product = function
+  | [] -> []
+  | [list] -> List.map list ~f:(fun element -> [element])
+  | head :: tail ->
+      tail
+      |> cartesian_product
+      |> List.map ~f:(fun product -> List.map head ~f:(fun element -> element :: product))
+      |> List.concat

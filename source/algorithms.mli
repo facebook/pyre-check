@@ -18,3 +18,5 @@
  * already folded over, as opposed to O(n^2).
  *)
 val fold_balanced : 'a list -> f:('a -> 'a -> 'a) -> init:'a -> 'a
+
+val cartesian_product : 'a list list -> 'a list list
