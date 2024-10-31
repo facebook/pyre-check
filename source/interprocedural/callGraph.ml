@@ -2531,7 +2531,7 @@ let return_type_for_call ~pyre_in_context ~callee =
     |> CallResolution.resolve_ignoring_untracked ~pyre_in_context)
 
 
-let resolve_attribute_access_callable_targets ~define ~pyre_in_context expression =
+let resolve_callable_targets_from_global_identifiers ~define ~pyre_in_context expression =
   match as_identifier_reference ~define ~pyre_in_context expression with
   | Some
       (IdentifierCallees.Reference.Global
@@ -2558,7 +2558,7 @@ let resolve_attribute_access_callable_targets ~define ~pyre_in_context expressio
   | _ -> []
 
 
-let resolve_identifier ~override_graph ~define ~pyre_in_context ~call_indexer ~identifier =
+let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
   let expression =
     Expression.Name (Name.Identifier identifier) |> Node.create_with_default_location
   in
@@ -2590,16 +2590,8 @@ let resolve_identifier ~override_graph ~define ~pyre_in_context ~call_indexer ~i
                 ] ))
     |> Option.value ~default:([], [])
   in
-  let { CallCallees.call_targets = callable_targets; _ } =
-    resolve_regular_callees
-      ~debug:false
-      ~pyre_in_context
-      ~override_graph
-      ~call_indexer:(CallTargetIndexer.create ())
-        (* Need not index them, because these callees are only used by higher order call graph
-           building. *)
-      ~return_type:(return_type_for_call ~pyre_in_context ~callee:expression)
-      ~callee:expression
+  let callable_targets =
+    resolve_callable_targets_from_global_identifiers ~define ~pyre_in_context expression
   in
   match global_targets, nonlocal_targets, callable_targets with
   | [], [], [] -> None
@@ -2754,7 +2746,9 @@ struct
     let callable_targets =
       Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
       |> Node.create_with_default_location
-      |> resolve_attribute_access_callable_targets ~define:Context.define_name ~pyre_in_context
+      |> resolve_callable_targets_from_global_identifiers
+           ~define:Context.define_name
+           ~pyre_in_context
     in
 
     { AttributeAccessCallees.property_targets; global_targets; is_attribute; callable_targets }
@@ -2850,7 +2844,6 @@ struct
             |> register_targets ~expression_identifier:attribute
         | Expression.Name (Name.Identifier identifier) ->
             resolve_identifier
-              ~override_graph
               ~define:Context.define_name
               ~pyre_in_context
               ~call_indexer

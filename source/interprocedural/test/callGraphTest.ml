@@ -532,20 +532,6 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
-               ( "5:3-5:4",
-                 LocationCallees.Singleton
-                   (ExpressionCallees.from_identifier
-                      (IdentifierCallees.create
-                         ~callable_targets:
-                           [
-                             CallTarget.create
-                               ~implicit_receiver:true
-                               ~implicit_dunder_call:true (*TODO*)
-                               ~return_type:(Some ReturnType.bool)
-                               ~receiver_class:"test.C"
-                               (Target.create_method (Reference.create "test.C.__call__"));
-                           ]
-                         ())) );
                ( "5:3-5:16",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call
@@ -5817,19 +5803,7 @@ let test_call_graph_of_define =
        return inner
   |}
            ~define_name:"test.foo"
-           ~expected:
-             [
-               ( "4:9-4:14",
-                 LocationCallees.Singleton
-                   (ExpressionCallees.from_identifier
-                      (IdentifierCallees.create
-                         ~callable_targets:
-                           [
-                             CallTarget.create_regular
-                               (Target.Regular.Function { name = "test.foo.inner"; kind = Normal });
-                           ]
-                         ())) );
-             ]
+           ~expected:[]
            ();
     ]
 
