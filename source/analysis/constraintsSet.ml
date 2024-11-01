@@ -1185,7 +1185,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               protocol_generics >>| List.map ~f:Type.Variable.to_argument
             in
             let find_first_solution sofar protocol_annotation =
-              let candidate, desanitize_map =
+              let sanitized_candidate, desanitize_map =
                 match candidate with
                 | Type.Callable _ -> candidate, []
                 | _ ->
@@ -1277,7 +1277,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                         assumed_protocol_instantiations =
                           AssumedProtocolInstantiations.add
                             assumed_protocol_instantiations
-                            ~candidate
+                            ~candidate:sanitized_candidate
                             ~protocol
                             ~protocol_parameters:
                               (Option.value protocol_generics_as_args ~default:[]);
@@ -1287,7 +1287,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   in
                   solve_candidate_less_or_equal
                     order_with_new_assumption
-                    ~candidate
+                    ~candidate:sanitized_candidate
                     ~protocol_annotation
                   >>| instantiate_protocol_generics
             in
