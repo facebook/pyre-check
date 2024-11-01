@@ -1185,87 +1185,113 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               protocol_generics >>| List.map ~f:Type.Variable.to_argument
             in
             let find_first_solution sofar protocol_annotation =
-              let sanitized_candidate, desanitize_map =
-                match candidate with
-                | Type.Callable _ -> candidate, []
-                | _ ->
-                    (* We don't return constraints for the candidate's free variables, so we must
-                       underapproximate and determine conformance in the worst case *)
-                    let desanitize_map, sanitized_candidate =
-                      let namespace = Type.Variable.Namespace.create_fresh () in
-                      let module SanitizeTransform = Type.VisitWithTransform.Make (struct
-                        type state = Type.Variable.pair list
+              (* To handle recursive typing, we
+               * (1) transform the candadate by marking all free vars as bound,
+               *     (and in a fresh namespace) which will cause the constraint
+               *     solver to solve for all vars.
+               * (2) save the inverse mapping of the transform and write a function
+               *     that will compose the constraint solution with that mapping
+               *     in order to convert solved protocol type arguments back to the
+               *     original candidate's type variables.
+               *)
+              let sanitized_candidate, desanitize_using_solution =
+                (* Step (1): mark all free vars from the candidate as bound in a new namespace,
+                 * saving the inverse transform mapping. *)
+                let sanitized_candidate, desanitize_map =
+                  match candidate with
+                  | Type.Callable _ -> candidate, []
+                  | _ ->
+                      (* We don't return constraints for the candidate's free variables, so we must
+                         underapproximate and determine conformance in the worst case *)
+                      let desanitize_map, sanitized_candidate =
+                        let namespace = Type.Variable.Namespace.create_fresh () in
+                        let module SanitizeTransform = Type.VisitWithTransform.Make (struct
+                          type state = Type.Variable.pair list
 
-                        let visit_children_before _ _ = true
+                          let visit_children_before _ _ = true
 
-                        let visit_children_after = false
+                          let visit_children_after = false
 
-                        let visit sofar = function
-                          | Type.Variable variable when Type.Variable.TypeVar.is_free variable ->
-                              let transformed_variable =
-                                Type.Variable.TypeVar.namespace variable ~namespace
-                                |> Type.Variable.TypeVar.mark_as_bound
-                              in
-                              {
-                                Type.VisitWithTransform.transformed_annotation =
-                                  Type.Variable transformed_variable;
-                                new_state =
-                                  Type.Variable.TypeVarPair
-                                    (transformed_variable, Type.Variable variable)
-                                  :: sofar;
-                              }
-                          | transformed_annotation ->
-                              { Type.VisitWithTransform.transformed_annotation; new_state = sofar }
-                      end)
+                          let visit sofar = function
+                            | Type.Variable variable when Type.Variable.TypeVar.is_free variable ->
+                                let transformed_variable =
+                                  Type.Variable.TypeVar.namespace variable ~namespace
+                                  |> Type.Variable.TypeVar.mark_as_bound
+                                in
+                                {
+                                  Type.VisitWithTransform.transformed_annotation =
+                                    Type.Variable transformed_variable;
+                                  new_state =
+                                    Type.Variable.TypeVarPair
+                                      (transformed_variable, Type.Variable variable)
+                                    :: sofar;
+                                }
+                            | transformed_annotation ->
+                                {
+                                  Type.VisitWithTransform.transformed_annotation;
+                                  new_state = sofar;
+                                }
+                        end)
+                        in
+                        SanitizeTransform.visit [] candidate
                       in
-                      SanitizeTransform.visit [] candidate
+                      sanitized_candidate, desanitize_map
+                in
+                (* Step (2): compose applying the constraints with the desanitize map to transform
+                 * solved type arguments of the protocol to be in terms of the free vars of the
+                 * candidate once more.
+                 *
+                 * The implementation is confusing but conceptually it's just two steps of search-and-replace.
+                 *)
+                let desanitize_using_solution_and_map solution =
+                  (* This function is hard to skim, but it just desanitizes by composing the
+                     constraint solution with the `desanitize_map`. *)
+                  let desanitize =
+                    let desanitization_solution = TypeConstraints.Solution.create desanitize_map in
+                    let instantiate = function
+                      | Type.Argument.Single single ->
+                          [
+                            Type.Argument.Single
+                              (TypeConstraints.Solution.instantiate desanitization_solution single);
+                          ]
+                      | CallableParameters parameters ->
+                          [
+                            CallableParameters
+                              (TypeConstraints.Solution.instantiate_callable_parameters
+                                 desanitization_solution
+                                 parameters);
+                          ]
+                      | Unpacked unpackable ->
+                          TypeConstraints.Solution.instantiate_ordered_types
+                            desanitization_solution
+                            (Concatenation
+                               (Type.OrderedTypes.Concatenation.create_from_unpackable unpackable))
+                          |> Type.OrderedTypes.to_arguments
                     in
-                    sanitized_candidate, desanitize_map
-              in
-              let instantiate_protocol_generics solution =
-                let desanitize =
-                  let desanitization_solution = TypeConstraints.Solution.create desanitize_map in
+                    List.concat_map ~f:instantiate
+                  in
                   let instantiate = function
-                    | Type.Argument.Single single ->
-                        [
-                          Type.Argument.Single
-                            (TypeConstraints.Solution.instantiate desanitization_solution single);
-                        ]
-                    | CallableParameters parameters ->
-                        [
-                          CallableParameters
-                            (TypeConstraints.Solution.instantiate_callable_parameters
-                               desanitization_solution
-                               parameters);
-                        ]
-                    | Unpacked unpackable ->
+                    | Type.Variable.TypeVarVariable variable ->
+                        TypeConstraints.Solution.instantiate_single_type_var solution variable
+                        |> Option.value ~default:(Type.Variable variable)
+                        |> fun instantiated -> [Type.Argument.Single instantiated]
+                    | ParamSpecVariable variable ->
+                        TypeConstraints.Solution.instantiate_single_param_spec solution variable
+                        |> Option.value
+                             ~default:(Type.Callable.FromParamSpec { head = []; variable })
+                        |> fun instantiated -> [Type.Argument.CallableParameters instantiated]
+                    | TypeVarTupleVariable variadic ->
                         TypeConstraints.Solution.instantiate_ordered_types
-                          desanitization_solution
-                          (Concatenation
-                             (Type.OrderedTypes.Concatenation.create_from_unpackable unpackable))
+                          solution
+                          (Concatenation (Type.OrderedTypes.Concatenation.create variadic))
                         |> Type.OrderedTypes.to_arguments
                   in
-                  List.concat_map ~f:instantiate
+                  protocol_generics
+                  >>| List.concat_map ~f:instantiate
+                  >>| desanitize
+                  |> Option.value ~default:[]
                 in
-                let instantiate = function
-                  | Type.Variable.TypeVarVariable variable ->
-                      TypeConstraints.Solution.instantiate_single_type_var solution variable
-                      |> Option.value ~default:(Type.Variable variable)
-                      |> fun instantiated -> [Type.Argument.Single instantiated]
-                  | ParamSpecVariable variable ->
-                      TypeConstraints.Solution.instantiate_single_param_spec solution variable
-                      |> Option.value ~default:(Type.Callable.FromParamSpec { head = []; variable })
-                      |> fun instantiated -> [Type.Argument.CallableParameters instantiated]
-                  | TypeVarTupleVariable variadic ->
-                      TypeConstraints.Solution.instantiate_ordered_types
-                        solution
-                        (Concatenation (Type.OrderedTypes.Concatenation.create variadic))
-                      |> Type.OrderedTypes.to_arguments
-                in
-                protocol_generics
-                >>| List.concat_map ~f:instantiate
-                >>| desanitize
-                |> Option.value ~default:[]
+                sanitized_candidate, desanitize_using_solution_and_map
               in
               match sofar with
               | Some _ -> sofar
@@ -1289,7 +1315,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                     order_with_new_assumption
                     ~candidate:sanitized_candidate
                     ~protocol_annotation
-                  >>| instantiate_protocol_generics
+                  >>| desanitize_using_solution
             in
             let protocol_annotations =
               let generic_protocol_annotation =
