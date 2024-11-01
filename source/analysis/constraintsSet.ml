@@ -1132,7 +1132,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
 
 
   (** Find parameters to instantiate `protocol` such that `candidate <: protocol[parameters]`, where
-      `<:` is `solve_candidate_less_or_equal_protocol`.
+      `<:` is `solve_candidate_less_or_equal`.
 
       NOTE: unlike several of the other methods defined by this `let rec` block, here an empty list
       does not mean failure, it means a success with no constraints due to generics. A failure is
@@ -1149,8 +1149,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
 
       Note that classes that refer to themselves don't suffer from this since subtyping for two
       classes just follows from the class hierarchy. *)
-  and instantiate_protocol_parameters_with_solve
-      ~solve_candidate_less_or_equal_protocol
+  and instantiate_recursive_type_with_solve
+      ~solve_candidate_less_or_equal
       ~candidate
       ~protocol
       ?protocol_arguments
@@ -1285,7 +1285,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                     in
                     { order with cycle_detections }
                   in
-                  solve_candidate_less_or_equal_protocol
+                  solve_candidate_less_or_equal
                     order_with_new_assumption
                     ~candidate
                     ~protocol_annotation
@@ -1323,7 +1323,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             List.fold ~init:None ~f:find_first_solution protocol_annotations)
 
 
-  (** As with `instantiate_protocol_parameters_with_solve`, here `None` means a failure to match
+  (** As with `instantiate_recursive_type_with_solve`, here `None` means a failure to match
       `candidate` type with the protocol, whereas `Some []` means no generic constraints were
       induced. *)
   and instantiate_protocol_parameters ~candidate ~protocol ?protocol_arguments order =
@@ -1384,9 +1384,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       >>| List.filter_map ~f:(OrderedConstraints.solve ~order)
       >>= List.hd
     in
-    instantiate_protocol_parameters_with_solve
+    instantiate_recursive_type_with_solve
       order
-      ~solve_candidate_less_or_equal_protocol:solve_all_protocol_attributes_less_or_equal
+      ~solve_candidate_less_or_equal:solve_all_protocol_attributes_less_or_equal
       ~candidate
       ~protocol
       ~protocol_arguments:(Option.value ~default:[] protocol_arguments)
@@ -1406,9 +1406,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       |> List.filter_map ~f:(OrderedConstraints.solve ~order)
       |> List.hd
     in
-    instantiate_protocol_parameters_with_solve
+    instantiate_recursive_type_with_solve
       order
-      ~solve_candidate_less_or_equal_protocol:solve_recursive_type_less_or_equal
+      ~solve_candidate_less_or_equal:solve_recursive_type_less_or_equal
       ~candidate
       ~protocol:(Type.RecursiveType.name recursive_type)
 
