@@ -364,7 +364,7 @@ module HigherOrderCallGraph : sig
 
     val empty : t
 
-    val from_callable : Target.t -> t
+    val from_list : (TaintAccessPath.Root.t * Target.t) list -> t
   end
 end
 

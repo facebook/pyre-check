@@ -101,6 +101,7 @@ let assert_call_graph_of_define
 
 let assert_higher_order_call_graph_of_define
     ?(object_targets = [])
+    ?(initial_state = CallGraph.HigherOrderCallGraph.State.empty)
     ~source
     ~define_name
     ~expected_call_graph
@@ -126,7 +127,7 @@ let assert_higher_order_call_graph_of_define
         (create_call_graph_of_define ~define ~test_source ~pyre_api ~configuration ~object_targets)
       ~qualifier:test_qualifier
       ~define
-      ~initial_state:CallGraph.HigherOrderCallGraph.State.empty
+      ~initial_state
   in
   assert_equal ~cmp ~printer:HigherOrderCallGraph.show expected actual
 
@@ -6517,6 +6518,30 @@ let test_higher_order_call_graph_of_define =
                          ())) );
              ]
            ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:{|
+     def bar():
+       pass
+     def foo(g):
+       g(1)
+       return g
+  |}
+           ~define_name:"test.foo"
+           ~expected_call_graph:[] (* TODO: Resolve the call to `g` into `bar`. *)
+           ~expected_returned_callables:
+             [
+               CallTarget.create_regular
+                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+             ]
+           ~initial_state:
+             (CallGraph.HigherOrderCallGraph.State.from_list
+                [
+                  ( create_positional_parameter 0 "g",
+                    Target.Regular.Function { name = "test.bar"; kind = Normal }
+                    |> Target.from_regular );
+                ])
            ();
     ]
 

@@ -28,6 +28,8 @@ module Root : sig
 
   val parameter_name : t -> string option
 
+  val prepend_parameter_prefix : string -> string
+
   val pp_for_issue_handle : Format.formatter -> t -> unit
 
   val show_for_issue_handle : t -> string

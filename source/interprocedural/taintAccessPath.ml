@@ -38,11 +38,15 @@ module Root = struct
       | CapturedVariable of { name: Identifier.t }
     [@@deriving compare, eq, hash, sexp]
 
+    let parameter_prefix = "$parameter$"
+
     let chop_parameter_prefix name =
-      match String.chop_prefix ~prefix:"$parameter$" name with
+      match String.chop_prefix ~prefix:parameter_prefix name with
       | Some chopped -> chopped
       | None -> name
 
+
+    let prepend_parameter_prefix = String.append parameter_prefix
 
     let is_parameter = function
       | PositionalParameter _

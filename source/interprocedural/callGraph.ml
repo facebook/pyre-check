@@ -3211,14 +3211,31 @@ module HigherOrderCallGraph = struct
 
     let empty = bottom
 
+    let create_root_for_local_variable name = TaintAccessPath.Root.Variable name
+
+    let from_list list =
+      list
+      |> List.map ~f:(fun (parameter, target) ->
+             (* We treat formal arguments and local variables as the same variant under
+                `TaintAccessPath.Root`, since the expressions and statements in the CFG use the
+                qualified names for both formal arguments and local variables. In this way, we can
+                look up the value bound to an `Identifier` easily. *)
+             let parameter =
+               match TaintAccessPath.Root.parameter_name parameter with
+               | Some name ->
+                   name
+                   |> TaintAccessPath.Root.prepend_parameter_prefix
+                   |> create_root_for_local_variable
+               | None -> parameter
+             in
+             parameter, target |> CallTarget.create |> CallTarget.Set.singleton)
+      |> of_list
+
+
     let from_callable = function
       | Target.Regular _ -> bottom
       | Target.Parameterized { parameters; _ } ->
-          parameters
-          |> Target.ParameterMap.to_alist
-          |> List.map ~f:(fun (parameter, target) ->
-                 parameter, target |> CallTarget.create |> CallTarget.Set.singleton)
-          |> of_list
+          parameters |> Target.ParameterMap.to_alist |> from_list
   end
 
   module MakeFixpoint (Context : sig
@@ -3399,7 +3416,7 @@ module HigherOrderCallGraph = struct
               |> Option.value ~default:CallTarget.Set.bottom
             in
             let callables_from_variable =
-              State.get (TaintAccessPath.Root.Variable identifier) state
+              State.get (State.create_root_for_local_variable identifier) state
             in
             CallTarget.Set.join global_callables callables_from_variable, state
         | Name (Name.Attribute { base = _; attribute; special = _ }) ->
