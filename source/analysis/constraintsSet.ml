@@ -1188,11 +1188,19 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               (* To handle recursive typing, we
                * (1) transform the candadate by marking all free vars as bound,
                *     (and in a fresh namespace) which will cause the constraint
-               *     solver to solve for all vars.
+               *      solver to solve for all vars.
                * (2) save the inverse mapping of the transform and write a function
                *     that will compose the constraint solution with that mapping
                *     in order to convert solved protocol type arguments back to the
                *     original candidate's type variables.
+               * (3) Set the cycle_detections to assume the candidate matches the
+               *     desired recursive type, and solve for the transformed candidate
+               *     (which now has only bound type vars) using
+               *     `solve_candidate_less_or_equal`. If the ordering is solvable, the
+               *     resulting constraints will "pin" all of the candidate type vars.
+               * (4) Pass that solution, assuming we found one, to the function from (1b)
+               *     which will give the protocol type arguments in terms of the original
+               *     candidate's type parameters.
                *)
               let sanitized_candidate, desanitize_using_solution =
                 (* Step (1): mark all free vars from the candidate as bound in a new namespace,
@@ -1237,9 +1245,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                       in
                       sanitized_candidate, desanitize_map
                 in
-                (* Step (2): compose applying the constraints with the desanitize map to transform
-                 * solved type arguments of the protocol to be in terms of the free vars of the
-                 * candidate once more.
+                (* Step (2): Write a function that composes applying the constraints with the desanitize
+                 * map to transform solved type arguments of the protocol to be in terms of the
+                 * free vars of the candidate once more.
                  *
                  * The implementation is confusing but conceptually it's just two steps of search-and-replace.
                  *)
@@ -1293,6 +1301,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 in
                 sanitized_candidate, desanitize_using_solution_and_map
               in
+              (* Step (3): set the recursive assumption, and solve for `sanitized_candidate <:
+                 protocol_annotation` which will result in constraints that relate the candidate's
+                 type parameters to the protocol arguments. *)
               let order_with_new_assumption =
                 let cycle_detections =
                   {
@@ -1311,19 +1322,21 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 order_with_new_assumption
                 ~candidate:sanitized_candidate
                 ~protocol_annotation
+              (* Step (4) use the transform from step (2) on the constraints from (3) to get the
+                 result *)
               >>| desanitize_using_solution
             in
             let protocol_annotations =
-              let generic_protocol_annotation =
-                protocol_generics_as_args
-                >>| Type.parametric protocol
-                |> Option.value ~default:(Type.Primitive protocol)
-              in
               (* When protocol arguments are provided by the caller, we first try solving for them
                  before falling back to a protocol annotation with generic parameters. We keep only
                  the non-variable arguments because using the variable names from the protocol
                  definition produces better error messages. Falling back to the generic annotation
                  handles the case of `candidate` being an empty container. *)
+              let generic_protocol_annotation =
+                protocol_generics_as_args
+                >>| Type.parametric protocol
+                |> Option.value ~default:(Type.Primitive protocol)
+              in
               match protocol_arguments, protocol_generics_as_args with
               | Some arguments, Some generic_arguments
                 when Int.equal (List.length arguments) (List.length generic_arguments) ->
