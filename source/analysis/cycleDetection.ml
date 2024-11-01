@@ -17,14 +17,15 @@
    decorators (which would typically produce a runtime error); the simplest case is a decorator
    trying to decorate itself.
 
-   The `assumed_protocol_instantiations` is used to track any combination of a candidate `Type.t`
-   and a protocol (as a bare name) that we might want to subtype; the process of subtyping involves
-   solving for the type arguments on the protocol if it is generic, and we can hit recursive cases:
-   for example a protocol with a method that returns itself. We break the cycle by basically
-   assuming the candidate satisfies the protocol in any recursive call, then bubbling back out to
-   the topmost call and checking for contradictions. This logic can be triggered both by generic
-   protocols and by generic recursive type aliases (which share some type checking logic with
-   protocols because both are structural types that are potentially recursive).
+   The `assumed_recursive_instantiations` is used to track any combination of a candidate `Type.t`
+   and a recursive structural type - i.e. a protocol or a recursive alias - (as a bare name) that we
+   might want to subtype; the process of subtyping involves solving for the type arguments on the
+   protocol if it is generic, and we can hit recursive cases: for example a protocol with a method
+   that returns itself. We break the cycle by basically assuming the candidate satisfies the
+   protocol in any recursive call, then bubbling back out to the topmost call and checking for
+   contradictions. This logic can be triggered both by generic protocols and by generic recursive
+   type aliases (which share some type checking logic with protocols because both are structural
+   types that are potentially recursive).
 
    The `assumed_callable_types` seems to get hit mainly when understanding the `__call__` method of
    a callable type as a `BoundMethod`. This particular cycle may just be an implementation detail of
@@ -49,26 +50,26 @@ open Core
 open Ast
 module Callable = Type.Callable
 
-module AssumedProtocolInstantiations = struct
-  type protocol_parameters = Type.Argument.t list [@@deriving compare, sexp, hash, show]
+module AssumedRecursiveInstantiations = struct
+  type target_parameters = Type.Argument.t list [@@deriving compare, sexp, hash, show]
 
   type assumption = {
     candidate: Type.t;
-    protocol: Identifier.t;
+    target: Identifier.t;
   }
   [@@deriving compare, sexp, hash, show, eq]
 
-  type t = (assumption * protocol_parameters) list [@@deriving compare, sexp, hash, show]
+  type t = (assumption * target_parameters) list [@@deriving compare, sexp, hash, show]
 
-  let find_assumed_protocol_parameters ~candidate ~protocol cycle_detections =
-    List.Assoc.find cycle_detections { candidate; protocol } ~equal:equal_assumption
+  let find_assumed_recursive_type_parameters ~candidate ~target cycle_detections =
+    List.Assoc.find cycle_detections { candidate; target } ~equal:equal_assumption
 
 
-  let add ~candidate ~protocol ~protocol_parameters existing_cycle_detections =
+  let add ~candidate ~target ~target_parameters existing_cycle_detections =
     List.Assoc.add
       existing_cycle_detections
-      { candidate; protocol }
-      protocol_parameters
+      { candidate; target }
+      target_parameters
       ~equal:equal_assumption
 
 
@@ -102,7 +103,7 @@ module DecoratorsBeingResolved = struct
 end
 
 type t = {
-  assumed_protocol_instantiations: AssumedProtocolInstantiations.t;
+  assumed_recursive_instantiations: AssumedRecursiveInstantiations.t;
   assumed_callable_types: AssumedCallableTypes.t;
   decorators_being_resolved: DecoratorsBeingResolved.t;
 }

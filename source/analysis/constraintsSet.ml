@@ -1152,11 +1152,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
   and instantiate_recursive_type_with_solve
       ~solve_candidate_less_or_equal
       ~candidate
-      ~protocol
-      ?protocol_arguments
+      ~target
+      ?target_arguments
       ({
          class_hierarchy = { generic_parameters; _ };
-         cycle_detections = { assumed_protocol_instantiations; _ } as cycle_detections;
+         cycle_detections = { assumed_recursive_instantiations; _ } as cycle_detections;
          _;
        } as order)
       : Type.Argument.t list option
@@ -1166,32 +1166,32 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         (* If we are given a "stripped" generic, we decline to do structural analysis, as these
            kinds of comparisons only exists for legacy reasons to do nominal comparisons *)
         None
-    | Type.Primitive candidate_name when Identifier.equal candidate_name protocol -> Some []
-    | Type.Parametric { name; arguments } when Identifier.equal name protocol -> Some arguments
+    | Type.Primitive candidate_name when Identifier.equal candidate_name target -> Some []
+    | Type.Parametric { name; arguments } when Identifier.equal name target -> Some arguments
     | _ -> (
-        let assumed_protocol_parameters =
-          AssumedProtocolInstantiations.find_assumed_protocol_parameters
-            assumed_protocol_instantiations
+        let assumed_target_parameters =
+          AssumedRecursiveInstantiations.find_assumed_recursive_type_parameters
+            assumed_recursive_instantiations
             ~candidate
-            ~protocol
+            ~target
         in
-        match assumed_protocol_parameters with
+        match assumed_target_parameters with
         | Some result -> Some result
         | None ->
-            let protocol_generics =
-              generic_parameters protocol >>| List.map ~f:Type.GenericParameter.to_variable
+            let target_generics =
+              generic_parameters target >>| List.map ~f:Type.GenericParameter.to_variable
             in
-            let protocol_generics_as_args =
-              protocol_generics >>| List.map ~f:Type.Variable.to_argument
+            let target_generics_as_args =
+              target_generics >>| List.map ~f:Type.Variable.to_argument
             in
-            let find_solution protocol_annotation =
+            let find_solution target_annotation =
               (* To handle recursive typing, we
                * (1) transform the candadate by marking all free vars as bound,
-               *     (and in a fresh namespace) which will cause the constraint
-               *      solver to solve for all vars.
+               *     in a fresh namespace which will cause the constraint solver
+               *     to solve for all of them in step (3).
                * (2) save the inverse mapping of the transform and write a function
-               *     that will compose the constraint solution with that mapping
-               *     in order to convert solved protocol type arguments back to the
+               *     that will compose a constraints solution with that mapping
+               *     in order to convert solved target type arguments back to the
                *     original candidate's type variables.
                * (3) Set the cycle_detections to assume the candidate matches the
                *     desired recursive type, and solve for the transformed candidate
@@ -1199,7 +1199,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                *     `solve_candidate_less_or_equal`. If the ordering is solvable, the
                *     resulting constraints will "pin" all of the candidate type vars.
                * (4) Pass that solution, assuming we found one, to the function from (1b)
-               *     which will give the protocol type arguments in terms of the original
+               *     which will give the target type arguments in terms of the original
                *     candidate's type parameters.
                *)
               let sanitized_candidate, desanitize_using_solution =
@@ -1246,7 +1246,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                       sanitized_candidate, desanitize_map
                 in
                 (* Step (2): Write a function that composes applying the constraints with the desanitize
-                 * map to transform solved type arguments of the protocol to be in terms of the
+                 * map to transform solved type arguments of the target to be in terms of the
                  * free vars of the candidate once more.
                  *
                  * The implementation is confusing but conceptually it's just two steps of search-and-replace.
@@ -1294,7 +1294,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                           (Concatenation (Type.OrderedTypes.Concatenation.create variadic))
                         |> Type.OrderedTypes.to_arguments
                   in
-                  protocol_generics
+                  target_generics
                   >>| List.concat_map ~f:instantiate
                   >>| desanitize
                   |> Option.value ~default:[]
@@ -1302,18 +1302,18 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 sanitized_candidate, desanitize_using_solution_and_map
               in
               (* Step (3): set the recursive assumption, and solve for `sanitized_candidate <:
-                 protocol_annotation` which will result in constraints that relate the candidate's
-                 type parameters to the protocol arguments. *)
+                 target_annotation` which will result in constraints that relate the candidate's
+                 type parameters to the target arguments. *)
               let order_with_new_assumption =
                 let cycle_detections =
                   {
                     cycle_detections with
-                    assumed_protocol_instantiations =
-                      AssumedProtocolInstantiations.add
-                        assumed_protocol_instantiations
+                    assumed_recursive_instantiations =
+                      AssumedRecursiveInstantiations.add
+                        assumed_recursive_instantiations
                         ~candidate:sanitized_candidate
-                        ~protocol
-                        ~protocol_parameters:(Option.value protocol_generics_as_args ~default:[]);
+                        ~target
+                        ~target_parameters:(Option.value target_generics_as_args ~default:[]);
                   }
                 in
                 { order with cycle_detections }
@@ -1321,23 +1321,23 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               solve_candidate_less_or_equal
                 order_with_new_assumption
                 ~candidate:sanitized_candidate
-                ~protocol_annotation
+                ~target_annotation
               (* Step (4) use the transform from step (2) on the constraints from (3) to get the
                  result *)
               >>| desanitize_using_solution
             in
-            let protocol_annotations =
-              (* When protocol arguments are provided by the caller, we first try solving for them
-                 before falling back to a protocol annotation with generic parameters. We keep only
-                 the non-variable arguments because using the variable names from the protocol
+            let target_annotations =
+              (* When target arguments are provided by the caller, we first try solving for them
+                 before falling back to a target annotation with generic parameters. We keep only
+                 the non-variable arguments because using the variable names from the target
                  definition produces better error messages. Falling back to the generic annotation
                  handles the case of `candidate` being an empty container. *)
-              let generic_protocol_annotation =
-                protocol_generics_as_args
-                >>| Type.parametric protocol
-                |> Option.value ~default:(Type.Primitive protocol)
+              let generic_target_annotation =
+                target_generics_as_args
+                >>| Type.parametric target
+                |> Option.value ~default:(Type.Primitive target)
               in
-              match protocol_arguments, protocol_generics_as_args with
+              match target_arguments, target_generics_as_args with
               | Some arguments, Some generic_arguments
                 when Int.equal (List.length arguments) (List.length generic_arguments) ->
                   let map argument generic_argument =
@@ -1345,17 +1345,17 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                     | Type.Argument.Single (Type.Variable _) -> generic_argument
                     | _ -> argument
                   in
-                  let protocol_annotation =
+                  let target_annotation =
                     Type.Parametric
                       {
-                        name = protocol;
+                        name = target;
                         arguments = List.map2_exn ~f:map arguments generic_arguments;
                       }
                   in
-                  [protocol_annotation; generic_protocol_annotation]
-              | _ -> [generic_protocol_annotation]
+                  [target_annotation; generic_target_annotation]
+              | _ -> [generic_target_annotation]
             in
-            List.find_map ~f:find_solution protocol_annotations)
+            List.find_map ~f:find_solution target_annotations)
 
 
   (** As with `instantiate_recursive_type_with_solve`, here `None` means a failure to match
@@ -1367,7 +1367,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     let solve_all_protocol_attributes_less_or_equal
         ({ attribute; instantiated_attributes; cycle_detections; _ } as order)
         ~candidate
-        ~protocol_annotation
+        ~target_annotation
       =
       let attribute_implements constraints_set protocol_attribute =
         match constraints_set with
@@ -1411,7 +1411,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           (not (Type.is_object (Primitive parent)))
           && not (Type.is_generic_primitive (Primitive parent))
         in
-        instantiated_attributes ~cycle_detections protocol_annotation
+        instantiated_attributes ~cycle_detections target_annotation
         >>| List.filter ~f:is_not_object_or_generic_method
       in
       protocol_attributes
@@ -1423,15 +1423,15 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       order
       ~solve_candidate_less_or_equal:solve_all_protocol_attributes_less_or_equal
       ~candidate
-      ~protocol
-      ~protocol_arguments:(Option.value ~default:[] protocol_arguments)
+      ~target:protocol
+      ~target_arguments:(Option.value ~default:[] protocol_arguments)
 
 
   and instantiate_recursive_type_parameters order ~candidate ~recursive_type
       : Type.Argument.t list option
     =
     (* TODO(T44784951): Allow passing in the generic parameters for generic recursive types. *)
-    let solve_recursive_type_less_or_equal order ~candidate ~protocol_annotation:_ =
+    let solve_recursive_type_less_or_equal order ~candidate ~target_annotation:_ =
       let expanded_body = Type.RecursiveType.unfold_recursive_type recursive_type in
       solve_less_or_equal
         order
@@ -1445,7 +1445,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       order
       ~solve_candidate_less_or_equal:solve_recursive_type_less_or_equal
       ~candidate
-      ~protocol:(Type.RecursiveType.name recursive_type)
+      ~target:(Type.RecursiveType.name recursive_type)
 
 
   let add_and_simplify existing_constraints ~new_constraint ~order =

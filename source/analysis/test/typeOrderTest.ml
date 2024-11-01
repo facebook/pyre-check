@@ -189,7 +189,7 @@ let less_or_equal
       is_protocol;
       cycle_detections =
         {
-          assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+          assumed_recursive_instantiations = AssumedRecursiveInstantiations.empty;
           assumed_callable_types = AssumedCallableTypes.empty;
           decorators_being_resolved = DecoratorsBeingResolved.empty;
         };
@@ -209,7 +209,7 @@ let join ?(attributes = fun _ ~cycle_detections:_ -> None) handler =
       is_protocol = (fun _ -> false);
       cycle_detections =
         {
-          assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+          assumed_recursive_instantiations = AssumedRecursiveInstantiations.empty;
           assumed_callable_types = AssumedCallableTypes.empty;
           decorators_being_resolved = DecoratorsBeingResolved.empty;
         };
@@ -229,7 +229,7 @@ let meet handler =
       is_protocol = (fun _ -> false);
       cycle_detections =
         {
-          assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+          assumed_recursive_instantiations = AssumedRecursiveInstantiations.empty;
           assumed_callable_types = AssumedCallableTypes.empty;
           decorators_being_resolved = DecoratorsBeingResolved.empty;
         };

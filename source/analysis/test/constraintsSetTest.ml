@@ -229,7 +229,7 @@ let make_assert_functions context =
           is_protocol;
           cycle_detections =
             {
-              assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+              assumed_recursive_instantiations = AssumedRecursiveInstantiations.empty;
               assumed_callable_types = AssumedCallableTypes.empty;
               decorators_being_resolved = DecoratorsBeingResolved.empty;
             };
@@ -1548,7 +1548,7 @@ let test_instantiate_protocol_parameters context =
         is_protocol;
         cycle_detections =
           {
-            assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+            assumed_recursive_instantiations = AssumedRecursiveInstantiations.empty;
             assumed_callable_types = AssumedCallableTypes.empty;
             decorators_being_resolved = DecoratorsBeingResolved.empty;
           };
@@ -1723,7 +1723,7 @@ let test_mark_escaped_as_escaped context =
         is_protocol = (fun _ -> false);
         cycle_detections =
           {
-            assumed_protocol_instantiations = AssumedProtocolInstantiations.empty;
+            assumed_recursive_instantiations = AssumedRecursiveInstantiations.empty;
             assumed_callable_types = AssumedCallableTypes.empty;
             decorators_being_resolved = DecoratorsBeingResolved.empty;
           };

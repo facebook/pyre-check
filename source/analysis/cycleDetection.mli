@@ -8,19 +8,19 @@
 open Ast
 module Callable = Type.Callable
 
-module AssumedProtocolInstantiations : sig
+module AssumedRecursiveInstantiations : sig
   type t [@@deriving show]
 
-  val find_assumed_protocol_parameters
+  val find_assumed_recursive_type_parameters
     :  candidate:Type.t ->
-    protocol:Identifier.t ->
+    target:Identifier.t ->
     t ->
     Type.Argument.t list option
 
   val add
     :  candidate:Type.t ->
-    protocol:Identifier.t ->
-    protocol_parameters:Type.Argument.t list ->
+    target:Identifier.t ->
+    target_parameters:Type.Argument.t list ->
     t ->
     t
 
@@ -50,7 +50,7 @@ module DecoratorsBeingResolved : sig
 end
 
 type t = {
-  assumed_protocol_instantiations: AssumedProtocolInstantiations.t;
+  assumed_recursive_instantiations: AssumedRecursiveInstantiations.t;
   assumed_callable_types: AssumedCallableTypes.t;
   decorators_being_resolved: DecoratorsBeingResolved.t;
 }
