@@ -26,6 +26,7 @@ from ..errors import (
     SkippingGeneratedFileException,
 )
 
+# pyre-fixme[41]: Cannot reassign final attribute `_MAX_LENGTH`.
 unittest.util._MAX_LENGTH = 200
 
 
