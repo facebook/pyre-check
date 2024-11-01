@@ -1184,7 +1184,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             let protocol_generics_as_args =
               protocol_generics >>| List.map ~f:Type.Variable.to_argument
             in
-            let find_first_solution sofar protocol_annotation =
+            let find_solution protocol_annotation =
               (* To handle recursive typing, we
                * (1) transform the candadate by marking all free vars as bound,
                *     (and in a fresh namespace) which will cause the constraint
@@ -1293,29 +1293,25 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 in
                 sanitized_candidate, desanitize_using_solution_and_map
               in
-              match sofar with
-              | Some _ -> sofar
-              | None ->
-                  let order_with_new_assumption =
-                    let cycle_detections =
-                      {
-                        cycle_detections with
-                        assumed_protocol_instantiations =
-                          AssumedProtocolInstantiations.add
-                            assumed_protocol_instantiations
-                            ~candidate:sanitized_candidate
-                            ~protocol
-                            ~protocol_parameters:
-                              (Option.value protocol_generics_as_args ~default:[]);
-                      }
-                    in
-                    { order with cycle_detections }
-                  in
-                  solve_candidate_less_or_equal
-                    order_with_new_assumption
-                    ~candidate:sanitized_candidate
-                    ~protocol_annotation
-                  >>| desanitize_using_solution
+              let order_with_new_assumption =
+                let cycle_detections =
+                  {
+                    cycle_detections with
+                    assumed_protocol_instantiations =
+                      AssumedProtocolInstantiations.add
+                        assumed_protocol_instantiations
+                        ~candidate:sanitized_candidate
+                        ~protocol
+                        ~protocol_parameters:(Option.value protocol_generics_as_args ~default:[]);
+                  }
+                in
+                { order with cycle_detections }
+              in
+              solve_candidate_less_or_equal
+                order_with_new_assumption
+                ~candidate:sanitized_candidate
+                ~protocol_annotation
+              >>| desanitize_using_solution
             in
             let protocol_annotations =
               let generic_protocol_annotation =
@@ -1346,7 +1342,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   [protocol_annotation; generic_protocol_annotation]
               | _ -> [generic_protocol_annotation]
             in
-            List.fold ~init:None ~f:find_first_solution protocol_annotations)
+            List.find_map ~f:find_solution protocol_annotations)
 
 
   (** As with `instantiate_recursive_type_with_solve`, here `None` means a failure to match
