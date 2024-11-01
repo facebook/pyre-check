@@ -9,7 +9,7 @@ open Ast
 module Callable = Type.Callable
 
 module AssumedProtocolInstantiations : sig
-  type t
+  type t [@@deriving show]
 
   val find_assumed_protocol_parameters
     :  candidate:Type.t ->
@@ -30,7 +30,7 @@ end
 module AssumedCallableTypes : sig
   (* This should be removed when classes can be generic over TParams, and Callable can be treated
      like any other generic protocol. *)
-  type t
+  type t [@@deriving show]
 
   val find_assumed_callable_type : candidate:Type.t -> t -> Type.t option
 
@@ -40,7 +40,7 @@ module AssumedCallableTypes : sig
 end
 
 module DecoratorsBeingResolved : sig
-  type t
+  type t [@@deriving show]
 
   val add : t -> assume_is_not_a_decorator:Reference.t -> t
 
