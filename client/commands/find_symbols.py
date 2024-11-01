@@ -70,7 +70,11 @@ def _create_document_symbols_response(
 
 
 def _generate_lsp_symbol_info(node: ast.AST, name: str, kind: SymbolKind) -> SymbolInfo:
+    # pyre-fixme[16]: `AST` has no attribute `lineno`.
+    # pyre-fixme[16]: `AST` has no attribute `col_offset`.
     start = PyrePosition(line=node.lineno, character=node.col_offset)
+    # pyre-fixme[16]: `AST` has no attribute `end_lineno`.
+    # pyre-fixme[16]: `AST` has no attribute `end_col_offset`.
     end_lineno, end_col_offset = (node.end_lineno, node.end_col_offset)
     # Degrade gracefully on nodes that don't have end position information
     if end_lineno is not None and end_col_offset is not None:

@@ -76,6 +76,8 @@ class TaskManager:
         """
         async with self._lock:
             if self._ongoing is None:
+                # pyre-fixme[8]: Attribute has type `Optional[Future[None]]`; used
+                #  as `Task[None]`.
                 self._ongoing = asyncio.create_task(self._run_task())
 
     async def ensure_task_stop(self) -> None:
