@@ -10,7 +10,6 @@ TODO(T132414938) Add a module-level docstring
 
 import argparse
 from pathlib import Path
-import dataclasses
 
 from pypi.build_pypi_package import build_pypi_package
 

@@ -6,10 +6,8 @@
 # pyre-strict
 from random import Random
 from typing import List, Tuple, Callable
-import functools
 import inspect
 import itertools
-import os
 import string
 
 

@@ -713,10 +713,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         open_documents = set(self.server_state.opened_documents.keys())
         # filter out documents that may have been closed in between preempts
         type_checkable_files &= open_documents
-        with (
-            tempfile.NamedTemporaryFile(mode="rb") as build_id_file,
-            tempfile.NamedTemporaryFile(mode="w") as argfile,
-        ):
+        with tempfile.NamedTemporaryFile(
+            mode="rb"
+        ) as build_id_file, tempfile.NamedTemporaryFile(mode="w") as argfile:
             print("--", file=argfile)
             if self.get_language_server_features().type_error_sharding.is_enabled():
                 print("--enable-sharding\ntrue", file=argfile)
