@@ -69,13 +69,15 @@ module type OrderedConstraintsSetType = sig
     parameter_specification:Type.Variable.ParamSpec.t ->
     Type.Callable.parameters list
 
-  (* Only exposed for testing *)
-  val instantiate_protocol_parameters
-    :  candidate:Type.t ->
-    protocol:Ast.Identifier.t ->
-    ?protocol_arguments:Type.Argument.t list ->
-    order ->
-    Type.Argument.t list option
+  module Testing : sig
+    (* Only exposed for testing *)
+    val instantiate_protocol_parameters
+      :  candidate:Type.t ->
+      protocol:Ast.Identifier.t ->
+      ?protocol_arguments:Type.Argument.t list ->
+      order ->
+      Type.Argument.t list option
+  end
 end
 
 module type OrderedConstraintsType = TypeConstraints.OrderedConstraintsType with type order = order

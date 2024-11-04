@@ -100,12 +100,14 @@ module type OrderedConstraintsSetType = sig
     parameter_specification:Type.Variable.ParamSpec.t ->
     Type.Callable.parameters list
 
-  val instantiate_protocol_parameters
-    :  candidate:Type.t ->
-    protocol:Ast.Identifier.t ->
-    ?protocol_arguments:Type.Argument.t list ->
-    order ->
-    Type.Argument.t list option
+  module Testing : sig
+    val instantiate_protocol_parameters
+      :  candidate:Type.t ->
+      protocol:Ast.Identifier.t ->
+      ?protocol_arguments:Type.Argument.t list ->
+      order ->
+      Type.Argument.t list option
+  end
 end
 
 let resolve_callable_protocol
@@ -1484,4 +1486,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     |> List.map ~f:snd
     |> List.filter_map ~f:(fun solution ->
            TypeConstraints.Solution.instantiate_single_param_spec solution parameter_specification)
+
+
+  module Testing = struct
+    let instantiate_protocol_parameters = instantiate_protocol_parameters
+  end
 end

@@ -1561,7 +1561,10 @@ let test_instantiate_protocol_parameters context =
     assert_equal
       ~printer:optional_ordered_types_printer
       expected
-      (instantiate_protocol_parameters order ~candidate:(parse_annotation candidate) ~protocol)
+      (TypeOrder.OrderedConstraintsSet.Testing.instantiate_protocol_parameters
+         order
+         ~candidate:(parse_annotation candidate)
+         ~protocol)
   in
   (* Simple attribute protocols *)
   assert_instantiate_protocol_parameters

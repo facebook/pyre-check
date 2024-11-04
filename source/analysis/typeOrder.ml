@@ -606,8 +606,6 @@ and OrderedConstraintsSet : ConstraintsSet.OrderedConstraintsSetType =
 
 and Implementation : FullOrderType = OrderImplementation.Make (OrderedConstraintsSet)
 
-let instantiate_protocol_parameters = OrderedConstraintsSet.instantiate_protocol_parameters
-
 module OrderedConstraints = Constraints
 
 module IncludableImplementation : FullOrderType = Implementation

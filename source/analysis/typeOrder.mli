@@ -26,10 +26,3 @@ val widen
 module OrderedConstraints : TypeConstraints.OrderedConstraintsType with type order = order
 
 module OrderedConstraintsSet : ConstraintsSet.OrderedConstraintsSetType
-
-val instantiate_protocol_parameters
-  :  candidate:Type.t ->
-  protocol:Ast.Identifier.t ->
-  ?protocol_arguments:Type.Argument.t list ->
-  order ->
-  Type.Argument.t list option
