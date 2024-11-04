@@ -92,6 +92,7 @@ PTT_ISOLATION_PREFIX: str = ".pyrelsp"
 @dataclasses.dataclass(frozen=True)
 class FilesForTypeChecker:
     daemon_files: Set[Path]
+    daemon_files_use_buck: Optional[bool]
     buck_files: Set[Path]
     error_message: Optional[str]
     duration: float
@@ -104,6 +105,7 @@ class FilesForTypeChecker:
             "error_message": self.error_message,
             "duration": self.duration,
             "did_run": self.did_run,
+            "daemon_files_use_buck": self.daemon_files_use_buck,
         }
 
 
@@ -930,6 +932,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             LOG.error(message)
             return FilesForTypeChecker(
                 buck_files=set(),
+                daemon_files_use_buck=None,
                 daemon_files=open_documents,
                 error_message=message,
                 duration=buck_query_timer.stop_in_millisecond(),
@@ -940,12 +943,25 @@ class PyreLanguageServer(PyreLanguageServerApi):
         query_data = json.loads(stdout_decoded)
         buck_type_checkable_files: Set[Path] = {
             Path(file)
-            for file, is_type_checkable in query_data.items()
-            if is_type_checkable
+            for file, query_result in query_data.items()
+            if (
+                (
+                    isinstance(query_result, dict)
+                    and query_result.get("typing_enabled", False)
+                )
+                # TODO(connernilsen): remove, this is for API compatibility
+                or query_result is True
+            )
         }
 
+        daemon_files_use_buck = any(
+            isinstance(query_result, dict)
+            and query_result.get("has_owning_targets", False)
+            for query_result in query_data.values()
+        )
         return FilesForTypeChecker(
             buck_files=buck_type_checkable_files,
+            daemon_files_use_buck=daemon_files_use_buck,
             daemon_files=open_documents - buck_type_checkable_files,
             error_message=None,
             duration=buck_query_timer.stop_in_millisecond(),
@@ -987,6 +1003,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
             type_checked_files = FilesForTypeChecker(
                 daemon_files=open_documents,
+                daemon_files_use_buck=None,
                 buck_files=set(),
                 error_message=None,
                 duration=0,
