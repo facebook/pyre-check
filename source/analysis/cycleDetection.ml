@@ -52,7 +52,7 @@ open Ast
 module Callable = Type.Callable
 
 module DecoratorsBeingResolved = struct
-  type t = Reference.t list [@@deriving compare, sexp, hash, show]
+  type t = Reference.t list [@@deriving compare, equal, sexp, hash, show]
 
   let add sofar ~assume_is_not_a_decorator = assume_is_not_a_decorator :: sofar
 
@@ -62,9 +62,9 @@ module DecoratorsBeingResolved = struct
 end
 
 module AssumedCallableTypes = struct
-  type callable_assumption = Type.t [@@deriving compare, sexp, hash, show]
+  type callable_assumption = Type.t [@@deriving compare, equal, sexp, hash, show]
 
-  type t = (Type.t * callable_assumption) list [@@deriving compare, sexp, hash, show]
+  type t = (Type.t * callable_assumption) list [@@deriving compare, equal, sexp, hash, show]
 
   let find_assumed_callable_type ~candidate cycle_detections =
     List.Assoc.find cycle_detections candidate ~equal:Type.equal
@@ -78,7 +78,7 @@ module AssumedCallableTypes = struct
 end
 
 module AssumedRecursiveInstantiations = struct
-  type target_parameters = Type.Argument.t list [@@deriving compare, sexp, hash, show]
+  type target_parameters = Type.Argument.t list [@@deriving compare, equal, sexp, hash, show]
 
   type assumption = {
     candidate: Type.t;
@@ -86,7 +86,7 @@ module AssumedRecursiveInstantiations = struct
   }
   [@@deriving compare, sexp, hash, show, eq]
 
-  type t = (assumption * target_parameters) list [@@deriving compare, sexp, hash, show]
+  type t = (assumption * target_parameters) list [@@deriving compare, equal, sexp, hash, show]
 
   let find_assumed_recursive_type_parameters ~candidate ~target cycle_detections =
     List.Assoc.find cycle_detections { candidate; target } ~equal:equal_assumption
@@ -108,4 +108,4 @@ type t = {
   assumed_callable_types: AssumedCallableTypes.t;
   assumed_recursive_instantiations: AssumedRecursiveInstantiations.t;
 }
-[@@deriving compare, sexp, hash, show]
+[@@deriving compare, equal, sexp, hash, show]

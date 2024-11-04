@@ -54,4 +54,4 @@ type t = {
   assumed_callable_types: AssumedCallableTypes.t;
   assumed_recursive_instantiations: AssumedRecursiveInstantiations.t;
 }
-[@@deriving compare, sexp, hash, show]
+[@@deriving compare, equal, sexp, hash, show]
