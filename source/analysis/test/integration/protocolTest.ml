@@ -1036,6 +1036,59 @@ let test_protocol_inheritance =
     ]
 
 
+(* This example demonstrates that the naive recursive type algorithm can be very slow when applied
+   to nested container types (e.g. here we are checking whether `list[X]` is a protocol where `X`
+   may itself be a list). This is relevant because numpy relies heavily on an `ArrayLike` protocol
+   that hits this problem. *)
+let test_arraylike_example =
+  __FUNCTION__
+  >:: fun context ->
+  let timer = Timer.start () in
+  assert_type_errors
+    {|
+      from typing import Any, Generic, Iterator, overload, Protocol, TypeVar, Union
+
+      T = TypeVar("T")
+      _T_co = TypeVar("_T_co", covariant=True)
+
+      class dtype(Generic[_T_co]):
+          pass
+
+      class _SupportsArray(Protocol[_T_co]):
+          def __array__(self) -> None: ...
+
+      class _NestedSequence(Protocol[_T_co]):
+          @overload
+          def __getitem__(self, index: int, /) -> _T_co | _NestedSequence[_T_co]: ...
+          @overload
+          def __getitem__(self, index: slice, /) -> _NestedSequence[_T_co]: ...
+          def __getitem__(self, index: object, /) -> object: ...
+          def __iter__(self, /) -> Iterator[_T_co | _NestedSequence[_T_co]]: ...
+          def __reversed__(self, /) -> Iterator[_T_co | _NestedSequence[_T_co]]: ...
+
+      _ArrayLike = Union[
+          _SupportsArray["dtype[T]"],
+          _NestedSequence[_SupportsArray["dtype[T]"]],
+      ]
+
+      def array(x: _ArrayLike[T]) -> None: ...
+
+      def test(x: list[list[list[list[list[list[list[list[int]]]]]]]]) -> None:
+          array(x)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `array`, for 1st positional argument, expected \
+       `Union[_NestedSequence[_SupportsArray[dtype[Variable[T]]]], \
+       _SupportsArray[dtype[Variable[T]]]]` but got \
+       `List[List[List[List[List[List[List[List[int]]]]]]]]`.";
+    ]
+    context;
+  let time = Timer.stop_in_sec timer in
+  let dump_time = false in
+  if dump_time then Log.dump "Analysis in `test_arraylike_example` took %f seconds" time;
+  ()
+
+
 let () =
   "protocol"
   >::: [
@@ -1045,5 +1098,6 @@ let () =
          test_callback_protocols;
          test_hash_protocol;
          test_protocol_inheritance;
+         test_arraylike_example;
        ]
   |> Test.run
