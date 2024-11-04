@@ -1563,8 +1563,8 @@ let test_instantiate_protocol_parameters context =
       expected
       (TypeOrder.OrderedConstraintsSet.Testing.instantiate_protocol_parameters
          order
-         ~candidate:(parse_annotation candidate)
-         ~protocol)
+         ~protocol
+         (parse_annotation candidate))
   in
   (* Simple attribute protocols *)
   assert_instantiate_protocol_parameters

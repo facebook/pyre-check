@@ -102,10 +102,10 @@ module type OrderedConstraintsSetType = sig
 
   module Testing : sig
     val instantiate_protocol_parameters
-      :  candidate:Type.t ->
+      :  order ->
       protocol:Ast.Identifier.t ->
       ?protocol_arguments:Type.Argument.t list ->
-      order ->
+      Type.t ->
       Type.Argument.t list option
   end
 end
@@ -589,7 +589,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       else if
         is_protocol right
         && [%compare.equal: Type.Argument.t list option]
-             (instantiate_protocol_parameters order ~candidate:left ~protocol:target)
+             (instantiate_protocol_parameters order ~protocol:target left)
              (Some [])
       then
         [constraints]
@@ -651,7 +651,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | _, Type.RecursiveType recursive_type ->
         if
           [%compare.equal: Type.Argument.t list option]
-            (instantiate_recursive_type_parameters order ~candidate:left ~recursive_type)
+            (instantiate_recursive_type_parameters order ~recursive_type left)
             (Some [])
         then
           [constraints]
@@ -666,14 +666,14 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | (Type.Callable _ | Type.NoneType), Type.Primitive protocol when is_protocol right ->
         if
           [%compare.equal: Type.Argument.t list option]
-            (instantiate_protocol_parameters order ~protocol ~candidate:left)
+            (instantiate_protocol_parameters order ~protocol left)
             (Some [])
         then
           [constraints]
         else
           impossible
     | (Type.Callable _ | Type.NoneType), Type.Parametric { name; _ } when is_protocol right ->
-        instantiate_protocol_parameters order ~protocol:name ~candidate:left
+        instantiate_protocol_parameters order ~protocol:name left
         >>| Type.parametric name
         >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
         |> Option.value ~default:impossible
@@ -771,14 +771,14 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           | Primitive right_name, true ->
               if
                 [%compare.equal: Type.Argument.t list option]
-                  (instantiate_protocol_parameters order ~candidate:left ~protocol:right_name)
+                  (instantiate_protocol_parameters order ~protocol:right_name left)
                   (Some [])
               then
                 [constraints]
               else
                 impossible
           | Parametric { name = right_name; _ }, true ->
-              instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
+              instantiate_protocol_parameters order ~protocol:right_name left
               >>| Type.parametric right_name
               >>| (fun left -> solve_less_or_equal order ~left ~right ~constraints)
               |> Option.value ~default:impossible
@@ -865,7 +865,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 order
                 ~protocol:right_name
                 ~protocol_arguments:right_arguments
-                ~candidate:left
+                left
           | _ -> left_arguments
         in
         left_arguments
@@ -1152,15 +1152,15 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       Note that classes that refer to themselves don't suffer from this since subtyping for two
       classes just follows from the class hierarchy. *)
   and instantiate_recursive_type_with_solve
-      ~solve_candidate_less_or_equal
-      ~candidate
-      ~target
-      ?target_arguments
       ({
          class_hierarchy = { generic_parameters; _ };
          cycle_detections = { assumed_recursive_instantiations; _ } as cycle_detections;
          _;
        } as order)
+      ~solve_candidate_less_or_equal
+      ~target
+      ?target_arguments
+      candidate
       : Type.Argument.t list option
     =
     match candidate with
@@ -1363,7 +1363,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
   (** As with `instantiate_recursive_type_with_solve`, here `None` means a failure to match
       `candidate` type with the protocol, whereas `Some []` means no generic constraints were
       induced. *)
-  and instantiate_protocol_parameters ~candidate ~protocol ?protocol_arguments order =
+  and instantiate_protocol_parameters order ~protocol ?protocol_arguments candidate =
     (* A candidate is less-or-equal to a protocol if candidate.x <: protocol.x for each attribute
        `x` in the protocol. *)
     let solve_all_protocol_attributes_less_or_equal
@@ -1424,12 +1424,12 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     instantiate_recursive_type_with_solve
       order
       ~solve_candidate_less_or_equal:solve_all_protocol_attributes_less_or_equal
-      ~candidate
       ~target:protocol
       ~target_arguments:(Option.value ~default:[] protocol_arguments)
+      candidate
 
 
-  and instantiate_recursive_type_parameters order ~candidate ~recursive_type
+  and instantiate_recursive_type_parameters order ~recursive_type candidate
       : Type.Argument.t list option
     =
     (* TODO(T44784951): Allow passing in the generic parameters for generic recursive types. *)
@@ -1446,8 +1446,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     instantiate_recursive_type_with_solve
       order
       ~solve_candidate_less_or_equal:solve_recursive_type_less_or_equal
-      ~candidate
       ~target:(Type.RecursiveType.name recursive_type)
+      candidate
 
 
   let add_and_simplify existing_constraints ~new_constraint ~order =
