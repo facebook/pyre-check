@@ -4140,9 +4140,9 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
 
 let empty_cycle_detections =
   {
-    assumed_recursive_instantiations = AssumedRecursiveInstantiations.empty;
-    assumed_callable_types = AssumedCallableTypes.empty;
     decorators_being_resolved = DecoratorsBeingResolved.empty;
+    assumed_callable_types = AssumedCallableTypes.empty;
+    assumed_recursive_instantiations = AssumedRecursiveInstantiations.empty;
   }
 
 

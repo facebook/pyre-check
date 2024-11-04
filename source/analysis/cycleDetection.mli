@@ -8,6 +8,28 @@
 open Ast
 module Callable = Type.Callable
 
+module DecoratorsBeingResolved : sig
+  type t [@@deriving show]
+
+  val add : t -> assume_is_not_a_decorator:Reference.t -> t
+
+  val not_a_decorator : t -> candidate:Reference.t -> bool
+
+  val empty : t
+end
+
+module AssumedCallableTypes : sig
+  (* This should be removed when classes can be generic over TParams, and Callable can be treated
+     like any other generic protocol. *)
+  type t [@@deriving show]
+
+  val find_assumed_callable_type : candidate:Type.t -> t -> Type.t option
+
+  val add : candidate:Type.t -> callable:Type.t -> t -> t
+
+  val empty : t
+end
+
 module AssumedRecursiveInstantiations : sig
   type t [@@deriving show]
 
@@ -27,31 +49,9 @@ module AssumedRecursiveInstantiations : sig
   val empty : t
 end
 
-module AssumedCallableTypes : sig
-  (* This should be removed when classes can be generic over TParams, and Callable can be treated
-     like any other generic protocol. *)
-  type t [@@deriving show]
-
-  val find_assumed_callable_type : candidate:Type.t -> t -> Type.t option
-
-  val add : candidate:Type.t -> callable:Type.t -> t -> t
-
-  val empty : t
-end
-
-module DecoratorsBeingResolved : sig
-  type t [@@deriving show]
-
-  val add : t -> assume_is_not_a_decorator:Reference.t -> t
-
-  val not_a_decorator : t -> candidate:Reference.t -> bool
-
-  val empty : t
-end
-
 type t = {
-  assumed_recursive_instantiations: AssumedRecursiveInstantiations.t;
-  assumed_callable_types: AssumedCallableTypes.t;
   decorators_being_resolved: DecoratorsBeingResolved.t;
+  assumed_callable_types: AssumedCallableTypes.t;
+  assumed_recursive_instantiations: AssumedRecursiveInstantiations.t;
 }
 [@@deriving compare, sexp, hash, show]
