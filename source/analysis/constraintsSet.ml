@@ -145,6 +145,42 @@ let resolve_callable_protocol
 module type OrderedConstraintsType = TypeConstraints.OrderedConstraintsType with type order = order
 
 module Make (OrderedConstraints : OrderedConstraintsType) = struct
+  (* Solving recursive types can have exponential complexity in some cases without a cache due to
+     massive fanout. Because the fanout involves many redundant solves, memoizing avoids the
+     problem. *)
+  module RecursiveInstantiationCache = struct
+    module Key = struct
+      type t = {
+        candidate: Type.t;
+        target: Identifier.t;
+        target_arguments: Type.Argument.t list option;
+        cycle_detections: CycleDetection.t;
+      }
+      [@@deriving equal, hash, sexp, compare]
+    end
+
+    include Hashable.Make (Key)
+
+    let empty () = Table.create ()
+
+    let set_recursive_instantiation
+        table
+        ~cycle_detections
+        ~target
+        ~target_arguments
+        ~candidate
+        result
+      =
+      Hashtbl.set
+        table
+        ~key:{ Key.candidate; target; target_arguments; cycle_detections }
+        ~data:result
+
+
+    let find_recursive_instantiation table ~cycle_detections ~target ~target_arguments ~candidate =
+      Hashtbl.find table { Key.candidate; target; target_arguments; cycle_detections }
+  end
+
   (* This function takes a possibly-overloaded function `callable` and asks it whether it can be
      called as if it had a particular overload signature `called_as`. Multiple solutions are
      possible if more than one overload matches; for each one we produce the returning return type
@@ -156,14 +192,15 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
 
      TODO(T41127207): merge this with actual signature select logic in AttributeResolution.ml *)
   let rec simulate_signature_select
+      ~cache
       order
       ~callable:({ Type.Callable.implementation; overloads; _ } as _callable)
       ~called_as
       ~constraints
       ~get_typed_dictionary
     =
-    let solve_less_or_equal = solve_less_or_equal order in
-    let solve_ordered_types_less_or_equal = solve_ordered_types_less_or_equal order in
+    let solve_less_or_equal = solve_less_or_equal ~cache order in
+    let solve_ordered_types_less_or_equal = solve_ordered_types_less_or_equal ~cache order in
     let open Callable in
     let solve implementation ~initial_constraints =
       let get_kwargs_type parameters =
@@ -546,6 +583,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
      possible solutions to the constraints set you have built up with List.filter_map
      ~f:OrderedConstraints.solve *)
   and solve_less_or_equal
+      ~cache
       ({
          class_hierarchy =
            { instantiate_successors_parameters; generic_parameters; has_transitive_successor; _ };
@@ -561,11 +599,13 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       ~left
       ~right
     =
-    let solve_less_or_equal = solve_less_or_equal order in
-    let solve_ordered_types_less_or_equal = solve_ordered_types_less_or_equal order in
-    let instantiate_protocol_parameters = instantiate_protocol_parameters order in
-    let instantiate_recursive_type_parameters = instantiate_recursive_type_parameters order in
-    let simulate_signature_select = simulate_signature_select order in
+    let solve_less_or_equal = solve_less_or_equal ~cache order in
+    let solve_ordered_types_less_or_equal = solve_ordered_types_less_or_equal ~cache order in
+    let instantiate_protocol_parameters = instantiate_protocol_parameters ~cache order in
+    let instantiate_recursive_type_parameters =
+      instantiate_recursive_type_parameters ~cache order
+    in
+    let simulate_signature_select = simulate_signature_select ~cache order in
     let open Type.TypedDictionary in
     let add_fallbacks other =
       Type.Variable.all_free_variables other
@@ -1000,8 +1040,8 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         impossible
 
 
-  and solve_ordered_types_less_or_equal order ~left ~right ~constraints =
-    let solve_less_or_equal = solve_less_or_equal order in
+  and solve_ordered_types_less_or_equal ~cache order ~left ~right ~constraints =
+    let solve_less_or_equal = solve_less_or_equal ~cache order in
     let solve_non_variadic_pairs ~pairs constraints =
       let solve_pair constraints (left, right) =
         List.concat_map constraints ~f:(fun constraints ->
@@ -1127,6 +1167,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       Note that classes that refer to themselves don't suffer from this since subtyping for two
       classes just follows from the class hierarchy. *)
   and instantiate_recursive_type_with_solve
+      ~cache
       ({
          class_hierarchy = { generic_parameters; _ };
          cycle_detections = { assumed_recursive_instantiations; _ } as cycle_detections;
@@ -1146,199 +1187,223 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     | Type.Primitive candidate_name when Identifier.equal candidate_name target -> Some []
     | Type.Parametric { name; arguments } when Identifier.equal name target -> Some arguments
     | _ -> (
+        let cached_result =
+          RecursiveInstantiationCache.find_recursive_instantiation
+            cache
+            ~cycle_detections
+            ~target
+            ~target_arguments
+            ~candidate
+        in
         let assumed_target_parameters =
           AssumedRecursiveInstantiations.find_assumed_recursive_type_parameters
             assumed_recursive_instantiations
             ~candidate
             ~target
         in
-        match assumed_target_parameters with
-        | Some result -> Some result
-        | None ->
-            let target_generics =
-              generic_parameters target >>| List.map ~f:Type.GenericParameter.to_variable
-            in
-            let target_generics_as_args =
-              target_generics >>| List.map ~f:Type.Variable.to_argument
-            in
-            let find_solution target_annotation =
-              (* To handle recursive typing, we
-               * (1) transform the candadate by marking all free vars as bound,
-               *     in a fresh namespace which will cause the constraint solver
-               *     to solve for all of them in step (3).
-               * (2) save the inverse mapping of the transform and write a function
-               *     that will compose a constraints solution with that mapping
-               *     in order to convert solved target type arguments back to the
-               *     original candidate's type variables.
-               * (3) Set the cycle_detections to assume the candidate matches the
-               *     desired recursive type, and solve for the transformed candidate
-               *     (which now has only bound type vars) using
-               *     `solve_candidate_less_or_equal`. If the ordering is solvable, the
-               *     resulting constraints will "pin" all of the candidate type vars.
-               * (4) Pass that solution, assuming we found one, to the function from (1b)
-               *     which will give the target type arguments in terms of the original
-               *     candidate's type parameters.
-               *)
-              let sanitized_candidate, desanitize_using_solution =
-                (* Step (1): mark all free vars from the candidate as bound in a new namespace,
-                 * saving the inverse transform mapping. *)
-                let sanitized_candidate, desanitize_map =
-                  match candidate with
-                  | Type.Callable _ -> candidate, []
-                  | _ ->
-                      (* We don't return constraints for the candidate's free variables, so we must
-                         underapproximate and determine conformance in the worst case *)
-                      let desanitize_map, sanitized_candidate =
-                        let namespace = Type.Variable.Namespace.create_fresh () in
-                        let module SanitizeTransform = Type.VisitWithTransform.Make (struct
-                          type state = Type.Variable.pair list
-
-                          let visit_children_before _ _ = true
-
-                          let visit_children_after = false
-
-                          let visit sofar = function
-                            | Type.Variable variable when Type.Variable.TypeVar.is_free variable ->
-                                let transformed_variable =
-                                  Type.Variable.TypeVar.namespace variable ~namespace
-                                  |> Type.Variable.TypeVar.mark_as_bound
-                                in
-                                {
-                                  Type.VisitWithTransform.transformed_annotation =
-                                    Type.Variable transformed_variable;
-                                  new_state =
-                                    Type.Variable.TypeVarPair
-                                      (transformed_variable, Type.Variable variable)
-                                    :: sofar;
-                                }
-                            | transformed_annotation ->
-                                {
-                                  Type.VisitWithTransform.transformed_annotation;
-                                  new_state = sofar;
-                                }
-                        end)
-                        in
-                        SanitizeTransform.visit [] candidate
-                      in
-                      sanitized_candidate, desanitize_map
-                in
-                (* Step (2): Write a function that composes applying the constraints with the desanitize
-                 * map to transform solved type arguments of the target to be in terms of the
-                 * free vars of the candidate once more.
-                 *
-                 * The implementation is confusing but conceptually it's just two steps of search-and-replace.
+        match cached_result, assumed_target_parameters with
+        | Some cached, _ -> cached
+        | None, Some result -> Some result
+        | None, None ->
+            let result =
+              let target_generics =
+                generic_parameters target >>| List.map ~f:Type.GenericParameter.to_variable
+              in
+              let target_generics_as_args =
+                target_generics >>| List.map ~f:Type.Variable.to_argument
+              in
+              let find_solution target_annotation =
+                (* To handle recursive typing, we
+                 * (1) transform the candadate by marking all free vars as bound,
+                 *     in a fresh namespace which will cause the constraint solver
+                 *     to solve for all of them in step (3).
+                 * (2) save the inverse mapping of the transform and write a function
+                 *     that will compose a constraints solution with that mapping
+                 *     in order to convert solved target type arguments back to the
+                 *     original candidate's type variables.
+                 * (3) Set the cycle_detections to assume the candidate matches the
+                 *     desired recursive type, and solve for the transformed candidate
+                 *     (which now has only bound type vars) using
+                 *     `solve_candidate_less_or_equal`. If the ordering is solvable, the
+                 *     resulting constraints will "pin" all of the candidate type vars.
+                 * (4) Pass that solution, assuming we found one, to the function from (1b)
+                 *     which will give the target type arguments in terms of the original
+                 *     candidate's type parameters.
                  *)
-                let desanitize_using_solution_and_map solution =
-                  (* This function is hard to skim, but it just desanitizes by composing the
-                     constraint solution with the `desanitize_map`. *)
-                  let desanitize =
-                    let desanitization_solution = TypeConstraints.Solution.create desanitize_map in
+                let sanitized_candidate, desanitize_using_solution =
+                  (* Step (1): mark all free vars from the candidate as bound in a new namespace,
+                   * saving the inverse transform mapping. *)
+                  let sanitized_candidate, desanitize_map =
+                    match candidate with
+                    | Type.Callable _ -> candidate, []
+                    | _ ->
+                        (* We don't return constraints for the candidate's free variables, so we
+                           must underapproximate and determine conformance in the worst case *)
+                        let desanitize_map, sanitized_candidate =
+                          let namespace = Type.Variable.Namespace.create_fresh () in
+                          let module SanitizeTransform = Type.VisitWithTransform.Make (struct
+                            type state = Type.Variable.pair list
+
+                            let visit_children_before _ _ = true
+
+                            let visit_children_after = false
+
+                            let visit sofar = function
+                              | Type.Variable variable when Type.Variable.TypeVar.is_free variable
+                                ->
+                                  let transformed_variable =
+                                    Type.Variable.TypeVar.namespace variable ~namespace
+                                    |> Type.Variable.TypeVar.mark_as_bound
+                                  in
+                                  {
+                                    Type.VisitWithTransform.transformed_annotation =
+                                      Type.Variable transformed_variable;
+                                    new_state =
+                                      Type.Variable.TypeVarPair
+                                        (transformed_variable, Type.Variable variable)
+                                      :: sofar;
+                                  }
+                              | transformed_annotation ->
+                                  {
+                                    Type.VisitWithTransform.transformed_annotation;
+                                    new_state = sofar;
+                                  }
+                          end)
+                          in
+                          SanitizeTransform.visit [] candidate
+                        in
+                        sanitized_candidate, desanitize_map
+                  in
+                  (* Step (2): Write a function that composes applying the constraints with the desanitize
+                   * map to transform solved type arguments of the target to be in terms of the
+                   * free vars of the candidate once more.
+                   *
+                   * The implementation is confusing but conceptually it's just two steps of search-and-replace.
+                   *)
+                  let desanitize_using_solution_and_map solution =
+                    (* This function is hard to skim, but it just desanitizes by composing the
+                       constraint solution with the `desanitize_map`. *)
+                    let desanitize =
+                      let desanitization_solution =
+                        TypeConstraints.Solution.create desanitize_map
+                      in
+                      let instantiate = function
+                        | Type.Argument.Single single ->
+                            [
+                              Type.Argument.Single
+                                (TypeConstraints.Solution.instantiate
+                                   desanitization_solution
+                                   single);
+                            ]
+                        | CallableParameters parameters ->
+                            [
+                              CallableParameters
+                                (TypeConstraints.Solution.instantiate_callable_parameters
+                                   desanitization_solution
+                                   parameters);
+                            ]
+                        | Unpacked unpackable ->
+                            TypeConstraints.Solution.instantiate_ordered_types
+                              desanitization_solution
+                              (Concatenation
+                                 (Type.OrderedTypes.Concatenation.create_from_unpackable unpackable))
+                            |> Type.OrderedTypes.to_arguments
+                      in
+                      List.concat_map ~f:instantiate
+                    in
                     let instantiate = function
-                      | Type.Argument.Single single ->
-                          [
-                            Type.Argument.Single
-                              (TypeConstraints.Solution.instantiate desanitization_solution single);
-                          ]
-                      | CallableParameters parameters ->
-                          [
-                            CallableParameters
-                              (TypeConstraints.Solution.instantiate_callable_parameters
-                                 desanitization_solution
-                                 parameters);
-                          ]
-                      | Unpacked unpackable ->
+                      | Type.Variable.TypeVarVariable variable ->
+                          TypeConstraints.Solution.instantiate_single_type_var solution variable
+                          |> Option.value ~default:(Type.Variable variable)
+                          |> fun instantiated -> [Type.Argument.Single instantiated]
+                      | ParamSpecVariable variable ->
+                          TypeConstraints.Solution.instantiate_single_param_spec solution variable
+                          |> Option.value
+                               ~default:(Type.Callable.FromParamSpec { head = []; variable })
+                          |> fun instantiated -> [Type.Argument.CallableParameters instantiated]
+                      | TypeVarTupleVariable variadic ->
                           TypeConstraints.Solution.instantiate_ordered_types
-                            desanitization_solution
-                            (Concatenation
-                               (Type.OrderedTypes.Concatenation.create_from_unpackable unpackable))
+                            solution
+                            (Concatenation (Type.OrderedTypes.Concatenation.create variadic))
                           |> Type.OrderedTypes.to_arguments
                     in
-                    List.concat_map ~f:instantiate
+                    target_generics
+                    >>| List.concat_map ~f:instantiate
+                    >>| desanitize
+                    |> Option.value ~default:[]
                   in
-                  let instantiate = function
-                    | Type.Variable.TypeVarVariable variable ->
-                        TypeConstraints.Solution.instantiate_single_type_var solution variable
-                        |> Option.value ~default:(Type.Variable variable)
-                        |> fun instantiated -> [Type.Argument.Single instantiated]
-                    | ParamSpecVariable variable ->
-                        TypeConstraints.Solution.instantiate_single_param_spec solution variable
-                        |> Option.value
-                             ~default:(Type.Callable.FromParamSpec { head = []; variable })
-                        |> fun instantiated -> [Type.Argument.CallableParameters instantiated]
-                    | TypeVarTupleVariable variadic ->
-                        TypeConstraints.Solution.instantiate_ordered_types
-                          solution
-                          (Concatenation (Type.OrderedTypes.Concatenation.create variadic))
-                        |> Type.OrderedTypes.to_arguments
-                  in
-                  target_generics
-                  >>| List.concat_map ~f:instantiate
-                  >>| desanitize
-                  |> Option.value ~default:[]
+                  sanitized_candidate, desanitize_using_solution_and_map
                 in
-                sanitized_candidate, desanitize_using_solution_and_map
-              in
-              (* Step (3): set the recursive assumption, and solve for `sanitized_candidate <:
-                 target_annotation` which will result in constraints that relate the candidate's
-                 type parameters to the target arguments. *)
-              let order_with_new_assumption =
-                let cycle_detections =
-                  {
-                    cycle_detections with
-                    assumed_recursive_instantiations =
-                      AssumedRecursiveInstantiations.add
-                        assumed_recursive_instantiations
-                        ~candidate:sanitized_candidate
-                        ~target
-                        ~target_parameters:(Option.value target_generics_as_args ~default:[]);
-                  }
+                (* Step (3): set the recursive assumption, and solve for `sanitized_candidate <:
+                   target_annotation` which will result in constraints that relate the candidate's
+                   type parameters to the target arguments. *)
+                let order_with_new_assumption =
+                  let cycle_detections =
+                    {
+                      cycle_detections with
+                      assumed_recursive_instantiations =
+                        AssumedRecursiveInstantiations.add
+                          assumed_recursive_instantiations
+                          ~candidate:sanitized_candidate
+                          ~target
+                          ~target_parameters:(Option.value target_generics_as_args ~default:[]);
+                    }
+                  in
+                  { order with cycle_detections }
                 in
-                { order with cycle_detections }
+                solve_candidate_less_or_equal
+                  order_with_new_assumption
+                  ~candidate:sanitized_candidate
+                  ~target_annotation
+                (* Step (4) use the transform from step (2) on the constraints from (3) to get the
+                   result *)
+                >>| desanitize_using_solution
               in
-              solve_candidate_less_or_equal
-                order_with_new_assumption
-                ~candidate:sanitized_candidate
-                ~target_annotation
-              (* Step (4) use the transform from step (2) on the constraints from (3) to get the
-                 result *)
-              >>| desanitize_using_solution
-            in
-            let target_annotations =
-              (* When target arguments are provided by the caller, we first try solving for them
-                 before falling back to a target annotation with generic parameters. We keep only
-                 the non-variable arguments because using the variable names from the target
-                 definition produces better error messages. Falling back to the generic annotation
-                 handles the case of `candidate` being an empty container. *)
-              let generic_target_annotation =
-                target_generics_as_args
-                >>| Type.parametric target
-                |> Option.value ~default:(Type.Primitive target)
+              let target_annotations =
+                (* When target arguments are provided by the caller, we first try solving for them
+                   before falling back to a target annotation with generic parameters. We keep only
+                   the non-variable arguments because using the variable names from the target
+                   definition produces better error messages. Falling back to the generic annotation
+                   handles the case of `candidate` being an empty container. *)
+                let generic_target_annotation =
+                  target_generics_as_args
+                  >>| Type.parametric target
+                  |> Option.value ~default:(Type.Primitive target)
+                in
+                match target_arguments, target_generics_as_args with
+                | Some arguments, Some generic_arguments
+                  when Int.equal (List.length arguments) (List.length generic_arguments) ->
+                    let map argument generic_argument =
+                      match argument with
+                      | Type.Argument.Single (Type.Variable _) -> generic_argument
+                      | _ -> argument
+                    in
+                    let target_annotation =
+                      Type.Parametric
+                        {
+                          name = target;
+                          arguments = List.map2_exn ~f:map arguments generic_arguments;
+                        }
+                    in
+                    [target_annotation; generic_target_annotation]
+                | _ -> [generic_target_annotation]
               in
-              match target_arguments, target_generics_as_args with
-              | Some arguments, Some generic_arguments
-                when Int.equal (List.length arguments) (List.length generic_arguments) ->
-                  let map argument generic_argument =
-                    match argument with
-                    | Type.Argument.Single (Type.Variable _) -> generic_argument
-                    | _ -> argument
-                  in
-                  let target_annotation =
-                    Type.Parametric
-                      {
-                        name = target;
-                        arguments = List.map2_exn ~f:map arguments generic_arguments;
-                      }
-                  in
-                  [target_annotation; generic_target_annotation]
-              | _ -> [generic_target_annotation]
+              List.find_map ~f:find_solution target_annotations
             in
-            List.find_map ~f:find_solution target_annotations)
+            RecursiveInstantiationCache.set_recursive_instantiation
+              cache
+              ~cycle_detections
+              ~target
+              ~target_arguments
+              ~candidate
+              result;
+            result)
 
 
   (** As with `instantiate_recursive_type_with_solve`, here `None` means a failure to match
       `candidate` type with the protocol, whereas `Some []` means no generic constraints were
       induced. *)
-  and instantiate_protocol_parameters order ~protocol ?protocol_arguments candidate =
+  and instantiate_protocol_parameters ~cache order ~protocol ?protocol_arguments candidate =
     (* A candidate is less-or-equal to a protocol if candidate.x <: protocol.x for each attribute
        `x` in the protocol. *)
     let solve_all_protocol_attributes_less_or_equal
@@ -1379,7 +1444,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                     | annotation -> annotation
                   in
                   List.concat_map constraints_set ~f:(fun constraints ->
-                      solve_less_or_equal order ~left ~right ~constraints))
+                      solve_less_or_equal ~cache order ~left ~right ~constraints))
             |> Option.value ~default:[]
       in
       let protocol_attributes =
@@ -1397,6 +1462,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       >>= List.hd
     in
     instantiate_recursive_type_with_solve
+      ~cache
       order
       ~solve_candidate_less_or_equal:solve_all_protocol_attributes_less_or_equal
       ~target:protocol
@@ -1404,13 +1470,14 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       candidate
 
 
-  and instantiate_recursive_type_parameters order ~recursive_type candidate
+  and instantiate_recursive_type_parameters ~cache order ~recursive_type candidate
       : Type.Argument.t list option
     =
     (* TODO(T44784951): Allow passing in the generic parameters for generic recursive types. *)
     let solve_recursive_type_less_or_equal order ~candidate ~target_annotation:_ =
       let expanded_body = Type.RecursiveType.unfold_recursive_type recursive_type in
       solve_less_or_equal
+        ~cache
         order
         ~left:candidate
         ~right:expanded_body
@@ -1419,6 +1486,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       |> List.hd
     in
     instantiate_recursive_type_with_solve
+      ~cache
       order
       ~solve_candidate_less_or_equal:solve_recursive_type_less_or_equal
       ~target:(Type.RecursiveType.name recursive_type)
@@ -1429,10 +1497,20 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     match new_constraint with
     | LessOrEqual { left; right } ->
         List.concat_map existing_constraints ~f:(fun constraints ->
-            solve_less_or_equal order ~constraints ~left ~right)
+            solve_less_or_equal
+              ~cache:(RecursiveInstantiationCache.empty ())
+              order
+              ~constraints
+              ~left
+              ~right)
     | OrderedTypesLessOrEqual { left; right } ->
         List.concat_map existing_constraints ~f:(fun constraints ->
-            solve_ordered_types_less_or_equal order ~constraints ~left ~right)
+            solve_ordered_types_less_or_equal
+              ~cache:(RecursiveInstantiationCache.empty ())
+              order
+              ~constraints
+              ~left
+              ~right)
     | VariableIsExactly pair ->
         let add_both_bounds constraints =
           OrderedConstraints.add_upper_bound constraints ~order ~pair
@@ -1464,6 +1542,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
 
 
   module Testing = struct
-    let instantiate_protocol_parameters = instantiate_protocol_parameters
+    let instantiate_protocol_parameters order =
+      instantiate_protocol_parameters ~cache:(RecursiveInstantiationCache.empty ()) order
   end
 end
