@@ -61,11 +61,11 @@ let setup ~context ~test_qualifier ~define_name ~source =
     ScratchProject.configuration_of project )
 
 
-let create_call_graph_of_define ~define ~test_source ~pyre_api ~configuration ~object_targets =
+let create_define_call_graph ~define ~test_source ~pyre_api ~configuration ~object_targets =
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source:test_source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
-  let call_graph =
+  let mutable_call_graph =
     CallGraph.call_graph_of_define
       ~static_analysis_configuration
       ~pyre_api
@@ -77,7 +77,7 @@ let create_call_graph_of_define ~define ~test_source ~pyre_api ~configuration ~o
       ~define
   in
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
-  call_graph
+  mutable_call_graph
 
 
 let assert_call_graph_of_define
@@ -94,7 +94,8 @@ let assert_call_graph_of_define
     setup ~context ~test_qualifier:(Reference.create "test") ~define_name ~source
   in
   let actual =
-    create_call_graph_of_define ~define ~test_source ~pyre_api ~configuration ~object_targets
+    create_define_call_graph ~define ~test_source ~pyre_api ~configuration ~object_targets
+    |> DefineCallGraph.from_mutable_define_call_graph
   in
   assert_equal ~cmp ~printer:DefineCallGraph.show expected actual
 
@@ -124,7 +125,7 @@ let assert_higher_order_call_graph_of_define
     CallGraph.higher_order_call_graph_of_define
       ~pyre_api
       ~define_call_graph:
-        (create_call_graph_of_define ~define ~test_source ~pyre_api ~configuration ~object_targets)
+        (create_define_call_graph ~define ~test_source ~pyre_api ~configuration ~object_targets)
       ~qualifier:test_qualifier
       ~define
       ~initial_state
