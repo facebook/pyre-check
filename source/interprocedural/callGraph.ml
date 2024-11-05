@@ -3331,6 +3331,13 @@ module HigherOrderCallGraph = struct
                     Location.pp
                     location)
         in
+        let callee_return_values, state = analyze_expression ~state ~expression:call.Call.callee in
+        let call_targets =
+          call_targets
+          |> CallTarget.Set.of_list
+          |> CallTarget.Set.join callee_return_values
+          |> CallTarget.Set.elements
+        in
         let state, argument_callees =
           List.fold_mapi arguments ~f:(analyze_arguments ~higher_order_parameters) ~init:state
         in

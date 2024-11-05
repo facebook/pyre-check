@@ -6529,7 +6529,19 @@ let test_higher_order_call_graph_of_define =
        return g
   |}
            ~define_name:"test.foo"
-           ~expected_call_graph:[] (* TODO: Resolve the call to `g` into `bar`. *)
+           ~expected_call_graph:
+             [
+               ( "5:2-5:6",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
            ~expected_returned_callables:
              [
                CallTarget.create_regular
@@ -6542,6 +6554,38 @@ let test_higher_order_call_graph_of_define =
                     Target.Regular.Function { name = "test.bar"; kind = Normal }
                     |> Target.from_regular );
                 ])
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:{|
+     def bar(x):
+       return x
+     def foo():
+       return bar(bar)
+  |}
+           ~define_name:"test.foo"
+           ~expected_call_graph:
+             [
+               ( "5:9-5:17",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create
+                               (create_parameterized_target
+                                  ~regular:
+                                    (Target.Regular.Function { name = "test.bar"; kind = Normal })
+                                  ~parameters:
+                                    [
+                                      ( create_positional_parameter 0 "x",
+                                        Target.Regular.Function { name = "test.bar"; kind = Normal }
+                                        |> Target.from_regular );
+                                    ]);
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[] (* TODO: Expect returning `bar` *)
            ();
     ]
 
