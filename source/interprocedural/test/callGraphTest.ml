@@ -6587,6 +6587,30 @@ let test_higher_order_call_graph_of_define =
              ]
            ~expected_returned_callables:[] (* TODO: Expect returning `bar` *)
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     class A:
+       @classmethod
+       def bar(cls):
+         pass
+       def baz(self):
+         pass
+     class B(A):
+       pass
+     def foo(a: A):
+       if 1 == 1:
+         return A.bar
+       elif 1 == 1:
+         return A().baz
+       else:
+         return a.baz
+  |}
+           ~define_name:"test.foo"
+           ~expected_call_graph:[]
+           ~expected_returned_callables:[] (* TODO: Expect returning `A.bar` and `A.baz` *)
+           ();
     ]
 
 
