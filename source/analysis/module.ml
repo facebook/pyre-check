@@ -118,6 +118,13 @@ module UnannotatedGlobal = struct
                 (* Don't register x.* as a global when a user writes `from x import *`. *)
                 sofar
             | target ->
+                let from =
+                  match Reference.as_list from with
+                  | ["future"; "builtins"]
+                  | ["builtins"] ->
+                      Reference.empty
+                  | _ -> from
+                in
                 let implicit_alias, name =
                   match alias with
                   | None -> true, target

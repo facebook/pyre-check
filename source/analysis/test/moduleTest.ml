@@ -153,6 +153,13 @@ let test_collected_imports context =
       ];
 
   assert_imports "from foo import *" ~expected:[];
+  assert_imports
+    "from builtins import int, str as s"
+    ~expected:
+      [
+        "int", ImportFrom { from = Ast.Reference.empty; target = "int"; implicit_alias = true };
+        "s", ImportFrom { from = Ast.Reference.empty; target = "str"; implicit_alias = false };
+      ];
   ()
 
 
