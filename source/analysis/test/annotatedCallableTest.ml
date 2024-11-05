@@ -196,7 +196,7 @@ let test_create_overload context =
         Type.Callable.Defined
           [
             Type.Callable.CallableParamType.Named
-              { name = "x"; default = false; annotation = Type.builtins_type (Primitive "test.C") };
+              { name = "x"; default = false; annotation = Type.class_type (Primitive "test.C") };
             Type.Callable.CallableParamType.Named
               { name = "y"; default = false; annotation = Type.string };
           ];

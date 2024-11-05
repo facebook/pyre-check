@@ -1530,9 +1530,9 @@ let test_is_not_instantiated _ =
 
 
 let test_is_meta _ =
-  assert_true (Type.is_builtins_type (Type.parametric "type" ![Type.integer]));
-  assert_false (Type.is_builtins_type Type.integer);
-  assert_false (Type.is_builtins_type (Type.parametric "typing.Type" ![Type.integer]))
+  assert_true (Type.is_class_type (Type.parametric "type" ![Type.integer]));
+  assert_false (Type.is_class_type Type.integer);
+  assert_false (Type.is_class_type (Type.parametric "typing.Type" ![Type.integer]))
 
 
 let test_is_none _ =
@@ -3883,7 +3883,7 @@ let test_class_attribute_lookups_for_type _ =
   in
   assert_class_data Type.Any (Some []);
   assert_class_data
-    (Type.builtins_type Type.integer)
+    (Type.class_type Type.integer)
     (Some
        [
          {
@@ -4041,7 +4041,7 @@ let test_class_attribute_lookups_for_type _ =
          };
        ]);
   assert_class_data
-    (Type.builtins_type (Type.PyreReadOnly.create (Type.Primitive "Foo")))
+    (Type.class_type (Type.PyreReadOnly.create (Type.Primitive "Foo")))
     (Some
        [
          {
@@ -4052,7 +4052,7 @@ let test_class_attribute_lookups_for_type _ =
          };
        ]);
   assert_class_data
-    (Type.PyreReadOnly.create (Type.builtins_type (Type.Primitive "Foo")))
+    (Type.PyreReadOnly.create (Type.class_type (Type.Primitive "Foo")))
     (Some
        [
          {

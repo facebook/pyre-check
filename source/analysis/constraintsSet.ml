@@ -810,7 +810,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               | Type.Union types ->
                   solve_less_or_equal
                     ~constraints
-                    ~left:(Type.union (List.map ~f:Type.builtins_type types))
+                    ~left:(Type.union (List.map ~f:Type.class_type types))
                     ~right
               | _ ->
                   resolve_callable_protocol ~order ~assumption:right left

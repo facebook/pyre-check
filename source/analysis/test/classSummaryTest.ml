@@ -436,7 +436,7 @@ let test_class_attributes =
            [
              attribute
                ~name:"Bar"
-               ~annotation:(Type.class_variable (Type.builtins_type (Type.Primitive "Foo.Bar")))
+               ~annotation:(Type.class_variable (Type.class_type (Type.Primitive "Foo.Bar")))
                ~nested_class:true
                ();
            ];

@@ -2360,7 +2360,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
         in
         ( Type.parametric
             "BoundMethod"
-            [Single new_signature; Single (Type.builtins_type type_for_lookup)],
+            [Single new_signature; Single (Type.class_type type_for_lookup)],
           new_index,
           new_parent_name )
       in
@@ -2520,7 +2520,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
           | None -> Type.Primitive class_name
         in
         let type_for_lookup =
-          if accessed_via_metaclass then Type.builtins_type type_for_lookup else type_for_lookup
+          if accessed_via_metaclass then Type.class_type type_for_lookup else type_for_lookup
         in
         let special_case_methods callable =
           (* Certain callables' types can't be expressed directly and need to be special cased *)
@@ -2574,21 +2574,18 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                 (* TODO:(T60535947) We can't do the Map[Ts, type] -> X[Ts] trick here because we
                    don't yet support Union[Ts] *)
                 | "typing.Union" ->
-                    ( {
-                        Type.Callable.annotation = Type.builtins_type Type.Any;
-                        parameters = Undefined;
-                      },
+                    ( { Type.Callable.annotation = Type.class_type Type.Any; parameters = Undefined },
                       [] )
                 | "typing.Callable" ->
                     ( {
                         Type.Callable.annotation =
-                          Type.builtins_type (Type.Callable.create ~annotation:synthetic ());
+                          Type.class_type (Type.Callable.create ~annotation:synthetic ());
                         parameters =
                           Defined
                             [
                               self_parameter;
                               create_parameter
-                                (Type.Tuple (Concrete [Type.Any; Type.builtins_type synthetic]));
+                                (Type.Tuple (Concrete [Type.Any; Type.class_type synthetic]));
                             ];
                       },
                       [] )
@@ -2598,19 +2595,19 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                       match name, generics with
                       | "typing.Optional", [Single generic] ->
                           {
-                            Type.Callable.annotation = Type.builtins_type (Type.optional generic);
+                            Type.Callable.annotation = Type.class_type (Type.optional generic);
                             parameters = Defined [self_parameter; parameter];
                           }
                       | _ ->
                           {
                             Type.Callable.annotation =
-                              Type.builtins_type (Type.parametric name generics);
+                              Type.class_type (Type.parametric name generics);
                             parameters = Defined [self_parameter; parameter];
                           }
                     in
                     match generics with
                     | [TypeVarVariable generic] ->
-                        overload (create_parameter (Type.builtins_type (Variable generic))), []
+                        overload (create_parameter (Type.class_type (Variable generic))), []
                     | _ ->
                         (* To support the value `GenericFoo[int, str]`, we need `class
                            GenericFoo[T1, T2]` to have:
@@ -2619,7 +2616,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                            T2]`. *)
                         let meta_type_and_return_type = function
                           | Type.Variable.TypeVarVariable single ->
-                              ( Type.builtins_type (Variable single),
+                              ( Type.class_type (Variable single),
                                 Type.Argument.Single (Type.Variable single) )
                           | ParamSpecVariable _ ->
                               (* TODO:(T60536033) We'd really like to take FiniteList[Ts], but
@@ -2633,7 +2630,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                         in
                         ( {
                             Type.Callable.annotation =
-                              Type.builtins_type (Type.parametric name return_parameters);
+                              Type.class_type (Type.parametric name return_parameters);
                             parameters =
                               Defined [self_parameter; create_parameter (Type.tuple meta_types)];
                           },
@@ -2730,7 +2727,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                           {
                             Argument.kind = Positional;
                             expression = None;
-                            resolved = Type.builtins_type type_for_lookup;
+                            resolved = Type.class_type type_for_lookup;
                           };
                         ]
                       ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
@@ -2812,7 +2809,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                   if accessed_through_class then
                     (* descriptor methods are statically looked up on the class (in this case
                        `type`), not on the instance. `type` is not a descriptor. *)
-                    `NotDescriptor (Type.builtins_type type_for_lookup)
+                    `NotDescriptor (Type.class_type type_for_lookup)
                   else
                     match type_for_lookup with
                     | Callable callable -> (
@@ -3007,7 +3004,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                 ~accessed_through_class:true
                 ~accessed_through_readonly:false
                 ~include_generated_attributes:true
-                ~type_for_lookup:(Type.builtins_type annotation)
+                ~type_for_lookup:(Type.class_type annotation)
                 ~special_method:false
                 ~attribute_name:name
                 class_name
@@ -3403,7 +3400,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
               if Type.is_none annotation then
                 Type.none
               else
-                Type.builtins_type annotation
+                Type.class_type annotation
           | None -> Type.Any
         else
           Type.Any
@@ -3429,7 +3426,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
           match fully_specified_type expression with
           | Some annotation ->
               (* Literal generic type, e.g. global = List[int] *)
-              Type.builtins_type annotation
+              Type.class_type annotation
           | None ->
               (* Constructor on concrete class or fully specified generic,
                * e.g. global = GenericClass[int](x, y) or global = ConcreteClass(x) *)
@@ -4068,7 +4065,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                  ~validation:ValidatePrimitives
                  ~cycle_detections
                  ~scoped_type_variables:None
-            |> Type.builtins_type
+            |> Type.class_type
             |> TypeInfo.Unit.create_immutable
             |> fun type_info ->
             Some { Global.type_info; undecorated_signature = None; problem = None }
@@ -4119,7 +4116,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
       let class_lookup = Reference.show name |> class_exists in
       if class_lookup then
         let primitive = Type.Primitive (Reference.show name) in
-        TypeInfo.Unit.create_immutable (Type.builtins_type primitive)
+        TypeInfo.Unit.create_immutable (Type.class_type primitive)
         |> fun type_info -> Some { Global.type_info; undecorated_signature = None; problem = None }
       else
         get_unannotated_global name

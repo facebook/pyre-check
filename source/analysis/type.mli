@@ -312,9 +312,9 @@ val list : t -> t
 
 val mapping_primitive : string
 
-val builtins_type : t -> t
+val class_type : t -> t
 
-val extract_from_builtins_type : t -> t option
+val extract_from_class_type : t -> t option
 
 val named_tuple : t
 
@@ -528,7 +528,7 @@ val is_iterator : t -> bool
 
 val is_list : t -> bool
 
-val is_builtins_type : t -> bool
+val is_class_type : t -> bool
 
 val is_none : t -> bool
 

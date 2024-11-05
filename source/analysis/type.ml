@@ -442,9 +442,9 @@ module Constructors = struct
 
   let list argument = Parametric { name = "list"; arguments = [Single argument] }
 
-  let builtins_type annotation = Parametric { name = "type"; arguments = [Single annotation] }
+  let class_type annotation = Parametric { name = "type"; arguments = [Single annotation] }
 
-  let extract_from_builtins_type = function
+  let extract_from_class_type = function
     | Parametric { name = "type"; arguments = [Single annotation] } -> Some annotation
     | _ -> None
 
@@ -885,7 +885,7 @@ module Predicates = struct
     | _ -> false
 
 
-  let is_builtins_type = function
+  let is_class_type = function
     | Parametric { name = "type"; _ } -> true
     | _ -> false
 
@@ -5481,7 +5481,7 @@ let class_attribute_lookups_for_type type_ =
         (* The `PyreReadOnly[Xyz]` type behaves like a qualifier: anything accessed on a value of
            this type behaves like an access on Xyz, but restricted to read-only *)
         extract_class_data ~accessed_through_class ~accessed_through_readonly:true type_
-    | type_ when Predicates.is_builtins_type type_ ->
+    | type_ when Predicates.is_class_type type_ ->
         (* The `type[Xyz]` type (also known as `typing.Type[Xyz]`) indicates a class object: access
            on a value of this type is always a class rather than instance access. *)
         single_argument type_

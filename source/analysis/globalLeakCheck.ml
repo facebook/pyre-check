@@ -294,7 +294,7 @@ module State (Context : Context) = struct
         let { errors; _ } = forward_expression callee in
         let reachable_globals =
           let resolved_expression_type = expression_type () in
-          match Type.extract_from_builtins_type resolved_expression_type with
+          match Type.extract_from_class_type resolved_expression_type with
           | Some class_name ->
               (* if this expression (the result of the call) returns a class reference/type, then
                  treat it as a global (i.e. `get_class().x = 5` for `def get_class() ->
@@ -628,9 +628,7 @@ module State (Context : Context) = struct
       | Return { expression = Some expression; _ } ->
           let { errors; reachable_globals } = forward_expression ~resolution expression in
           let reachable_globals =
-            let is_safe_global { expression_type; _ } =
-              not (Type.is_builtins_type expression_type)
-            in
+            let is_safe_global { expression_type; _ } = not (Type.is_class_type expression_type) in
             List.filter ~f:is_safe_global reachable_globals
           in
           let leak_to_global_returns =

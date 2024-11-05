@@ -214,7 +214,7 @@ let test_constructors =
     let actual =
       GlobalResolution.attribute_from_annotation
         ~special_method:true
-        ~parent:(Type.builtins_type instantiated)
+        ~parent:(Type.class_type instantiated)
         resolution
         ~name:"__call__"
       |> (fun option -> Option.value_exn option)
