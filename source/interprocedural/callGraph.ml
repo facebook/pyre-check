@@ -1177,8 +1177,6 @@ module MutableDefineCallGraph = struct
 
   include MakeResolveCallGraph (ResolveCallGraph)
 
-  let create = Location.Table.create
-
   let add_callees ~expression_identifier ~location ~callees map =
     Hashtbl.update map location ~f:(function
         | None -> LocationCallees.Map.singleton ~expression_identifier ~callees
@@ -3275,14 +3273,12 @@ module HigherOrderCallGraph = struct
 
   module MakeFixpoint (Context : sig
     (* Inputs. *)
-    val mutable_define_call_graph : MutableDefineCallGraph.t
-
     val qualifier : Reference.t
 
     val pyre_api : PyrePysaEnvironment.ReadOnly.t
 
-    (* Outputs. *)
-    val callees_at_location : MutableDefineCallGraph.t
+    (* Inputs and outputs. *)
+    val mutable_define_call_graph : MutableDefineCallGraph.t
   end) =
   struct
     let get_result = State.get TaintAccessPath.Root.LocalResult
@@ -3313,7 +3309,7 @@ module HigherOrderCallGraph = struct
             ~callees:
               (CallCallees.create ~call_targets:(CallTarget.Set.to_sorted_list callees) ()
               |> ExpressionCallees.from_call)
-            Context.callees_at_location
+            Context.mutable_define_call_graph
 
 
       let rec analyze_call ~location ~call ~arguments ~state =
@@ -3532,15 +3528,12 @@ end
 
 let higher_order_call_graph_of_define ~define_call_graph ~pyre_api ~qualifier ~define ~initial_state
   =
-  let callees_at_location = MutableDefineCallGraph.create () in
   let module Fixpoint = HigherOrderCallGraph.MakeFixpoint (struct
     let mutable_define_call_graph = define_call_graph
 
     let qualifier = qualifier
 
     let pyre_api = pyre_api
-
-    let callees_at_location = callees_at_location
   end)
   in
   let returned_callables =
@@ -3551,7 +3544,7 @@ let higher_order_call_graph_of_define ~define_call_graph ~pyre_api ~qualifier ~d
   in
   {
     HigherOrderCallGraph.returned_callables;
-    call_graph = DefineCallGraph.from_mutable_define_call_graph callees_at_location;
+    call_graph = DefineCallGraph.from_mutable_define_call_graph define_call_graph;
   }
 
 

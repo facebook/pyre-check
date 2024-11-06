@@ -6275,7 +6275,19 @@ let test_higher_order_call_graph_of_define =
        pass
   |}
            ~define_name:"test.foo"
-           ~expected_call_graph:[]
+           ~expected_call_graph:
+             [
+               ( "3:8-3:11",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
            ~expected_returned_callables:[]
            ();
       labeled_test_case __FUNCTION__ __LINE__
@@ -6287,7 +6299,19 @@ let test_higher_order_call_graph_of_define =
        pass
   |}
            ~define_name:"test.foo"
-           ~expected_call_graph:[]
+           ~expected_call_graph:
+             [
+               ( "3:8-3:11",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
            ~expected_returned_callables:
              [
                CallTarget.create_regular
@@ -6303,7 +6327,19 @@ let test_higher_order_call_graph_of_define =
        pass
   |}
            ~define_name:"test.foo"
-           ~expected_call_graph:[]
+           ~expected_call_graph:
+             [
+               ( "3:9-3:12",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
            ~expected_returned_callables:
              [
                CallTarget.create_regular
@@ -6320,7 +6356,19 @@ let test_higher_order_call_graph_of_define =
        pass
   |}
            ~define_name:"test.foo"
-           ~expected_call_graph:[]
+           ~expected_call_graph:
+             [
+               ( "3:15-3:18",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
            ~expected_returned_callables:
              [
                CallTarget.create_regular
@@ -6347,6 +6395,8 @@ let test_higher_order_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
+                             CallTarget.create_regular (* TODO: Remove *)
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6360,6 +6410,51 @@ let test_higher_order_call_graph_of_define =
                                         Target.Regular.Function { name = "test.baz"; kind = Normal }
                                         |> Target.from_regular );
                                     ]);
+                           ]
+                         ~higher_order_parameters:
+                           (* TODO: Remove *)
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.foo"; kind = Normal });
+                                    ];
+                                  unresolved = false;
+                                };
+                                {
+                                  index = 1;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.baz"; kind = Normal });
+                                    ];
+                                  unresolved = false;
+                                };
+                              ])
+                         ())) );
+               ( "3:6-3:9",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ())) );
+               ( "3:11-3:14",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.baz"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -6384,6 +6479,8 @@ let test_higher_order_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
+                             CallTarget.create_regular (* TODO: Remove *)
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6394,6 +6491,31 @@ let test_higher_order_call_graph_of_define =
                                         Target.Regular.Function { name = "test.bar"; kind = Normal }
                                         |> Target.from_regular );
                                     ]);
+                           ]
+                         ~higher_order_parameters:
+                           (* TODO: Remove *)
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.bar"; kind = Normal });
+                                    ];
+                                  unresolved = false;
+                                };
+                              ])
+                         ())) );
+               ( "3:6-3:9",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
                ( "4:2-4:11",
@@ -6430,6 +6552,8 @@ let test_higher_order_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
+                             CallTarget.create_regular (* TODO: Remove *)
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6440,6 +6564,30 @@ let test_higher_order_call_graph_of_define =
                                         Target.Regular.Function { name = "test.bar"; kind = Normal }
                                         |> Target.from_regular );
                                     ]);
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.bar"; kind = Normal });
+                                    ];
+                                  unresolved = false;
+                                };
+                              ])
+                         ())) );
+               ( "7:6-7:9",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -6473,6 +6621,8 @@ let test_higher_order_call_graph_of_define =
                              (* TODO(T206271514): It is incorrect to create targets for the
                                 undecorated version of the functions that have decorators. Instead,
                                 we should create targets for the decorated version. *)
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6483,6 +6633,30 @@ let test_higher_order_call_graph_of_define =
                                         Target.Regular.Function { name = "test.baz"; kind = Normal }
                                         |> Target.from_regular );
                                     ]);
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.baz"; kind = Normal });
+                                    ];
+                                  unresolved = false;
+                                };
+                              ])
+                         ())) );
+               ( "12:7-12:10",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.baz"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -6505,6 +6679,8 @@ let test_higher_order_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
+                             CallTarget.create_regular (* TODO: Remove *)
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6515,6 +6691,31 @@ let test_higher_order_call_graph_of_define =
                                         Target.Regular.Function { name = "test.bar"; kind = Normal }
                                         |> Target.from_regular );
                                     ]);
+                           ]
+                         ~higher_order_parameters:
+                           (* TODO: Remove *)
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.bar"; kind = Normal });
+                                    ];
+                                  unresolved = false;
+                                };
+                              ])
+                         ())) );
+               ( "5:8-5:11",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -6541,6 +6742,7 @@ let test_higher_order_call_graph_of_define =
                              CallTarget.create_regular
                                (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
+                         ~unresolved:true
                          ())) );
              ]
            ~expected_returned_callables:
@@ -6573,6 +6775,8 @@ let test_higher_order_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
+                             CallTarget.create_regular (* TODO: Remove *)
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6583,6 +6787,31 @@ let test_higher_order_call_graph_of_define =
                                         Target.Regular.Function { name = "test.bar"; kind = Normal }
                                         |> Target.from_regular );
                                     ]);
+                           ]
+                         ~higher_order_parameters:
+                           (* TODO: Remove *)
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.bar"; kind = Normal });
+                                    ];
+                                  unresolved = false;
+                                };
+                              ])
+                         ())) );
+               ( "5:13-5:16",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );
              ]
@@ -6609,7 +6838,112 @@ let test_higher_order_call_graph_of_define =
          return a.baz
   |}
            ~define_name:"test.foo"
-           ~expected_call_graph:[]
+           ~expected_call_graph:
+             [
+               ( "11:5-11:11",
+                 LocationCallees.Compound
+                   (SerializableStringMap.of_alist_exn
+                      [
+                        ( "__eq__",
+                          ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     ~receiver_class:"int"
+                                     ~return_type:(Some ReturnType.bool)
+                                     ~index:1
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "int";
+                                          method_name = "__eq__";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ()) );
+                        ( "__ne__",
+                          ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     ~receiver_class:"int"
+                                     ~return_type:(Some ReturnType.bool)
+                                     ~index:0
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "int";
+                                          method_name = "__ne__";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ()) );
+                      ]) );
+               ( "13:7-13:13",
+                 LocationCallees.Compound
+                   (SerializableStringMap.of_alist_exn
+                      [
+                        ( "__eq__",
+                          ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     ~receiver_class:"int"
+                                     ~return_type:(Some ReturnType.bool)
+                                     ~index:0
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "int";
+                                          method_name = "__eq__";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ()) );
+                        ( "__ne__",
+                          ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     ~receiver_class:"int"
+                                     ~return_type:(Some ReturnType.bool)
+                                     ~index:1
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "int";
+                                          method_name = "__ne__";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ()) );
+                      ]) );
+               ( "14:11-14:14",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~init_targets:
+                           [
+                             CallTarget.create_regular
+                               ~implicit_receiver:true
+                               ~return_type:(Some ReturnType.any)
+                               (Target.Regular.Method
+                                  { class_name = "object"; method_name = "__init__"; kind = Normal });
+                           ]
+                         ~new_targets:
+                           [
+                             CallTarget.create_regular
+                               ~return_type:(Some ReturnType.any)
+                               ~is_static_method:true
+                               (Target.Regular.Method
+                                  { class_name = "object"; method_name = "__new__"; kind = Normal });
+                           ]
+                         ())) );
+             ]
            ~expected_returned_callables:[] (* TODO: Expect returning `A.bar` and `A.baz` *)
            ();
     ]
