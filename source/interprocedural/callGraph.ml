@@ -1177,6 +1177,8 @@ module MutableDefineCallGraph = struct
 
   include MakeResolveCallGraph (ResolveCallGraph)
 
+  let copy = Hashtbl.copy
+
   let add_callees ~expression_identifier ~location ~callees map =
     Hashtbl.update map location ~f:(function
         | None -> LocationCallees.Map.singleton ~expression_identifier ~callees
@@ -3570,8 +3572,9 @@ end
 
 let higher_order_call_graph_of_define ~define_call_graph ~pyre_api ~qualifier ~define ~initial_state
   =
+  let mutable_define_call_graph = MutableDefineCallGraph.copy define_call_graph in
   let module Fixpoint = HigherOrderCallGraph.MakeFixpoint (struct
-    let mutable_define_call_graph = define_call_graph
+    let mutable_define_call_graph = mutable_define_call_graph
 
     let qualifier = qualifier
 
@@ -3586,7 +3589,7 @@ let higher_order_call_graph_of_define ~define_call_graph ~pyre_api ~qualifier ~d
   in
   {
     HigherOrderCallGraph.returned_callables;
-    call_graph = DefineCallGraph.from_mutable_define_call_graph define_call_graph;
+    call_graph = DefineCallGraph.from_mutable_define_call_graph mutable_define_call_graph;
   }
 
 
