@@ -6532,32 +6532,26 @@ let test_higher_order_call_graph_of_define =
       @@ assert_higher_order_call_graph_of_define
            ~source:
              {|
+     from builtins import _test_sink
      def foo(x):
        ... # stub
      def bar():
        pass
      def baz():
        foo(bar)
+       _test_sink(bar)
   |}
            ~define_name:"test.baz"
            ~expected_call_graph:
              [
-               ( "7:2-7:10",
+               ( "8:2-8:10",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create
-                               (create_parameterized_target
-                                  ~regular:
-                                    (Target.Regular.Function { name = "test.foo"; kind = Normal })
-                                  ~parameters:
-                                    [
-                                      ( create_positional_parameter 0 "x",
-                                        Target.Regular.Function { name = "test.bar"; kind = Normal }
-                                        |> Target.from_regular );
-                                    ]);
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ~higher_order_parameters:
                            (HigherOrderParameterMap.from_list
@@ -6574,7 +6568,42 @@ let test_higher_order_call_graph_of_define =
                                 };
                               ])
                          ())) );
-               ( "7:6-7:9",
+               ( "8:6-8:9",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+               ( "9:2-9:17",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "_test_sink"; kind = Normal });
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        ~index:1
+                                        (Target.Regular.Function
+                                           { name = "test.bar"; kind = Normal });
+                                    ];
+                                  unresolved = false;
+                                };
+                              ])
+                         ())) );
+               ( "9:13-9:16",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_attribute_access
                       (AttributeAccessCallees.create

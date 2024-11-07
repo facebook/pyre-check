@@ -3317,15 +3317,17 @@ module HigherOrderCallGraph = struct
 
 
       let rec analyze_call ~location ~call ~arguments ~state =
-        let formal_arguments target =
+        let formal_arguments_if_non_stub target =
           match Target.get_module_and_definition ~pyre_api:Context.pyre_api target with
-          | None -> []
+          | Some (_, { Node.value = define; _ }) when Define.is_stub define -> None
+          | None -> None
           | Some
               (_, { Node.value = { Define.signature = { Define.Signature.parameters; _ }; _ }; _ })
             ->
-              parameters
-              |> TaintAccessPath.normalize_parameters
-              |> List.map ~f:(fun { TaintAccessPath.NormalizedParameter.root; _ } -> root)
+              Some
+                (parameters
+                |> TaintAccessPath.normalize_parameters
+                |> List.map ~f:(fun { TaintAccessPath.NormalizedParameter.root; _ } -> root))
         in
         let create_parameter_target (parameter_target, (_, argument_matches)) =
           match argument_matches, parameter_target with
@@ -3396,13 +3398,17 @@ module HigherOrderCallGraph = struct
           | Some callee_target :: parameter_targets ->
               let parameters =
                 callee_target.CallTarget.target
-                |> formal_arguments
-                |> TaintAccessPath.match_actuals_to_formals arguments
-                |> List.zip_exn parameter_targets
-                |> List.filter_map ~f:create_parameter_target
-                |> Target.ParameterMap.of_alist_exn
+                |> formal_arguments_if_non_stub
+                >>| TaintAccessPath.match_actuals_to_formals arguments
+                >>| List.zip_exn parameter_targets
+                >>| List.filter_map ~f:create_parameter_target
+                >>| Target.ParameterMap.of_alist_exn
+                |> Option.value ~default:Target.ParameterMap.empty
               in
               if Target.ParameterMap.is_empty parameters then
+                (* Treat as regular target when (1) no parameter targets exist or (2) we cannot find
+                   function bodies, so that the taint analysis can still use
+                   `higher_order_parameters`. *)
                 Some
                   {
                     callee_target with
