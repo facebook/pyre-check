@@ -57,7 +57,7 @@ module CallTarget : sig
   module Set : sig
     type call_target = t
 
-    type t
+    type t [@@deriving show, eq]
 
     val of_list : call_target list -> t
   end
@@ -360,7 +360,7 @@ val call_graph_of_callable
 module HigherOrderCallGraph : sig
   type t = {
     returned_callables: CallTarget.Set.t;
-    call_graph: DefineCallGraph.t;
+    call_graph: MutableDefineCallGraph.t;
         (* Higher order function callees (i.e., parameterized targets) and potentially regular
            callees. *)
   }

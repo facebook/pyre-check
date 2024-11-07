@@ -100,6 +100,18 @@ let assert_call_graph_of_define
   assert_equal ~cmp ~printer:DefineCallGraph.show expected actual
 
 
+module ImmutableHigherOrderCallGraph = struct
+  type t = {
+    returned_callables: CallTarget.Set.t;
+    call_graph: DefineCallGraph.t;
+  }
+  [@@deriving eq, show]
+
+  let from_higher_order_call_graph { CallGraph.HigherOrderCallGraph.returned_callables; call_graph }
+    =
+    { returned_callables; call_graph = DefineCallGraph.from_mutable_define_call_graph call_graph }
+end
+
 let assert_higher_order_call_graph_of_define
     ?(object_targets = [])
     ?(initial_state = CallGraph.HigherOrderCallGraph.State.empty)
@@ -107,13 +119,13 @@ let assert_higher_order_call_graph_of_define
     ~define_name
     ~expected_call_graph
     ~expected_returned_callables
-    ?(cmp = HigherOrderCallGraph.equal)
+    ?(cmp = ImmutableHigherOrderCallGraph.equal)
     ()
     context
   =
   let expected =
     {
-      CallGraph.HigherOrderCallGraph.call_graph = parse_define_call_graph expected_call_graph;
+      ImmutableHigherOrderCallGraph.call_graph = parse_define_call_graph expected_call_graph;
       returned_callables = CallTarget.Set.of_list expected_returned_callables;
     }
   in
@@ -129,8 +141,9 @@ let assert_higher_order_call_graph_of_define
       ~qualifier:test_qualifier
       ~define
       ~initial_state
+    |> ImmutableHigherOrderCallGraph.from_higher_order_call_graph
   in
-  assert_equal ~cmp ~printer:HigherOrderCallGraph.show expected actual
+  assert_equal ~cmp ~printer:ImmutableHigherOrderCallGraph.show expected actual
 
 
 let create_parameterized_target ~regular ~parameters =

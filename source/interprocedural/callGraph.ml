@@ -1179,6 +1179,20 @@ module MutableDefineCallGraph = struct
 
   let copy = Hashtbl.copy
 
+  let pp formatter call_graph =
+    let pp_pair formatter (key, value) =
+      Format.fprintf
+        formatter
+        "@,%a -> %a"
+        Location.pp
+        key
+        (LocationCallees.Map.pp ExpressionCallees.pp)
+        value
+    in
+    let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+    call_graph |> Hashtbl.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
+
+
   let add_callees ~expression_identifier ~location ~callees map =
     Hashtbl.update map location ~f:(function
         | None -> LocationCallees.Map.singleton ~expression_identifier ~callees
@@ -3241,7 +3255,7 @@ end
 module HigherOrderCallGraph = struct
   type t = {
     returned_callables: CallTarget.Set.t;
-    call_graph: DefineCallGraph.t;
+    call_graph: MutableDefineCallGraph.t;
         (* Higher order function callees (i.e., parameterized targets) and potentially regular
            callees. *)
   }
@@ -3587,10 +3601,7 @@ let higher_order_call_graph_of_define ~define_call_graph ~pyre_api ~qualifier ~d
     >>| Fixpoint.get_result
     |> Option.value ~default:CallTarget.Set.bottom
   in
-  {
-    HigherOrderCallGraph.returned_callables;
-    call_graph = DefineCallGraph.from_mutable_define_call_graph mutable_define_call_graph;
-  }
+  { HigherOrderCallGraph.returned_callables; call_graph = mutable_define_call_graph }
 
 
 let higher_order_call_graph_of_callable ~pyre_api ~define_call_graph ~callable =
