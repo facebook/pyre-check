@@ -6395,8 +6395,6 @@ let test_higher_order_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create_regular (* TODO: Remove *)
-                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6479,8 +6477,6 @@ let test_higher_order_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create_regular (* TODO: Remove *)
-                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6552,8 +6548,6 @@ let test_higher_order_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create_regular (* TODO: Remove *)
-                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6621,8 +6615,6 @@ let test_higher_order_call_graph_of_define =
                              (* TODO(T206271514): It is incorrect to create targets for the
                                 undecorated version of the functions that have decorators. Instead,
                                 we should create targets for the decorated version. *)
-                             CallTarget.create_regular
-                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6679,8 +6671,6 @@ let test_higher_order_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create_regular (* TODO: Remove *)
-                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
@@ -6775,8 +6765,6 @@ let test_higher_order_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create_regular (* TODO: Remove *)
-                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
                              CallTarget.create
                                (create_parameterized_target
                                   ~regular:
