@@ -3459,6 +3459,13 @@ module HigherOrderCallGraph = struct
                 parameterized_call_targets
                 |> CallTarget.Set.to_sorted_list
                 |> List.rev_append non_parameterized_targets;
+              (* Do not keep keep higher order parameters if each existing call target is
+                 parameterized. *)
+              higher_order_parameters =
+                (if List.is_empty non_parameterized_targets then
+                   HigherOrderParameterMap.empty
+                else
+                  higher_order_parameters);
             }
           Context.mutable_define_call_graph;
         (* TODO: Return the summaries of calling `call_targets`. *)

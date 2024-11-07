@@ -6409,31 +6409,6 @@ let test_higher_order_call_graph_of_define =
                                         |> Target.from_regular );
                                     ]);
                            ]
-                         ~higher_order_parameters:
-                           (* TODO: Remove *)
-                           (HigherOrderParameterMap.from_list
-                              [
-                                {
-                                  index = 0;
-                                  call_targets =
-                                    [
-                                      CallTarget.create_regular
-                                        (Target.Regular.Function
-                                           { name = "test.foo"; kind = Normal });
-                                    ];
-                                  unresolved = false;
-                                };
-                                {
-                                  index = 1;
-                                  call_targets =
-                                    [
-                                      CallTarget.create_regular
-                                        (Target.Regular.Function
-                                           { name = "test.baz"; kind = Normal });
-                                    ];
-                                  unresolved = false;
-                                };
-                              ])
                          ())) );
                ( "3:6-3:9",
                  LocationCallees.Singleton
@@ -6488,21 +6463,6 @@ let test_higher_order_call_graph_of_define =
                                         |> Target.from_regular );
                                     ]);
                            ]
-                         ~higher_order_parameters:
-                           (* TODO: Remove *)
-                           (HigherOrderParameterMap.from_list
-                              [
-                                {
-                                  index = 0;
-                                  call_targets =
-                                    [
-                                      CallTarget.create_regular
-                                        (Target.Regular.Function
-                                           { name = "test.bar"; kind = Normal });
-                                    ];
-                                  unresolved = false;
-                                };
-                              ])
                          ())) );
                ( "3:6-3:9",
                  LocationCallees.Singleton
@@ -6655,20 +6615,6 @@ let test_higher_order_call_graph_of_define =
                                         |> Target.from_regular );
                                     ]);
                            ]
-                         ~higher_order_parameters:
-                           (HigherOrderParameterMap.from_list
-                              [
-                                {
-                                  index = 0;
-                                  call_targets =
-                                    [
-                                      CallTarget.create_regular
-                                        (Target.Regular.Function
-                                           { name = "test.baz"; kind = Normal });
-                                    ];
-                                  unresolved = false;
-                                };
-                              ])
                          ())) );
                ( "12:7-12:10",
                  LocationCallees.Singleton
@@ -6711,21 +6657,6 @@ let test_higher_order_call_graph_of_define =
                                         |> Target.from_regular );
                                     ]);
                            ]
-                         ~higher_order_parameters:
-                           (* TODO: Remove *)
-                           (HigherOrderParameterMap.from_list
-                              [
-                                {
-                                  index = 0;
-                                  call_targets =
-                                    [
-                                      CallTarget.create_regular
-                                        (Target.Regular.Function
-                                           { name = "test.bar"; kind = Normal });
-                                    ];
-                                  unresolved = false;
-                                };
-                              ])
                          ())) );
                ( "5:8-5:11",
                  LocationCallees.Singleton
@@ -6805,21 +6736,6 @@ let test_higher_order_call_graph_of_define =
                                         |> Target.from_regular );
                                     ]);
                            ]
-                         ~higher_order_parameters:
-                           (* TODO: Remove *)
-                           (HigherOrderParameterMap.from_list
-                              [
-                                {
-                                  index = 0;
-                                  call_targets =
-                                    [
-                                      CallTarget.create_regular
-                                        (Target.Regular.Function
-                                           { name = "test.bar"; kind = Normal });
-                                    ];
-                                  unresolved = false;
-                                };
-                              ])
                          ())) );
                ( "5:13-5:16",
                  LocationCallees.Singleton
