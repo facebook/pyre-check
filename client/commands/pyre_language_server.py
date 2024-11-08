@@ -1127,9 +1127,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
 
         pyautotargets_timer = timer.Timer()
         system_pyautotarget = (
-            Path(
-                r"C:\ProgramData\chocolatey\lib\fb-pyautotargets-windows\bin\pyautotargets.exe"
-            )
+            Path(r"C:\ProgramData\chocolatey\bin\pyautotargets.exe")
             if os.name == "nt"
             else Path("/usr/local/bin/pyautotargets")
         )
