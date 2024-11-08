@@ -368,7 +368,6 @@ static pid_t* master_pid = NULL;
 static pid_t my_pid = 0;
 
 static size_t allow_hashtable_writes_by_current_process = 1;
-static size_t worker_can_exit = 1;
 
 static char* db_filename = NULL;
 static char* hashtable_db_filename = NULL;
@@ -1998,7 +1997,6 @@ hh_update_dep_table_sqlite(value out_filename, value build_revision) {
   assert_master();
 
   struct timeval tv = {0};
-  struct timeval tv2 = {0};
   gettimeofday(&tv, NULL);
 
   assert_sql(sqlite3_open(out_filename_raw, &db_out), SQLITE_OK);
