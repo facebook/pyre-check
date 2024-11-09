@@ -667,12 +667,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
         self,
         type_errors: Mapping[Path, Collection[error.Error]],
         type_checked_files: Set[Path],
+        set_unused_as_warning: bool = False,
     ) -> None:
         for file in type_checked_files:
             document_errors = type_errors.get(file, set())
             await self.client_type_error_handler.show_overlay_type_errors(
                 path=file,
                 type_errors=list(document_errors),
+                set_unused_as_warning=set_unused_as_warning,
             )
 
     @staticmethod
@@ -685,8 +687,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
         )
         result: defaultdict[Path, Set[error.Error]] = defaultdict(set)
         for type_error in error_result.errors:
-            if type_error.code == 0:
-                continue
             type_error = type_error.with_path(buck_root / type_error.path)
             result[type_error.path].add(type_error)
         return result
@@ -803,7 +803,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         try:
             type_errors = self._process_buck_type_errors_from_stdout(stdout_text)
             LOG.debug(f"Received type errors from Buck: {type_errors}")
-            await self._publish_type_errors_for_files(type_errors, type_checkable_files)
+            await self._publish_type_errors_for_files(
+                type_errors, type_checkable_files, set_unused_as_warning=True
+            )
         except (
             json.JSONDecodeError,
             AssertionError,

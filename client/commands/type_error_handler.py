@@ -44,17 +44,25 @@ async def _publish_diagnostics(
 
 def type_errors_to_diagnostics(
     type_errors: Collection[error.Error],
+    set_unused_as_warning: bool,
 ) -> Dict[Path, List[lsp.Diagnostic]]:
     result: Dict[Path, List[lsp.Diagnostic]] = {}
     for type_error in type_errors:
         result.setdefault(type_error.path, []).append(
-            type_error_to_diagnostic(type_error)
+            type_error_to_diagnostic(type_error, set_unused_as_warning)
         )
     return result
 
 
-def type_error_to_diagnostic(type_error: error.Error) -> lsp.Diagnostic:
+def type_error_to_diagnostic(
+    type_error: error.Error, set_unused_as_warning: bool
+) -> lsp.Diagnostic:
     code_description = _get_code_description(type_error)
+    severity = (
+        lsp.DiagnosticSeverity.WARNING
+        if set_unused_as_warning and type_error.code == 0
+        else lsp.DiagnosticSeverity.ERROR
+    )
     return lsp.Diagnostic(
         range=lsp.LspRange(
             start=lsp.LspPosition(
@@ -65,7 +73,7 @@ def type_error_to_diagnostic(type_error: error.Error) -> lsp.Diagnostic:
             ),
         ),
         message=type_error.description,
-        severity=lsp.DiagnosticSeverity.ERROR,
+        severity=severity,
         code=None if code_description is None else "pyre (documentation link)",
         code_description=code_description,
         source="Pyre",
@@ -85,12 +93,16 @@ class ClientTypeErrorHandler:
     server_state: server_state.ServerState
     remote_logging: Optional[backend_arguments.RemoteLogging] = None
 
-    def update_type_errors(self, type_errors: Collection[error.Error]) -> None:
+    def update_type_errors(
+        self, type_errors: Collection[error.Error], set_unused_as_warning: bool = False
+    ) -> None:
         LOG.info(
             "Refreshing type errors received from Pyre server. "
             f"Total number of type errors is {len(type_errors)}."
         )
-        self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
+        self.server_state.diagnostics = type_errors_to_diagnostics(
+            type_errors, set_unused_as_warning
+        )
 
     async def clear_type_errors_for_client(self) -> None:
         for path in self.server_state.diagnostics:
@@ -104,11 +116,14 @@ class ClientTypeErrorHandler:
         self,
         path: Path,
         type_errors: Collection[error.Error],
+        set_unused_as_warning: bool = False,
     ) -> None:
         LOG.info(
             f"Refreshing type errors at path {path}. "
             f"Total number of type errors is {len(type_errors)}."
         )
-        diagnostics_by_path = type_errors_to_diagnostics(type_errors)
+        diagnostics_by_path = type_errors_to_diagnostics(
+            type_errors, set_unused_as_warning
+        )
         diagnostics = diagnostics_by_path.get(path, [])
         await _publish_diagnostics(self.client_output_channel, path, diagnostics)

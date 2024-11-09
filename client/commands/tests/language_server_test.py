@@ -457,7 +457,8 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                     code=42,
                     name="name",
                     description="description",
-                )
+                ),
+                set_unused_as_warning=False,
             ),
             lsp.Diagnostic(
                 range=lsp.LspRange(
@@ -506,7 +507,18 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                         name="bar_name",
                         description="bar_description",
                     ),
-                ]
+                    error.Error(
+                        line=5,
+                        column=5,
+                        stop_line=6,
+                        stop_column=6,
+                        path=Path("/bar.py"),
+                        code=0,
+                        name="bar_name",
+                        description="bar_description",
+                    ),
+                ],
+                set_unused_as_warning=True,
             ),
             {
                 Path("/foo.py"): [
@@ -550,7 +562,20 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                         code_description=lsp.CodeDescription(
                             href="https://pyre-check.org/docs/errors/#"
                         ),
-                    )
+                    ),
+                    lsp.Diagnostic(
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=4, character=5),
+                            end=lsp.LspPosition(line=5, character=6),
+                        ),
+                        message="bar_description",
+                        severity=lsp.DiagnosticSeverity.WARNING,
+                        code="pyre (documentation link)",
+                        source="Pyre",
+                        code_description=lsp.CodeDescription(
+                            href="https://pyre-check.org/docs/errors/#0-unused-ignore"
+                        ),
+                    ),
                 ],
             },
         )
