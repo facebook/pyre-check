@@ -4973,6 +4973,9 @@ module State (Context : Context) = struct
                      constructor instead of being assigned to _value_ directly, so we don't have to
                      do this check. *)
                   | Type.Tuple _, Some _ -> true, expected
+                  (* When the member is defined with `auto()`, we don't check the type because the
+                     value is automatically assigned. *)
+                  | Type.Primitive "enum.auto", Some _ -> true, expected
                   | _, Some instantiated ->
                       let { TypeInfo.Unit.annotation = enum_value_annotation; _ } =
                         AnnotatedAttribute.annotation instantiated

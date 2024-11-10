@@ -1816,12 +1816,12 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
           def value(self) -> int: ...
         if sys.version_info >= (3, 6):
           _auto_null: typing.Any
-          class auto(IntFlag):
-            value: typing.Any
           class Flag(Enum):
             pass
           class IntFlag(int, Flag):  # type: ignore
             pass
+        class auto:
+          pass
         _EnumMemberT = TypeVar("_EnumMemberT")
         if sys.version_info >= (3, 11):
           class nonmember(Generic[_EnumMemberT]):

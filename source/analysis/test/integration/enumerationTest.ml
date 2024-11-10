@@ -422,6 +422,17 @@ let test_check_enumeration_attributes =
       @@ assert_type_errors
            {|
               import enum
+              from enum import auto
+              class C(enum.Enum):
+                _value_: int
+                a = enum.auto()
+                b = auto()
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              import enum
               class Color(enum.Enum):
                 RED = "red"
                 BLUE = "blue"
