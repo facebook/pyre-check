@@ -63,6 +63,10 @@ let test_weaken_mutable_literals context =
       actual_weakened_type
   in
   assert_weaken_mutable_literals
+    ~source:"[test.D()] * 3"
+    ~against:"typing.List[test.C]"
+    "typing.List[test.C]";
+  assert_weaken_mutable_literals
     ~source:"list([test.D()])"
     ~against:"typing.List[test.C]"
     "typing.List[test.C]";

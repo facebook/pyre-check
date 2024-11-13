@@ -166,6 +166,19 @@ let rec weaken_mutable_literals
             |> List.concat_map ~f:typed_dictionary_errors
           in
           make_weakened_type ~typed_dictionary_errors resolved)
+  | ( Some
+        {
+          Node.value =
+            Expression.BinaryOperator
+              {
+                left = { Node.value = Expression.List items; _ };
+                operator = Mult;
+                right = { Node.value = Expression.Constant (Constant.Integer _); _ };
+              };
+          _;
+        },
+      Type.Parametric { name = "list" as container_name; arguments = [Single actual_item_type] },
+      Type.Parametric { name = "list"; arguments = [Single expected_item_type] } )
   | ( Some { Node.value = Expression.List items; _ },
       Type.Parametric { name = "list" as container_name; arguments = [Single actual_item_type] },
       Type.Parametric { name = "list"; arguments = [Single expected_item_type] } )
