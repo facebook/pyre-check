@@ -1064,18 +1064,21 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         impossible
 
 
-  and solve_ordered_types_less_or_equal ~cache order ~left ~right ~constraints =
-    let solve_less_or_equal = solve_less_or_equal ~cache order in
-    let solve_non_variadic_pairs ~pairs constraints =
+  and solve_ordered_types_less_or_equal ~cache order ~left ~right ~constraints:initial_constraints =
+    let solve_less_or_equal_with_constraints = solve_less_or_equal ~cache order in
+    let solve_non_variadic_pairs_with_constraints ~pairs constraints =
       let solve_pair constraints (left, right) =
         List.concat_map constraints ~f:(fun constraints ->
-            solve_less_or_equal ~constraints ~left ~right)
+            solve_less_or_equal_with_constraints ~constraints ~left ~right)
       in
       List.fold ~init:[constraints] ~f:solve_pair pairs
     in
+    let solve_non_variadic_pairs ~pairs =
+      solve_non_variadic_pairs_with_constraints ~pairs initial_constraints
+    in
     let open Type.OrderedTypes in
     if Type.OrderedTypes.equal left right then
-      [constraints]
+      [initial_constraints]
     else
       let solve_split_ordered_types { prefix_pairs; middle_pair; suffix_pairs } =
         match middle_pair with
@@ -1084,9 +1087,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         | Concrete left_middle, Concrete right_middle -> (
             match List.zip left_middle right_middle with
             | Ok middle_pairs ->
-                solve_non_variadic_pairs
-                  ~pairs:(prefix_pairs @ middle_pairs @ suffix_pairs)
-                  constraints
+                solve_non_variadic_pairs ~pairs:(prefix_pairs @ middle_pairs @ suffix_pairs)
             | Unequal_lengths -> impossible)
         | Concrete concrete, Concatenation concatenation -> (
             match
@@ -1094,16 +1095,16 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation )
             with
             | Some variadic, _ when Type.Variable.TypeVarTuple.is_free variadic ->
-                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs)
                 |> List.filter_map
                      ~f:
                        (OrderedConstraints.add_lower_bound
                           ~order
                           ~pair:(Type.Variable.TypeVarTuplePair (variadic, Concrete concrete)))
             | _, Some unbounded_element ->
-                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs)
                 |> List.concat_map ~f:(fun constraints ->
-                       solve_less_or_equal
+                       solve_less_or_equal_with_constraints
                          ~constraints
                          ~left:(Type.union concrete)
                          ~right:unbounded_element)
@@ -1114,7 +1115,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation )
             with
             | Some variadic, _ when Type.Variable.TypeVarTuple.is_free variadic ->
-                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs)
                 |> List.filter_map
                      ~f:
                        (OrderedConstraints.add_upper_bound
@@ -1127,7 +1128,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 Type.OrderedTypes.Concatenation.extract_sole_variadic right_concatenation )
             with
             | _, Some variadic when Type.Variable.TypeVarTuple.is_free variadic ->
-                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs)
                 |> List.filter_map
                      ~f:
                        (OrderedConstraints.add_lower_bound
@@ -1136,7 +1137,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                             (Type.Variable.TypeVarTuplePair
                                (variadic, Concatenation left_concatenation)))
             | Some variadic, _ when Type.Variable.TypeVarTuple.is_free variadic ->
-                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs)
                 |> List.filter_map
                      ~f:
                        (OrderedConstraints.add_upper_bound
@@ -1152,16 +1153,16 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                       right_concatenation )
                 with
                 | Some left_unbounded_element, Some right_unbounded_element ->
-                    solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                    solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs)
                     |> List.concat_map ~f:(fun constraints ->
-                           solve_less_or_equal
+                           solve_less_or_equal_with_constraints
                              ~constraints
                              ~left:left_unbounded_element
                              ~right:right_unbounded_element)
                 | None, Some right_unbounded_element ->
-                    solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs) constraints
+                    solve_non_variadic_pairs ~pairs:(prefix_pairs @ suffix_pairs)
                     |> List.concat_map ~f:(fun constraints ->
-                           solve_less_or_equal
+                           solve_less_or_equal_with_constraints
                              ~constraints
                              ~left:Type.object_primitive
                              ~right:right_unbounded_element)
