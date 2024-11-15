@@ -22,7 +22,7 @@
    Pyre; the issue happens when we try to understand a `BoundMethod` as a callable; we end up
    resolving the `__call__` attribute through a special case that eventually calls back into an
    identical `resolve_callable_protocol` call, and there is probably perf to gain by handling it
-   better. It *may* also be possible to directly hit a cycle if people are annotating a `__call__`
+   better. It is also possible to directly hit a cycle if people are annotating a `__call__`
    attribute directly as a (mutually) recursive type; ideally we would just reject this and ignore
    it which would rule out cycles.
 
