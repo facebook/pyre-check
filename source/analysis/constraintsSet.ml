@@ -196,13 +196,18 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       order
       ~callable:({ Type.Callable.implementation; overloads; _ } as _callable)
       ~called_as
-      ~constraints
+      ~constraints:initial_constraints
       ~get_typed_dictionary
     =
-    let solve_less_or_equal = solve_less_or_equal ~cache order in
-    let solve_ordered_types_less_or_equal = solve_ordered_types_less_or_equal ~cache order in
+    let solve_less_or_equal_with_constraints = solve_less_or_equal ~cache order in
+    let solve_ordered_types_less_or_equal_with_constraints =
+      solve_ordered_types_less_or_equal ~cache order
+    in
+    let solve_ordered_types_less_or_equal =
+      solve_ordered_types_less_or_equal_with_constraints ~constraints:initial_constraints
+    in
     let open Callable in
-    let solve implementation ~initial_constraints =
+    let solve implementation =
       let get_kwargs_type parameters =
         let has_kwargs =
           List.exists ~f:(fun parameter ->
@@ -239,14 +244,14 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             in
             List.split_while concretes ~f:is_not_keyword_only
           in
-          let solve_remaining_parameters constraints =
+          let solve_remaining_parameters_with_constraints constraints =
             if is_lower_bound then
-              solve_parameters
+              solve_parameters_with_constraints
                 ~left_parameters:after_first_keyword_inclusive
                 ~right_parameters:remaining_parameters
                 constraints
             else
-              solve_parameters
+              solve_parameters_with_constraints
                 ~left_parameters:remaining_parameters
                 ~right_parameters:after_first_keyword_inclusive
                 constraints
@@ -258,7 +263,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               else
                 ordered_type, concretes
             in
-            solve_ordered_types_less_or_equal ~left ~right ~constraints
+            solve_ordered_types_less_or_equal ~left ~right
           in
           let ordered_type_from_non_keyword_parameters =
             let extract_component = function
@@ -281,9 +286,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           in
           ordered_type_from_non_keyword_parameters
           >>| add_bound
-          >>| List.concat_map ~f:solve_remaining_parameters
+          >>| List.concat_map ~f:solve_remaining_parameters_with_constraints
           |> Option.value ~default:impossible
-        and solve_parameters ~left_parameters ~right_parameters constraints =
+        and solve_parameters_with_constraints ~left_parameters ~right_parameters constraints =
           let expand_typed_dictionary_parameters =
             List.map ~f:(fun { Type.TypedDictionary.name; annotation; required; _ } ->
                 CallableParamType.KeywordOnly { name; annotation; default = not required })
@@ -298,19 +303,27 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           | ( CallableParamType.Named { annotation = left_annotation; _ } :: left_parameters,
               CallableParamType.PositionalOnly { annotation = right_annotation; _ }
               :: right_parameters ) ->
-              solve_less_or_equal ~constraints ~left:right_annotation ~right:left_annotation
-              |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+              solve_less_or_equal_with_constraints
+                ~constraints
+                ~left:right_annotation
+                ~right:left_annotation
+              |> List.concat_map
+                   ~f:(solve_parameters_with_constraints ~left_parameters ~right_parameters)
           | ( CallableParamType.Keywords left_annotation :: left_parameters,
               CallableParamType.Keywords right_annotation :: right_parameters ) -> (
               match Type.unpack_value left_annotation, Type.unpack_value right_annotation with
               | Some left_annotation, Some right_annotation ->
-                  solve_less_or_equal ~constraints ~left:right_annotation ~right:left_annotation
-                  |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+                  solve_less_or_equal_with_constraints
+                    ~constraints
+                    ~left:right_annotation
+                    ~right:left_annotation
+                  |> List.concat_map
+                       ~f:(solve_parameters_with_constraints ~left_parameters ~right_parameters)
               | _, Some right_annotation -> (
                   match get_typed_dictionary right_annotation with
                   | None -> impossible
                   | Some { Type.TypedDictionary.fields; _ } ->
-                      solve_parameters
+                      solve_parameters_with_constraints
                         ~left_parameters:all_left_parameters
                         ~right_parameters:
                           (expand_typed_dictionary_parameters fields @ right_parameters)
@@ -319,20 +332,24 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   match get_typed_dictionary left_annotation with
                   | None -> impossible
                   | Some { Type.TypedDictionary.fields; _ } ->
-                      solve_parameters
+                      solve_parameters_with_constraints
                         ~left_parameters:
                           (expand_typed_dictionary_parameters fields @ left_parameters)
                         ~right_parameters:all_right_parameters
                         constraints)
               | None, None ->
-                  solve_less_or_equal ~constraints ~left:right_annotation ~right:left_annotation
-                  |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters))
+                  solve_less_or_equal_with_constraints
+                    ~constraints
+                    ~left:right_annotation
+                    ~right:left_annotation
+                  |> List.concat_map
+                       ~f:(solve_parameters_with_constraints ~left_parameters ~right_parameters))
           | _, CallableParamType.Keywords right_annotation :: right_parameters
             when Type.is_unpack right_annotation -> (
               match Type.unpack_value right_annotation >>= get_typed_dictionary with
               | None -> impossible
               | Some { Type.TypedDictionary.fields; _ } ->
-                  solve_parameters
+                  solve_parameters_with_constraints
                     ~left_parameters
                     ~right_parameters:(expand_typed_dictionary_parameters fields @ right_parameters)
                     constraints)
@@ -341,20 +358,28 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               match Type.unpack_value left_annotation >>= get_typed_dictionary with
               | None -> impossible
               | Some { Type.TypedDictionary.fields; _ } ->
-                  solve_parameters
+                  solve_parameters_with_constraints
                     ~left_parameters:(expand_typed_dictionary_parameters fields @ left_parameters)
                     ~right_parameters
                     constraints)
           | ( CallableParamType.Variable (Concrete left_annotation) :: left_parameters,
               CallableParamType.Variable (Concrete right_annotation) :: right_parameters ) ->
-              solve_less_or_equal ~constraints ~left:right_annotation ~right:left_annotation
-              |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+              solve_less_or_equal_with_constraints
+                ~constraints
+                ~left:right_annotation
+                ~right:left_annotation
+              |> List.concat_map
+                   ~f:(solve_parameters_with_constraints ~left_parameters ~right_parameters)
           | ( CallableParamType.Keywords left_annotation :: _,
               ( CallableParamType.KeywordOnly { annotation = right_annotation; _ }
               | CallableParamType.Named { annotation = right_annotation; _ } )
               :: right_parameters ) ->
-              solve_less_or_equal ~constraints ~left:right_annotation ~right:left_annotation
-              |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+              solve_less_or_equal_with_constraints
+                ~constraints
+                ~left:right_annotation
+                ~right:left_annotation
+              |> List.concat_map
+                   ~f:(solve_parameters_with_constraints ~left_parameters ~right_parameters)
           | ( CallableParamType.KeywordOnly ({ annotation = left_annotation; _ } as left)
               :: left_parameters,
               CallableParamType.KeywordOnly ({ annotation = right_annotation; _ } as right)
@@ -382,22 +407,31 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                 if right.default && not left.default then
                   impossible
                 else
-                  solve_less_or_equal ~constraints ~left:right_annotation ~right:left_annotation
-                  |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+                  solve_less_or_equal_with_constraints
+                    ~constraints
+                    ~left:right_annotation
+                    ~right:left_annotation
+                  |> List.concat_map
+                       ~f:(solve_parameters_with_constraints ~left_parameters ~right_parameters)
               else
                 impossible
           | ( CallableParamType.Variable (Concrete left_annotation) :: _,
               CallableParamType.PositionalOnly { annotation = right_annotation; _ }
               :: right_parameters ) ->
-              solve_less_or_equal ~constraints ~left:right_annotation ~right:left_annotation
-              |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+              solve_less_or_equal_with_constraints
+                ~constraints
+                ~left:right_annotation
+                ~right:left_annotation
+              |> List.concat_map
+                   ~f:(solve_parameters_with_constraints ~left_parameters ~right_parameters)
           | ( CallableParamType.Variable (Concatenation left) :: left_parameters,
               CallableParamType.Variable (Concatenation right) :: right_parameters ) ->
-              solve_ordered_types_less_or_equal
+              solve_ordered_types_less_or_equal_with_constraints
                 ~left:(Type.OrderedTypes.Concatenation left)
                 ~right:(Type.OrderedTypes.Concatenation right)
                 ~constraints
-              |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+              |> List.concat_map
+                   ~f:(solve_parameters_with_constraints ~left_parameters ~right_parameters)
           | left, CallableParamType.Variable (Concatenation concatenation) :: remaining_parameters
             ->
               solve_parameters_against_tuple_variadic
@@ -417,16 +451,20 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
               :: _,
               CallableParamType.Named { annotation = named_annotation; _ } :: right_parameters ) ->
               if Type.equal variable_annotation keywords_annotation then
-                solve_less_or_equal ~constraints ~left:named_annotation ~right:keywords_annotation
-                |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+                solve_less_or_equal_with_constraints
+                  ~constraints
+                  ~left:named_annotation
+                  ~right:keywords_annotation
+                |> List.concat_map
+                     ~f:(solve_parameters_with_constraints ~left_parameters ~right_parameters)
               else
                 impossible
           | CallableParamType.Variable _ :: left_parameters, right_parameters
           | CallableParamType.Keywords _ :: left_parameters, right_parameters ->
-              solve_parameters ~left_parameters ~right_parameters constraints
+              solve_parameters_with_constraints ~left_parameters ~right_parameters constraints
           | left :: left_parameters, [] ->
               if CallableParamType.default left then
-                solve_parameters ~left_parameters ~right_parameters:[] constraints
+                solve_parameters_with_constraints ~left_parameters ~right_parameters:[] constraints
               else
                 impossible
           | [], [] -> [constraints]
@@ -445,7 +483,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             (* In other cases, it should be safe to expand unpacked typed dictionary fields and
                check them against each other or regular parameters. *)
             | _ ->
-                solve_parameters
+                solve_parameters_with_constraints
                   ~left_parameters:implementation
                   ~right_parameters:called_as
                   initial_constraints)
@@ -477,7 +515,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             solve_ordered_types_less_or_equal
               ~left:(Type.OrderedTypes.Concrete right_head)
               ~right:(Type.OrderedTypes.Concrete left_head)
-              ~constraints:initial_constraints
             |> List.concat_map ~f:add_parameter_specification_bounds
         | bound, FromParamSpec { head = []; variable } when Type.Variable.ParamSpec.is_free variable
           ->
@@ -491,12 +528,11 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                   let paired, remainder = List.split_n left_head (List.length head) in
                   ( solve_ordered_types_less_or_equal
                       ~left:(Type.OrderedTypes.Concrete paired)
-                      ~right:(Type.OrderedTypes.Concrete head)
-                      ~constraints:initial_constraints,
+                      ~right:(Type.OrderedTypes.Concrete head),
                     FromParamSpec { head = remainder; variable = left_variable } )
               | Defined defined ->
                   let paired, remainder = List.split_n defined (List.length head) in
-                  ( solve_parameters
+                  ( solve_parameters_with_constraints
                       ~left_parameters:paired
                       ~right_parameters:(Type.Callable.prepend_anonymous_parameters ~head ~tail:[])
                       initial_constraints,
@@ -531,7 +567,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         in
         instantiated_return, external_constraints
       in
-      solve overload ~initial_constraints:constraints
+      solve overload
       |> List.map
            ~f:(OrderedConstraints.extract_partial_solution ~order ~variables:namespaced_variables)
       |> List.concat_map ~f:Option.to_list
