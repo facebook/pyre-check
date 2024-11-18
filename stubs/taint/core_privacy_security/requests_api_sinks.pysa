@@ -309,10 +309,23 @@ def requests.models.Request.__init__(self, auth: TaintSink[Authentication] = ...
 def requests.models.PreparedRequest.prepare(auth: TaintSink[Authentication] = ...): ...
 
 # SSRF [urllib.request]
-@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
-def urllib.request.urlopen(url: TaintSink[HTTPClientRequest_URI], data: TaintSink[HTTPClientRequest_DATA],
-                           timeout, *, cafile, capath,
-                           cadefault, context) -> TaintSource[DataFromInternet]: ...
+if sys.version >= (3, 13, 0):
+    @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
+    def urllib.request.urlopen(url: TaintSink[HTTPClientRequest_URI],
+                               data: TaintSink[HTTPClientRequest_DATA],
+                               timeout,
+                               *,
+                               context) -> TaintSource[DataFromInternet]: ...
+else:
+    @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
+    def urllib.request.urlopen(url: TaintSink[HTTPClientRequest_URI],
+                               data: TaintSink[HTTPClientRequest_DATA],
+                               timeout,
+                               *,
+                               cafile,
+                               capath,
+                               cadefault,
+                               context) -> TaintSource[DataFromInternet]: ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def urllib.request.urlretrieve(url: TaintSink[HTTPClientRequest_URI], filename, reporthook, data: TaintSink[HTTPClientRequest_DATA] ) -> TaintSource[DataFromInternet]: ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
