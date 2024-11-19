@@ -57,6 +57,8 @@ module Map : sig
   end
 end
 
+module SerializableMap : Data_structures.SerializableMap.S with type key = t
+
 module Set : Set.S with type Elt.t = t
 
 include Hashable with type t := t

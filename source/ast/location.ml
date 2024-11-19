@@ -79,6 +79,7 @@ module Map = struct
   end)
 end
 
+module SerializableMap = Data_structures.SerializableMap.Make (T)
 module Set = Set.Make (T)
 include Hashable.Make (T)
 

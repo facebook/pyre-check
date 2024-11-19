@@ -1189,27 +1189,29 @@ end
 
 module MutableDefineCallGraph = struct
   module T = struct
-    type t = LocationCallees.Map.t Location.Table.t [@@deriving eq]
+    type t = LocationCallees.Map.t Location.SerializableMap.t [@@deriving eq]
 
     let resolve_expression call_graph ~location ~expression_identifier =
-      match Hashtbl.find call_graph location with
+      match Location.SerializableMap.find_opt location call_graph with
       | Some callees -> SerializableStringMap.find_opt expression_identifier callees
       | None -> None
 
 
     let to_json call_graph =
       let bindings =
-        Hashtbl.fold call_graph ~init:[] ~f:(fun ~key ~data sofar ->
-            (Location.show key, LocationCallees.Map.to_json data) :: sofar)
+        Location.SerializableMap.fold
+          (fun key data sofar -> (Location.show key, LocationCallees.Map.to_json data) :: sofar)
+          call_graph
+          []
       in
       `Assoc bindings
   end
 
   include MakeCallGraph (T)
 
-  let copy = Hashtbl.copy
+  let empty = Location.SerializableMap.empty
 
-  let is_empty = Hashtbl.is_empty
+  let is_empty = Location.SerializableMap.is_empty
 
   let pp formatter call_graph =
     let pp_pair formatter (key, value) =
@@ -1222,43 +1224,49 @@ module MutableDefineCallGraph = struct
         value
     in
     let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-    call_graph |> Hashtbl.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
+    call_graph
+    |> Location.SerializableMap.to_alist
+    |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
 
 
-  let add_callees ~expression_identifier ~location ~callees map =
-    Hashtbl.update map location ~f:(function
-        | None -> LocationCallees.Map.singleton ~expression_identifier ~callees
+  let add_callees ~expression_identifier ~location ~callees =
+    Location.SerializableMap.update location (function
+        | None -> Some (LocationCallees.Map.singleton ~expression_identifier ~callees)
         | Some existing_callees ->
-            LocationCallees.Map.add existing_callees ~expression_identifier ~callees)
+            Some (LocationCallees.Map.add existing_callees ~expression_identifier ~callees))
 
 
-  let set_call_callees ~expression_identifier ~location ~call_callees map =
-    Hashtbl.update map location ~f:(function
+  let set_call_callees ~expression_identifier ~location ~call_callees =
+    Location.SerializableMap.update location (function
         | None ->
-            LocationCallees.Map.singleton
-              ~expression_identifier
-              ~callees:(ExpressionCallees.from_call call_callees)
+            Some
+              (LocationCallees.Map.singleton
+                 ~expression_identifier
+                 ~callees:(ExpressionCallees.from_call call_callees))
         | Some callees ->
-            LocationCallees.Map.update
-              expression_identifier
-              (function
-                | Some callees -> Some { callees with ExpressionCallees.call = Some call_callees }
-                | None -> Some (ExpressionCallees.from_call call_callees))
-              callees)
+            Some
+              (LocationCallees.Map.update
+                 expression_identifier
+                 (function
+                   | Some callees ->
+                       Some { callees with ExpressionCallees.call = Some call_callees }
+                   | None -> Some (ExpressionCallees.from_call call_callees))
+                 callees))
 
 
   let filter_empty_attribute_access =
-    Hashtbl.filter
-      ~f:
-        (SerializableStringMap.exists (fun _ callees ->
-             not (ExpressionCallees.is_empty_attribute_access_callees callees)))
+    let exist_non_empty_attribute_access =
+      SerializableStringMap.exists (fun _ callees ->
+          not (ExpressionCallees.is_empty_attribute_access_callees callees))
+    in
+    Location.SerializableMap.filter (fun _ -> exist_non_empty_attribute_access)
 
 
   (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
       true excludes the targets that are not required in building the dependency graph. *)
   let all_targets ~exclude_reference_only call_graph =
     call_graph
-    |> Hashtbl.data
+    |> Location.SerializableMap.data
     |> List.concat_map ~f:(fun map ->
            map
            |> LocationCallees.Map.data
@@ -1292,7 +1300,7 @@ module DefineCallGraph = struct
 
   let from_mutable_define_call_graph map =
     map
-    |> Hashtbl.to_alist
+    |> Location.SerializableMap.to_alist
     |> List.map ~f:(fun (location, callees) ->
            match SerializableStringMap.to_alist callees with
            | [] -> failwith "unreachable"
@@ -2707,7 +2715,7 @@ module DefineCallGraphFixpoint (Context : sig
 
   val debug : bool
 
-  val callees_at_location : MutableDefineCallGraph.t
+  val callees_at_location : MutableDefineCallGraph.t ref
 
   val override_graph : OverrideGraph.SharedMemory.ReadOnly.t option
 
@@ -2902,11 +2910,12 @@ struct
           expression
           ExpressionCallees.pp
           callees;
-        MutableDefineCallGraph.add_callees
-          ~expression_identifier
-          ~location
-          ~callees
-          Context.callees_at_location
+        Context.callees_at_location :=
+          MutableDefineCallGraph.add_callees
+            ~expression_identifier
+            ~location
+            ~callees
+            !Context.callees_at_location
       in
       let value = redirect_expressions ~pyre_in_context ~location value in
       let () =
@@ -3337,7 +3346,7 @@ module HigherOrderCallGraph = struct
     val pyre_api : PyrePysaEnvironment.ReadOnly.t
 
     (* Inputs and outputs. *)
-    val mutable_define_call_graph : MutableDefineCallGraph.t
+    val mutable_define_call_graph : MutableDefineCallGraph.t ref
   end) =
   struct
     let get_result = State.get TaintAccessPath.Root.LocalResult
@@ -3413,7 +3422,7 @@ module HigherOrderCallGraph = struct
         let ({ CallCallees.call_targets = existing_call_targets; higher_order_parameters; _ } as
             existing_call_callees)
           =
-          Context.mutable_define_call_graph
+          !Context.mutable_define_call_graph
           |> MutableDefineCallGraph.resolve_call ~location ~call
           |> Option.value_exn
                ~message:
@@ -3491,27 +3500,28 @@ module HigherOrderCallGraph = struct
         let non_parameterized_targets =
           non_parameterized_targets ~parameterized_call_targets existing_call_targets
         in
-        MutableDefineCallGraph.set_call_callees
-          ~location
-          ~expression_identifier:(call_identifier call)
-          ~call_callees:
-            {
-              existing_call_callees with
-              (* Remove any existing call target that is now parameterized, because the taint
-                 analysis is more precise for the parameterized targets. *)
-              call_targets =
-                parameterized_call_targets
-                |> CallTarget.Set.to_sorted_list
-                |> List.rev_append non_parameterized_targets;
-              (* Do not keep keep higher order parameters if each existing call target is
-                 parameterized. *)
-              higher_order_parameters =
-                (if List.is_empty non_parameterized_targets then
-                   HigherOrderParameterMap.empty
-                else
-                  higher_order_parameters);
-            }
-          Context.mutable_define_call_graph;
+        Context.mutable_define_call_graph :=
+          MutableDefineCallGraph.set_call_callees
+            ~location
+            ~expression_identifier:(call_identifier call)
+            ~call_callees:
+              {
+                existing_call_callees with
+                (* Remove any existing call target that is now parameterized, because the taint
+                   analysis is more precise for the parameterized targets. *)
+                call_targets =
+                  parameterized_call_targets
+                  |> CallTarget.Set.to_sorted_list
+                  |> List.rev_append non_parameterized_targets;
+                (* Do not keep keep higher order parameters if each existing call target is
+                   parameterized. *)
+                higher_order_parameters =
+                  (if List.is_empty non_parameterized_targets then
+                     HigherOrderParameterMap.empty
+                  else
+                    higher_order_parameters);
+              }
+            !Context.mutable_define_call_graph;
         (* TODO: Return the summaries of calling `call_targets`. *)
         CallTarget.Set.bottom, state
 
@@ -3533,7 +3543,7 @@ module HigherOrderCallGraph = struct
         | ListComprehension _ -> CallTarget.Set.bottom, state
         | Name (Name.Identifier identifier) ->
             let global_callables =
-              Context.mutable_define_call_graph
+              !Context.mutable_define_call_graph
               |> MutableDefineCallGraph.resolve_identifier ~location ~identifier
               |> Option.map ~f:(fun { IdentifierCallees.callable_targets; _ } ->
                      CallTarget.Set.of_list callable_targets)
@@ -3545,7 +3555,7 @@ module HigherOrderCallGraph = struct
             CallTarget.Set.join global_callables callables_from_variable, state
         | Name (Name.Attribute { base = _; attribute; special = _ }) ->
             let callables =
-              Context.mutable_define_call_graph
+              !Context.mutable_define_call_graph
               |> MutableDefineCallGraph.resolve_attribute_access ~location ~attribute
               |> Option.map ~f:(fun { AttributeAccessCallees.callable_targets; _ } ->
                      CallTarget.Set.of_list callable_targets)
@@ -3614,22 +3624,22 @@ end
 
 let higher_order_call_graph_of_define ~define_call_graph ~pyre_api ~qualifier ~define ~initial_state
   =
-  let mutable_define_call_graph = MutableDefineCallGraph.copy define_call_graph in
-  let module Fixpoint = HigherOrderCallGraph.MakeFixpoint (struct
-    let mutable_define_call_graph = mutable_define_call_graph
+  let module Context = struct
+    let mutable_define_call_graph = ref define_call_graph
 
     let qualifier = qualifier
 
     let pyre_api = pyre_api
-  end)
+  end
   in
+  let module Fixpoint = HigherOrderCallGraph.MakeFixpoint (Context) in
   let returned_callables =
     Fixpoint.Fixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:initial_state
     |> Fixpoint.Fixpoint.exit
     >>| Fixpoint.get_result
     |> Option.value ~default:CallTarget.Set.bottom
   in
-  { HigherOrderCallGraph.returned_callables; call_graph = mutable_define_call_graph }
+  { HigherOrderCallGraph.returned_callables; call_graph = !Context.mutable_define_call_graph }
 
 
 let higher_order_call_graph_of_callable ~pyre_api ~define_call_graph ~callable =
@@ -3668,7 +3678,7 @@ let call_graph_of_define
 
     let debug = Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define
 
-    let callees_at_location = Location.Table.create ()
+    let callees_at_location = ref MutableDefineCallGraph.empty
 
     let override_graph = override_graph
 
@@ -3702,7 +3712,7 @@ let call_graph_of_define
 
   DefineFixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:() |> ignore;
   let mutable_call_graph =
-    MutableDefineCallGraph.filter_empty_attribute_access Context.callees_at_location
+    MutableDefineCallGraph.filter_empty_attribute_access !Context.callees_at_location
   in
   Statistics.performance
     ~randomly_log_every:1000
