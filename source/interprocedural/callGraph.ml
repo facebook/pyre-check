@@ -3376,6 +3376,8 @@ module HigherOrderCallGraph = struct
 
     val pyre_api : PyrePysaEnvironment.ReadOnly.t
 
+    val get_callee_model : Target.t -> t option
+
     (* Inputs and outputs. *)
     val mutable_define_call_graph : MutableDefineCallGraph.t ref
   end) =
@@ -3531,30 +3533,36 @@ module HigherOrderCallGraph = struct
         let non_parameterized_targets =
           non_parameterized_targets ~parameterized_call_targets existing_call_targets
         in
+        (* Remove any existing call target that is now parameterized, because the taint analysis is
+           more precise for the parameterized targets. *)
+        let call_targets =
+          parameterized_call_targets
+          |> CallTarget.Set.to_sorted_list
+          |> List.rev_append non_parameterized_targets
+        in
+        (* Do not keep keep higher order parameters if each existing call target is
+           parameterized. *)
+        let higher_order_parameters =
+          if List.is_empty non_parameterized_targets then
+            HigherOrderParameterMap.empty
+          else
+            higher_order_parameters
+        in
         Context.mutable_define_call_graph :=
           MutableDefineCallGraph.set_call_callees
             ~location
             ~expression_identifier:(call_identifier call)
-            ~call_callees:
-              {
-                existing_call_callees with
-                (* Remove any existing call target that is now parameterized, because the taint
-                   analysis is more precise for the parameterized targets. *)
-                call_targets =
-                  parameterized_call_targets
-                  |> CallTarget.Set.to_sorted_list
-                  |> List.rev_append non_parameterized_targets;
-                (* Do not keep keep higher order parameters if each existing call target is
-                   parameterized. *)
-                higher_order_parameters =
-                  (if List.is_empty non_parameterized_targets then
-                     HigherOrderParameterMap.empty
-                  else
-                    higher_order_parameters);
-              }
+            ~call_callees:{ existing_call_callees with call_targets; higher_order_parameters }
             !Context.mutable_define_call_graph;
-        (* TODO: Return the summaries of calling `call_targets`. *)
-        CallTarget.Set.bottom, state
+        let returned_callees =
+          call_targets
+          |> List.map ~f:(fun { CallTarget.target; _ } ->
+                 match Context.get_callee_model target with
+                 | Some { returned_callables; _ } -> returned_callables
+                 | None -> CallTarget.Set.bottom)
+          |> Algorithms.fold_balanced ~f:CallTarget.Set.join ~init:CallTarget.Set.bottom
+        in
+        returned_callees, state
 
 
       (* Return possible callees and the new state. *)
@@ -3653,7 +3661,13 @@ module HigherOrderCallGraph = struct
   end
 end
 
-let higher_order_call_graph_of_define ~define_call_graph ~pyre_api ~qualifier ~define ~initial_state
+let higher_order_call_graph_of_define
+    ~define_call_graph
+    ~pyre_api
+    ~qualifier
+    ~define
+    ~initial_state
+    ~get_callee_model
   =
   let module Context = struct
     let mutable_define_call_graph = ref define_call_graph
@@ -3661,6 +3675,8 @@ let higher_order_call_graph_of_define ~define_call_graph ~pyre_api ~qualifier ~d
     let qualifier = qualifier
 
     let pyre_api = pyre_api
+
+    let get_callee_model = get_callee_model
   end
   in
   let module Fixpoint = HigherOrderCallGraph.MakeFixpoint (Context) in
@@ -3673,7 +3689,7 @@ let higher_order_call_graph_of_define ~define_call_graph ~pyre_api ~qualifier ~d
   { HigherOrderCallGraph.returned_callables; call_graph = !Context.mutable_define_call_graph }
 
 
-let higher_order_call_graph_of_callable ~pyre_api ~define_call_graph ~callable =
+let higher_order_call_graph_of_callable ~pyre_api ~define_call_graph ~callable ~get_callee_model =
   let qualifier, define =
     match Target.get_module_and_definition ~pyre_api callable with
     | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
@@ -3685,6 +3701,7 @@ let higher_order_call_graph_of_callable ~pyre_api ~define_call_graph ~callable =
     ~qualifier
     ~define
     ~initial_state:(HigherOrderCallGraph.State.from_callable callable)
+    ~get_callee_model
 
 
 (* TODO(T206240754): Re-index `CallTarget`s after building the higher order call graphs. *)

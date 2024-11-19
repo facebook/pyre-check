@@ -53,3 +53,10 @@ module ImmutableHigherOrderCallGraph = struct
       returned_callables = CallTarget.Set.of_list returned_callables;
     }
 end
+
+let create_parameterized_target ~regular ~parameters =
+  Target.Parameterized { regular; parameters = Target.ParameterMap.of_alist_exn parameters }
+
+
+let create_positional_parameter ?(positional_only = false) position name =
+  AccessPath.Root.PositionalParameter { position; name; positional_only }

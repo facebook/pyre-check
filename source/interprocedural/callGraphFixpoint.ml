@@ -62,7 +62,7 @@ module CallGraphAnalysis = struct
       ~callable
       ~define:_
       ~previous_model:_
-      ~get_callee_model:_
+      ~get_callee_model
     =
     let define_call_graph =
       define_call_graphs
@@ -72,7 +72,11 @@ module CallGraphAnalysis = struct
     in
     let result = () in
     let higher_order_call_graph =
-      CallGraph.higher_order_call_graph_of_callable ~pyre_api ~define_call_graph ~callable
+      CallGraph.higher_order_call_graph_of_callable
+        ~pyre_api
+        ~define_call_graph
+        ~callable
+        ~get_callee_model
     in
     result, higher_order_call_graph
 end

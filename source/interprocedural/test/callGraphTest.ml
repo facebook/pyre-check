@@ -11,6 +11,7 @@ open OUnit2
 open Ast
 open Analysis
 open Test
+open CallGraphTestHelper
 open Interprocedural
 open CallGraph
 
@@ -112,17 +113,10 @@ let assert_higher_order_call_graph_of_define
       ~qualifier:test_qualifier
       ~define
       ~initial_state
+      ~get_callee_model:(fun _ -> None)
     |> ImmutableHigherOrderCallGraph.from_higher_order_call_graph
   in
   assert_equal ~cmp ~printer:ImmutableHigherOrderCallGraph.show expected actual
-
-
-let create_parameterized_target ~regular ~parameters =
-  Target.Parameterized { regular; parameters = Target.ParameterMap.of_alist_exn parameters }
-
-
-let create_positional_parameter ?(positional_only = false) position name =
-  AccessPath.Root.PositionalParameter { position; name; positional_only }
 
 
 let test_call_graph_of_define =
