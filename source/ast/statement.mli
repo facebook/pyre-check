@@ -309,6 +309,8 @@ and Define : sig
 
   val dump_call_graph : t -> bool
 
+  val dump_higher_order_call_graph : t -> bool
+
   val dump_perf : t -> bool
 
   val show_json : t -> string

@@ -633,6 +633,8 @@ and Define : sig
 
   val dump_call_graph : t -> bool
 
+  val dump_higher_order_call_graph : t -> bool
+
   val dump_perf : t -> bool
 
   val show_json : t -> string
@@ -1059,6 +1061,8 @@ end = struct
   let dump_locations define = contains_call define "pyre_dump_locations"
 
   let dump_call_graph define = contains_call define "pyre_dump_call_graph"
+
+  let dump_higher_order_call_graph define = contains_call define "pyre_dump_higher_order_call_graph"
 
   let dump_perf define = contains_call define "pyre_dump_perf"
 

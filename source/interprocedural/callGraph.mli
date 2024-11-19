@@ -389,6 +389,8 @@ module HigherOrderCallGraph : sig
   end
 end
 
+val debug_higher_order_call_graph : Ast.Statement.Define.t -> bool
+
 val higher_order_call_graph_of_define
   :  define_call_graph:MutableDefineCallGraph.t ->
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->

@@ -3378,6 +3378,8 @@ module HigherOrderCallGraph = struct
 
     val get_callee_model : Target.t -> t option
 
+    val debug : bool
+
     (* Inputs and outputs. *)
     val mutable_define_call_graph : MutableDefineCallGraph.t ref
   end) =
@@ -3566,7 +3568,14 @@ module HigherOrderCallGraph = struct
 
 
       (* Return possible callees and the new state. *)
-      and analyze_expression ~state ~expression:{ Node.value; location } =
+      and analyze_expression ~state ~expression:({ Node.value; location } as expression) =
+        log
+          ~debug:Context.debug
+          "Analyzing expression `%a` with state `%a`"
+          Expression.pp
+          expression
+          State.pp
+          state;
         match value with
         | Expression.Await expression -> analyze_expression ~state ~expression
         | BinaryOperator _ -> CallTarget.Set.bottom, state
@@ -3621,6 +3630,13 @@ module HigherOrderCallGraph = struct
 
 
       let analyze_statement ~state ~statement =
+        log
+          ~debug:Context.debug
+          "Analyzing statement `%a` with state `%a`"
+          Statement.pp
+          statement
+          State.pp
+          state;
         match Node.value statement with
         | Statement.Assign { Assign.target = _; value = Some _; _ } -> state
         | Assign { Assign.target = _; value = None; _ } -> state
@@ -3661,6 +3677,12 @@ module HigherOrderCallGraph = struct
   end
 end
 
+let debug_higher_order_call_graph define =
+  Ast.Statement.Define.dump define
+  || Ast.Statement.Define.dump_call_graph define
+  || Ast.Statement.Define.dump_higher_order_call_graph define
+
+
 let higher_order_call_graph_of_define
     ~define_call_graph
     ~pyre_api
@@ -3677,8 +3699,17 @@ let higher_order_call_graph_of_define
     let pyre_api = pyre_api
 
     let get_callee_model = get_callee_model
+
+    let debug = debug_higher_order_call_graph define
   end
   in
+  log
+    ~debug:Context.debug
+    "Building higher order call graph of `%a` with initial state `%a`"
+    Reference.pp
+    (PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define)
+    HigherOrderCallGraph.State.pp
+    initial_state;
   let module Fixpoint = HigherOrderCallGraph.MakeFixpoint (Context) in
   let returned_callables =
     Fixpoint.Fixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:initial_state
