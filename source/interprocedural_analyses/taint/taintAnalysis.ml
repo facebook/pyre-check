@@ -707,14 +707,19 @@ let run_taint_analysis
   let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
   let attribute_targets = Registry.object_targets initial_models in
   let skip_analysis_targets = Registry.skip_analysis initial_models in
-  let { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs }, cache =
+  let ( {
+          Interprocedural.CallGraph.DefineCallGraphSharedMemory.whole_program_call_graph;
+          define_call_graphs;
+        },
+        cache )
+    =
     Cache.call_graph
       ~attribute_targets
       ~skip_analysis_targets
       ~definitions
       cache
       (fun ~attribute_targets ~skip_analysis_targets ~definitions () ->
-        Interprocedural.CallGraph.build_whole_program_call_graph
+        Interprocedural.CallGraph.DefineCallGraphSharedMemory.build_whole_program_call_graph
           ~scheduler
           ~static_analysis_configuration
           ~pyre_api

@@ -389,26 +389,6 @@ val higher_order_call_graph_of_callable
   callable:Target.t ->
   HigherOrderCallGraph.t
 
-(** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
-    `DefineCallGraph.t`. *)
-module DefineCallGraphSharedMemory : sig
-  type t
-
-  val cleanup : t -> unit
-
-  val save_to_cache : t -> unit
-
-  val load_from_cache : unit -> (t, SaveLoadSharedMemory.Usage.t) result
-
-  module ReadOnly : sig
-    type t
-
-    val get : t -> callable:Target.t -> DefineCallGraph.t option
-  end
-
-  val read_only : t -> ReadOnly.t
-end
-
 (** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
     callees. *)
 module WholeProgramCallGraph : sig
@@ -427,24 +407,51 @@ module WholeProgramCallGraph : sig
   val to_target_graph : t -> TargetGraph.t
 end
 
-type call_graphs = {
-  whole_program_call_graph: WholeProgramCallGraph.t;
-  define_call_graphs: DefineCallGraphSharedMemory.t;
-}
+module type SharedMemory = sig
+  type t
 
-(** Build the whole call graph of the program.
+  type call_graph
 
-    The overrides must be computed first because we depend on a global shared memory graph to
-    include overrides in the call graph. Without it, we'll underanalyze and have an inconsistent
-    fixpoint. *)
-val build_whole_program_call_graph
-  :  scheduler:Scheduler.t ->
-  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-  resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
-  override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-  store_shared_memory:bool ->
-  attribute_targets:Target.Set.t ->
-  skip_analysis_targets:Target.Set.t ->
-  definitions:Target.t list ->
-  call_graphs
+  module ReadOnly : sig
+    type t
+
+    val get : t -> callable:Target.t -> call_graph option
+  end
+
+  val read_only : t -> ReadOnly.t
+
+  val cleanup : t -> unit
+
+  val save_to_cache : t -> unit
+
+  val load_from_cache : unit -> (t, SaveLoadSharedMemory.Usage.t) result
+
+  type call_graphs = {
+    whole_program_call_graph: WholeProgramCallGraph.t;
+    define_call_graphs: t;
+  }
+
+  (** Build the whole call graph of the program.
+
+      The overrides must be computed first because we depend on a global shared memory graph to
+      include overrides in the call graph. Without it, we'll underanalyze and have an inconsistent
+      fixpoint. *)
+  val build_whole_program_call_graph
+    :  scheduler:Scheduler.t ->
+    static_analysis_configuration:Configuration.StaticAnalysis.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
+    override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
+    store_shared_memory:bool ->
+    attribute_targets:Target.Set.t ->
+    skip_analysis_targets:Target.Set.t ->
+    definitions:Target.t list ->
+    call_graphs
+end
+
+(** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
+    `DefineCallGraph.t`. *)
+module DefineCallGraphSharedMemory : SharedMemory with type call_graph = DefineCallGraph.t
+
+module MutableDefineCallGraphSharedMemory :
+  SharedMemory with type call_graph = MutableDefineCallGraph.t

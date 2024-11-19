@@ -604,8 +604,8 @@ let initialize
 
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
-  let { CallGraph.whole_program_call_graph; define_call_graphs } =
-    CallGraph.build_whole_program_call_graph
+  let { CallGraph.DefineCallGraphSharedMemory.whole_program_call_graph; define_call_graphs } =
+    CallGraph.DefineCallGraphSharedMemory.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~pyre_api

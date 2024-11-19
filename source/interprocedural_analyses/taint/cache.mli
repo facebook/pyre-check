@@ -79,8 +79,8 @@ val call_graph
   skip_analysis_targets:Interprocedural.Target.Set.t ->
   definitions:Interprocedural.Target.t list ->
   unit ->
-  Interprocedural.CallGraph.call_graphs) ->
-  Interprocedural.CallGraph.call_graphs * t
+  Interprocedural.CallGraph.DefineCallGraphSharedMemory.call_graphs) ->
+  Interprocedural.CallGraph.DefineCallGraphSharedMemory.call_graphs * t
 
 val global_constants
   :  t ->

@@ -788,7 +788,10 @@ module CallGraphSharedMemory = struct
     =
     match Interprocedural.CallGraph.DefineCallGraphSharedMemory.load_from_cache () with
     | Ok define_call_graphs ->
-        ( { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs },
+        ( {
+            Interprocedural.CallGraph.DefineCallGraphSharedMemory.whole_program_call_graph;
+            define_call_graphs;
+          },
           SaveLoadSharedMemory.Usage.Used )
     | Error error -> compute_value ~attribute_targets ~skip_analysis_targets ~definitions (), error
 
