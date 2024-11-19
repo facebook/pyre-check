@@ -1694,7 +1694,7 @@ value Val_some(value v) {
 CAMLprim value hh_removed_count(value ml_unit) {
   CAMLparam1(ml_unit);
   UNUSED(ml_unit);
-  return Val_long(removed_count);
+  CAMLreturn(Val_long(removed_count));
 }
 
 CAMLprim value get_file_info_on_disk(value ml_unit) {
