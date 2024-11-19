@@ -95,7 +95,9 @@ let assert_fixpoint
   let () =
     List.iter ~f:(check_expectation ~pyre_api ~taint_configuration ~get_model ~get_errors) expect
   in
-  let () = TaintFixpoint.cleanup fixpoint_state in
+  OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
+  CallGraph.DefineCallGraphSharedMemory.cleanup define_call_graphs;
+  TaintFixpoint.cleanup fixpoint_state;
   ()
 
 

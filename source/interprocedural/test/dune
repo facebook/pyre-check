@@ -2,6 +2,7 @@
  (names
   targetTest
   callGraphTest
+  callGraphFixpointTest
   dependencyGraphTest
   classHierarchyGraphTest
   classIntervalTest
@@ -29,4 +30,6 @@
   ppx_deriving
   pyrelib.test
   pyrelib.ast
-  pyrelib.interprocedural))
+  pyrelib.interprocedural
+  pyrelib.taintTestHelper
+  pyrelib.taint))

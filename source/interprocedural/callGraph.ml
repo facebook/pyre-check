@@ -1213,6 +1213,23 @@ module MutableDefineCallGraph = struct
 
   let is_empty = Location.SerializableMap.is_empty
 
+  let merge =
+    let merge_location_callees_map =
+      LocationCallees.Map.merge (fun _ left right ->
+          match left, right with
+          | Some left, Some right -> Some (ExpressionCallees.join left right)
+          | Some left, None -> Some left
+          | None, Some right -> Some right
+          | None, None -> None)
+    in
+    Location.SerializableMap.merge (fun _ left right ->
+        match left, right with
+        | Some left, Some right -> Some (merge_location_callees_map left right)
+        | Some left, None -> Some left
+        | None, Some right -> Some right
+        | None, None -> None)
+
+
   let pp formatter call_graph =
     let pp_pair formatter (key, value) =
       Format.fprintf
@@ -3297,6 +3314,20 @@ module HigherOrderCallGraph = struct
            callees. *)
   }
   [@@deriving eq, show]
+
+  let empty =
+    { returned_callables = CallTarget.Set.bottom; call_graph = MutableDefineCallGraph.empty }
+
+
+  let merge
+      { returned_callables = left_returned_callables; call_graph = left_call_graph }
+      { returned_callables = right_returned_callables; call_graph = right_call_graph }
+    =
+    {
+      returned_callables = CallTarget.Set.join left_returned_callables right_returned_callables;
+      call_graph = MutableDefineCallGraph.merge left_call_graph right_call_graph;
+    }
+
 
   module State = struct
     include

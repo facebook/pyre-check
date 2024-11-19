@@ -60,6 +60,10 @@ module CallTarget : sig
     type t [@@deriving show, eq]
 
     val of_list : call_target list -> t
+
+    val join : t -> t -> t
+
+    val bottom : t
   end
 
   val target : t -> Target.t
@@ -283,6 +287,12 @@ val resolve_callees_from_type_external
 
 module MutableDefineCallGraph : sig
   type t
+
+  val empty : t
+
+  val merge : t -> t -> t
+
+  val all_targets : exclude_reference_only:bool -> t -> Target.t list
 end
 
 (** The call graph of a function or method definition. Unlike `MutableDefineCallGraph`, this is
@@ -365,6 +375,10 @@ module HigherOrderCallGraph : sig
            callees. *)
   }
   [@@deriving eq, show]
+
+  val empty : t
+
+  val merge : t -> t -> t
 
   module State : sig
     type t

@@ -14,25 +14,6 @@ open Test
 open Interprocedural
 open CallGraph
 
-let parse_define_call_graph =
-  let parse_location location =
-    let parse_position position =
-      let line_and_column = String.split ~on:':' position in
-      {
-        Location.line = Int.of_string (List.nth_exn line_and_column 0);
-        column = Int.of_string (List.nth_exn line_and_column 1);
-      }
-    in
-    let positions = String.split ~on:'-' location in
-    {
-      Location.start = parse_position (List.nth_exn positions 0);
-      stop = parse_position (List.nth_exn positions 1);
-    }
-  in
-  List.fold ~init:DefineCallGraph.empty ~f:(fun call_graph_of_define (location, callees) ->
-      DefineCallGraph.add call_graph_of_define ~location:(parse_location location) ~callees)
-
-
 let setup ~context ~test_qualifier ~define_name ~source =
   let find_define = function
     | { Node.value = define; _ }
@@ -89,7 +70,7 @@ let assert_call_graph_of_define
     ()
     context
   =
-  let expected = parse_define_call_graph expected in
+  let expected = CallGraphTestHelper.parse_define_call_graph expected in
   let define, test_source, pyre_api, configuration =
     setup ~context ~test_qualifier:(Reference.create "test") ~define_name ~source
   in
@@ -100,18 +81,6 @@ let assert_call_graph_of_define
   assert_equal ~cmp ~printer:DefineCallGraph.show expected actual
 
 
-module ImmutableHigherOrderCallGraph = struct
-  type t = {
-    returned_callables: CallTarget.Set.t;
-    call_graph: DefineCallGraph.t;
-  }
-  [@@deriving eq, show]
-
-  let from_higher_order_call_graph { CallGraph.HigherOrderCallGraph.returned_callables; call_graph }
-    =
-    { returned_callables; call_graph = DefineCallGraph.from_mutable_define_call_graph call_graph }
-end
-
 let assert_higher_order_call_graph_of_define
     ?(object_targets = [])
     ?(initial_state = CallGraph.HigherOrderCallGraph.State.empty)
@@ -119,15 +88,17 @@ let assert_higher_order_call_graph_of_define
     ~define_name
     ~expected_call_graph
     ~expected_returned_callables
-    ?(cmp = ImmutableHigherOrderCallGraph.equal)
+    ?(cmp = CallGraphTestHelper.ImmutableHigherOrderCallGraph.equal)
     ()
     context
   =
+  let open CallGraphTestHelper in
   let expected =
-    {
-      ImmutableHigherOrderCallGraph.call_graph = parse_define_call_graph expected_call_graph;
-      returned_callables = CallTarget.Set.of_list expected_returned_callables;
-    }
+    ImmutableHigherOrderCallGraph.from_input
+      {
+        ImmutableHigherOrderCallGraph.Input.returned_callables = expected_returned_callables;
+        call_graph = expected_call_graph;
+      }
   in
   let test_qualifier = Reference.create "test" in
   let define, test_source, pyre_api, configuration =

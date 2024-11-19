@@ -489,6 +489,10 @@ let initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_
   configuration, pyre_api
 
 
+let source_from_qualifier ~pyre_api qualifier =
+  qualifier |> PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api |> Option.value_exn
+
+
 let initialize
     ?(handle = "test.py")
     ?models_source
@@ -510,10 +514,7 @@ let initialize
     Configuration.StaticAnalysis.create configuration ?find_missing_flows ()
   in
   let qualifier = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
-  let source =
-    PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier
-    |> fun option -> Option.value_exn option
-  in
+  let source = source_from_qualifier ~pyre_api qualifier in
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
   let stubs = FetchCallables.get_stubs initial_callables in
   let definitions = FetchCallables.get_definitions initial_callables in

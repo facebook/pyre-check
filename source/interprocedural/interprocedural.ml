@@ -11,6 +11,7 @@ module AccessPath = TaintAccessPath
 module FixpointAnalysis = FixpointAnalysis
 module Target = Target
 module CallGraph = CallGraph
+module CallGraphFixpoint = CallGraphFixpoint
 module CallResolution = CallResolution
 module OverrideGraph = OverrideGraph
 module DependencyGraph = DependencyGraph
