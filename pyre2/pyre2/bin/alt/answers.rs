@@ -721,6 +721,17 @@ impl<'a> AnswersSolver<'a> {
         ty: Type,
         range: TextRange,
     ) -> Type {
+        if matches!(
+            style,
+            TypeAliasStyle::Scoped | TypeAliasStyle::LegacyExplicit
+        ) && self.untype_opt(ty.clone(), range).is_none()
+        {
+            self.error(
+                range,
+                format!("Expected `{name}` to be a type alias, got {ty}"),
+            );
+            return Type::any_error();
+        }
         let mut ta = {
             let ty = match &ty {
                 Type::ClassDef(cls) => Type::Type(Box::new(self.promote_to_class_type(cls, range))),
@@ -1100,17 +1111,21 @@ impl<'a> AnswersSolver<'a> {
                     _ => ty,
                 }
             }
-            Binding::ScopedTypeAlias(name, qs, binding, _range) => {
+            Binding::ScopedTypeAlias(name, qs, binding, range) => {
                 let ty = self.solve_binding_inner(binding);
-                let ta = Type::TypeAlias(TypeAlias {
-                    name: name.clone(),
-                    ty: Box::new(ty),
-                    style: TypeAliasStyle::Scoped,
-                });
-                if qs.is_empty() {
-                    ta
-                } else {
-                    Type::Forall(qs.clone(), Box::new(ta))
+                let ta = self.as_type_alias(name, TypeAliasStyle::Scoped, ty, *range);
+                match ta {
+                    Type::Forall(other_qs, inner_ta) => {
+                        self.error(
+                            *range,
+                            format!("Type parameters used in `{name}` but not declared"),
+                        );
+                        let mut all_qs = qs.clone();
+                        all_qs.extend(other_qs);
+                        Type::Forall(all_qs, inner_ta)
+                    }
+                    Type::TypeAlias(_) if !qs.is_empty() => Type::Forall(qs.clone(), Box::new(ta)),
+                    _ => ta,
                 }
             }
         }

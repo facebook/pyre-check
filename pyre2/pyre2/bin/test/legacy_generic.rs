@@ -230,3 +230,11 @@ def f(x: X[int]):
     assert_type(x, int)
     "#,
 );
+
+simple_test!(
+    test_bad_annotated_alias,
+    r#"
+from typing import TypeAlias
+X: TypeAlias = 1  # E: Expected `X` to be a type alias, got Literal[1]
+    "#,
+);

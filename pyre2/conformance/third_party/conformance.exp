@@ -13,6 +13,16 @@
     },
     {
       "code": -2,
+      "column": 23,
+      "concise_description": "Expected `GoodTypeAlias13` to be a type alias, got Literal['int | str']",
+      "description": "Expected `GoodTypeAlias13` to be a type alias, got Literal['int | str']",
+      "line": 27,
+      "name": "PyreError",
+      "stop_column": 34,
+      "stop_line": 27
+    },
+    {
+      "code": -2,
       "column": 28,
       "concise_description": "untype, got Literal['int | str']",
       "description": "untype, got Literal['int | str']",
@@ -50,16 +60,6 @@
       "name": "PyreError",
       "stop_column": 41,
       "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 10,
-      "concise_description": "untype, got LegacyExplicitTypeAlias[GoodTypeAlias13, Literal['int | str']]",
-      "description": "untype, got LegacyExplicitTypeAlias[GoodTypeAlias13, Literal['int | str']]",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 45
     },
     {
       "code": -2,
@@ -213,6 +213,36 @@
     },
     {
       "code": -2,
+      "column": 21,
+      "concise_description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
+      "description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
+      "line": 80,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 80
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "Expected `BadTypeAlias3` to be a type alias, got tuple[tuple[type[int], type[str]]]",
+      "description": "Expected `BadTypeAlias3` to be a type alias, got tuple[tuple[type[int], type[str]]]",
+      "line": 81,
+      "name": "PyreError",
+      "stop_column": 34,
+      "stop_line": 81
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "Expected `BadTypeAlias4` to be a type alias, got list[type[int]]",
+      "description": "Expected `BadTypeAlias4` to be a type alias, got list[type[int]]",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 44,
+      "stop_line": 82
+    },
+    {
+      "code": -2,
       "column": 41,
       "concise_description": "Expected 0 positional argument(s)",
       "description": "Expected 0 positional argument(s)",
@@ -220,6 +250,16 @@
       "name": "PyreError",
       "stop_column": 42,
       "stop_line": 82
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "Expected `BadTypeAlias5` to be a type alias, got dict[str, str]",
+      "description": "Expected `BadTypeAlias5` to be a type alias, got dict[str, str]",
+      "line": 83,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 83
     },
     {
       "code": -2,
@@ -240,6 +280,46 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 85
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "Expected `BadTypeAlias9` to be a type alias, got Literal[3]",
+      "description": "Expected `BadTypeAlias9` to be a type alias, got Literal[3]",
+      "line": 87,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 87
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "Expected `BadTypeAlias10` to be a type alias, got Literal[True]",
+      "description": "Expected `BadTypeAlias10` to be a type alias, got Literal[True]",
+      "line": 88,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 88
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "Expected `BadTypeAlias11` to be a type alias, got Literal[1]",
+      "description": "Expected `BadTypeAlias11` to be a type alias, got Literal[1]",
+      "line": 89,
+      "name": "PyreError",
+      "stop_column": 23,
+      "stop_line": 89
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "Expected `BadTypeAlias13` to be a type alias, got str",
+      "description": "Expected `BadTypeAlias13` to be a type alias, got str",
+      "line": 91,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 91
     },
     {
       "code": -2,
@@ -1051,6 +1131,36 @@
     },
     {
       "code": -2,
+      "column": 1,
+      "concise_description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
+      "description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected `BadTypeAlias3` to be a type alias, got tuple[tuple[type[int], type[str]]]",
+      "description": "Expected `BadTypeAlias3` to be a type alias, got tuple[tuple[type[int], type[str]]]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 35,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected `BadTypeAlias4` to be a type alias, got list[type[int]]",
+      "description": "Expected `BadTypeAlias4` to be a type alias, got list[type[int]]",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 45,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
       "column": 42,
       "concise_description": "Expected 0 positional argument(s)",
       "description": "Expected 0 positional argument(s)",
@@ -1058,6 +1168,16 @@
       "name": "PyreError",
       "stop_column": 43,
       "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected `BadTypeAlias5` to be a type alias, got dict[str, str]",
+      "description": "Expected `BadTypeAlias5` to be a type alias, got dict[str, str]",
+      "line": 41,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 41
     },
     {
       "code": -2,
@@ -1078,6 +1198,66 @@
       "name": "PyreError",
       "stop_column": 30,
       "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected `BadTypeAlias9` to be a type alias, got Literal[1]",
+      "description": "Expected `BadTypeAlias9` to be a type alias, got Literal[1]",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected `BadTypeAlias10` to be a type alias, got Literal[True]",
+      "description": "Expected `BadTypeAlias10` to be a type alias, got Literal[True]",
+      "line": 46,
+      "name": "PyreError",
+      "stop_column": 27,
+      "stop_line": 46
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected `BadTypeAlias11` to be a type alias, got Literal[1]",
+      "description": "Expected `BadTypeAlias11` to be a type alias, got Literal[1]",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected `BadTypeAlias13` to be a type alias, got str",
+      "description": "Expected `BadTypeAlias13` to be a type alias, got str",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 33,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Type parameters used in `TA1` but not declared",
+      "description": "Type parameters used in `TA1` but not declared",
+      "line": 64,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 64
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Type parameters used in `TA2` but not declared",
+      "description": "Type parameters used in `TA2` but not declared",
+      "line": 69,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 69
     },
     {
       "code": -2,

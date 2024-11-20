@@ -442,3 +442,27 @@ def f(x: X[int]):
     assert_type(x, list[int])
     "#,
 );
+
+simple_test!(
+    test_type_alias_missing_quantifieds,
+    r#"
+from typing import TypeVar
+T = TypeVar('T')
+type X = list[T]  # E: Type parameters used in `X`
+    "#,
+);
+
+simple_test!(
+    test_type_alias_unused_quantifieds,
+    r#"
+# Questionable code, but not an error
+type X[T] = list
+    "#,
+);
+
+simple_test!(
+    test_bad_type_alias,
+    r#"
+type X = 1  # E: Expected `X` to be a type alias, got Literal[1]
+    "#,
+);
