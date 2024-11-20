@@ -388,25 +388,7 @@ impl Driver {
             total - printing
         ));
         if let Some(timings) = timings {
-            eprintln!("Expensive operations");
-            for ((module, step, number), time) in timers.ordered().iter().take(timings) {
-                eprintln!(
-                    "  {module} {step}{}: {time:.2?}",
-                    if *number == 0 {
-                        String::new()
-                    } else {
-                        format!(" ({number})")
-                    }
-                );
-            }
-            eprintln!("Expensive modules");
-            for (module, time) in timers.grouped(|x| x.0).iter().take(timings) {
-                eprintln!("  {module}: {time:.2?}");
-            }
-            eprintln!("Expensive steps");
-            for (step, time) in timers.grouped(|x| x.1).iter().take(timings) {
-                eprintln!("  {step}: {time:.2?}");
-            }
+            Self::print_timings(timings, timers);
         }
 
         mem::drop(answers);
@@ -425,6 +407,28 @@ impl Driver {
             expectations,
             solutions,
             phases,
+        }
+    }
+
+    fn print_timings(count: usize, timers: &mut TimerContext<(ModuleName, Step, usize)>) {
+        eprintln!("Expensive operations");
+        for ((module, step, number), time) in timers.ordered().iter().take(count) {
+            eprintln!(
+                "  {module} {step}{}: {time:.2?}",
+                if *number == 0 {
+                    String::new()
+                } else {
+                    format!(" ({number})")
+                }
+            );
+        }
+        eprintln!("Expensive modules");
+        for (module, time) in timers.grouped(|x| x.0).iter().take(count) {
+            eprintln!("  {module}: {time:.2?}");
+        }
+        eprintln!("Expensive steps");
+        for (step, time) in timers.grouped(|x| x.1).iter().take(count) {
+            eprintln!("  {step}: {time:.2?}");
         }
     }
 
