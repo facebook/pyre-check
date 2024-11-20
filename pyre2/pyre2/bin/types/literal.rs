@@ -149,7 +149,7 @@ impl Lit {
         match self {
             Lit::Int(x) if let Some(x) = x.checked_neg() => Lit::Int(x),
             _ => {
-                errors.add(module_info, range, format!("Can't negate type {self}"));
+                errors.add(module_info, range, format!("Cannot negate type {self}"));
                 self.clone()
             }
         }

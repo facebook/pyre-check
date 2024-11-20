@@ -48,5 +48,5 @@ pub fn find_module(name: ModuleName, include: &[PathBuf]) -> anyhow::Result<Path
             }
         }
     }
-    Err(anyhow::anyhow!("Couldn't find path for `{name}`"))
+    Err(anyhow::anyhow!("Could not find path for `{name}`"))
 }
