@@ -128,3 +128,4 @@ exclude =
   source/errpy/*,
   source/interprocedural_analyses/taint/test/integration/*,
   source/command/test/integration/fake_repository/*
+  pyre2/*,
