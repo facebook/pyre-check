@@ -71,7 +71,6 @@ impl Variable {
 #[derive(Debug)]
 pub struct Solver<'a> {
     uniques: &'a UniqueFactory,
-    errors: &'a ErrorCollector,
     variables: RwLock<SmallMap<Var, Variable>>,
 }
 
@@ -90,10 +89,9 @@ const TYPE_LIMIT: usize = 20;
 
 impl<'a> Solver<'a> {
     /// Create a new solver.
-    pub fn new(uniques: &'a UniqueFactory, errors: &'a ErrorCollector) -> Self {
+    pub fn new(uniques: &'a UniqueFactory) -> Self {
         Self {
             uniques,
-            errors,
             variables: Default::default(),
         }
     }
@@ -218,13 +216,20 @@ impl<'a> Solver<'a> {
     }
 
     /// Generate an error message that `got <: want` failed.
-    pub fn error(&self, want: &Type, got: &Type, module_info: &ModuleInfo, loc: TextRange) {
+    pub fn error(
+        &self,
+        want: &Type,
+        got: &Type,
+        errors: &ErrorCollector,
+        module_info: &ModuleInfo,
+        loc: TextRange,
+    ) {
         let got = self.expand(got.clone()).deterministic_printing();
         let want = self.expand(want.clone()).deterministic_printing();
         let mut ctx = TypeDisplayContext::new();
         ctx.add(&got);
         ctx.add(&want);
-        self.errors.add(
+        errors.add(
             module_info,
             loc,
             format!("EXPECTED {} <: {}", ctx.display(&got), ctx.display(&want)),
@@ -280,6 +285,7 @@ impl<'a> Solver<'a> {
         v: Var,
         t: Type,
         type_order: TypeOrder,
+        errors: &ErrorCollector,
         module_info: &ModuleInfo,
         loc: TextRange,
     ) {
@@ -315,7 +321,7 @@ impl<'a> Solver<'a> {
                 mem::drop(lock);
                 // We got forced into choosing a type to satisfy a subset constraint, so check we are OK with that.
                 if !self.is_subset_eq(&got, &t, type_order) {
-                    self.error(&t, &got, module_info, loc);
+                    self.error(&t, &got, errors, module_info, loc);
                 }
             }
             _ => {

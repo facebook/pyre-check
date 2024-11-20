@@ -336,7 +336,7 @@ impl Driver {
         } else {
             ErrorCollector::new()
         };
-        let solver = Solver::new(&uniques, &errors);
+        let solver = Solver::new(&uniques);
 
         timers.add((timers_global_module(), Step::Startup, 0));
         let phase1 = run_phase1(timers, modules, config, &errors, load, debug, parallel);

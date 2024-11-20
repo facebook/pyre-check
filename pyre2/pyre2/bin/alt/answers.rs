@@ -467,6 +467,7 @@ impl<'a> AnswersSolver<'a> {
             recursive,
             (*answer).clone(),
             self.type_order(),
+            self.errors,
             self.module_info,
             key.range(),
         );
@@ -1126,7 +1127,8 @@ impl<'a> AnswersSolver<'a> {
         } else if self.solver.is_subset_eq(got, want, self.type_order()) {
             got.clone()
         } else {
-            self.solver.error(want, got, self.module_info, loc);
+            self.solver
+                .error(want, got, self.errors, self.module_info, loc);
             want.clone()
         }
     }
