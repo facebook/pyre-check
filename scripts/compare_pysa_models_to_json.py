@@ -125,13 +125,11 @@ def json_to_parsed_model(taint_data: List[Dict[str, Any]]) -> TargetModel:
                     port = entry["port"]
                     taints = parse_kinds(entry["taint"])
                     if port == "result":
-                        # pyre-fixme[26]: TypedDict key must be a string literal.
                         result["return_model"][model_type].update(taints)
                     else:
                         # TODO(sym): This currently does not support 'AppliesTo'
                         # models.
                         port = entry["port"].replace("formal(", "").replace(")", "")
-                        # pyre-fixme[26]: TypedDict key must be a string literal.
                         result["parameters"][port][model_type].update(taints)
     return result
 
