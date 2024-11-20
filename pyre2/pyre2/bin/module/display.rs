@@ -1,0 +1,49 @@
+use std::fmt;
+use std::fmt::Display;
+
+use ruff_python_ast::Expr;
+use ruff_python_ast::Stmt;
+use ruff_text_size::Ranged;
+use ruff_text_size::TextRange;
+use ruff_text_size::TextSize;
+
+use crate::module::module_info::ModuleInfo;
+use crate::util::display::DisplayWith;
+
+// Special module-specific types
+
+impl ModuleInfo {
+    pub fn display<'a>(&'a self, x: &'a impl DisplayWith<ModuleInfo>) -> impl Display + 'a {
+        x.display_with(self)
+    }
+}
+
+impl DisplayWith<ModuleInfo> for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, m: &ModuleInfo) -> fmt::Result {
+        // We have a special case for NoneLiteral because we might manufacture these
+        // during type checking (e.g. in the return position)
+        if let Expr::NoneLiteral(_) = self {
+            write!(f, "None")
+        } else {
+            write!(f, "{}", m.code_at(self.range()))
+        }
+    }
+}
+
+impl DisplayWith<ModuleInfo> for Stmt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, m: &ModuleInfo) -> fmt::Result {
+        write!(f, "{}", m.code_at(self.range()))
+    }
+}
+
+impl DisplayWith<ModuleInfo> for TextRange {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, m: &ModuleInfo) -> fmt::Result {
+        write!(f, "{}", m.source_range(*self))
+    }
+}
+
+impl DisplayWith<ModuleInfo> for TextSize {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, m: &ModuleInfo) -> fmt::Result {
+        write!(f, "{}", m.source_location(*self))
+    }
+}

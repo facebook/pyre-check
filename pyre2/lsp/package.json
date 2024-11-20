@@ -1,0 +1,73 @@
+{
+    "name": "pyre2",
+    "description": "A Python language server, powered by Pyre2",
+    "extensionKind": [
+        "workspace"
+    ],
+    "author": "Facebook",
+    "license": "Apache2",
+    "version": "1.0.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/facebook/pyre"
+    },
+    "publisher": "facebook",
+    "categories": [],
+    "keywords": [
+        "multi-root ready"
+    ],
+    "engines": {
+        "vscode": "^1.94.0"
+    },
+    "main": "./out/extension",
+    "activationEvents": [
+        "onLanguage:python"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "python",
+                "aliases": [
+                    "Python"
+                ],
+                "extensions": [
+                    ".py",
+                    ".pyi"
+                ]
+            }
+        ],
+        "configuration": {
+            "properties": {
+                "pyre2.lspPath": {
+                    "type": "string",
+                    "default": "pyre2",
+                    "description": "The path to the binary to invoke (possibly on the path) for the plugin to invoke that handles LSP over stdin/stdout"
+                },
+                "pyre2.lspArguments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "lsp"
+                    ],
+                    "description": "Additional arguments that should be passed to the binary at pyre2.lspPath"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -b",
+        "watch": "tsc -b -w"
+    },
+    "devDependencies": {
+        "@types/node": "^16.11.7",
+        "@types/vscode": "^1.78.1",
+        "typescript": "^4.4.3",
+        "vsce": "^2.9.2"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^8.1.0"
+    }
+}

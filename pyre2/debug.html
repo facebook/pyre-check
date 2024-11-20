@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Pyre2 debugger</title>
+<style type="text/css">
+body {
+    font-family: sans-serif;
+    font-size: 10pt;
+}
+
+#search {
+    float: right;
+    width: 400px;
+}
+
+.error { color: darkred; }
+.result { color: darkblue; }
+.key { color: darkgreen; }
+.binding { color: dimgray; }
+</style>
+
+        <script src="debug.js" type="text/javascript"></script>
+        <script type="text/javascript">
+
+const BIG = 100000;
+
+function load() {
+    document.getElementById("search").addEventListener('input', search);
+    search();
+}
+
+function parse(x) {
+    const regex = /^((?<lineStart>[0-9]+)(:(?<colStart>[0-9]+))?(-(?<lineEnd>[0-9]+)(:(?<colEnd>[0-9]+))?)?)? *(?<text>.*)$/;
+    const re = regex.exec(x).groups;
+    const ans = {
+        "lineStart": re.lineStart != undefined ? +re.lineStart : 1,
+        "colStart": re.colStart != undefined ? +re.colStart : 1,
+    };
+    if (re.lineEnd == undefined && re.colEnd == undefined) {
+        ans.lineEnd = re.lineStart != undefined ? +re.lineStart : BIG;
+        ans.colEnd = re.colStart != undefined ? +re.colStart : BIG;
+    } else if (re.colEnd == undefined) {
+        ans.lineEnd = ans.lineStart;
+        ans.colEnd = +re.lineEnd;
+    } else {
+        ans.lineEnd = +re.lineEnd;
+        ans.colEnd = +re.colEnd;
+    }
+    ans.text = re.text;
+    return ans;
+}
+
+function rangeOverlap(a, b) {
+    // Check if range1 ends before range2 starts
+    if (a.lineEnd < b.lineStart || (a.lineEnd === b.lineStart && a.colEnd < b.colStart)) {
+        return false;
+    }
+    // Check if range2 ends before range1 starts
+    if (b.lineEnd < a.lineStart || (b.lineEnd === a.lineStart && b.colEnd < a.colStart)) {
+        return false;
+    }
+    // If neither of the above conditions are true, the ranges overlap
+    return true;
+}
+
+function search() {
+    const key = parse(document.getElementById("search").value);
+    render(function(range, msg) {
+        return rangeOverlap(key, parse(range)) && msg.indexOf(key.text) != -1;
+    })
+}
+
+function li(texts) {
+    const res = document.createElement("li");
+    for (var i = 0; i < texts.length; i++) {
+        const [style, text, after] = texts[i];
+        var x = document.createElement("span");
+        x.className = style;
+        x.innerText = text;
+        res.appendChild(x);
+        if (after) {
+            res.appendChild(document.createTextNode(after));
+        }
+    }
+    return res;
+}
+
+function render(keep) {
+    const $errors = document.getElementById("errors");
+    const $keys = document.getElementById("keys");
+    $errors.innerHTML = "";
+    $keys.innerHTML = "";
+    for (module_name in data.modules) {
+        const module_data = data.modules[module_name];
+        for (error in module_data.errors) {
+            error = module_data.errors[error];
+            if (keep(error.location, error.message)) {
+                const item = document.createElement("li");
+                $errors.appendChild(li([
+                    ["location", error.location, " "],
+                    ["error", error.message, ""],
+                ]));
+            }
+        }
+        for (binding in module_data.bindings) {
+            binding = module_data.bindings[binding];
+            if (keep(binding.location, binding.key + " " + binding.binding + " " + binding.result)) {
+                const item = document.createElement("li");
+                item.textContent = binding.location + " " + binding.kind + " " + binding.key + " = " + binding.binding + " = " + binding.result;
+                $keys.appendChild(li([
+                    ["location", binding.location, " "],
+                    ["kind", binding.kind, " "],
+                    ["key", binding.key, " = "],
+                    ["binding", binding.binding, " = "],
+                    ["result", binding.result, ""],
+                ]));
+            }
+        }
+    }
+}
+
+function assertEq(a, b) {
+    if (Array.isArray(a) && Array.isArray(b)) {
+        assertEq(a.length, b.length);
+        for (i = 0; i < a.length; i++) {
+            assertEq(a[i], b[i]);
+        }
+    } else if (typeof a === "object" && typeof b === "object") {
+        assertEq(Object.keys(a), Object.keys(b))
+        for (k in a) {
+            assertEq(a[k], b[k]);
+        }
+    }
+    else if (a !== b) {
+        throw "Assertion failure: " + a + " === " + b;
+    }
+}
+
+function test() {
+    assertEq(parse("1:1 test"), {lineStart: 1, colStart: 1, lineEnd: 1, colEnd: 1, text: "test"});
+    assertEq(parse("1:2-3:4   more stuff"), {lineStart: 1, colStart: 2, lineEnd: 3, colEnd: 4, text: "more stuff"});
+    assertEq(parse("1:2-3"), {lineStart: 1, colStart: 2, lineEnd: 1, colEnd: 3, text: ""});
+    assertEq(parse("8 search"), {lineStart: 8, colStart: 1, lineEnd: 8, colEnd: BIG, text: "search"});
+    assertEq(parse("just words"), {lineStart: 1, colStart: 1, lineEnd: BIG, colEnd: BIG, text: "just words"});
+}
+
+test();
+
+        </script>
+    </head>
+    <body onload="load()">
+        <input id="search" placeholder="Search: e.g. '3-5' or 'foo'" />
+        <h1>Pyre2 debugger</h1>
+        <h2>Errors</h2>
+        <ul id="errors"></ul>
+        <h2>Keys</h2>
+        <ul id="keys"></ul>
+    </body>
+</html>
