@@ -464,30 +464,20 @@ impl Driver {
 
     #[cfg(test)]
     pub fn mro_of_export(&self, module: ModuleName, name: &str) -> Option<&Mro> {
-        use ruff_python_ast::name::Name;
-
-        use crate::alt::binding::Key;
         use crate::alt::binding::KeyMro;
-        use crate::types::types::Type;
 
-        match self.solutions.get(&module).unwrap().types.get(
-            self.phases
-                .get(&module)
-                .unwrap()
-                .1
-                .bindings
-                .key_to_idx(&Key::Export(Name::new(name))),
-        ) {
+        let solutions = self.solutions.get(&module).unwrap();
+        let bindings = &self.phases.get(&module).unwrap().1.bindings;
+
+        match solutions
+            .types
+            .get(bindings.key_to_idx(&Key::Export(Name::new(name))))
+        {
             Some(Type::ClassDef(cls)) => {
                 println!("Class {cls:?}");
-                let x = self.solutions.get(&module).unwrap().mros.get(
-                    self.phases
-                        .get(&module)
-                        .unwrap()
-                        .1
-                        .bindings
-                        .key_to_idx(&KeyMro::Mro(cls.name().clone())),
-                );
+                let x = solutions
+                    .mros
+                    .get(bindings.key_to_idx(&KeyMro::Mro(cls.name().clone())));
                 x
             }
             _ => None,
