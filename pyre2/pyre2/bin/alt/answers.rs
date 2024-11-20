@@ -1104,7 +1104,7 @@ impl<'a> AnswersSolver<'a> {
                 let ty = self.solve_binding_inner(binding);
                 self.as_type_alias(name, annot, ty, range)
             }
-            Binding::ScopedTypeAlias(name, qs, binding) => {
+            Binding::ScopedTypeAlias(name, qs, binding, _range) => {
                 let ty = self.solve_binding_inner(binding);
                 let ta = Type::TypeAlias(TypeAlias {
                     name: name.clone(),

@@ -247,7 +247,7 @@ pub enum Binding {
     /// can error on bad type forms in type aliases.
     NameAssign(Name, Option<Idx<KeyAnnotation>>, Box<Binding>, TextRange),
     /// A type alias declared with the `type` soft keyword
-    ScopedTypeAlias(Name, Vec<Quantified>, Box<Binding>),
+    ScopedTypeAlias(Name, Vec<Quantified>, Box<Binding>, TextRange),
 }
 
 impl Binding {
@@ -537,10 +537,10 @@ impl DisplayWith<Bindings> for Binding {
                     binding.display_with(ctx)
                 )
             }
-            Self::ScopedTypeAlias(name, qs, binding) if qs.is_empty() => {
+            Self::ScopedTypeAlias(name, qs, binding, _r) if qs.is_empty() => {
                 write!(f, "type {} = {}", name, binding.display_with(ctx))
             }
-            Self::ScopedTypeAlias(name, qs, binding) => {
+            Self::ScopedTypeAlias(name, qs, binding, _r) => {
                 write!(
                     f,
                     "type {}[{}] = {}",

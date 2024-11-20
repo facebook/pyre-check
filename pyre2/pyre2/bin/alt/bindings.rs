@@ -1192,8 +1192,12 @@ impl<'a> BindingsBuilder<'a> {
                     };
                     self.ensure_expr(&x.value);
                     let expr_binding = Binding::Expr(None, *x.value);
-                    let binding =
-                        Binding::ScopedTypeAlias(name.id.clone(), qs, Box::new(expr_binding));
+                    let binding = Binding::ScopedTypeAlias(
+                        name.id.clone(),
+                        qs,
+                        Box::new(expr_binding),
+                        x.range,
+                    );
                     self.bind_definition(&Ast::expr_name_identifier(name), binding, None);
                 } else {
                     self.todo("Bindings::stmt TypeAlias", &x);
