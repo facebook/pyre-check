@@ -148,28 +148,26 @@ impl<'a> Solver<'a> {
         }
     }
 
-    fn deep_force_mut_with_limit(&self, t: &mut Type, limit: usize, seen: &mut HashSet<Var>) {
+    fn deep_force_mut_with_limit(&self, t: &mut Type, limit: usize, recurser: &Recurser<Var>) {
         if limit == 0 {
             // FIXME: Should probably add an error here, and use any_error,
             // but don't have any good location information to hand.
             *t = Type::any_implicit();
         } else if let Type::Var(v) = t {
-            if seen.insert(*v) {
-                let vv = *v;
+            if let Some(_guard) = recurser.recurse(*v) {
                 *t = self.force_var(*v);
-                self.deep_force_mut_with_limit(t, limit - 1, seen);
-                seen.remove(&vv);
+                self.deep_force_mut_with_limit(t, limit - 1, recurser);
             } else {
                 *t = Type::any_implicit();
             }
         } else {
-            t.visit_mut(|t| self.deep_force_mut_with_limit(t, limit - 1, seen));
+            t.visit_mut(|t| self.deep_force_mut_with_limit(t, limit - 1, recurser));
         }
     }
 
     /// A version of `deep_force` that works in-place on a `Type`.
     pub fn deep_force_mut(&self, t: &mut Type) {
-        self.deep_force_mut_with_limit(t, TYPE_LIMIT, &mut HashSet::new());
+        self.deep_force_mut_with_limit(t, TYPE_LIMIT, &Recurser::new());
         // After forcing, we might be able to simplify some unions
         t.transform_mut(|x| {
             if let Type::Union(xs) = x {
