@@ -561,17 +561,8 @@ fn make_stdlib(
     uniques: &UniqueFactory,
     solver: &Solver,
 ) -> Stdlib {
-    let stdlib_modules = [
-        ModuleName::builtins(),
-        ModuleName::typing(),
-        ModuleName::types(),
-    ];
-    let stdlib_answers = stdlib_modules
-        .into_iter()
-        .map(|module| (module, answers.get(&module).unwrap()))
-        .collect::<SmallMap<_, _>>();
     let lookup_class = |module: ModuleName, name: &Name| {
-        stdlib_answers
+        answers
             .get(&module)
             .unwrap()
             .lookup_class_without_stdlib(module, name, answers, errors, uniques, solver)
