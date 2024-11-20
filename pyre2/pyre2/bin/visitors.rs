@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 use ruff_python_ast::visitor::source_order::walk_stmt;
 use ruff_python_ast::visitor::source_order::SourceOrderVisitor;
 use ruff_python_ast::ExceptHandler;
