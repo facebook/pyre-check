@@ -717,34 +717,19 @@ impl<'a> AnswersSolver<'a> {
     fn as_type_alias(
         &self,
         name: &Name,
-        annot: Option<Arc<Annotation>>,
+        style: TypeAliasStyle,
         ty: Type,
-        range: &TextRange,
+        range: TextRange,
     ) -> Type {
-        let mut ta = match (annot, &ty) {
-            (Some(annot), _) if annot.qualifiers.contains(&Qualifier::TypeAlias) => {
-                let ty = match &ty {
-                    Type::ClassDef(cls) => {
-                        Type::Type(Box::new(self.promote_to_class_type(cls, *range)))
-                    }
-                    t => t.clone(),
-                };
-                TypeAlias {
-                    name: name.clone(),
-                    ty: Box::new(ty),
-                    style: TypeAliasStyle::LegacyExplicit,
-                }
-            }
-            (None, Type::Type(box t)) if !t.is_tvar_declaration(name) => TypeAlias {
+        let mut ta = {
+            let ty = match &ty {
+                Type::ClassDef(cls) => Type::Type(Box::new(self.promote_to_class_type(cls, range))),
+                t => t.clone(),
+            };
+            TypeAlias {
                 name: name.clone(),
                 ty: Box::new(ty),
-                style: TypeAliasStyle::LegacyImplicit,
-            },
-            // TODO(stroxler, rechen): Do we want to include Type::ClassDef(_)
-            // when there is no annotation, so that `mylist = list` is treated
-            // like a type alias rather than a value assignment?
-            _ => {
-                return ty; // Not a type alias, exit early with the raw expression type
+                style,
             }
         };
         let mut seen = SmallMap::new();
@@ -1102,7 +1087,18 @@ impl<'a> AnswersSolver<'a> {
             Binding::NameAssign(name, annot_key, binding, range) => {
                 let annot = annot_key.map(|k| self.get_annotation_idx(k));
                 let ty = self.solve_binding_inner(binding);
-                self.as_type_alias(name, annot, ty, range)
+                match (annot, &ty) {
+                    (Some(annot), _) if annot.qualifiers.contains(&Qualifier::TypeAlias) => {
+                        self.as_type_alias(name, TypeAliasStyle::LegacyExplicit, ty, *range)
+                    }
+                    // TODO(stroxler, rechen): Do we want to include Type::ClassDef(_)
+                    // when there is no annotation, so that `mylist = list` is treated
+                    // like a value assignment rather than a type alias?
+                    (None, Type::Type(box t)) if !t.is_tvar_declaration(name) => {
+                        self.as_type_alias(name, TypeAliasStyle::LegacyImplicit, ty, *range)
+                    }
+                    _ => ty,
+                }
             }
             Binding::ScopedTypeAlias(name, qs, binding, _range) => {
                 let ty = self.solve_binding_inner(binding);
