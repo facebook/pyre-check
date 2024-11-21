@@ -113,6 +113,35 @@ for xs in [[B()]]:
 "#,
 );
 
+simple_test!(
+    test_set_hint,
+    r#"
+from typing import Iterable, MutableSet
+
+x: set[int] = {1}
+x: set[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
+x: MutableSet[int] = {1}
+x: MutableSet[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
+x: Iterable[int] = {1}
+x: object = {1}
+x: list[int] = {1}  # E: EXPECTED set[Unknown] <: list[int]
+    "#,
+);
+
+simple_test!(
+    test_dict_hint,
+    r#"
+from typing import Iterable, MutableMapping
+x: dict[str, int] = {"a": 1}
+x: dict[str, int] = {"a": "oops"}  # E: EXPECTED Literal['oops'] <: int
+x: MutableMapping[str, int] = {"a": 1}
+x: Iterable[str] = {"a": 1}
+x: Iterable[int] = {"oops": 1}  # E: EXPECTED Literal['oops'] <: int
+x: object = {"a": 1}
+x: list[str] = {"a": 1}  # E: EXPECTED dict[Unknown, Unknown] <: list[str]
+    "#,
+);
+
 // TODO: Unpacked assignment propagates wrong hint to RHS expression
 simple_test!(
     test_context_assign_unpacked_tuple,
