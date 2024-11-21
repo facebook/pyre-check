@@ -645,7 +645,7 @@ impl<'a> AnswersSolver<'a> {
                 match x.op {
                     UnaryOp::USub => match t {
                         Type::Literal(lit) => {
-                            Type::Literal(lit.negate(self.module_info, x.range, self.errors))
+                            Type::Literal(lit.negate(self.module_info, x.range, self.errors()))
                         }
                         _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
                     },
@@ -890,7 +890,7 @@ impl<'a> AnswersSolver<'a> {
             Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
             Expr::BytesLiteral(x) => Lit::from_bytes_literal(x).to_type(),
             Expr::NumberLiteral(x) => {
-                Lit::from_number_literal(x, self.module_info, self.errors).to_type()
+                Lit::from_number_literal(x, self.module_info, self.errors()).to_type()
             }
             Expr::BooleanLiteral(x) => Lit::from_boolean_literal(x).to_type(),
             Expr::NoneLiteral(_) => Type::None,

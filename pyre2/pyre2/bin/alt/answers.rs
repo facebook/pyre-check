@@ -152,7 +152,6 @@ pub struct AnswersSolver<'a> {
     uniques: &'a UniqueFactory,
     pub recurser: &'a Recurser<Var>,
     pub solver: &'a Solver<'a>,
-    pub errors: &'a ErrorCollector,
     pub stdlib: &'a Stdlib,
     pub module_info: &'a ModuleInfo,
 }
@@ -321,7 +320,6 @@ impl<'a> Answers<'a> {
             solver,
             recurser: &Recurser::new(),
             current: self,
-            errors: self.errors,
             module_info: self.bindings.module_info(),
         };
         table_mut_for_each!(&mut res, |items| pre_solve(items, &answers_solver));
@@ -354,7 +352,6 @@ impl<'a> Answers<'a> {
             answers,
             recurser: &Recurser::new(),
             current: self,
-            errors: self.errors,
             module_info: self.bindings.module_info(),
         };
         match solver.get_import(name, module, TextRange::default()) {
@@ -379,12 +376,15 @@ impl<'a> AnswersSolver<'a> {
         self.current.bindings
     }
 
+    pub fn errors(&self) -> &ErrorCollector {
+        self.current.errors
+    }
+
     pub fn with_module(&self, name: ModuleName) -> Self {
         let current = self.answers.get(&name).unwrap();
         AnswersSolver {
             current,
             module_info: current.bindings.module_info(),
-            errors: current.errors,
             ..self.clone()
         }
     }
@@ -472,7 +472,7 @@ impl<'a> AnswersSolver<'a> {
             recursive,
             (*answer).clone(),
             self.type_order(),
-            self.errors,
+            self.errors(),
             self.module_info,
             key.range(),
         );
@@ -1135,7 +1135,7 @@ impl<'a> AnswersSolver<'a> {
             got.clone()
         } else {
             self.solver
-                .error(want, got, self.errors, self.module_info, loc);
+                .error(want, got, self.errors(), self.module_info, loc);
             want.clone()
         }
     }
@@ -1149,12 +1149,12 @@ impl<'a> AnswersSolver<'a> {
     }
 
     pub fn error_todo(&self, msg: &str, x: impl Ranged + Debug) -> Type {
-        self.errors.todo(self.module_info, msg, x);
+        self.errors().todo(self.module_info, msg, x);
         Type::any_error()
     }
 
     pub fn error(&self, range: TextRange, msg: String) -> Type {
-        self.errors.add(self.module_info, range, msg);
+        self.errors().add(self.module_info, range, msg);
         Type::any_error()
     }
 

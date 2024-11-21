@@ -135,7 +135,7 @@ impl<'a> AnswersSolver<'a> {
             &|cls| self.get_mro_for_class(cls),
             &|cls| self.bases_of_class(cls),
             &|base| self.get_substitution(base),
-            self.errors,
+            self.errors(),
         )
     }
 
