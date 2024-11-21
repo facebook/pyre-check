@@ -518,6 +518,77 @@ impl<'a> AnswersSolver<'a> {
         })
     }
 
+    fn tyvar_from_arguments(&self, arguments: &Arguments) -> TypeVar {
+        let tv = match arguments.args.first() {
+            Some(Expr::StringLiteral(x)) => {
+                let name = Identifier::new(Name::new(x.value.to_str()), x.range);
+                TypeVar::new(name, self.module_info.dupe())
+            }
+            _ => {
+                let msg = if arguments.args.is_empty() {
+                    "Missing `name` argument to TypeVar"
+                } else {
+                    "Expected first argument of TypeVar to be a string literal"
+                };
+                self.errors
+                    .add(self.module_info, arguments.range, msg.to_owned());
+                // FIXME: This isn't ideal - we are creating a fake Identifier, which is not good.
+                TypeVar::new(
+                    Identifier::new(Name::new("unknown"), arguments.range),
+                    self.module_info.dupe(),
+                )
+            }
+        };
+        // TODO: store these on the TypeVar
+        let constraints = if arguments.args.len() > 1 {
+            arguments.args[1..].to_vec()
+        } else {
+            Vec::new()
+        };
+        let mut bound = None;
+        let mut _default = None;
+        let mut _covariant = None;
+        let mut _contravariant = None;
+        let mut _infer_variance = None;
+        for kw in arguments.keywords.iter() {
+            match &kw.arg {
+                Some(id) if id.id == "bound" => {
+                    bound = Some(kw.value.clone());
+                }
+                Some(id) if id.id == "default" => {
+                    _default = Some(kw.value.clone());
+                }
+                Some(id) if id.id == "covariant" => {
+                    _covariant = Some(kw.value.clone());
+                }
+                Some(id) if id.id == "contravariant" => {
+                    _contravariant = Some(kw.value.clone());
+                }
+                Some(id) if id.id == "infer_variance" => {
+                    _infer_variance = Some(kw.value.clone());
+                }
+                Some(id) => self.errors.add(
+                    self.module_info,
+                    kw.range,
+                    format!("Unexpected keyword argument `{}` to TypeVar", id.id),
+                ),
+                None => self.errors.add(
+                    self.module_info,
+                    kw.range,
+                    "Unexpected anonymous keyword to TypeVar".to_string(),
+                ),
+            }
+        }
+        if !constraints.is_empty() && bound.is_some() {
+            self.errors.add(
+                self.module_info,
+                arguments.range,
+                "TypeVar cannot have both constraints and bound".to_string(),
+            );
+        }
+        tv
+    }
+
     fn expr_infer(&self, x: &Expr) -> Type {
         self.expr_infer_with_hint(x, None)
     }
@@ -748,10 +819,7 @@ impl<'a> AnswersSolver<'a> {
                     })
                 };
                 if TypeVar::is_ctor(&ty_fun) {
-                    Type::Type(Box::new(
-                        TypeVar::from_arguments(&x.arguments, self.module_info, self.errors)
-                            .to_type(),
-                    ))
+                    Type::Type(Box::new(self.tyvar_from_arguments(&x.arguments).to_type()))
                 } else if TypeVarTuple::is_ctor(&ty_fun)
                     && let Some(name) = arguments_one_string(&x.arguments)
                 {
