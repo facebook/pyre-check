@@ -1059,8 +1059,7 @@ impl<'a> AnswersSolver<'a> {
                     LegacyTypeParameterLookup::Parameter(q) => {
                         // This class or function has scoped (PEP 695) type parameters. Mixing legacy-style parameters is an error.
                         if let Some(r) = range_if_scoped_params_exist {
-                            self.errors.add(
-                                self.module_info,
+                            self.error(
                                 *r,
                                 format!(
                                     "Type parameter {} is not included in the type parameter list",

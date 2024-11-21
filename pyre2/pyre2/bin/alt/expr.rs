@@ -543,8 +543,7 @@ impl<'a> AnswersSolver<'a> {
                 } else {
                     "Expected first argument of TypeVar to be a string literal"
                 };
-                self.errors
-                    .add(self.module_info, arguments.range, msg.to_owned());
+                self.error(arguments.range, msg.to_owned());
                 // FIXME: This isn't ideal - we are creating a fake Identifier, which is not good.
                 Identifier::new(Name::new("unknown"), arguments.range)
             }
@@ -576,24 +575,25 @@ impl<'a> AnswersSolver<'a> {
                 Some(id) if id.id == "infer_variance" => {
                     infer_variance = self.literal_bool_infer(&kw.value.clone());
                 }
-                Some(id) => self.errors.add(
-                    self.module_info,
-                    kw.range,
-                    format!("Unexpected keyword argument `{}` to TypeVar", id.id),
-                ),
-                None => self.errors.add(
-                    self.module_info,
-                    kw.range,
-                    "Unexpected anonymous keyword to TypeVar".to_string(),
-                ),
+                Some(id) => {
+                    self.error(
+                        kw.range,
+                        format!("Unexpected keyword argument `{}` to TypeVar", id.id),
+                    );
+                }
+                None => {
+                    self.error(
+                        kw.range,
+                        "Unexpected anonymous keyword to TypeVar".to_owned(),
+                    );
+                }
             }
         }
         let restriction = if let Some(bound) = bound {
             if !constraints.is_empty() {
-                self.errors.add(
-                    self.module_info,
+                self.error(
                     arguments.range,
-                    "TypeVar cannot have both constraints and bound".to_string(),
+                    "TypeVar cannot have both constraints and bound".to_owned(),
                 );
             }
             Restriction::Bound(bound)
