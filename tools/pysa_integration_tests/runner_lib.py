@@ -313,6 +313,7 @@ def compare_to_expected_json(
     test_result_directory: Path,
     filter_issues: bool,
     ignore_positions: bool,
+    write_actual_results_on_failure: bool,
     error_help: Optional[str] = None,
 ) -> None:
     """
@@ -335,8 +336,10 @@ def compare_to_expected_json(
         LOG.info("Run produced expected results")
         return
 
+    actual_results_path = test_result_directory / "result.actual"
+
     (test_result_directory / "full_result.json").write_text(actual_results)
-    (test_result_directory / "result.actual").write_text(
+    actual_results_path.write_text(
         normalized_json_dump(
             actual_results, ignore_positions=False, filter_issues=filter_issues
         )
@@ -372,6 +375,12 @@ def compare_to_expected_json(
     if error_help is not None:
         sys.stdout.write("\n")
         sys.stdout.write(error_help)
+
+    if write_actual_results_on_failure:
+        sys.stdout.write("Contents of result.actual:\n")
+        sys.stdout.write("---\n")
+        sys.stdout.write(actual_results_path.read_text())
+        sys.stdout.write("---\n")
     sys.exit(ExitCode.TEST_COMPARISON_DIFFERS.value)
 
 

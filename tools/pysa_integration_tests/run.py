@@ -38,6 +38,7 @@ def main(
     inline_decorators: bool,
     require_pyre_env: bool,
     ignore_positions: bool,
+    write_actual_results_on_failure: bool,
 ) -> None:
     """
     Entry point function to run a full end-to-end integration test.
@@ -78,6 +79,7 @@ def main(
         test_result_directory=test_result_directory,
         filter_issues=filter_issues,
         ignore_positions=ignore_positions,
+        write_actual_results_on_failure=write_actual_results_on_failure,
     )
 
 
@@ -107,6 +109,11 @@ if __name__ == "__main__":
         "--ignore-positions",
         action="store_true",
         help="Ignore positions when comparing expected results",
+    )
+    parser.add_argument(
+        "--write-actual-results-on-failure",
+        action="store_true",
+        help="Dump result.actual to stdout on failure. Useful for updating based on CI results.",
     )
     parser.add_argument(
         "--passthrough-args",
@@ -157,4 +164,5 @@ if __name__ == "__main__":
         inline_decorators=parsed.inline_decorators,
         require_pyre_env=parsed.require_pyre_env,
         ignore_positions=parsed.ignore_positions,
+        write_actual_results_on_failure=parsed.write_actual_results_on_failure,
     )
