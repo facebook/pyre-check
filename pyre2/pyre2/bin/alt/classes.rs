@@ -151,7 +151,7 @@ impl<'a> AnswersSolver<'a> {
 
     fn get_base_class_index(&self, cls: &Class, base_idx: usize) -> Arc<BaseClass> {
         self.with_module(cls.module_info().name())
-            .get_base_class(&KeyBaseClass::BaseClass(cls.name().clone(), base_idx))
+            .get_base_class(&KeyBaseClass(cls.name().clone(), base_idx))
     }
 
     pub fn bases_of_class(&self, cls: &Class) -> Vec<Arc<BaseClass>> {

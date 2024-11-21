@@ -100,18 +100,13 @@ impl Ranged for KeyAnnotation {
     }
 }
 
-/// Keys that refer to a `BaseClass`
+/// Key that refers to a `BaseClass`
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum KeyBaseClass {
-    /// I am an expression appearing as the ith base class in a class definition.
-    BaseClass(Identifier, usize),
-}
+pub struct KeyBaseClass(pub Identifier, pub usize);
 
 impl Ranged for KeyBaseClass {
     fn range(&self) -> TextRange {
-        match self {
-            Self::BaseClass(x, _) => x.range,
-        }
+        self.0.range
     }
 }
 
@@ -277,13 +272,13 @@ pub enum BindingAnnotation {
     Forward(Key),
 }
 
-/// Values that return a base class.
+/// Binding used to compute a `BaseClass`.
+///
+/// The `Expr` is the base class expression, from the containing class header.
+/// The `Key` is the self type of the containing class, which might appear in base
+/// class type arguments.
 #[derive(Clone, Debug)]
-pub enum BindingBaseClass {
-    /// A base class expression. The key is the self type for this class, which could be used
-    /// inside base class type arguments.
-    BaseClassExpr(Expr, Key),
-}
+pub struct BindingBaseClass(pub Expr, pub Key);
 
 /// Values that return the ancestors of a class, in method resolution order.
 #[derive(Clone, Debug)]
@@ -320,9 +315,11 @@ impl Display for KeyAnnotation {
 
 impl Display for KeyBaseClass {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::BaseClass(x, i) => write!(f, "base_class {} {:?} [{}]", x.id, x.range, i),
-        }
+        write!(
+            f,
+            "base_class {} {:?} [{}]",
+            self.0.id, self.0.range, self.1
+        )
     }
 }
 
@@ -385,16 +382,12 @@ impl DisplayWith<Bindings> for BindingAnnotation {
 
 impl DisplayWith<Bindings> for BindingBaseClass {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
-        match self {
-            Self::BaseClassExpr(x, self_type) => {
-                write!(
-                    f,
-                    "_: {} (self {})",
-                    ctx.module_info().display(x),
-                    self_type
-                )
-            }
-        }
+        write!(
+            f,
+            "_: {} (self {})",
+            ctx.module_info().display(&self.0),
+            self.1
+        )
     }
 }
 

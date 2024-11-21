@@ -994,8 +994,8 @@ impl<'a> BindingsBuilder<'a> {
                 legacy_tparam_builder.forward_lookup(lookup_name, name)
             });
             self.table.insert(
-                KeyBaseClass::BaseClass(x.name.clone(), i),
-                BindingBaseClass::BaseClassExpr(base.clone(), self_type_key.clone()),
+                KeyBaseClass(x.name.clone(), i),
+                BindingBaseClass(base.clone(), self_type_key.clone()),
             );
         });
         self.table
