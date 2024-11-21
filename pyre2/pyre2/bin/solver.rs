@@ -186,8 +186,8 @@ impl<'a> Solver<'a> {
 
     /// Generate a fresh variable based on code that is unspecified inside a container,
     /// e.g. `[]` with an unknown type of element.
-    pub fn fresh_contained(&self, hint: String) -> Var {
-        let v = Var::new(self.uniques, format!("?{hint}"));
+    pub fn fresh_contained(&self) -> Var {
+        let v = Var::new(self.uniques, "contained".to_owned());
         self.variables
             .write()
             .unwrap()
