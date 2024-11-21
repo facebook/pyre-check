@@ -3386,6 +3386,13 @@ module HigherOrderCallGraph = struct
   struct
     let get_result = State.get TaintAccessPath.Root.LocalResult
 
+    let log format =
+      if Context.debug then
+        Log.dump format
+      else
+        Log.log ~section:`CallGraph format
+
+
     module Fixpoint = Analysis.Fixpoint.Make (struct
       type t = State.t [@@deriving show]
 
@@ -3569,13 +3576,7 @@ module HigherOrderCallGraph = struct
 
       (* Return possible callees and the new state. *)
       and analyze_expression ~state ~expression:({ Node.value; location } as expression) =
-        log
-          ~debug:Context.debug
-          "Analyzing expression `%a` with state `%a`"
-          Expression.pp
-          expression
-          State.pp
-          state;
+        log "Analyzing expression `%a` with state `%a`" Expression.pp expression State.pp state;
         match value with
         | Expression.Await expression -> analyze_expression ~state ~expression
         | BinaryOperator _ -> CallTarget.Set.bottom, state
@@ -3630,13 +3631,7 @@ module HigherOrderCallGraph = struct
 
 
       let analyze_statement ~state ~statement =
-        log
-          ~debug:Context.debug
-          "Analyzing statement `%a` with state `%a`"
-          Statement.pp
-          statement
-          State.pp
-          state;
+        log "Analyzing statement `%a` with state `%a`" Statement.pp statement State.pp state;
         match Node.value statement with
         | Statement.Assign { Assign.target = _; value = Some _; _ } -> state
         | Assign { Assign.target = _; value = None; _ } -> state
