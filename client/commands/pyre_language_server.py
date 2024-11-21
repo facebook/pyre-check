@@ -719,8 +719,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
             mode="rb"
         ) as build_id_file, tempfile.NamedTemporaryFile(mode="w") as argfile:
             print("--", file=argfile)
-            if self.get_language_server_features().type_error_sharding.is_enabled():
-                print("--enable-sharding\ntrue", file=argfile)
             print(
                 *[
                     argument
@@ -731,26 +729,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 file=argfile,
             )
             argfile.flush()
-            if (
-                self.get_language_server_features().type_errors_preemptible.is_enabled()
-                or self.get_language_server_features().per_target_isolation_dir.is_disabled()
-            ):
-                preemptible = [
-                    "--preemptible=ondifferentstate",
-                ]
-            else:
-                preemptible = []
-            if self.get_language_server_features().per_target_isolation_dir.is_enabled():
-                isolation_dir = [f"--isolation-dir={PTT_ISOLATION_PREFIX}"]
-            else:
-                isolation_dir = []
 
             type_check_parameters = [
                 "buck2",
-                *isolation_dir,
+                f"--isolation-dir={PTT_ISOLATION_PREFIX}",
                 "bxl",
                 "--reuse-current-config",
-                *preemptible,
+                "--preemptible=ondifferentstate",
                 "--oncall=pyre",
                 "--client-metadata=id=pyre.ide",
                 f"--write-build-id={build_id_file.name}",
@@ -901,13 +886,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 file=argfile,
             )
             argfile.flush()
-            if self.get_language_server_features().per_target_isolation_dir.is_enabled():
-                isolation_dir = [f"--isolation-dir={PTT_ISOLATION_PREFIX}"]
-            else:
-                isolation_dir = []
             query_parameters = [
                 "buck2",
-                *isolation_dir,
+                f"--isolation-dir={PTT_ISOLATION_PREFIX}",
                 "bxl",
                 "--reuse-current-config",
                 "--oncall=pyre",
@@ -1016,10 +997,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
             pyre_buck_metadata.error_message or ""
         )
 
-        if self.get_language_server_features().per_target_isolation_dir.is_enabled():
-            isolation_dir = PTT_ISOLATION_PREFIX
-        else:
-            isolation_dir = "v2"
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -1036,14 +1013,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "buck_type_errors": pyre_buck_metadata.to_json(),
                     "daemon_type_errors": daemon_type_errors.to_json(),
                     "typing_query": type_checked_files.to_json(),
-                    "telemetry_version": 3,
+                    "telemetry_version": 4,
                     "new_file_loaded": new_file_loaded,
-                    "isolation_dir": isolation_dir,
-                    "sharding_enabled": self.get_language_server_features().type_error_sharding.is_enabled(),
-                    "preemptible": (
-                        self.get_language_server_features().type_errors_preemptible.is_enabled()
-                        or self.get_language_server_features().per_target_isolation_dir.is_disabled()
-                    ),
                 },
                 **daemon_status_before.as_telemetry_dict(),
             },

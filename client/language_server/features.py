@@ -98,9 +98,6 @@ SymbolSearchAvailability = _Availability
 InlayHintAvailability = _Availability
 FormattingAvailability = _Availability
 PerTargetTypeErrorsAvailability = CustomAvailability
-PerTargetIsolationDirAvailability = CustomAvailability
-TypeErrorShardingAvailability = CustomAvailability
-TypeErrorsPreemptibleAvailability = CustomAvailability
 PythonAutoTargetsAvailability = CustomAvailability
 SystemPyAutoTargetsAvailability = CustomAvailability
 # TODO: T204372341 remove this once we have rolled out addition and removal features
@@ -121,15 +118,6 @@ class LanguageServerFeatures:
     type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED
     per_target_type_errors: PerTargetTypeErrorsAvailability = (
         PerTargetTypeErrorsAvailability.from_enabled(False)
-    )
-    per_target_isolation_dir: PerTargetIsolationDirAvailability = (
-        PerTargetIsolationDirAvailability.from_enabled(False)
-    )
-    type_error_sharding: TypeErrorShardingAvailability = (
-        TypeErrorShardingAvailability.from_enabled(False)
-    )
-    type_errors_preemptible: TypeErrorsPreemptibleAvailability = (
-        TypeErrorsPreemptibleAvailability.from_enabled(False)
     )
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
     telemetry: TelemetryAvailability = TelemetryAvailability.DISABLED
