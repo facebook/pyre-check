@@ -70,6 +70,9 @@ module Analysis = struct
             right
       in
       result
+
+
+    let for_new_dependency ~get_model:_ _ = failwith "Not expecting new dependencies"
   end
 
   module Result = struct
@@ -93,6 +96,14 @@ module Analysis = struct
       (* Explicitly collect the shared memory to reduce heap size. *)
       let () = Memory.SharedMemory.collect `aggressive in
       iteration_end ~iteration ~expensive_callables ~number_of_callables ~timer
+  end
+
+  module AnalyzeDefineResult = struct
+    type t = {
+      result: Result.t;
+      model: Model.t;
+      additional_dependencies: Interprocedural.Target.t list;
+    }
   end
 
   let analyze_define_with_sanitizers_and_modes
@@ -189,7 +200,7 @@ module Analysis = struct
           Model.apply_sanitizers ~taint_configuration model)
     in
     TaintProfiler.dump profiler;
-    result, model
+    { AnalyzeDefineResult.result; model; additional_dependencies = [] }
 
 
   let analyze_define
@@ -230,7 +241,11 @@ module Analysis = struct
     in
     if Model.ModeSet.contains Model.Mode.SkipAnalysis modes then
       let () = Log.info "Skipping taint analysis of %a" Interprocedural.Target.pp_pretty callable in
-      Result.empty, previous_model
+      {
+        AnalyzeDefineResult.result = Result.empty;
+        model = previous_model;
+        additional_dependencies = [];
+      }
     else
       analyze_define_with_sanitizers_and_modes
         ~taint_configuration

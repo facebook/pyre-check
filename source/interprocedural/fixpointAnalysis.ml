@@ -39,6 +39,9 @@ module type MODEL = sig
 
   (** Transform the model before joining into the override model. *)
   val for_override_model : callable:Target.t -> t -> t
+
+  (** Initial models for the dependencies that are newly discovered during the fixpoint. *)
+  val for_new_dependency : get_model:(Target.t -> t option) -> Target.t -> t
 end
 
 (** Represents the result of the analysis.
@@ -120,6 +123,14 @@ module type ANALYSIS = sig
   (** Model for obscure callables (usually, stubs) *)
   val obscure_model : Model.t
 
+  module AnalyzeDefineResult : sig
+    type t = {
+      result: Result.t;
+      model: Model.t;
+      additional_dependencies: Target.t list;
+    }
+  end
+
   (** Analyze a function or method definition.
 
       `get_callee_model` can be used to get the model of a callee, as long as it is registered in
@@ -131,7 +142,7 @@ module type ANALYSIS = sig
     define:Define.t Node.t ->
     previous_model:Model.t ->
     get_callee_model:(Target.t -> Model.t option) ->
-    Result.t * Model.t
+    AnalyzeDefineResult.t
 end
 
 module Make (Analysis : ANALYSIS) = struct
@@ -309,6 +320,8 @@ module Make (Analysis : ANALYSIS) = struct
       model: Model.t;
       (* The result of the analysis. *)
       result: Result.t;
+      (* Need to be considered in the next iteration. *)
+      additional_dependencies: DependencyGraph.t;
     }
 
     let add ~shared_models_handle step callable state =
@@ -368,6 +381,14 @@ module Make (Analysis : ANALYSIS) = struct
   end
 
   type shared_models = State.SharedModels.t
+
+  let initialize_models_for_new_dependencies ~shared_models_handle =
+    List.iter ~f:(fun callable ->
+        let initial_model =
+          Model.for_new_dependency ~get_model:(State.get_model shared_models_handle) callable
+        in
+        State.SharedModels.add shared_models_handle callable initial_model)
+
 
   (* Save initial models in the shared memory. *)
   let record_initial_models ~scheduler ~initial_models ~initial_callables ~stubs ~override_targets =
@@ -431,15 +452,16 @@ module Make (Analysis : ANALYSIS) = struct
     shared_models_handle
 
 
-  let widen_if_necessary ~step ~callable ~previous_model ~new_model ~result =
+  let widen_if_necessary ~step ~callable ~previous_model ~new_model ~result ~additional_dependencies
+    =
     (* Check if we've reached a fixed point *)
     if Model.less_or_equal ~callable ~left:new_model ~right:previous_model then
-      State.{ is_partial = false; model = previous_model; result }
+      State.{ is_partial = false; model = previous_model; result; additional_dependencies }
     else
       let model =
         Model.widen ~iteration:step.iteration ~callable ~previous:previous_model ~next:new_model
       in
-      State.{ is_partial = true; model; result }
+      State.{ is_partial = true; model; result; additional_dependencies }
 
 
   let analyze_define
@@ -460,7 +482,7 @@ module Make (Analysis : ANALYSIS) = struct
              initialization. *)
           Format.asprintf "No initial model found for `%a`" Target.pp_pretty callable |> failwith
     in
-    let result, new_model =
+    let { Analysis.AnalyzeDefineResult.result; model = new_model; additional_dependencies } =
       try
         Analysis.analyze_define
           ~context
@@ -475,7 +497,13 @@ module Make (Analysis : ANALYSIS) = struct
           let () = Logger.on_analyze_define_exception ~iteration ~callable ~exn in
           Exception.reraise wrapped_exn
     in
-    widen_if_necessary ~step ~callable ~previous_model ~new_model ~result
+    let additional_dependencies =
+      List.fold
+        additional_dependencies
+        ~f:(fun so_far callee -> DependencyGraph.add ~callee ~caller:callable so_far)
+        ~init:DependencyGraph.empty
+    in
+    widen_if_necessary ~step ~callable ~previous_model ~new_model ~result ~additional_dependencies
 
 
   let analyze_overrides
@@ -550,7 +578,13 @@ module Make (Analysis : ANALYSIS) = struct
           Format.asprintf "No initial model found for `%a`" Target.pp_pretty callable |> failwith
     in
     let state =
-      widen_if_necessary ~step ~callable ~previous_model ~new_model ~result:Result.empty
+      widen_if_necessary
+        ~step
+        ~callable
+        ~previous_model
+        ~new_model
+        ~result:Result.empty
+        ~additional_dependencies:DependencyGraph.empty
     in
     let () = Logger.override_analysis_end ~callable ~timer in
     state
@@ -574,13 +608,16 @@ module Make (Analysis : ANALYSIS) = struct
           |> failwith
       | _ -> ()
     in
+    let analyze_define_with_definition ~callable = function
+      | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
+      | Some (qualifier, define) -> analyze_define ~context ~step ~callable ~qualifier ~define
+    in
     match callable with
     | Target.Regular (Target.Regular.Function _)
-    | Target.Regular (Target.Regular.Method _) -> (
-        match Target.get_module_and_definition callable ~pyre_api with
-        | None ->
-            Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
-        | Some (qualifier, define) -> analyze_define ~context ~step ~callable ~qualifier ~define)
+    | Target.Regular (Target.Regular.Method _) ->
+        callable
+        |> Target.get_module_and_definition ~pyre_api
+        |> analyze_define_with_definition ~callable
     | Target.Regular (Target.Regular.Override _) ->
         Alarm.with_alarm
           ~max_time_in_seconds:60
@@ -591,12 +628,18 @@ module Make (Analysis : ANALYSIS) = struct
     | Target.Regular (Target.Regular.Object _) ->
         Format.asprintf "Found object `%a` in fixpoint analysis" Target.pp_pretty callable
         |> failwith
-    | Target.Parameterized _ -> failwith "Not implemented: Analyzing parameterized targets"
+    | Target.Parameterized { regular; _ } ->
+        regular
+        |> Target.from_regular
+        |> Target.get_module_and_definition ~pyre_api
+        |> analyze_define_with_definition ~callable
 
 
   type iteration_result = {
     callables_processed: int;
     expensive_callables: expensive_callable list;
+    (* Need to be considered in the next iteration. *)
+    additional_dependencies: DependencyGraph.t;
   }
 
   (* Called on a worker with a set of targets to analyze. *)
@@ -609,7 +652,7 @@ module Make (Analysis : ANALYSIS) = struct
       ~step:({ iteration; _ } as step)
       ~callables
     =
-    let analyze_target expensive_callables callable =
+    let analyze_target (expensive_callables, additional_dependencies) callable =
       let timer = Timer.start () in
       let result =
         analyze_callable
@@ -632,14 +675,20 @@ module Make (Analysis : ANALYSIS) = struct
           result.State.model
       in
       State.add ~shared_models_handle step callable result;
+      let additional_dependencies =
+        DependencyGraph.merge result.State.additional_dependencies additional_dependencies
+      in
       (* Log outliers. *)
       if Logger.is_expensive_callable ~callable ~timer then
-        { time_to_analyze_in_ms = Timer.stop_in_ms timer; callable } :: expensive_callables
+        ( { time_to_analyze_in_ms = Timer.stop_in_ms timer; callable } :: expensive_callables,
+          additional_dependencies )
       else
-        expensive_callables
+        expensive_callables, additional_dependencies
     in
-    let expensive_callables = List.fold callables ~f:analyze_target ~init:[] in
-    { callables_processed = List.length callables; expensive_callables }
+    let expensive_callables, additional_dependencies =
+      List.fold callables ~f:analyze_target ~init:([], DependencyGraph.empty)
+    in
+    { callables_processed = List.length callables; expensive_callables; additional_dependencies }
 
 
   let compute_callables_to_reanalyze ~dependency_graph ~all_callables ~previous_callables ~step =
@@ -707,7 +756,7 @@ module Make (Analysis : ANALYSIS) = struct
       ~epoch
       ~shared_models:shared_models_handle
     =
-    let rec iterate ~iteration callables_to_analyze =
+    let rec iterate ~iteration ~dependency_graph ~all_callables callables_to_analyze =
       let number_of_callables = List.length callables_to_analyze in
       if number_of_callables = 0 then (* Fixpoint. *)
         iteration
@@ -735,13 +784,20 @@ module Make (Analysis : ANALYSIS) = struct
           {
             callables_processed;
             expensive_callables = List.rev_append left.expensive_callables right.expensive_callables;
+            additional_dependencies =
+              DependencyGraph.merge left.additional_dependencies right.additional_dependencies;
           }
         in
-        let { expensive_callables; _ } =
+        let { expensive_callables; additional_dependencies; _ } =
           Scheduler.map_reduce
             scheduler
             ~policy:scheduler_policy
-            ~initial:{ callables_processed = 0; expensive_callables = [] }
+            ~initial:
+              {
+                callables_processed = 0;
+                expensive_callables = [];
+                additional_dependencies = DependencyGraph.empty;
+              }
             ~map
             ~reduce
             ~inputs:callables_to_analyze
@@ -751,14 +807,32 @@ module Make (Analysis : ANALYSIS) = struct
         let callables_to_analyze =
           compute_callables_to_reanalyze
             ~dependency_graph
-            ~all_callables:initial_callables_to_analyze
+            ~all_callables
             ~previous_callables:callables_to_analyze
             ~step
         in
+        (* Additional dependencies may imply new callables that need to be analyzed. *)
+        let new_callables =
+          Target.Set.diff
+            (additional_dependencies |> DependencyGraph.keys |> Target.Set.of_list)
+            (Target.Set.of_list all_callables)
+          |> Target.Set.elements
+        in
+        initialize_models_for_new_dependencies ~shared_models_handle new_callables;
         let () = Logger.iteration_end ~iteration ~expensive_callables ~number_of_callables ~timer in
-        iterate ~iteration:(iteration + 1) callables_to_analyze
+        iterate
+          ~iteration:(iteration + 1)
+          ~dependency_graph:(DependencyGraph.merge dependency_graph additional_dependencies)
+          ~all_callables:(List.rev_append new_callables all_callables)
+          (List.rev_append new_callables callables_to_analyze)
     in
-    let iterations = iterate ~iteration:0 initial_callables_to_analyze in
+    let iterations =
+      iterate
+        ~iteration:0
+        ~dependency_graph
+        ~all_callables:initial_callables_to_analyze
+        initial_callables_to_analyze
+    in
     { fixpoint_reached_iterations = iterations; shared_models_handle }
 
 

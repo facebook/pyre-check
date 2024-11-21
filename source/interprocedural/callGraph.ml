@@ -3722,7 +3722,7 @@ let higher_order_call_graph_of_define
 
 let higher_order_call_graph_of_callable ~pyre_api ~define_call_graph ~callable ~get_callee_model =
   let qualifier, define =
-    match Target.get_module_and_definition ~pyre_api callable with
+    match callable |> Target.strip_parameters |> Target.get_module_and_definition ~pyre_api with
     | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
     | Some (qualifier, define) -> qualifier, define.Node.value
   in

@@ -120,6 +120,8 @@ val get_regular : t -> Regular.t
 (* Return `Regular.t`, but throw if called on `Parameterized`. *)
 val as_regular_exn : t -> Regular.t
 
+val strip_parameters : t -> t
+
 (* Accessors. *)
 
 val class_name : t -> string option

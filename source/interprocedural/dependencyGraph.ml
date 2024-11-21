@@ -24,6 +24,19 @@ let dependencies dependency_graph target =
   Target.Map.Tree.find dependency_graph target |> Option.value ~default:[]
 
 
+let keys = Target.Map.Tree.keys
+
+let add ~callee ~caller map =
+  Target.Map.Tree.update map callee ~f:(function
+      | Some callers -> caller :: callers
+      | None -> [caller])
+
+
+let merge left right =
+  Target.Map.Tree.merge_skewed left right ~combine:(fun ~key:_ left right ->
+      List.rev_append left right)
+
+
 let to_target_graph = Fn.id
 
 module PruneMethod = struct

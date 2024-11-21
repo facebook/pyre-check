@@ -314,6 +314,8 @@ let get_regular = function
       regular
 
 
+let strip_parameters target = target |> get_regular |> from_regular
+
 let as_regular_exn = function
   | Regular regular -> regular
   | Parameterized _ -> failwith "expect `Regular`"

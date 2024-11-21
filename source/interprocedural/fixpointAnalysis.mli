@@ -23,6 +23,9 @@ module type MODEL = sig
 
   (** Transform the model before joining into the override model. *)
   val for_override_model : callable:Target.t -> t -> t
+
+  (** Initial models for the dependencies that are newly discovered during the fixpoint. *)
+  val for_new_dependency : get_model:(Target.t -> t option) -> Target.t -> t
 end
 
 (** Represents the result of the analysis.
@@ -104,6 +107,14 @@ module type ANALYSIS = sig
   (** Model for obscure callables (usually, stubs) *)
   val obscure_model : Model.t
 
+  module AnalyzeDefineResult : sig
+    type t = {
+      result: Result.t;
+      model: Model.t;
+      additional_dependencies: Target.t list;
+    }
+  end
+
   (** Analyze a function or method definition.
 
       `get_callee_model` can be used to get the model of a callee, as long as it is registered in
@@ -115,7 +126,7 @@ module type ANALYSIS = sig
     define:Statement.Define.t Node.t ->
     previous_model:Model.t ->
     get_callee_model:(Target.t -> Model.t option) ->
-    Result.t * Model.t
+    AnalyzeDefineResult.t
 end
 
 module Make (Analysis : ANALYSIS) : sig

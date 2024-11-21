@@ -10,7 +10,13 @@ type t
 
 val empty : t
 
+val merge : t -> t -> t
+
+val add : callee:Target.t -> caller:Target.t -> t -> t
+
 val dependencies : t -> Target.t -> Target.t list
+
+val keys : t -> Target.t list
 
 val to_target_graph : t -> TargetGraph.t
 
