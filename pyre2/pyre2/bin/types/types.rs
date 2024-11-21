@@ -51,11 +51,6 @@ impl Var {
         Type::Var(self)
     }
 
-    #[expect(dead_code)] // Not used currently - not sure if it should be or not
-    pub fn display_with_hint<'a>(&self, uniques: &'a UniqueFactory) -> impl Display + 'a {
-        self.0.display_with_hint("@", uniques)
-    }
-
     fn zero(&mut self) {
         self.0 = Unique::zero();
     }

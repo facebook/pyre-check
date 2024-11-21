@@ -47,21 +47,6 @@ impl Unique {
         // Safe because we create every UniqueFactory with a zero.
         Self(0)
     }
-
-    #[allow(dead_code)] // Only used in dead code
-    pub fn display_with_hint<'a>(
-        self,
-        prefix: &'static str,
-        uniques: &'a UniqueFactory,
-    ) -> impl Display + 'a {
-        struct X<'a>(Unique, &'static str, &'a UniqueFactory);
-        impl<'a> Display for X<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(f, "{}{}[{}]", self.0, self.1, self.2.hint(self.0))
-            }
-        }
-        X(self, prefix, uniques)
-    }
 }
 
 impl UniqueFactory {
@@ -76,10 +61,5 @@ impl UniqueFactory {
         let v = Unique(me.len());
         me.push(hint);
         v
-    }
-
-    #[allow(dead_code)] // Only used in dead code
-    fn hint(&self, var: Unique) -> String {
-        self.hints.lock().unwrap()[var.0].clone()
     }
 }
