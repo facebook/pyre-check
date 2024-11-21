@@ -110,18 +110,14 @@ impl Ranged for KeyBaseClass {
     }
 }
 
-/// Keys that refer to an `Mro`.
+/// Keys that refer to a class's `Mro` (which tracks its ancestors, in method
+/// resolution order).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum KeyMro {
-    /// I represent the ancestors of a class, in method resolution order.
-    Mro(Identifier),
-}
+pub struct KeyMro(pub Identifier);
 
 impl Ranged for KeyMro {
     fn range(&self) -> TextRange {
-        match self {
-            Self::Mro(x) => x.range,
-        }
+        self.0.range
     }
 }
 
@@ -280,12 +276,9 @@ pub enum BindingAnnotation {
 #[derive(Clone, Debug)]
 pub struct BindingBaseClass(pub Expr, pub Key);
 
-/// Values that return the ancestors of a class, in method resolution order.
+/// Binding for the class `Mro`. The `Key` is the self type of the class.
 #[derive(Clone, Debug)]
-pub enum BindingMro {
-    /// The key is the self type of the class.
-    Mro(Key),
-}
+pub struct BindingMro(pub Key);
 
 /// Values that represent type parameters of either functions or classes.
 #[derive(Clone, Debug)]
@@ -325,9 +318,7 @@ impl Display for KeyBaseClass {
 
 impl Display for KeyMro {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Mro(x) => write!(f, "mro {} {:?}", x.id, x.range),
-        }
+        write!(f, "mro {} {:?}", self.0.id, self.0.range)
     }
 }
 
@@ -393,9 +384,7 @@ impl DisplayWith<Bindings> for BindingBaseClass {
 
 impl DisplayWith<Bindings> for BindingMro {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, _: &Bindings) -> fmt::Result {
-        match self {
-            Self::Mro(k) => write!(f, "mro {k}"),
-        }
+        write!(f, "mro {}", self.0)
     }
 }
 

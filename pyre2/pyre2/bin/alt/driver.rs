@@ -477,7 +477,7 @@ impl Driver {
                 println!("Class {cls:?}");
                 let x = solutions
                     .mros
-                    .get(bindings.key_to_idx(&KeyMro::Mro(cls.name().clone())));
+                    .get(bindings.key_to_idx(&KeyMro(cls.name().clone())));
                 x
             }
             _ => None,

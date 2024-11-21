@@ -999,7 +999,7 @@ impl<'a> BindingsBuilder<'a> {
             );
         });
         self.table
-            .insert(KeyMro::Mro(x.name.clone()), BindingMro::Mro(self_type_key));
+            .insert(KeyMro(x.name.clone()), BindingMro(self_type_key));
 
         let definition_key = Key::Definition(x.name.clone());
         self.table.insert(

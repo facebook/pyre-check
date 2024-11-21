@@ -548,7 +548,7 @@ impl<'a> AnswersSolver<'a> {
 
     fn solve_mro(&self, binding: &BindingMro) -> Arc<Mro> {
         match binding {
-            BindingMro::Mro(k) => {
+            BindingMro(k) => {
                 let self_ty = self.get_type(k);
                 match &*self_ty {
                     Type::ClassType(cls) => Arc::new(self.mro_of(cls.class_object())),

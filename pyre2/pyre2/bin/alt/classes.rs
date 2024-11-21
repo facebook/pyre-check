@@ -146,7 +146,7 @@ impl<'a> AnswersSolver<'a> {
 
     pub fn get_mro_for_class(&self, cls: &Class) -> Arc<Mro> {
         self.with_module(cls.module_info().name())
-            .get_mro(&KeyMro::Mro(cls.name().clone()))
+            .get_mro(&KeyMro(cls.name().clone()))
     }
 
     fn get_base_class_index(&self, cls: &Class, base_idx: usize) -> Arc<BaseClass> {
