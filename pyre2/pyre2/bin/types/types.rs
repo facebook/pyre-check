@@ -43,8 +43,8 @@ impl Display for Var {
 }
 
 impl Var {
-    pub fn new(uniques: &UniqueFactory, hint: String) -> Self {
-        Self(uniques.fresh(hint))
+    pub fn new(uniques: &UniqueFactory) -> Self {
+        Self(uniques.fresh())
     }
 
     pub fn to_type(self) -> Type {
@@ -73,20 +73,20 @@ impl Display for Quantified {
 }
 
 impl Quantified {
-    pub fn new(uniques: &UniqueFactory, hint: String, kind: QuantifiedKind) -> Self {
-        Quantified(uniques.fresh(hint), kind)
+    pub fn new(uniques: &UniqueFactory, kind: QuantifiedKind) -> Self {
+        Quantified(uniques.fresh(), kind)
     }
 
-    pub fn type_var(uniques: &UniqueFactory, hint: String) -> Self {
-        Quantified::new(uniques, hint, QuantifiedKind::TypeVar)
+    pub fn type_var(uniques: &UniqueFactory) -> Self {
+        Quantified::new(uniques, QuantifiedKind::TypeVar)
     }
 
-    pub fn param_spec(uniques: &UniqueFactory, hint: String) -> Self {
-        Quantified::new(uniques, hint, QuantifiedKind::ParamSpec)
+    pub fn param_spec(uniques: &UniqueFactory) -> Self {
+        Quantified::new(uniques, QuantifiedKind::ParamSpec)
     }
 
-    pub fn type_var_tuple(uniques: &UniqueFactory, hint: String) -> Self {
-        Quantified::new(uniques, hint, QuantifiedKind::TypeVarTuple)
+    pub fn type_var_tuple(uniques: &UniqueFactory) -> Self {
+        Quantified::new(uniques, QuantifiedKind::TypeVarTuple)
     }
 
     pub fn to_type(self) -> Type {
@@ -431,7 +431,7 @@ impl Type {
     ) -> (Vec<Var>, Self) {
         let mp: SmallMap<Quantified, Type> = gargs
             .iter()
-            .map(|x| (*x, Var::new(uniques, format!("gen {x}")).to_type()))
+            .map(|x| (*x, Var::new(uniques).to_type()))
             .collect();
         let res = self.subst(&mp);
         (mp.into_values().map(|x| x.as_var().unwrap()).collect(), res)

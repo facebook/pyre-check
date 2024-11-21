@@ -187,7 +187,7 @@ impl<'a> Solver<'a> {
     /// Generate a fresh variable based on code that is unspecified inside a container,
     /// e.g. `[]` with an unknown type of element.
     pub fn fresh_contained(&self) -> Var {
-        let v = Var::new(self.uniques, "contained".to_owned());
+        let v = Var::new(self.uniques);
         self.variables
             .write()
             .unwrap()
@@ -207,7 +207,7 @@ impl<'a> Solver<'a> {
 
     /// Generate a fresh variable used to tie recursive bindings.
     pub fn fresh_recursive(&self) -> Var {
-        let v = Var::new(self.uniques, "recursive".to_owned());
+        let v = Var::new(self.uniques);
         self.variables
             .write()
             .unwrap()

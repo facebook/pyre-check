@@ -782,18 +782,15 @@ impl<'a> BindingsBuilder<'a> {
         for x in x.iter() {
             let (q, name) = match x {
                 TypeParam::TypeVar(x) => {
-                    let q = Quantified::type_var(self.uniques, format!("generic {}", x.name));
+                    let q = Quantified::type_var(self.uniques);
                     (q, &x.name)
                 }
                 TypeParam::ParamSpec(x) => {
-                    let q = Quantified::param_spec(self.uniques, format!("param spec {}", x.name));
+                    let q = Quantified::param_spec(self.uniques);
                     (q, &x.name)
                 }
                 TypeParam::TypeVarTuple(x) => {
-                    let q = Quantified::type_var_tuple(
-                        self.uniques,
-                        format!("type var tuple {}", x.name),
-                    );
+                    let q = Quantified::type_var_tuple(self.uniques);
                     (q, &x.name)
                 }
             };

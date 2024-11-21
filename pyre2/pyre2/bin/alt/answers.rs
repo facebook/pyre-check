@@ -510,16 +510,16 @@ impl<'a> AnswersSolver<'a> {
         binding: &BindingLegacyTypeParam,
     ) -> Arc<LegacyTypeParameterLookup> {
         match &*self.get_type(&binding.0) {
-            Type::Type(box Type::TypeVar(x)) => {
-                let q = Quantified::type_var(self.uniques, format!("TypeVar {x}"));
+            Type::Type(box Type::TypeVar(_)) => {
+                let q = Quantified::type_var(self.uniques);
                 Arc::new(LegacyTypeParameterLookup::Parameter(q))
             }
-            Type::Type(box Type::TypeVarTuple(x)) => {
-                let q = Quantified::type_var_tuple(self.uniques, format!("TypeVarTuple {x}"));
+            Type::Type(box Type::TypeVarTuple(_)) => {
+                let q = Quantified::type_var_tuple(self.uniques);
                 Arc::new(LegacyTypeParameterLookup::Parameter(q))
             }
-            Type::Type(box Type::ParamSpec(x)) => {
-                let q = Quantified::param_spec(self.uniques, format!("ParamSpec {x}"));
+            Type::Type(box Type::ParamSpec(_)) => {
+                let q = Quantified::param_spec(self.uniques);
                 Arc::new(LegacyTypeParameterLookup::Parameter(q))
             }
             ty => Arc::new(LegacyTypeParameterLookup::NotParameter(ty.clone())),
@@ -704,8 +704,7 @@ impl<'a> AnswersSolver<'a> {
                 let q = match seen.entry(ty_var.dupe()) {
                     Entry::Occupied(e) => *e.get(),
                     Entry::Vacant(e) => {
-                        let q =
-                            Quantified::type_var(self.uniques, ty_var.qname().name.id.to_string());
+                        let q = Quantified::type_var(self.uniques);
                         e.insert(q);
                         quantifieds.push(q);
                         q

@@ -56,7 +56,7 @@ impl UniqueFactory {
         }
     }
 
-    pub fn fresh(&self, _hint: String) -> Unique {
+    pub fn fresh(&self) -> Unique {
         Unique(self.unique.fetch_add(1, Ordering::Relaxed))
     }
 }
