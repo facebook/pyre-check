@@ -883,7 +883,7 @@ class ClientTypeErrorHandlerTest(testslide.TestCase):
     async def test_clear_type_errors_for_client(self) -> None:
         server_state = server_setup.create_server_state_with_options()
         server_state.diagnostics = {
-            Path("foo.py"): [],
+            Path("/foo.py"): [],
         }
         bytes_writer = connections.MemoryBytesWriter()
         client_output_channel = connections.AsyncTextWriter(bytes_writer)
