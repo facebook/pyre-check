@@ -23,7 +23,6 @@ use tracing::error;
 
 use crate::error::error::Error;
 use crate::module::module_info::ModuleInfo;
-use crate::module::module_name::ModuleName;
 
 /// Wrapped to provide custom Ord/Eq etc.
 /// Do not use ModuleInfo in the comparisons.
@@ -93,33 +92,16 @@ impl ModuleErrors {
     }
 }
 
-#[derive(Debug, Default, Clone)]
-struct ManyModuleErrors(SmallMap<ModuleName, ModuleErrors>);
-
-impl ManyModuleErrors {
-    fn push(&mut self, err: Error) {
-        self.0.entry(err.module_name()).or_default().push(err);
-    }
-
-    fn errors(&mut self) -> impl Iterator<Item = &OneError> {
-        self.0.values_mut().flat_map(|x| x.iter())
-    }
-
-    fn len(&mut self) -> usize {
-        self.0.values_mut().map(|x| x.len()).sum()
-    }
-}
-
 // Deliberately don't implement Clone,
 #[derive(Debug, Default)]
 pub struct ErrorCollector {
     quiet: bool,
-    errors: Mutex<ManyModuleErrors>,
+    errors: Mutex<ModuleErrors>,
 }
 
 impl Display for ErrorCollector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for err in self.errors.lock().unwrap().errors() {
+        for err in self.errors.lock().unwrap().iter() {
             writeln!(f, "ERROR: {err}")?;
         }
         Ok(())
@@ -164,7 +146,7 @@ impl ErrorCollector {
         self.errors
             .lock()
             .unwrap()
-            .errors()
+            .iter()
             .map(|x| x.0.clone())
             .collect()
     }
@@ -172,7 +154,7 @@ impl ErrorCollector {
     pub fn summarise<'a>(xs: impl Iterator<Item = &'a ErrorCollector>) -> Vec<(String, usize)> {
         let mut map = SmallMap::new();
         for x in xs {
-            for err in x.errors.lock().unwrap().errors() {
+            for err in x.errors.lock().unwrap().iter() {
                 // Lots of error messages have names in them, e.g. "Can't find module `foo`".
                 // We want to summarise those together, so replace bits of text inside `...` with `...`.
                 let clean_msg = err
@@ -203,7 +185,7 @@ impl ErrorCollector {
     }
 
     pub fn print(&self) {
-        for err in self.errors.lock().unwrap().errors() {
+        for err in self.errors.lock().unwrap().iter() {
             error!("{err}");
         }
     }
@@ -216,6 +198,7 @@ mod tests {
     use ruff_python_ast::name::Name;
 
     use super::*;
+    use crate::module::module_name::ModuleName;
 
     #[test]
     fn test_error_collector() {
