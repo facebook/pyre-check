@@ -80,7 +80,7 @@ impl<'a> AnswersSolver<'a> {
         let mut types = Vec::new();
         let last_index = values.len() - 1;
         for (i, value) in values.iter().enumerate() {
-            let t = self.expr_infer(value, None);
+            let t = self.expr_infer(value);
             if should_shortcircuit(&t) {
                 types.push(t.clone());
                 break;
@@ -257,10 +257,10 @@ impl<'a> AnswersSolver<'a> {
     pub fn expr(&self, x: &Expr, check: Option<&Type>) -> Type {
         match check {
             Some(want) if !want.is_any() => {
-                let got = self.expr_infer(x, Some(want));
+                let got = self.expr_infer_with_hint(x, Some(want));
                 self.check_type(want, &got, x.range())
             }
-            _ => self.expr_infer(x, None),
+            _ => self.expr_infer(x),
         }
     }
 
@@ -269,7 +269,7 @@ impl<'a> AnswersSolver<'a> {
     fn ifs_infer(&self, comps: &[Comprehension]) {
         for comp in comps.iter() {
             for if_clause in comp.ifs.iter() {
-                self.expr_infer(if_clause, None);
+                self.expr_infer(if_clause);
             }
         }
     }
@@ -481,8 +481,8 @@ impl<'a> AnswersSolver<'a> {
                 )
             })
         };
-        let lhs = self.expr(&x.left, None);
-        let rhs = self.expr(&x.right, None);
+        let lhs = self.expr_infer(&x.left);
+        let rhs = self.expr_infer(&x.right);
         if let Type::Any(style) = &lhs {
             return style.propagate();
         } else if x.op == Operator::BitOr
@@ -518,13 +518,17 @@ impl<'a> AnswersSolver<'a> {
         })
     }
 
-    fn expr_infer(&self, x: &Expr, hint: Option<&Type>) -> Type {
+    fn expr_infer(&self, x: &Expr) -> Type {
+        self.expr_infer_with_hint(x, None)
+    }
+
+    fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>) -> Type {
         match x {
             Expr::BoolOp(x) => self.boolop(&x.values, x.op),
             Expr::Named(_) => self.error_todo("Answers::expr_infer", x),
             Expr::BinOp(x) => self.binop_infer(x),
             Expr::UnaryOp(x) => {
-                let t = self.expr(&x.operand, None);
+                let t = self.expr_infer(&x.operand);
                 match x.op {
                     UnaryOp::USub => match t {
                         Type::Literal(lit) => {
@@ -541,10 +545,10 @@ impl<'a> AnswersSolver<'a> {
             }
             Expr::Lambda(_) => self.error_todo("Answers::expr_infer", x),
             Expr::If(x) => {
-                let condition_type = self.expr(&x.test, None);
+                let condition_type = self.expr_infer(&x.test);
                 // TODO: Support type refinement
-                let body_type = self.expr(&x.body, None);
-                let orelse_type = self.expr(&x.orelse, None);
+                let body_type = self.expr_infer(&x.body);
+                let orelse_type = self.expr_infer(&x.orelse);
                 match condition_type.as_bool() {
                     Some(true) => body_type,
                     Some(false) => orelse_type,
@@ -649,31 +653,31 @@ impl<'a> AnswersSolver<'a> {
             }
             Expr::ListComp(x) => {
                 self.ifs_infer(&x.generators);
-                let elem_ty = self.expr_infer(&x.elt, None);
+                let elem_ty = self.expr_infer(&x.elt);
                 self.stdlib.list(elem_ty)
             }
             Expr::SetComp(x) => {
                 self.ifs_infer(&x.generators);
-                let elem_ty = self.expr_infer(&x.elt, None);
+                let elem_ty = self.expr_infer(&x.elt);
                 self.stdlib.set(elem_ty)
             }
             Expr::DictComp(x) => {
                 self.ifs_infer(&x.generators);
-                let k_ty = self.expr_infer(&x.key, None);
-                let v_ty = self.expr_infer(&x.value, None);
+                let k_ty = self.expr_infer(&x.key);
+                let v_ty = self.expr_infer(&x.value);
                 self.stdlib.dict(k_ty, v_ty)
             }
             Expr::Generator(x) => {
                 self.ifs_infer(&x.generators);
-                let yield_ty = self.expr_infer(&x.elt, None);
+                let yield_ty = self.expr_infer(&x.elt);
                 self.stdlib.generator(yield_ty, Type::None, Type::None)
             }
             Expr::Await(_) => self.error_todo("Answers::expr_infer", x),
             Expr::Yield(x) => self.error_todo("Answers::expr_infer", x),
             Expr::YieldFrom(_) => self.error_todo("Answers::expr_infer", x),
             Expr::Compare(x) => {
-                let _ty = self.expr(&x.left, None);
-                let _tys = x.comparators.map(|x| self.expr(x, None));
+                let _ty = self.expr_infer(&x.left);
+                let _tys = x.comparators.map(|x| self.expr_infer(x));
                 // We don't actually check that comparing these types is sensible, which matches Pyright
                 self.stdlib.bool()
             }
@@ -681,7 +685,7 @@ impl<'a> AnswersSolver<'a> {
                 if x.arguments.args.len() == 2 {
                     let expr_a = &x.arguments.args[0];
                     let expr_b = &x.arguments.args[1];
-                    let a = self.expr(expr_a, None);
+                    let a = self.expr_infer(expr_a);
                     let b = self.expr_untype(expr_b);
                     let a = self.solver.deep_force(a).explicit_any();
                     let b = self.canonicalize_all_class_types(
@@ -711,7 +715,7 @@ impl<'a> AnswersSolver<'a> {
             }
             Expr::Call(x) if is_special_name(&x.func, "reveal_type") => {
                 if x.arguments.args.len() == 1 {
-                    let t = self.expr(&x.arguments.args[0], None);
+                    let t = self.expr_infer(&x.arguments.args[0]);
                     self.error(
                         x.range,
                         format!("revealed type: {}", t.deterministic_printing()),
@@ -728,7 +732,7 @@ impl<'a> AnswersSolver<'a> {
                 Type::None
             }
             Expr::Call(x) => {
-                let ty_fun = self.expr(&x.func, None);
+                let ty_fun = self.expr_infer(&x.func);
                 let func_range = x.func.range();
                 let check_call = |ty: Type| -> Type {
                     self.as_callable_or_error(ty.clone(), CallStyle::FreeForm, func_range, |c| {
@@ -782,13 +786,13 @@ impl<'a> AnswersSolver<'a> {
             Expr::NoneLiteral(_) => Type::None,
             Expr::EllipsisLiteral(_) => Type::Ellipsis,
             Expr::Attribute(x) => {
-                let obj = self.expr(&x.value, None);
+                let obj = self.expr_infer(&x.value);
                 self.attr_infer(obj, &x.attr.id, x.range)
             }
             Expr::Subscript(x) => {
                 let xs = Ast::unpack_slice(&x.slice);
                 // FIXME: We don't deal properly with hint here, we should.
-                let mut fun = self.expr(&x.value, None);
+                let mut fun = self.expr_infer(&x.value);
                 if matches!(&fun, Type::ClassDef(t) if t.name() == "tuple") {
                     fun = Type::Type(Box::new(Type::SpecialForm(SpecialForm::Tuple)));
                 }
@@ -840,7 +844,7 @@ impl<'a> AnswersSolver<'a> {
                         }) => {
                             let lower_literal = match lower_expr {
                                 Some(box expr) => {
-                                    let lower_type = self.expr(expr, None);
+                                    let lower_type = self.expr_infer(expr);
                                     match &lower_type {
                                         Type::Literal(Lit::Int(idx)) => Some(*idx),
                                         _ => None,
@@ -850,7 +854,7 @@ impl<'a> AnswersSolver<'a> {
                             };
                             let upper_literal = match upper_expr {
                                 Some(box expr) => {
-                                    let upper_type = self.expr(expr, None);
+                                    let upper_type = self.expr_infer(expr);
                                     match &upper_type {
                                         Type::Literal(Lit::Int(idx)) => Some(*idx),
                                         _ => None,
@@ -873,7 +877,7 @@ impl<'a> AnswersSolver<'a> {
                             }
                         }
                         _ => {
-                            let idx_type = self.expr(&xs[0], None);
+                            let idx_type = self.expr_infer(&xs[0]);
                             match &idx_type {
                                 Type::Literal(Lit::Int(idx)) => {
                                     let elt_idx = if *idx >= 0 {
