@@ -249,7 +249,9 @@ mod tests {
     use crate::types::class::Class;
     use crate::types::literal::Lit;
     use crate::types::tuple::Tuple;
+    use crate::types::type_var::Restriction;
     use crate::types::type_var::TypeVar;
+    use crate::types::type_var::Variance;
 
     fn fake_class(name: &str, module: &str, range: u32) -> Class {
         let mi = ModuleInfo::new(
@@ -277,6 +279,9 @@ mod tests {
         TypeVar::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
             mi,
+            Restriction::Unrestricted,
+            None,
+            Variance::Invariant,
         )
     }
 

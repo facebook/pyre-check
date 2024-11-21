@@ -27,14 +27,41 @@ impl Display for TypeVar {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+pub enum Restriction {
+    Constraints(Vec<Type>),
+    Bound(Type),
+    Unrestricted,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+pub enum Variance {
+    Covariant,
+    Contravariant,
+    Invariant,
+    Inferred,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 struct TypeVarInner {
     qname: QName,
+    restriction: Restriction,
+    default: Option<Type>,
+    variance: Variance,
 }
 
 impl TypeVar {
-    pub fn new(name: Identifier, module: ModuleInfo) -> Self {
+    pub fn new(
+        name: Identifier,
+        module: ModuleInfo,
+        restriction: Restriction,
+        default: Option<Type>,
+        variance: Variance,
+    ) -> Self {
         Self(ArcId::new(TypeVarInner {
             qname: QName::new(name, module),
+            restriction,
+            default,
+            variance,
         }))
     }
 

@@ -37,7 +37,9 @@ use crate::types::simplify::as_class_attribute_base;
 use crate::types::simplify::ClassAttributeBase;
 use crate::types::special_form::SpecialForm;
 use crate::types::tuple::Tuple;
+use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
+use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
@@ -518,12 +520,23 @@ impl<'a> AnswersSolver<'a> {
         })
     }
 
-    fn tyvar_from_arguments(&self, arguments: &Arguments) -> TypeVar {
-        let tv = match arguments.args.first() {
-            Some(Expr::StringLiteral(x)) => {
-                let name = Identifier::new(Name::new(x.value.to_str()), x.range);
-                TypeVar::new(name, self.module_info.dupe())
+    fn literal_bool_infer(&self, x: &Expr) -> bool {
+        let ty = self.expr_infer(x);
+        match ty {
+            Type::Literal(Lit::Bool(b)) => b,
+            _ => {
+                self.error(
+                    x.range(),
+                    format!("Expected literal True or False, got {ty}"),
+                );
+                false
             }
+        }
+    }
+
+    fn tyvar_from_arguments(&self, arguments: &Arguments) -> TypeVar {
+        let name = match arguments.args.first() {
+            Some(Expr::StringLiteral(x)) => Identifier::new(Name::new(x.value.to_str()), x.range),
             _ => {
                 let msg = if arguments.args.is_empty() {
                     "Missing `name` argument to TypeVar"
@@ -533,39 +546,35 @@ impl<'a> AnswersSolver<'a> {
                 self.errors
                     .add(self.module_info, arguments.range, msg.to_owned());
                 // FIXME: This isn't ideal - we are creating a fake Identifier, which is not good.
-                TypeVar::new(
-                    Identifier::new(Name::new("unknown"), arguments.range),
-                    self.module_info.dupe(),
-                )
+                Identifier::new(Name::new("unknown"), arguments.range)
             }
         };
-        // TODO: store these on the TypeVar
         let constraints = if arguments.args.len() > 1 {
-            arguments.args[1..].to_vec()
+            arguments.args[1..].map(|arg| self.expr_untype(arg))
         } else {
             Vec::new()
         };
         let mut bound = None;
-        let mut _default = None;
-        let mut _covariant = None;
-        let mut _contravariant = None;
-        let mut _infer_variance = None;
+        let mut default = None;
+        let mut covariant = false;
+        let mut contravariant = false;
+        let mut infer_variance = false;
         for kw in arguments.keywords.iter() {
             match &kw.arg {
                 Some(id) if id.id == "bound" => {
-                    bound = Some(kw.value.clone());
+                    bound = Some(self.expr_untype(&kw.value.clone()));
                 }
                 Some(id) if id.id == "default" => {
-                    _default = Some(kw.value.clone());
+                    default = Some(self.expr_untype(&kw.value.clone()));
                 }
                 Some(id) if id.id == "covariant" => {
-                    _covariant = Some(kw.value.clone());
+                    covariant = self.literal_bool_infer(&kw.value.clone());
                 }
                 Some(id) if id.id == "contravariant" => {
-                    _contravariant = Some(kw.value.clone());
+                    contravariant = self.literal_bool_infer(&kw.value.clone());
                 }
                 Some(id) if id.id == "infer_variance" => {
-                    _infer_variance = Some(kw.value.clone());
+                    infer_variance = self.literal_bool_infer(&kw.value.clone());
                 }
                 Some(id) => self.errors.add(
                     self.module_info,
@@ -579,14 +588,47 @@ impl<'a> AnswersSolver<'a> {
                 ),
             }
         }
-        if !constraints.is_empty() && bound.is_some() {
-            self.errors.add(
-                self.module_info,
+        let restriction = if let Some(bound) = bound {
+            if !constraints.is_empty() {
+                self.errors.add(
+                    self.module_info,
+                    arguments.range,
+                    "TypeVar cannot have both constraints and bound".to_string(),
+                );
+            }
+            Restriction::Bound(bound)
+        } else if !constraints.is_empty() {
+            Restriction::Constraints(constraints)
+        } else {
+            Restriction::Unrestricted
+        };
+        if [covariant, contravariant, infer_variance]
+            .iter()
+            .filter(|x| **x)
+            .count()
+            > 1
+        {
+            self.error(
                 arguments.range,
-                "TypeVar cannot have both constraints and bound".to_string(),
+                "Contradictory variance specifications".to_string(),
             );
         }
-        tv
+        let variance = if covariant {
+            Variance::Covariant
+        } else if contravariant {
+            Variance::Contravariant
+        } else if infer_variance {
+            Variance::Inferred
+        } else {
+            Variance::Invariant
+        };
+        TypeVar::new(
+            name,
+            self.module_info.dupe(),
+            restriction,
+            default,
+            variance,
+        )
     }
 
     fn expr_infer(&self, x: &Expr) -> Type {

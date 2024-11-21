@@ -173,3 +173,13 @@ from typing import TypeVar
 T = TypeVar('T', int, bound=int)  # E: TypeVar cannot have both constraints and bound
     "#,
 );
+
+simple_test!(
+    test_tvar_variance,
+    r#"
+from typing import TypeVar
+T1 = TypeVar('T1', covariant=True, contravariant=True)  # E: Contradictory variance specifications
+T2 = TypeVar('T2', covariant=True, contravariant=False)
+T3 = TypeVar('T3', covariant="lunch")  # E: Expected literal True or False
+    "#,
+);
