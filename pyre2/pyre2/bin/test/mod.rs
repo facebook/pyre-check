@@ -22,5 +22,6 @@ mod operators;
 mod simple;
 mod stdlib;
 mod tuple;
+mod type_alias;
 mod util;
 mod with;
