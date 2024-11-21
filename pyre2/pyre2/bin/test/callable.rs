@@ -179,6 +179,21 @@ def err(x: int = ...): pass # E: EXPECTED Ellipsis <: int
 "#,
 );
 
+simple_test!(
+    test_callable_async,
+    r#"
+from typing import Any, Awaitable, Callable, Coroutine
+
+async def f(x: int) -> int: ...
+def test_corountine() -> Callable[[int], Coroutine[Any, Any, int]]:
+    return f
+def test_awaitable() -> Callable[[int], Awaitable[int]]:
+    return f
+def test_sync() -> Callable[[int], int]:
+    return f  # E: Callable[[int], Coroutine[Unknown, Unknown, int]] <: Callable[[int], int]
+"#,
+);
+
 // TODO
 simple_test!(
     test_callable_param_spec,

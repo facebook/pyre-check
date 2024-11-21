@@ -1657,16 +1657,6 @@
   "annotations_coroutines.py": [
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Callable[[int], str], Callable[[int], Coroutine[Any, Any, str]]) failed",
-      "description": "assert_type(Callable[[int], str], Callable[[int], Coroutine[Any, Any, str]]) failed",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 62,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "TODO: Await(ExprAwait - Answers::expr_infer",
       "description": "TODO: Await(ExprAwait - Answers::expr_infer",
@@ -2421,6 +2411,26 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
+      "description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
+      "line": 167,
+      "name": "PyreError",
+      "stop_column": 47,
+      "stop_line": 167
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncGenerator[str, None]",
+      "description": "EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncGenerator[str, None]",
+      "line": 168,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 168
+    },
+    {
+      "code": -2,
       "column": 12,
       "concise_description": "TODO: Await(ExprAwait - Answers::expr_infer",
       "description": "TODO: Await(ExprAwait - Answers::expr_infer",
@@ -2432,22 +2442,32 @@
     {
       "code": -2,
       "column": 5,
+      "concise_description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
+      "description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
+      "line": 174,
+      "name": "PyreError",
+      "stop_column": 47,
+      "stop_line": 174
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncIterator[str]",
+      "description": "EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncIterator[str]",
+      "line": 175,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 175
+    },
+    {
+      "code": -2,
+      "column": 5,
       "concise_description": "EXPECTED None <: AsyncIterator[int]",
       "description": "EXPECTED None <: AsyncIterator[int]",
       "line": 179,
       "name": "PyreError",
       "stop_column": 30,
       "stop_line": 179
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Callable[[], AsyncIterator[int]], Callable[[], Coroutine[Any, Any, AsyncIterator[int]]]) failed",
-      "description": "assert_type(Callable[[], AsyncIterator[int]], Callable[[], Coroutine[Any, Any, AsyncIterator[int]]]) failed",
-      "line": 182,
-      "name": "PyreError",
-      "stop_column": 80,
-      "stop_line": 182
     },
     {
       "code": -2,
@@ -2468,6 +2488,16 @@
       "name": "PyreError",
       "stop_column": 10,
       "stop_line": 187
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Callable[[], Coroutine[Any, Any, AsyncIterator[int]]], Callable[[], AsyncIterator[int]]) failed",
+      "description": "assert_type(Callable[[], Coroutine[Any, Any, AsyncIterator[int]]], Callable[[], AsyncIterator[int]]) failed",
+      "line": 190,
+      "name": "PyreError",
+      "stop_column": 59,
+      "stop_line": 190
     }
   ],
   "annotations_methods.py": [

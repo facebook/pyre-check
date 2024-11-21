@@ -984,6 +984,12 @@ impl<'a> AnswersSolver<'a> {
                     Arg::Kwargs(ty.clone())
                 }));
                 let ret = self.get_type(&Key::ReturnType(x.name.clone())).arc_clone();
+                let ret = if x.is_async {
+                    self.stdlib
+                        .coroutine(Type::any_implicit(), Type::any_implicit(), ret)
+                } else {
+                    ret
+                };
                 let qs = self.get_tparams(&KeyTypeParams(x.name.clone()));
                 Type::forall(qs.0.clone(), Type::callable(args, ret))
             }
