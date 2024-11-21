@@ -27,6 +27,8 @@ use crate::types::types::Quantified;
 use crate::types::types::Type;
 use crate::util::display::DisplayWith;
 
+/// Keys that refer to a `Type`.
+///
 /// Within a `Key`, `Identifier` MUST be a name in the original AST,
 /// not something we've synthesized.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -77,7 +79,7 @@ impl Ranged for Key {
     }
 }
 
-/// Keys that return an annotation.
+/// Keys that refer to an `Annotation`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum KeyAnnotation {
     /// I am the annotation for this instance of a name.
@@ -98,7 +100,7 @@ impl Ranged for KeyAnnotation {
     }
 }
 
-/// Keys that return a base class.
+/// Keys that refer to a `BaseClass`
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum KeyBaseClass {
     /// I am an expression appearing as the ith base class in a class definition.
@@ -113,7 +115,7 @@ impl Ranged for KeyBaseClass {
     }
 }
 
-/// Keys that return a base class.
+/// Keys that refer to an `Mro`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum KeyMro {
     /// I represent the ancestors of a class, in method resolution order.
@@ -137,7 +139,7 @@ impl Ranged for KeyLegacyTypeParam {
     }
 }
 
-/// I represent the type parameters of a function or class.
+/// Keys that refer to the `TypeParams` for a class or function.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct KeyTypeParams(pub Identifier);
 
