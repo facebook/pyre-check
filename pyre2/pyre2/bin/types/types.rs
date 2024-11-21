@@ -224,8 +224,12 @@ impl TypeAlias {
 
     /// Gets the type contained within the type alias for use in a value
     /// position - for example, for a function call or attribute access.
-    pub fn as_value(&self) -> Type {
-        *self.ty.clone()
+    pub fn as_value(&self) -> Option<Type> {
+        if self.style == TypeAliasStyle::Scoped {
+            None
+        } else {
+            Some(*self.ty.clone())
+        }
     }
 
     /// Gets the type contained within the type alias for use in a type

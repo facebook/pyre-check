@@ -44,7 +44,13 @@ fn as_attribute_base_type(ty: Type, stdlib: &Stdlib) -> Option<Type> {
         Type::LiteralString => Some(stdlib.str()),
         Type::Literal(lit) => Some(lit.general_type(stdlib)),
         Type::TypeGuard(_) | Type::TypeIs(_) => Some(stdlib.bool()),
-        Type::TypeAlias(ta) => as_attribute_base_type(ta.as_value(), stdlib),
+        Type::TypeAlias(ta) => {
+            if let Some(t) = ta.as_value() {
+                as_attribute_base_type(t, stdlib)
+            } else {
+                None
+            }
+        }
         // TODO: check to see which ones should have class representations
         Type::Union(_)
         | Type::Never(_)

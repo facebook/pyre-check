@@ -1012,12 +1012,22 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "TODO: Answers::expr_infer attribute: `ScopedTypeAlias[GoodAlias1, type[int]]`.bit_count",
-      "description": "TODO: Answers::expr_infer attribute: `ScopedTypeAlias[GoodAlias1, type[int]]`.bit_count",
+      "concise_description": "Cannot use type alias `GoodAlias1` as a value",
+      "description": "Cannot use type alias `GoodAlias1` as a value",
       "line": 17,
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 17
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected a callable, got ScopedTypeAlias[GoodAlias1, type[int]]",
+      "description": "Expected a callable, got ScopedTypeAlias[GoodAlias1, type[int]]",
+      "line": 19,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 19
     },
     {
       "code": -2,
@@ -1032,8 +1042,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "TODO: Answers::expr_infer attribute: `ScopedTypeAlias[GoodAlias1, type[int]]`.__value__",
-      "description": "TODO: Answers::expr_infer attribute: `ScopedTypeAlias[GoodAlias1, type[int]]`.__value__",
+      "concise_description": "Cannot use type alias `GoodAlias1` as a value",
+      "description": "Cannot use type alias `GoodAlias1` as a value",
       "line": 21,
       "name": "PyreError",
       "stop_column": 27,
@@ -1052,8 +1062,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "TODO: Answers::expr_infer attribute: `ScopedTypeAlias[GoodAlias1, type[int]]`.__type_params__",
-      "description": "TODO: Answers::expr_infer attribute: `ScopedTypeAlias[GoodAlias1, type[int]]`.__type_params__",
+      "concise_description": "Cannot use type alias `GoodAlias1` as a value",
+      "description": "Cannot use type alias `GoodAlias1` as a value",
       "line": 22,
       "name": "PyreError",
       "stop_column": 33,
@@ -1072,8 +1082,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "TODO: Answers::expr_infer attribute: `ScopedTypeAlias[GoodAlias1, type[int]]`.other_attrib",
-      "description": "TODO: Answers::expr_infer attribute: `ScopedTypeAlias[GoodAlias1, type[int]]`.other_attrib",
+      "concise_description": "Cannot use type alias `GoodAlias1` as a value",
+      "description": "Cannot use type alias `GoodAlias1` as a value",
       "line": 23,
       "name": "PyreError",
       "stop_column": 30,
@@ -20421,8 +20431,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "TODO: Answers::expr_infer attribute: `LegacyExplicitTypeAlias[TA1, type[Type]]`.unknown",
-      "description": "TODO: Answers::expr_infer attribute: `LegacyExplicitTypeAlias[TA1, type[Type]]`.unknown",
+      "concise_description": "TODO: Answers::expr_infer attribute: `type[Type]`.unknown",
+      "description": "TODO: Answers::expr_infer attribute: `type[Type]`.unknown",
       "line": 143,
       "name": "PyreError",
       "stop_column": 12,
@@ -20431,8 +20441,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "TODO: Answers::expr_infer attribute: `LegacyExplicitTypeAlias[TA2, type[type[Any]]]`.unknown",
-      "description": "TODO: Answers::expr_infer attribute: `LegacyExplicitTypeAlias[TA2, type[type[Any]]]`.unknown",
+      "concise_description": "TODO: Answers::expr_infer attribute: `type[type[Any]]`.unknown",
+      "description": "TODO: Answers::expr_infer attribute: `type[type[Any]]`.unknown",
       "line": 144,
       "name": "PyreError",
       "stop_column": 12,
@@ -20441,8 +20451,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "TODO: Answers::expr_infer attribute: `LegacyExplicitTypeAlias[TA3, type[type]]`.unknown",
-      "description": "TODO: Answers::expr_infer attribute: `LegacyExplicitTypeAlias[TA3, type[type]]`.unknown",
+      "concise_description": "Class `type` has no class attribute `unknown`",
+      "description": "Class `type` has no class attribute `unknown`",
       "line": 145,
       "name": "PyreError",
       "stop_column": 12,
@@ -20451,8 +20461,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "TODO: Answers::expr_infer attribute: `LegacyExplicitTypeAlias[TA4, type[type[Any]]]`.unknown",
-      "description": "TODO: Answers::expr_infer attribute: `LegacyExplicitTypeAlias[TA4, type[type[Any]]]`.unknown",
+      "concise_description": "TODO: Answers::expr_infer attribute: `type[type[Any]]`.unknown",
+      "description": "TODO: Answers::expr_infer attribute: `type[type[Any]]`.unknown",
       "line": 146,
       "name": "PyreError",
       "stop_column": 12,

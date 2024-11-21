@@ -115,3 +115,17 @@ from typing import TypeAlias
 X: TypeAlias = 1  # E: Expected `X` to be a type alias, got Literal[1]
     "#,
 );
+
+simple_test!(
+    test_attribute_access,
+    r#"
+from typing import TypeAlias
+X1 = int
+X2: TypeAlias = int
+type X3 = int
+
+X1.__add__  # ok
+X2.__add__  # ok
+X3.__add__  # E: Cannot use type alias `X3`
+    "#,
+);
