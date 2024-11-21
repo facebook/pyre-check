@@ -10,7 +10,8 @@
 
 use std::fmt;
 use std::fmt::Display;
-use std::sync::Mutex;
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering;
 
 use dupe::Dupe;
 
@@ -18,8 +19,7 @@ use dupe::Dupe;
 /// Deliberately NOT Clone.
 #[derive(Debug)]
 pub struct UniqueFactory {
-    // For each Var we maintain a hint about what it means.
-    hints: Mutex<Vec<String>>,
+    unique: AtomicUsize,
 }
 
 impl Default for UniqueFactory {
@@ -52,14 +52,11 @@ impl Unique {
 impl UniqueFactory {
     pub fn new() -> Self {
         Self {
-            hints: Mutex::new(vec!["zero".to_owned()]),
+            unique: AtomicUsize::new(1),
         }
     }
 
-    pub fn fresh(&self, hint: String) -> Unique {
-        let mut me = self.hints.lock().unwrap();
-        let v = Unique(me.len());
-        me.push(hint);
-        v
+    pub fn fresh(&self, _hint: String) -> Unique {
+        Unique(self.unique.fetch_add(1, Ordering::Relaxed))
     }
 }
