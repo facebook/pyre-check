@@ -169,20 +169,22 @@ impl ErrorCollector {
             .collect()
     }
 
-    pub fn summarise(&self) -> Vec<(String, usize)> {
+    pub fn summarise<'a>(xs: impl Iterator<Item = &'a ErrorCollector>) -> Vec<(String, usize)> {
         let mut map = SmallMap::new();
-        for err in self.errors.lock().unwrap().errors() {
-            // Lots of error messages have names in them, e.g. "Can't find module `foo`".
-            // We want to summarise those together, so replace bits of text inside `...` with `...`.
-            let clean_msg = err
-                .0
-                .msg
-                .split('`')
-                .enumerate()
-                .map(|(i, x)| if i % 2 == 0 { x } else { "..." })
-                .collect::<Vec<_>>()
-                .join("`");
-            *map.entry(clean_msg).or_default() += 1;
+        for x in xs {
+            for err in x.errors.lock().unwrap().errors() {
+                // Lots of error messages have names in them, e.g. "Can't find module `foo`".
+                // We want to summarise those together, so replace bits of text inside `...` with `...`.
+                let clean_msg = err
+                    .0
+                    .msg
+                    .split('`')
+                    .enumerate()
+                    .map(|(i, x)| if i % 2 == 0 { x } else { "..." })
+                    .collect::<Vec<_>>()
+                    .join("`");
+                *map.entry(clean_msg).or_default() += 1;
+            }
         }
         let mut res = map.into_iter().collect::<Vec<_>>();
         res.sort_by_key(|x| x.1);

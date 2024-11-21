@@ -107,6 +107,7 @@ impl LoadResult {
 struct Phase1 {
     expectations: Expectation,
     module_info: ModuleInfo,
+    errors: ErrorCollector,
     module: ModModule,
     exports: Exports,
     /// Set only if the path doesn't exist, so the importer is wrong
@@ -121,6 +122,7 @@ impl Phase1 {
         code: String,
         module: ModModule,
         should_type_check: bool,
+        quiet_errors: bool,
         config: &Config,
     ) -> Self {
         let expectations = Expectation::parse(&code);
@@ -132,9 +134,15 @@ impl Phase1 {
         timers.add((module_name, Step::Startup, 0));
         let exports = Exports::new(&module.body, &module_info, config);
         timers.add((module_name, Step::Exports, 0));
+        let errors = if quiet_errors {
+            ErrorCollector::new_quiet()
+        } else {
+            ErrorCollector::new()
+        };
         Self {
             expectations,
             module_info,
+            errors,
             module,
             exports,
             error,
@@ -163,14 +171,13 @@ impl Phase2 {
         modules: &SmallMap<ModuleName, Exports>,
         uniques: &UniqueFactory,
         config: &Config,
-        errors: &ErrorCollector,
     ) -> Self {
         let bindings = Bindings::new(
             phase1.module.body.clone(),
             phase1.module_info.dupe(),
             modules,
             config,
-            errors,
+            &phase1.errors,
             uniques,
         );
         timers.add((phase1.module_info.name(), Step::Bindings, bindings.len()));
@@ -193,7 +200,7 @@ fn run_phase1(
     timers: &mut Timers,
     modules: &[ModuleName],
     config: &Config,
-    errors: &ErrorCollector,
+    quiet_errors: bool,
     load: impl Fn(ModuleName) -> (LoadResult, bool) + Sync,
     debug: bool,
     parallel: bool,
@@ -245,13 +252,14 @@ fn run_phase1(
             code,
             module,
             should_type_check,
+            quiet_errors,
             config,
         );
         if debug {
             eprintln!("\nExports for {name}:\n{}", p.exports);
         }
         for x in my_errors {
-            errors.add(&p.module_info, x.0, x.1);
+            p.errors.add(&p.module_info, x.0, x.1);
         }
         let my_imports = p.imports();
         imports
@@ -268,10 +276,11 @@ fn run_phase1(
     timers.add((timers_global_module(), Step::Parse, 0));
 
     for import in imports.into_inner().unwrap() {
-        let result = done.get(&import.name).unwrap();
-        if let Some(err) = &result.error {
-            errors.add(
-                &done.get(&import.importer).unwrap().module_info,
+        let loaded = done.get(&import.name).unwrap();
+        if let Some(err) = &loaded.error {
+            let loader = done.get(&import.importer).unwrap();
+            loader.errors.add(
+                &loader.module_info,
                 import.range,
                 format!("Could not find import of `{}`, {err:#}", import.name),
             );
@@ -286,7 +295,6 @@ fn run_phase2(
     modules: &SmallMap<ModuleName, Exports>,
     uniques: &UniqueFactory,
     config: &Config,
-    errors: &ErrorCollector,
     debug: bool,
     parallel: bool,
 ) -> Vec<Phase2> {
@@ -294,7 +302,7 @@ fn run_phase2(
         let mut timers = Timers::new();
         let module_name = v.module_info.name();
         info!("Phase 2 for {module_name}");
-        let res = Phase2::new(&mut timers, v, modules, uniques, config, errors);
+        let res = Phase2::new(&mut timers, v, modules, uniques, config);
         if debug {
             eprintln!("\nBindings for {module_name}:\n{}", res.bindings);
         }
@@ -329,54 +337,61 @@ impl Driver {
         let mut timers = Timers::new();
         let timers = &mut timers;
         let uniques = UniqueFactory::new();
-        let errors = if timings.is_some() {
-            // Printing errors immediately takes a variable amount of time (waiting for IO),
-            // so avoid that if we are trying to get robust timings.
-            ErrorCollector::new_quiet()
-        } else {
-            ErrorCollector::new()
-        };
         let solver = Solver::new(&uniques);
 
         timers.add((timers_global_module(), Step::Startup, 0));
-        let phase1 = run_phase1(timers, modules, config, &errors, load, debug, parallel);
+        let phase1 = run_phase1(
+            timers,
+            modules,
+            config,
+            timings.is_some(),
+            load,
+            debug,
+            parallel,
+        );
         let exports = phase1
             .iter()
             .map(|v| (v.module_info.name(), v.exports.dupe()))
             .collect();
 
-        let phase2 = run_phase2(
-            timers, &phase1, &exports, &uniques, config, &errors, debug, parallel,
-        );
+        let phase2 = run_phase2(timers, &phase1, &exports, &uniques, config, debug, parallel);
 
-        let answers: SmallMap<ModuleName, Answers> = phase2
+        let answers: SmallMap<ModuleName, Answers> = phase1
             .iter()
-            .map(|v| {
-                let ans = Answers::new(&exports, &v.bindings);
-                timers.add((v.name, Step::Answers, ans.len()));
-                (v.name, ans)
+            .zip(&phase2)
+            .map(|(p1, p2)| {
+                let ans = Answers::new(&exports, &p2.bindings, &p1.errors);
+                timers.add((p2.name, Step::Answers, ans.len()));
+                (p2.name, ans)
             })
             .collect();
-        let stdlib = make_stdlib(&answers, &errors, &uniques, &solver);
+        let stdlib = make_stdlib(&answers, &uniques, &solver);
         let solutions = (if parallel {
             small_map::par_map
         } else {
             small_map::map
         })(&answers, |_, x: &Answers| {
-            x.solve(&answers, &stdlib, &errors, &uniques, &solver)
+            x.solve(&answers, &stdlib, &uniques, &solver)
         });
         timers.add((timers_global_module(), Step::Solve, 0));
 
         if timings.is_some() {
-            errors.print();
+            for p1 in &phase1 {
+                p1.errors.print();
+            }
         }
-        for (error, count) in errors.summarise() {
+        let error_count = phase1.iter().map(|x| x.errors.len()).sum();
+        let mut errors = Vec::with_capacity(error_count);
+        for p in &phase1 {
+            errors.extend(p.errors.collect());
+        }
+        for (error, count) in ErrorCollector::summarise(phase1.iter().map(|x| &x.errors)) {
             eprintln!("{count} instances of {error}");
         }
 
         // Print this on both stderr and stdout, since handy to have in either dump
-        info_eprintln(format!("Total errors: {}", errors.len()));
-        let printing = timers.add((timers_global_module(), Step::PrintErrors, errors.len()));
+        info_eprintln(format!("Total errors: {}", error_count));
+        let printing = timers.add((timers_global_module(), Step::PrintErrors, error_count));
 
         if let Some(memory) = memory_stats() {
             eprintln!("Memory usage: {}", human_bytes(memory.physical_mem as f64));
@@ -403,7 +418,7 @@ impl Driver {
             phases.insert(p2.name, (p1, p2));
         }
         Driver {
-            errors: errors.collect(),
+            errors,
             expectations,
             solutions,
             phases,
@@ -557,7 +572,6 @@ fn info_eprintln(msg: String) {
 
 fn make_stdlib(
     answers: &SmallMap<ModuleName, Answers>,
-    errors: &ErrorCollector,
     uniques: &UniqueFactory,
     solver: &Solver,
 ) -> Stdlib {
@@ -565,7 +579,7 @@ fn make_stdlib(
         answers
             .get(&module)
             .unwrap()
-            .lookup_class_without_stdlib(module, name, answers, errors, uniques, solver)
+            .lookup_class_without_stdlib(module, name, answers, uniques, solver)
     };
     Stdlib::new(lookup_class)
 }

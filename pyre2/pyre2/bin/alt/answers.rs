@@ -95,6 +95,7 @@ use crate::util::recurser::Recurser;
 pub struct Answers<'a> {
     exports: &'a SmallMap<ModuleName, Exports>,
     bindings: &'a Bindings,
+    errors: &'a ErrorCollector,
     table: AnswerTable,
 }
 
@@ -258,7 +259,11 @@ impl Solve for KeyTypeParams {
 }
 
 impl<'a> Answers<'a> {
-    pub fn new(exports: &'a SmallMap<ModuleName, Exports>, bindings: &'a Bindings) -> Self {
+    pub fn new(
+        exports: &'a SmallMap<ModuleName, Exports>,
+        bindings: &'a Bindings,
+        errors: &'a ErrorCollector,
+    ) -> Self {
         fn presize<K: Solve>(items: &mut AnswerEntry<K>, bindings: &Bindings)
         where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -275,6 +280,7 @@ impl<'a> Answers<'a> {
         Self {
             exports,
             bindings,
+            errors,
             table,
         }
     }
@@ -289,7 +295,6 @@ impl<'a> Answers<'a> {
         &self,
         answers: &SmallMap<ModuleName, Answers>,
         stdlib: &Stdlib,
-        errors: &'a ErrorCollector,
         uniques: &'a UniqueFactory,
         solver: &'a Solver<'a>,
     ) -> Solutions {
@@ -312,11 +317,11 @@ impl<'a> Answers<'a> {
         let answers_solver = AnswersSolver {
             stdlib,
             answers,
-            errors,
             uniques,
             solver,
             recurser: &Recurser::new(),
             current: self,
+            errors: self.errors,
             module_info: self.bindings.module_info(),
         };
         table_mut_for_each!(&mut res, |items| pre_solve(items, &answers_solver));
@@ -339,18 +344,17 @@ impl<'a> Answers<'a> {
         module: ModuleName,
         name: &Name,
         answers: &SmallMap<ModuleName, Answers<'_>>,
-        errors: &'a ErrorCollector,
         uniques: &'a UniqueFactory,
         solver: &'a Solver<'a>,
     ) -> Option<Class> {
         let solver = AnswersSolver {
             stdlib: &Stdlib::for_bootstrapping(),
-            errors,
             uniques,
             solver,
             answers,
             recurser: &Recurser::new(),
             current: self,
+            errors: self.errors,
             module_info: self.bindings.module_info(),
         };
         match solver.get_import(name, module, TextRange::default()) {
@@ -380,6 +384,7 @@ impl<'a> AnswersSolver<'a> {
         AnswersSolver {
             current,
             module_info: current.bindings.module_info(),
+            errors: current.errors,
             ..self.clone()
         }
     }
