@@ -183,3 +183,28 @@ T2 = TypeVar('T2', covariant=True, contravariant=False)
 T3 = TypeVar('T3', covariant="lunch")  # E: Expected literal True or False
     "#,
 );
+
+simple_test!(
+    test_tvar_forward_ref,
+    r#"
+from typing import TypeVar
+T1 = TypeVar('T1', bound='A')
+T2 = TypeVar('T2', bound='B')  # E: Could not find name `B`
+T3 = TypeVar('T3', 'A', int)
+T4 = TypeVar('T4', 'B', int)  # E: Could not find name `B`
+
+class A:
+    pass
+    "#,
+);
+
+simple_test!(
+    test_tvar_class_constraint,
+    r#"
+from typing import TypeVar
+class A:
+    pass
+T1 = TypeVar('T1', int, A)
+T2 = TypeVar('T2', int, B)  # E: Could not find name `B`
+    "#,
+);

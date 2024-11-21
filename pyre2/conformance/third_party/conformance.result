@@ -180,7 +180,6 @@
     "Line 187: Unexpected errors ['EXPECTED None <: AsyncIterator[int]', 'TODO: ExprYield - Answers::expr_infer']"
   ],
   "annotations_methods.py": [
-    "Line 10: Unexpected errors [\"untype, got Literal['A']\"]",
     "Line 19: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 23: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 30: Unexpected errors ['assert_type(Any, A) failed']",
@@ -880,7 +879,6 @@
     "Line 59: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 60: Unexpected errors [\"Missing argument 'flush'\", 'TODO: Answers::expr_infer attribute: `Self`.x']",
     "Line 63: Unexpected errors ['EXPECTED HasNestedFunction <: Self']",
-    "Line 78: Unexpected errors [\"untype, got Literal['Foo2']\"]",
     "Line 93: Unexpected errors ['Object of class `Foo3` has no attribute `child_value`']"
   ],
   "generics_syntax_compatibility.py": [],
@@ -1071,7 +1069,6 @@
   "generics_upper_bound.py": [
     "Line 24: Expected 1 errors",
     "Line 51: Expected 1 errors",
-    "Line 12: Unexpected errors [\"untype, got Literal['ForwardRef | str']\"]",
     "Line 37: Unexpected errors ['assert_type(list[Any], list[int]) failed']",
     "Line 38: Unexpected errors ['assert_type(set[Any], set[int]) failed']"
   ],
@@ -1224,7 +1221,6 @@
     "Line 25: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]', 'Expected `list.__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[object]]], Iterator[_PyreReadOnly_[object]]] | Callable[[list[object]], Iterator[object]]']",
     "Line 28: Unexpected errors ['EXPECTED bool <: TypeGuard[set[?_]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]', 'EXPECTED type[?_] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 32: Unexpected errors ['assert_type(set[object], set[int]) failed']",
-    "Line 37: Unexpected errors [\"untype, got Literal['A']\"]",
     "Line 41: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 45: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 49: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
@@ -1256,7 +1252,6 @@
     "Line 28: Unexpected errors ['EXPECTED bool <: TypeIs[Awaitable[Any]]', 'EXPECTED type[Awaitable] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 35: Unexpected errors ['TODO: Await(ExprAwait - Answers::expr_infer']",
     "Line 38: Unexpected errors ['assert_type(Awaitable[int] | int, int) failed']",
-    "Line 41: Unexpected errors [\"untype, got Literal['A']\"]",
     "Line 45: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 49: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 53: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
@@ -1387,8 +1382,6 @@
     "Line 96: Expected 1 errors"
   ],
   "protocols_self.py": [
-    "Line 10: Unexpected errors [\"untype, got Literal['Copyable']\"]",
-    "Line 23: Unexpected errors [\"untype, got Literal['Other']\"]",
     "Line 32: Unexpected errors ['EXPECTED One <: Copyable']",
     "Line 33: Unexpected errors ['EXPECTED Other <: Copyable']",
     "Line 54: Unexpected errors ['EXPECTED C1[str] <: P1Parent[str]']",
