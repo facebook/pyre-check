@@ -884,3 +884,37 @@ def foo(x: int):
     x = "test"  # E: Literal['test'] <: int
 "#,
 );
+
+simple_test!(
+    test_await_simple,
+    r#"
+from typing import Any, Awaitable, assert_type
+class Foo(Awaitable[int]):
+    pass
+async def bar() -> str: ...
+
+async def test() -> None:
+    assert_type(await Foo(), int)
+    assert_type(await bar(), str)
+"#,
+);
+
+simple_test!(
+    test_await_non_awaitable,
+    r#"
+async def test() -> None:
+    await 42  # E: Expression is not awaitable
+"#,
+);
+
+simple_test!(
+    test_await_wrong_await_return_type,
+    r#"
+class Foo:
+    def __await__(self) -> int:
+        ...
+
+async def test() -> None:
+    await Foo()  # E: Expression is not awaitable
+"#,
+);

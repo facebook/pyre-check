@@ -776,7 +776,21 @@ impl<'a> AnswersSolver<'a> {
                 let yield_ty = self.expr_infer(&x.elt);
                 self.stdlib.generator(yield_ty, Type::None, Type::None)
             }
-            Expr::Await(_) => self.error_todo("Answers::expr_infer", x),
+            Expr::Await(x) => {
+                // TODO: contextual typing with `Awaitable[X]`
+                let awaiting_ty = self.expr_infer(&x.value);
+
+                let var = self.solver.fresh_contained("await_hint".to_string());
+                let awaitable_ty = self.stdlib.awaitable(Type::Var(var));
+                if !(self
+                    .solver
+                    .is_subset_eq(&awaiting_ty, &awaitable_ty, self.type_order()))
+                {
+                    self.error(x.range(), "Expression is not awaitable".to_owned())
+                } else {
+                    self.solver.force_var(var)
+                }
+            }
             Expr::Yield(x) => self.error_todo("Answers::expr_infer", x),
             Expr::YieldFrom(_) => self.error_todo("Answers::expr_infer", x),
             Expr::Compare(x) => {

@@ -29,6 +29,7 @@ pub struct Stdlib {
     tuple: Option<Class>,
     iterable: Option<Class>,
     generator: Option<Class>,
+    awaitable: Option<Class>,
     coroutine: Option<Class>,
     traceback_type: Option<Class>,
     // We want an owned ClassType for object because it allows the MRO code to clone less frequently.
@@ -53,6 +54,7 @@ impl Stdlib {
             tuple: lookup_class(ModuleName::builtins(), &Name::new("tuple")),
             iterable: lookup_class(ModuleName::typing(), &Name::new("Iterable")),
             generator: lookup_class(ModuleName::typing(), &Name::new("Generator")),
+            awaitable: lookup_class(ModuleName::typing(), &Name::new("Awaitable")),
             coroutine: lookup_class(ModuleName::typing(), &Name::new("Coroutine")),
             traceback_type: lookup_class(ModuleName::types(), &Name::new("TracebackType")),
             object_class_type: object.map(|obj| ClassType(obj, TArgs::default())),
@@ -152,6 +154,10 @@ impl Stdlib {
 
     pub fn generator(&self, yield_ty: Type, send_ty: Type, return_ty: Type) -> Type {
         Self::apply(&self.generator, vec![yield_ty, send_ty, return_ty])
+    }
+
+    pub fn awaitable(&self, x: Type) -> Type {
+        Self::apply(&self.awaitable, vec![x])
     }
 
     pub fn coroutine(&self, yield_ty: Type, send_ty: Type, return_ty: Type) -> Type {

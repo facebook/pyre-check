@@ -1657,16 +1657,6 @@
   "annotations_coroutines.py": [
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "TODO: Await(ExprAwait - Answers::expr_infer",
-      "description": "TODO: Await(ExprAwait - Answers::expr_infer",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "assert_type(Any, str) failed",
       "description": "assert_type(Any, str) failed",
@@ -2351,12 +2341,22 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "TODO: Await(ExprAwait - Answers::expr_infer",
-      "description": "TODO: Await(ExprAwait - Answers::expr_infer",
+      "column": 11,
+      "concise_description": "Missing argument 'result'",
+      "description": "Missing argument 'result'",
       "line": 154,
       "name": "PyreError",
-      "stop_column": 27,
+      "stop_column": 24,
+      "stop_line": 154
+    },
+    {
+      "code": -2,
+      "column": 25,
+      "concise_description": "EXPECTED Literal[1] <: float",
+      "description": "EXPECTED Literal[1] <: float",
+      "line": 154,
+      "name": "PyreError",
+      "stop_column": 26,
       "stop_line": 154
     },
     {
@@ -2381,12 +2381,22 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "TODO: Await(ExprAwait - Answers::expr_infer",
-      "description": "TODO: Await(ExprAwait - Answers::expr_infer",
+      "column": 15,
+      "concise_description": "Missing argument 'result'",
+      "description": "Missing argument 'result'",
       "line": 160,
       "name": "PyreError",
-      "stop_column": 31,
+      "stop_column": 28,
+      "stop_line": 160
+    },
+    {
+      "code": -2,
+      "column": 29,
+      "concise_description": "EXPECTED Literal[1] <: float",
+      "description": "EXPECTED Literal[1] <: float",
+      "line": 160,
+      "name": "PyreError",
+      "stop_column": 30,
       "stop_line": 160
     },
     {
@@ -2398,16 +2408,6 @@
       "name": "PyreError",
       "stop_column": 35,
       "stop_line": 161
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "TODO: Await(ExprAwait - Answers::expr_infer",
-      "description": "TODO: Await(ExprAwait - Answers::expr_infer",
-      "line": 165,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 165
     },
     {
       "code": -2,
@@ -2428,16 +2428,6 @@
       "name": "PyreError",
       "stop_column": 14,
       "stop_line": 168
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "TODO: Await(ExprAwait - Answers::expr_infer",
-      "description": "TODO: Await(ExprAwait - Answers::expr_infer",
-      "line": 172,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 172
     },
     {
       "code": -2,
@@ -17623,8 +17613,8 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "TODO: Await(ExprAwait - Answers::expr_infer",
-      "description": "TODO: Await(ExprAwait - Answers::expr_infer",
+      "concise_description": "Expression is not awaitable",
+      "description": "Expression is not awaitable",
       "line": 35,
       "name": "PyreError",
       "stop_column": 27,
