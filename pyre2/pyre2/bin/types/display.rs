@@ -24,7 +24,6 @@ use crate::types::qname::QName;
 use crate::types::types::AnyStyle;
 use crate::types::types::NeverStyle;
 use crate::types::types::Type;
-use crate::types::types::TypeAlias;
 use crate::types::types::TypeAliasStyle;
 use crate::util::display::append;
 use crate::util::display::commas_iter;
@@ -216,13 +215,13 @@ impl<'a> TypeDisplayContext<'a> {
                 AnyStyle::Implicit => write!(f, "Unknown"),
                 AnyStyle::Error => write!(f, "Error"),
             },
-            Type::TypeAlias(TypeAlias { name, ty, style }) => {
-                let desc = match style {
+            Type::TypeAlias(ta) => {
+                let desc = match ta.style {
                     TypeAliasStyle::Scoped => "ScopedTypeAlias",
                     TypeAliasStyle::LegacyExplicit => "LegacyExplicitTypeAlias",
                     TypeAliasStyle::LegacyImplicit => "LegacyImplicitTypeAlias",
                 };
-                write!(f, "{}[{}, {}]", desc, name, self.display(ty))
+                write!(f, "{}[{}, {}]", desc, ta.name, self.display(&ta.as_type()))
             }
             Type::None => write!(f, "None"),
         }

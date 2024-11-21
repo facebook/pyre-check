@@ -730,29 +730,23 @@ impl<'a> AnswersSolver<'a> {
             );
             return Type::any_error();
         }
-        let mut ta = {
-            let ty = match &ty {
-                Type::ClassDef(cls) => Type::Type(Box::new(self.promote_to_class_type(cls, range))),
-                t => t.clone(),
-            };
-            TypeAlias {
-                name: name.clone(),
-                ty: Box::new(ty),
-                style,
-            }
+        let mut ty = match &ty {
+            Type::ClassDef(cls) => Type::Type(Box::new(self.promote_to_class_type(cls, range))),
+            t => t.clone(),
         };
         let mut seen = SmallMap::new();
         let mut quantifieds = Vec::new();
-        match ta.ty.as_mut() {
-            Type::Type(t) => {
+        match ty {
+            Type::Type(ref mut t) => {
                 self.tvars_to_quantifieds_for_type_alias(t, &mut seen, &mut quantifieds)
             }
             _ => {}
         }
+        let ta = Type::TypeAlias(TypeAlias::new(name.clone(), ty, style));
         if quantifieds.is_empty() {
-            Type::TypeAlias(ta)
+            ta
         } else {
-            Type::Forall(quantifieds, Box::new(Type::TypeAlias(ta)))
+            Type::Forall(quantifieds, Box::new(ta))
         }
     }
 
@@ -1228,7 +1222,7 @@ impl<'a> AnswersSolver<'a> {
             Type::None => Some(Type::None), // Both a value and a type
             Type::Ellipsis => Some(Type::Ellipsis), // A bit weird because of tuples, so just promote it
             Type::Any(style) => Some(style.propagate()),
-            Type::TypeAlias(ta) => self.untype_opt(*ta.ty, range),
+            Type::TypeAlias(ta) => self.untype_opt(ta.as_type(), range),
             _ => None,
         }
     }

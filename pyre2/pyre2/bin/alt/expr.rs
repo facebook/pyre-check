@@ -136,7 +136,7 @@ impl<'a> AnswersSolver<'a> {
                 args: Args::Ellipsis,
                 ret: style.propagate(),
             }),
-            Type::TypeAlias(ta) => self.as_callable(*ta.ty),
+            Type::TypeAlias(ta) => self.as_callable(ta.as_value()),
             _ => None,
         }
     }

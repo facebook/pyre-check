@@ -10,7 +10,6 @@ use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
-use crate::types::types::TypeAlias;
 
 pub fn unions(xs: Vec<Type>) -> Type {
     if xs.is_empty() {
@@ -36,7 +35,7 @@ pub fn unions(xs: Vec<Type>) -> Type {
     }
 }
 
-// Return `Some` when `ty` can be treated as a type for attrbute access purpose, and `None` otherwise
+// Return `Some` when `ty` can be treated as a type for attribute access purpose, and `None` otherwise
 fn as_attribute_base_type(ty: Type, stdlib: &Stdlib) -> Option<Type> {
     match ty {
         Type::ClassType(_) | Type::Any(_) => Some(ty),
@@ -45,7 +44,7 @@ fn as_attribute_base_type(ty: Type, stdlib: &Stdlib) -> Option<Type> {
         Type::LiteralString => Some(stdlib.str()),
         Type::Literal(lit) => Some(lit.general_type(stdlib)),
         Type::TypeGuard(_) | Type::TypeIs(_) => Some(stdlib.bool()),
-        Type::TypeAlias(TypeAlias { box ty, .. }) => as_attribute_base_type(ty, stdlib),
+        Type::TypeAlias(ta) => as_attribute_base_type(ta.as_value(), stdlib),
         // TODO: check to see which ones should have class representations
         Type::Union(_)
         | Type::Never(_)
