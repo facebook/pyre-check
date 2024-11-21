@@ -153,7 +153,6 @@ pub struct AnswersSolver<'a> {
     pub recurser: &'a Recurser<Var>,
     pub solver: &'a Solver<'a>,
     pub stdlib: &'a Stdlib,
-    pub module_info: &'a ModuleInfo,
 }
 
 pub trait Solve: Keyed {
@@ -320,7 +319,6 @@ impl<'a> Answers<'a> {
             solver,
             recurser: &Recurser::new(),
             current: self,
-            module_info: self.bindings.module_info(),
         };
         table_mut_for_each!(&mut res, |items| pre_solve(items, &answers_solver));
 
@@ -352,7 +350,6 @@ impl<'a> Answers<'a> {
             answers,
             recurser: &Recurser::new(),
             current: self,
-            module_info: self.bindings.module_info(),
         };
         match solver.get_import(name, module, TextRange::default()) {
             Type::ClassDef(cls) => Some(cls),
@@ -380,11 +377,14 @@ impl<'a> AnswersSolver<'a> {
         self.current.errors
     }
 
+    pub fn module_info(&self) -> &ModuleInfo {
+        self.current.bindings.module_info()
+    }
+
     pub fn with_module(&self, name: ModuleName) -> Self {
         let current = self.answers.get(&name).unwrap();
         AnswersSolver {
             current,
-            module_info: current.bindings.module_info(),
             ..self.clone()
         }
     }
@@ -424,7 +424,7 @@ impl<'a> AnswersSolver<'a> {
             // We should always be sure before calling `get`.
             panic!(
                 "Internal error: Answer not found: {}, {}",
-                self.module_info.name(),
+                self.module_info().name(),
                 self.bindings().idx_to_key(idx),
             )
         });
@@ -473,7 +473,7 @@ impl<'a> AnswersSolver<'a> {
             (*answer).clone(),
             self.type_order(),
             self.errors(),
-            self.module_info,
+            self.module_info(),
             key.range(),
         );
     }
@@ -672,7 +672,7 @@ impl<'a> AnswersSolver<'a> {
                 range,
                 format!(
                     "Expression `{}` has type `{actual_type}` which does not derive from BaseException",
-                    self.module_info.display(x)
+                    self.module_info().display(x)
                 ),
             );
         }
@@ -995,7 +995,7 @@ impl<'a> AnswersSolver<'a> {
                 let tparams = self.type_params(&x.type_params);
                 let c = Class::new(
                     x.name.clone(),
-                    self.module_info.dupe(),
+                    self.module_info().dupe(),
                     tparams,
                     fields.clone(),
                     *n_bases,
@@ -1134,7 +1134,7 @@ impl<'a> AnswersSolver<'a> {
             got.clone()
         } else {
             self.solver
-                .error(want, got, self.errors(), self.module_info, loc);
+                .error(want, got, self.errors(), self.module_info(), loc);
             want.clone()
         }
     }
@@ -1148,12 +1148,12 @@ impl<'a> AnswersSolver<'a> {
     }
 
     pub fn error_todo(&self, msg: &str, x: impl Ranged + Debug) -> Type {
-        self.errors().todo(self.module_info, msg, x);
+        self.errors().todo(self.module_info(), msg, x);
         Type::any_error()
     }
 
     pub fn error(&self, range: TextRange, msg: String) -> Type {
-        self.errors().add(self.module_info, range, msg);
+        self.errors().add(self.module_info(), range, msg);
         Type::any_error()
     }
 

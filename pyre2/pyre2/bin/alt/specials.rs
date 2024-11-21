@@ -70,7 +70,7 @@ impl<'a> AnswersSolver<'a> {
                 for x in arguments.iter() {
                     let lit = Lit::from_expr(
                         x,
-                        self.module_info,
+                        self.module_info(),
                         &|cls| self.get_mro_for_class(cls),
                         &|identifier| self.get_class_for_identifier(&identifier),
                         self.errors(),
@@ -147,7 +147,7 @@ impl<'a> AnswersSolver<'a> {
                 &format!(
                     "Answers::apply_special_form cannot handle `{special_form}[{}]`",
                     arguments
-                        .map(|x| self.module_info.display(x).to_string())
+                        .map(|x| self.module_info().display(x).to_string())
                         .join(", ")
                 ),
                 range,

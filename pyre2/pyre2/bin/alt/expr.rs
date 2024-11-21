@@ -624,7 +624,7 @@ impl<'a> AnswersSolver<'a> {
         };
         TypeVar::new(
             name,
-            self.module_info.dupe(),
+            self.module_info().dupe(),
             restriction,
             default,
             variance,
@@ -645,7 +645,7 @@ impl<'a> AnswersSolver<'a> {
                 match x.op {
                     UnaryOp::USub => match t {
                         Type::Literal(lit) => {
-                            Type::Literal(lit.negate(self.module_info, x.range, self.errors()))
+                            Type::Literal(lit.negate(self.module_info(), x.range, self.errors()))
                         }
                         _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
                     },
@@ -857,13 +857,13 @@ impl<'a> AnswersSolver<'a> {
                     && let Some(name) = arguments_one_string(&x.arguments)
                 {
                     Type::Type(Box::new(
-                        TypeVarTuple::new(name, self.module_info.dupe()).to_type(),
+                        TypeVarTuple::new(name, self.module_info().dupe()).to_type(),
                     ))
                 } else if ParamSpec::is_ctor(&ty_fun)
                     && let Some(name) = arguments_one_string(&x.arguments)
                 {
                     Type::Type(Box::new(
-                        ParamSpec::new(name, self.module_info.dupe()).to_type(),
+                        ParamSpec::new(name, self.module_info().dupe()).to_type(),
                     ))
                 } else if let Type::Union(members) = ty_fun {
                     self.unions(&members.into_iter().map(check_call).collect::<Vec<_>>())
@@ -881,7 +881,7 @@ impl<'a> AnswersSolver<'a> {
             Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
             Expr::BytesLiteral(x) => Lit::from_bytes_literal(x).to_type(),
             Expr::NumberLiteral(x) => {
-                Lit::from_number_literal(x, self.module_info, self.errors()).to_type()
+                Lit::from_number_literal(x, self.module_info(), self.errors()).to_type()
             }
             Expr::BooleanLiteral(x) => Lit::from_boolean_literal(x).to_type(),
             Expr::NoneLiteral(_) => Type::None,
