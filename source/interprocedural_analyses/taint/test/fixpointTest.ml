@@ -70,8 +70,7 @@ let assert_fixpoint
           TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
           pyre_api;
           class_interval_graph = class_interval_graph_shared_memory;
-          define_call_graphs =
-            Interprocedural.CallGraph.DefineCallGraphSharedMemory.read_only define_call_graphs;
+          define_call_graphs = Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs;
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
         }
       ~callables_to_analyze
@@ -96,7 +95,7 @@ let assert_fixpoint
     List.iter ~f:(check_expectation ~pyre_api ~taint_configuration ~get_model ~get_errors) expect
   in
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
-  CallGraph.DefineCallGraphSharedMemory.cleanup define_call_graphs;
+  CallGraph.SharedMemory.cleanup define_call_graphs;
   TaintFixpoint.cleanup fixpoint_state;
   ()
 

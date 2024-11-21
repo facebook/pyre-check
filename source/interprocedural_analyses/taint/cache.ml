@@ -524,9 +524,7 @@ let save
     let () =
       Interprocedural.OverrideGraph.SharedMemory.save_to_cache override_graph_shared_memory
     in
-    let () =
-      Interprocedural.CallGraph.DefineCallGraphSharedMemory.save_to_cache call_graph_shared_memory
-    in
+    let () = Interprocedural.CallGraph.SharedMemory.save_to_cache call_graph_shared_memory in
     let () = Interprocedural.GlobalConstants.SharedMemory.save_to_cache global_constants in
     let () =
       PreviousAnalysisSetupSharedMemory.save_to_cache
@@ -772,10 +770,10 @@ module CallGraphSharedMemory = struct
 
 
   let remove_previous () =
-    match Interprocedural.CallGraph.DefineCallGraphSharedMemory.load_from_cache () with
+    match Interprocedural.CallGraph.SharedMemory.load_from_cache () with
     | Ok call_graph_shared_memory ->
         Log.info "Removing the previous call graph.";
-        Interprocedural.CallGraph.DefineCallGraphSharedMemory.cleanup call_graph_shared_memory
+        Interprocedural.CallGraph.SharedMemory.cleanup call_graph_shared_memory
     | Error _ -> Log.warning "Failed to remove the previous call graph."
 
 
@@ -786,12 +784,9 @@ module CallGraphSharedMemory = struct
       ~previous_analysis_setup:{ AnalysisSetup.whole_program_call_graph; _ }
       compute_value
     =
-    match Interprocedural.CallGraph.DefineCallGraphSharedMemory.load_from_cache () with
+    match Interprocedural.CallGraph.SharedMemory.load_from_cache () with
     | Ok define_call_graphs ->
-        ( {
-            Interprocedural.CallGraph.DefineCallGraphSharedMemory.whole_program_call_graph;
-            define_call_graphs;
-          },
+        ( { Interprocedural.CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs },
           SaveLoadSharedMemory.Usage.Used )
     | Error error -> compute_value ~attribute_targets ~skip_analysis_targets ~definitions (), error
 

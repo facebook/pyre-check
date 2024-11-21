@@ -707,11 +707,7 @@ let run_taint_analysis
   let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
   let attribute_targets = Registry.object_targets initial_models in
   let skip_analysis_targets = Registry.skip_analysis initial_models in
-  let ( {
-          Interprocedural.CallGraph.DefineCallGraphSharedMemory.whole_program_call_graph;
-          define_call_graphs;
-        },
-        cache )
+  let { Interprocedural.CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs }, cache
     =
     Cache.call_graph
       ~attribute_targets
@@ -719,7 +715,7 @@ let run_taint_analysis
       ~definitions
       cache
       (fun ~attribute_targets ~skip_analysis_targets ~definitions () ->
-        Interprocedural.CallGraph.DefineCallGraphSharedMemory.build_whole_program_call_graph
+        Interprocedural.CallGraph.SharedMemory.build_whole_program_call_graph
           ~scheduler
           ~static_analysis_configuration
           ~pyre_api
@@ -827,8 +823,7 @@ let run_taint_analysis
           Taint.TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
           pyre_api;
           class_interval_graph = class_interval_graph_shared_memory;
-          define_call_graphs =
-            Interprocedural.CallGraph.DefineCallGraphSharedMemory.read_only define_call_graphs;
+          define_call_graphs = Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs;
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
         }
       ~callables_to_analyze

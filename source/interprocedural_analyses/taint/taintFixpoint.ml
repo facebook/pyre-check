@@ -26,7 +26,7 @@ module Context = struct
     pyre_api: PyrePysaEnvironment.ReadOnly.t;
     class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
     (* Use a lightweight handle, to avoid copying a large handle for each worker. *)
-    define_call_graphs: Interprocedural.CallGraph.DefineCallGraphSharedMemory.ReadOnly.t;
+    define_call_graphs: Interprocedural.CallGraph.SharedMemory.ReadOnly.t;
     global_constants: Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t;
   }
 end
@@ -129,11 +129,7 @@ module Analysis = struct
         TaintProfiler.none
     in
     let call_graph_of_define =
-      match
-        Interprocedural.CallGraph.DefineCallGraphSharedMemory.ReadOnly.get
-          define_call_graphs
-          ~callable
-      with
+      match Interprocedural.CallGraph.SharedMemory.ReadOnly.get define_call_graphs ~callable with
       | Some call_graph -> call_graph
       | None ->
           Format.asprintf "Missing call graph for `%a`" Interprocedural.Target.pp callable
@@ -142,6 +138,9 @@ module Analysis = struct
     let cfg =
       TaintProfiler.track_duration ~profiler ~name:"Control flow graph" ~f:(fun () ->
           PyrePysaLogic.Cfg.create define.value)
+    in
+    let call_graph_of_define =
+      Interprocedural.CallGraph.MutableDefineCallGraph.read_only call_graph_of_define
     in
     let forward, result, triggered_sinks =
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis" ~f:(fun () ->

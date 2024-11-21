@@ -431,7 +431,7 @@ type test_environment = {
   taint_configuration: TaintConfiguration.Heap.t;
   taint_configuration_shared_memory: TaintConfiguration.SharedMemory.t;
   whole_program_call_graph: CallGraph.WholeProgramCallGraph.t;
-  define_call_graphs: CallGraph.DefineCallGraphSharedMemory.t;
+  define_call_graphs: CallGraph.SharedMemory.t;
   override_graph_heap: OverrideGraph.Heap.t;
   override_graph_shared_memory: OverrideGraph.SharedMemory.t;
   initial_callables: FetchCallables.t;
@@ -605,8 +605,8 @@ let initialize
 
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
-  let { CallGraph.DefineCallGraphSharedMemory.whole_program_call_graph; define_call_graphs } =
-    CallGraph.DefineCallGraphSharedMemory.build_whole_program_call_graph
+  let { CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs } =
+    CallGraph.SharedMemory.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~pyre_api
@@ -832,8 +832,7 @@ let end_to_end_integration_test path context =
             TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
             pyre_api;
             class_interval_graph = class_interval_graph_shared_memory;
-            define_call_graphs =
-              Interprocedural.CallGraph.DefineCallGraphSharedMemory.read_only define_call_graphs;
+            define_call_graphs = Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs;
             global_constants =
               Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
           }

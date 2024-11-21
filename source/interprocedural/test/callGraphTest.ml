@@ -77,7 +77,7 @@ let assert_call_graph_of_define
   in
   let actual =
     create_define_call_graph ~define ~test_source ~pyre_api ~configuration ~object_targets
-    |> DefineCallGraph.from_mutable_define_call_graph
+    |> MutableDefineCallGraph.read_only
   in
   assert_equal ~cmp ~printer:DefineCallGraph.show expected actual
 

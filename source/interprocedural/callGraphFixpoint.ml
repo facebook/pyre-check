@@ -11,7 +11,7 @@ module CallGraphAnalysis = struct
   module Context = struct
     type t = {
       pyre_api: Analysis.PyrePysaEnvironment.ReadOnly.t;
-      define_call_graphs: CallGraph.MutableDefineCallGraphSharedMemory.ReadOnly.t;
+      define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
     }
   end
 
@@ -81,8 +81,7 @@ module CallGraphAnalysis = struct
     =
     let define_call_graph =
       define_call_graphs
-      |> CallGraph.MutableDefineCallGraphSharedMemory.ReadOnly.get
-           ~callable:(Target.strip_parameters callable)
+      |> CallGraph.SharedMemory.ReadOnly.get ~callable:(Target.strip_parameters callable)
       |> Option.value_exn
            ~message:(Format.asprintf "Missing call graph for `%a`" Target.pp callable)
     in
@@ -123,7 +122,7 @@ let compute
     ~scheduler
     ~scheduler_policy
     ~pyre_api
-    ~call_graph:{ CallGraph.MutableDefineCallGraphSharedMemory.define_call_graphs; _ }
+    ~call_graph:{ CallGraph.SharedMemory.define_call_graphs; _ }
     ~dependency_graph:
       { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ }
     ~override_graph_shared_memory
@@ -133,8 +132,8 @@ let compute
   let definitions = FetchCallables.get_definitions initial_callables in
   let initial_call_graph callable =
     define_call_graphs
-    |> CallGraph.MutableDefineCallGraphSharedMemory.read_only
-    |> CallGraph.MutableDefineCallGraphSharedMemory.ReadOnly.get ~callable
+    |> CallGraph.SharedMemory.read_only
+    |> CallGraph.SharedMemory.ReadOnly.get ~callable
     |> Option.value ~default:CallGraph.MutableDefineCallGraph.empty
   in
   let initial_models =
@@ -162,8 +161,7 @@ let compute
     ~context:
       {
         CallGraphAnalysis.Context.pyre_api;
-        define_call_graphs =
-          CallGraph.MutableDefineCallGraphSharedMemory.read_only define_call_graphs;
+        define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
       }
     ~callables_to_analyze
     ~max_iterations

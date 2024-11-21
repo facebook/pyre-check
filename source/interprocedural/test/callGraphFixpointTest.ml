@@ -34,10 +34,8 @@ let assert_higher_order_call_graph_fixpoint ~source ~expected () context =
   let definitions = FetchCallables.get_definitions initial_callables in
   let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
-  let ({ MutableDefineCallGraphSharedMemory.whole_program_call_graph; define_call_graphs } as
-      call_graph)
-    =
-    MutableDefineCallGraphSharedMemory.build_whole_program_call_graph
+  let ({ SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
+    SharedMemory.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~pyre_api
@@ -90,7 +88,7 @@ let assert_higher_order_call_graph_fixpoint ~source ~expected () context =
         expected_call_graph
         actual_call_graph);
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
-  MutableDefineCallGraphSharedMemory.cleanup define_call_graphs;
+  SharedMemory.cleanup define_call_graphs;
   CallGraphFixpoint.cleanup fixpoint_state;
   ()
 

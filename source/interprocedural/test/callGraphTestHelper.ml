@@ -37,7 +37,7 @@ module ImmutableHigherOrderCallGraph = struct
   [@@deriving eq, show]
 
   let from_higher_order_call_graph { HigherOrderCallGraph.returned_callables; call_graph } =
-    { returned_callables; call_graph = DefineCallGraph.from_mutable_define_call_graph call_graph }
+    { returned_callables; call_graph = MutableDefineCallGraph.read_only call_graph }
 
 
   module Input = struct

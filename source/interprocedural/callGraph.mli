@@ -285,22 +285,10 @@ val resolve_callees_from_type_external
   Expression.t ->
   CallCallees.t
 
-module MutableDefineCallGraph : sig
-  type t
-
-  val empty : t
-
-  val merge : t -> t -> t
-
-  val all_targets : exclude_reference_only:bool -> t -> Target.t list
-end
-
 (** The call graph of a function or method definition. Unlike `MutableDefineCallGraph`, this is
     immutable. *)
 module DefineCallGraph : sig
   type t [@@deriving eq, show]
-
-  val from_mutable_define_call_graph : MutableDefineCallGraph.t -> t
 
   val empty : t
 
@@ -332,13 +320,16 @@ module DefineCallGraph : sig
   (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
       true excludes the targets that are not required in building the dependency graph. *)
   val all_targets : exclude_reference_only:bool -> t -> Target.t list
+end
 
-  val to_json
-    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-    resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
-    callable:Target.t ->
-    t ->
-    Yojson.Safe.t
+module MutableDefineCallGraph : sig
+  type t
+
+  val empty : t
+
+  val all_targets : exclude_reference_only:bool -> t -> Target.t list
+
+  val read_only : t -> DefineCallGraph.t
 end
 
 val call_graph_of_define
@@ -425,15 +416,15 @@ module WholeProgramCallGraph : sig
   val to_target_graph : t -> TargetGraph.t
 end
 
-module type SharedMemory = sig
+(** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
+    `MutableDefineCallGraph.t`. *)
+module SharedMemory : sig
   type t
-
-  type call_graph
 
   module ReadOnly : sig
     type t
 
-    val get : t -> callable:Target.t -> call_graph option
+    val get : t -> callable:Target.t -> MutableDefineCallGraph.t option
   end
 
   val read_only : t -> ReadOnly.t
@@ -466,10 +457,3 @@ module type SharedMemory = sig
     definitions:Target.t list ->
     call_graphs
 end
-
-(** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
-    `DefineCallGraph.t`. *)
-module DefineCallGraphSharedMemory : SharedMemory with type call_graph = DefineCallGraph.t
-
-module MutableDefineCallGraphSharedMemory :
-  SharedMemory with type call_graph = MutableDefineCallGraph.t

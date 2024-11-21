@@ -1187,6 +1187,58 @@ struct
     `Assoc (List.rev bindings)
 end
 
+(** The call graph of a function or method definition. Unlike `MutableDefineCallGraph`, this is
+    immutable. *)
+module DefineCallGraph = struct
+  module T = struct
+    type t = LocationCallees.t Location.Map.Tree.t [@@deriving eq]
+
+    let resolve_expression call_graph ~location ~expression_identifier =
+      match Location.Map.Tree.find call_graph location with
+      | Some (LocationCallees.Singleton callees) -> Some callees
+      | Some (LocationCallees.Compound name_to_callees) ->
+          SerializableStringMap.find_opt expression_identifier name_to_callees
+      | None -> None
+
+
+    let to_json call_graph =
+      let bindings =
+        Location.Map.Tree.fold call_graph ~init:[] ~f:(fun ~key ~data sofar ->
+            (Location.show key, LocationCallees.to_json data) :: sofar)
+      in
+      `Assoc bindings
+  end
+
+  include MakeCallGraph (T)
+
+  let pp formatter call_graph =
+    let pp_pair formatter (key, value) =
+      Format.fprintf formatter "@,%a -> %a" Location.pp key LocationCallees.pp value
+    in
+    let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+    call_graph |> Location.Map.Tree.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
+
+
+  let show = Format.asprintf "%a" pp
+
+  let empty = Location.Map.Tree.empty
+
+  let add call_graph ~location ~callees =
+    Location.Map.Tree.set call_graph ~key:location ~data:callees
+
+
+  let equal_ignoring_types call_graph_left call_graph_right =
+    Location.Map.Tree.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
+
+
+  (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
+      true excludes the targets that are not required in building the dependency graph. *)
+  let all_targets ~exclude_reference_only call_graph =
+    Location.Map.Tree.data call_graph
+    |> List.concat_map ~f:(LocationCallees.all_targets ~exclude_reference_only)
+    |> List.dedup_and_sort ~compare:Target.compare
+end
+
 module MutableDefineCallGraph = struct
   module T = struct
     type t = LocationCallees.Map.t Location.SerializableMap.t [@@deriving eq]
@@ -1212,6 +1264,21 @@ module MutableDefineCallGraph = struct
   let empty = Location.SerializableMap.empty
 
   let is_empty = Location.SerializableMap.is_empty
+
+  let read_only map =
+    map
+    |> Location.SerializableMap.to_alist
+    |> List.map ~f:(fun (location, callees) ->
+           match SerializableStringMap.to_alist callees with
+           | [] -> failwith "unreachable"
+           | [(_, callees)] ->
+               location, LocationCallees.Singleton (ExpressionCallees.deduplicate callees)
+           | _ ->
+               ( location,
+                 LocationCallees.Compound
+                   (SerializableStringMap.map ExpressionCallees.deduplicate callees) ))
+    |> Location.Map.Tree.of_alist_exn
+
 
   let merge =
     let merge_location_callees_map =
@@ -1288,75 +1355,6 @@ module MutableDefineCallGraph = struct
            map
            |> LocationCallees.Map.data
            |> List.concat_map ~f:(ExpressionCallees.all_targets ~exclude_reference_only))
-    |> List.dedup_and_sort ~compare:Target.compare
-end
-
-(** The call graph of a function or method definition. Unlike `MutableDefineCallGraph`, this is
-    immutable. *)
-module DefineCallGraph = struct
-  module T = struct
-    type t = LocationCallees.t Location.Map.Tree.t [@@deriving eq]
-
-    let resolve_expression call_graph ~location ~expression_identifier =
-      match Location.Map.Tree.find call_graph location with
-      | Some (LocationCallees.Singleton callees) -> Some callees
-      | Some (LocationCallees.Compound name_to_callees) ->
-          SerializableStringMap.find_opt expression_identifier name_to_callees
-      | None -> None
-
-
-    let to_json call_graph =
-      let bindings =
-        Location.Map.Tree.fold call_graph ~init:[] ~f:(fun ~key ~data sofar ->
-            (Location.show key, LocationCallees.to_json data) :: sofar)
-      in
-      `Assoc bindings
-  end
-
-  include MakeCallGraph (T)
-
-  let from_mutable_define_call_graph map =
-    map
-    |> Location.SerializableMap.to_alist
-    |> List.map ~f:(fun (location, callees) ->
-           match SerializableStringMap.to_alist callees with
-           | [] -> failwith "unreachable"
-           | [(_, callees)] ->
-               location, LocationCallees.Singleton (ExpressionCallees.deduplicate callees)
-           | _ ->
-               ( location,
-                 LocationCallees.Compound
-                   (SerializableStringMap.map ExpressionCallees.deduplicate callees) ))
-    |> Location.Map.Tree.of_alist_exn
-
-
-  let pp formatter call_graph =
-    let pp_pair formatter (key, value) =
-      Format.fprintf formatter "@,%a -> %a" Location.pp key LocationCallees.pp value
-    in
-    let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-    call_graph |> Location.Map.Tree.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
-
-
-  let show = Format.asprintf "%a" pp
-
-  let empty = Location.Map.Tree.empty
-
-  let is_empty = Location.Map.Tree.is_empty
-
-  let add call_graph ~location ~callees =
-    Location.Map.Tree.set call_graph ~key:location ~data:callees
-
-
-  let equal_ignoring_types call_graph_left call_graph_right =
-    Location.Map.Tree.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
-
-
-  (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
-      true excludes the targets that are not required in building the dependency graph. *)
-  let all_targets ~exclude_reference_only call_graph =
-    Location.Map.Tree.data call_graph
-    |> List.concat_map ~f:(LocationCallees.all_targets ~exclude_reference_only)
     |> List.dedup_and_sort ~compare:Target.compare
 end
 
@@ -3851,70 +3849,14 @@ module WholeProgramCallGraph = struct
   let to_target_graph graph = graph
 end
 
-module type SharedMemory = sig
-  type t
-
-  type call_graph
-
-  module ReadOnly : sig
-    type t
-
-    val get : t -> callable:Target.t -> call_graph option
-  end
-
-  val read_only : t -> ReadOnly.t
-
-  val cleanup : t -> unit
-
-  val save_to_cache : t -> unit
-
-  val load_from_cache : unit -> (t, SaveLoadSharedMemory.Usage.t) result
-
-  type call_graphs = {
-    whole_program_call_graph: WholeProgramCallGraph.t;
-    define_call_graphs: t;
-  }
-
-  val build_whole_program_call_graph
-    :  scheduler:Scheduler.t ->
-    static_analysis_configuration:Configuration.StaticAnalysis.t ->
-    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-    resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
-    override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-    store_shared_memory:bool ->
-    attribute_targets:Target.Set.t ->
-    skip_analysis_targets:Target.Set.t ->
-    definitions:Target.t list ->
-    call_graphs
-end
-
-module MakeDefineCallGraphSharedMemory (CallGraph : sig
-  type t
-
-  val is_empty : t -> bool
-
-  val to_json
-    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-    resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
-    callable:Target.t ->
-    t ->
-    Yojson.Safe.t
-
-  val call_graph_of_callable
-    :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-    override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-    attribute_targets:Target.HashSet.t ->
-    callable:Target.t ->
-    t
-
-  val all_targets : exclude_reference_only:bool -> t -> Target.t list
-end) : SharedMemory with type call_graph = CallGraph.t = struct
+(** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
+    `MutableDefineCallGraph.t`. *)
+module SharedMemory = struct
   module T =
     SaveLoadSharedMemory.MakeKeyValue
       (Target.SharedMemoryKey)
       (struct
-        type t = CallGraph.t
+        type t = MutableDefineCallGraph.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -3925,11 +3867,9 @@ end) : SharedMemory with type call_graph = CallGraph.t = struct
 
   type t = T.t
 
-  type call_graph = CallGraph.t
-
   type call_graphs = {
     whole_program_call_graph: WholeProgramCallGraph.t;
-    define_call_graphs: t;
+    define_call_graphs: T.t;
   }
 
   let add handle ~callable ~call_graph = T.add handle callable call_graph
@@ -3988,7 +3928,7 @@ end) : SharedMemory with type call_graph = CallGraph.t = struct
               ~event_name:"call graph building"
               ~callable:(Target.show_pretty callable)
               (fun () ->
-                CallGraph.call_graph_of_callable
+                call_graph_of_callable
                   ~static_analysis_configuration
                   ~pyre_api
                   ~override_graph
@@ -4006,7 +3946,10 @@ end) : SharedMemory with type call_graph = CallGraph.t = struct
             WholeProgramCallGraph.add_or_exn
               whole_program_call_graph
               ~callable
-              ~callees:(CallGraph.all_targets ~exclude_reference_only:true callable_call_graph)
+              ~callees:
+                (MutableDefineCallGraph.all_targets
+                   ~exclude_reference_only:true
+                   callable_call_graph)
           in
           define_call_graphs, whole_program_call_graph
       in
@@ -4051,11 +3994,12 @@ end) : SharedMemory with type call_graph = CallGraph.t = struct
     let define_call_graphs_read_only = read_only define_call_graphs in
     let call_graph_to_json callable =
       match ReadOnly.get define_call_graphs_read_only ~callable with
-      | Some call_graph when not (CallGraph.is_empty call_graph) ->
+      | Some call_graph when not (MutableDefineCallGraph.is_empty call_graph) ->
           [
             {
               NewlineDelimitedJson.Line.kind = CallGraph;
-              data = CallGraph.to_json ~pyre_api ~resolve_module_path ~callable call_graph;
+              data =
+                MutableDefineCallGraph.to_json ~pyre_api ~resolve_module_path ~callable call_graph;
             };
           ]
       | _ -> []
@@ -4098,30 +4042,3 @@ end) : SharedMemory with type call_graph = CallGraph.t = struct
     in
     { whole_program_call_graph; define_call_graphs }
 end
-
-(** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
-    `DefineCallGraph.t`. *)
-module DefineCallGraphSharedMemory = MakeDefineCallGraphSharedMemory (struct
-  include DefineCallGraph
-
-  let call_graph_of_callable
-      ~static_analysis_configuration
-      ~pyre_api
-      ~override_graph
-      ~attribute_targets
-      ~callable
-    =
-    call_graph_of_callable
-      ~static_analysis_configuration
-      ~pyre_api
-      ~override_graph
-      ~attribute_targets
-      ~callable
-    |> DefineCallGraph.from_mutable_define_call_graph
-end)
-
-module MutableDefineCallGraphSharedMemory = MakeDefineCallGraphSharedMemory (struct
-  include MutableDefineCallGraph
-
-  let call_graph_of_callable = call_graph_of_callable
-end)

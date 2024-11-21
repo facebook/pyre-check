@@ -11,7 +11,7 @@ val compute
   :  scheduler:Scheduler.t ->
   scheduler_policy:Scheduler.Policy.t ->
   pyre_api:CallGraph.PyrePysaEnvironment.ReadOnly.t ->
-  call_graph:CallGraph.MutableDefineCallGraphSharedMemory.call_graphs ->
+  call_graph:CallGraph.SharedMemory.call_graphs ->
   dependency_graph:DependencyGraph.whole_program_dependency_graph ->
   override_graph_shared_memory:OverrideGraph.SharedMemory.t ->
   initial_callables:FetchCallables.t ->
