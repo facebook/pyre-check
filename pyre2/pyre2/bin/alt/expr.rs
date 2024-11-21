@@ -780,7 +780,7 @@ impl<'a> AnswersSolver<'a> {
                 // TODO: contextual typing with `Awaitable[X]`
                 let awaiting_ty = self.expr_infer(&x.value);
 
-                let var = self.solver.fresh_contained("await_hint".to_string());
+                let var = self.solver.fresh_contained();
                 let awaitable_ty = self.stdlib.awaitable(Type::Var(var));
                 if !(self
                     .solver
