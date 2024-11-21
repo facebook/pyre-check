@@ -9,4 +9,5 @@ exec python3 ../../tools/pysa_integration_tests/run.py \
     --skip-model-verification \
     --run-from-source \
     --ignore-positions \
+    --write-actual-results-on-failure \
     "$@"
