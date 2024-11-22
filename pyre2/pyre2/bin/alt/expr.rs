@@ -1050,7 +1050,7 @@ impl<'a> AnswersSolver<'a> {
             Expr::Name(x) => match x.id.as_str() {
                 "Any" => Type::type_form(Type::any_explicit()),
                 _ => self
-                    .get_type(&Key::Usage(Ast::expr_name_identifier(x.clone())))
+                    .get(&Key::Usage(Ast::expr_name_identifier(x.clone())))
                     .arc_clone(),
             },
             Expr::List(x) => {

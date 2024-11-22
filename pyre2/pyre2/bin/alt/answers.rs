@@ -444,7 +444,7 @@ impl<'a> AnswersSolver<'a> {
         result.map(|x| x.0)
     }
 
-    fn get<K: Solve>(&self, k: &K) -> Arc<K::Answer>
+    pub fn get<K: Solve>(&self, k: &K) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -452,7 +452,7 @@ impl<'a> AnswersSolver<'a> {
         self.get_idx(self.bindings().key_to_idx(k))
     }
 
-    fn get_idx<K: Solve>(&self, k: Idx<K>) -> Arc<K::Answer>
+    pub fn get_idx<K: Solve>(&self, k: Idx<K>) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -461,14 +461,6 @@ impl<'a> AnswersSolver<'a> {
             Ok(v) => v,
             Err(r) => Arc::new(K::promote_recursive(r)),
         }
-    }
-
-    fn get_annotation(&self, key: &KeyAnnotation) -> Arc<Annotation> {
-        self.get(key)
-    }
-
-    fn get_annotation_idx(&self, key: Idx<KeyAnnotation>) -> Arc<Annotation> {
-        self.get_idx(key)
     }
 
     fn record_recursive(&self, key: &Key, answer: Arc<Type>, recursive: Var) {
@@ -482,38 +474,11 @@ impl<'a> AnswersSolver<'a> {
         );
     }
 
-    pub fn get_type(&self, key: &Key) -> Arc<Type> {
-        self.get(key)
-    }
-
-    pub fn get_type_idx(&self, key: Idx<Key>) -> Arc<Type> {
-        self.get_idx(key)
-    }
-
-    pub fn get_base_class(&self, key: &KeyBaseClass) -> Arc<BaseClass> {
-        self.get(key)
-    }
-
-    pub fn get_mro(&self, key: &KeyMro) -> Arc<Mro> {
-        self.get(key)
-    }
-
-    pub fn get_tparams(&self, key: &KeyTypeParams) -> Arc<QuantifiedVec> {
-        self.get(key)
-    }
-
-    pub fn get_legacy_tparam_idx(
-        &self,
-        key: Idx<KeyLegacyTypeParam>,
-    ) -> Arc<LegacyTypeParameterLookup> {
-        self.get_idx(key)
-    }
-
     fn solve_legacy_tparam(
         &self,
         binding: &BindingLegacyTypeParam,
     ) -> Arc<LegacyTypeParameterLookup> {
-        match &*self.get_type_idx(binding.0) {
+        match &*self.get_idx(binding.0) {
             Type::Type(box Type::TypeVar(_)) => {
                 let q = Quantified::type_var(self.uniques);
                 Arc::new(LegacyTypeParameterLookup::Parameter(q))
@@ -535,27 +500,18 @@ impl<'a> AnswersSolver<'a> {
             BindingTypeParams::Function(scoped, legacy) => {
                 let legacy_tparams: Vec<_> = legacy
                     .iter()
-                    .filter_map(|key| {
-                        self.get_legacy_tparam_idx(*key)
-                            .deref()
-                            .parameter()
-                            .copied()
-                    })
+                    .filter_map(|key| self.get_idx(*key).deref().parameter().copied())
                     .collect();
                 let mut tparams = scoped.clone();
                 tparams.extend(legacy_tparams);
                 QuantifiedVec(tparams)
             }
-            BindingTypeParams::Class(class_def, legacy_params) => {
-                match &*self.get_type(class_def) {
-                    Type::ClassDef(cls) => self.tparams_of(cls, legacy_params),
-                    _ => {
-                        unreachable!(
-                            "The key inside a ClassTypeParams binding must be a class type"
-                        )
-                    }
+            BindingTypeParams::Class(class_def, legacy_params) => match &*self.get(class_def) {
+                Type::ClassDef(cls) => self.tparams_of(cls, legacy_params),
+                _ => {
+                    unreachable!("The key inside a ClassTypeParams binding must be a class type")
                 }
-            }
+            },
         };
         Arc::new(res)
     }
@@ -563,7 +519,7 @@ impl<'a> AnswersSolver<'a> {
     fn solve_mro(&self, binding: &BindingMro) -> Arc<Mro> {
         match binding {
             BindingMro(k) => {
-                let self_ty = self.get_type_idx(*k);
+                let self_ty = self.get_idx(*k);
                 match &*self_ty {
                     Type::ClassType(cls) => Arc::new(self.mro_of(cls.class_object())),
                     _ => {
@@ -587,7 +543,7 @@ impl<'a> AnswersSolver<'a> {
                 if let Some(self_type) = self_type
                     && let Some(ty) = &mut ann.ty
                 {
-                    let self_type = &*self.get_type_idx(*self_type);
+                    let self_type = &*self.get_idx(*self_type);
                     ty.subst_self_type_mut(self_type);
                 }
                 Arc::new(ann)
@@ -599,7 +555,7 @@ impl<'a> AnswersSolver<'a> {
                 Arc::new(Annotation::new_type(t))
             }
             BindingAnnotation::Forward(k) => {
-                Arc::new(Annotation::new_type(self.get_type_idx(*k).arc_clone()))
+                Arc::new(Annotation::new_type(self.get_idx(*k).arc_clone()))
             }
         }
     }
@@ -855,11 +811,11 @@ impl<'a> AnswersSolver<'a> {
     fn solve_binding_inner(&self, binding: &Binding) -> Type {
         match binding {
             Binding::Expr(ann, e) => {
-                let ty = ann.map(|k| self.get_annotation_idx(k));
+                let ty = ann.map(|k| self.get_idx(k));
                 self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()))
             }
             Binding::IterableValue(ann, e) => {
-                let ty = ann.map(|k| self.get_annotation_idx(k));
+                let ty = ann.map(|k| self.get_idx(k));
                 let hint = ty.and_then(|x| x.ty.clone().map(|ty| self.stdlib.iterable(ty)));
                 let iterable = self.iterate(&self.expr(e, hint.as_ref()), e.range());
                 match iterable {
@@ -870,7 +826,7 @@ impl<'a> AnswersSolver<'a> {
             Binding::ContextValue(ann, e, kind) => {
                 let context_manager = self.expr(e, None);
                 let context_value = self.context_value(context_manager, *kind, e.range());
-                let ty = ann.map(|k| self.get_annotation_idx(k));
+                let ty = ann.map(|k| self.get_idx(k));
                 match ty.as_ref().and_then(|x| x.ty.as_ref()) {
                     Some(ty) => self.check_type(ty, &context_value, e.range()),
                     None => context_value,
@@ -986,49 +942,46 @@ impl<'a> AnswersSolver<'a> {
                 };
                 let mut args = Vec::with_capacity(x.parameters.len());
                 args.extend(x.parameters.posonlyargs.iter().map(|x| {
-                    let annot =
-                        self.get_annotation(&KeyAnnotation::Annotation(x.parameter.name.clone()));
+                    let annot = self.get(&KeyAnnotation::Annotation(x.parameter.name.clone()));
                     let ty = annot.get_type();
                     let required = check_default(&x.default, ty);
                     Arg::PosOnly(ty.clone(), required)
                 }));
                 args.extend(x.parameters.args.iter().map(|x| {
-                    let annot =
-                        self.get_annotation(&KeyAnnotation::Annotation(x.parameter.name.clone()));
+                    let annot = self.get(&KeyAnnotation::Annotation(x.parameter.name.clone()));
                     let ty = annot.get_type();
                     let required = check_default(&x.default, ty);
                     Arg::Pos(x.parameter.name.id.clone(), ty.clone(), required)
                 }));
                 args.extend(x.parameters.vararg.iter().map(|x| {
-                    let annot = self.get_annotation(&KeyAnnotation::Annotation(x.name.clone()));
+                    let annot = self.get(&KeyAnnotation::Annotation(x.name.clone()));
                     let ty = annot.get_type();
                     Arg::VarArg(ty.clone())
                 }));
                 args.extend(x.parameters.kwonlyargs.iter().map(|x| {
-                    let annot =
-                        self.get_annotation(&KeyAnnotation::Annotation(x.parameter.name.clone()));
+                    let annot = self.get(&KeyAnnotation::Annotation(x.parameter.name.clone()));
                     let ty = annot.get_type();
                     let required = check_default(&x.default, ty);
                     Arg::KwOnly(x.parameter.name.id.clone(), ty.clone(), required)
                 }));
                 args.extend(x.parameters.kwarg.iter().map(|x| {
-                    let annot = self.get_annotation(&KeyAnnotation::Annotation(x.name.clone()));
+                    let annot = self.get(&KeyAnnotation::Annotation(x.name.clone()));
                     let ty = annot.get_type();
                     Arg::Kwargs(ty.clone())
                 }));
-                let ret = self.get_type(&Key::ReturnType(x.name.clone())).arc_clone();
+                let ret = self.get(&Key::ReturnType(x.name.clone())).arc_clone();
                 let ret = if x.is_async {
                     self.stdlib
                         .coroutine(Type::any_implicit(), Type::any_implicit(), ret)
                 } else {
                     ret
                 };
-                let qs = self.get_tparams(&KeyTypeParams(x.name.clone()));
+                let qs = self.get(&KeyTypeParams(x.name.clone()));
                 Type::forall(qs.0.clone(), Type::callable(args, ret))
             }
             Binding::Import(m, name) => self
                 .with_module(*m)
-                .get_type(&Key::Export(name.clone()))
+                .get(&Key::Export(name.clone()))
                 .arc_clone(),
             Binding::Class(x, fields, n_bases) => {
                 let tparams = self.type_params(&x.type_params);
@@ -1041,18 +994,18 @@ impl<'a> AnswersSolver<'a> {
                 );
                 Type::ClassDef(c)
             }
-            Binding::SelfType(k) => match &*self.get_type_idx(*k) {
+            Binding::SelfType(k) => match &*self.get_idx(*k) {
                 Type::ClassDef(c) => c.self_type(self.get_tparams_for_class(c).deref()),
                 _ => unreachable!(),
             },
-            Binding::Forward(k) => self.get_type_idx(*k).arc_clone(),
+            Binding::Forward(k) => self.get_idx(*k).arc_clone(),
             Binding::Phi(ks) => {
                 if ks.len() == 1 {
-                    self.get_type_idx(*ks.first().unwrap()).arc_clone()
+                    self.get_idx(*ks.first().unwrap()).arc_clone()
                 } else {
                     self.unions(
                         &ks.iter()
-                            .map(|k| self.get_type_idx(*k).arc_clone())
+                            .map(|k| self.get_idx(*k).arc_clone())
                             .collect::<Vec<_>>(),
                     )
                 }
@@ -1066,7 +1019,7 @@ impl<'a> AnswersSolver<'a> {
                 self.check_is_exception(cause, cause.range(), true);
                 Type::None // Unused
             }
-            Binding::AnnotatedType(ann, val) => match &self.get_annotation_idx(*ann).ty {
+            Binding::AnnotatedType(ann, val) => match &self.get_idx(*ann).ty {
                 Some(ty) => ty.clone(),
                 None => self.solve_binding_inner(val),
             },
@@ -1076,7 +1029,7 @@ impl<'a> AnswersSolver<'a> {
             Binding::Module(m, path, prev) => {
                 let prev = prev
                     .as_ref()
-                    .and_then(|x| self.get_type_idx(*x).as_module().cloned());
+                    .and_then(|x| self.get_idx(*x).as_module().cloned());
                 match prev {
                     Some(prev) if prev.path() == path => prev.add_module(*m).to_type(),
                     _ => {
@@ -1093,7 +1046,7 @@ impl<'a> AnswersSolver<'a> {
                 }
             }
             Binding::CheckLegacyTypeParam(key, range_if_scoped_params_exist) => {
-                match &*self.get_legacy_tparam_idx(*key) {
+                match &*self.get_idx(*key) {
                     LegacyTypeParameterLookup::Parameter(q) => {
                         // This class or function has scoped (PEP 695) type parameters. Mixing legacy-style parameters is an error.
                         if let Some(r) = range_if_scoped_params_exist {
@@ -1111,8 +1064,8 @@ impl<'a> AnswersSolver<'a> {
                 }
             }
             Binding::Eq(k1, k2, name) => {
-                let ann1 = self.get_annotation_idx(*k1);
-                let ann2 = self.get_annotation_idx(*k2);
+                let ann1 = self.get_idx(*k1);
+                let ann2 = self.get_idx(*k2);
                 if let Some(t1) = &ann1.ty
                     && let Some(t2) = &ann2.ty
                     && *t1 != *t2
@@ -1130,7 +1083,7 @@ impl<'a> AnswersSolver<'a> {
                 Type::None // Unused
             }
             Binding::NameAssign(name, annot_key, binding, range) => {
-                let annot = annot_key.map(|k| self.get_annotation_idx(k));
+                let annot = annot_key.map(|k| self.get_idx(k));
                 let ty = self.solve_binding_inner(binding);
                 match (annot, &ty) {
                     (Some(annot), _) if annot.qualifiers.contains(&Qualifier::TypeAlias) => {
@@ -1227,7 +1180,7 @@ impl<'a> AnswersSolver<'a> {
             .map(|x| {
                 (
                     x.id.clone(),
-                    get_quantified(&self.get_type(&Key::Definition(x.clone()))),
+                    get_quantified(&self.get(&Key::Definition(x.clone()))),
                 )
             })
             .collect()
@@ -1279,7 +1232,7 @@ impl<'a> AnswersSolver<'a> {
             self.error(range, format!("No attribute `{name}` in module `{from}`",))
         } else {
             self.with_module(from)
-                .get_type(&Key::Export(name.clone()))
+                .get(&Key::Export(name.clone()))
                 .arc_clone()
         }
     }

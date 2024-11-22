@@ -64,7 +64,7 @@ fn replace_return_type(ty: Type, ret: Type) -> Type {
 impl<'a> AnswersSolver<'a> {
     pub fn base_class_of(&self, base_expr: &Expr, self_type: Idx<Key>) -> BaseClass {
         let mut base = self.expr_base_class(base_expr);
-        let self_type = &*self.get_type_idx(self_type);
+        let self_type = &*self.get_idx(self_type);
         base.subst_self_type_mut(self_type);
         base
     }
@@ -76,7 +76,7 @@ impl<'a> AnswersSolver<'a> {
     /// TODO(stroxler): See if there's a way to express this more clearly in the types.
     fn special_base_class(&self, base_expr: &Expr) -> Option<BaseClass> {
         if let Expr::Name(name) = base_expr {
-            match &*self.get_type(&Key::Usage(Ast::expr_name_identifier(name.clone()))) {
+            match &*self.get(&Key::Usage(Ast::expr_name_identifier(name.clone()))) {
                 Type::Type(box Type::SpecialForm(special)) => special.to_base_class(),
                 _ => None,
             }
@@ -111,7 +111,7 @@ impl<'a> AnswersSolver<'a> {
         let legacy_tparams: SmallMap<_, _> = legacy
             .iter()
             .filter_map(|key| {
-                self.get_legacy_tparam_idx(*key)
+                self.get_idx(*key)
                     .deref()
                     .parameter()
                     .map(|q| (self.bindings().idx_to_key(*key).0.clone(), *q))
@@ -144,17 +144,17 @@ impl<'a> AnswersSolver<'a> {
 
     pub fn get_tparams_for_class(&self, cls: &Class) -> Arc<QuantifiedVec> {
         self.with_module(cls.module_info().name())
-            .get_tparams(&KeyTypeParams(cls.name().clone()))
+            .get(&KeyTypeParams(cls.name().clone()))
     }
 
     pub fn get_mro_for_class(&self, cls: &Class) -> Arc<Mro> {
         self.with_module(cls.module_info().name())
-            .get_mro(&KeyMro(cls.name().clone()))
+            .get(&KeyMro(cls.name().clone()))
     }
 
     fn get_base_class_index(&self, cls: &Class, base_idx: usize) -> Arc<BaseClass> {
         self.with_module(cls.module_info().name())
-            .get_base_class(&KeyBaseClass(cls.name().clone(), base_idx))
+            .get(&KeyBaseClass(cls.name().clone(), base_idx))
     }
 
     pub fn bases_of_class(&self, cls: &Class) -> Vec<Arc<BaseClass>> {
@@ -272,7 +272,7 @@ impl<'a> AnswersSolver<'a> {
         if cls.contains(name) {
             let ty = self
                 .with_module(cls.module_info().name())
-                .get_type(&Key::ClassField(cls.name().clone(), name.clone()));
+                .get(&Key::ClassField(cls.name().clone(), name.clone()));
             Some(ty)
         } else {
             None
@@ -378,7 +378,7 @@ impl<'a> AnswersSolver<'a> {
         let init_ty = if cls.contains(&init) {
             Some(
                 self.with_module(cls.module_info().name())
-                    .get_type(&Key::ClassField(cls.name().clone(), init)),
+                    .get(&Key::ClassField(cls.name().clone(), init)),
             )
         } else {
             None
@@ -405,7 +405,7 @@ impl<'a> AnswersSolver<'a> {
     /// Given an identifier, see whether it is bound to an enum class. If so,
     /// return a `ClassType` for the enum class, otherwise return `None`.
     pub fn get_enum_class_type(&self, name: Identifier) -> Option<ClassType> {
-        match self.get_type(&Key::Usage(name.clone())).deref() {
+        match self.get(&Key::Usage(name.clone())).deref() {
             Type::ClassDef(class) if class.is_enum(&|c| self.get_mro_for_class(c)) => {
                 // TODO(stroxler): Eventually, we should raise type errors on generic Enum because
                 // this doesn't make semantic sense. But in the meantime we need to be robust against
