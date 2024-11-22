@@ -828,6 +828,7 @@ let run_taint_analysis
         }
       ~callables_to_analyze
       ~max_iterations:100
+      ~error_on_max_iterations:true
       ~epoch:Taint.TaintFixpoint.Epoch.initial
       ~shared_models
   in

@@ -162,6 +162,7 @@ let compute
       }
     ~callables_to_analyze
     ~max_iterations
+    ~error_on_max_iterations:false
     ~epoch:Fixpoint.Epoch.initial
     ~shared_models
 

@@ -68,6 +68,8 @@ module type LOGGER = sig
     callables_to_analyze:Target.t list ->
     exn
 
+  val reached_maximum_iteration_exit : iteration:int -> callables_to_analyze:Target.t list -> unit
+
   (** This is called at the beginning of each iteration. *)
   val iteration_start
     :  iteration:int ->
@@ -753,6 +755,7 @@ module Make (Analysis : ANALYSIS) = struct
       ~context
       ~callables_to_analyze:initial_callables_to_analyze
       ~max_iterations
+      ~error_on_max_iterations
       ~epoch
       ~shared_models:shared_models_handle
     =
@@ -761,7 +764,11 @@ module Make (Analysis : ANALYSIS) = struct
       if number_of_callables = 0 then (* Fixpoint. *)
         iteration
       else if iteration >= max_iterations then
-        raise (Logger.reached_maximum_iteration_exception ~iteration ~callables_to_analyze)
+        if error_on_max_iterations then
+          raise (Logger.reached_maximum_iteration_exception ~iteration ~callables_to_analyze)
+        else
+          let () = Logger.reached_maximum_iteration_exit ~iteration ~callables_to_analyze in
+          iteration
       else
         let () = Logger.iteration_start ~iteration ~callables_to_analyze ~number_of_callables in
         let timer = Timer.start () in
@@ -856,6 +863,10 @@ module WithoutLogging = struct
     Format.asprintf "Failed to reach a fixpoint after %d iterations" iteration |> failwith
 
 
+  let reached_maximum_iteration_exit ~iteration ~callables_to_analyze:_ =
+    Log.info "Failed to reach a fixpoint after %d iterations. Terminate now." iteration
+
+
   let iteration_start ~iteration:_ ~callables_to_analyze:_ ~number_of_callables:_ = ()
 
   let iteration_end ~iteration:_ ~expensive_callables:_ ~number_of_callables:_ ~timer:_ = ()
@@ -884,19 +895,30 @@ struct
       ()
 
 
-  let reached_maximum_iteration_exception ~iteration ~callables_to_analyze =
-    let max_to_show = 15 in
-    let bucket =
-      callables_to_analyze |> List.map ~f:Target.show_pretty |> List.sort ~compare:String.compare
-    in
+  let show_callables ~max_to_show callables =
+    let bucket = callables |> List.map ~f:Target.show_pretty |> List.sort ~compare:String.compare in
     let bucket_len = List.length bucket in
     Format.sprintf
-      "Failed to reach a fixpoint after %d iterations (%d callables: %s%s)"
-      iteration
-      (List.length callables_to_analyze)
+      "%s%s"
       (String.concat ~sep:", " (List.take bucket max_to_show))
       (if bucket_len > max_to_show then "..." else "")
+
+
+  let reached_maximum_iteration_exception ~iteration ~callables_to_analyze =
+    Format.sprintf
+      "Failed to reach a fixpoint after %d iterations (%d callables: %s)"
+      iteration
+      (List.length callables_to_analyze)
+      (show_callables ~max_to_show:15 callables_to_analyze)
     |> failwith
+
+
+  let reached_maximum_iteration_exit ~iteration ~callables_to_analyze =
+    Log.info
+      "Failed to reach a fixpoint after %d iterations. Terminate now  (%d callables: %s)"
+      iteration
+      (List.length callables_to_analyze)
+      (show_callables ~max_to_show:15 callables_to_analyze)
 
 
   let iteration_start ~iteration ~callables_to_analyze ~number_of_callables =

@@ -52,6 +52,8 @@ module type LOGGER = sig
     callables_to_analyze:Target.t list ->
     exn
 
+  val reached_maximum_iteration_exit : iteration:int -> callables_to_analyze:Target.t list -> unit
+
   (** This is called at the beginning of each iteration. *)
   val iteration_start
     :  iteration:int ->
@@ -204,6 +206,7 @@ module Make (Analysis : ANALYSIS) : sig
     context:Analysis.context ->
     callables_to_analyze:Target.t list ->
     max_iterations:int ->
+    error_on_max_iterations:bool ->
     epoch:Epoch.t ->
     shared_models:shared_models ->
     t

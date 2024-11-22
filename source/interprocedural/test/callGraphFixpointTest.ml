@@ -22,7 +22,7 @@ module Expected = struct
   }
 end
 
-let assert_higher_order_call_graph_fixpoint ~source ~expected () context =
+let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expected () context =
   let handle = "test.py" in
   let configuration, pyre_api =
     initialize_pyre_and_fail_on_errors ~context ~handle ~source_content:source ~models_source:None
@@ -63,7 +63,7 @@ let assert_higher_order_call_graph_fixpoint ~source ~expected () context =
       ~dependency_graph
       ~override_graph_shared_memory
       ~initial_callables
-      ~max_iterations:10
+      ~max_iterations
   in
   List.iter expected ~f:(fun { Expected.callable; call_graph; returned_callables } ->
       let actual_call_graph =
@@ -154,6 +154,61 @@ let test_higher_order_call_graph_fixpoint =
                      CallTarget.create_regular
                        (Target.Regular.Function { name = "test.foo"; kind = Normal });
                    ];
+               };
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def foo():
+       return 0
+     def bar(arg):
+       return foo
+     def baz():
+       return bar(foo)
+  |}
+           ~max_iterations:1
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.baz"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "7:9-7:17",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create
+                                     (create_parameterized_target
+                                        ~regular:
+                                          (Target.Regular.Function
+                                             { name = "test.bar"; kind = Normal })
+                                        ~parameters:
+                                          [
+                                            ( create_positional_parameter 0 "arg",
+                                              Target.Regular.Function
+                                                { name = "test.foo"; kind = Normal }
+                                              |> Target.from_regular );
+                                          ]);
+                                 ]
+                               ())) );
+                     ( "7:13-7:16",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_attribute_access
+                            (AttributeAccessCallees.create
+                               ~callable_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                                 ]
+                               ())) );
+                   ];
+                 returned_callables = [];
                };
              ]
            ();
