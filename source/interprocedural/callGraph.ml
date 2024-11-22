@@ -1154,7 +1154,7 @@ struct
 end
 
 (** The call graph of a function or method definition. This is for testing purpose only. *)
-module DefineCallGraph = struct
+module DefineCallGraphForTest = struct
   module T = struct
     type t = LocationCallees.t Location.Map.Tree.t [@@deriving eq]
 
@@ -1189,7 +1189,7 @@ module DefineCallGraph = struct
 end
 
 (** The call graph of a function or method definition. *)
-module MutableDefineCallGraph = struct
+module DefineCallGraph = struct
   module T = struct
     type t = LocationCallees.Map.t Location.SerializableMap.t [@@deriving eq]
 
@@ -1225,7 +1225,7 @@ module MutableDefineCallGraph = struct
 
   let is_empty = Location.SerializableMap.is_empty
 
-  let read_only map =
+  let for_test map =
     map
     |> Location.SerializableMap.to_alist
     |> List.map ~f:(fun (location, callees) ->
@@ -2711,7 +2711,7 @@ module DefineCallGraphFixpoint (Context : sig
 
   val debug : bool
 
-  val callees_at_location : MutableDefineCallGraph.t ref
+  val callees_at_location : DefineCallGraph.t ref
 
   val override_graph : OverrideGraph.SharedMemory.ReadOnly.t option
 
@@ -2907,7 +2907,7 @@ struct
           ExpressionCallees.pp
           callees;
         Context.callees_at_location :=
-          MutableDefineCallGraph.add_callees
+          DefineCallGraph.add_callees
             ~expression_identifier
             ~location
             ~callees
@@ -2973,7 +2973,7 @@ struct
             (* Use indexed artificial targets to distinguish format strings at different
                locations. *)
             register_targets
-              ~expression_identifier:MutableDefineCallGraph.string_format_expression_identifier
+              ~expression_identifier:DefineCallGraph.string_format_expression_identifier
               ~location
               callees;
             List.iter substrings ~f:(function
@@ -3009,8 +3009,7 @@ struct
                             (StringFormatCallees.from_stringify_targets call_targets)
                         in
                         register_targets
-                          ~expression_identifier:
-                            MutableDefineCallGraph.string_format_expression_identifier
+                          ~expression_identifier:DefineCallGraph.string_format_expression_identifier
                           ~location:expression_location
                           callees
                     in
@@ -3289,15 +3288,13 @@ end
 module HigherOrderCallGraph = struct
   type t = {
     returned_callables: CallTarget.Set.t;
-    call_graph: MutableDefineCallGraph.t;
+    call_graph: DefineCallGraph.t;
         (* Higher order function callees (i.e., parameterized targets) and potentially regular
            callees. *)
   }
   [@@deriving eq, show]
 
-  let empty =
-    { returned_callables = CallTarget.Set.bottom; call_graph = MutableDefineCallGraph.empty }
-
+  let empty = { returned_callables = CallTarget.Set.bottom; call_graph = DefineCallGraph.empty }
 
   let merge
       { returned_callables = left_returned_callables; call_graph = left_call_graph }
@@ -3305,7 +3302,7 @@ module HigherOrderCallGraph = struct
     =
     {
       returned_callables = CallTarget.Set.join left_returned_callables right_returned_callables;
-      call_graph = MutableDefineCallGraph.merge left_call_graph right_call_graph;
+      call_graph = DefineCallGraph.merge left_call_graph right_call_graph;
     }
 
 
@@ -3361,7 +3358,7 @@ module HigherOrderCallGraph = struct
     val debug : bool
 
     (* Inputs and outputs. *)
-    val mutable_define_call_graph : MutableDefineCallGraph.t ref
+    val mutable_define_call_graph : DefineCallGraph.t ref
   end) =
   struct
     let get_result = State.get TaintAccessPath.Root.LocalResult
@@ -3445,7 +3442,7 @@ module HigherOrderCallGraph = struct
             existing_call_callees)
           =
           !Context.mutable_define_call_graph
-          |> MutableDefineCallGraph.resolve_call ~location ~call
+          |> DefineCallGraph.resolve_call ~location ~call
           |> Option.value_exn
                ~message:
                  (Format.asprintf
@@ -3538,7 +3535,7 @@ module HigherOrderCallGraph = struct
             higher_order_parameters
         in
         Context.mutable_define_call_graph :=
-          MutableDefineCallGraph.set_call_callees
+          DefineCallGraph.set_call_callees
             ~location
             ~expression_identifier:(call_identifier call)
             ~call_callees:{ existing_call_callees with call_targets; higher_order_parameters }
@@ -3573,7 +3570,7 @@ module HigherOrderCallGraph = struct
         | Name (Name.Identifier identifier) ->
             let global_callables =
               !Context.mutable_define_call_graph
-              |> MutableDefineCallGraph.resolve_identifier ~location ~identifier
+              |> DefineCallGraph.resolve_identifier ~location ~identifier
               |> Option.map ~f:(fun { IdentifierCallees.callable_targets; _ } ->
                      CallTarget.Set.of_list callable_targets)
               |> Option.value ~default:CallTarget.Set.bottom
@@ -3585,7 +3582,7 @@ module HigherOrderCallGraph = struct
         | Name (Name.Attribute { base = _; attribute; special = _ }) ->
             let callables =
               !Context.mutable_define_call_graph
-              |> MutableDefineCallGraph.resolve_attribute_access ~location ~attribute
+              |> DefineCallGraph.resolve_attribute_access ~location ~attribute
               |> Option.map ~f:(fun { AttributeAccessCallees.callable_targets; _ } ->
                      CallTarget.Set.of_list callable_targets)
               |> Option.value ~default:CallTarget.Set.bottom
@@ -3732,7 +3729,7 @@ let call_graph_of_define
 
     let debug = Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define
 
-    let callees_at_location = ref MutableDefineCallGraph.empty
+    let callees_at_location = ref DefineCallGraph.empty
 
     let override_graph = override_graph
 
@@ -3766,7 +3763,7 @@ let call_graph_of_define
 
   DefineFixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:() |> ignore;
   let mutable_call_graph =
-    MutableDefineCallGraph.filter_empty_attribute_access !Context.callees_at_location
+    DefineCallGraph.filter_empty_attribute_access !Context.callees_at_location
   in
   Statistics.performance
     ~randomly_log_every:1000
@@ -3832,13 +3829,13 @@ module WholeProgramCallGraph = struct
 end
 
 (** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
-    `MutableDefineCallGraph.t`. *)
+    `DefineCallGraph.t`. *)
 module SharedMemory = struct
   module T =
     SaveLoadSharedMemory.MakeKeyValue
       (Target.SharedMemoryKey)
       (struct
-        type t = MutableDefineCallGraph.t
+        type t = DefineCallGraph.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -3929,9 +3926,7 @@ module SharedMemory = struct
               whole_program_call_graph
               ~callable
               ~callees:
-                (MutableDefineCallGraph.all_targets
-                   ~exclude_reference_only:true
-                   callable_call_graph)
+                (DefineCallGraph.all_targets ~exclude_reference_only:true callable_call_graph)
           in
           define_call_graphs, whole_program_call_graph
       in
@@ -3976,12 +3971,11 @@ module SharedMemory = struct
     let define_call_graphs_read_only = read_only define_call_graphs in
     let call_graph_to_json callable =
       match ReadOnly.get define_call_graphs_read_only ~callable with
-      | Some call_graph when not (MutableDefineCallGraph.is_empty call_graph) ->
+      | Some call_graph when not (DefineCallGraph.is_empty call_graph) ->
           [
             {
               NewlineDelimitedJson.Line.kind = CallGraph;
-              data =
-                MutableDefineCallGraph.to_json ~pyre_api ~resolve_module_path ~callable call_graph;
+              data = DefineCallGraph.to_json ~pyre_api ~resolve_module_path ~callable call_graph;
             };
           ]
       | _ -> []

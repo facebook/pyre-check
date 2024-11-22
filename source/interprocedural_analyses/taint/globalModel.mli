@@ -13,7 +13,7 @@ type t
 
 val from_expression
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
-  call_graph:CallGraph.MutableDefineCallGraph.t ->
+  call_graph:CallGraph.DefineCallGraph.t ->
   get_callee_model:(Target.t -> Model.t option) ->
   qualifier:Reference.t ->
   expression:Expression.t ->

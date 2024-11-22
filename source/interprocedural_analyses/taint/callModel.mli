@@ -144,7 +144,7 @@ module StringFormatCall : sig
   val declared_partial_sink_tree : TaintConfiguration.Heap.t -> BackwardState.Tree.t
 
   val get_string_format_callees
-    :  call_graph_of_define:CallGraph.MutableDefineCallGraph.t ->
+    :  call_graph_of_define:CallGraph.DefineCallGraph.t ->
     location:Location.t ->
     CallGraph.StringFormatCallees.t option
 
@@ -179,7 +179,7 @@ module StringFormatCall : sig
     val from_function_name : string -> CallGraph.CallTarget.t
 
     val from_format_string
-      :  call_graph_of_define:CallGraph.MutableDefineCallGraph.t ->
+      :  call_graph_of_define:CallGraph.DefineCallGraph.t ->
       location:Location.t ->
       CallGraph.CallTarget.t
   end

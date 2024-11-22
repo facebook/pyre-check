@@ -286,7 +286,7 @@ val resolve_callees_from_type_external
   CallCallees.t
 
 (** The call graph of a function or method definition. This is for testing purpose only. *)
-module DefineCallGraph : sig
+module DefineCallGraphForTest : sig
   type t [@@deriving eq, show]
 
   val empty : t
@@ -297,7 +297,7 @@ module DefineCallGraph : sig
 end
 
 (** The call graph of a function or method definition. *)
-module MutableDefineCallGraph : sig
+module DefineCallGraph : sig
   type t [@@deriving show]
 
   val empty : t
@@ -306,7 +306,7 @@ module MutableDefineCallGraph : sig
       true excludes the targets that are not required in building the dependency graph. *)
   val all_targets : exclude_reference_only:bool -> t -> Target.t list
 
-  val read_only : t -> DefineCallGraph.t
+  val for_test : t -> DefineCallGraphForTest.t
 
   val resolve_call
     :  t ->
@@ -336,7 +336,7 @@ val call_graph_of_define
   attribute_targets:Target.HashSet.t ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
-  MutableDefineCallGraph.t
+  DefineCallGraph.t
 
 val redirect_expressions
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
@@ -352,13 +352,13 @@ val call_graph_of_callable
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
   callable:Target.t ->
-  MutableDefineCallGraph.t
+  DefineCallGraph.t
 
 (* The result of finding higher order function callees inside a callable. *)
 module HigherOrderCallGraph : sig
   type t = {
     returned_callables: CallTarget.Set.t;
-    call_graph: MutableDefineCallGraph.t;
+    call_graph: DefineCallGraph.t;
         (* Higher order function callees (i.e., parameterized targets) and potentially regular
            callees. *)
   }
@@ -380,7 +380,7 @@ end
 val debug_higher_order_call_graph : Ast.Statement.Define.t -> bool
 
 val higher_order_call_graph_of_define
-  :  define_call_graph:MutableDefineCallGraph.t ->
+  :  define_call_graph:DefineCallGraph.t ->
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
@@ -390,7 +390,7 @@ val higher_order_call_graph_of_define
 
 val higher_order_call_graph_of_callable
   :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-  define_call_graph:MutableDefineCallGraph.t ->
+  define_call_graph:DefineCallGraph.t ->
   callable:Target.t ->
   get_callee_model:(Target.t -> HigherOrderCallGraph.t option) ->
   HigherOrderCallGraph.t
@@ -414,14 +414,14 @@ module WholeProgramCallGraph : sig
 end
 
 (** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
-    `MutableDefineCallGraph.t`. *)
+    `DefineCallGraph.t`. *)
 module SharedMemory : sig
   type t
 
   module ReadOnly : sig
     type t
 
-    val get : t -> callable:Target.t -> MutableDefineCallGraph.t option
+    val get : t -> callable:Target.t -> DefineCallGraph.t option
   end
 
   val read_only : t -> ReadOnly.t

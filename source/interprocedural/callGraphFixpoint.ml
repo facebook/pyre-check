@@ -31,10 +31,7 @@ module CallGraphAnalysis = struct
     (* For an `Override` target, it make senses to let it return its overriding targets' returned
        callables, but it does not make sense to let its call graph be the union. *)
     let for_override_model ~callable:_ model =
-      {
-        model with
-        CallGraph.HigherOrderCallGraph.call_graph = CallGraph.MutableDefineCallGraph.empty;
-      }
+      { model with CallGraph.HigherOrderCallGraph.call_graph = CallGraph.DefineCallGraph.empty }
 
 
     let for_new_dependency ~get_model callable =
@@ -53,7 +50,7 @@ module CallGraphAnalysis = struct
   let empty_model =
     {
       CallGraph.HigherOrderCallGraph.returned_callables = CallGraph.CallTarget.Set.bottom;
-      call_graph = CallGraph.MutableDefineCallGraph.empty;
+      call_graph = CallGraph.DefineCallGraph.empty;
     }
 
 
@@ -94,7 +91,7 @@ module CallGraphAnalysis = struct
     in
     let dependencies call_graph =
       call_graph
-      |> CallGraph.MutableDefineCallGraph.all_targets ~exclude_reference_only:true
+      |> CallGraph.DefineCallGraph.all_targets ~exclude_reference_only:true
       |> Target.Set.of_list
     in
     let additional_dependencies =
@@ -134,7 +131,7 @@ let compute
     define_call_graphs
     |> CallGraph.SharedMemory.read_only
     |> CallGraph.SharedMemory.ReadOnly.get ~callable
-    |> Option.value ~default:CallGraph.MutableDefineCallGraph.empty
+    |> Option.value ~default:CallGraph.DefineCallGraph.empty
   in
   let initial_models =
     definitions

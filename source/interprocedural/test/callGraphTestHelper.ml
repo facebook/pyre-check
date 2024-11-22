@@ -25,19 +25,19 @@ let parse_define_call_graph =
       stop = parse_position (List.nth_exn positions 1);
     }
   in
-  List.fold ~init:DefineCallGraph.empty ~f:(fun call_graph_of_define (location, callees) ->
-      DefineCallGraph.add call_graph_of_define ~location:(parse_location location) ~callees)
+  List.fold ~init:DefineCallGraphForTest.empty ~f:(fun call_graph_of_define (location, callees) ->
+      DefineCallGraphForTest.add call_graph_of_define ~location:(parse_location location) ~callees)
 
 
 module ImmutableHigherOrderCallGraph = struct
   type t = {
     returned_callables: CallTarget.Set.t;
-    call_graph: DefineCallGraph.t;
+    call_graph: DefineCallGraphForTest.t;
   }
   [@@deriving eq, show]
 
   let from_higher_order_call_graph { HigherOrderCallGraph.returned_callables; call_graph } =
-    { returned_callables; call_graph = MutableDefineCallGraph.read_only call_graph }
+    { returned_callables; call_graph = DefineCallGraph.for_test call_graph }
 
 
   module Input = struct

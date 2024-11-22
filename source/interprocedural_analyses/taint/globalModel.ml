@@ -29,14 +29,14 @@ type t = {
 let get_global_targets ~call_graph ~expression =
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) ->
-      CallGraph.MutableDefineCallGraph.resolve_identifier
+      CallGraph.DefineCallGraph.resolve_identifier
         call_graph
         ~location:(Node.location expression)
         ~identifier
       >>| (fun { global_targets; _ } -> global_targets)
       |> Option.value ~default:[]
   | Expression.Name (Name.Attribute { attribute; _ }) ->
-      CallGraph.MutableDefineCallGraph.resolve_attribute_access
+      CallGraph.DefineCallGraph.resolve_attribute_access
         call_graph
         ~location:(Node.location expression)
         ~attribute

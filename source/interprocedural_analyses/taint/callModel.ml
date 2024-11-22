@@ -607,7 +607,7 @@ module StringFormatCall = struct
 
 
   let get_string_format_callees ~call_graph_of_define ~location =
-    CallGraph.MutableDefineCallGraph.resolve_string_format call_graph_of_define ~location
+    CallGraph.DefineCallGraph.resolve_string_format call_graph_of_define ~location
 
 
   let apply_call ~callee ~pyre_in_context ~call_site ~location =

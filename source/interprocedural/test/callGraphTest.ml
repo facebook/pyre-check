@@ -67,7 +67,7 @@ let assert_call_graph_of_define
     ~source
     ~define_name
     ~expected
-    ?(cmp = DefineCallGraph.equal)
+    ?(cmp = DefineCallGraphForTest.equal)
     ()
     context
   =
@@ -77,9 +77,9 @@ let assert_call_graph_of_define
   in
   let actual =
     create_define_call_graph ~define ~test_source ~pyre_api ~configuration ~object_targets
-    |> MutableDefineCallGraph.read_only
+    |> DefineCallGraph.for_test
   in
-  assert_equal ~cmp ~printer:DefineCallGraph.show expected actual
+  assert_equal ~cmp ~printer:DefineCallGraphForTest.show expected actual
 
 
 let assert_higher_order_call_graph_of_define
@@ -1793,7 +1793,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~cmp:DefineCallGraph.equal_ignoring_types
+           ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
         from contextlib import ContextManager
@@ -2454,7 +2454,7 @@ let test_call_graph_of_define =
       (* TODO(T105570363): Resolve calls with mixed function and methods. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~cmp:DefineCallGraph.equal_ignoring_types
+           ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
       class Foo:
@@ -2534,7 +2534,7 @@ let test_call_graph_of_define =
       (* TODO(T105570363): Resolve calls with mixed function and constructors. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~cmp:DefineCallGraph.equal_ignoring_types
+           ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
       class Foo:
@@ -3626,7 +3626,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~cmp:DefineCallGraph.equal_ignoring_types
+           ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:{|
       def foo(e: Exception):
         f"{e}"
@@ -3783,7 +3783,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~cmp:DefineCallGraph.equal_ignoring_types
+           ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
       class A:
@@ -3843,7 +3843,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~cmp:DefineCallGraph.equal_ignoring_types
+           ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
       class A:
@@ -3902,7 +3902,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~cmp:DefineCallGraph.equal_ignoring_types
+           ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:{|
       def foo(e: Exception):
         return str(e) + "hello"

@@ -61,7 +61,7 @@ module type FUNCTION_CONTEXT = sig
 
   val global_constants : Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t
 
-  val call_graph_of_define : CallGraph.MutableDefineCallGraph.t
+  val call_graph_of_define : CallGraph.DefineCallGraph.t
 
   val get_callee_model : Interprocedural.Target.t -> Model.t option
 
@@ -111,10 +111,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let get_call_callees ~location ~call =
     let callees =
       match
-        CallGraph.MutableDefineCallGraph.resolve_call
-          FunctionContext.call_graph_of_define
-          ~location
-          ~call
+        CallGraph.DefineCallGraph.resolve_call FunctionContext.call_graph_of_define ~location ~call
       with
       | Some callees -> callees
       | None ->
@@ -143,7 +140,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let get_attribute_access_callees ~location ~attribute =
     let callees =
-      CallGraph.MutableDefineCallGraph.resolve_attribute_access
+      CallGraph.DefineCallGraph.resolve_attribute_access
         FunctionContext.call_graph_of_define
         ~location
         ~attribute
