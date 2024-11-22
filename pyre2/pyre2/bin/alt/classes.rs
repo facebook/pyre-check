@@ -8,6 +8,7 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
+use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
@@ -212,7 +213,7 @@ impl<'a> AnswersSolver<'a> {
         range: TextRange,
     ) -> ClassType {
         let targs = self.check_and_create_targs(cls, targs, range);
-        ClassType::create_with_validated_targs(cls.clone(), targs)
+        ClassType::create_with_validated_targs(cls.dupe(), targs)
     }
 
     /// Given a class, create a `Type` that represents to an instance annotated
@@ -225,14 +226,14 @@ impl<'a> AnswersSolver<'a> {
     /// a type error when a generic class is promoted using gradual types.
     pub fn promote_to_class_type(&self, cls: &Class, range: TextRange) -> ClassType {
         let targs = self.create_default_targs(cls, Some(range));
-        ClassType::create_with_validated_targs(cls.clone(), targs)
+        ClassType::create_with_validated_targs(cls.dupe(), targs)
     }
 
     /// Private version of `promote_to_class_type` that does not potentially
     /// raise strict mode errors. Should only be used for unusual scenarios.
     fn promote_to_class_type_silently(&self, cls: &Class) -> ClassType {
         let targs = self.create_default_targs(cls, None);
-        ClassType::create_with_validated_targs(cls.clone(), targs)
+        ClassType::create_with_validated_targs(cls.dupe(), targs)
     }
 
     fn instantiate_class_member(&self, cls: &ClassType, ty: Type) -> Type {
