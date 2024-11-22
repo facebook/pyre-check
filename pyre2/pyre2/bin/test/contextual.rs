@@ -124,7 +124,7 @@ x: MutableSet[int] = {1}
 x: MutableSet[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
 x: Iterable[int] = {1}
 x: object = {1}
-x: list[int] = {1}  # E: EXPECTED set[Unknown] <: list[int]
+x: list[int] = {1}  # E: EXPECTED set[int] <: list[int]
     "#,
 );
 
@@ -138,7 +138,7 @@ x: MutableMapping[str, int] = {"a": 1}
 x: Iterable[str] = {"a": 1}
 x: Iterable[int] = {"oops": 1}  # E: EXPECTED Literal['oops'] <: int
 x: object = {"a": 1}
-x: list[str] = {"a": 1}  # E: EXPECTED dict[Unknown, Unknown] <: list[str]
+x: list[str] = {"a": 1}  # E: EXPECTED dict[str, int] <: list[str]
     "#,
 );
 

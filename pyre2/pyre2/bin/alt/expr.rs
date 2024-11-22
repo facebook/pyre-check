@@ -669,22 +669,22 @@ impl<'a> AnswersSolver<'a> {
                 }
             }
             Expr::Dict(x) => {
-                let key_value_ty = match hint {
-                    Some(ty) => {
-                        // We check `dict[key_var, value_var]` against the hint to make sure it's a
-                        // superclass of dict, then check the dict elements against the vars, which
-                        // have been solved to the hint's contained types.
-                        let key_var = self.solver.fresh_contained();
-                        let value_var = self.solver.fresh_contained();
-                        let dict_type = self.stdlib.dict(Type::Var(key_var), Type::Var(value_var));
-                        self.solver.is_subset_eq(&dict_type, ty, self.type_order());
+                let key_value_ty = hint.and_then(|ty| {
+                    // We check `dict[key_var, value_var]` against the hint to make sure it's a
+                    // superclass of dict, then check the dict elements against the vars, which
+                    // have been solved to the hint's contained types.
+                    let key_var = self.solver.fresh_contained();
+                    let value_var = self.solver.fresh_contained();
+                    let dict_type = self.stdlib.dict(Type::Var(key_var), Type::Var(value_var));
+                    if self.solver.is_subset_eq(&dict_type, ty, self.type_order()) {
                         Some((
                             self.solver.force_var(key_var),
                             self.solver.force_var(value_var),
                         ))
+                    } else {
+                        None
                     }
-                    None => None,
-                };
+                });
                 if x.is_empty() {
                     match key_value_ty {
                         Some((key_ty, value_ty)) => self.stdlib.dict(key_ty, value_ty),
@@ -731,18 +731,19 @@ impl<'a> AnswersSolver<'a> {
                 }
             }
             Expr::Set(x) => {
-                let elem_ty = match hint {
-                    Some(ty) => {
-                        // We check `set[var]` against the hint to make sure it's a superclass of set,
-                        // then check the set elements against `var`, which has been solved to the
-                        // hint's contained type.
-                        let var = self.solver.fresh_contained();
-                        let set_type = self.stdlib.set(Type::Var(var));
-                        self.solver.is_subset_eq(&set_type, ty, self.type_order());
+                let elem_ty = hint.and_then(|ty| {
+                    // We check `set[var]` against the hint to make sure it's a superclass of set,
+                    // then check the set elements against `var`, which has been solved to the
+                    // hint's contained type.
+                    let var = self.solver.fresh_contained();
+                    let set_type = self.stdlib.set(Type::Var(var));
+                    if self.solver.is_subset_eq(&set_type, ty, self.type_order()) {
                         Some(self.solver.force_var(var))
+                    } else {
+                        None
                     }
-                    None => None,
-                };
+                });
+
                 if x.is_empty() {
                     let elem_ty = match elem_ty {
                         None => self.solver.fresh_contained().to_type(),
@@ -1050,18 +1051,18 @@ impl<'a> AnswersSolver<'a> {
                     .arc_clone(),
             },
             Expr::List(x) => {
-                let elem_ty = match hint {
-                    Some(ty) => {
-                        // We check `list[var]` against the hint to make sure it's a superclass of list,
-                        // then check the list elements against `var`, which has been solved to the
-                        // hint's contained type.
-                        let var = self.solver.fresh_contained();
-                        let list_type = self.stdlib.list(Type::Var(var));
-                        self.solver.is_subset_eq(&list_type, ty, self.type_order());
+                let elem_ty = hint.and_then(|ty| {
+                    // We check `list[var]` against the hint to make sure it's a superclass of list,
+                    // then check the list elements against `var`, which has been solved to the
+                    // hint's contained type.
+                    let var = self.solver.fresh_contained();
+                    let list_type = self.stdlib.list(Type::Var(var));
+                    if self.solver.is_subset_eq(&list_type, ty, self.type_order()) {
                         Some(self.solver.force_var(var))
+                    } else {
+                        None
                     }
-                    None => None,
-                };
+                });
                 if x.is_empty() {
                     let elem_ty = match elem_ty {
                         None => self.solver.fresh_contained().to_type(),
@@ -1085,9 +1086,12 @@ impl<'a> AnswersSolver<'a> {
                         // hint's contained type.
                         let var = self.solver.fresh_contained();
                         let tuple_type = self.stdlib.tuple(Type::Var(var));
-                        self.solver.is_subset_eq(&tuple_type, ty, self.type_order());
-                        let elem_ty = self.solver.force_var(var);
-                        &vec![elem_ty; x.elts.len()]
+                        if self.solver.is_subset_eq(&tuple_type, ty, self.type_order()) {
+                            let elem_ty = self.solver.force_var(var);
+                            &vec![elem_ty; x.elts.len()]
+                        } else {
+                            &Vec::new()
+                        }
                     }
                     None => &Vec::new(),
                 };
