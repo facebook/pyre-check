@@ -392,10 +392,7 @@ impl<'a> AnswersSolver<'a> {
         TypeOrder::new(self)
     }
 
-    fn try_get_idx<K: Solve>(
-        &self,
-        idx: Idx<K>,
-    ) -> Result<(Arc<K::Answer>, Option<K::Recursive>), K::Recursive>
+    fn try_get_idx<K: Solve>(&self, idx: Idx<K>) -> Result<Arc<K::Answer>, K::Recursive>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -420,7 +417,7 @@ impl<'a> AnswersSolver<'a> {
             let k = self.bindings().idx_to_key(idx);
             K::record_recursive(self, k, v.clone(), r.clone());
         }
-        result
+        result.map(|x| x.0)
     }
 
     fn get<K: Solve>(&self, k: &K) -> Option<Arc<K::Answer>>
@@ -436,7 +433,7 @@ impl<'a> AnswersSolver<'a> {
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        self.try_get_idx(k).ok().map(|(v, _)| v)
+        self.try_get_idx(k).ok()
     }
 
     fn get_annotation(&self, key: &KeyAnnotation) -> Arc<Annotation> {
@@ -466,7 +463,7 @@ impl<'a> AnswersSolver<'a> {
     pub fn get_type_idx(&self, key: Idx<Key>) -> Arc<Type> {
         match self.try_get_idx(key) {
             Err(v) => Arc::new(v.to_type()),
-            Ok((v, _)) => v,
+            Ok(v) => v,
         }
     }
 
