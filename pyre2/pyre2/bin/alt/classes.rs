@@ -375,14 +375,7 @@ impl<'a> AnswersSolver<'a> {
 
     pub fn get_init_method(&self, cls: &Class) -> Type {
         let init = Name::new("__init__");
-        let init_ty = if cls.contains(&init) {
-            Some(
-                self.with_module(cls.module_info().name())
-                    .get(&Key::ClassField(cls.name().clone(), init)),
-            )
-        } else {
-            None
-        };
+        let init_ty = self.get_class_field(cls, &init);
         let tparams = self.get_tparams_for_class(cls);
         let ret = cls.self_type(tparams.deref());
         match init_ty.as_deref() {
