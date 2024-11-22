@@ -33,7 +33,6 @@ with Foo() as bar: # E: EXPECTED int <: str
     "#,
 );
 
-// TODO: Async with needs an additional `await` on the context value
 simple_test!(
     test_simple_async_with,
     r#"
@@ -52,8 +51,8 @@ class Foo:
         ...
 
 async def test() -> None:
-    async with Foo() as foo:  # E: Coroutine[Unknown, Unknown, None] <: bool | None
-        assert_type(foo, int) # E: assert_type(Coroutine[Any, Any, int], int) failed
+    async with Foo() as foo:
+        assert_type(foo, int)
     "#,
 );
 

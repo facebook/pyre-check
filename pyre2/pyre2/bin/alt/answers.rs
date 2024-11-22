@@ -749,35 +749,71 @@ impl<'a> AnswersSolver<'a> {
         }
     }
 
+    fn context_value_enter(
+        &self,
+        context_manager_type: &Type,
+        kind: ContextManagerKind,
+        range: TextRange,
+    ) -> Type {
+        match kind {
+            ContextManagerKind::Sync => {
+                self.call_method_with_types(context_manager_type, &dunder::ENTER, range, &[])
+            }
+            ContextManagerKind::Async => self.unwrap_awaitable(
+                self.call_method_with_types(context_manager_type, &dunder::AENTER, range, &[]),
+                None,
+            ),
+        }
+    }
+
+    fn context_value_exit(
+        &self,
+        context_manager_type: &Type,
+        kind: ContextManagerKind,
+        range: TextRange,
+    ) -> Type {
+        let base_exception_class_type = Type::type_form(self.stdlib.base_exception());
+        let exit_arg_types = [
+            TypeCallArg::new(
+                Type::Union(vec![base_exception_class_type, Type::None]),
+                range,
+            ),
+            TypeCallArg::new(
+                Type::Union(vec![self.stdlib.base_exception(), Type::None]),
+                range,
+            ),
+            TypeCallArg::new(
+                Type::Union(vec![self.stdlib.traceback_type(), Type::None]),
+                range,
+            ),
+        ];
+        match kind {
+            ContextManagerKind::Sync => self.call_method_with_types(
+                context_manager_type,
+                &dunder::EXIT,
+                range,
+                &exit_arg_types,
+            ),
+            ContextManagerKind::Async => self.unwrap_awaitable(
+                self.call_method_with_types(
+                    context_manager_type,
+                    &dunder::AEXIT,
+                    range,
+                    &exit_arg_types,
+                ),
+                None,
+            ),
+        }
+    }
+
     fn context_value(
         &self,
         context_manager_type: Type,
-        enter_method_name: &Name,
-        exit_method_name: &Name,
+        kind: ContextManagerKind,
         range: TextRange,
     ) -> Type {
-        let enter_type =
-            self.call_method_with_types(&context_manager_type, enter_method_name, range, &[]);
-        let base_exception_class_type = Type::type_form(self.stdlib.base_exception());
-        let exit_type = self.call_method_with_types(
-            &context_manager_type,
-            exit_method_name,
-            range,
-            &[
-                TypeCallArg::new(
-                    Type::Union(vec![base_exception_class_type, Type::None]),
-                    range,
-                ),
-                TypeCallArg::new(
-                    Type::Union(vec![self.stdlib.base_exception(), Type::None]),
-                    range,
-                ),
-                TypeCallArg::new(
-                    Type::Union(vec![self.stdlib.traceback_type(), Type::None]),
-                    range,
-                ),
-            ],
-        );
+        let enter_type = self.context_value_enter(&context_manager_type, kind, range);
+        let exit_type = self.context_value_exit(&context_manager_type, kind, range);
         self.check_type(
             &Type::Union(vec![self.stdlib.bool(), Type::None]),
             &exit_type,
@@ -817,21 +853,7 @@ impl<'a> AnswersSolver<'a> {
             }
             Binding::ContextValue(ann, e, kind) => {
                 let context_manager = self.expr(e, None);
-                let context_value = match kind {
-                    ContextManagerKind::Sync => self.context_value(
-                        context_manager,
-                        &dunder::ENTER,
-                        &dunder::EXIT,
-                        e.range(),
-                    ),
-                    ContextManagerKind::Async => self.context_value(
-                        context_manager,
-                        &dunder::AENTER,
-                        &dunder::AEXIT,
-                        e.range(),
-                    ),
-                };
-
+                let context_value = self.context_value(context_manager, *kind, e.range());
                 let ty = ann.map(|k| self.get_annotation_idx(k));
                 match ty.as_ref().and_then(|x| x.ty.as_ref()) {
                     Some(ty) => self.check_type(ty, &context_value, e.range()),
