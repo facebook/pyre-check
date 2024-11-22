@@ -69,8 +69,7 @@ impl<'a> AnswersSolver<'a> {
                     let lit = Lit::from_expr(
                         x,
                         self.module_info(),
-                        &|cls| self.get_mro_for_class(cls),
-                        &|identifier| self.get_class_for_identifier(&identifier),
+                        &|name| self.get_enum_class_type(name),
                         self.errors(),
                     );
                     literals.push(Type::Literal(lit));

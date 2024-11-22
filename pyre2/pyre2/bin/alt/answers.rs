@@ -14,7 +14,6 @@ use std::sync::Arc;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
-use ruff_python_ast::Identifier;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
@@ -391,13 +390,6 @@ impl<'a> AnswersSolver<'a> {
 
     pub fn type_order(&self) -> TypeOrder {
         TypeOrder::new(self)
-    }
-
-    pub fn get_class_for_identifier(&self, name: &Identifier) -> Type {
-        self.untype(
-            (*self.get_type(&Key::Usage(name.clone()))).clone(),
-            name.range,
-        )
     }
 
     fn try_get_idx<K: Solve>(

@@ -8642,16 +8642,6 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "untype, got Enum",
-      "description": "untype, got Enum",
-      "line": 33,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 33,
       "concise_description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "line": 33,
@@ -8682,16 +8672,6 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "untype, got Enum",
-      "description": "untype, got Enum",
-      "line": 34,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 34
-    },
-    {
-      "code": -2,
-      "column": 33,
       "concise_description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "line": 34,
@@ -8722,16 +8702,6 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "untype, got Enum",
-      "description": "untype, got Enum",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 33,
       "concise_description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "line": 35,
@@ -8762,16 +8732,6 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "untype, got Enum",
-      "description": "untype, got Enum",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 33,
       "concise_description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "line": 36,
@@ -8802,16 +8762,6 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "untype, got Enum",
-      "description": "untype, got Enum",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 33,
       "concise_description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "line": 37,
@@ -8842,16 +8792,6 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "untype, got Enum",
-      "description": "untype, got Enum",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 33,
       "concise_description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "line": 38,
@@ -8882,16 +8822,6 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "untype, got Enum",
-      "description": "untype, got Enum",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 39
-    },
-    {
-      "code": -2,
-      "column": 33,
       "concise_description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
       "line": 39,
@@ -8917,16 +8847,6 @@
       "line": 40,
       "name": "PyreError",
       "stop_column": 23,
-      "stop_line": 40
-    },
-    {
-      "code": -2,
-      "column": 33,
-      "concise_description": "untype, got Enum",
-      "description": "untype, got Enum",
-      "line": 40,
-      "name": "PyreError",
-      "stop_column": 39,
       "stop_line": 40
     },
     {
