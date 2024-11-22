@@ -910,13 +910,11 @@ impl<'a> BindingsBuilder<'a> {
             self.scopes.push(Scope::method(func_name.clone()));
         }
 
-        self.table.insert(
-            KeyTypeParams(func_name.clone()),
-            BindingTypeParams::Function(
-                tparams.unwrap_or_default(),
-                legacy_tparam_builder.lookup_keys(),
-            ),
+        let value = BindingTypeParams::Function(
+            tparams.unwrap_or_default(),
+            legacy_tparam_builder.lookup_keys(self),
         );
+        self.table.insert(KeyTypeParams(func_name.clone()), value);
 
         self.parameters(&mut x.parameters, &self_type);
 
@@ -1014,10 +1012,9 @@ impl<'a> BindingsBuilder<'a> {
             .insert(KeyMro(x.name.clone()), BindingMro(self_type_key));
 
         let definition_key = Key::Definition(x.name.clone());
-        self.table.insert(
-            KeyTypeParams(x.name.clone()),
-            BindingTypeParams::Class(definition_key, legacy_tparam_builder.lookup_keys()),
-        );
+        let value =
+            BindingTypeParams::Class(definition_key, legacy_tparam_builder.lookup_keys(self));
+        self.table.insert(KeyTypeParams(x.name.clone()), value);
 
         legacy_tparam_builder.add_name_definitions(self);
 
@@ -1596,7 +1593,11 @@ impl LegacyTParamBuilder {
                     None
                 };
                 Binding::CheckLegacyTypeParam(
-                    KeyLegacyTypeParam(id.clone()),
+                    builder
+                        .table
+                        .legacy_tparams
+                        .0
+                        .insert_if_missing(KeyLegacyTypeParam(id.clone())),
                     range_if_scoped_params_exist,
                 )
             })
@@ -1620,13 +1621,18 @@ impl LegacyTParamBuilder {
                     .last_mut()
                     .stat
                     .add(identifier.id.clone(), identifier.range);
+                let key = builder
+                    .table
+                    .legacy_tparams
+                    .0
+                    .insert_if_missing(KeyLegacyTypeParam(identifier.clone()));
                 builder.bind_definition(
                     identifier,
                     // Note: we use None as the range here because the range is
                     // used to error if legacy tparams are mixed with scope
                     // tparams, and we only want to do that once (which we do in
                     // the binding created by `forward_lookup`).
-                    Binding::CheckLegacyTypeParam(KeyLegacyTypeParam(identifier.clone()), None),
+                    Binding::CheckLegacyTypeParam(key, None),
                     None,
                 );
             }
@@ -1638,11 +1644,17 @@ impl LegacyTParamBuilder {
     /// the final type parameters for classes and functions, which have to take
     /// all the names that *do* map to type variable declarations and combine
     /// them (potentially) with scoped type parameters.
-    fn lookup_keys(&self) -> Vec<KeyLegacyTypeParam> {
+    fn lookup_keys(&self, builder: &mut BindingsBuilder) -> Vec<Idx<KeyLegacyTypeParam>> {
         self.legacy_tparams
             .values()
             .flatten()
-            .map(|(id, _)| KeyLegacyTypeParam(id.clone()))
+            .map(|(id, _)| {
+                builder
+                    .table
+                    .legacy_tparams
+                    .0
+                    .insert_if_missing(KeyLegacyTypeParam(id.clone()))
+            })
             .collect()
     }
 }

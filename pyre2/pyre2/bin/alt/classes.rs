@@ -105,14 +105,14 @@ impl<'a> AnswersSolver<'a> {
         class.substitution(&self.get_tparams_for_class(class.class_object()))
     }
 
-    pub fn tparams_of(&self, cls: &Class, legacy: &[KeyLegacyTypeParam]) -> QuantifiedVec {
+    pub fn tparams_of(&self, cls: &Class, legacy: &[Idx<KeyLegacyTypeParam>]) -> QuantifiedVec {
         let legacy_tparams: SmallMap<_, _> = legacy
             .iter()
             .filter_map(|key| {
-                self.get_legacy_tparam(key)
+                self.get_legacy_tparam_idx(*key)
                     .deref()
                     .parameter()
-                    .map(|q| (key.0.clone(), *q))
+                    .map(|q| (self.bindings().idx_to_key(*key).0.clone(), *q))
             })
             .collect();
         let scoped_tparams = cls.scoped_tparams();

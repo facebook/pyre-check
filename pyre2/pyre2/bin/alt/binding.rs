@@ -233,7 +233,7 @@ pub enum Binding {
     /// identifier).
     /// It controls whether to produce an error saying there are scoped type parameters for this
     /// function / class, and therefore the use of legacy type parameters is invalid.
-    CheckLegacyTypeParam(KeyLegacyTypeParam, Option<TextRange>),
+    CheckLegacyTypeParam(Idx<KeyLegacyTypeParam>, Option<TextRange>),
     /// An expectation that the types are identical, with an associated name for error messages.
     Eq(Idx<KeyAnnotation>, Idx<KeyAnnotation>, Name),
     /// An assignment to a name. The text range is the range of the RHS, and is used so that we
@@ -286,11 +286,11 @@ pub enum BindingTypeParams {
     /// The first argument is any scoped type parameters.
     /// The second argument tracks all names that appear in parameter and return annotations, which might
     /// indicate legacy type parameters if they point to variable declarations.
-    Function(Vec<Quantified>, Vec<KeyLegacyTypeParam>),
+    Function(Vec<Quantified>, Vec<Idx<KeyLegacyTypeParam>>),
     /// The first argument is a lookup for the class definition.
     /// The second argument tracks all names that appear in bases, which might
     /// indicate legacy type parameters if they point to variable declarations.
-    Class(Key, Vec<KeyLegacyTypeParam>),
+    Class(Key, Vec<Idx<KeyLegacyTypeParam>>),
 }
 
 #[derive(Clone, Debug)]
@@ -470,7 +470,9 @@ impl DisplayWith<Bindings> for Binding {
             Self::AnyType(s) => write!(f, "anytype {s}"),
             Self::StrType => write!(f, "strtype"),
             Self::TypeParameter(q) => write!(f, "type_parameter {q}"),
-            Self::CheckLegacyTypeParam(k, _) => write!(f, "check_legacy_type_param {k}"),
+            Self::CheckLegacyTypeParam(k, _) => {
+                write!(f, "check_legacy_type_param {}", ctx.display(*k))
+            }
             Self::AnnotatedType(k1, k2) => {
                 write!(f, "({}): {}", k2.display_with(ctx), ctx.display(*k1))
             }

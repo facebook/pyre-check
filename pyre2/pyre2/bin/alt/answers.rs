@@ -492,8 +492,11 @@ impl<'a> AnswersSolver<'a> {
             .unwrap_or_else(|| Arc::new(QuantifiedVec(Vec::new())))
     }
 
-    pub fn get_legacy_tparam(&self, key: &KeyLegacyTypeParam) -> Arc<LegacyTypeParameterLookup> {
-        self.get(key).unwrap_or_else(|| {
+    pub fn get_legacy_tparam_idx(
+        &self,
+        key: Idx<KeyLegacyTypeParam>,
+    ) -> Arc<LegacyTypeParameterLookup> {
+        self.get_idx(key).unwrap_or_else(|| {
             Arc::new(LegacyTypeParameterLookup::NotParameter(Type::any_implicit()))
         })
     }
@@ -524,7 +527,12 @@ impl<'a> AnswersSolver<'a> {
             BindingTypeParams::Function(scoped, legacy) => {
                 let legacy_tparams: Vec<_> = legacy
                     .iter()
-                    .filter_map(|key| self.get_legacy_tparam(key).deref().parameter().copied())
+                    .filter_map(|key| {
+                        self.get_legacy_tparam_idx(*key)
+                            .deref()
+                            .parameter()
+                            .copied()
+                    })
                     .collect();
                 let mut tparams = scoped.clone();
                 tparams.extend(legacy_tparams);
@@ -1055,7 +1063,7 @@ impl<'a> AnswersSolver<'a> {
                 }
             }
             Binding::CheckLegacyTypeParam(key, range_if_scoped_params_exist) => {
-                match &*self.get_legacy_tparam(key) {
+                match &*self.get_legacy_tparam_idx(*key) {
                     LegacyTypeParameterLookup::Parameter(q) => {
                         // This class or function has scoped (PEP 695) type parameters. Mixing legacy-style parameters is an error.
                         if let Some(r) = range_if_scoped_params_exist {
@@ -1063,7 +1071,7 @@ impl<'a> AnswersSolver<'a> {
                                 *r,
                                 format!(
                                     "Type parameter {} is not included in the type parameter list",
-                                    key.0.as_str()
+                                    self.bindings().idx_to_key(*key).0
                                 ),
                             );
                         }

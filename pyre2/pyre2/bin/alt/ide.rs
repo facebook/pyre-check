@@ -71,7 +71,7 @@ impl Driver {
             }
             Binding::Module(name, _, _) => Some((*name, TextRange::default())),
             Binding::CheckLegacyTypeParam(k, _) => {
-                let binding = bindings.get(bindings.key_to_idx(k));
+                let binding = bindings.get(*k);
                 self.key_to_definition(module, bindings.idx_to_key(binding.0), gas - 1)
             }
             b => {
