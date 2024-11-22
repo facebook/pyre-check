@@ -464,7 +464,7 @@ impl<'a> AnswersSolver<'a> {
     }
 
     fn get_annotation(&self, key: &KeyAnnotation) -> Arc<Annotation> {
-        self.get_annotation_idx(self.bindings().key_to_idx(key))
+        self.get(key)
     }
 
     fn get_annotation_idx(&self, key: Idx<KeyAnnotation>) -> Arc<Annotation> {
@@ -483,14 +483,11 @@ impl<'a> AnswersSolver<'a> {
     }
 
     pub fn get_type(&self, key: &Key) -> Arc<Type> {
-        self.get_type_idx(self.bindings().key_to_idx(key))
+        self.get(key)
     }
 
     pub fn get_type_idx(&self, key: Idx<Key>) -> Arc<Type> {
-        match self.try_get_idx(key) {
-            Err(v) => Arc::new(v.to_type()),
-            Ok(v) => v,
-        }
+        self.get_idx(key)
     }
 
     pub fn get_base_class(&self, key: &KeyBaseClass) -> Arc<BaseClass> {
