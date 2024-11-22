@@ -21,6 +21,7 @@ use crate::alt::binding::KeyLegacyTypeParam;
 use crate::alt::binding::KeyMro;
 use crate::alt::binding::KeyTypeParams;
 use crate::ast::Ast;
+use crate::graph::index::Idx;
 use crate::types::base_class::BaseClass;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
@@ -59,9 +60,9 @@ fn replace_return_type(ty: Type, ret: Type) -> Type {
 }
 
 impl<'a> AnswersSolver<'a> {
-    pub fn base_class_of(&self, base_expr: &Expr, self_type: &Key) -> BaseClass {
+    pub fn base_class_of(&self, base_expr: &Expr, self_type: Idx<Key>) -> BaseClass {
         let mut base = self.expr_base_class(base_expr);
-        let self_type = &*self.get_type(self_type);
+        let self_type = &*self.get_type_idx(self_type);
         base.subst_self_type_mut(self_type);
         base
     }

@@ -400,17 +400,6 @@ impl<'a> AnswersSolver<'a> {
         )
     }
 
-    fn try_get<K: Solve>(
-        &self,
-        k: &K,
-    ) -> Result<(Arc<K::Answer>, Option<K::Recursive>), K::Recursive>
-    where
-        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
-        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
-    {
-        self.try_get_idx(self.bindings().key_to_idx(k))
-    }
-
     fn try_get_idx<K: Solve>(
         &self,
         idx: Idx<K>,
@@ -479,7 +468,11 @@ impl<'a> AnswersSolver<'a> {
     }
 
     pub fn get_type(&self, key: &Key) -> Arc<Type> {
-        match self.try_get(key) {
+        self.get_type_idx(self.bindings().key_to_idx(key))
+    }
+
+    pub fn get_type_idx(&self, key: Idx<Key>) -> Arc<Type> {
+        match self.try_get_idx(key) {
             Err(v) => Arc::new(v.to_type()),
             Ok((v, _)) => v,
         }
@@ -509,7 +502,7 @@ impl<'a> AnswersSolver<'a> {
         &self,
         binding: &BindingLegacyTypeParam,
     ) -> Arc<LegacyTypeParameterLookup> {
-        match &*self.get_type(&binding.0) {
+        match &*self.get_type_idx(binding.0) {
             Type::Type(box Type::TypeVar(_)) => {
                 let q = Quantified::type_var(self.uniques);
                 Arc::new(LegacyTypeParameterLookup::Parameter(q))
@@ -554,7 +547,7 @@ impl<'a> AnswersSolver<'a> {
     fn solve_mro(&self, binding: &BindingMro) -> Arc<Mro> {
         match binding {
             BindingMro(k) => {
-                let self_ty = self.get_type(k);
+                let self_ty = self.get_type_idx(*k);
                 match &*self_ty {
                     Type::ClassType(cls) => Arc::new(self.mro_of(cls.class_object())),
                     _ => {
@@ -567,7 +560,7 @@ impl<'a> AnswersSolver<'a> {
 
     fn solve_base_class(&self, binding: &BindingBaseClass) -> Arc<BaseClass> {
         match binding {
-            BindingBaseClass(x, self_type) => Arc::new(self.base_class_of(x, self_type)),
+            BindingBaseClass(x, self_type) => Arc::new(self.base_class_of(x, *self_type)),
         }
     }
 
@@ -578,7 +571,7 @@ impl<'a> AnswersSolver<'a> {
                 if let Some(self_type) = self_type
                     && let Some(ty) = &mut ann.ty
                 {
-                    let self_type = &*self.get_type(self_type);
+                    let self_type = &*self.get_type_idx(*self_type);
                     ty.subst_self_type_mut(self_type);
                 }
                 Arc::new(ann)
@@ -590,7 +583,7 @@ impl<'a> AnswersSolver<'a> {
                 Arc::new(Annotation::new_type(t))
             }
             BindingAnnotation::Forward(k) => {
-                Arc::new(Annotation::new_type(self.get_type(k).arc_clone()))
+                Arc::new(Annotation::new_type(self.get_type_idx(*k).arc_clone()))
             }
         }
     }
@@ -1010,18 +1003,18 @@ impl<'a> AnswersSolver<'a> {
                 );
                 Type::ClassDef(c)
             }
-            Binding::SelfType(k) => match &*self.get_type(k) {
+            Binding::SelfType(k) => match &*self.get_type_idx(*k) {
                 Type::ClassDef(c) => c.self_type(&self.get_tparams_for_class(c).0),
                 _ => unreachable!(),
             },
-            Binding::Forward(k) => self.get_type(k).arc_clone(),
+            Binding::Forward(k) => self.get_type_idx(*k).arc_clone(),
             Binding::Phi(ks) => {
                 if ks.len() == 1 {
-                    self.get_type(ks.first().unwrap()).arc_clone()
+                    self.get_type_idx(*ks.first().unwrap()).arc_clone()
                 } else {
                     self.unions(
                         &ks.iter()
-                            .map(|k| self.get_type(k).arc_clone())
+                            .map(|k| self.get_type_idx(*k).arc_clone())
                             .collect::<Vec<_>>(),
                     )
                 }
@@ -1045,7 +1038,7 @@ impl<'a> AnswersSolver<'a> {
             Binding::Module(m, path, prev) => {
                 let prev = prev
                     .as_ref()
-                    .and_then(|x| self.get_type(x).as_module().cloned());
+                    .and_then(|x| self.get_type_idx(*x).as_module().cloned());
                 match prev {
                     Some(prev) if prev.path() == path => prev.add_module(*m).to_type(),
                     _ => {

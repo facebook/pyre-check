@@ -60,17 +60,19 @@ impl Driver {
         let bindings = self.get_bindings(module)?;
         let idx = bindings.key_to_idx(key);
         let res = match bindings.get(idx) {
-            Binding::Forward(k) => self.key_to_definition(module, k, gas - 1),
-            Binding::Phi(ks) if !ks.is_empty() => {
-                self.key_to_definition(module, ks.iter().next().unwrap(), gas - 1)
-            }
+            Binding::Forward(k) => self.key_to_definition(module, bindings.idx_to_key(*k), gas - 1),
+            Binding::Phi(ks) if !ks.is_empty() => self.key_to_definition(
+                module,
+                bindings.idx_to_key(*ks.iter().next().unwrap()),
+                gas - 1,
+            ),
             Binding::Import(m, name) => {
                 self.key_to_definition(*m, &Key::Export(name.clone()), gas - 1)
             }
             Binding::Module(name, _, _) => Some((*name, TextRange::default())),
             Binding::CheckLegacyTypeParam(k, _) => {
                 let binding = bindings.get(bindings.key_to_idx(k));
-                self.key_to_definition(module, &binding.0, gas - 1)
+                self.key_to_definition(module, bindings.idx_to_key(binding.0), gas - 1)
             }
             b => {
                 eprintln!("No definition for {key:?} => {b:?}");

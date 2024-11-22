@@ -213,17 +213,17 @@ pub enum Binding {
     /// Track the number of base classes, use this to build `BaseClass` keys for lookup.
     Class(StmtClassDef, SmallSet<Name>, usize),
     /// The Self type for a class, must point at a class.
-    SelfType(Key),
+    SelfType(Idx<Key>),
     /// A forward reference to another binding.
-    Forward(Key),
+    Forward(Idx<Key>),
     /// A phi node, representing the union of several alternative keys.
-    Phi(SmallSet<Key>),
+    Phi(SmallSet<Idx<Key>>),
     /// An import of a module.
     /// Also contains the path along the module to bind, and optionally a key
     /// with the previous import to this binding (in which case merge the modules).
     /// FIXME: Once we fix on alt, we the Module type will be ModuleName+Vec<Name>,
     /// so people using the None option will be able to use Self::Type instead.
-    Module(ModuleName, Vec<Name>, Option<Key>),
+    Module(ModuleName, Vec<Name>, Option<Idx<Key>>),
     /// An exception and its cause from a raise statement.
     CheckRaisedException(RaisedException),
     /// A name that might be a legacy type parameter. Solving this gives the Quantified type if so.
@@ -245,7 +245,7 @@ pub enum Binding {
 
 impl Binding {
     /// Helper function that turns trivial Phi nodes into a forward.
-    pub fn phi(xs: SmallSet<Key>) -> Self {
+    pub fn phi(xs: SmallSet<Idx<Key>>) -> Self {
         if xs.len() == 1 {
             Self::Forward(xs.into_iter().next().unwrap())
         } else {
@@ -259,13 +259,13 @@ impl Binding {
 pub enum BindingAnnotation {
     /// The type is annotated to be this key, will have the outer type removed.
     /// Optionally occuring within a class, in which case Self refers to this class.
-    AnnotateExpr(Expr, Option<Key>),
+    AnnotateExpr(Expr, Option<Idx<Key>>),
     /// A literal type we know statically.
     Type(Type),
     /// Type of an attribute.
     AttrType(ExprAttribute),
     /// A forward reference to another binding.
-    Forward(Key),
+    Forward(Idx<Key>),
 }
 
 /// Binding used to compute a `BaseClass`.
@@ -274,11 +274,11 @@ pub enum BindingAnnotation {
 /// The `Key` is the self type of the containing class, which might appear in base
 /// class type arguments.
 #[derive(Clone, Debug)]
-pub struct BindingBaseClass(pub Expr, pub Key);
+pub struct BindingBaseClass(pub Expr, pub Idx<Key>);
 
 /// Binding for the class `Mro`. The `Key` is the self type of the class.
 #[derive(Clone, Debug)]
-pub struct BindingMro(pub Key);
+pub struct BindingMro(pub Idx<Key>);
 
 /// Values that represent type parameters of either functions or classes.
 #[derive(Clone, Debug)]
@@ -294,7 +294,7 @@ pub enum BindingTypeParams {
 }
 
 #[derive(Clone, Debug)]
-pub struct BindingLegacyTypeParam(pub Key);
+pub struct BindingLegacyTypeParam(pub Idx<Key>);
 
 impl Display for KeyAnnotation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -361,10 +361,10 @@ impl DisplayWith<Bindings> for BindingAnnotation {
                 ctx.module_info().display(x),
                 match self_type {
                     None => String::new(),
-                    Some(t) => format!(" (self {t})"),
+                    Some(t) => format!(" (self {})", ctx.display(*t)),
                 }
             ),
-            Self::Forward(k) => write!(f, "{k}"),
+            Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
             Self::Type(t) => write!(f, "type {t}"),
             Self::AttrType(attr) => write!(f, "type {attr:?}"),
         }
@@ -377,14 +377,14 @@ impl DisplayWith<Bindings> for BindingBaseClass {
             f,
             "_: {} (self {})",
             ctx.module_info().display(&self.0),
-            self.1
+            ctx.display(self.1)
         )
     }
 }
 
 impl DisplayWith<Bindings> for BindingMro {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, _: &Bindings) -> fmt::Result {
-        write!(f, "mro {}", self.0)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        write!(f, "mro {}", ctx.display(self.0))
     }
 }
 
@@ -404,8 +404,8 @@ impl DisplayWith<Bindings> for BindingTypeParams {
 }
 
 impl DisplayWith<Bindings> for BindingLegacyTypeParam {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, _: &Bindings) -> fmt::Result {
-        write!(f, "legacy_type_param {}", self.0)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        write!(f, "legacy_type_param {}", ctx.display(self.0))
     }
 }
 
@@ -465,8 +465,8 @@ impl DisplayWith<Bindings> for Binding {
             Self::Function(x, _) => write!(f, "def {}", x.name.id),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::Class(c, _, _) => write!(f, "class {}", c.name.id),
-            Self::SelfType(k) => write!(f, "self {k}"),
-            Self::Forward(k) => write!(f, "{k}"),
+            Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),
+            Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
             Self::AnyType(s) => write!(f, "anytype {s}"),
             Self::StrType => write!(f, "strtype"),
             Self::TypeParameter(q) => write!(f, "type_parameter {q}"),
@@ -482,7 +482,7 @@ impl DisplayWith<Bindings> for Binding {
                     m,
                     match key {
                         None => String::new(),
-                        Some(k) => format!("+ {k}"),
+                        Some(k) => format!("+ {}", ctx.display(*k)),
                     }
                 )
             }
@@ -498,7 +498,7 @@ impl DisplayWith<Bindings> for Binding {
                     if i != 0 {
                         write!(f, "; ")?;
                     }
-                    write!(f, "{x}")?;
+                    write!(f, "{}", ctx.display(*x))?;
                 }
                 write!(f, ")")
             }

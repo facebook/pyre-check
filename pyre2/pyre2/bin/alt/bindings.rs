@@ -177,7 +177,7 @@ struct Flow {
 
 #[derive(Debug, Clone)]
 struct FlowInfo {
-    key: Key,
+    key: Idx<Key>,
     /// The annotation associated with this key, if any.
     /// If there is one, all subsequent bindings must obey this annotation.
     ann: Option<Idx<KeyAnnotation>>,
@@ -186,7 +186,7 @@ struct FlowInfo {
 }
 
 impl FlowInfo {
-    fn new(key: Key, ann: Option<Idx<KeyAnnotation>>) -> Self {
+    fn new(key: Idx<Key>, ann: Option<Idx<KeyAnnotation>>) -> Self {
         Self {
             key,
             ann,
@@ -385,8 +385,8 @@ impl Bindings {
                     key,
                     ann: Some(ann),
                     ..
-                }) => Binding::AnnotatedType(*ann, Box::new(Binding::Forward(key.clone()))),
-                Some(FlowInfo { key, ann: None, .. }) => Binding::Forward(key.clone()),
+                }) => Binding::AnnotatedType(*ann, Box::new(Binding::Forward(*key))),
+                Some(FlowInfo { key, ann: None, .. }) => Binding::Forward(*key),
                 None => {
                     // We think we have a binding for this, but we didn't encounter a flow element, so have no idea of what.
                     // This might be because we haven't fully implemented all bindings, or because the two disagree. Just guess.
@@ -413,19 +413,23 @@ impl BindingTable {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
         let entry = self.get_mut::<K>();
-        let idx = entry.0.insert(key);
+        let idx = entry.0.insert_if_missing(key);
         entry.1.insert_once(idx, value);
         idx
     }
 
-    fn insert_anywhere(&mut self, name: Name, range: TextRange) -> &mut SmallSet<Key> {
+    fn insert_anywhere(
+        &mut self,
+        name: Name,
+        range: TextRange,
+    ) -> (Idx<Key>, &mut SmallSet<Idx<Key>>) {
         let idx = self.types.0.insert_if_missing(Key::Anywhere(name, range));
         match self
             .types
             .1
             .insert_if_missing(idx, || Binding::Phi(SmallSet::new()))
         {
-            Binding::Phi(phi) => phi,
+            Binding::Phi(phi) => (idx, phi),
             _ => unreachable!(),
         }
     }
@@ -443,9 +447,10 @@ impl<'a> BindingsBuilder<'a> {
         let builtins_export = self.modules.get(&builtins_module).unwrap();
         for name in builtins_export.wildcard(self.modules).iter() {
             let key = Key::Import(name.clone(), TextRange::default());
-            self.table
-                .insert(key.clone(), Binding::Import(builtins_module, name.clone()));
-            self.bind_key(name, key, None, false);
+            let idx = self
+                .table
+                .insert(key, Binding::Import(builtins_module, name.clone()));
+            self.bind_key(name, idx, None, false);
         }
     }
 
@@ -453,16 +458,16 @@ impl<'a> BindingsBuilder<'a> {
         self.errors.todo(&self.module_info, msg, x);
     }
 
-    fn lookup_name(&mut self, name: &Identifier) -> Option<Key> {
+    fn lookup_name(&mut self, name: &Identifier) -> Option<Idx<Key>> {
         let mut barrier = false;
         for scope in self.scopes.iter().rev() {
             if !barrier && let Some(flow) = scope.flow.info.get(&name.id) {
-                return Some(flow.key.clone());
+                return Some(flow.key);
             } else if !matches!(scope.kind, ScopeKind::ClassBody(_))
                 && let Some(name_id) = scope.stat.0.get(&name.id)
             {
-                self.table.insert_anywhere(name.id.clone(), *name_id);
-                return Some(Key::Anywhere(name.id.clone(), *name_id));
+                let (idx, _) = self.table.insert_anywhere(name.id.clone(), *name_id);
+                return Some(idx);
             }
             barrier = barrier || scope.barrier;
         }
@@ -621,10 +626,8 @@ impl<'a> BindingsBuilder<'a> {
         binding: Binding,
         annotation: Option<Idx<KeyAnnotation>>,
     ) -> Option<Idx<KeyAnnotation>> {
-        let key = Key::Definition(name.clone());
-        let ann = self.bind_key(&name.id, key.clone(), annotation, false);
-        self.table.insert(key, binding);
-        ann
+        let idx = self.table.insert(Key::Definition(name.clone()), binding);
+        self.bind_key(&name.id, idx, annotation, false)
     }
 
     fn bind_unpacking(
@@ -707,8 +710,9 @@ impl<'a> BindingsBuilder<'a> {
             Expr::Name(name) => {
                 let id = Ast::expr_name_identifier(name.clone());
                 let key = Key::Definition(id.clone());
-                let ann = self.bind_key(&id.id, key.clone(), None, false);
-                self.table.insert(key, make_binding(ann));
+                let idx = self.table.types.0.insert(key);
+                let ann = self.bind_key(&id.id, idx, None, false);
+                self.table.types.1.insert(idx, make_binding(ann));
             }
             Expr::Attribute(x) => {
                 self.ensure_expr(&x.value);
@@ -743,7 +747,7 @@ impl<'a> BindingsBuilder<'a> {
     fn bind_key(
         &mut self,
         name: &Name,
-        key: Key,
+        key: Idx<Key>,
         annotation: Option<Idx<KeyAnnotation>>,
         is_import: bool,
     ) -> Option<Idx<KeyAnnotation>> {
@@ -752,7 +756,7 @@ impl<'a> BindingsBuilder<'a> {
                 // if there was a previous annotation, reuse that
                 let annotation = annotation.or_else(|| e.get().ann);
                 *e.get_mut() = FlowInfo {
-                    key: key.clone(),
+                    key,
                     ann: annotation,
                     is_import,
                 };
@@ -760,7 +764,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             Entry::Vacant(e) => {
                 e.insert(FlowInfo {
-                    key: key.clone(),
+                    key,
                     ann: annotation,
                     is_import,
                 });
@@ -773,6 +777,7 @@ impl<'a> BindingsBuilder<'a> {
         });
         self.table
             .insert_anywhere(name.clone(), *defn_range)
+            .1
             .insert(key);
         annotation
     }
@@ -801,7 +806,7 @@ impl<'a> BindingsBuilder<'a> {
         qs
     }
 
-    fn parameters(&mut self, x: &mut Parameters, self_type: &Option<Key>) {
+    fn parameters(&mut self, x: &mut Parameters, self_type: &Option<Idx<Key>>) {
         let mut self_name = None;
         for x in x.iter() {
             let name = x.name();
@@ -809,12 +814,12 @@ impl<'a> BindingsBuilder<'a> {
                 self_name = Some(name.clone());
             }
             let ann_val = match x.annotation() {
-                Some(a) => BindingAnnotation::AnnotateExpr(a.clone(), self_type.clone()),
+                Some(a) => BindingAnnotation::AnnotateExpr(a.clone(), *self_type),
                 None => {
                     if let Some(self_name) = &self_name
                         && name.id == *self_name.id
                     {
-                        BindingAnnotation::Forward(self_type.clone().unwrap())
+                        BindingAnnotation::Forward(self_type.unwrap())
                     } else {
                         BindingAnnotation::Type(Type::any_implicit())
                     }
@@ -823,9 +828,8 @@ impl<'a> BindingsBuilder<'a> {
             let ann_key = self
                 .table
                 .insert(KeyAnnotation::Annotation(name.clone()), ann_val);
-            let bind_key = Key::Definition(name.clone());
-            self.table.insert(
-                bind_key.clone(),
+            let bind_key = self.table.insert(
+                Key::Definition(name.clone()),
                 Binding::AnnotatedType(ann_key, Box::new(Binding::AnyType(AnyStyle::Implicit))),
             );
 
@@ -865,7 +869,12 @@ impl<'a> BindingsBuilder<'a> {
         }
         let func_name = x.name.clone();
         let self_type = match &self.scopes.last().kind {
-            ScopeKind::ClassBody(body) => Some(body.as_self_type_key()),
+            ScopeKind::ClassBody(body) => Some(
+                self.table
+                    .types
+                    .0
+                    .insert_if_missing(body.as_self_type_key()),
+            ),
             _ => None,
         };
 
@@ -942,9 +951,10 @@ impl<'a> BindingsBuilder<'a> {
         });
         let mut return_expr_keys = SmallSet::with_capacity(return_exprs.len());
         for x in return_exprs {
-            let key = Key::ReturnExpression(func_name.clone(), x.range);
-            self.table
-                .insert(key.clone(), Binding::Expr(return_ann, return_expr(x)));
+            let key = self.table.insert(
+                Key::ReturnExpression(func_name.clone(), x.range),
+                Binding::Expr(return_ann, return_expr(x)),
+            );
             return_expr_keys.insert(key);
         }
         let mut return_type = Binding::phi(return_expr_keys);
@@ -956,13 +966,17 @@ impl<'a> BindingsBuilder<'a> {
 
     fn class_def(&mut self, mut x: StmtClassDef) {
         let body = mem::take(&mut x.body);
-        let self_type_key = Key::SelfType(x.name.clone());
 
         self.scopes.push(Scope::class_body(x.name.clone()));
-        self.table.insert(
-            self_type_key.clone(),
-            Binding::SelfType(Key::Definition(x.name.clone())),
+        let self_binding = Binding::SelfType(
+            self.table
+                .types
+                .0
+                .insert_if_missing(Key::Definition(x.name.clone())),
         );
+        let self_type_key = self
+            .table
+            .insert(Key::SelfType(x.name.clone()), self_binding);
         x.type_params.iter().for_each(|x| {
             self.type_params(x);
         });
@@ -993,7 +1007,7 @@ impl<'a> BindingsBuilder<'a> {
             });
             self.table.insert(
                 KeyBaseClass(x.name.clone(), i),
-                BindingBaseClass(base.clone(), self_type_key.clone()),
+                BindingBaseClass(base.clone(), self_type_key),
             );
         });
         self.table
@@ -1019,10 +1033,10 @@ impl<'a> BindingsBuilder<'a> {
         let last_scope = self.scopes.pop().unwrap();
         let mut fields = SmallSet::new();
         for (name, info) in last_scope.flow.info.iter() {
-            let mut val = Binding::Forward(Key::Anywhere(
+            let mut val = Binding::Forward(self.table.types.0.insert_if_missing(Key::Anywhere(
                 name.clone(),
                 *last_scope.stat.0.get(name).unwrap(),
-            ));
+            )));
             if let Some(ann) = &info.ann {
                 val = Binding::AnnotatedType(*ann, Box::new(val));
             }
@@ -1335,14 +1349,11 @@ impl<'a> BindingsBuilder<'a> {
                             let first = m.first_component();
                             let flow_info = self.scopes.last().flow.info.get(&first);
                             let module_key = match flow_info {
-                                Some(flow_info) if flow_info.is_import => {
-                                    Some(flow_info.key.clone())
-                                }
+                                Some(flow_info) if flow_info.is_import => Some(flow_info.key),
                                 _ => None,
                             };
-                            let key = Key::Import(first.clone(), x.name.range);
-                            self.table.insert(
-                                key.clone(),
+                            let key = self.table.insert(
+                                Key::Import(first.clone(), x.name.range),
                                 Binding::Module(m, vec![first.clone()], module_key),
                             );
                             self.bind_key(&first, key, None, true);
@@ -1371,7 +1382,7 @@ impl<'a> BindingsBuilder<'a> {
                                     );
                                     Binding::AnyType(AnyStyle::Error)
                                 };
-                                self.table.insert(key.clone(), val);
+                                let key = self.table.insert(key, val);
                                 self.bind_key(name, key, None, false);
                             }
                         } else {
@@ -1436,8 +1447,12 @@ impl<'a> BindingsBuilder<'a> {
             .collect::<SmallSet<_>>();
         let mut res = SmallMap::with_capacity(items.len());
         for (name, ann) in items.into_iter() {
-            let key = Key::Phi(name.key().clone(), range);
-            res.insert_hashed(name, FlowInfo::new(key.clone(), ann));
+            let key = self
+                .table
+                .types
+                .0
+                .insert_if_missing(Key::Phi(name.key().clone(), range));
+            res.insert_hashed(name, FlowInfo::new(key, ann));
         }
         Flow {
             info: res,
@@ -1491,11 +1506,13 @@ impl<'a> BindingsBuilder<'a> {
             .collect::<SmallSet<_>>();
         let mut res = SmallMap::with_capacity(names.len());
         for name in names.into_iter() {
-            let (values, unordered_anns): (SmallSet<Key>, SmallSet<Option<Idx<KeyAnnotation>>>) =
-                visible_branches
-                    .iter()
-                    .flat_map(|x| x.info.get(name.key()).cloned().map(|x| (x.key, x.ann)))
-                    .unzip();
+            let (values, unordered_anns): (
+                SmallSet<Idx<Key>>,
+                SmallSet<Option<Idx<KeyAnnotation>>>,
+            ) = visible_branches
+                .iter()
+                .flat_map(|x| x.info.get(name.key()).cloned().map(|x| (x.key, x.ann)))
+                .unzip();
             let mut anns = unordered_anns
                 .into_iter()
                 .flatten()
@@ -1521,9 +1538,10 @@ impl<'a> BindingsBuilder<'a> {
                     }
                 }
             }
-            let key = Key::Phi(name.key().clone(), range);
-            res.insert_hashed(name, FlowInfo::new(key.clone(), ann.map(|x| x.0)));
-            self.table.insert(key, Binding::phi(values));
+            let key = self
+                .table
+                .insert(Key::Phi(name.key().clone(), range), Binding::phi(values));
+            res.insert_hashed(name, FlowInfo::new(key, ann.map(|x| x.0)));
         }
         Flow {
             info: res,
@@ -1544,7 +1562,7 @@ impl<'a> BindingsBuilder<'a> {
 struct LegacyTParamBuilder {
     /// All of the names used. Each one may or may not point at a type variable
     /// and therefore bind a legacy type parameter.
-    legacy_tparams: SmallMap<Name, Option<(Identifier, Key)>>,
+    legacy_tparams: SmallMap<Name, Option<(Identifier, Idx<Key>)>>,
     /// Are there scoped type parameters? Used to control downstream errors.
     has_scoped_tparams: bool,
 }
@@ -1595,7 +1613,7 @@ impl LegacyTParamBuilder {
             if let Some((identifier, key)) = entry {
                 builder.table.insert(
                     KeyLegacyTypeParam(identifier.clone()),
-                    BindingLegacyTypeParam(key.clone()),
+                    BindingLegacyTypeParam(*key),
                 );
                 builder
                     .scopes
