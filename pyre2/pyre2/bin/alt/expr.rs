@@ -669,7 +669,7 @@ impl<'a> AnswersSolver<'a> {
                 }
             }
             Expr::Dict(x) => {
-                let (key_ty, value_ty) = match hint {
+                let key_value_ty = match hint {
                     Some(ty) => {
                         // We check `dict[key_var, value_var]` against the hint to make sure it's a
                         // superclass of dict, then check the dict elements against the vars, which
@@ -678,31 +678,33 @@ impl<'a> AnswersSolver<'a> {
                         let value_var = self.solver.fresh_contained();
                         let dict_type = self.stdlib.dict(Type::Var(key_var), Type::Var(value_var));
                         self.solver.is_subset_eq(&dict_type, ty, self.type_order());
-                        (
-                            Some(self.solver.force_var(key_var)),
-                            Some(self.solver.force_var(value_var)),
-                        )
+                        Some((
+                            self.solver.force_var(key_var),
+                            self.solver.force_var(value_var),
+                        ))
                     }
-                    None => (None, None),
+                    None => None,
                 };
                 if x.is_empty() {
-                    let key_ty = match key_ty {
-                        None => self.solver.fresh_contained().to_type(),
-                        Some(key_ty) => key_ty.clone(),
-                    };
-                    let value_ty = match value_ty {
-                        None => self.solver.fresh_contained().to_type(),
-                        Some(value_ty) => value_ty.clone(),
-                    };
-                    self.stdlib.dict(key_ty, value_ty)
+                    match key_value_ty {
+                        Some((key_ty, value_ty)) => self.stdlib.dict(key_ty, value_ty),
+                        None => self.stdlib.dict(
+                            self.solver.fresh_contained().to_type(),
+                            self.solver.fresh_contained().to_type(),
+                        ),
+                    }
                 } else {
+                    let (key_hint, value_hint) = match key_value_ty {
+                        Some((key_ty, value_ty)) => (Some(key_ty), Some(value_ty)),
+                        None => (None, None),
+                    };
                     let key_tys: Vec<Type> = x
                         .items
                         .iter()
                         .filter_map(|x| match &x.key {
                             Some(key) => {
-                                let key_t = self.expr(key, key_ty.as_ref());
-                                Some(self.promote(key_t, key_ty.as_ref()))
+                                let key_t = self.expr(key, key_hint.as_ref());
+                                Some(self.promote(key_t, key_hint.as_ref()))
                             }
                             _ => {
                                 self.error_todo("Answers::expr_infer expansion in dict literal", x);
@@ -715,8 +717,8 @@ impl<'a> AnswersSolver<'a> {
                         .iter()
                         .filter_map(|x| match x.key {
                             Some(_) => {
-                                let value_t = self.expr(&x.value, value_ty.as_ref());
-                                Some(self.promote(value_t, value_ty.as_ref()))
+                                let value_t = self.expr(&x.value, value_hint.as_ref());
+                                Some(self.promote(value_t, value_hint.as_ref()))
                             }
                             _ => {
                                 self.error_todo("Answers::expr_infer expansion in dict literal", x);
