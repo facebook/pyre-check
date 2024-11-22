@@ -404,12 +404,24 @@ impl<'a> AnswersSolver<'a> {
         self.current.bindings.module_info()
     }
 
-    pub fn with_module(&self, name: ModuleName) -> Self {
-        let current = self.answers.get(&name).unwrap();
-        AnswersSolver {
-            current,
+    pub fn get_from_module<K: Solve>(&self, name: ModuleName, k: &K) -> Arc<K::Answer>
+    where
+        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
+        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+    {
+        let new_answers = AnswersSolver {
+            current: self.answers.get(&name).unwrap(),
             ..self.clone()
-        }
+        };
+        new_answers.get(k)
+    }
+
+    pub fn get_from_class<K: Solve>(&self, cls: &Class, k: &K) -> Arc<K::Answer>
+    where
+        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
+        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+    {
+        self.get_from_module(cls.module_info().name(), k)
     }
 
     pub fn type_order(&self) -> TypeOrder {
@@ -972,8 +984,7 @@ impl<'a> AnswersSolver<'a> {
                 Type::forall(qs.0.clone(), Type::callable(args, ret))
             }
             Binding::Import(m, name) => self
-                .with_module(*m)
-                .get(&Key::Export(name.clone()))
+                .get_from_module(*m, &Key::Export(name.clone()))
                 .arc_clone(),
             Binding::Class(x, fields, n_bases) => {
                 let tparams = self.type_params(&x.type_params);
@@ -1223,8 +1234,7 @@ impl<'a> AnswersSolver<'a> {
         if !exports.contains(name, self.current.exports) {
             self.error(range, format!("No attribute `{name}` in module `{from}`",))
         } else {
-            self.with_module(from)
-                .get(&Key::Export(name.clone()))
+            self.get_from_module(from, &Key::Export(name.clone()))
                 .arc_clone()
         }
     }

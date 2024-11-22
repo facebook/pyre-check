@@ -143,18 +143,15 @@ impl<'a> AnswersSolver<'a> {
     }
 
     pub fn get_tparams_for_class(&self, cls: &Class) -> Arc<QuantifiedVec> {
-        self.with_module(cls.module_info().name())
-            .get(&KeyTypeParams(cls.name().clone()))
+        self.get_from_class(cls, &KeyTypeParams(cls.name().clone()))
     }
 
     pub fn get_mro_for_class(&self, cls: &Class) -> Arc<Mro> {
-        self.with_module(cls.module_info().name())
-            .get(&KeyMro(cls.name().clone()))
+        self.get_from_class(cls, &KeyMro(cls.name().clone()))
     }
 
     fn get_base_class_index(&self, cls: &Class, base_idx: usize) -> Arc<BaseClass> {
-        self.with_module(cls.module_info().name())
-            .get(&KeyBaseClass(cls.name().clone(), base_idx))
+        self.get_from_class(cls, &KeyBaseClass(cls.name().clone(), base_idx))
     }
 
     pub fn bases_of_class(&self, cls: &Class) -> Vec<Arc<BaseClass>> {
@@ -270,9 +267,7 @@ impl<'a> AnswersSolver<'a> {
 
     fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Arc<Type>> {
         if cls.contains(name) {
-            let ty = self
-                .with_module(cls.module_info().name())
-                .get(&Key::ClassField(cls.name().clone(), name.clone()));
+            let ty = self.get_from_class(cls, &Key::ClassField(cls.name().clone(), name.clone()));
             Some(ty)
         } else {
             None
