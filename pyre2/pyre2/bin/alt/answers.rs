@@ -169,6 +169,8 @@ pub trait Solve: Keyed {
     ) {
     }
 
+    fn promote_recursive(x: Self::Recursive) -> Self::Answer;
+
     fn visit_type_mut(v: &mut Self::Answer, f: &mut dyn FnMut(&mut Type));
 }
 
@@ -187,6 +189,10 @@ impl Solve for Key {
         answers.record_recursive(key, answer, recursive);
     }
 
+    fn promote_recursive(x: Self::Recursive) -> Self::Answer {
+        Type::Var(x)
+    }
+
     fn visit_type_mut(v: &mut Type, f: &mut dyn FnMut(&mut Type)) {
         f(v);
     }
@@ -198,6 +204,10 @@ impl Solve for KeyAnnotation {
     }
 
     fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
+
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        Annotation::default()
+    }
 
     fn visit_type_mut(v: &mut Annotation, f: &mut dyn FnMut(&mut Type)) {
         v.ty.iter_mut().for_each(f);
@@ -211,6 +221,10 @@ impl Solve for KeyBaseClass {
 
     fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
 
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        BaseClass::Type(Type::any_implicit())
+    }
+
     fn visit_type_mut(v: &mut BaseClass, f: &mut dyn FnMut(&mut Type)) {
         v.visit_mut(f);
     }
@@ -222,6 +236,10 @@ impl Solve for KeyMro {
     }
 
     fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
+
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        Mro::cyclic()
+    }
 
     fn visit_type_mut(v: &mut Mro, f: &mut dyn FnMut(&mut Type)) {
         v.visit_mut(f);
@@ -238,6 +256,10 @@ impl Solve for KeyLegacyTypeParam {
 
     fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
 
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        LegacyTypeParameterLookup::NotParameter(Type::any_implicit())
+    }
+
     fn visit_type_mut(v: &mut LegacyTypeParameterLookup, f: &mut dyn FnMut(&mut Type)) {
         v.not_parameter_mut().into_iter().for_each(f);
     }
@@ -249,6 +271,10 @@ impl Solve for KeyTypeParams {
     }
 
     fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
+
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        QuantifiedVec(Vec::new())
+    }
 
     fn visit_type_mut(_: &mut Self::Answer, _: &mut dyn FnMut(&mut Type)) {
         // There are no types in the answer
@@ -305,9 +331,7 @@ impl<'a> Answers<'a> {
             items.reserve(answers.current.bindings.keys::<K>().len());
             for idx in answers.current.bindings.keys::<K>() {
                 let k = answers.current.bindings.idx_to_key(idx);
-                let v = Arc::unwrap_or_clone(
-                    answers.get(k).expect("Shouldn't have recursion in solve"),
-                );
+                let v = Arc::unwrap_or_clone(answers.get(k));
                 items.insert_once(idx, v);
             }
         }
@@ -420,7 +444,7 @@ impl<'a> AnswersSolver<'a> {
         result.map(|x| x.0)
     }
 
-    fn get<K: Solve>(&self, k: &K) -> Option<Arc<K::Answer>>
+    fn get<K: Solve>(&self, k: &K) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -428,12 +452,15 @@ impl<'a> AnswersSolver<'a> {
         self.get_idx(self.bindings().key_to_idx(k))
     }
 
-    fn get_idx<K: Solve>(&self, k: Idx<K>) -> Option<Arc<K::Answer>>
+    fn get_idx<K: Solve>(&self, k: Idx<K>) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        self.try_get_idx(k).ok()
+        match self.try_get_idx(k) {
+            Ok(v) => v,
+            Err(r) => Arc::new(K::promote_recursive(r)),
+        }
     }
 
     fn get_annotation(&self, key: &KeyAnnotation) -> Arc<Annotation> {
@@ -442,7 +469,6 @@ impl<'a> AnswersSolver<'a> {
 
     fn get_annotation_idx(&self, key: Idx<KeyAnnotation>) -> Arc<Annotation> {
         self.get_idx(key)
-            .unwrap_or_else(|| Arc::new(Annotation::default()))
     }
 
     fn record_recursive(&self, key: &Key, answer: Arc<Type>, recursive: Var) {
@@ -469,25 +495,21 @@ impl<'a> AnswersSolver<'a> {
 
     pub fn get_base_class(&self, key: &KeyBaseClass) -> Arc<BaseClass> {
         self.get(key)
-            .unwrap_or_else(|| Arc::new(BaseClass::Type(Type::any_implicit())))
     }
 
     pub fn get_mro(&self, key: &KeyMro) -> Arc<Mro> {
-        self.get(key).unwrap_or_else(|| Arc::new(Mro::cyclic()))
+        self.get(key)
     }
 
     pub fn get_tparams(&self, key: &KeyTypeParams) -> Arc<QuantifiedVec> {
         self.get(key)
-            .unwrap_or_else(|| Arc::new(QuantifiedVec(Vec::new())))
     }
 
     pub fn get_legacy_tparam_idx(
         &self,
         key: Idx<KeyLegacyTypeParam>,
     ) -> Arc<LegacyTypeParameterLookup> {
-        self.get_idx(key).unwrap_or_else(|| {
-            Arc::new(LegacyTypeParameterLookup::NotParameter(Type::any_implicit()))
-        })
+        self.get_idx(key)
     }
 
     fn solve_legacy_tparam(
