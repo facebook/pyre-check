@@ -474,7 +474,7 @@ impl<'a> AnswersSolver<'a> {
     fn record_recursive(&self, key: &Key, answer: Arc<Type>, recursive: Var) {
         self.solver.record_recursive(
             recursive,
-            (*answer).clone(),
+            answer.arc_clone(),
             self.type_order(),
             self.errors(),
             self.module_info(),
