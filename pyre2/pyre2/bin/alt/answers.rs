@@ -735,7 +735,9 @@ impl<'a> AnswersSolver<'a> {
             return Type::any_error();
         }
         let mut ty = match &ty {
-            Type::ClassDef(cls) => Type::Type(Box::new(self.promote_to_class_type(cls, range))),
+            Type::ClassDef(cls) => Type::Type(Box::new(Type::ClassType(
+                self.promote_to_class_type(cls, range),
+            ))),
             t => t.clone(),
         };
         let mut seen = SmallMap::new();

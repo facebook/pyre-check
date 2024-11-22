@@ -514,7 +514,9 @@ impl<'a> AnswersSolver<'a> {
     pub fn canonicalize_all_class_types(&self, ty: Type, range: TextRange) -> Type {
         ty.transform(|ty| match ty {
             Type::ClassDef(cls) => {
-                *ty = Type::Type(Box::new(self.promote_to_class_type(cls, range)));
+                *ty = Type::Type(Box::new(Type::ClassType(
+                    self.promote_to_class_type(cls, range),
+                )));
             }
             _ => {}
         })
@@ -942,11 +944,13 @@ impl<'a> AnswersSolver<'a> {
                         // (https://typing.readthedocs.io/en/latest/spec/annotations.html#type-and-annotation-expressions)
                         Type::Type(Box::new(Type::Type(Box::new(targ))))
                     }
-                    Type::ClassDef(cls) => Type::Type(Box::new(self.specialize_as_class_type(
-                        &cls,
-                        xs.map(|x| self.expr_untype(x)),
-                        x.range,
-                    ))),
+                    Type::ClassDef(cls) => {
+                        Type::Type(Box::new(Type::ClassType(self.specialize_as_class_type(
+                            &cls,
+                            xs.map(|x| self.expr_untype(x)),
+                            x.range,
+                        ))))
+                    }
                     Type::Type(box Type::SpecialForm(special)) => {
                         self.apply_special_form(special, xs, x.range)
                     }

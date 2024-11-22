@@ -208,9 +208,9 @@ impl<'a> AnswersSolver<'a> {
         cls: &Class,
         targs: Vec<Type>,
         range: TextRange,
-    ) -> Type {
+    ) -> ClassType {
         let targs = self.check_and_create_targs(cls, targs, range);
-        Type::class_type(cls, targs)
+        ClassType(cls.clone(), targs)
     }
 
     /// Given a class, create a `Type` that represents to an instance annotated
@@ -221,9 +221,9 @@ impl<'a> AnswersSolver<'a> {
     ///
     /// We require a range because depending on the configuration we may raise
     /// a type error when a generic class is promoted using gradual types.
-    pub fn promote_to_class_type(&self, cls: &Class, range: TextRange) -> Type {
+    pub fn promote_to_class_type(&self, cls: &Class, range: TextRange) -> ClassType {
         let targs = self.create_default_targs(cls, range);
-        Type::class_type(cls, targs)
+        ClassType(cls.clone(), targs)
     }
 
     fn instantiate_class_member(&self, cls: &ClassType, ty: Type) -> Type {
