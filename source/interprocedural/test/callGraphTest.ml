@@ -5543,7 +5543,7 @@ let test_call_graph_of_define =
              {|
       from typing import Any, MutableMapping
       from typing_extensions import Self
-      from pyre_extensions import ReadOnly
+      from pyre_extensions import PyreReadOnly
 
       class A:
         B: MutableMapping[str, Any] = {}
@@ -5551,7 +5551,7 @@ let test_call_graph_of_define =
         def __init__(self) -> None:
           self.B: MutableMapping[str, Any] = {}
 
-        def self_readonly(self: ReadOnly[Self]) -> None:
+        def self_readonly(self: PyreReadOnly[Self]) -> None:
           self.B.get("")
      |}
            ~define_name:"test.A.self_readonly"
@@ -5598,7 +5598,7 @@ let test_call_graph_of_define =
              {|
       from typing import Any, MutableMapping
       from typing_extensions import Self
-      from pyre_extensions import ReadOnly
+      from pyre_extensions import PyreReadOnly
 
       class A:
         def __init__(self) -> None:

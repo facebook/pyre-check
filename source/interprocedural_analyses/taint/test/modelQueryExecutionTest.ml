@@ -1408,7 +1408,7 @@ let test_generated_annotations context =
   assert_generated_annotations
     ~source:
       {|
-      from pyre_extensions import ReadOnly
+      from pyre_extensions import PyreReadOnly
       from typing import Optional
 
       class A:
@@ -1420,7 +1420,7 @@ let test_generated_annotations context =
       class C(B):
         pass
 
-      def test1() -> ReadOnly[Optional[ReadOnly[C]]]: ...
+      def test1() -> PyreReadOnly[Optional[PyreReadOnly[C]]]: ...
      |}
     ~query:
       {

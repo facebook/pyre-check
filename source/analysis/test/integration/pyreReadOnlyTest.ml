@@ -15,13 +15,13 @@ let test_ignore_readonly =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
-              def foo(x: ReadOnly[Bar]) -> Bar:
+              def foo(x: PyreReadOnly[Bar]) -> Bar:
                 y: Bar = x
-                z: ReadOnly[Bar] = y
+                z: PyreReadOnly[Bar] = y
                 return z
             |}
            [
@@ -32,11 +32,11 @@ let test_ignore_readonly =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
-              def foo(x: ReadOnly[Bar]) -> None:
+              def foo(x: PyreReadOnly[Bar]) -> None:
                 y: str = x
             |}
            [
@@ -46,12 +46,12 @@ let test_ignore_readonly =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing_extensions import Literal
 
               def foo(
-                always_true: ReadOnly[Literal[True]],
-                always_false: ReadOnly[Literal[False]]
+                always_true: PyreReadOnly[Literal[True]],
+                always_false: PyreReadOnly[Literal[False]]
               ) -> None:
                 x: Literal[True] = always_true or False
                 y: Literal[False] = always_false and True
@@ -67,9 +67,9 @@ let test_ignore_readonly =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
-              def foo(s: ReadOnly[str]) -> None:
+              def foo(s: PyreReadOnly[str]) -> None:
                 y: str = s.capitalize()
             |}
            [
@@ -83,7 +83,7 @@ let test_ignore_readonly =
            {|
 
               from typing import overload, Self
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar:
                   @overload
@@ -91,11 +91,11 @@ let test_ignore_readonly =
                       ...
 
                   @overload
-                  def method_rw_ro(self: ReadOnly[Self]) -> ReadOnly[Self]:
+                  def method_rw_ro(self: PyreReadOnly[Self]) -> PyreReadOnly[Self]:
                       ...
 
 
-              def f(rw: Bar, ro: ReadOnly[Bar]) -> None:
+              def f(rw: Bar, ro: PyreReadOnly[Bar]) -> None:
                 reveal_type(rw.method_rw_ro())
                 reveal_type(ro.method_rw_ro())
             |}
@@ -112,11 +112,11 @@ let test_ignore_readonly =
            {|
 
               from typing import overload, Self
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar:
                   @overload
-                  def method_ro_rw(self: ReadOnly[Self]) -> ReadOnly[Self]:
+                  def method_ro_rw(self: PyreReadOnly[Self]) -> PyreReadOnly[Self]:
                       ...
 
                   @overload
@@ -124,7 +124,7 @@ let test_ignore_readonly =
                       ...
 
 
-              def f(rw: Bar, ro: ReadOnly[Bar]) -> None:
+              def f(rw: Bar, ro: PyreReadOnly[Bar]) -> None:
                 reveal_type(rw.method_ro_rw())
                 reveal_type(ro.method_ro_rw())
             |}
@@ -150,12 +150,12 @@ let test_readonly_configuration_flag =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               def main() -> None:
-                x: ReadOnly[Bar]
+                x: PyreReadOnly[Bar]
                 y = x
                 z: Bar = y
             |}
@@ -167,11 +167,11 @@ let test_readonly_configuration_flag =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
-              x: ReadOnly[Bar]
+              x: PyreReadOnly[Bar]
               y: Bar = x
             |}
            [
@@ -188,12 +188,12 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               def main() -> None:
-                x: ReadOnly[Bar]
+                x: PyreReadOnly[Bar]
                 y = x
                 z: Bar = y
             |}
@@ -204,21 +204,21 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               def main() -> None:
                 x = Bar()
                 y = x
-                z: ReadOnly[Bar] = y
+                z: PyreReadOnly[Bar] = y
             |}
            [];
       (* Treat constants, such as `42` or `...`, as assignable to mutable types. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
                 # This is treated as `some_attribute: Bar = ...`.
@@ -236,7 +236,7 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
                 mutable_attribute: Bar = Bar()
@@ -244,7 +244,7 @@ let test_assignment =
               class Bar: ...
 
               def main() -> None:
-                readonly_foo: ReadOnly[Foo]
+                readonly_foo: PyreReadOnly[Foo]
                 mutable_foo: Foo
 
                 x1: Bar = readonly_foo.mutable_attribute
@@ -257,7 +257,7 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Baz: ...
 
@@ -268,7 +268,7 @@ let test_assignment =
                 foo_attribute: Bar = Bar()
 
               def main() -> None:
-                readonly_foo: ReadOnly[Foo]
+                readonly_foo: PyreReadOnly[Foo]
                 mutable_foo: Foo
 
                 x1: Baz = readonly_foo.foo_attribute.bar_attribute
@@ -281,15 +281,15 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               class Foo:
-                readonly_attribute: ReadOnly[Bar] = Bar()
+                readonly_attribute: PyreReadOnly[Bar] = Bar()
 
               def main() -> None:
-                readonly_foo: ReadOnly[Foo]
+                readonly_foo: PyreReadOnly[Foo]
                 mutable_foo: Foo
 
                 x1: Bar = readonly_foo.readonly_attribute
@@ -305,7 +305,7 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Type
 
               class Foo:
@@ -314,8 +314,8 @@ let test_assignment =
               class Bar: ...
 
               def main() -> None:
-                readonly_type_foo: ReadOnly[Type[Foo]]
-                type_readonly_foo: Type[ReadOnly[Foo]]
+                readonly_type_foo: PyreReadOnly[Type[Foo]]
+                type_readonly_foo: Type[PyreReadOnly[Foo]]
                 x: Bar = readonly_type_foo.some_attribute
                 y: Bar = type_readonly_foo.some_attribute
             |}
@@ -328,7 +328,7 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
                 some_attribute: Bar = Bar()
@@ -336,7 +336,7 @@ let test_assignment =
               class Bar: ...
 
               def main() -> None:
-                readonly_foo: ReadOnly[Foo]
+                readonly_foo: PyreReadOnly[Foo]
                 readonly_foo.some_attribute = Bar()
             |}
            [
@@ -348,10 +348,10 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
-                readonly_attribute: ReadOnly[Bar] = Bar()
+                readonly_attribute: PyreReadOnly[Bar] = Bar()
                 mutable_attribute: Bar = Bar()
 
               class Bar: ...
@@ -365,12 +365,12 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               class Foo:
-                readonly_attribute: ReadOnly[Bar] = Bar()
+                readonly_attribute: PyreReadOnly[Bar] = Bar()
                 mutable_attribute: Bar = Bar()
 
                 def some_method(self) -> None:
@@ -381,12 +381,12 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               class Foo:
-                def __init__(self, x: ReadOnly[Bar], some_bool: bool) -> None:
+                def __init__(self, x: PyreReadOnly[Bar], some_bool: bool) -> None:
                   self.x = x
 
                   if some_bool:
@@ -398,7 +398,7 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Type
 
               class Foo:
@@ -407,10 +407,10 @@ let test_assignment =
               class Bar: ...
 
               def main() -> None:
-                readonly_type_foo: ReadOnly[Type[Foo]]
+                readonly_type_foo: PyreReadOnly[Type[Foo]]
                 readonly_type_foo.some_attribute = Bar()
 
-                type_readonly_foo: Type[ReadOnly[Foo]]
+                type_readonly_foo: Type[PyreReadOnly[Foo]]
                 type_readonly_foo.some_attribute = Bar()
             |}
            [
@@ -418,11 +418,11 @@ let test_assignment =
               `some_attribute`.";
            ];
       (* TODO(T130377746): Emit readonly violation error when assigning to attribute of
-         `Type[ReadOnly[Foo]]`. *)
+         `Type[PyreReadOnly[Foo]]`. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Type
 
               class Foo:
@@ -431,7 +431,7 @@ let test_assignment =
               class Bar: ...
 
               def main() -> None:
-                type_readonly_foo: Type[ReadOnly[Foo]]
+                type_readonly_foo: Type[PyreReadOnly[Foo]]
                 type_readonly_foo.some_attribute = Bar()
             |}
            [];
@@ -440,24 +440,24 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               def main() -> None:
-                x: ReadOnly[Bar] = Bar()
+                x: PyreReadOnly[Bar] = Bar()
                 x = Bar()
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import List
 
               class Bar: ...
 
-              def main(xs: List[ReadOnly[Bar]]) -> None:
+              def main(xs: List[PyreReadOnly[Bar]]) -> None:
                 y: List[Bar] = xs
             |}
            [
@@ -469,14 +469,14 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
                 mutable_attribute: Bar = Bar()
 
               class Bar: ...
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 readonly_foo.mutable_attribute = Bar()
             |}
            [
@@ -486,13 +486,13 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
                 @property
                 def some_property(self) -> str: ...
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 reveal_type(readonly_foo.some_property)
             |}
            [
@@ -502,7 +502,7 @@ let test_assignment =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
                 @property
@@ -511,7 +511,7 @@ let test_assignment =
                 @some_property.setter
                 def some_property(self, value: str) -> None: ...
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 readonly_foo.some_property = "hello"
             |}
            [
@@ -528,14 +528,14 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
-              def expect_mutable_and_readonly(x: Bar, y: ReadOnly[Bar]) -> ReadOnly[Bar]: ...
+              def expect_mutable_and_readonly(x: Bar, y: PyreReadOnly[Bar]) -> PyreReadOnly[Bar]: ...
 
               def main() -> None:
-                x: ReadOnly[Bar]
+                x: PyreReadOnly[Bar]
                 y: Bar = expect_mutable_and_readonly(x, x)
             |}
            [
@@ -548,11 +548,11 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def foo(x: Foo) -> ReadOnly[Foo]: ...
+              def foo(x: Foo) -> PyreReadOnly[Foo]: ...
 
               def main(x: Foo) -> None:
                 y: Foo = foo(foo(x))
@@ -567,14 +567,14 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
-              def expect_mutable(x: Bar) -> ReadOnly[Bar]: ...
+              def expect_mutable(x: Bar) -> PyreReadOnly[Bar]: ...
 
               def main() -> None:
-                x: ReadOnly[Bar]
+                x: PyreReadOnly[Bar]
                 expect_mutable(x)
             |}
            [
@@ -585,16 +585,16 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
-                def return_readonly(self, x: Bar) -> ReadOnly[Bar]: ...
+                def return_readonly(self, x: Bar) -> PyreReadOnly[Bar]: ...
 
               class Bar: ...
 
               def main() -> None:
                 foo: Foo
-                x: ReadOnly[Bar]
+                x: PyreReadOnly[Bar]
                 y: Bar = foo.return_readonly(x)
             |}
            [
@@ -607,10 +607,10 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
-                def return_readonly(self, x: Bar) -> ReadOnly[Bar]: ...
+                def return_readonly(self, x: Bar) -> PyreReadOnly[Bar]: ...
 
               class Bar: ...
 
@@ -618,7 +618,7 @@ let test_function_call =
 
               def main() -> None:
                 foo: Foo
-                x: ReadOnly[Bar]
+                x: PyreReadOnly[Bar]
                 y: Bar = return_foo(x).return_readonly(x)
             |}
            [
@@ -634,15 +634,15 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
-                def expect_readonly_self(self: ReadOnly[Foo], x: Bar) -> None: ...
+                def expect_readonly_self(self: PyreReadOnly[Foo], x: Bar) -> None: ...
 
               class Bar: ...
 
               def main() -> None:
-                readonly_foo: ReadOnly[Foo]
+                readonly_foo: PyreReadOnly[Foo]
                 mutable_foo: Foo
                 x: Bar
                 readonly_foo.expect_readonly_self(x)
@@ -652,7 +652,7 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
                 def expect_mutable_self(self, x: Bar) -> None: ...
@@ -660,7 +660,7 @@ let test_function_call =
               class Bar: ...
 
               def main() -> None:
-                readonly_foo: ReadOnly[Foo]
+                readonly_foo: PyreReadOnly[Foo]
                 mutable_foo: Foo
                 x: Bar
                 readonly_foo.expect_mutable_self(x)
@@ -677,18 +677,18 @@ let test_function_call =
       @@ assert_type_errors_including_readonly
            ~include_line_numbers:true
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
                 def expect_mutable_self(self, x: Bar) -> None: ...
 
-                def expect_readonly_self(self: ReadOnly["Foo"], x: Bar) -> None:
+                def expect_readonly_self(self: PyreReadOnly["Foo"], x: Bar) -> None:
                   self.expect_mutable_self(x)
 
               class Bar: ...
 
               def main() -> None:
-                readonly_foo: ReadOnly[Foo]
+                readonly_foo: PyreReadOnly[Foo]
                 mutable_foo: Foo
                 x: Bar
                 readonly_foo.expect_readonly_self(x)
@@ -702,15 +702,15 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
-              def expect_positional_mutable_and_readonly(x: Bar, y: ReadOnly[Bar], /) -> None:
+              def expect_positional_mutable_and_readonly(x: Bar, y: PyreReadOnly[Bar], /) -> None:
                 reveal_type(x)
                 reveal_type(y)
 
-              def main(my_readonly: ReadOnly[Bar]) -> None:
+              def main(my_readonly: PyreReadOnly[Bar]) -> None:
                 expect_positional_mutable_and_readonly(my_readonly, my_readonly)
             |}
            [
@@ -723,15 +723,15 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
-              def expect_keyword_only( *, x: Bar, y: ReadOnly[Bar]) -> None:
+              def expect_keyword_only( *, x: Bar, y: PyreReadOnly[Bar]) -> None:
                 reveal_type(x)
                 reveal_type(y)
 
-              def main(my_readonly: ReadOnly[Bar], my_mutable: Bar) -> None:
+              def main(my_readonly: PyreReadOnly[Bar], my_mutable: Bar) -> None:
                 expect_keyword_only(y=my_mutable, x=my_readonly)
             |}
            [
@@ -744,13 +744,13 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               def expect_kwargs( **kwargs: Bar) -> None: ...
 
-              def main(my_readonly: ReadOnly[Bar], my_mutable: Bar, **kwargs: ReadOnly[Bar]) -> None:
+              def main(my_readonly: PyreReadOnly[Bar], my_mutable: Bar, **kwargs: PyreReadOnly[Bar]) -> None:
                 expect_kwargs(y=my_mutable, x=my_readonly)
                 expect_kwargs( **kwargs)
             |}
@@ -765,12 +765,12 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Callable
 
               class Bar: ...
 
-              def main(my_readonly: ReadOnly[Bar], undefined: Callable[..., ReadOnly[Bar]]) -> None:
+              def main(my_readonly: PyreReadOnly[Bar], undefined: Callable[..., PyreReadOnly[Bar]]) -> None:
                 x: Bar = undefined(my_readonly)
             |}
            [
@@ -780,7 +780,7 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
@@ -788,7 +788,7 @@ let test_function_call =
                 # pyre-ignore[16]: `object` has no attribute `some_attribute`.
                 x.some_attribute = 42
 
-              def main(readonly: ReadOnly[Bar]) -> None:
+              def main(readonly: PyreReadOnly[Bar]) -> None:
                 expect_mutable(readonly)
             |}
            [
@@ -799,25 +799,25 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
-              def expect_union(x: Bar | ReadOnly[str]) -> None: ...
+              def expect_union(x: Bar | PyreReadOnly[str]) -> None: ...
 
-              def main(readonly_string: ReadOnly[str]) -> None:
+              def main(readonly_string: PyreReadOnly[str]) -> None:
                 expect_union(readonly_string)
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import List
 
               class Bar: ...
 
-              def expect_list_mutable(xs: List[ReadOnly[Bar]]) -> None: ...
+              def expect_list_mutable(xs: List[PyreReadOnly[Bar]]) -> None: ...
 
               def main(xs: List[Bar]) -> None:
                 expect_list_mutable(xs)
@@ -831,12 +831,12 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import List
 
               class Bar: ...
 
-              def expect_list_list_mutable(xs: List[List[ReadOnly[Bar]]]) -> None: ...
+              def expect_list_list_mutable(xs: List[List[PyreReadOnly[Bar]]]) -> None: ...
 
               def main(xs: List[List[Bar]]) -> None:
                 expect_list_list_mutable(xs)
@@ -850,14 +850,14 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Union
 
               class Bar: ...
 
               def expect_union(xs: Union[Bar, str]) -> None: ...
 
-              def main(readonly_Bar: ReadOnly[Bar] | ReadOnly[str]) -> None:
+              def main(readonly_Bar: PyreReadOnly[Bar] | PyreReadOnly[str]) -> None:
                 expect_union(readonly_Bar)
             |}
            [
@@ -870,13 +870,13 @@ let test_function_call =
       @@ assert_type_errors_including_readonly
            {|
               from typing import TypeVar
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing_extensions import Self
 
               class Foo:
                   def mutable_method(self) -> None: ...
 
-                  def readonly_method(self: ReadOnly[Self]) -> None:
+                  def readonly_method(self: PyreReadOnly[Self]) -> None:
                     self.mutable_method()
               |}
            [
@@ -889,7 +889,7 @@ let test_function_call =
       @@ assert_type_errors_including_readonly
            {|
               from typing import Awaitable, TypeVar, Callable
-              from pyre_extensions import ParameterSpecification, ReadOnly
+              from pyre_extensions import ParameterSpecification, PyreReadOnly
               from readonly_stubs_for_testing import readonly_entrypoint
 
               T = TypeVar("T")
@@ -928,11 +928,11 @@ let test_function_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-          from pyre_extensions import ReadOnly
+          from pyre_extensions import PyreReadOnly
           class C:
             def f(self, x: int, /) -> None:
               pass
-          def f(c: ReadOnly[C]) -> None:
+          def f(c: PyreReadOnly[C]) -> None:
             c.f(0)
         |}
            [
@@ -950,11 +950,11 @@ let test_await =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
-              async def return_readonly() -> ReadOnly[Bar]: ...
+              async def return_readonly() -> PyreReadOnly[Bar]: ...
 
               async def main() -> None:
                 y: Bar = await return_readonly()
@@ -973,13 +973,13 @@ let test_parameters =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def main(my_mutable: Foo, my_readonly: ReadOnly[Foo]) -> None:
+              def main(my_mutable: Foo, my_readonly: PyreReadOnly[Foo]) -> None:
                 y: Foo = my_readonly
-                y2: ReadOnly[Foo] = my_mutable
+                y2: PyreReadOnly[Foo] = my_mutable
             |}
            [
              "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
@@ -988,7 +988,7 @@ let test_parameters =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               def main(unannotated) -> None:
                 y: int = unannotated
@@ -997,11 +997,11 @@ let test_parameters =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def main(x: ReadOnly[Foo], /, y: ReadOnly[Foo], *, z: ReadOnly[Foo]) -> None:
+              def main(x: PyreReadOnly[Foo], /, y: PyreReadOnly[Foo], *, z: PyreReadOnly[Foo]) -> None:
                 y1: Foo = x
                 y2: Foo = y
                 y3: Foo = z
@@ -1017,11 +1017,11 @@ let test_parameters =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def main(*args: ReadOnly[Foo], **kwargs: ReadOnly[Foo]) -> None:
+              def main(*args: PyreReadOnly[Foo], **kwargs: PyreReadOnly[Foo]) -> None:
                 reveal_type(args)
                 reveal_type(kwargs)
             |}
@@ -1035,11 +1035,11 @@ let test_parameters =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def return_readonly() -> ReadOnly[Foo]: ...
+              def return_readonly() -> PyreReadOnly[Foo]: ...
 
               def expect_mutable(x: Foo) -> Foo: ...
 
@@ -1056,11 +1056,11 @@ let test_parameters =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def foo(x: ReadOnly[Foo], y: Foo = x) -> None:
+              def foo(x: PyreReadOnly[Foo], y: Foo = x) -> None:
                 pass
             |}
            [
@@ -1078,11 +1078,11 @@ let test_reveal_type =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def main(my_mutable: Foo, my_readonly: ReadOnly[Foo]) -> None:
+              def main(my_mutable: Foo, my_readonly: PyreReadOnly[Foo]) -> None:
                 y1 = my_readonly
                 y2 = my_mutable
                 reveal_type(y1)
@@ -1102,13 +1102,13 @@ let test_format_string =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_including_readonly
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def expect_mutable(x: Foo) -> ReadOnly[Foo]: ...
+              def expect_mutable(x: Foo) -> PyreReadOnly[Foo]: ...
 
-              def main(my_readonly: ReadOnly[Foo], my_mutable: Foo) -> None:
+              def main(my_readonly: PyreReadOnly[Foo], my_mutable: Foo) -> None:
                 s = f"hello, {expect_mutable(my_readonly)}, {expect_mutable(my_mutable)}"
             |}
            [
@@ -1125,7 +1125,7 @@ let test_generic_types =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Generic, List, TypeVar
 
               T = TypeVar("T")
@@ -1134,7 +1134,7 @@ let test_generic_types =
 
               class Bar: ...
 
-              def main(readonly: ReadOnly[Bar]) -> None:
+              def main(readonly: PyreReadOnly[Bar]) -> None:
                 y = identity(readonly)
                 reveal_type(y)
             |}
@@ -1142,7 +1142,7 @@ let test_generic_types =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Generic, List, TypeVar
 
               T = TypeVar("T")
@@ -1152,7 +1152,7 @@ let test_generic_types =
 
               class Bar: ...
 
-              def main(foo: Foo[ReadOnly[Bar]]) -> None:
+              def main(foo: Foo[PyreReadOnly[Bar]]) -> None:
                 x = foo.get_element()
                 reveal_type(x)
             |}
@@ -1160,12 +1160,12 @@ let test_generic_types =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import List
 
               class Bar: ...
 
-              def main(xs: List[ReadOnly[Bar]]) -> None:
+              def main(xs: List[PyreReadOnly[Bar]]) -> None:
                 x = xs[0]
                 reveal_type(x)
             |}
@@ -1173,12 +1173,12 @@ let test_generic_types =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import List
 
               class Bar: ...
 
-              def main(xs: List[ReadOnly[Bar]]) -> None:
+              def main(xs: List[PyreReadOnly[Bar]]) -> None:
                 x = xs[0]
                 reveal_type(x)
             |}
@@ -1192,12 +1192,12 @@ let test_refinement =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Optional
 
               class Foo: ...
 
-              def main(optional_readonly: ReadOnly[Optional[Foo]]) -> None:
+              def main(optional_readonly: PyreReadOnly[Optional[Foo]]) -> None:
                 if optional_readonly:
                   reveal_type(optional_readonly)
                 else:
@@ -1213,12 +1213,12 @@ let test_refinement =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Optional
 
               class Foo: ...
 
-              def main(optional_readonly: ReadOnly[Optional[Foo]]) -> None:
+              def main(optional_readonly: PyreReadOnly[Optional[Foo]]) -> None:
                 x = optional_readonly if optional_readonly else Foo()
                 reveal_type(x)
             |}
@@ -1226,7 +1226,7 @@ let test_refinement =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Base: ...
 
@@ -1234,7 +1234,7 @@ let test_refinement =
 
               class Foo: ...
 
-              def main(x: ReadOnly[Base | Foo]) -> None:
+              def main(x: PyreReadOnly[Base | Foo]) -> None:
                 if isinstance(x, Child):
                   reveal_type(x)
                 else:
@@ -1271,13 +1271,13 @@ let test_refinement =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
               class Bar: ...
 
-              def main(x: ReadOnly[Foo] | Bar) -> None:
+              def main(x: PyreReadOnly[Foo] | Bar) -> None:
                 if isinstance(x, Foo):
                   reveal_type(x)
                 else:
@@ -1290,13 +1290,13 @@ let test_refinement =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
               class Bar: ...
 
-              def main(x: ReadOnly[Foo] | Bar) -> None:
+              def main(x: PyreReadOnly[Foo] | Bar) -> None:
                 if not isinstance(x, Foo):
                   reveal_type(x)
             |}
@@ -1305,14 +1305,14 @@ let test_refinement =
       @@ assert_type_errors
            {|
               from typing import Optional
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               class Foo:
                 optional_attribute: Optional[Bar] = None
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 if readonly_foo.optional_attribute is not None:
                   reveal_type(readonly_foo.optional_attribute)
             |}
@@ -1325,15 +1325,15 @@ let test_refinement =
       @@ assert_type_errors
            {|
               from typing import Optional
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar:
-                def some_method(self: ReadOnly[Bar]) -> None: ...
+                def some_method(self: PyreReadOnly[Bar]) -> None: ...
 
               class Foo:
                 optional_attribute: Optional[Bar] = None
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 if readonly_foo.optional_attribute is not None and readonly_foo.optional_attribute.some_method():
                   pass
             |}
@@ -1341,7 +1341,7 @@ let test_refinement =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Optional
               from typing_extensions import Self
 
@@ -1351,7 +1351,7 @@ let test_refinement =
               class Foo:
                 bar: Optional[Bar] = None
 
-                def some_method(self: ReadOnly[Self]) -> None:
+                def some_method(self: PyreReadOnly[Self]) -> None:
                   y = self.bar.some_attribute if self.bar else ""
                   reveal_type(y)
             |}
@@ -1366,7 +1366,7 @@ let test_captured_variable_for_specially_decorated_functions =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_stubs_for_testing import readonly_entrypoint
 
               class Bar: ...
@@ -1398,7 +1398,7 @@ let test_captured_variable_for_specially_decorated_functions =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_stubs_for_testing import readonly_entrypoint
 
               class Bar: ...
@@ -1426,7 +1426,7 @@ let test_captured_variable_for_specially_decorated_functions =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_stubs_for_testing import readonly_entrypoint
 
               class Bar: ...
@@ -1451,7 +1451,7 @@ let test_captured_variable_for_specially_decorated_functions =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_stubs_for_testing import readonly_entrypoint
 
               class Bar: ...
@@ -1478,7 +1478,7 @@ let test_captured_variable_for_specially_decorated_functions =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_stubs_for_testing import readonly_entrypoint
 
               class Bar: ...
@@ -1506,7 +1506,7 @@ let test_captured_variable_for_specially_decorated_functions =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_stubs_for_testing import readonly_entrypoint
 
               some_global: str = ""
@@ -1533,11 +1533,11 @@ let test_return_type =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def main(x: ReadOnly[Foo]) -> Foo:
+              def main(x: PyreReadOnly[Foo]) -> Foo:
                 return x
             |}
            [
@@ -1547,12 +1547,12 @@ let test_return_type =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import List
 
               class Foo: ...
 
-              def main(x: List[ReadOnly[Foo]]) -> List[Foo]:
+              def main(x: List[PyreReadOnly[Foo]]) -> List[Foo]:
                 return x
             |}
            [
@@ -1573,10 +1573,10 @@ let test_ignored_module =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_filtered_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_module_to_ignore import Foo
 
-              def main(foo: ReadOnly[Foo]) -> None:
+              def main(foo: PyreReadOnly[Foo]) -> None:
                 foo.some_method(42)
             |}
            [];
@@ -1585,20 +1585,20 @@ let test_ignored_module =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_filtered_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_module_to_ignore import Foo
 
-              def main(readonly_int: ReadOnly[int]) -> None:
+              def main(readonly_int: PyreReadOnly[int]) -> None:
                 Foo().some_method(readonly_int)
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_filtered_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_module_to_ignore import some_function
 
-              def main(readonly_int: ReadOnly[int]) -> None:
+              def main(readonly_int: PyreReadOnly[int]) -> None:
                 some_function(readonly_int)
             |}
            [];
@@ -1606,12 +1606,12 @@ let test_ignored_module =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_filtered_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_module_to_ignore import Foo
 
               def user_function_expects_mutable_foo(foo: Foo) -> None: ...
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 user_function_expects_mutable_foo(readonly_foo)
             |}
            [
@@ -1629,11 +1629,11 @@ let test_typechecking_errors_are_prioritized =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def expect_mutable_int(x: ReadOnly[Foo]) -> None: ...
+              def expect_mutable_int(x: PyreReadOnly[Foo]) -> None: ...
 
               def main(s: str) -> None:
                 expect_mutable_int(s)
@@ -1645,12 +1645,12 @@ let test_typechecking_errors_are_prioritized =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo:
                 def expect_mutable_self(self, x: int) -> None: ...
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 readonly_foo.expect_mutable_self("hello")
                 readonly_foo.non_existent_method("hello")
             |}
@@ -1665,14 +1665,14 @@ let test_typechecking_errors_are_prioritized =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               class Foo:
                 x: Bar = Bar()
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 readonly_foo.x = "wrong type"
             |}
            [
@@ -1690,65 +1690,65 @@ let test_weaken_readonly_literals =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def expect_readonly_list(x: ReadOnly[list[Foo]]) -> None: ...
+              def expect_readonly_list(x: PyreReadOnly[list[Foo]]) -> None: ...
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 expect_readonly_list([readonly_foo, readonly_foo])
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def expect_readonly_list(x: ReadOnly[list[list[Foo]]]) -> None: ...
+              def expect_readonly_list(x: PyreReadOnly[list[list[Foo]]]) -> None: ...
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 expect_readonly_list([[readonly_foo], [readonly_foo]])
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def expect_readonly_set(x: ReadOnly[set[Foo]]) -> None: ...
+              def expect_readonly_set(x: PyreReadOnly[set[Foo]]) -> None: ...
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 expect_readonly_set({readonly_foo, readonly_foo})
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def expect_readonly_set(x: ReadOnly[set[set[Foo]]]) -> None: ...
+              def expect_readonly_set(x: PyreReadOnly[set[set[Foo]]]) -> None: ...
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 expect_readonly_set({{readonly_foo}, {readonly_foo}})
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def expect_readonly_dict(x: ReadOnly[dict[str, Foo]]) -> None: ...
+              def expect_readonly_dict(x: PyreReadOnly[dict[str, Foo]]) -> None: ...
 
-              def main(readonly_foo: ReadOnly[Foo], readonly_str: ReadOnly[str]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo], readonly_str: PyreReadOnly[str]) -> None:
                 expect_readonly_dict({ "foo": readonly_foo, "bar": readonly_foo})
                 expect_readonly_dict({ readonly_str: readonly_foo, readonly_str: readonly_foo})
                 expect_readonly_dict({ readonly_str: x for x in [readonly_foo, readonly_foo]})
@@ -1757,24 +1757,24 @@ let test_weaken_readonly_literals =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def expect_readonly_nested_dict(x: ReadOnly[dict[Foo, dict[str, Foo]]]) -> None: ...
+              def expect_readonly_nested_dict(x: PyreReadOnly[dict[Foo, dict[str, Foo]]]) -> None: ...
 
-              def main(readonly_foo: ReadOnly[Foo], readonly_str: ReadOnly[str]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo], readonly_str: PyreReadOnly[str]) -> None:
                 expect_readonly_nested_dict({ Foo(): { "foo": readonly_foo }})
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 xs = [readonly_foo, readonly_foo]
                 reveal_type(xs)
             |}
@@ -1785,11 +1785,11 @@ let test_weaken_readonly_literals =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def main(readonly_list: ReadOnly[list[Foo]]) -> None:
+              def main(readonly_list: PyreReadOnly[list[Foo]]) -> None:
                 xs = [x for x in readonly_list]
                 reveal_type(xs)
             |}
@@ -1811,13 +1811,13 @@ let test_error_message_has_non_any_location =
       @@ assert_type_errors
            ~include_line_numbers:true
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class FooWithCustomEqualityCheck:
                 def __eq__(self, other: object) -> bool: ...
 
               def main(
-                readonly_foo: ReadOnly[FooWithCustomEqualityCheck],
+                readonly_foo: PyreReadOnly[FooWithCustomEqualityCheck],
                 mutable_foo: FooWithCustomEqualityCheck
               ) -> None:
                 readonly_foo == readonly_foo
@@ -1842,13 +1842,13 @@ let test_error_message_has_non_any_location =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class FooWithCustomEqualityCheck:
                 def __eq__(self, other: object) -> bool: ...
 
               def main(
-                readonly_foo: ReadOnly[FooWithCustomEqualityCheck],
+                readonly_foo: PyreReadOnly[FooWithCustomEqualityCheck],
                 mutable_foo: FooWithCustomEqualityCheck
               ) -> None:
                 # pyre-ignore[58]: `==` is not supported for operand types
@@ -1866,10 +1866,10 @@ let test_allowlisted_classes_are_not_readonly =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_stubs_for_testing import MySafeReadOnlyClass
 
-              def main(readonly_object: ReadOnly[MySafeReadOnlyClass]) -> None:
+              def main(readonly_object: PyreReadOnly[MySafeReadOnlyClass]) -> None:
                 reveal_type(readonly_object)
                 reveal_type(readonly_object.some_attribute)
             |}
@@ -1880,10 +1880,10 @@ let test_allowlisted_classes_are_not_readonly =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_stubs_for_testing import MySafeReadOnlyClass
 
-              def main(readonly_object: ReadOnly[str | bool | MySafeReadOnlyClass]) -> None:
+              def main(readonly_object: PyreReadOnly[str | bool | MySafeReadOnlyClass]) -> None:
                 reveal_type(readonly_object)
             |}
            [
@@ -1895,13 +1895,13 @@ let test_allowlisted_classes_are_not_readonly =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_stubs_for_testing import MySafeReadOnlyClass
 
               class Foo:
                 some_attribute: MySafeReadOnlyClass = MySafeReadOnlyClass()
 
-              def main(readonly_foo: ReadOnly[Foo]) -> None:
+              def main(readonly_foo: PyreReadOnly[Foo]) -> None:
                 reveal_type(readonly_foo.some_attribute)
             |}
            [
@@ -1911,10 +1911,10 @@ let test_allowlisted_classes_are_not_readonly =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Any
 
-              def main(x: ReadOnly[int], y: ReadOnly[bool]) -> None:
+              def main(x: PyreReadOnly[int], y: PyreReadOnly[bool]) -> None:
                 reveal_type(x)
                 reveal_type(y)
             |}
@@ -1925,14 +1925,14 @@ let test_allowlisted_classes_are_not_readonly =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import TypeVar
 
               T = TypeVar("T")
 
-              def lookup(d: ReadOnly[dict[str, T]], key: str) -> ReadOnly[T]: ...
+              def lookup(d: PyreReadOnly[dict[str, T]], key: str) -> PyreReadOnly[T]: ...
 
-              def main(d: ReadOnly[dict[str, int]]) -> None:
+              def main(d: PyreReadOnly[dict[str, int]]) -> None:
                   x = lookup(d, "foo")
                   reveal_type(x)
             |}
@@ -1940,14 +1940,14 @@ let test_allowlisted_classes_are_not_readonly =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from typing import Any, TypeVar
 
               T = TypeVar("T")
 
-              def lookup(d: ReadOnly[dict[str, T]], key: str) -> ReadOnly[T]: ...
+              def lookup(d: PyreReadOnly[dict[str, T]], key: str) -> PyreReadOnly[T]: ...
 
-              def main(d: ReadOnly[dict[str, Any]]) -> None:
+              def main(d: PyreReadOnly[dict[str, Any]]) -> None:
                   x = lookup(d, "foo")
                   reveal_type(x)
             |}
@@ -1962,13 +1962,13 @@ let test_allowlisted_generic_integer_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
               from readonly_stubs_for_testing import MySafeReadOnlyIdType
 
               def takes_default_visibility(not_read_only: MySafeReadOnlyIdType[int]) -> None:
                 reveal_type(not_read_only)
 
-              def main(read_only: ReadOnly[MySafeReadOnlyIdType[int]]) -> None:
+              def main(read_only: PyreReadOnly[MySafeReadOnlyIdType[int]]) -> None:
                 takes_default_visibility(read_only)
                 reveal_type(read_only)
             |}
@@ -1990,13 +1990,13 @@ let test_typing_PyreReadOnly =
            {|
 
               from typing import _PyreReadOnly_
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Bar: ...
 
               def foo(x: _PyreReadOnly_[Bar]) -> Bar:
                 y: Bar = x
-                z: ReadOnly[Bar] = y
+                z: PyreReadOnly[Bar] = y
                 return z
             |}
            [
@@ -2023,40 +2023,6 @@ let test_no_pyre_extensions =
     ]
 
 
-let test_pyre_extensions_PyreReadOnly =
-  (* To facilitate a rename of [pyre_extensions.ReadOnly] to [pyre_extensions.PyreReadOnly], we add
-     a temporary [PyreReadOnly] alias. Once [ReadOnly] has been renamed and the alias removed, this
-     test can be deleted. *)
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-      from pyre_extensions import PyreReadOnly
-      from typing import List
-
-      def f(x: PyreReadOnly[List[int]]) -> None:
-        x.append(1)
-    |}
-           [
-             "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
-              `list.append` may modify its object. Cannot call it on readonly expression `x` of \
-              type `pyre_extensions.PyreReadOnly[List[int]]`.";
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_type_errors
-           {|
-        from pyre_extensions import PyreReadOnly
-        from typing_extensions import Self
-
-        class C:
-          def f(self: PyreReadOnly[Self]) -> None:
-            pass
-      |}
-           [];
-    ]
-
-
 let () =
   "readOnly"
   >::: [
@@ -2080,6 +2046,5 @@ let () =
          test_allowlisted_generic_integer_classes;
          test_typing_PyreReadOnly;
          test_no_pyre_extensions;
-         test_pyre_extensions_PyreReadOnly;
        ]
   |> Test.run

@@ -155,14 +155,14 @@ class BasicTestCase(unittest.TestCase):
 
     def test_readonly(self) -> None:
         try:
-            from .. import ReadOnly
+            from .. import PyreReadOnly
 
-            def expect_mutable(x: int) -> ReadOnly[int]:
-                y: ReadOnly[int] = x
+            def expect_mutable(x: int) -> PyreReadOnly[int]:
+                y: PyreReadOnly[int] = x
                 return y
 
         except Exception:
-            self.fail("ReadOnly type is missing or broken")
+            self.fail("PyreReadOnly type is missing or broken")
 
     def test_override(self):
         from .. import override

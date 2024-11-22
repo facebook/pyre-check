@@ -170,9 +170,5 @@ class Compose(Generic[_Ts]):
     pass
 
 
-class ReadOnly(Generic[_T]):
+class PyreReadOnly(Generic[_T]):
     pass
-
-
-# Temporary alias as we rename ReadOnly to PyreReadOnly.
-PyreReadOnly = ReadOnly

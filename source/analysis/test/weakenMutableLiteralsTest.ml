@@ -348,15 +348,15 @@ let test_weaken_mutable_literals_to_readonly context =
     make_resolution
       ~context
       {|
-      from pyre_extensions import ReadOnly
+      from pyre_extensions import PyreReadOnly
 
       class Base: ...
       class Child(Base): ...
       class Unrelated: ...
 
-      readonly_base: ReadOnly[Base]
-      readonly_child: ReadOnly[Child]
-      readonly_unrelated: ReadOnly[Unrelated]
+      readonly_base: PyreReadOnly[Base]
+      readonly_child: PyreReadOnly[Child]
+      readonly_unrelated: PyreReadOnly[Unrelated]
     |}
   in
   let assert_weaken_mutable_literals ~source ~against expected_output =
@@ -391,68 +391,68 @@ let test_weaken_mutable_literals_to_readonly context =
   in
   assert_weaken_mutable_literals
     ~source:"[test.readonly_child]"
-    ~against:"pyre_extensions.ReadOnly[typing.List[test.Base]]"
-    "pyre_extensions.ReadOnly[typing.List[test.Base]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.List[test.Base]]"
+    "pyre_extensions.PyreReadOnly[typing.List[test.Base]]";
   assert_weaken_mutable_literals
     ~source:"[test.readonly_unrelated]"
-    ~against:"pyre_extensions.ReadOnly[typing.List[test.Base]]"
-    "typing.List[pyre_extensions.ReadOnly[test.Unrelated]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.List[test.Base]]"
+    "typing.List[pyre_extensions.PyreReadOnly[test.Unrelated]]";
   assert_weaken_mutable_literals
     ~source:"[y for y in [test.Child()]]"
-    ~against:"pyre_extensions.ReadOnly[typing.List[test.Base]]"
-    "pyre_extensions.ReadOnly[typing.List[test.Base]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.List[test.Base]]"
+    "pyre_extensions.PyreReadOnly[typing.List[test.Base]]";
   assert_weaken_mutable_literals
     ~source:"[[test.readonly_child]]"
-    ~against:"pyre_extensions.ReadOnly[typing.List[typing.List[test.Base]]]"
-    "pyre_extensions.ReadOnly[typing.List[typing.List[test.Base]]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.List[typing.List[test.Base]]]"
+    "pyre_extensions.PyreReadOnly[typing.List[typing.List[test.Base]]]";
   assert_weaken_mutable_literals
     ~source:"[[test.readonly_unrelated]]"
-    ~against:"pyre_extensions.ReadOnly[typing.List[typing.List[test.Base]]]"
-    "typing.List[typing.List[pyre_extensions.ReadOnly[test.Unrelated]]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.List[typing.List[test.Base]]]"
+    "typing.List[typing.List[pyre_extensions.PyreReadOnly[test.Unrelated]]]";
   assert_weaken_mutable_literals
     ~source:"{test.readonly_child}"
-    ~against:"pyre_extensions.ReadOnly[typing.Set[test.Base]]"
-    "pyre_extensions.ReadOnly[typing.Set[test.Base]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Set[test.Base]]"
+    "pyre_extensions.PyreReadOnly[typing.Set[test.Base]]";
   assert_weaken_mutable_literals
     ~source:"{test.readonly_unrelated}"
-    ~against:"pyre_extensions.ReadOnly[typing.Set[test.Base]]"
-    "typing.Set[pyre_extensions.ReadOnly[test.Unrelated]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Set[test.Base]]"
+    "typing.Set[pyre_extensions.PyreReadOnly[test.Unrelated]]";
   assert_weaken_mutable_literals
     ~source:"{{test.readonly_child}}"
-    ~against:"pyre_extensions.ReadOnly[typing.Set[typing.Set[test.Base]]]"
-    "pyre_extensions.ReadOnly[typing.Set[typing.Set[test.Base]]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Set[typing.Set[test.Base]]]"
+    "pyre_extensions.PyreReadOnly[typing.Set[typing.Set[test.Base]]]";
   assert_weaken_mutable_literals
     ~source:"{{test.readonly_unrelated}}"
-    ~against:"pyre_extensions.ReadOnly[typing.Set[typing.Set[test.Base]]]"
-    "typing.Set[typing.Set[pyre_extensions.ReadOnly[test.Unrelated]]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Set[typing.Set[test.Base]]]"
+    "typing.Set[typing.Set[pyre_extensions.PyreReadOnly[test.Unrelated]]]";
   assert_weaken_mutable_literals
     ~source:"{y for y in [test.Child()]}"
-    ~against:"pyre_extensions.ReadOnly[typing.Set[test.Base]]"
-    "pyre_extensions.ReadOnly[typing.Set[test.Base]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Set[test.Base]]"
+    "pyre_extensions.PyreReadOnly[typing.Set[test.Base]]";
   assert_weaken_mutable_literals
     ~source:"{ 's': test.readonly_child }"
-    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]"
-    "pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Dict[str, test.Base]]"
+    "pyre_extensions.PyreReadOnly[typing.Dict[str, test.Base]]";
   assert_weaken_mutable_literals
     ~source:"{ 's': test.readonly_unrelated }"
-    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]"
-    "typing.Dict[str, pyre_extensions.ReadOnly[test.Unrelated]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Dict[str, test.Base]]"
+    "typing.Dict[str, pyre_extensions.PyreReadOnly[test.Unrelated]]";
   assert_weaken_mutable_literals
     ~source:"{ 's': y for y in [test.readonly_child] }"
-    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]"
-    "pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Dict[str, test.Base]]"
+    "pyre_extensions.PyreReadOnly[typing.Dict[str, test.Base]]";
   assert_weaken_mutable_literals
     ~source:"{ 's': y for y in [test.readonly_unrelated] }"
-    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]"
-    "typing.Dict[str, pyre_extensions.ReadOnly[test.Unrelated]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Dict[str, test.Base]]"
+    "typing.Dict[str, pyre_extensions.PyreReadOnly[test.Unrelated]]";
   assert_weaken_mutable_literals
     ~source:"{ 'x': { 's': test.readonly_child }}"
-    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, typing.Dict[str, test.Base]]]"
-    "pyre_extensions.ReadOnly[typing.Dict[str, typing.Dict[str, test.Base]]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Dict[str, typing.Dict[str, test.Base]]]"
+    "pyre_extensions.PyreReadOnly[typing.Dict[str, typing.Dict[str, test.Base]]]";
   assert_weaken_mutable_literals
     ~source:"{ 'x': { 's': test.readonly_unrelated }}"
-    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, typing.Dict[str, test.Base]]]"
-    "typing.Dict[str, typing.Dict[str, pyre_extensions.ReadOnly[test.Unrelated]]]";
+    ~against:"pyre_extensions.PyreReadOnly[typing.Dict[str, typing.Dict[str, test.Base]]]"
+    "typing.Dict[str, typing.Dict[str, pyre_extensions.PyreReadOnly[test.Unrelated]]]";
   ()
 
 

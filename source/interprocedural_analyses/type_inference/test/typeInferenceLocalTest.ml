@@ -1045,15 +1045,15 @@ let test_inferred_function_parameters =
             |}
            ~target:"test.foo"
            ~expected:no_inferences;
-      (* Ignore `ReadOnly` annotations. *)
+      (* Ignore `PyreReadOnly` annotations. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ check_inference_results
            {|
-              from pyre_extensions import ReadOnly
+              from pyre_extensions import PyreReadOnly
 
               class Foo: ...
 
-              def expect_readonly_foo(foo: ReadOnly[Foo]) -> None: ...
+              def expect_readonly_foo(foo: PyreReadOnly[Foo]) -> None: ...
 
               def foo(x) -> None:
                   expect_readonly_foo(x)

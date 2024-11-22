@@ -435,7 +435,7 @@ let test_check_isinstance =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-      from pyre_extensions import ReadOnly
+      from pyre_extensions import PyreReadOnly
 
       class Base: ...
 

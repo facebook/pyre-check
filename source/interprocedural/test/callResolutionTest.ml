@@ -34,11 +34,11 @@ let test_resolve_ignoring_errors context =
   assert_resolved
     ~source:
       {|
-    from pyre_extensions import ReadOnly
+    from pyre_extensions import PyreReadOnly
     from typing_extensions import Self
 
     class Foo:
-      def readonly(self: ReadOnly[Self]) -> ReadOnly[Self]:
+      def readonly(self: PyreReadOnly[Self]) -> PyreReadOnly[Self]:
         return self
   |}
     ~expression:"x.Foo().readonly()"
