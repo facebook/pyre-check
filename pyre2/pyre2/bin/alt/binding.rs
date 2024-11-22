@@ -290,7 +290,7 @@ pub enum BindingTypeParams {
     /// The first argument is a lookup for the class definition.
     /// The second argument tracks all names that appear in bases, which might
     /// indicate legacy type parameters if they point to variable declarations.
-    Class(Key, Vec<Idx<KeyLegacyTypeParam>>),
+    Class(Idx<Key>, Vec<Idx<KeyLegacyTypeParam>>),
 }
 
 #[derive(Clone, Debug)]
@@ -395,10 +395,10 @@ impl DisplayWith<Bindings> for Key {
 }
 
 impl DisplayWith<Bindings> for BindingTypeParams {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, _: &Bindings) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         match self {
             Self::Function(_, _) => write!(f, "function_type_params"),
-            Self::Class(id, _) => write!(f, "class_type_params {}", id),
+            Self::Class(id, _) => write!(f, "class_type_params {}", ctx.display(*id)),
         }
     }
 }

@@ -510,12 +510,16 @@ impl<'a> AnswersSolver<'a> {
                 tparams.extend(legacy_tparams);
                 QuantifiedVec(tparams)
             }
-            BindingTypeParams::Class(class_def, legacy_params) => match &*self.get(class_def) {
-                Type::ClassDef(cls) => self.tparams_of(cls, legacy_params),
-                _ => {
-                    unreachable!("The key inside a ClassTypeParams binding must be a class type")
+            BindingTypeParams::Class(class_def, legacy_params) => {
+                match &*self.get_idx(*class_def) {
+                    Type::ClassDef(cls) => self.tparams_of(cls, legacy_params),
+                    _ => {
+                        unreachable!(
+                            "The key inside a ClassTypeParams binding must be a class type"
+                        )
+                    }
                 }
-            },
+            }
         };
         Arc::new(res)
     }
