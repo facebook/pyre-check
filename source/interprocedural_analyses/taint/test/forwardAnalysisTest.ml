@@ -68,7 +68,6 @@ let assert_taint ?models ?models_source ~context source expect =
           (models |> Registry.object_targets |> Target.Set.elements |> Target.HashSet.of_list)
         ~qualifier
         ~define:(Ast.Node.value define)
-      |> CallGraph.MutableDefineCallGraph.read_only
     in
     let cfg = Cfg.create define.value in
     let taint_configuration = TaintConfiguration.Heap.default in

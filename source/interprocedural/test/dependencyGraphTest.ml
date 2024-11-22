@@ -59,8 +59,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
           (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
         ~attribute_targets:(Target.HashSet.create ())
         ~callable
-      |> CallGraph.MutableDefineCallGraph.read_only
-      |> CallGraph.DefineCallGraph.all_targets ~exclude_reference_only:true
+      |> CallGraph.MutableDefineCallGraph.all_targets ~exclude_reference_only:true
     in
     CallGraph.WholeProgramCallGraph.add_or_exn call_graph ~callable ~callees
   in

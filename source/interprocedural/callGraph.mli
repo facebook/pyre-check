@@ -285,14 +285,28 @@ val resolve_callees_from_type_external
   Expression.t ->
   CallCallees.t
 
-(** The call graph of a function or method definition. Unlike `MutableDefineCallGraph`, this is
-    immutable. *)
+(** The call graph of a function or method definition. This is for testing purpose only. *)
 module DefineCallGraph : sig
   type t [@@deriving eq, show]
 
   val empty : t
 
   val add : t -> location:Ast.Location.t -> callees:LocationCallees.t -> t
+
+  val equal_ignoring_types : t -> t -> bool
+end
+
+(** The call graph of a function or method definition. *)
+module MutableDefineCallGraph : sig
+  type t [@@deriving show]
+
+  val empty : t
+
+  (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
+      true excludes the targets that are not required in building the dependency graph. *)
+  val all_targets : exclude_reference_only:bool -> t -> Target.t list
+
+  val read_only : t -> DefineCallGraph.t
 
   val resolve_call
     :  t ->
@@ -313,23 +327,6 @@ module DefineCallGraph : sig
     IdentifierCallees.t option
 
   val resolve_string_format : t -> location:Ast.Location.t -> StringFormatCallees.t option
-
-  (* For testing purpose only. *)
-  val equal_ignoring_types : t -> t -> bool
-
-  (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
-      true excludes the targets that are not required in building the dependency graph. *)
-  val all_targets : exclude_reference_only:bool -> t -> Target.t list
-end
-
-module MutableDefineCallGraph : sig
-  type t
-
-  val empty : t
-
-  val all_targets : exclude_reference_only:bool -> t -> Target.t list
-
-  val read_only : t -> DefineCallGraph.t
 end
 
 val call_graph_of_define

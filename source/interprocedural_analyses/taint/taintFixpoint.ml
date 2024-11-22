@@ -139,9 +139,6 @@ module Analysis = struct
       TaintProfiler.track_duration ~profiler ~name:"Control flow graph" ~f:(fun () ->
           PyrePysaLogic.Cfg.create define.value)
     in
-    let call_graph_of_define =
-      Interprocedural.CallGraph.MutableDefineCallGraph.read_only call_graph_of_define
-    in
     let forward, result, triggered_sinks =
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis" ~f:(fun () ->
           ForwardAnalysis.run

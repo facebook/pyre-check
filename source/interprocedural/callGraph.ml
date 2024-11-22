@@ -1093,12 +1093,6 @@ module LocationCallees = struct
 
   let show callees = Format.asprintf "%a" pp callees
 
-  let all_targets ~exclude_reference_only = function
-    | Singleton raw_callees -> ExpressionCallees.all_targets ~exclude_reference_only raw_callees
-    | Compound map ->
-        Map.data map |> List.concat_map ~f:(ExpressionCallees.all_targets ~exclude_reference_only)
-
-
   let equal_ignoring_types location_callees_left location_callees_right =
     match location_callees_left, location_callees_right with
     | Singleton callees_left, Singleton callees_right ->
@@ -1131,43 +1125,12 @@ let expression_identifier = function
 module MakeCallGraph (CallGraph : sig
   type t [@@deriving eq]
 
-  val resolve_expression
-    :  t ->
-    location:Location.t ->
-    expression_identifier:string ->
-    ExpressionCallees.t option
-
   val to_json : t -> Yojson.Safe.t
+
+  val pp : Format.formatter -> t -> unit
 end) =
 struct
   include CallGraph
-
-  let resolve_call call_graph ~location ~call =
-    expression_identifier (Expression.Call call)
-    >>= fun expression_identifier ->
-    CallGraph.resolve_expression call_graph ~location ~expression_identifier
-    >>= fun { call; _ } -> call
-
-
-  let resolve_attribute_access call_graph ~location ~attribute =
-    CallGraph.resolve_expression call_graph ~location ~expression_identifier:attribute
-    >>= fun { attribute_access; _ } -> attribute_access
-
-
-  let resolve_identifier call_graph ~location ~identifier =
-    CallGraph.resolve_expression call_graph ~location ~expression_identifier:identifier
-    >>= fun { identifier; _ } -> identifier
-
-
-  let string_format_expression_identifier = "$__str__$"
-
-  let resolve_string_format call_graph ~location =
-    CallGraph.resolve_expression
-      call_graph
-      ~location
-      ~expression_identifier:string_format_expression_identifier
-    >>= fun { string_format; _ } -> string_format
-
 
   let to_json ~pyre_api ~resolve_module_path ~callable (call_graph : t) : Yojson.Safe.t =
     let bindings = ["callable", `String (Target.external_name callable)] in
@@ -1185,21 +1148,15 @@ struct
     in
     let bindings = ("calls", CallGraph.to_json call_graph) :: bindings in
     `Assoc (List.rev bindings)
+
+
+  let show = Format.asprintf "%a" pp
 end
 
-(** The call graph of a function or method definition. Unlike `MutableDefineCallGraph`, this is
-    immutable. *)
+(** The call graph of a function or method definition. This is for testing purpose only. *)
 module DefineCallGraph = struct
   module T = struct
     type t = LocationCallees.t Location.Map.Tree.t [@@deriving eq]
-
-    let resolve_expression call_graph ~location ~expression_identifier =
-      match Location.Map.Tree.find call_graph location with
-      | Some (LocationCallees.Singleton callees) -> Some callees
-      | Some (LocationCallees.Compound name_to_callees) ->
-          SerializableStringMap.find_opt expression_identifier name_to_callees
-      | None -> None
-
 
     let to_json call_graph =
       let bindings =
@@ -1207,19 +1164,19 @@ module DefineCallGraph = struct
             (Location.show key, LocationCallees.to_json data) :: sofar)
       in
       `Assoc bindings
+
+
+    let pp formatter call_graph =
+      let pp_pair formatter (key, value) =
+        Format.fprintf formatter "@,%a -> %a" Location.pp key LocationCallees.pp value
+      in
+      let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+      call_graph
+      |> Location.Map.Tree.to_alist
+      |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
   end
 
   include MakeCallGraph (T)
-
-  let pp formatter call_graph =
-    let pp_pair formatter (key, value) =
-      Format.fprintf formatter "@,%a -> %a" Location.pp key LocationCallees.pp value
-    in
-    let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-    call_graph |> Location.Map.Tree.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
-
-
-  let show = Format.asprintf "%a" pp
 
   let empty = Location.Map.Tree.empty
 
@@ -1229,25 +1186,12 @@ module DefineCallGraph = struct
 
   let equal_ignoring_types call_graph_left call_graph_right =
     Location.Map.Tree.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
-
-
-  (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
-      true excludes the targets that are not required in building the dependency graph. *)
-  let all_targets ~exclude_reference_only call_graph =
-    Location.Map.Tree.data call_graph
-    |> List.concat_map ~f:(LocationCallees.all_targets ~exclude_reference_only)
-    |> List.dedup_and_sort ~compare:Target.compare
 end
 
+(** The call graph of a function or method definition. *)
 module MutableDefineCallGraph = struct
   module T = struct
     type t = LocationCallees.Map.t Location.SerializableMap.t [@@deriving eq]
-
-    let resolve_expression call_graph ~location ~expression_identifier =
-      match Location.SerializableMap.find_opt location call_graph with
-      | Some callees -> SerializableStringMap.find_opt expression_identifier callees
-      | None -> None
-
 
     let to_json call_graph =
       let bindings =
@@ -1257,6 +1201,22 @@ module MutableDefineCallGraph = struct
           []
       in
       `Assoc bindings
+
+
+    let pp formatter call_graph =
+      let pp_pair formatter (key, value) =
+        Format.fprintf
+          formatter
+          "@,%a -> %a"
+          Location.pp
+          key
+          (LocationCallees.Map.pp ExpressionCallees.pp)
+          value
+      in
+      let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+      call_graph
+      |> Location.SerializableMap.to_alist
+      |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
   end
 
   include MakeCallGraph (T)
@@ -1295,22 +1255,6 @@ module MutableDefineCallGraph = struct
         | Some left, None -> Some left
         | None, Some right -> Some right
         | None, None -> None)
-
-
-  let pp formatter call_graph =
-    let pp_pair formatter (key, value) =
-      Format.fprintf
-        formatter
-        "@,%a -> %a"
-        Location.pp
-        key
-        (LocationCallees.Map.pp ExpressionCallees.pp)
-        value
-    in
-    let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-    call_graph
-    |> Location.SerializableMap.to_alist
-    |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
 
 
   let add_callees ~expression_identifier ~location ~callees =
@@ -1356,6 +1300,43 @@ module MutableDefineCallGraph = struct
            |> LocationCallees.Map.data
            |> List.concat_map ~f:(ExpressionCallees.all_targets ~exclude_reference_only))
     |> List.dedup_and_sort ~compare:Target.compare
+
+
+  let resolve_expression call_graph ~location ~expression_identifier =
+    match Location.SerializableMap.find_opt location call_graph with
+    | Some callees -> (
+        match SerializableStringMap.data callees with
+        | [] -> None
+        | [callee] -> Some callee
+        | _ -> SerializableStringMap.find_opt expression_identifier callees)
+    | None -> None
+
+
+  let resolve_call call_graph ~location ~call =
+    expression_identifier (Expression.Call call)
+    >>= fun expression_identifier ->
+    resolve_expression call_graph ~location ~expression_identifier
+    >>= fun { ExpressionCallees.call; _ } -> call
+
+
+  let resolve_attribute_access call_graph ~location ~attribute =
+    resolve_expression call_graph ~location ~expression_identifier:attribute
+    >>= fun { ExpressionCallees.attribute_access; _ } -> attribute_access
+
+
+  let resolve_identifier call_graph ~location ~identifier =
+    resolve_expression call_graph ~location ~expression_identifier:identifier
+    >>= fun { ExpressionCallees.identifier; _ } -> identifier
+
+
+  let string_format_expression_identifier = "$__str__$"
+
+  let resolve_string_format call_graph ~location =
+    resolve_expression
+      call_graph
+      ~location
+      ~expression_identifier:string_format_expression_identifier
+    >>= fun { ExpressionCallees.string_format; _ } -> string_format
 end
 
 (* Produce call targets with a textual order index.
@@ -2992,7 +2973,7 @@ struct
             (* Use indexed artificial targets to distinguish format strings at different
                locations. *)
             register_targets
-              ~expression_identifier:DefineCallGraph.string_format_expression_identifier
+              ~expression_identifier:MutableDefineCallGraph.string_format_expression_identifier
               ~location
               callees;
             List.iter substrings ~f:(function
@@ -3028,7 +3009,8 @@ struct
                             (StringFormatCallees.from_stringify_targets call_targets)
                         in
                         register_targets
-                          ~expression_identifier:DefineCallGraph.string_format_expression_identifier
+                          ~expression_identifier:
+                            MutableDefineCallGraph.string_format_expression_identifier
                           ~location:expression_location
                           callees
                     in
