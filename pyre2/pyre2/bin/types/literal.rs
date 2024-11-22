@@ -28,9 +28,7 @@ use ruff_text_size::TextRange;
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
-use crate::types::class::Class;
 use crate::types::class::ClassType;
-use crate::types::class::TArgs;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 
@@ -46,7 +44,7 @@ pub enum Lit {
     },
     Bool(bool),
     Bytes(Vec<u8>),
-    Enum(Class, Name),
+    Enum(ClassType, Name),
 }
 
 impl Display for Lit {
@@ -117,9 +115,7 @@ impl Lit {
                 attr: member_name,
                 ctx: _,
             }) => match get_enum_class_type(Ast::expr_name_identifier(maybe_enum_name.clone())) {
-                Some(class_type) => {
-                    Lit::Enum(class_type.class_object().clone(), member_name.id.to_owned())
-                }
+                Some(class_type) => Lit::Enum(class_type, member_name.id.to_owned()),
                 _ => {
                     errors.todo(module_info, "Lit::from_expr", x);
                     Lit::Bool(false)
@@ -212,7 +208,7 @@ impl Lit {
             Lit::Bytes(_) => stdlib.bytes(),
             Lit::Float(_) => stdlib.float(),
             Lit::Complex { .. } => stdlib.complex(),
-            Lit::Enum(enum_name, _) => Type::class_type(enum_name, TArgs::default()),
+            Lit::Enum(class_type, _) => Type::ClassType(class_type.clone()),
         }
     }
 
