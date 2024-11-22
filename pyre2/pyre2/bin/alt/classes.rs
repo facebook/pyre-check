@@ -289,9 +289,7 @@ impl<'a> AnswersSolver<'a> {
                     self.get_class_field(ancestor.class_object(), name)
                         .as_deref()
                         .map(|ty| {
-                            let raw_member = self
-                                .with_module(cls.module_info().name())
-                                .instantiate_class_member(ancestor, ty.clone());
+                            let raw_member = self.instantiate_class_member(ancestor, ty.clone());
                             Arc::new(raw_member)
                         })
                 })
