@@ -322,13 +322,6 @@ impl Type {
         matches!(self, Type::Callable(_))
     }
 
-    pub fn as_class_with_args(&self) -> Option<(&Class, &TArgs)> {
-        match self {
-            Type::ClassType(ClassType(cls, targs)) => Some((cls, targs)),
-            _ => None,
-        }
-    }
-
     pub fn as_var(&self) -> Option<Var> {
         match self {
             Type::Var(v) => Some(*v),
