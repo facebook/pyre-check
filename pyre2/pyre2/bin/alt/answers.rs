@@ -416,7 +416,7 @@ impl<'a> AnswersSolver<'a> {
         TypeOrder::new(self)
     }
 
-    fn try_get_idx<K: Solve>(&self, idx: Idx<K>) -> Result<Arc<K::Answer>, K::Recursive>
+    pub fn get_idx<K: Solve>(&self, idx: Idx<K>) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -441,7 +441,10 @@ impl<'a> AnswersSolver<'a> {
             let k = self.bindings().idx_to_key(idx);
             K::record_recursive(self, k, v.clone(), r.clone());
         }
-        result.map(|x| x.0)
+        match result {
+            Ok((v, _)) => v,
+            Err(r) => Arc::new(K::promote_recursive(r)),
+        }
     }
 
     pub fn get<K: Solve>(&self, k: &K) -> Arc<K::Answer>
@@ -450,17 +453,6 @@ impl<'a> AnswersSolver<'a> {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
         self.get_idx(self.bindings().key_to_idx(k))
-    }
-
-    pub fn get_idx<K: Solve>(&self, k: Idx<K>) -> Arc<K::Answer>
-    where
-        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
-        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
-    {
-        match self.try_get_idx(k) {
-            Ok(v) => v,
-            Err(r) => Arc::new(K::promote_recursive(r)),
-        }
     }
 
     fn record_recursive(&self, key: &Key, answer: Arc<Type>, recursive: Var) {
