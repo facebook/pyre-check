@@ -34,5 +34,6 @@ excludes = [
     "generate_taint_models/",
     "scripts/",
     "source/",
-    "stubs/"
+    "stubs/",
+    "pyre2/",
 ]
