@@ -966,36 +966,6 @@
       "name": "PyreError",
       "stop_column": 32,
       "stop_line": 69
-    },
-    {
-      "code": -2,
-      "column": 35,
-      "concise_description": "untype, got Literal['RecursiveUnion']",
-      "description": "untype, got Literal['RecursiveUnion']",
-      "line": 72,
-      "name": "PyreError",
-      "stop_column": 51,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 37,
-      "concise_description": "untype, got Literal['MutualReference2']",
-      "description": "untype, got Literal['MutualReference2']",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 55,
-      "stop_line": 75
-    },
-    {
-      "code": -2,
-      "column": 99,
-      "concise_description": "untype, got Literal['MutualReference1']",
-      "description": "untype, got Literal['MutualReference1']",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 117,
-      "stop_line": 75
     }
   ],
   "aliases_type_statement.py": [
@@ -1092,6 +1062,16 @@
     {
       "code": -2,
       "column": 27,
+      "concise_description": "Could not parse type string: , got Expected an expression at byte range 791..791",
+      "description": "Could not parse type string: , got Expected an expression at byte range 791..791",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 27,
       "concise_description": "Expected 1 more positional argument(s)",
       "description": "Expected 1 more positional argument(s)",
       "line": 37,
@@ -1171,22 +1151,32 @@
     },
     {
       "code": -2,
-      "column": 42,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
-      "line": 40,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 40
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "Expected `BadTypeAlias5` to be a type alias, got dict[str, str]",
-      "description": "Expected `BadTypeAlias5` to be a type alias, got dict[str, str]",
+      "concise_description": "Expected `BadTypeAlias5` to be a type alias, got dict[Error, Error]",
+      "description": "Expected `BadTypeAlias5` to be a type alias, got dict[Error, Error]",
       "line": 41,
       "name": "PyreError",
       "stop_column": 32,
+      "stop_line": 41
+    },
+    {
+      "code": -2,
+      "column": 23,
+      "concise_description": "Could not find name `a`",
+      "description": "Could not find name `a`",
+      "line": 41,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 41
+    },
+    {
+      "code": -2,
+      "column": 28,
+      "concise_description": "Could not find name `b`",
+      "description": "Could not find name `b`",
+      "line": 41,
+      "name": "PyreError",
+      "stop_column": 29,
       "stop_line": 41
     },
     {

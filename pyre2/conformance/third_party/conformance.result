@@ -68,6 +68,8 @@
     "Line 50: Expected 1 errors",
     "Line 51: Expected 1 errors",
     "Line 52: Expected 1 errors",
+    "Line 72: Expected 1 errors",
+    "Line 75: Expected 1 errors",
     "Line 14: Unexpected errors [\"untype, got Literal['Json']\", \"untype, got Literal['Json']\"]",
     "Line 24: Unexpected errors [\"untype, got Literal['Json2']\", \"untype, got Literal['Json2']\"]",
     "Line 30: Unexpected errors [\"untype, got Literal['RecursiveTuple']\"]",

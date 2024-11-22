@@ -1154,15 +1154,22 @@ impl<'a> BindingsBuilder<'a> {
                     let ann_val = if let Some(special) = SpecialForm::new(&name.id, &x.annotation) {
                         BindingAnnotation::Type(special.to_type())
                     } else {
-                        BindingAnnotation::AnnotateExpr(*x.annotation, None)
+                        BindingAnnotation::AnnotateExpr(*x.annotation.clone(), None)
                     };
                     let ann_key = self.table.insert(ann_key, ann_val);
 
-                    if let Some(value) = x.value
+                    if let Some(mut value) = x.value
                         && (!self.module_info.is_interface()
                             || !matches!(&*value, Expr::EllipsisLiteral(_)))
                     {
-                        self.ensure_expr(&value);
+                        // Handle forward references in explicit type aliases.
+                        if let Expr::Name(name) = *x.annotation
+                            && name.id == "TypeAlias"
+                        {
+                            self.ensure_type(&mut value, &mut BindingsBuilder::forward_lookup);
+                        } else {
+                            self.ensure_expr(&value);
+                        }
                         let range = value.range();
                         self.bind_definition(
                             &name.clone(),
@@ -1220,14 +1227,14 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 _ => self.todo("Bindings::stmt AnnAssign", &x),
             },
-            Stmt::TypeAlias(x) => {
+            Stmt::TypeAlias(mut x) => {
                 if let Expr::Name(name) = *x.name {
                     let qs = if let Some(params) = x.type_params {
                         self.type_params(&params)
                     } else {
                         Vec::new()
                     };
-                    self.ensure_expr(&x.value);
+                    self.ensure_type(&mut x.value, &mut BindingsBuilder::forward_lookup);
                     let expr_binding = Binding::Expr(None, *x.value);
                     let binding = Binding::ScopedTypeAlias(
                         name.id.clone(),

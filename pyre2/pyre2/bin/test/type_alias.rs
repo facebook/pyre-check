@@ -129,3 +129,24 @@ X2.__add__  # ok
 X3.__add__  # E: Cannot use type alias `X3`
     "#,
 );
+
+simple_test!(
+    test_forward_ref,
+    r#"
+from typing import TypeAlias, assert_type
+
+X1 = "A"  # Just a normal alias to a str
+X2: TypeAlias = "A"  # Forward ref
+type X3 = "A"  # Forward ref
+
+class A:
+    pass
+
+def f(x1: X1):  # E: untype, got Literal['A']
+    pass
+
+def g(x2: X2, x3: X3):
+    assert_type(x2, A)
+    assert_type(x3, A)
+    "#,
+);
