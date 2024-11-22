@@ -385,7 +385,7 @@ impl<'a> AnswersSolver<'a> {
             None
         };
         let tparams = self.get_tparams_for_class(cls);
-        let ret = cls.self_type(&tparams.0);
+        let ret = cls.self_type(tparams.deref());
         match init_ty.as_deref() {
             Some(ty) => replace_return_type(strip_first_argument(ty), ret),
             None => Type::callable(Vec::new(), ret),

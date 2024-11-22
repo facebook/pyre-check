@@ -120,8 +120,8 @@ impl Class {
         self.0.n_bases
     }
 
-    pub fn self_type(&self, tparams: &[Quantified]) -> Type {
-        let tparams_as_targs = TArgs::new(tparams.iter().map(|q| q.to_type()).collect());
+    pub fn self_type(&self, tparams: &QuantifiedVec) -> Type {
+        let tparams_as_targs = TArgs::new(tparams.as_slice().iter().map(|q| q.to_type()).collect());
         Type::class_type(ClassType::create_with_validated_targs(
             self.clone(),
             tparams_as_targs,

@@ -1004,7 +1004,7 @@ impl<'a> AnswersSolver<'a> {
                 Type::ClassDef(c)
             }
             Binding::SelfType(k) => match &*self.get_type_idx(*k) {
-                Type::ClassDef(c) => c.self_type(&self.get_tparams_for_class(c).0),
+                Type::ClassDef(c) => c.self_type(self.get_tparams_for_class(c).deref()),
                 _ => unreachable!(),
             },
             Binding::Forward(k) => self.get_type_idx(*k).arc_clone(),
