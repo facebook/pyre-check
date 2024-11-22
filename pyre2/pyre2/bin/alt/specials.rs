@@ -26,12 +26,10 @@ impl<'a> AnswersSolver<'a> {
         range: TextRange,
     ) -> Type {
         match special_form {
-            SpecialForm::Optional if arguments.len() == 1 => {
-                Type::Type(Box::new(Type::Union(vec![
-                    self.expr_untype(&arguments[0]),
-                    Type::None,
-                ])))
-            }
+            SpecialForm::Optional if arguments.len() == 1 => Type::type_form(Type::Union(vec![
+                self.expr_untype(&arguments[0]),
+                Type::None,
+            ])),
             SpecialForm::Optional => self.error(
                 range,
                 format!(
@@ -39,9 +37,9 @@ impl<'a> AnswersSolver<'a> {
                     arguments.len()
                 ),
             ),
-            SpecialForm::Union => Type::Type(Box::new(Type::Union(
-                arguments.map(|arg| self.expr_untype(arg)),
-            ))),
+            SpecialForm::Union => {
+                Type::type_form(Type::Union(arguments.map(|arg| self.expr_untype(arg))))
+            }
             SpecialForm::Tuple => {
                 let types: Vec<Type> = arguments.map(|x| self.expr_untype(x));
                 match types.as_slice() {
@@ -50,7 +48,7 @@ impl<'a> AnswersSolver<'a> {
                         "Invalid position for `...`".to_string(),
                     ),
                     [t, Type::Ellipsis] => {
-                        Type::Type(Box::new(Type::Tuple(Tuple::unbounded(t.clone()))))
+                        Type::type_form(Type::Tuple(Tuple::unbounded(t.clone())))
                     }
                     _ => {
                         for (index, value) in arguments.iter().enumerate() {
@@ -61,7 +59,7 @@ impl<'a> AnswersSolver<'a> {
                                 );
                             }
                         }
-                        Type::Type(Box::new(Type::Tuple(Tuple::concrete(types))))
+                        Type::type_form(Type::Tuple(Tuple::concrete(types)))
                     }
                 }
             }
@@ -77,20 +75,20 @@ impl<'a> AnswersSolver<'a> {
                     );
                     literals.push(Type::Literal(lit));
                 }
-                Type::Type(Box::new(self.unions(&literals)))
+                Type::type_form(self.unions(&literals))
             }
             SpecialForm::Callable if arguments.len() == 2 => {
                 let ret = self.expr_untype(&arguments[1]);
                 match &arguments[0] {
-                    Expr::List(args) => Type::Type(Box::new(Type::callable(
+                    Expr::List(args) => Type::type_form(Type::callable(
                         args.elts
                             .map(|x| Arg::PosOnly(self.expr_untype(x), Required::Required)),
                         ret,
-                    ))),
-                    Expr::EllipsisLiteral(_) => Type::Type(Box::new(Type::callable_ellipsis(ret))),
+                    )),
+                    Expr::EllipsisLiteral(_) => Type::type_form(Type::callable_ellipsis(ret)),
                     name @ Expr::Name(_) => {
                         let ty = self.expr_untype(name);
-                        Type::Type(Box::new(Type::callable_param_spec(ty, ret)))
+                        Type::type_form(Type::callable_param_spec(ty, ret))
                     }
                     x => self.error_todo("expr_infer, Callable type", x),
                 }
@@ -102,9 +100,9 @@ impl<'a> AnswersSolver<'a> {
                     arguments.len()
                 ),
             ),
-            SpecialForm::TypeGuard if arguments.len() == 1 => Type::Type(Box::new(
-                Type::TypeGuard(Box::new(self.expr_untype(&arguments[0]))),
-            )),
+            SpecialForm::TypeGuard if arguments.len() == 1 => {
+                Type::type_form(Type::TypeGuard(Box::new(self.expr_untype(&arguments[0]))))
+            }
             SpecialForm::TypeGuard => self.error(
                 range,
                 format!(
@@ -112,9 +110,9 @@ impl<'a> AnswersSolver<'a> {
                     arguments.len()
                 ),
             ),
-            SpecialForm::TypeIs if arguments.len() == 1 => Type::Type(Box::new(Type::TypeIs(
-                Box::new(self.expr_untype(&arguments[0])),
-            ))),
+            SpecialForm::TypeIs if arguments.len() == 1 => {
+                Type::type_form(Type::TypeIs(Box::new(self.expr_untype(&arguments[0]))))
+            }
             SpecialForm::TypeIs => self.error(
                 range,
                 format!(
@@ -122,9 +120,9 @@ impl<'a> AnswersSolver<'a> {
                     arguments.len()
                 ),
             ),
-            SpecialForm::Unpack if arguments.len() == 1 => Type::Type(Box::new(Type::Unpack(
-                Box::new(self.expr_untype(&arguments[0])),
-            ))),
+            SpecialForm::Unpack if arguments.len() == 1 => {
+                Type::type_form(Type::Unpack(Box::new(self.expr_untype(&arguments[0]))))
+            }
             SpecialForm::Unpack => self.error(
                 range,
                 format!(
@@ -132,9 +130,9 @@ impl<'a> AnswersSolver<'a> {
                     arguments.len()
                 ),
             ),
-            SpecialForm::Type if arguments.len() == 1 => Type::Type(Box::new(Type::Type(
-                Box::new(self.expr_untype(&arguments[0])),
-            ))),
+            SpecialForm::Type if arguments.len() == 1 => {
+                Type::type_form(Type::Type(Box::new(self.expr_untype(&arguments[0]))))
+            }
             SpecialForm::Type => self.error(
                 range,
                 format!(

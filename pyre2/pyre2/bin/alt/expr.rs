@@ -425,12 +425,12 @@ impl<'a> AnswersSolver<'a> {
                     None => module.push_path(attr_name.clone()).to_type(),
                 },
                 Type::Type(box Type::Quantified(q)) if q.is_param_spec() && attr_name == "args" => {
-                    Type::Type(Box::new(Type::Args(q.id())))
+                    Type::type_form(Type::Args(q.id()))
                 }
                 Type::Type(box Type::Quantified(q))
                     if q.is_param_spec() && attr_name == "kwargs" =>
                 {
-                    Type::Type(Box::new(Type::Kwargs(q.id())))
+                    Type::type_form(Type::Kwargs(q.id()))
                 }
                 Type::Type(box Type::ClassType(ClassType(cls, _))) | Type::ClassDef(cls) => {
                     self.get_class_attribute_or_error(&cls, attr_name, range)
@@ -491,7 +491,7 @@ impl<'a> AnswersSolver<'a> {
             && let Some(l) = self.untype_opt(lhs.clone(), x.left.range())
             && let Some(r) = self.untype_opt(rhs.clone(), x.right.range())
         {
-            return Type::Type(Box::new(self.union(&l, &r)));
+            return Type::type_form(self.union(&l, &r));
         }
         match lhs {
             Type::Union(members) => self.unions(
@@ -514,9 +514,7 @@ impl<'a> AnswersSolver<'a> {
     pub fn canonicalize_all_class_types(&self, ty: Type, range: TextRange) -> Type {
         ty.transform(|ty| match ty {
             Type::ClassDef(cls) => {
-                *ty = Type::Type(Box::new(Type::ClassType(
-                    self.promote_to_class_type(cls, range),
-                )));
+                *ty = Type::type_form(Type::ClassType(self.promote_to_class_type(cls, range)));
             }
             _ => {}
         })
@@ -868,19 +866,15 @@ impl<'a> AnswersSolver<'a> {
                     })
                 };
                 if TypeVar::is_ctor(&ty_fun) {
-                    Type::Type(Box::new(self.tyvar_from_arguments(&x.arguments).to_type()))
+                    Type::type_form(self.tyvar_from_arguments(&x.arguments).to_type())
                 } else if TypeVarTuple::is_ctor(&ty_fun)
                     && let Some(name) = arguments_one_string(&x.arguments)
                 {
-                    Type::Type(Box::new(
-                        TypeVarTuple::new(name, self.module_info().dupe()).to_type(),
-                    ))
+                    Type::type_form(TypeVarTuple::new(name, self.module_info().dupe()).to_type())
                 } else if ParamSpec::is_ctor(&ty_fun)
                     && let Some(name) = arguments_one_string(&x.arguments)
                 {
-                    Type::Type(Box::new(
-                        ParamSpec::new(name, self.module_info().dupe()).to_type(),
-                    ))
+                    Type::type_form(ParamSpec::new(name, self.module_info().dupe()).to_type())
                 } else if let Type::Union(members) = ty_fun {
                     self.unions(&members.into_iter().map(check_call).collect::<Vec<_>>())
                 } else {
@@ -911,7 +905,7 @@ impl<'a> AnswersSolver<'a> {
                 // FIXME: We don't deal properly with hint here, we should.
                 let mut fun = self.expr_infer(&x.value);
                 if matches!(&fun, Type::ClassDef(t) if t.name() == "tuple") {
-                    fun = Type::Type(Box::new(Type::SpecialForm(SpecialForm::Tuple)));
+                    fun = Type::type_form(Type::SpecialForm(SpecialForm::Tuple));
                 }
                 match fun {
                     Type::Forall(quantifieds, ty) => {
@@ -942,14 +936,14 @@ impl<'a> AnswersSolver<'a> {
                         };
                         // TODO: Validate that `targ` refers to a "valid in-scope class or TypeVar"
                         // (https://typing.readthedocs.io/en/latest/spec/annotations.html#type-and-annotation-expressions)
-                        Type::Type(Box::new(Type::Type(Box::new(targ))))
+                        Type::type_form(Type::type_form(targ))
                     }
                     Type::ClassDef(cls) => {
-                        Type::Type(Box::new(Type::ClassType(self.specialize_as_class_type(
+                        Type::type_form(Type::ClassType(self.specialize_as_class_type(
                             &cls,
                             xs.map(|x| self.expr_untype(x)),
                             x.range,
-                        ))))
+                        )))
                     }
                     Type::Type(box Type::SpecialForm(special)) => {
                         self.apply_special_form(special, xs, x.range)
@@ -1048,7 +1042,7 @@ impl<'a> AnswersSolver<'a> {
             }
             Expr::Starred(_) => self.error_todo("Answers::expr_infer", x),
             Expr::Name(x) => match x.id.as_str() {
-                "Any" => Type::Type(Box::new(Type::any_explicit())),
+                "Any" => Type::type_form(Type::any_explicit()),
                 _ => self
                     .get_type(&Key::Usage(Ast::expr_name_identifier(x.clone())))
                     .arc_clone(),

@@ -370,6 +370,10 @@ impl Type {
         Type::Callable(Box::new(Callable::param_spec(p, ret)))
     }
 
+    pub fn type_form(inner: Type) -> Self {
+        Type::Type(Box::new(inner))
+    }
+
     pub fn class_type(cls: &Class, targs: TArgs) -> Self {
         Type::ClassType(ClassType(cls.dupe(), targs))
     }

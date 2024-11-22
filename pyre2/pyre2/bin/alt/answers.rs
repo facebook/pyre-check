@@ -735,9 +735,9 @@ impl<'a> AnswersSolver<'a> {
             return Type::any_error();
         }
         let mut ty = match &ty {
-            Type::ClassDef(cls) => Type::Type(Box::new(Type::ClassType(
-                self.promote_to_class_type(cls, range),
-            ))),
+            Type::ClassDef(cls) => {
+                Type::type_form(Type::ClassType(self.promote_to_class_type(cls, range)))
+            }
             t => t.clone(),
         };
         let mut seen = SmallMap::new();
@@ -765,7 +765,7 @@ impl<'a> AnswersSolver<'a> {
     ) -> Type {
         let enter_type =
             self.call_method_with_types(&context_manager_type, enter_method_name, range, &[]);
-        let base_exception_class_type = Type::Type(Box::new(self.stdlib.base_exception()));
+        let base_exception_class_type = Type::type_form(self.stdlib.base_exception());
         let exit_type = self.call_method_with_types(
             &context_manager_type,
             exit_method_name,
@@ -1041,7 +1041,7 @@ impl<'a> AnswersSolver<'a> {
             },
             Binding::AnyType(x) => Type::Any(*x),
             Binding::StrType => self.stdlib.str(),
-            Binding::TypeParameter(q) => Type::Type(Box::new(q.to_type())),
+            Binding::TypeParameter(q) => Type::type_form(q.to_type()),
             Binding::Module(m, path, prev) => {
                 let prev = prev
                     .as_ref()
@@ -1074,7 +1074,7 @@ impl<'a> AnswersSolver<'a> {
                                 ),
                             );
                         }
-                        Type::Type(Box::new(q.to_type()))
+                        Type::type_form(q.to_type())
                     }
                     LegacyTypeParameterLookup::NotParameter(ty) => ty.clone(),
                 }

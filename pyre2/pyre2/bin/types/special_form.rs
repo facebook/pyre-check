@@ -60,10 +60,10 @@ impl SpecialForm {
 
     pub fn to_type(self) -> Type {
         match self {
-            SpecialForm::LiteralString => Type::Type(Box::new(Type::LiteralString)),
-            SpecialForm::Never => Type::Type(Box::new(Type::Never(NeverStyle::Never))),
-            SpecialForm::NoReturn => Type::Type(Box::new(Type::Never(NeverStyle::NoReturn))),
-            _ => Type::Type(Box::new(Type::SpecialForm(self))),
+            SpecialForm::LiteralString => Type::type_form(Type::LiteralString),
+            SpecialForm::Never => Type::type_form(Type::Never(NeverStyle::Never)),
+            SpecialForm::NoReturn => Type::type_form(Type::Never(NeverStyle::NoReturn)),
+            _ => Type::type_form(Type::SpecialForm(self)),
         }
     }
 
