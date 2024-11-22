@@ -19,7 +19,6 @@ use crate::types::callable::Arg;
 use crate::types::callable::Callable;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
-use crate::types::class::TArgs;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
@@ -374,8 +373,8 @@ impl Type {
         Type::Type(Box::new(inner))
     }
 
-    pub fn class_type(cls: &Class, targs: TArgs) -> Self {
-        Type::ClassType(ClassType(cls.dupe(), targs))
+    pub fn class_type(class_type: ClassType) -> Self {
+        Type::ClassType(class_type)
     }
 
     pub fn tuple(elts: Vec<Type>) -> Self {

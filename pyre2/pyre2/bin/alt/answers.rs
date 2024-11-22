@@ -684,7 +684,7 @@ impl<'a> AnswersSolver<'a> {
                 }
             }
             Type::ClassType(cls) => {
-                for t in cls.1.as_mut() {
+                for t in cls.targs_mut().as_mut() {
                     self.tvars_to_quantifieds_for_type_alias(t, seen, quantifieds);
                 }
             }

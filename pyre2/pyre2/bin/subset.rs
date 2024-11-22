@@ -9,7 +9,6 @@ use crate::solver::Subset;
 use crate::types::callable::Arg;
 use crate::types::callable::Args;
 use crate::types::callable::Required;
-use crate::types::class::ClassType;
 use crate::types::class::TArgs;
 use crate::types::simplify::unions;
 use crate::types::tuple::Tuple;
@@ -73,10 +72,14 @@ impl<'a> Subset<'a> {
                     None => false,
                 }
             }
-            (Type::ClassDef(got), Type::ClassDef(want))
-            | (Type::ClassDef(got), Type::Type(box Type::ClassType(ClassType(want, _))))
-            | (Type::Type(box Type::ClassType(ClassType(got, _))), Type::ClassDef(want)) => {
+            (Type::ClassDef(got), Type::ClassDef(want)) => {
                 self.type_order.has_superclass(got, want)
+            }
+            (Type::ClassDef(got), Type::Type(box Type::ClassType(want))) => {
+                self.type_order.has_superclass(got, want.class_object())
+            }
+            (Type::Type(box Type::ClassType(got)), Type::ClassDef(want)) => {
+                self.type_order.has_superclass(got.class_object(), want)
             }
             (Type::ClassDef(_), Type::Type(box Type::Any(_)))
             | (Type::Type(box Type::Any(_)), Type::ClassDef(_)) => true,

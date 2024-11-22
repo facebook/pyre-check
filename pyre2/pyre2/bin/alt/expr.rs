@@ -30,7 +30,6 @@ use crate::types::callable::Arg;
 use crate::types::callable::Args;
 use crate::types::callable::Callable;
 use crate::types::callable::Required;
-use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::param_spec::ParamSpec;
 use crate::types::simplify::as_class_attribute_base;
@@ -432,8 +431,9 @@ impl<'a> AnswersSolver<'a> {
                 {
                     Type::type_form(Type::Kwargs(q.id()))
                 }
-                Type::Type(box Type::ClassType(ClassType(cls, _))) | Type::ClassDef(cls) => {
-                    self.get_class_attribute_or_error(&cls, attr_name, range)
+                Type::ClassDef(cls) => self.get_class_attribute_or_error(&cls, attr_name, range),
+                Type::Type(box Type::ClassType(class)) => {
+                    self.get_class_attribute_or_error(class.class_object(), attr_name, range)
                 }
                 Type::Type(box Type::Any(style)) => style.propagate(),
                 Type::Union(members) => self.unions(

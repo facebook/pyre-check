@@ -122,7 +122,10 @@ impl Class {
 
     pub fn self_type(&self, tparams: &[Quantified]) -> Type {
         let tparams_as_targs = TArgs::new(tparams.iter().map(|q| q.to_type()).collect());
-        Type::class_type(self, tparams_as_targs)
+        Type::class_type(ClassType::create_with_validated_targs(
+            self.clone(),
+            tparams_as_targs,
+        ))
     }
 
     pub fn module_info(&self) -> &ModuleInfo {
@@ -185,7 +188,7 @@ impl Substitution {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ClassType(pub Class, pub TArgs);
+pub struct ClassType(Class, TArgs);
 
 impl Display for ClassType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -194,12 +197,23 @@ impl Display for ClassType {
 }
 
 impl ClassType {
+    /// Create a ClassType. The caller must have validated that
+    /// the targs are correctly aligned with the `tparams`; failure to do so
+    /// will lead to panics downstream.
+    pub fn create_with_validated_targs(class: Class, targs: TArgs) -> Self {
+        Self(class, targs)
+    }
+
     pub fn class_object(&self) -> &Class {
         &self.0
     }
 
     pub fn targs(&self) -> &TArgs {
         &self.1
+    }
+
+    pub fn targs_mut(&mut self) -> &mut TArgs {
+        &mut self.1
     }
 
     /// Rewrite type arguments of some class relative to another.
@@ -218,7 +232,7 @@ impl ClassType {
             unreachable!(
                 "Encountered invalid type arguments of length {} in class `{}` (expected {})",
                 targs.len(),
-                self.name().id(),
+                self.name().id,
                 tparams.len(),
             );
         }

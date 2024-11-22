@@ -18,7 +18,6 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::smallmap;
 
 use crate::module::module_name::ModuleName;
-use crate::types::class::ClassType;
 use crate::types::class::TArgs;
 use crate::types::qname::QName;
 use crate::types::types::AnyStyle;
@@ -135,9 +134,9 @@ impl<'a> TypeDisplayContext<'a> {
                 self.fmt_qname(cls.qname(), f)?;
                 write!(f, "]")
             }
-            Type::ClassType(ClassType(cls, targs)) => {
-                self.fmt_qname(cls.qname(), f)?;
-                self.fmt_targs(targs, f)
+            Type::ClassType(class_type) => {
+                self.fmt_qname(class_type.qname(), f)?;
+                self.fmt_targs(class_type.targs(), f)
             }
             Type::TypeVar(t) => {
                 write!(f, "TypeVar[")?;
@@ -247,6 +246,7 @@ mod tests {
     use super::*;
     use crate::module::module_info::ModuleInfo;
     use crate::types::class::Class;
+    use crate::types::class::ClassType;
     use crate::types::literal::Lit;
     use crate::types::tuple::Tuple;
     use crate::types::type_var::Restriction;
@@ -292,36 +292,34 @@ mod tests {
         let foo3 = fake_class("foo", "ule", 3);
         let bar = fake_class("bar", "mod.ule", 0);
 
+        fn class_type(class: &Class, targs: TArgs) -> Type {
+            Type::ClassType(ClassType::create_with_validated_targs(class.clone(), targs))
+        }
+
         assert_eq!(
-            Type::Tuple(Tuple::unbounded(Type::class_type(&foo1, TArgs::default()))).to_string(),
+            Type::Tuple(Tuple::unbounded(class_type(&foo1, TArgs::default()))).to_string(),
             "tuple[foo, ...]"
         );
         assert_eq!(
             Type::Tuple(Tuple::concrete(vec![
-                Type::class_type(&foo1, TArgs::default()),
-                Type::class_type(
-                    &bar,
-                    TArgs::new(vec![Type::class_type(&foo1, TArgs::default())])
-                )
+                class_type(&foo1, TArgs::default()),
+                class_type(&bar, TArgs::new(vec![class_type(&foo1, TArgs::default())]))
             ]))
             .to_string(),
             "tuple[foo, bar[foo]]"
         );
         assert_eq!(
             Type::Tuple(Tuple::concrete(vec![
-                Type::class_type(&foo1, TArgs::default()),
-                Type::class_type(
-                    &bar,
-                    TArgs::new(vec![Type::class_type(&foo2, TArgs::default())])
-                )
+                class_type(&foo1, TArgs::default()),
+                class_type(&bar, TArgs::new(vec![class_type(&foo2, TArgs::default())]))
             ]))
             .to_string(),
             "tuple[mod.ule.foo@1:6, bar[mod.ule.foo@1:9]]"
         );
         assert_eq!(
             Type::Tuple(Tuple::concrete(vec![
-                Type::class_type(&foo1, TArgs::default()),
-                Type::class_type(&foo3, TArgs::default())
+                class_type(&foo1, TArgs::default()),
+                class_type(&foo3, TArgs::default())
             ]))
             .to_string(),
             "tuple[mod.ule.foo, ule.foo]"
@@ -331,8 +329,8 @@ mod tests {
             "tuple[()]"
         );
 
-        let t1 = Type::class_type(&foo1, TArgs::default());
-        let t2 = Type::class_type(&foo2, TArgs::default());
+        let t1 = class_type(&foo1, TArgs::default());
+        let t2 = class_type(&foo2, TArgs::default());
         let mut ctx = TypeDisplayContext::new();
         ctx.add(&t1);
         ctx.add(&t2);

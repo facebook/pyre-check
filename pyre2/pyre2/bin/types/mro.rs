@@ -258,7 +258,8 @@ impl Linearization {
                 // Strip the selected class from all chains. Any empty chain is removed.
                 let mut chains_to_remove = Vec::new();
                 for (idx, ancestors) in ancestor_chains.iter_mut().enumerate() {
-                    if ancestors.0.last().0.qname() == selected.0.qname() {
+                    if ancestors.0.last().class_object().qname() == selected.class_object().qname()
+                    {
                         match ancestors.0.pop() {
                             Ok(_) => {}
                             Err(_) => chains_to_remove.push(idx),
@@ -274,7 +275,7 @@ impl Linearization {
                 // The ancestors are not linearizable at this point. Record an error and stop with
                 // what we have so far.
                 // (The while loop invariant ensures that ancestor_chains is non-empty, so unwrap is safe.)
-                let first_candidate = &ancestor_chains.first().unwrap().0.last().0;
+                let first_candidate = &ancestor_chains.first().unwrap().0.last().class_object();
                 errors.add(
                     cls.module_info(),
                     cls.name().range,

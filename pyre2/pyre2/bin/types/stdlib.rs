@@ -57,7 +57,8 @@ impl Stdlib {
             awaitable: lookup_class(ModuleName::typing(), &Name::new("Awaitable")),
             coroutine: lookup_class(ModuleName::typing(), &Name::new("Coroutine")),
             traceback_type: lookup_class(ModuleName::types(), &Name::new("TracebackType")),
-            object_class_type: object.map(|obj| ClassType(obj, TArgs::default())),
+            object_class_type: object
+                .map(|obj| ClassType::create_with_validated_targs(obj, TArgs::default())),
         }
     }
 
@@ -83,7 +84,12 @@ impl Stdlib {
     }
 
     fn primitive(cls: &Option<Class>) -> Type {
-        Type::class_type(Self::unwrap_class(cls), TArgs::default())
+        // NOTE: if we hardcode in invalid use of `primitive` here, we will panic later
+        // when performing substitutions.
+        Type::class_type(ClassType::create_with_validated_targs(
+            Self::unwrap_class(cls).clone(),
+            TArgs::default(),
+        ))
     }
 
     pub fn object_class_type(&self) -> &ClassType {
@@ -129,7 +135,12 @@ impl Stdlib {
     }
 
     fn apply(cls: &Option<Class>, targs: Vec<Type>) -> Type {
-        Type::class_type(Self::unwrap_class(cls), TArgs::new(targs))
+        // NOTE: if we hardcode in invalid use of `apply` here, we will panic later
+        // when performing substitutions.
+        Type::class_type(ClassType::create_with_validated_targs(
+            Self::unwrap_class(cls).clone(),
+            TArgs::new(targs),
+        ))
     }
 
     pub fn tuple(&self, x: Type) -> Type {
