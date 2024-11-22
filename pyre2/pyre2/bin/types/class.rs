@@ -216,9 +216,10 @@ impl ClassType {
             // Invariant violation: all type arguments should be constructed through
             // `check_and_sanitize_targs_for_class`, which should guarantee zippability.
             unreachable!(
-                "Encountered invalid type arguments of length {} in class `{}`",
+                "Encountered invalid type arguments of length {} in class `{}` (expected {})",
                 targs.len(),
                 self.name().id(),
+                tparams.len(),
             );
         }
         Substitution(
