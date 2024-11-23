@@ -13,7 +13,6 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_text_size::TextRange;
-use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use super::answers::AnswersSolver;
@@ -101,28 +100,54 @@ impl<'a> AnswersSolver<'a> {
     }
 
     pub fn tparams_of(&self, cls: &Class, legacy: &[Idx<KeyLegacyTypeParam>]) -> QuantifiedVec {
-        let legacy_tparams: SmallMap<_, _> = legacy
+        let scoped_tparams: SmallSet<_> = cls.scoped_tparams().values().copied().collect();
+        let legacy_quantifieds: SmallSet<_> = legacy
             .iter()
-            .filter_map(|key| {
-                self.get_idx(*key)
-                    .deref()
-                    .parameter()
-                    .map(|q| (self.bindings().idx_to_key(*key).0.clone(), *q))
-            })
+            .filter_map(|key| self.get_idx(*key).deref().parameter().copied())
             .collect();
-        let scoped_tparams = cls.scoped_tparams();
-        // TODO(stroxler): Add checks for:
-        // - Use of both Generic and Protocol with parameters as arguments.
-        // - Use of both a Generic/Protocol base and implicit generic parameters.
-        //
-        // Note that we should *not* validate the absence of legacy parameters when there are
-        // scoped parameters, that is handled by CheckLegacyTypeParam.
-        let mut tparams = scoped_tparams.clone();
-        for (identifier, q) in legacy_tparams.iter() {
-            let entry = tparams.entry(identifier.id.clone());
-            entry.or_insert_with(|| *q);
+        // TODO(stroxler): There are a lot of checks, such as that `Generic` only appears once
+        // and no non-type-vars are used, that we can more easily detect in a dedictated class
+        // validation step that validates all the bases. We are deferring these for now.
+        let bases = self.bases_of_class(cls);
+        let mut generic_tparams = SmallSet::new();
+        let mut protocol_tparams = SmallSet::new();
+        for base in bases.iter() {
+            match base.deref() {
+                BaseClass::Generic(ts) => {
+                    generic_tparams.extend(ts.iter().filter_map(|t| t.as_quantified()))
+                }
+                BaseClass::Protocol(ts) if !ts.is_empty() => {
+                    protocol_tparams.extend(ts.iter().filter_map(|t| t.as_quantified()))
+                }
+                _ => {}
+            }
         }
-        QuantifiedVec(tparams.values().copied().collect())
+        if !generic_tparams.is_empty() && !protocol_tparams.is_empty() {
+            // TODO(stroxler) Complain about using both Generic[...] and Protocol[...].
+        }
+        // Initialized the tparams: combine scoped and explicit type parameters
+        let mut tparams = scoped_tparams;
+        tparams.extend(generic_tparams);
+        tparams.extend(protocol_tparams);
+        // Handle implicit tparams: if a Quantified was bound at this scope and is not yet
+        // in tparams, we add it. These will be added in left-to-right order.
+        let implicit_tparams_okay = tparams.is_empty();
+        for base in self.bases_of_class(cls).iter() {
+            match base.deref() {
+                BaseClass::Type(t) => {
+                    t.for_each_quantified(&mut |q| {
+                        if !tparams.contains(&q) && legacy_quantifieds.contains(&q) {
+                            if !implicit_tparams_okay {
+                                // TODO(stroxler): complain if explicit and implicit legacy type parameters are mixed.
+                            }
+                            tparams.insert(q);
+                        }
+                    });
+                }
+                _ => {}
+            }
+        }
+        QuantifiedVec(tparams.into_iter().collect())
     }
 
     pub fn mro_of(&self, cls: &Class) -> Mro {

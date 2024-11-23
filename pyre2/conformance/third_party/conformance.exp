@@ -1644,18 +1644,7 @@
       "stop_line": 32
     }
   ],
-  "annotations_coroutines.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 24
-    }
-  ],
+  "annotations_coroutines.py": [],
   "annotations_forward_refs.py": [
     {
       "code": -2,
@@ -9666,8 +9655,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected `MyMap2.__getitem__` to be a callable, got Callable[[Mapping[int, str], int], str] | Callable[[_PyreReadOnly_[Mapping[int, str]], _PyreReadOnly_[int]], _PyreReadOnly_[str]]",
-      "description": "Expected `MyMap2.__getitem__` to be a callable, got Callable[[Mapping[int, str], int], str] | Callable[[_PyreReadOnly_[Mapping[int, str]], _PyreReadOnly_[int]], _PyreReadOnly_[str]]",
+      "concise_description": "Expected `MyMap2.__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
+      "description": "Expected `MyMap2.__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
       "line": 155,
       "name": "PyreError",
       "stop_column": 26,
@@ -9686,8 +9675,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected `MyMap2.__getitem__` to be a callable, got Callable[[Mapping[int, str], int], str] | Callable[[_PyreReadOnly_[Mapping[int, str]], _PyreReadOnly_[int]], _PyreReadOnly_[str]]",
-      "description": "Expected `MyMap2.__getitem__` to be a callable, got Callable[[Mapping[int, str], int], str] | Callable[[_PyreReadOnly_[Mapping[int, str]], _PyreReadOnly_[int]], _PyreReadOnly_[str]]",
+      "concise_description": "Expected `MyMap2.__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
+      "description": "Expected `MyMap2.__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
       "line": 158,
       "name": "PyreError",
       "stop_column": 10,
@@ -10068,8 +10057,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected 1 type argument for class `Foo6`, got 2.",
-      "description": "Expected 1 type argument for class `Foo6`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Foo6`, got 2.",
+      "description": "Expected 0 type arguments for class `Foo6`, got 2.",
       "line": 151,
       "name": "PyreError",
       "stop_column": 27,
@@ -10078,8 +10067,8 @@
     {
       "code": -2,
       "column": 34,
-      "concise_description": "Expected 1 type argument for class `Foo6`, got 3.",
-      "description": "Expected 1 type argument for class `Foo6`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Foo6`, got 3.",
+      "description": "Expected 0 type arguments for class `Foo6`, got 3.",
       "line": 151,
       "name": "PyreError",
       "stop_column": 63,
@@ -10098,8 +10087,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected 1 type argument for class `Foo6`, got 3.",
-      "description": "Expected 1 type argument for class `Foo6`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Foo6`, got 3.",
+      "description": "Expected 0 type arguments for class `Foo6`, got 3.",
       "line": 152,
       "name": "PyreError",
       "stop_column": 36,
@@ -10118,8 +10107,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "Expected 1 type argument for class `Foo6`, got 3.",
-      "description": "Expected 1 type argument for class `Foo6`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Foo6`, got 3.",
+      "description": "Expected 0 type arguments for class `Foo6`, got 3.",
       "line": 152,
       "name": "PyreError",
       "stop_column": 66,
@@ -12516,8 +12505,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 36,
       "name": "PyreError",
       "stop_column": 25,
@@ -12576,8 +12565,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 3.",
+      "description": "Expected 0 type arguments for class `Array`, got 3.",
       "line": 37,
       "name": "PyreError",
       "stop_column": 32,
@@ -12656,8 +12645,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 4.",
-      "description": "Expected 1 type argument for class `Array`, got 4.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 4.",
+      "description": "Expected 0 type arguments for class `Array`, got 4.",
       "line": 38,
       "name": "PyreError",
       "stop_column": 38,
@@ -12756,8 +12745,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 42,
       "name": "PyreError",
       "stop_column": 25,
@@ -12796,8 +12785,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 3.",
+      "description": "Expected 0 type arguments for class `Array`, got 3.",
       "line": 43,
       "name": "PyreError",
       "stop_column": 32,
@@ -12866,8 +12855,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 4.",
-      "description": "Expected 1 type argument for class `Array`, got 4.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 4.",
+      "description": "Expected 0 type arguments for class `Array`, got 4.",
       "line": 44,
       "name": "PyreError",
       "stop_column": 38,
@@ -13055,12 +13044,32 @@
     },
     {
       "code": -2,
+      "column": 17,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 93,
+      "name": "PyreError",
+      "stop_column": 30,
+      "stop_line": 93
+    },
+    {
+      "code": -2,
       "column": 23,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "line": 93,
       "name": "PyreError",
       "stop_column": 29,
+      "stop_line": 93
+    },
+    {
+      "code": -2,
+      "column": 35,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 93,
+      "name": "PyreError",
+      "stop_column": 48,
       "stop_line": 93
     },
     {
@@ -13075,6 +13084,16 @@
     },
     {
       "code": -2,
+      "column": 53,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 93,
+      "name": "PyreError",
+      "stop_column": 66,
+      "stop_line": 93
+    },
+    {
+      "code": -2,
       "column": 59,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
@@ -13085,12 +13104,32 @@
     },
     {
       "code": -2,
+      "column": 14,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 27,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
       "column": 20,
       "concise_description": "untype, got NewType",
       "description": "untype, got NewType",
       "line": 97,
       "name": "PyreError",
       "stop_column": 26,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 44,
       "stop_line": 97
     },
     {
@@ -13106,8 +13145,8 @@
     {
       "code": -2,
       "column": 49,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 97,
       "name": "PyreError",
       "stop_column": 69,
@@ -13329,6 +13368,16 @@
     },
     {
       "code": -2,
+      "column": 23,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
       "column": 29,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
@@ -13340,8 +13389,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 26,
       "name": "PyreError",
       "stop_column": 61,
@@ -13370,8 +13419,8 @@
     {
       "code": -2,
       "column": 23,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 30,
       "name": "PyreError",
       "stop_column": 43,
@@ -13399,6 +13448,16 @@
     },
     {
       "code": -2,
+      "column": 48,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 30,
+      "name": "PyreError",
+      "stop_column": 61,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
       "column": 54,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
@@ -13406,6 +13465,16 @@
       "name": "PyreError",
       "stop_column": 60,
       "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 27,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 34,
+      "name": "PyreError",
+      "stop_column": 40,
+      "stop_line": 34
     },
     {
       "code": -2,
@@ -13420,8 +13489,8 @@
     {
       "code": -2,
       "column": 45,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 3.",
+      "description": "Expected 0 type arguments for class `Array`, got 3.",
       "line": 34,
       "name": "PyreError",
       "stop_column": 75,
@@ -13460,8 +13529,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 38,
       "name": "PyreError",
       "stop_column": 34,
@@ -13490,8 +13559,8 @@
     {
       "code": -2,
       "column": 20,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 3.",
+      "description": "Expected 0 type arguments for class `Array`, got 3.",
       "line": 40,
       "name": "PyreError",
       "stop_column": 47,
@@ -13530,8 +13599,8 @@
     {
       "code": -2,
       "column": 20,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 42,
       "name": "PyreError",
       "stop_column": 40,
@@ -13560,8 +13629,8 @@
     {
       "code": -2,
       "column": 20,
-      "concise_description": "Expected 1 type argument for class `Array`, got 4.",
-      "description": "Expected 1 type argument for class `Array`, got 4.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 4.",
+      "description": "Expected 0 type arguments for class `Array`, got 4.",
       "line": 44,
       "name": "PyreError",
       "stop_column": 57,
@@ -13692,8 +13761,8 @@
     {
       "code": -2,
       "column": 25,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 18,
       "name": "PyreError",
       "stop_column": 44,
@@ -13702,8 +13771,8 @@
     {
       "code": -2,
       "column": 51,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 18,
       "name": "PyreError",
       "stop_column": 70,
@@ -13712,8 +13781,8 @@
     {
       "code": -2,
       "column": 25,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 3.",
+      "description": "Expected 0 type arguments for class `Array`, got 3.",
       "line": 22,
       "name": "PyreError",
       "stop_column": 51,
@@ -13722,8 +13791,8 @@
     {
       "code": -2,
       "column": 58,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 3.",
+      "description": "Expected 0 type arguments for class `Array`, got 3.",
       "line": 22,
       "name": "PyreError",
       "stop_column": 84,
@@ -13732,8 +13801,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 29,
       "name": "PyreError",
       "stop_column": 33,
@@ -13742,8 +13811,8 @@
     {
       "code": -2,
       "column": 38,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 3.",
+      "description": "Expected 0 type arguments for class `Array`, got 3.",
       "line": 29,
       "name": "PyreError",
       "stop_column": 64,
@@ -13752,8 +13821,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Array[Any] | Any, Array[Any]) failed",
-      "description": "assert_type(Array[Any] | Any, Array[Any]) failed",
+      "concise_description": "assert_type(Array | Any, Array) failed",
+      "description": "assert_type(Array | Any, Array) failed",
       "line": 30,
       "name": "PyreError",
       "stop_column": 52,
@@ -13772,8 +13841,8 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 30,
       "name": "PyreError",
       "stop_column": 51,
@@ -13782,8 +13851,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Array[Any] | Any, Array[Any]) failed",
-      "description": "assert_type(Array[Any] | Any, Array[Any]) failed",
+      "concise_description": "assert_type(Array | Any, Array) failed",
+      "description": "assert_type(Array | Any, Array) failed",
       "line": 31,
       "name": "PyreError",
       "stop_column": 59,
@@ -13802,8 +13871,8 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 3.",
+      "description": "Expected 0 type arguments for class `Array`, got 3.",
       "line": 31,
       "name": "PyreError",
       "stop_column": 58,
@@ -13823,6 +13892,16 @@
     },
     {
       "code": -2,
+      "column": 27,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 24,
+      "name": "PyreError",
+      "stop_column": 50,
+      "stop_line": 24
+    },
+    {
+      "code": -2,
       "column": 33,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
@@ -13834,8 +13913,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 28,
       "name": "PyreError",
       "stop_column": 34,
@@ -13864,8 +13943,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 3.",
+      "description": "Expected 0 type arguments for class `Array`, got 3.",
       "line": 33,
       "name": "PyreError",
       "stop_column": 40,
@@ -13913,6 +13992,16 @@
     },
     {
       "code": -2,
+      "column": 25,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 35,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
       "column": 31,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
@@ -13934,8 +14023,8 @@
     {
       "code": -2,
       "column": 40,
-      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array[Error]]]]",
-      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array[Error]]]]",
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array]]]",
       "line": 45,
       "name": "PyreError",
       "stop_column": 58,
@@ -13954,11 +14043,21 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, tuple[str, Array[Any]]) failed",
-      "description": "assert_type(Any, tuple[str, Array[Any]]) failed",
+      "concise_description": "assert_type(Any, tuple[str, Array]) failed",
+      "description": "assert_type(Any, tuple[str, Array]) failed",
       "line": 47,
       "name": "PyreError",
       "stop_column": 46,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 31,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 44,
       "stop_line": 47
     },
     {
@@ -13984,8 +14083,8 @@
     {
       "code": -2,
       "column": 31,
-      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array[Error]]]]",
-      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array[Error]]]]",
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array]]]",
       "line": 50,
       "name": "PyreError",
       "stop_column": 45,
@@ -14004,21 +14103,11 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, tuple[str, Array[Any]]) failed",
-      "description": "assert_type(Any, tuple[str, Array[Any]]) failed",
+      "concise_description": "assert_type(Any, tuple[str, Array]) failed",
+      "description": "assert_type(Any, tuple[str, Array]) failed",
       "line": 52,
       "name": "PyreError",
       "stop_column": 42,
-      "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 31,
-      "concise_description": "Expected 1 type argument for class `Array`, got 0.",
-      "description": "Expected 1 type argument for class `Array`, got 0.",
-      "line": 52,
-      "name": "PyreError",
-      "stop_column": 40,
       "stop_line": 52
     },
     {
@@ -14033,6 +14122,16 @@
     },
     {
       "code": -2,
+      "column": 14,
+      "concise_description": "Expected 1 type argument for class `Array2`, got 2.",
+      "description": "Expected 1 type argument for class `Array2`, got 2.",
+      "line": 63,
+      "name": "PyreError",
+      "stop_column": 35,
+      "stop_line": 63
+    },
+    {
+      "code": -2,
       "column": 28,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
@@ -14043,29 +14142,59 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "untype, got Forall[?_, LegacyImplicitTypeAlias[Array1D, type[Array2[?_, Any]]]]",
-      "description": "untype, got Forall[?_, LegacyImplicitTypeAlias[Array1D, type[Array2[?_, Any]]]]",
+      "column": 11,
+      "concise_description": "Expected 1 type argument for class `Array2`, got 2.",
+      "description": "Expected 1 type argument for class `Array2`, got 2.",
+      "line": 64,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 64
+    },
+    {
+      "code": -2,
+      "column": 28,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Array1D, type[Array2[Error]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Array1D, type[Array2[Error]]]",
       "line": 67,
       "name": "PyreError",
-      "stop_column": 23,
+      "stop_column": 40,
       "stop_line": 67
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, Array2[Any, Any]) failed",
-      "description": "assert_type(Any, Array2[Any, Any]) failed",
+      "column": 20,
+      "concise_description": "Expected 1 type argument for class `Array2`, got 2.",
+      "description": "Expected 1 type argument for class `Array2`, got 2.",
       "line": 68,
       "name": "PyreError",
-      "stop_column": 37,
+      "stop_column": 36,
       "stop_line": 68
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "assert_type(Any, Array2[Any]) failed",
+      "description": "assert_type(Any, Array2[Any]) failed",
+      "line": 69,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 69
+    },
+    {
+      "code": -2,
+      "column": 20,
+      "concise_description": "Expected 1 type argument for class `Array2`, got 2.",
+      "description": "Expected 1 type argument for class `Array2`, got 2.",
+      "line": 69,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 69
+    },
+    {
+      "code": -2,
       "column": 16,
-      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[float, Error]]]",
-      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[float, Error]]]",
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[Error]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[Error]]]",
       "line": 76,
       "name": "PyreError",
       "stop_column": 41,
@@ -14074,8 +14203,8 @@
     {
       "code": -2,
       "column": 46,
-      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[float, Error]]]",
-      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[float, Error]]]",
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[Error]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[Error]]]",
       "line": 80,
       "name": "PyreError",
       "stop_column": 71,
@@ -14596,8 +14725,8 @@
     {
       "code": -2,
       "column": 31,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 3.",
+      "description": "Expected 0 type arguments for class `Array`, got 3.",
       "line": 21,
       "name": "PyreError",
       "stop_column": 71,
@@ -14636,8 +14765,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected 1 type argument for class `Array`, got 4.",
-      "description": "Expected 1 type argument for class `Array`, got 4.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 4.",
+      "description": "Expected 0 type arguments for class `Array`, got 4.",
       "line": 26,
       "name": "PyreError",
       "stop_column": 45,
@@ -14686,8 +14815,8 @@
     {
       "code": -2,
       "column": 50,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 26,
       "name": "PyreError",
       "stop_column": 72,
@@ -14715,6 +14844,16 @@
     },
     {
       "code": -2,
+      "column": 77,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 89,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
       "column": 83,
       "concise_description": "untype, got NewType",
       "description": "untype, got NewType",
@@ -14726,8 +14865,8 @@
     {
       "code": -2,
       "column": 30,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 2.",
+      "description": "Expected 0 type arguments for class `Array`, got 2.",
       "line": 36,
       "name": "PyreError",
       "stop_column": 50,
@@ -14756,8 +14895,8 @@
     {
       "code": -2,
       "column": 29,
-      "concise_description": "Expected 1 type argument for class `Array`, got 4.",
-      "description": "Expected 1 type argument for class `Array`, got 4.",
+      "concise_description": "Expected 0 type arguments for class `Array`, got 4.",
+      "description": "Expected 0 type arguments for class `Array`, got 4.",
       "line": 40,
       "name": "PyreError",
       "stop_column": 66,
@@ -14802,6 +14941,16 @@
       "name": "PyreError",
       "stop_column": 65,
       "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Expected 0 type arguments for class `Array`, got 1.",
+      "description": "Expected 0 type arguments for class `Array`, got 1.",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 44
     },
     {
       "code": -2,

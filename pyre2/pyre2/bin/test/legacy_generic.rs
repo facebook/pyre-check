@@ -224,9 +224,8 @@ class Child(Base[S], Generic[T, S]):
     y: T
 
 def f(c: Child[int, str]):
-    # TODO(stroxler): We are taking the type vars in syntactic order, which is incorrect.
-    assert_type(c.x, int)
-    assert_type(c.y, str)
+    assert_type(c.x, str)
+    assert_type(c.y, int)
     "#,
 );
 
@@ -245,8 +244,7 @@ class Child(Base[S], Protocol[T, S]):
     y: T
 
 def f(c: Child[int, str]):
-    # TODO(stroxler): We are taking the type vars in syntactic order, which is incorrect.
-    assert_type(c.x, int)
-    assert_type(c.y, str)
+    assert_type(c.x, str)
+    assert_type(c.y, int)
     "#,
 );

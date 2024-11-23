@@ -599,6 +599,13 @@ impl Type {
         self
     }
 
+    pub fn as_quantified(&self) -> Option<Quantified> {
+        match self {
+            Type::Quantified(q) => Some(*q),
+            _ => None,
+        }
+    }
+
     // The result of calling bool() on a value of this type if we can get a definitive answer, None otherwise.
     pub fn as_bool(&self) -> Option<bool> {
         match self {
