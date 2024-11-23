@@ -149,8 +149,8 @@ pub struct AnswersSolver<'a> {
     answers: &'a SmallMap<ModuleName, Answers<'a>>,
     current: &'a Answers<'a>,
     uniques: &'a UniqueFactory,
+    solver: &'a Solver<'a>,
     pub recurser: &'a Recurser<Var>,
-    pub solver: &'a Solver<'a>,
     pub stdlib: &'a Stdlib,
 }
 
@@ -182,7 +182,7 @@ impl Solve for Key {
     }
 
     fn recursive(answers: &AnswersSolver) -> Self::Recursive {
-        answers.solver.fresh_recursive()
+        answers.solver().fresh_recursive()
     }
 
     fn record_recursive(answers: &AnswersSolver, key: &Key, answer: Arc<Type>, recursive: Var) {
@@ -404,6 +404,10 @@ impl<'a> AnswersSolver<'a> {
         self.current.bindings.module_info()
     }
 
+    pub fn solver(&self) -> &Solver {
+        self.solver
+    }
+
     pub fn get_from_module<K: Solve>(&self, name: ModuleName, k: &K) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
@@ -414,7 +418,7 @@ impl<'a> AnswersSolver<'a> {
             ..self.clone()
         };
         let mut ans = Arc::unwrap_or_clone(new_answers.get(k));
-        K::visit_type_mut(&mut ans, &mut |t| self.solver.deep_force_mut(t));
+        K::visit_type_mut(&mut ans, &mut |t| self.solver().deep_force_mut(t));
         Arc::new(ans)
     }
 
@@ -470,7 +474,7 @@ impl<'a> AnswersSolver<'a> {
     }
 
     fn record_recursive(&self, key: &Key, answer: Arc<Type>, recursive: Var) {
-        self.solver.record_recursive(
+        self.solver().record_recursive(
             recursive,
             answer.arc_clone(),
             self.type_order(),
@@ -638,7 +642,7 @@ impl<'a> AnswersSolver<'a> {
             } else {
                 unreachable!("The stdlib base exception type should be a ClassInstance")
             };
-        if !self.solver.is_subset_eq(
+        if !self.solver().is_subset_eq(
             &actual_type,
             &Type::Union(expected_types),
             self.type_order(),
@@ -811,7 +815,7 @@ impl<'a> AnswersSolver<'a> {
         // We call self.unions() to simplify cases like
         // v = @1 | int, @1 = int.
         Arc::new(
-            match self.solver.expand(self.solve_binding_inner(binding)) {
+            match self.solver().expand(self.solve_binding_inner(binding)) {
                 Type::Union(ts) => self.unions(&ts),
                 t => t,
             },
@@ -1131,17 +1135,17 @@ impl<'a> AnswersSolver<'a> {
         if matches!(got, Type::Any(AnyStyle::Error)) {
             // Don't propagate errors
             got.clone()
-        } else if self.solver.is_subset_eq(got, want, self.type_order()) {
+        } else if self.solver().is_subset_eq(got, want, self.type_order()) {
             got.clone()
         } else {
-            self.solver
+            self.solver()
                 .error(want, got, self.errors(), self.module_info(), loc);
             want.clone()
         }
     }
 
     pub fn unions(&self, xs: &[Type]) -> Type {
-        self.solver.unions(xs.to_owned(), self.type_order())
+        self.solver().unions(xs.to_owned(), self.type_order())
     }
 
     pub fn union(&self, x: &Type, y: &Type) -> Type {
@@ -1220,7 +1224,7 @@ impl<'a> AnswersSolver<'a> {
                 Some(self.unions(&ts))
             }
             Type::Var(v) if let Some(_guard) = self.recurser.recurse(v) => {
-                self.untype_opt(self.solver.force_var(v), range)
+                self.untype_opt(self.solver().force_var(v), range)
             }
             Type::Type(box t) => Some(t),
             Type::None => Some(Type::None), // Both a value and a type
