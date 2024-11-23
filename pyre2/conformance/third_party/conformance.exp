@@ -11698,16 +11698,6 @@
       "name": "PyreError",
       "stop_column": 22,
       "stop_line": 93
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "Class `generics_self_usage.Baz2` inheriting from `generics_self_usage.Baz2` creates a cycle.",
-      "description": "Class `generics_self_usage.Baz2` inheriting from `generics_self_usage.Baz2` creates a cycle.",
-      "line": 103,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 103
     }
   ],
   "generics_syntax_compatibility.py": [

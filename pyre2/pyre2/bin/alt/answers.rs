@@ -540,7 +540,7 @@ impl<'a> AnswersSolver<'a> {
 
     fn solve_base_class(&self, binding: &BindingBaseClass) -> Arc<BaseClass> {
         match binding {
-            BindingBaseClass(x, self_type) => Arc::new(self.base_class_of(x, *self_type)),
+            BindingBaseClass(x) => Arc::new(self.base_class_of(x)),
         }
     }
 

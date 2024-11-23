@@ -62,13 +62,6 @@ fn replace_return_type(ty: Type, ret: Type) -> Type {
 }
 
 impl<'a> AnswersSolver<'a> {
-    pub fn base_class_of(&self, base_expr: &Expr, self_type: Idx<Key>) -> BaseClass {
-        let mut base = self.expr_base_class(base_expr);
-        let self_type = &*self.get_idx(self_type);
-        base.subst_self_type_mut(self_type);
-        base
-    }
-
     /// This helper deals with special cases where we want to intercept an `Expr`
     /// manually and create a special variant of `BaseClass` instead of calling
     /// `expr_untype` and creating a `BaseClass::Type`.
@@ -85,7 +78,7 @@ impl<'a> AnswersSolver<'a> {
         }
     }
 
-    fn expr_base_class(&self, base_expr: &Expr) -> BaseClass {
+    pub fn base_class_of(&self, base_expr: &Expr) -> BaseClass {
         if let Some(special_base_class) = self.special_base_class(base_expr) {
             // This branch handles cases like `NamedTuple` or `Protocol`
             special_base_class

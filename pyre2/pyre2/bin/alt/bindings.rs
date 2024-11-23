@@ -1005,7 +1005,7 @@ impl<'a> BindingsBuilder<'a> {
             });
             self.table.insert(
                 KeyBaseClass(x.name.clone(), i),
-                BindingBaseClass(base.clone(), self_type_key),
+                BindingBaseClass(base.clone()),
             );
         });
         self.table

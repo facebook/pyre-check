@@ -50,10 +50,6 @@ impl BaseClass {
         }
     }
 
-    pub fn subst_self_type_mut(&mut self, self_type: &Type) {
-        self.visit_mut(|x| x.subst_self_type_mut(self_type));
-    }
-
     pub fn can_apply(&self) -> bool {
         matches!(self, BaseClass::Generic(_) | BaseClass::Protocol(_))
     }
