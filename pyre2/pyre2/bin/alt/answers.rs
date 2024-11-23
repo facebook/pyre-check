@@ -95,6 +95,7 @@ pub struct Answers<'a> {
     exports: &'a SmallMap<ModuleName, Exports>,
     bindings: &'a Bindings,
     errors: &'a ErrorCollector,
+    solver: Solver<'a>,
     table: AnswerTable,
 }
 
@@ -149,7 +150,6 @@ pub struct AnswersSolver<'a> {
     answers: &'a SmallMap<ModuleName, Answers<'a>>,
     current: &'a Answers<'a>,
     uniques: &'a UniqueFactory,
-    solver: &'a Solver<'a>,
     pub recurser: &'a Recurser<Var>,
     pub stdlib: &'a Stdlib,
 }
@@ -286,6 +286,7 @@ impl<'a> Answers<'a> {
         exports: &'a SmallMap<ModuleName, Exports>,
         bindings: &'a Bindings,
         errors: &'a ErrorCollector,
+        uniques: &'a UniqueFactory,
     ) -> Self {
         fn presize<K: Solve>(items: &mut AnswerEntry<K>, bindings: &Bindings)
         where
@@ -304,6 +305,7 @@ impl<'a> Answers<'a> {
             exports,
             bindings,
             errors,
+            solver: Solver::new(uniques),
             table,
         }
     }
@@ -319,7 +321,6 @@ impl<'a> Answers<'a> {
         answers: &SmallMap<ModuleName, Answers>,
         stdlib: &Stdlib,
         uniques: &'a UniqueFactory,
-        solver: &'a Solver<'a>,
     ) -> Solutions {
         let mut res = Solutions::default();
 
@@ -339,7 +340,6 @@ impl<'a> Answers<'a> {
             stdlib,
             answers,
             uniques,
-            solver,
             recurser: &Recurser::new(),
             current: self,
         };
@@ -351,7 +351,7 @@ impl<'a> Answers<'a> {
                 K::visit_type_mut(v, &mut |x| solver.deep_force_mut(x));
             }
         }
-        table_mut_for_each!(&mut res, |items| post_solve(items, solver));
+        table_mut_for_each!(&mut res, |items| post_solve(items, &self.solver));
         res
     }
 
@@ -364,12 +364,10 @@ impl<'a> Answers<'a> {
         name: &Name,
         answers: &SmallMap<ModuleName, Answers<'_>>,
         uniques: &'a UniqueFactory,
-        solver: &'a Solver<'a>,
     ) -> Option<Class> {
         let solver = AnswersSolver {
             stdlib: &Stdlib::for_bootstrapping(),
             uniques,
-            solver,
             answers,
             recurser: &Recurser::new(),
             current: self,
@@ -405,7 +403,7 @@ impl<'a> AnswersSolver<'a> {
     }
 
     pub fn solver(&self) -> &Solver {
-        self.solver
+        &self.current.solver
     }
 
     pub fn get_from_module<K: Solve>(&self, name: ModuleName, k: &K) -> Arc<K::Answer>

@@ -40,7 +40,6 @@ use crate::expectation::Expectation;
 use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
-use crate::solver::Solver;
 use crate::table_for_each;
 #[cfg(test)]
 use crate::types::mro::Mro;
@@ -337,7 +336,6 @@ impl Driver {
         let mut timers = Timers::new();
         let timers = &mut timers;
         let uniques = UniqueFactory::new();
-        let solver = Solver::new(&uniques);
 
         timers.add((timers_global_module(), Step::Startup, 0));
         let phase1 = run_phase1(
@@ -360,18 +358,18 @@ impl Driver {
             .iter()
             .zip(&phase2)
             .map(|(p1, p2)| {
-                let ans = Answers::new(&exports, &p2.bindings, &p1.errors);
+                let ans = Answers::new(&exports, &p2.bindings, &p1.errors, &uniques);
                 timers.add((p2.name, Step::Answers, ans.len()));
                 (p2.name, ans)
             })
             .collect();
-        let stdlib = make_stdlib(&answers, &uniques, &solver);
+        let stdlib = make_stdlib(&answers, &uniques);
         let solutions = (if parallel {
             small_map::par_map
         } else {
             small_map::map
         })(&answers, |_, x: &Answers| {
-            x.solve(&answers, &stdlib, &uniques, &solver)
+            x.solve(&answers, &stdlib, &uniques)
         });
         timers.add((timers_global_module(), Step::Solve, 0));
 
@@ -570,16 +568,12 @@ fn info_eprintln(msg: String) {
     eprintln!("{}", msg);
 }
 
-fn make_stdlib(
-    answers: &SmallMap<ModuleName, Answers>,
-    uniques: &UniqueFactory,
-    solver: &Solver,
-) -> Stdlib {
+fn make_stdlib(answers: &SmallMap<ModuleName, Answers>, uniques: &UniqueFactory) -> Stdlib {
     let lookup_class = |module: ModuleName, name: &Name| {
         answers
             .get(&module)
             .unwrap()
-            .lookup_class_without_stdlib(module, name, answers, uniques, solver)
+            .lookup_class_without_stdlib(module, name, answers, uniques)
     };
     Stdlib::new(lookup_class)
 }
