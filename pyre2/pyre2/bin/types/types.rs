@@ -433,12 +433,18 @@ impl Type {
         (mp.into_values().map(|x| x.as_var().unwrap()).collect(), res)
     }
 
-    pub fn collect_quantifieds(&self, acc: &mut SmallSet<Quantified>) {
+    pub fn for_each_quantified(&self, f: &mut impl FnMut(Quantified)) {
         self.universe(|x| {
             if let Type::Quantified(x) = x {
-                acc.insert(*x);
+                f(*x);
             }
         })
+    }
+
+    pub fn collect_quantifieds(&self, acc: &mut SmallSet<Quantified>) {
+        self.for_each_quantified(&mut |q| {
+            acc.insert(q);
+        });
     }
 
     pub fn contains(&self, x: &Type) -> bool {
