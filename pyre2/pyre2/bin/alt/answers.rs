@@ -413,7 +413,9 @@ impl<'a> AnswersSolver<'a> {
             current: self.answers.get(&name).unwrap(),
             ..self.clone()
         };
-        new_answers.get(k)
+        let mut ans = Arc::unwrap_or_clone(new_answers.get(k));
+        K::visit_type_mut(&mut ans, &mut |t| self.solver.deep_force_mut(t));
+        Arc::new(ans)
     }
 
     pub fn get_from_class<K: Solve>(&self, cls: &Class, k: &K) -> Arc<K::Answer>
