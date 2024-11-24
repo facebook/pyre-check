@@ -1045,16 +1045,14 @@ impl<'a> BindingsBuilder<'a> {
             self.table
                 .insert(Key::ClassField(x.name.clone(), name.clone()), val);
         }
-        if let ScopeKind::ClassBody(body) = &last_scope.kind {
-            for (method_name, instance_attributes) in body.instance_attributes_by_method.iter() {
+        if let ScopeKind::ClassBody(body) = last_scope.kind {
+            for (method_name, instance_attributes) in body.instance_attributes_by_method {
                 if method_name == "__init__" {
-                    for (name, binding) in instance_attributes.iter() {
-                        if !fields.contains(name) {
+                    for (name, binding) in instance_attributes {
+                        if !fields.contains(&name) {
                             fields.insert(name.clone());
-                            self.table.insert(
-                                Key::ClassField(x.name.clone(), name.clone()),
-                                binding.clone(),
-                            );
+                            self.table
+                                .insert(Key::ClassField(x.name.clone(), name), binding);
                         }
                     }
                 }
