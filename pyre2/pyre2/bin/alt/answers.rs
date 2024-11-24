@@ -29,6 +29,7 @@ use crate::alt::binding::BindingLegacyTypeParam;
 use crate::alt::binding::BindingMro;
 use crate::alt::binding::BindingTypeParams;
 use crate::alt::binding::ContextManagerKind;
+use crate::alt::binding::Exported;
 use crate::alt::binding::FunctionKind;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyAnnotation;
@@ -436,7 +437,7 @@ impl<'a> AnswersSolver<'a> {
         &self.current.solver
     }
 
-    pub fn get_from_module<K: Solve>(&self, name: ModuleName, k: &K) -> Arc<K::Answer>
+    pub fn get_from_module<K: Solve + Exported>(&self, name: ModuleName, k: &K) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -450,7 +451,7 @@ impl<'a> AnswersSolver<'a> {
         Arc::new(ans)
     }
 
-    pub fn get_from_class<K: Solve>(&self, cls: &Class, k: &K) -> Arc<K::Answer>
+    pub fn get_from_class<K: Solve + Exported>(&self, cls: &Class, k: &K) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,

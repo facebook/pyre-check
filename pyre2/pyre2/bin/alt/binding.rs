@@ -27,6 +27,14 @@ use crate::types::types::Quantified;
 use crate::types::types::Type;
 use crate::util::display::DisplayWith;
 
+/// A Key that can be accessed from another module.
+pub trait Exported {}
+
+impl Exported for KeyExported {}
+impl Exported for KeyBaseClass {}
+impl Exported for KeyMro {}
+impl Exported for KeyTypeParams {}
+
 /// Keys that refer to a `Type`.
 ///
 /// Within a `Key`, `Identifier` MUST be a name in the original AST,
