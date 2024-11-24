@@ -96,8 +96,7 @@ class Generator(Iterator[_YieldT], Generic[_YieldT, _SendT, _ReturnT]):
 class Awaitable(Protocol[_T]):
     def __await__(self) -> Generator[Any, Any, _T]: ...
 
-# TODO: Swap the ordering of the two base classes to better match what's on typeshed
-class Coroutine(Generic[_YieldT, _SendT, _ReturnT], Awaitable[_ReturnT]):
+class Coroutine(Awaitable[_ReturnT], Generic[_YieldT, _SendT, _ReturnT]):
     pass
     
 class MutableSet(Iterable[_T]): ...
