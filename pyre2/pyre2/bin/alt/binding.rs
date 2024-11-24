@@ -53,6 +53,11 @@ pub enum Key {
     Phi(Name, TextRange),
     /// The binding definition site, anywhere it occurs
     Anywhere(Name, TextRange),
+}
+
+/// Like `Key`, but used for things accessible in another module.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum KeyExported {
     /// The binding definition site, at the end of the module (used for export).
     /// If it has an annotation, only the annotation will be returned.
     Export(Name),
@@ -73,6 +78,13 @@ impl Ranged for Key {
             Self::Anon(r) => *r,
             Self::Phi(_, r) => *r,
             Self::Anywhere(_, r) => *r,
+        }
+    }
+}
+
+impl Ranged for KeyExported {
+    fn range(&self) -> TextRange {
+        match self {
             Self::Export(_) => TextRange::default(),
             Self::ClassField(x, _) => x.range,
         }
@@ -342,10 +354,17 @@ impl Display for Key {
             Self::Anon(r) => write!(f, "anon {r:?}"),
             Self::Phi(n, r) => write!(f, "phi {n} {r:?}"),
             Self::Anywhere(n, r) => write!(f, "anywhere {n} {r:?}"),
-            Self::Export(n) => write!(f, "export {n}"),
-            Self::ClassField(x, n) => write!(f, "field {} {:?} . {}", x.id, x.range, n),
             Self::ReturnType(x) => write!(f, "return {} {:?}", x.id, x.range),
             Self::ReturnExpression(x, i) => write!(f, "return {} {:?} @ {i:?}", x.id, x.range),
+        }
+    }
+}
+
+impl Display for KeyExported {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Export(n) => write!(f, "export {n}"),
+            Self::ClassField(x, n) => write!(f, "field {} {:?} . {}", x.id, x.range, n),
         }
     }
 }

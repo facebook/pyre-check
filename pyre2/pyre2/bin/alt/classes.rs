@@ -18,6 +18,7 @@ use starlark_map::small_set::SmallSet;
 use super::answers::AnswersSolver;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyBaseClass;
+use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
 use crate::alt::binding::KeyMro;
 use crate::alt::binding::KeyTypeParams;
@@ -297,7 +298,10 @@ impl<'a> AnswersSolver<'a> {
 
     fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Arc<Type>> {
         if cls.contains(name) {
-            let ty = self.get_from_class(cls, &Key::ClassField(cls.name().clone(), name.clone()));
+            let ty = self.get_from_class(
+                cls,
+                &KeyExported::ClassField(cls.name().clone(), name.clone()),
+            );
             Some(ty)
         } else {
             None

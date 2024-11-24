@@ -51,6 +51,7 @@ use crate::alt::binding::FunctionKind;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyAnnotation;
 use crate::alt::binding::KeyBaseClass;
+use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
 use crate::alt::binding::KeyMro;
 use crate::alt::binding::KeyTypeParams;
@@ -398,7 +399,7 @@ impl Bindings {
                     Binding::AnyType(AnyStyle::Error)
                 }
             };
-            builder.table.insert(Key::Export(k.clone()), val);
+            builder.table.insert(KeyExported::Export(k.clone()), val);
         }
         Self(Arc::new(BindingsInner {
             module_info,
@@ -1043,7 +1044,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             fields.insert(name.clone());
             self.table
-                .insert(Key::ClassField(x.name.clone(), name.clone()), val);
+                .insert(KeyExported::ClassField(x.name.clone(), name.clone()), val);
         }
         if let ScopeKind::ClassBody(body) = last_scope.kind {
             for (method_name, instance_attributes) in body.instance_attributes_by_method {
@@ -1052,7 +1053,7 @@ impl<'a> BindingsBuilder<'a> {
                         if !fields.contains(&name) {
                             fields.insert(name.clone());
                             self.table
-                                .insert(Key::ClassField(x.name.clone(), name), binding);
+                                .insert(KeyExported::ClassField(x.name.clone(), name), binding);
                         }
                     }
                 }

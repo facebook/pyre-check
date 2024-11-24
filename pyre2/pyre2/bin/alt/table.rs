@@ -22,6 +22,7 @@ use crate::alt::binding::BindingTypeParams;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyAnnotation;
 use crate::alt::binding::KeyBaseClass;
+use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
 use crate::alt::binding::KeyMro;
 use crate::alt::binding::KeyTypeParams;
@@ -40,6 +41,10 @@ pub trait Keyed: Hash + Eq + Clone + Display + Debug + Ranged + 'static {
 }
 
 impl Keyed for Key {
+    type Value = Binding;
+    type Answer = Type;
+}
+impl Keyed for KeyExported {
     type Value = Binding;
     type Answer = Type;
 }
@@ -82,6 +87,7 @@ macro_rules! table {
         #[$($derive)*]
         pub struct $name {
             $($vis)* types: $t<Key>,
+            $($vis)* exported_types: $t<KeyExported>,
             $($vis)* annotations: $t<KeyAnnotation>,
             $($vis)* base_classes: $t<KeyBaseClass>,
             $($vis)* mros: $t<KeyMro>,
@@ -93,6 +99,12 @@ macro_rules! table {
             type Value = $t<Key>;
             fn get(&self) -> &Self::Value { &self.types }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.types }
+        }
+
+        impl $crate::alt::table::TableKeyed<KeyExported> for $name {
+            type Value = $t<KeyExported>;
+            fn get(&self) -> &Self::Value { &self.exported_types }
+            fn get_mut(&mut self) -> &mut Self::Value { &mut self.exported_types }
         }
 
         impl $crate::alt::table::TableKeyed<KeyAnnotation> for $name {
@@ -149,6 +161,7 @@ macro_rules! table {
 macro_rules! table_for_each(
     ($e:expr, $f:expr) => {
         $f(&($e).types);
+        $f(&($e).exported_types);
         $f(&($e).annotations);
         $f(&($e).base_classes);
         $f(&($e).mros);
@@ -161,6 +174,7 @@ macro_rules! table_for_each(
 macro_rules! table_mut_for_each(
     ($e:expr, $f:expr) => {
         $f(&mut ($e).types);
+        $f(&mut ($e).exported_types);
         $f(&mut ($e).annotations);
         $f(&mut ($e).base_classes);
         $f(&mut ($e).mros);
@@ -173,6 +187,7 @@ macro_rules! table_mut_for_each(
 macro_rules! table_try_for_each(
     ($e:expr, $f:expr) => {
         $f(&($e).types)?;
+        $f(&($e).exported_types)?;
         $f(&($e).annotations)?;
         $f(&($e).base_classes)?;
         $f(&($e).mros)?;

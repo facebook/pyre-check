@@ -12,6 +12,7 @@ use ruff_text_size::TextSize;
 
 use crate::alt::binding::Binding;
 use crate::alt::binding::Key;
+use crate::alt::binding::KeyExported;
 use crate::alt::driver::Driver;
 use crate::ast::Ast;
 use crate::module::module_name::ModuleName;
@@ -50,16 +51,31 @@ impl Driver {
         key: &Key,
         gas: isize,
     ) -> Option<(ModuleName, TextRange)> {
-        eprintln!("Definition {gas} = {key:?}");
-        if gas <= 0 {
-            return None;
-        }
         if let Key::Definition(x) = key {
             return Some((module, x.range));
         }
         let bindings = self.get_bindings(module)?;
         let idx = bindings.key_to_idx(key);
-        let res = match bindings.get(idx) {
+        let res = self.binding_to_definition(module, bindings.get(idx), gas);
+        if res.is_none()
+            && let Key::Anywhere(_, range) = key
+        {
+            return Some((module, *range));
+        }
+        res
+    }
+
+    fn binding_to_definition(
+        &self,
+        module: ModuleName,
+        binding: &Binding,
+        gas: isize,
+    ) -> Option<(ModuleName, TextRange)> {
+        if gas <= 0 {
+            return None;
+        }
+        let bindings = self.get_bindings(module)?;
+        match binding {
             Binding::Forward(k) => self.key_to_definition(module, bindings.idx_to_key(*k), gas - 1),
             Binding::Phi(ks) if !ks.is_empty() => self.key_to_definition(
                 module,
@@ -67,24 +83,17 @@ impl Driver {
                 gas - 1,
             ),
             Binding::Import(m, name) => {
-                self.key_to_definition(*m, &Key::Export(name.clone()), gas - 1)
+                let bindings = self.get_bindings(*m)?;
+                let b = bindings.get(bindings.key_to_idx(&KeyExported::Export(name.clone())));
+                self.binding_to_definition(*m, b, gas - 1)
             }
             Binding::Module(name, _, _) => Some((*name, TextRange::default())),
             Binding::CheckLegacyTypeParam(k, _) => {
                 let binding = bindings.get(*k);
                 self.key_to_definition(module, bindings.idx_to_key(binding.0), gas - 1)
             }
-            b => {
-                eprintln!("No definition for {key:?} => {b:?}");
-                None
-            }
-        };
-        if res.is_none()
-            && let Key::Anywhere(_, range) = key
-        {
-            return Some((module, *range));
+            _ => None,
         }
-        res
     }
 
     pub fn goto_definition(
