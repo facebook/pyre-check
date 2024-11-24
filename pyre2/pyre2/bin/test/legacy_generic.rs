@@ -272,3 +272,20 @@ def f(c: C[int, str, bool, bytes]):
     assert_type(c.v, bytes)
     "#,
 );
+
+simple_test!(
+    test_both_generic_and_implicit,
+    r#"
+from typing import Generic, Protocol, TypeVar, assert_type
+
+T = TypeVar("T")
+S = TypeVar("S")
+
+class C(Generic[T], list[S]):  # E: Class `C` uses type variables not specified in `Generic` or `Protocol` base
+    t: T
+
+def f(c: C[int, str]):
+    assert_type(c.t, int)
+    assert_type(c[0], str)
+    "#,
+);

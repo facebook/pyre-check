@@ -11692,6 +11692,16 @@
   "generics_syntax_compatibility.py": [
     {
       "code": -2,
+      "column": 7,
+      "concise_description": "Class `ClassA` uses type variables not specified in `Generic` or `Protocol` base",
+      "description": "Class `ClassA` uses type variables not specified in `Generic` or `Protocol` base",
+      "line": 14,
+      "name": "PyreError",
+      "stop_column": 13,
+      "stop_line": 14
+    },
+    {
+      "code": -2,
       "column": 22,
       "concise_description": "Type parameter K is not included in the type parameter list",
       "description": "Type parameter K is not included in the type parameter list",
