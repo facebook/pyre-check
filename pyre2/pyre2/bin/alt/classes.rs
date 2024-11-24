@@ -123,7 +123,13 @@ impl<'a> AnswersSolver<'a> {
             }
         }
         if !generic_tparams.is_empty() && !protocol_tparams.is_empty() {
-            // TODO(stroxler) Complain about using both Generic[...] and Protocol[...].
+            self.error(
+                cls.name().range,
+                format!(
+                    "Class `{}` specifies type parameters in both `Generic` and `Protocol` bases",
+                    cls.name().id,
+                ),
+            );
         }
         // Initialized the tparams: combine scoped and explicit type parameters
         let mut tparams = scoped_tparams;

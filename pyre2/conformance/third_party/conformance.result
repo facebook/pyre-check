@@ -1345,7 +1345,6 @@
     "Line 39: Unexpected errors ['EXPECTED ImplicitColor <: PColor']"
   ],
   "protocols_generic.py": [
-    "Line 44: Expected 1 errors",
     "Line 33: Unexpected errors ['Expected `list.__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]']",
     "Line 39: Unexpected errors ['EXPECTED Concrete1 <: Proto1[str, int]']",
     "Line 55: Unexpected errors ['EXPECTED Box[int] <: Box[float]']",
