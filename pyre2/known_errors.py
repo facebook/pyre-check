@@ -18,10 +18,6 @@ def complex_callable(func: Callable[_P, bool], *args: Unpack[tuple[str, str]]):
     pass
 
 
-# Rebecca: Generic Type Aliases
-MyList: TypeAlias = list[_T]
-x: MyList[int]
-
 # Danny: Operators
 operators = []
 operators += [True, 2 > 3]
