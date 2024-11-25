@@ -565,7 +565,7 @@ impl<'a> AnswersSolver<'a> {
             BindingMro(k) => {
                 let self_ty = self.get_idx(*k);
                 match &*self_ty {
-                    Type::ClassType(cls) => Arc::new(self.mro_of(cls.class_object())),
+                    Type::ClassDef(cls) => Arc::new(self.mro_of(cls)),
                     _ => {
                         unreachable!("The key inside an Mro binding must be a class type")
                     }

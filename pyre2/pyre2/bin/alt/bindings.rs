@@ -983,8 +983,7 @@ impl<'a> BindingsBuilder<'a> {
             .insert_if_missing(Key::Definition(x.name.clone()));
 
         let self_binding = Binding::SelfType(definition_key);
-        let self_type_key = self
-            .table
+        self.table
             .insert(Key::SelfType(x.name.clone()), self_binding);
         x.type_params.iter().for_each(|x| {
             self.type_params(x);
@@ -1020,7 +1019,7 @@ impl<'a> BindingsBuilder<'a> {
             );
         });
         self.table
-            .insert(KeyMro(x.name.clone()), BindingMro(self_type_key));
+            .insert(KeyMro(x.name.clone()), BindingMro(definition_key));
 
         let mut keywords = SmallSet::new();
         x.keywords().iter().for_each(|keyword| {

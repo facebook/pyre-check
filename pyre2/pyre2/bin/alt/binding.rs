@@ -301,7 +301,7 @@ pub enum BindingAnnotation {
 #[derive(Clone, Debug)]
 pub struct BindingBaseClass(pub Expr);
 
-/// Binding for the class `Mro`. The `Key` is the self type of the class.
+/// Binding for the class `Mro`. The `Key` points to the definition of the class.
 #[derive(Clone, Debug)]
 pub struct BindingMro(pub Idx<Key>);
 
