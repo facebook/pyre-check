@@ -120,20 +120,24 @@ impl Stdlib {
         Type::class_type(self.bool_class_type())
     }
 
+    pub fn int_class_type(&self) -> ClassType {
+        Self::primitive_class_type(&self.int)
+    }
+
     pub fn int(&self) -> Type {
-        Self::primitive(&self.int)
+        Type::class_type(self.int_class_type())
     }
 
-    pub fn float(&self) -> Type {
-        Self::primitive(&self.float)
+    pub fn float_class_type(&self) -> ClassType {
+        Self::primitive_class_type(&self.float)
     }
 
-    pub fn complex(&self) -> Type {
-        Self::primitive(&self.complex)
+    pub fn complex_class_type(&self) -> ClassType {
+        Self::primitive_class_type(&self.complex)
     }
 
-    pub fn bytes(&self) -> Type {
-        Self::primitive(&self.bytes)
+    pub fn bytes_class_type(&self) -> ClassType {
+        Self::primitive_class_type(&self.bytes)
     }
 
     pub fn str_class_type(&self) -> ClassType {
@@ -162,8 +166,12 @@ impl Stdlib {
         Type::class_type(Self::apply_class_type(cls, targs))
     }
 
+    pub fn tuple_class_type(&self, x: Type) -> ClassType {
+        Self::apply_class_type(&self.tuple, vec![x])
+    }
+
     pub fn tuple(&self, x: Type) -> Type {
-        Self::apply(&self.tuple, vec![x])
+        Type::class_type(self.tuple_class_type(x))
     }
 
     pub fn list(&self, x: Type) -> Type {

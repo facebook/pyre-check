@@ -35,18 +35,31 @@ pub fn unions(xs: Vec<Type>) -> Type {
     }
 }
 
-// Return `Some` when `ty` can be treated as a type for attribute access purpose, and `None` otherwise
-fn as_attribute_base_type(ty: Type, stdlib: &Stdlib) -> Option<Type> {
+pub enum ClassAttributeBase {
+    ClassType(ClassType),
+    Any(AnyStyle),
+}
+
+pub fn as_class_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<ClassAttributeBase> {
     match ty {
-        Type::ClassType(_) | Type::Any(_) => Some(ty),
-        Type::Tuple(Tuple::Unbounded(box element)) => Some(stdlib.tuple(element)),
-        Type::Tuple(Tuple::Concrete(elements)) => Some(stdlib.tuple(unions(elements))),
-        Type::LiteralString => Some(stdlib.str()),
-        Type::Literal(lit) => Some(lit.general_type(stdlib)),
-        Type::TypeGuard(_) | Type::TypeIs(_) => Some(stdlib.bool()),
+        Type::ClassType(class_type) => Some(ClassAttributeBase::ClassType(class_type)),
+        Type::Tuple(Tuple::Unbounded(box element)) => Some(ClassAttributeBase::ClassType(
+            stdlib.tuple_class_type(element),
+        )),
+        Type::Tuple(Tuple::Concrete(elements)) => Some(ClassAttributeBase::ClassType(
+            stdlib.tuple_class_type(unions(elements)),
+        )),
+        Type::LiteralString => Some(ClassAttributeBase::ClassType(stdlib.str_class_type())),
+        Type::Literal(lit) => Some(ClassAttributeBase::ClassType(
+            lit.general_class_type(stdlib),
+        )),
+        Type::TypeGuard(_) | Type::TypeIs(_) => {
+            Some(ClassAttributeBase::ClassType(stdlib.bool_class_type()))
+        }
+        Type::Any(style) => Some(ClassAttributeBase::Any(style)),
         Type::TypeAlias(ta) => {
             if let Some(t) = ta.as_value() {
-                as_attribute_base_type(t, stdlib)
+                as_class_attribute_base(t, stdlib)
             } else {
                 None
             }
@@ -71,18 +84,5 @@ fn as_attribute_base_type(ty: Type, stdlib: &Stdlib) -> Option<Type> {
         | Type::Kwargs(_)
         | Type::Args(_)
         | Type::TypeVarTuple(_) => None,
-    }
-}
-
-pub enum ClassAttributeBase {
-    ClassType(ClassType),
-    Any(AnyStyle),
-}
-
-pub fn as_class_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<ClassAttributeBase> {
-    match as_attribute_base_type(ty, stdlib) {
-        Some(Type::ClassType(class_type)) => Some(ClassAttributeBase::ClassType(class_type)),
-        Some(Type::Any(style)) => Some(ClassAttributeBase::Any(style)),
-        _ => None,
     }
 }

@@ -198,18 +198,23 @@ impl Lit {
         Type::Literal(self)
     }
 
-    /// Convert a literal to a `Type` that is the general type of the literal.
+    /// Convert a literal to a `ClassType` that is the general class_type of the literal.
     /// For example, `1` is converted to `int`, and `"foo"` is converted to `str`.
-    pub fn general_type(&self, stdlib: &Stdlib) -> Type {
+    pub fn general_class_type(&self, stdlib: &Stdlib) -> ClassType {
         match self {
-            Lit::String(_) => stdlib.str(),
-            Lit::Int(_) => stdlib.int(),
-            Lit::Bool(_) => stdlib.bool(),
-            Lit::Bytes(_) => stdlib.bytes(),
-            Lit::Float(_) => stdlib.float(),
-            Lit::Complex { .. } => stdlib.complex(),
-            Lit::Enum(class_type, _) => Type::ClassType(class_type.clone()),
+            Lit::String(_) => stdlib.str_class_type(),
+            Lit::Int(_) => stdlib.int_class_type(),
+            Lit::Bool(_) => stdlib.bool_class_type(),
+            Lit::Bytes(_) => stdlib.bytes_class_type(),
+            Lit::Float(_) => stdlib.float_class_type(),
+            Lit::Complex { .. } => stdlib.complex_class_type(),
+            Lit::Enum(class_type, _) => class_type.clone(),
         }
+    }
+
+    /// Same as `general_class_type()`, but wraps the returned ClassType into a Type
+    pub fn general_type(&self, stdlib: &Stdlib) -> Type {
+        Type::class_type(self.general_class_type(stdlib))
     }
 
     pub fn is_string(&self) -> bool {
