@@ -198,21 +198,17 @@ fn run_phase1(
     })(todo, |name: &ModuleName| {
         let mut timers = Timers::new();
         let mut my_errors = Vec::new();
-        let (path, code, should_type_check) = {
-            let (loaded, should_type_check) = load(*name);
-            match loaded {
-                LoadResult::Loaded(path, code) => (Ok(path), code, should_type_check),
-                LoadResult::FailedToLoad(path, err) => {
-                    my_errors.push((
-                        TextRange::default(),
-                        format!("Failed to load {name} from {}, got {err:#}", path.display()),
-                    ));
-                    (Ok(path), FAKE_MODULE.to_owned(), should_type_check)
-                }
-                LoadResult::FailedToFind(err) => {
-                    (Err(err), FAKE_MODULE.to_owned(), should_type_check)
-                }
+        let (loaded, should_type_check) = load(*name);
+        let (path, code) = match loaded {
+            LoadResult::Loaded(path, code) => (Ok(path), code),
+            LoadResult::FailedToLoad(path, err) => {
+                my_errors.push((
+                    TextRange::default(),
+                    format!("Failed to load {name} from {}, got {err:#}", path.display()),
+                ));
+                (Ok(path), FAKE_MODULE.to_owned())
             }
+            LoadResult::FailedToFind(err) => (Err(err), FAKE_MODULE.to_owned()),
         };
         timers.add((*name, Step::Load, code.len()));
         let (module, parse_errors) = Ast::parse(&code);
