@@ -975,12 +975,14 @@ impl<'a> BindingsBuilder<'a> {
         let body = mem::take(&mut x.body);
 
         self.scopes.push(Scope::class_body(x.name.clone()));
-        let self_binding = Binding::SelfType(
-            self.table
-                .types
-                .0
-                .insert_if_missing(Key::Definition(x.name.clone())),
-        );
+
+        let definition_key = self
+            .table
+            .types
+            .0
+            .insert_if_missing(Key::Definition(x.name.clone()));
+
+        let self_binding = Binding::SelfType(definition_key);
         let self_type_key = self
             .table
             .insert(Key::SelfType(x.name.clone()), self_binding);
@@ -1048,11 +1050,6 @@ impl<'a> BindingsBuilder<'a> {
             }
         });
 
-        let definition_key = self
-            .table
-            .types
-            .0
-            .insert_if_missing(Key::Definition(x.name.clone()));
         let value =
             BindingTypeParams::Class(definition_key, legacy_tparam_builder.lookup_keys(self));
         self.table.insert(KeyTypeParams(x.name.clone()), value);
