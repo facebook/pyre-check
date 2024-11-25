@@ -95,7 +95,6 @@ use crate::util::recurser::Recurser;
 /// We never issue contains queries on these maps.
 #[derive(Debug)]
 pub struct Answers<'a> {
-    exports: &'a SmallMap<ModuleName, Exports>,
     bindings: &'a Bindings,
     errors: &'a ErrorCollector,
     solver: Solver,
@@ -150,6 +149,7 @@ table!(
 
 #[derive(Debug, Clone)]
 pub struct AnswersSolver<'a> {
+    exports: &'a SmallMap<ModuleName, Exports>,
     answers: &'a SmallMap<ModuleName, Answers<'a>>,
     current: &'a Answers<'a>,
     pub uniques: &'a UniqueFactory,
@@ -314,11 +314,7 @@ impl Solve for KeyTypeParams {
 }
 
 impl<'a> Answers<'a> {
-    pub fn new(
-        exports: &'a SmallMap<ModuleName, Exports>,
-        bindings: &'a Bindings,
-        errors: &'a ErrorCollector,
-    ) -> Self {
+    pub fn new(bindings: &'a Bindings, errors: &'a ErrorCollector) -> Self {
         fn presize<K: Solve>(items: &mut AnswerEntry<K>, bindings: &Bindings)
         where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -333,7 +329,6 @@ impl<'a> Answers<'a> {
         table_mut_for_each!(&mut table, |items| presize(items, bindings));
 
         Self {
-            exports,
             bindings,
             errors,
             solver: Solver::new(),
@@ -349,6 +344,7 @@ impl<'a> Answers<'a> {
 
     pub fn solve(
         &self,
+        exports: &SmallMap<ModuleName, Exports>,
         answers: &SmallMap<ModuleName, Answers>,
         stdlib: &Stdlib,
         uniques: &'a UniqueFactory,
@@ -370,6 +366,7 @@ impl<'a> Answers<'a> {
         let answers_solver = AnswersSolver {
             stdlib,
             answers,
+            exports,
             uniques,
             recurser: &Recurser::new(),
             current: self,
@@ -393,6 +390,7 @@ impl<'a> Answers<'a> {
         &self,
         module: ModuleName,
         name: &Name,
+        exports: &SmallMap<ModuleName, Exports>,
         answers: &SmallMap<ModuleName, Answers<'_>>,
         uniques: &'a UniqueFactory,
     ) -> Option<Class> {
@@ -400,6 +398,7 @@ impl<'a> Answers<'a> {
             stdlib: &Stdlib::for_bootstrapping(),
             uniques,
             answers,
+            exports,
             recurser: &Recurser::new(),
             current: self,
         };
@@ -1280,8 +1279,8 @@ impl<'a> AnswersSolver<'a> {
     }
 
     pub fn get_import(&self, name: &Name, from: ModuleName, range: TextRange) -> Type {
-        let exports = self.current.exports.get(&from).unwrap();
-        if !exports.contains(name, self.current.exports) {
+        let exports = self.exports.get(&from).unwrap();
+        if !exports.contains(name, self.exports) {
             self.error(range, format!("No attribute `{name}` in module `{from}`",))
         } else {
             self.get_from_module(from, &KeyExported::Export(name.clone()))

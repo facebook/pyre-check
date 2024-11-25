@@ -332,18 +332,18 @@ impl Driver {
             .iter()
             .zip(&phase2)
             .map(|(p1, p2)| {
-                let ans = Answers::new(&exports, &p2.bindings, &p1.errors);
+                let ans = Answers::new(&p2.bindings, &p1.errors);
                 timers.add((p2.name, Step::Answers, ans.len()));
                 (p2.name, ans)
             })
             .collect();
-        let stdlib = make_stdlib(&answers, &uniques);
+        let stdlib = make_stdlib(&exports, &answers, &uniques);
         let solutions = (if parallel {
             small_map::par_map
         } else {
             small_map::map
         })(&answers, |_, x: &Answers| {
-            x.solve(&answers, &stdlib, &uniques)
+            x.solve(&exports, &answers, &stdlib, &uniques)
         });
         timers.add((timers_global_module(), Step::Solve, 0));
 
@@ -543,12 +543,16 @@ fn info_eprintln(msg: String) {
     eprintln!("{}", msg);
 }
 
-fn make_stdlib(answers: &SmallMap<ModuleName, Answers>, uniques: &UniqueFactory) -> Stdlib {
+fn make_stdlib(
+    exports: &SmallMap<ModuleName, Exports>,
+    answers: &SmallMap<ModuleName, Answers>,
+    uniques: &UniqueFactory,
+) -> Stdlib {
     let lookup_class = |module: ModuleName, name: &Name| {
         answers
             .get(&module)
             .unwrap()
-            .lookup_class_without_stdlib(module, name, answers, uniques)
+            .lookup_class_without_stdlib(module, name, exports, answers, uniques)
     };
     Stdlib::new(lookup_class)
 }
