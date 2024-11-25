@@ -236,7 +236,7 @@ impl<'a> Server<'a> {
             false,
             None,
             true,
-            load,
+            &load,
         );
         let mut diags: SmallMap<&Path, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.keys() {

@@ -30,6 +30,7 @@ use crate::alt::bindings::BindingTable;
 use crate::alt::bindings::Bindings;
 use crate::alt::exports::Exports;
 use crate::alt::loader::LoadResult;
+use crate::alt::loader::Loader;
 use crate::alt::loader::FAKE_MODULE;
 use crate::alt::table::Keyed;
 use crate::alt::table::TableKeyed;
@@ -177,7 +178,7 @@ fn run_phase1(
     modules: &[ModuleName],
     config: &Config,
     quiet_errors: bool,
-    load: impl Fn(ModuleName) -> (LoadResult, bool) + Sync,
+    load: &Loader,
     debug: bool,
     parallel: bool,
 ) -> Vec<Phase1> {
@@ -304,7 +305,7 @@ impl Driver {
         debug: bool,
         timings: Option<usize>,
         parallel: bool,
-        load: impl Fn(ModuleName) -> (LoadResult, bool) + Sync,
+        load: &Loader,
     ) -> Self {
         let mut timers = Timers::new();
         let timers = &mut timers;

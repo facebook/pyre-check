@@ -160,7 +160,7 @@ fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonA
         common.debug,
         common.timings,
         common.parallel(),
-        lookup_module,
+        &lookup_module,
     )
     .errors_in_checked_modules()
 }

@@ -79,7 +79,7 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
         args.common.debug,
         args.common.timings,
         args.common.parallel(),
-        load,
+        &load,
     );
     if let Some(debug_info) = args.debug_info {
         let mut output = serde_json::to_string_pretty(&driver.debug_info(&modules))?;
