@@ -25,8 +25,3 @@ x: MyList[int]
 # Danny: Operators
 operators = []
 operators += [True, 2 > 3]
-
-
-# Danny: Tuples
-def tuple_type(x: tuple[str, ...]):
-    pass
