@@ -9,6 +9,7 @@
 
 mod assign;
 mod callable;
+mod class_keywords;
 mod class_subtyping;
 mod config;
 mod contextual;
