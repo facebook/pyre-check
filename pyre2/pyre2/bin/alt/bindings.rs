@@ -1049,10 +1049,10 @@ impl<'a> BindingsBuilder<'a> {
             }
         });
 
-        let value =
+        let legacy_tparams =
             BindingTypeParams::Class(definition_key, legacy_tparam_builder.lookup_keys(self));
-        self.table.insert(KeyTypeParams(x.name.clone()), value);
-
+        self.table
+            .insert(KeyTypeParams(x.name.clone()), legacy_tparams);
         legacy_tparam_builder.add_name_definitions(self);
 
         self.scopes.last_mut().stat.stmts(
