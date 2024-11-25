@@ -43,19 +43,17 @@ pub enum ClassAttributeBase {
 pub fn as_class_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<ClassAttributeBase> {
     match ty {
         Type::ClassType(class_type) => Some(ClassAttributeBase::ClassType(class_type)),
-        Type::Tuple(Tuple::Unbounded(box element)) => Some(ClassAttributeBase::ClassType(
-            stdlib.tuple_class_type(element),
-        )),
+        Type::Tuple(Tuple::Unbounded(box element)) => {
+            Some(ClassAttributeBase::ClassType(stdlib.tuple(element)))
+        }
         Type::Tuple(Tuple::Concrete(elements)) => Some(ClassAttributeBase::ClassType(
-            stdlib.tuple_class_type(unions(elements)),
+            stdlib.tuple(unions(elements)),
         )),
-        Type::LiteralString => Some(ClassAttributeBase::ClassType(stdlib.str_class_type())),
+        Type::LiteralString => Some(ClassAttributeBase::ClassType(stdlib.str())),
         Type::Literal(lit) => Some(ClassAttributeBase::ClassType(
             lit.general_class_type(stdlib),
         )),
-        Type::TypeGuard(_) | Type::TypeIs(_) => {
-            Some(ClassAttributeBase::ClassType(stdlib.bool_class_type()))
-        }
+        Type::TypeGuard(_) | Type::TypeIs(_) => Some(ClassAttributeBase::ClassType(stdlib.bool())),
         Type::Any(style) => Some(ClassAttributeBase::Any(style)),
         Type::TypeAlias(ta) => {
             if let Some(t) = ta.as_value() {

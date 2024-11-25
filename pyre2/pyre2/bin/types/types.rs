@@ -373,10 +373,6 @@ impl Type {
         Type::Type(Box::new(inner))
     }
 
-    pub fn class_type(class_type: ClassType) -> Self {
-        Type::ClassType(class_type)
-    }
-
     pub fn tuple(elts: Vec<Type>) -> Self {
         Type::Tuple(Tuple::concrete(elts))
     }
@@ -462,8 +458,8 @@ impl Type {
 
     pub fn promote_literals(self, stdlib: &Stdlib) -> Type {
         self.transform(|ty| match &ty {
-            Type::Literal(lit) => *ty = lit.general_type(stdlib),
-            Type::LiteralString => *ty = stdlib.str(),
+            Type::Literal(lit) => *ty = lit.general_class_type(stdlib).to_type(),
+            Type::LiteralString => *ty = stdlib.str().to_type(),
             _ => {}
         })
     }

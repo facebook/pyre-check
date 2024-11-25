@@ -640,7 +640,7 @@ impl<'a> AnswersSolver<'a> {
                         self.call_method_with_types(iterable, &dunder::ITER, range, &[]);
                     self.call_method_with_types(&iterator_ty, &dunder::NEXT, range, &[])
                 } else if self.has_attribute(cls.class_object(), &dunder::GETITEM) {
-                    let arg = TypeCallArg::new(self.stdlib.int(), range);
+                    let arg = TypeCallArg::new(self.stdlib.int().to_type(), range);
                     self.call_method_with_types(iterable, &dunder::GETITEM, range, &[arg])
                 } else {
                     self.error(range, format!("Class `{}` is not iterable", cls.name()))
@@ -649,8 +649,8 @@ impl<'a> AnswersSolver<'a> {
             }
             Type::Tuple(Tuple::Concrete(elts)) => Iterable::FixedLen(elts.clone()),
             Type::Tuple(Tuple::Unbounded(box elt)) => Iterable::OfType(elt.clone()),
-            Type::LiteralString => Iterable::OfType(self.stdlib.str()),
-            Type::Literal(lit) if lit.is_string() => Iterable::OfType(self.stdlib.str()),
+            Type::LiteralString => Iterable::OfType(self.stdlib.str().to_type()),
+            Type::Literal(lit) if lit.is_string() => Iterable::OfType(self.stdlib.str().to_type()),
             Type::Any(_) => Iterable::OfType(Type::any_implicit()),
             _ => Iterable::OfType(
                 self.error_todo("Answers::solve_binding - Binding::IterableValue", range),
@@ -663,13 +663,14 @@ impl<'a> AnswersSolver<'a> {
         if allow_none && actual_type.is_none() {
             return;
         }
-        let expected_types =
-            if let base_exception_type @ Type::ClassType(c) = &self.stdlib.base_exception() {
-                let base_exception_class_type = Type::ClassDef(c.class_object().dupe());
-                vec![base_exception_type.clone(), base_exception_class_type]
-            } else {
-                unreachable!("The stdlib base exception type should be a ClassInstance")
-            };
+        let expected_types = if let base_exception_type @ Type::ClassType(c) =
+            &self.stdlib.base_exception().to_type()
+        {
+            let base_exception_class_type = Type::ClassDef(c.class_object().dupe());
+            vec![base_exception_type.clone(), base_exception_class_type]
+        } else {
+            unreachable!("The stdlib base exception type should be a ClassInstance")
+        };
         if !self.solver().is_subset_eq(
             &actual_type,
             &Type::Union(expected_types),
@@ -786,18 +787,18 @@ impl<'a> AnswersSolver<'a> {
         kind: ContextManagerKind,
         range: TextRange,
     ) -> Type {
-        let base_exception_class_type = Type::type_form(self.stdlib.base_exception());
+        let base_exception_class_type = Type::type_form(self.stdlib.base_exception().to_type());
         let exit_arg_types = [
             TypeCallArg::new(
                 Type::Union(vec![base_exception_class_type, Type::None]),
                 range,
             ),
             TypeCallArg::new(
-                Type::Union(vec![self.stdlib.base_exception(), Type::None]),
+                Type::Union(vec![self.stdlib.base_exception().to_type(), Type::None]),
                 range,
             ),
             TypeCallArg::new(
-                Type::Union(vec![self.stdlib.traceback_type(), Type::None]),
+                Type::Union(vec![self.stdlib.traceback_type().to_type(), Type::None]),
                 range,
             ),
         ];
@@ -829,7 +830,7 @@ impl<'a> AnswersSolver<'a> {
         let enter_type = self.context_value_enter(&context_manager_type, kind, range);
         let exit_type = self.context_value_exit(&context_manager_type, kind, range);
         self.check_type(
-            &Type::Union(vec![self.stdlib.bool(), Type::None]),
+            &Type::Union(vec![self.stdlib.bool().to_type(), Type::None]),
             &exit_type,
             range,
         );
@@ -868,7 +869,8 @@ impl<'a> AnswersSolver<'a> {
             }
             Binding::IterableValue(ann, e) => {
                 let ty = ann.map(|k| self.get_idx(k));
-                let hint = ty.and_then(|x| x.ty.clone().map(|ty| self.stdlib.iterable(ty)));
+                let hint =
+                    ty.and_then(|x| x.ty.clone().map(|ty| self.stdlib.iterable(ty).to_type()));
                 let iterable = self.iterate(&self.expr(e, hint.as_ref()), e.range());
                 match iterable {
                     Iterable::OfType(ty) => ty,
@@ -904,7 +906,7 @@ impl<'a> AnswersSolver<'a> {
                 match iterable {
                     Iterable::OfType(ty) => match pos {
                         UnpackedPosition::Index(_) | UnpackedPosition::ReverseIndex(_) => ty,
-                        UnpackedPosition::Slice(_, _) => self.stdlib.list(ty),
+                        UnpackedPosition::Slice(_, _) => self.stdlib.list(ty).to_type(),
                     },
                     Iterable::FixedLen(ts) => {
                         match pos {
@@ -926,7 +928,7 @@ impl<'a> AnswersSolver<'a> {
                                 let end = ts.len() - *j;
                                 if start <= ts.len() && end >= start {
                                     let elem_ty = self.unions(&ts[start..end]);
-                                    self.stdlib.list(elem_ty)
+                                    self.stdlib.list(elem_ty).to_type()
                                 } else {
                                     // We'll report this error when solving for Binding::UnpackedLength.
                                     Type::any_error()
@@ -1025,6 +1027,7 @@ impl<'a> AnswersSolver<'a> {
                 let ret = if x.is_async {
                     self.stdlib
                         .coroutine(Type::any_implicit(), Type::any_implicit(), ret)
+                        .to_type()
                 } else {
                     ret
                 };
@@ -1076,7 +1079,7 @@ impl<'a> AnswersSolver<'a> {
                 None => self.solve_binding_inner(val),
             },
             Binding::AnyType(x) => Type::Any(*x),
-            Binding::StrType => self.stdlib.str(),
+            Binding::StrType => self.stdlib.str().to_type(),
             Binding::TypeParameter(q) => Type::type_form(q.to_type()),
             Binding::Module(m, path, prev) => {
                 let prev = prev

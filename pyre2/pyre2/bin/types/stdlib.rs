@@ -87,19 +87,15 @@ impl Stdlib {
             cls
         } else {
             unreachable!(
-                "Stdlib::primitive_class_type called using an stdlib with missing classes (probably a bootstrapping stdlib)"
+                "Stdlib::primitive called using an stdlib with missing classes (probably a bootstrapping stdlib)"
             )
         }
     }
 
-    fn primitive_class_type(cls: &Option<Class>) -> ClassType {
-        // NOTE: if we hardcode in invalid use of `primitive_class_type` here, we will panic later
+    fn primitive(cls: &Option<Class>) -> ClassType {
+        // NOTE: if we hardcode in invalid use of `primitive` here, we will panic later
         // when performing substitutions.
         ClassType::create_with_validated_targs(Self::unwrap_class(cls).clone(), TArgs::default())
-    }
-
-    fn primitive(cls: &Option<Class>) -> Type {
-        Type::class_type(Self::primitive_class_type(cls))
     }
 
     pub fn object_class_type(&self) -> &ClassType {
@@ -112,97 +108,77 @@ impl Stdlib {
         }
     }
 
-    pub fn bool_class_type(&self) -> ClassType {
-        Self::primitive_class_type(&self.bool)
+    pub fn bool(&self) -> ClassType {
+        Self::primitive(&self.bool)
     }
 
-    pub fn bool(&self) -> Type {
-        Type::class_type(self.bool_class_type())
+    pub fn int(&self) -> ClassType {
+        Self::primitive(&self.int)
     }
 
-    pub fn int_class_type(&self) -> ClassType {
-        Self::primitive_class_type(&self.int)
+    pub fn float(&self) -> ClassType {
+        Self::primitive(&self.float)
     }
 
-    pub fn int(&self) -> Type {
-        Type::class_type(self.int_class_type())
+    pub fn complex(&self) -> ClassType {
+        Self::primitive(&self.complex)
     }
 
-    pub fn float_class_type(&self) -> ClassType {
-        Self::primitive_class_type(&self.float)
+    pub fn bytes(&self) -> ClassType {
+        Self::primitive(&self.bytes)
     }
 
-    pub fn complex_class_type(&self) -> ClassType {
-        Self::primitive_class_type(&self.complex)
+    pub fn str(&self) -> ClassType {
+        Self::primitive(&self.str)
     }
 
-    pub fn bytes_class_type(&self) -> ClassType {
-        Self::primitive_class_type(&self.bytes)
-    }
-
-    pub fn str_class_type(&self) -> ClassType {
-        Self::primitive_class_type(&self.str)
-    }
-
-    pub fn str(&self) -> Type {
-        Type::class_type(self.str_class_type())
-    }
-
-    pub fn slice(&self) -> Type {
+    pub fn slice(&self) -> ClassType {
         Self::primitive(&self.slice)
     }
 
-    pub fn base_exception(&self) -> Type {
+    pub fn base_exception(&self) -> ClassType {
         Self::primitive(&self.base_exception)
     }
 
-    fn apply_class_type(cls: &Option<Class>, targs: Vec<Type>) -> ClassType {
-        // NOTE: if we hardcode in invalid use of `apply_class_type` here, we will panic later
+    fn apply(cls: &Option<Class>, targs: Vec<Type>) -> ClassType {
+        // NOTE: if we hardcode in invalid use of `apply` here, we will panic later
         // when performing substitutions.
         ClassType::create_with_validated_targs(Self::unwrap_class(cls).clone(), TArgs::new(targs))
     }
 
-    fn apply(cls: &Option<Class>, targs: Vec<Type>) -> Type {
-        Type::class_type(Self::apply_class_type(cls, targs))
+    pub fn tuple(&self, x: Type) -> ClassType {
+        Self::apply(&self.tuple, vec![x])
     }
 
-    pub fn tuple_class_type(&self, x: Type) -> ClassType {
-        Self::apply_class_type(&self.tuple, vec![x])
-    }
-
-    pub fn tuple(&self, x: Type) -> Type {
-        Type::class_type(self.tuple_class_type(x))
-    }
-
-    pub fn list(&self, x: Type) -> Type {
+    pub fn list(&self, x: Type) -> ClassType {
         Self::apply(&self.list, vec![x])
     }
 
-    pub fn dict(&self, key: Type, value: Type) -> Type {
+    pub fn dict(&self, key: Type, value: Type) -> ClassType {
         Self::apply(&self.dict, vec![key, value])
     }
 
-    pub fn set(&self, x: Type) -> Type {
+    pub fn set(&self, x: Type) -> ClassType {
         Self::apply(&self.set, vec![x])
     }
 
-    pub fn iterable(&self, x: Type) -> Type {
+    pub fn iterable(&self, x: Type) -> ClassType {
         Self::apply(&self.iterable, vec![x])
     }
 
-    pub fn generator(&self, yield_ty: Type, send_ty: Type, return_ty: Type) -> Type {
+    pub fn generator(&self, yield_ty: Type, send_ty: Type, return_ty: Type) -> ClassType {
         Self::apply(&self.generator, vec![yield_ty, send_ty, return_ty])
     }
 
-    pub fn awaitable(&self, x: Type) -> Type {
+    pub fn awaitable(&self, x: Type) -> ClassType {
         Self::apply(&self.awaitable, vec![x])
     }
 
-    pub fn coroutine(&self, yield_ty: Type, send_ty: Type, return_ty: Type) -> Type {
+    pub fn coroutine(&self, yield_ty: Type, send_ty: Type, return_ty: Type) -> ClassType {
         Self::apply(&self.coroutine, vec![yield_ty, send_ty, return_ty])
     }
 
-    pub fn traceback_type(&self) -> Type {
+    pub fn traceback_type(&self) -> ClassType {
         Self::primitive(&self.traceback_type)
     }
 }

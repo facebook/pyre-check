@@ -122,10 +122,7 @@ impl Class {
 
     pub fn self_type(&self, tparams: &QuantifiedVec) -> Type {
         let tparams_as_targs = TArgs::new(tparams.as_slice().iter().map(|q| q.to_type()).collect());
-        Type::class_type(ClassType::create_with_validated_targs(
-            self.clone(),
-            tparams_as_targs,
-        ))
+        ClassType::create_with_validated_targs(self.clone(), tparams_as_targs).to_type()
     }
 
     pub fn module_info(&self) -> &ModuleInfo {
@@ -257,6 +254,10 @@ impl ClassType {
 
     pub fn qname(&self) -> &QName {
         self.0.qname()
+    }
+
+    pub fn to_type(self) -> Type {
+        Type::ClassType(self)
     }
 
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {

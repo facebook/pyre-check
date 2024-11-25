@@ -101,22 +101,29 @@ impl<'a> Subset<'a> {
                 self.is_subset_eq(l, u)
             }
             (Type::Tuple(Tuple::Concrete(left_elts)), _) => {
-                let tuple_type = self.type_order.stdlib().tuple(unions(left_elts.clone()));
+                let tuple_type = self
+                    .type_order
+                    .stdlib()
+                    .tuple(unions(left_elts.clone()))
+                    .to_type();
                 self.is_subset_eq(&tuple_type, want)
             }
             (Type::Literal(lit), Type::LiteralString) => lit.is_string(),
-            (Type::Literal(lit), t @ Type::ClassType(_)) => {
-                self.is_subset_eq(&lit.general_type(self.type_order.stdlib()), t)
-            }
+            (Type::Literal(lit), t @ Type::ClassType(_)) => self.is_subset_eq(
+                &lit.general_class_type(self.type_order.stdlib()).to_type(),
+                t,
+            ),
             (Type::Literal(l_lit), Type::Literal(u_lit)) => l_lit == u_lit,
-            (Type::LiteralString, _) => self.is_subset_eq(&self.type_order.stdlib().str(), want),
+            (Type::LiteralString, _) => {
+                self.is_subset_eq(&self.type_order.stdlib().str().to_type(), want)
+            }
             (Type::Type(l), Type::Type(u)) => self.is_subset_eq(l, u),
             (Type::TypeGuard(l), Type::TypeGuard(u)) => {
                 // TypeGuard is covariant
                 self.is_subset_eq(l, u)
             }
             (Type::TypeGuard(_) | Type::TypeIs(_), _) => {
-                self.is_subset_eq(&self.type_order.stdlib().bool(), want)
+                self.is_subset_eq(&self.type_order.stdlib().bool().to_type(), want)
             }
             (Type::Ellipsis, Type::ClassType(c)) if c.name().id() == "EllipsisType" => {
                 // Bit of a weird case - pretty sure we should be modelling these slightly differently

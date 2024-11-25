@@ -523,7 +523,7 @@ impl<'a> AnswersSolver<'a> {
     // If `error_range` is None, do not report errors
     pub fn unwrap_awaitable(&self, ty: Type, error_range: Option<TextRange>) -> Type {
         let var = self.solver().fresh_contained(self.uniques);
-        let awaitable_ty = self.stdlib.awaitable(Type::Var(var));
+        let awaitable_ty = self.stdlib.awaitable(Type::Var(var)).to_type();
         let is_awaitable = self
             .solver()
             .is_subset_eq(&ty, &awaitable_ty, self.type_order());
@@ -664,7 +664,7 @@ impl<'a> AnswersSolver<'a> {
                         _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
                     },
                     UnaryOp::Not => match t.as_bool() {
-                        None => self.stdlib.bool(),
+                        None => self.stdlib.bool().to_type(),
                         Some(b) => Type::Literal(Lit::Bool(!b)),
                     },
                     _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
@@ -689,7 +689,10 @@ impl<'a> AnswersSolver<'a> {
                     // have been solved to the hint's contained types.
                     let key_var = self.solver().fresh_contained(self.uniques);
                     let value_var = self.solver().fresh_contained(self.uniques);
-                    let dict_type = self.stdlib.dict(Type::Var(key_var), Type::Var(value_var));
+                    let dict_type = self
+                        .stdlib
+                        .dict(Type::Var(key_var), Type::Var(value_var))
+                        .to_type();
                     if self
                         .solver()
                         .is_subset_eq(&dict_type, ty, self.type_order())
@@ -704,11 +707,14 @@ impl<'a> AnswersSolver<'a> {
                 });
                 if x.is_empty() {
                     match key_value_ty {
-                        Some((key_ty, value_ty)) => self.stdlib.dict(key_ty, value_ty),
-                        None => self.stdlib.dict(
-                            self.solver().fresh_contained(self.uniques).to_type(),
-                            self.solver().fresh_contained(self.uniques).to_type(),
-                        ),
+                        Some((key_ty, value_ty)) => self.stdlib.dict(key_ty, value_ty).to_type(),
+                        None => self
+                            .stdlib
+                            .dict(
+                                self.solver().fresh_contained(self.uniques).to_type(),
+                                self.solver().fresh_contained(self.uniques).to_type(),
+                            )
+                            .to_type(),
                     }
                 } else {
                     let (key_hint, value_hint) = match key_value_ty {
@@ -745,6 +751,7 @@ impl<'a> AnswersSolver<'a> {
                         .collect();
                     self.stdlib
                         .dict(self.unions(&key_tys), self.unions(&value_tys))
+                        .to_type()
                 }
             }
             Expr::Set(x) => {
@@ -753,7 +760,7 @@ impl<'a> AnswersSolver<'a> {
                     // then check the set elements against `var`, which has been solved to the
                     // hint's contained type.
                     let var = self.solver().fresh_contained(self.uniques);
-                    let set_type = self.stdlib.set(Type::Var(var));
+                    let set_type = self.stdlib.set(Type::Var(var)).to_type();
                     if self.solver().is_subset_eq(&set_type, ty, self.type_order()) {
                         Some(self.solver().force_var(var))
                     } else {
@@ -766,35 +773,37 @@ impl<'a> AnswersSolver<'a> {
                         None => self.solver().fresh_contained(self.uniques).to_type(),
                         Some(elem_ty) => elem_ty.clone(),
                     };
-                    self.stdlib.set(elem_ty)
+                    self.stdlib.set(elem_ty).to_type()
                 } else {
                     let tys = x.elts.map(|x| {
                         let t = self.expr(x, elem_ty.as_ref());
                         self.promote(t, elem_ty.as_ref())
                     });
-                    self.stdlib.set(self.unions(&tys))
+                    self.stdlib.set(self.unions(&tys)).to_type()
                 }
             }
             Expr::ListComp(x) => {
                 self.ifs_infer(&x.generators);
                 let elem_ty = self.expr_infer(&x.elt);
-                self.stdlib.list(elem_ty)
+                self.stdlib.list(elem_ty).to_type()
             }
             Expr::SetComp(x) => {
                 self.ifs_infer(&x.generators);
                 let elem_ty = self.expr_infer(&x.elt);
-                self.stdlib.set(elem_ty)
+                self.stdlib.set(elem_ty).to_type()
             }
             Expr::DictComp(x) => {
                 self.ifs_infer(&x.generators);
                 let k_ty = self.expr_infer(&x.key);
                 let v_ty = self.expr_infer(&x.value);
-                self.stdlib.dict(k_ty, v_ty)
+                self.stdlib.dict(k_ty, v_ty).to_type()
             }
             Expr::Generator(x) => {
                 self.ifs_infer(&x.generators);
                 let yield_ty = self.expr_infer(&x.elt);
-                self.stdlib.generator(yield_ty, Type::None, Type::None)
+                self.stdlib
+                    .generator(yield_ty, Type::None, Type::None)
+                    .to_type()
             }
             Expr::Await(x) => {
                 let awaiting_ty = self.expr_infer(&x.value);
@@ -806,7 +815,7 @@ impl<'a> AnswersSolver<'a> {
                 let _ty = self.expr_infer(&x.left);
                 let _tys = x.comparators.map(|x| self.expr_infer(x));
                 // We don't actually check that comparing these types is sensible, which matches Pyright
-                self.stdlib.bool()
+                self.stdlib.bool().to_type()
             }
             Expr::Call(x) if is_special_name(&x.func, "assert_type") => {
                 if x.arguments.args.len() == 2 {
@@ -894,7 +903,7 @@ impl<'a> AnswersSolver<'a> {
                 if let Some(lit) = Lit::from_fstring(x) {
                     lit.to_type()
                 } else {
-                    self.stdlib.str()
+                    self.stdlib.str().to_type()
                 }
             }
             Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
@@ -1062,7 +1071,7 @@ impl<'a> AnswersSolver<'a> {
                     // then check the list elements against `var`, which has been solved to the
                     // hint's contained type.
                     let var = self.solver().fresh_contained(self.uniques);
-                    let list_type = self.stdlib.list(Type::Var(var));
+                    let list_type = self.stdlib.list(Type::Var(var)).to_type();
                     if self
                         .solver()
                         .is_subset_eq(&list_type, ty, self.type_order())
@@ -1077,13 +1086,13 @@ impl<'a> AnswersSolver<'a> {
                         None => self.solver().fresh_contained(self.uniques).to_type(),
                         Some(elem_ty) => elem_ty.clone(),
                     };
-                    self.stdlib.list(elem_ty)
+                    self.stdlib.list(elem_ty).to_type()
                 } else {
                     let tys = x.elts.map(|x| {
                         let t = self.expr(x, elem_ty.as_ref());
                         self.promote(t, elem_ty.as_ref())
                     });
-                    self.stdlib.list(self.unions(&tys))
+                    self.stdlib.list(self.unions(&tys)).to_type()
                 }
             }
             Expr::Tuple(x) => {
@@ -1094,7 +1103,7 @@ impl<'a> AnswersSolver<'a> {
                         // then check the tuple elements against `var`, which has been solved to the
                         // hint's contained type.
                         let var = self.solver().fresh_contained(self.uniques);
-                        let tuple_type = self.stdlib.tuple(Type::Var(var));
+                        let tuple_type = self.stdlib.tuple(Type::Var(var)).to_type();
                         if self
                             .solver()
                             .is_subset_eq(&tuple_type, ty, self.type_order())
@@ -1115,7 +1124,7 @@ impl<'a> AnswersSolver<'a> {
                         .collect(),
                 )
             }
-            Expr::Slice(_) => self.stdlib.slice(),
+            Expr::Slice(_) => self.stdlib.slice().to_type(),
             Expr::IpyEscapeCommand(_) => self.error_todo("Answers::expr_infer", x),
         }
     }
