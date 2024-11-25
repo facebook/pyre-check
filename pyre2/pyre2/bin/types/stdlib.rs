@@ -92,13 +92,14 @@ impl Stdlib {
         }
     }
 
-    fn primitive(cls: &Option<Class>) -> Type {
-        // NOTE: if we hardcode in invalid use of `primitive` here, we will panic later
+    fn primitive_class_type(cls: &Option<Class>) -> ClassType {
+        // NOTE: if we hardcode in invalid use of `primitive_class_type` here, we will panic later
         // when performing substitutions.
-        Type::class_type(ClassType::create_with_validated_targs(
-            Self::unwrap_class(cls).clone(),
-            TArgs::default(),
-        ))
+        ClassType::create_with_validated_targs(Self::unwrap_class(cls).clone(), TArgs::default())
+    }
+
+    fn primitive(cls: &Option<Class>) -> Type {
+        Type::class_type(Self::primitive_class_type(cls))
     }
 
     pub fn object_class_type(&self) -> &ClassType {
@@ -143,13 +144,14 @@ impl Stdlib {
         Self::primitive(&self.base_exception)
     }
 
-    fn apply(cls: &Option<Class>, targs: Vec<Type>) -> Type {
-        // NOTE: if we hardcode in invalid use of `apply` here, we will panic later
+    fn apply_class_type(cls: &Option<Class>, targs: Vec<Type>) -> ClassType {
+        // NOTE: if we hardcode in invalid use of `apply_class_type` here, we will panic later
         // when performing substitutions.
-        Type::class_type(ClassType::create_with_validated_targs(
-            Self::unwrap_class(cls).clone(),
-            TArgs::new(targs),
-        ))
+        ClassType::create_with_validated_targs(Self::unwrap_class(cls).clone(), TArgs::new(targs))
+    }
+
+    fn apply(cls: &Option<Class>, targs: Vec<Type>) -> Type {
+        Type::class_type(Self::apply_class_type(cls, targs))
     }
 
     pub fn tuple(&self, x: Type) -> Type {
