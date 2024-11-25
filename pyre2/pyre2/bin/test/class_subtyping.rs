@@ -73,3 +73,28 @@ a2: type[A] = B[int]
 b2: type[B] = A[int]  # E: EXPECTED type[A[int]] <: type[B[Error]]
 "#,
 );
+
+simple_test!(
+    test_literal_string_subtyping,
+    r#"
+from typing import Literal, LiteralString
+
+def l0() -> Literal["foo"]: ...
+def l1() -> Literal["foo"] | Literal["bar"]: ...
+def l2() -> LiteralString: ...
+def l3() -> LiteralString | Literal["foo"]: ...
+def l4() -> str: ...
+
+test0: LiteralString = l0()
+test1: LiteralString = l1()
+test2: str = l0()
+test3: str = l1()
+test4: str = l2()
+test5: Literal["foo"] = l2()  # E: LiteralString <: Literal['foo']
+test6: str = l3()
+test7: LiteralString = l4()  # E: str <: LiteralString
+
+test10: object = l0()
+test11: object = l3()
+"#,
+);

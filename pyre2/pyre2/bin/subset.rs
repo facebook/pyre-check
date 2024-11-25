@@ -109,6 +109,7 @@ impl<'a> Subset<'a> {
                 self.is_subset_eq(&lit.general_type(self.type_order.stdlib()), t)
             }
             (Type::Literal(l_lit), Type::Literal(u_lit)) => l_lit == u_lit,
+            (Type::LiteralString, _) => self.is_subset_eq(&self.type_order.stdlib().str(), want),
             (Type::Type(l), Type::Type(u)) => self.is_subset_eq(l, u),
             (Type::Ellipsis, Type::ClassType(c)) if c.name().id() == "EllipsisType" => {
                 // Bit of a weird case - pretty sure we should be modelling these slightly differently

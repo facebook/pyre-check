@@ -111,7 +111,6 @@ impl Stdlib {
             )
         }
     }
-
     pub fn bool(&self) -> Type {
         Self::primitive(&self.bool)
     }
@@ -132,8 +131,12 @@ impl Stdlib {
         Self::primitive(&self.bytes)
     }
 
+    pub fn str_class_type(&self) -> ClassType {
+        Self::primitive_class_type(&self.str)
+    }
+
     pub fn str(&self) -> Type {
-        Self::primitive(&self.str)
+        Type::class_type(self.str_class_type())
     }
 
     pub fn slice(&self) -> Type {

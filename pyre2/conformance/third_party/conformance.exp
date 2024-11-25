@@ -173,16 +173,6 @@
     },
     {
       "code": -2,
-      "column": 26,
-      "concise_description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 60,
-      "stop_line": 79
-    },
-    {
-      "code": -2,
       "column": 34,
       "concise_description": "EXPECTED map[@_] <: LiteralString",
       "description": "EXPECTED map[@_] <: LiteralString",
@@ -491,16 +481,6 @@
       "line": 89,
       "name": "PyreError",
       "stop_column": 29,
-      "stop_line": 89
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "line": 89,
-      "name": "PyreError",
-      "stop_column": 56,
       "stop_line": 89
     },
     {
@@ -1081,16 +1061,6 @@
     },
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 61,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
       "column": 35,
       "concise_description": "EXPECTED map[@_] <: LiteralString",
       "description": "EXPECTED map[@_] <: LiteralString",
@@ -1563,16 +1533,6 @@
     },
     {
       "code": -2,
-      "column": 45,
-      "concise_description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "line": 52,
-      "name": "PyreError",
-      "stop_column": 79,
-      "stop_line": 52
-    },
-    {
-      "code": -2,
       "column": 53,
       "concise_description": "EXPECTED map[@_] <: LiteralString",
       "description": "EXPECTED map[@_] <: LiteralString",
@@ -1654,16 +1614,6 @@
       "line": 41,
       "name": "PyreError",
       "stop_column": 21,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 48,
       "stop_line": 41
     },
     {
@@ -2690,16 +2640,6 @@
       "line": 88,
       "name": "PyreError",
       "stop_column": 21,
-      "stop_line": 88
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "description": "EXPECTED LiteralString | str <: Buffer | CodeType | str",
-      "line": 88,
-      "name": "PyreError",
-      "stop_column": 48,
       "stop_line": 88
     },
     {
@@ -9511,16 +9451,6 @@
       "name": "PyreError",
       "stop_column": 42,
       "stop_line": 96
-    },
-    {
-      "code": -2,
-      "column": 26,
-      "concise_description": "EXPECTED LiteralString | str <: object",
-      "description": "EXPECTED LiteralString | str <: object",
-      "line": 100,
-      "name": "PyreError",
-      "stop_column": 61,
-      "stop_line": 100
     },
     {
       "code": -2,
