@@ -30,7 +30,3 @@ operators += [True, 2 > 3]
 # Danny: Tuples
 def tuple_type(x: tuple[str, ...]):
     pass
-
-
-# Unclaimed: Recursive alias
-Alias: TypeAlias = int | list["Alias"]

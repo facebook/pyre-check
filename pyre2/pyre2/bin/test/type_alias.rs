@@ -150,3 +150,16 @@ def g(x2: X2, x3: X3):
     assert_type(x3, A)
     "#,
 );
+
+simple_test!(
+    test_recursive_alias,
+    r#"
+from typing import TypeAlias, assert_type
+
+Alias: TypeAlias = int | list["Alias"]
+
+x: Alias = 1
+y: Alias = [1]
+z: Alias = [[1, 2]]
+"#,
+);
