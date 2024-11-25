@@ -982,9 +982,6 @@ impl<'a> BindingsBuilder<'a> {
             .0
             .insert_if_missing(Key::Definition(x.name.clone()));
 
-        let self_binding = Binding::SelfType(definition_key);
-        self.table
-            .insert(Key::SelfType(x.name.clone()), self_binding);
         x.type_params.iter().for_each(|x| {
             self.type_params(x);
         });
@@ -1093,6 +1090,10 @@ impl<'a> BindingsBuilder<'a> {
         } else {
             unreachable!("Expected class body scope, got {:?}", last_scope.kind);
         }
+
+        let self_binding = Binding::SelfType(definition_key);
+        self.table
+            .insert(Key::SelfType(x.name.clone()), self_binding);
 
         self.bind_definition(&x.name.clone(), Binding::Class(x, fields, n_bases), None);
     }
