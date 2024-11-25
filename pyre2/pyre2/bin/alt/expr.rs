@@ -116,7 +116,7 @@ impl<'a> AnswersSolver<'a> {
                 self.as_callable(constructor)
             }
             Type::Forall(qs, t) => {
-                let t: Type = self.solver().fresh_quantified(&qs, *t);
+                let t: Type = self.solver().fresh_quantified(&qs, *t, self.uniques);
                 self.as_callable(t)
             }
             Type::Var(v) if let Some(_guard) = self.recurser.recurse(v) => {
@@ -522,7 +522,7 @@ impl<'a> AnswersSolver<'a> {
 
     // If `error_range` is None, do not report errors
     pub fn unwrap_awaitable(&self, ty: Type, error_range: Option<TextRange>) -> Type {
-        let var = self.solver().fresh_contained();
+        let var = self.solver().fresh_contained(self.uniques);
         let awaitable_ty = self.stdlib.awaitable(Type::Var(var));
         let is_awaitable = self
             .solver()
@@ -687,8 +687,8 @@ impl<'a> AnswersSolver<'a> {
                     // We check `dict[key_var, value_var]` against the hint to make sure it's a
                     // superclass of dict, then check the dict elements against the vars, which
                     // have been solved to the hint's contained types.
-                    let key_var = self.solver().fresh_contained();
-                    let value_var = self.solver().fresh_contained();
+                    let key_var = self.solver().fresh_contained(self.uniques);
+                    let value_var = self.solver().fresh_contained(self.uniques);
                     let dict_type = self.stdlib.dict(Type::Var(key_var), Type::Var(value_var));
                     if self
                         .solver()
@@ -706,8 +706,8 @@ impl<'a> AnswersSolver<'a> {
                     match key_value_ty {
                         Some((key_ty, value_ty)) => self.stdlib.dict(key_ty, value_ty),
                         None => self.stdlib.dict(
-                            self.solver().fresh_contained().to_type(),
-                            self.solver().fresh_contained().to_type(),
+                            self.solver().fresh_contained(self.uniques).to_type(),
+                            self.solver().fresh_contained(self.uniques).to_type(),
                         ),
                     }
                 } else {
@@ -752,7 +752,7 @@ impl<'a> AnswersSolver<'a> {
                     // We check `set[var]` against the hint to make sure it's a superclass of set,
                     // then check the set elements against `var`, which has been solved to the
                     // hint's contained type.
-                    let var = self.solver().fresh_contained();
+                    let var = self.solver().fresh_contained(self.uniques);
                     let set_type = self.stdlib.set(Type::Var(var));
                     if self.solver().is_subset_eq(&set_type, ty, self.type_order()) {
                         Some(self.solver().force_var(var))
@@ -763,7 +763,7 @@ impl<'a> AnswersSolver<'a> {
 
                 if x.is_empty() {
                     let elem_ty = match elem_ty {
-                        None => self.solver().fresh_contained().to_type(),
+                        None => self.solver().fresh_contained(self.uniques).to_type(),
                         Some(elem_ty) => elem_ty.clone(),
                     };
                     self.stdlib.set(elem_ty)
@@ -1061,7 +1061,7 @@ impl<'a> AnswersSolver<'a> {
                     // We check `list[var]` against the hint to make sure it's a superclass of list,
                     // then check the list elements against `var`, which has been solved to the
                     // hint's contained type.
-                    let var = self.solver().fresh_contained();
+                    let var = self.solver().fresh_contained(self.uniques);
                     let list_type = self.stdlib.list(Type::Var(var));
                     if self
                         .solver()
@@ -1074,7 +1074,7 @@ impl<'a> AnswersSolver<'a> {
                 });
                 if x.is_empty() {
                     let elem_ty = match elem_ty {
-                        None => self.solver().fresh_contained().to_type(),
+                        None => self.solver().fresh_contained(self.uniques).to_type(),
                         Some(elem_ty) => elem_ty.clone(),
                     };
                     self.stdlib.list(elem_ty)
@@ -1093,7 +1093,7 @@ impl<'a> AnswersSolver<'a> {
                         // We check `tuple[var, ...]` against the hint to make sure it's a superclass of tuple,
                         // then check the tuple elements against `var`, which has been solved to the
                         // hint's contained type.
-                        let var = self.solver().fresh_contained();
+                        let var = self.solver().fresh_contained(self.uniques);
                         let tuple_type = self.stdlib.tuple(Type::Var(var));
                         if self
                             .solver()

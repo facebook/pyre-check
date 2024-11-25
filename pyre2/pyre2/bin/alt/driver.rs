@@ -332,7 +332,7 @@ impl Driver {
             .iter()
             .zip(&phase2)
             .map(|(p1, p2)| {
-                let ans = Answers::new(&exports, &p2.bindings, &p1.errors, &uniques);
+                let ans = Answers::new(&exports, &p2.bindings, &p1.errors);
                 timers.add((p2.name, Step::Answers, ans.len()));
                 (p2.name, ans)
             })

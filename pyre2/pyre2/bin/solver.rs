@@ -69,12 +69,11 @@ impl Variable {
 }
 
 #[derive(Debug)]
-pub struct Solver<'a> {
-    uniques: &'a UniqueFactory,
+pub struct Solver {
     variables: RwLock<SmallMap<Var, Variable>>,
 }
 
-impl Display for Solver<'_> {
+impl Display for Solver {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (x, y) in self.variables.read().unwrap().iter() {
             writeln!(f, "{x} = {y}")?;
@@ -87,11 +86,10 @@ impl Display for Solver<'_> {
 /// but we don't want to stack overflow.
 const TYPE_LIMIT: usize = 20;
 
-impl<'a> Solver<'a> {
+impl Solver {
     /// Create a new solver.
-    pub fn new(uniques: &'a UniqueFactory) -> Self {
+    pub fn new() -> Self {
         Self {
-            uniques,
             variables: Default::default(),
         }
     }
@@ -186,8 +184,8 @@ impl<'a> Solver<'a> {
 
     /// Generate a fresh variable based on code that is unspecified inside a container,
     /// e.g. `[]` with an unknown type of element.
-    pub fn fresh_contained(&self) -> Var {
-        let v = Var::new(self.uniques);
+    pub fn fresh_contained(&self, uniques: &UniqueFactory) -> Var {
+        let v = Var::new(uniques);
         self.variables
             .write()
             .unwrap()
@@ -196,8 +194,8 @@ impl<'a> Solver<'a> {
     }
 
     /// Generate fresh variables and substitute them in replacing a `Forall`.
-    pub fn fresh_quantified(&self, qs: &[Quantified], t: Type) -> Type {
-        let (vs, t) = t.instantiate_fresh(qs, self.uniques);
+    pub fn fresh_quantified(&self, qs: &[Quantified], t: Type, uniques: &UniqueFactory) -> Type {
+        let (vs, t) = t.instantiate_fresh(qs, uniques);
         let mut lock = self.variables.write().unwrap();
         for v in vs {
             lock.insert(v, Variable::Quantified);
@@ -206,8 +204,8 @@ impl<'a> Solver<'a> {
     }
 
     /// Generate a fresh variable used to tie recursive bindings.
-    pub fn fresh_recursive(&self) -> Var {
-        let v = Var::new(self.uniques);
+    pub fn fresh_recursive(&self, uniques: &UniqueFactory) -> Var {
+        let v = Var::new(uniques);
         self.variables
             .write()
             .unwrap()
@@ -353,7 +351,7 @@ impl<'a> Solver<'a> {
 /// A helper to implement subset erogonomically.
 /// Should only be used within `crate::subset`, which implements part of it.
 pub struct Subset<'a> {
-    solver: &'a Solver<'a>,
+    solver: &'a Solver,
     pub type_order: TypeOrder<'a>,
     // True if we are doing a union, false if we are actually checking for subset.
     union: bool,

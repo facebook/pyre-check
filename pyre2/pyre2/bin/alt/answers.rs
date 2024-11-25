@@ -98,7 +98,7 @@ pub struct Answers<'a> {
     exports: &'a SmallMap<ModuleName, Exports>,
     bindings: &'a Bindings,
     errors: &'a ErrorCollector,
-    solver: Solver<'a>,
+    solver: Solver,
     table: AnswerTable,
 }
 
@@ -152,7 +152,7 @@ table!(
 pub struct AnswersSolver<'a> {
     answers: &'a SmallMap<ModuleName, Answers<'a>>,
     current: &'a Answers<'a>,
-    uniques: &'a UniqueFactory,
+    pub uniques: &'a UniqueFactory,
     pub recurser: &'a Recurser<Var>,
     pub stdlib: &'a Stdlib,
 }
@@ -185,7 +185,7 @@ impl Solve for Key {
     }
 
     fn recursive(answers: &AnswersSolver) -> Self::Recursive {
-        answers.solver().fresh_recursive()
+        answers.solver().fresh_recursive(answers.uniques)
     }
 
     fn record_recursive(answers: &AnswersSolver, key: &Key, answer: Arc<Type>, recursive: Var) {
@@ -209,7 +209,7 @@ impl Solve for KeyExported {
     }
 
     fn recursive(answers: &AnswersSolver) -> Self::Recursive {
-        answers.solver().fresh_recursive()
+        answers.solver().fresh_recursive(answers.uniques)
     }
 
     fn record_recursive(
@@ -318,7 +318,6 @@ impl<'a> Answers<'a> {
         exports: &'a SmallMap<ModuleName, Exports>,
         bindings: &'a Bindings,
         errors: &'a ErrorCollector,
-        uniques: &'a UniqueFactory,
     ) -> Self {
         fn presize<K: Solve>(items: &mut AnswerEntry<K>, bindings: &Bindings)
         where
@@ -337,7 +336,7 @@ impl<'a> Answers<'a> {
             exports,
             bindings,
             errors,
-            solver: Solver::new(uniques),
+            solver: Solver::new(),
             table,
         }
     }
