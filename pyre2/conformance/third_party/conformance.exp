@@ -8204,26 +8204,6 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "TODO: StmtAugAssign - Bindings::stmt",
-      "description": "TODO: StmtAugAssign - Bindings::stmt",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "TODO: StmtAugAssign - Bindings::stmt",
-      "description": "TODO: StmtAugAssign - Bindings::stmt",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
-      "column": 1,
       "concise_description": "Expected a callable, got Invocable",
       "description": "Expected a callable, got Invocable",
       "line": 58,
@@ -15716,8 +15696,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "TODO: StmtAugAssign - Bindings::stmt",
-      "description": "TODO: StmtAugAssign - Bindings::stmt",
+      "concise_description": "Object of class `str` has no attribute `__iadd__`",
+      "description": "Object of class `str` has no attribute `__iadd__`",
       "line": 57,
       "name": "PyreError",
       "stop_column": 17,
@@ -15726,8 +15706,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "TODO: StmtAugAssign - Bindings::stmt",
-      "description": "TODO: StmtAugAssign - Bindings::stmt",
+      "concise_description": "Object of class `str` has no attribute `__iadd__`",
+      "description": "Object of class `str` has no attribute `__iadd__`",
       "line": 58,
       "name": "PyreError",
       "stop_column": 11,
@@ -15765,16 +15745,6 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]",
-      "description": "Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]",
-      "line": 68,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 68
-    },
-    {
-      "code": -2,
       "column": 25,
       "concise_description": "Expected 0 positional argument(s)",
       "description": "Expected 0 positional argument(s)",
@@ -15782,16 +15752,6 @@
       "name": "PyreError",
       "stop_column": 26,
       "stop_line": 68
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "EXPECTED LiteralString <: str",
-      "description": "EXPECTED LiteralString <: str",
-      "line": 71,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 71
     },
     {
       "code": -2,
@@ -16170,8 +16130,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "TODO: StmtAugAssign - Bindings::stmt",
-      "description": "TODO: StmtAugAssign - Bindings::stmt",
+      "concise_description": "Object of class `int` has no attribute `__iadd__`",
+      "description": "Object of class `int` has no attribute `__iadd__`",
       "line": 33,
       "name": "PyreError",
       "stop_column": 11,
@@ -19808,8 +19768,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "TODO: StmtAugAssign - Bindings::stmt",
-      "description": "TODO: StmtAugAssign - Bindings::stmt",
+      "concise_description": "Object of class `int` has no attribute `__iadd__`",
+      "description": "Object of class `int` has no attribute `__iadd__`",
       "line": 67,
       "name": "PyreError",
       "stop_column": 22,
@@ -19848,8 +19808,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "TODO: StmtAugAssign - Bindings::stmt",
-      "description": "TODO: StmtAugAssign - Bindings::stmt",
+      "concise_description": "Object of class `int` has no attribute `__iadd__`",
+      "description": "Object of class `int` has no attribute `__iadd__`",
       "line": 145,
       "name": "PyreError",
       "stop_column": 11,

@@ -8,6 +8,7 @@
 //! Various utilities for examining pieces of syntax.
 
 use ruff_python_ast::Expr;
+use ruff_python_ast::Operator;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtExpr;
 
@@ -52,5 +53,23 @@ pub fn is_ellipse(x: &[Stmt]) -> bool {
             }),
         ] => true,
         _ => false,
+    }
+}
+
+pub fn inplace_dunder(op: Operator) -> &'static str {
+    match op {
+        Operator::Add => "__iadd__",
+        Operator::Sub => "__isub__",
+        Operator::Mult => "__imul__",
+        Operator::MatMult => "__imatmul__",
+        Operator::Div => "__itruediv__",
+        Operator::Mod => "__imod__",
+        Operator::Pow => "__ipow__",
+        Operator::LShift => "__ilshift__",
+        Operator::RShift => "__irshift__",
+        Operator::BitOr => "__ior__",
+        Operator::BitXor => "__ixor__",
+        Operator::BitAnd => "__iand__",
+        Operator::FloorDiv => "__ifloordiv__",
     }
 }

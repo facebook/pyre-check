@@ -120,7 +120,6 @@ impl Definitions {
             // Explicitly defined, so don't redefine it
             return;
         }
-
         if style == ModuleStyle::Executable {
             for x in self.import_all.keys() {
                 self.dunder_all.push(DunderAllEntry::Module(*x));
@@ -248,7 +247,6 @@ impl<'a> DefinitionsBuilder<'a> {
                     }
                 }
             }
-
             Stmt::ClassDef(x) => {
                 self.add_identifier(&x.name, DefinitionStyle::Local);
                 return; // These things are inside a scope
@@ -266,6 +264,8 @@ impl<'a> DefinitionsBuilder<'a> {
                     self.inner
                         .dunder_all
                         .extend(DunderAllEntry::as_list(&x.value));
+                } else {
+                    self.expr_lvalue(&x.target);
                 }
             }
             Stmt::Expr(StmtExpr {
@@ -304,7 +304,6 @@ impl<'a> DefinitionsBuilder<'a> {
             }
             Stmt::AnnAssign(x) => self.expr_lvalue(&x.target),
             Stmt::TypeAlias(x) => self.expr_lvalue(&x.name),
-
             Stmt::FunctionDef(x) => {
                 self.add_identifier(&x.name, DefinitionStyle::Local);
                 return; // don't recurse because a separate scope
@@ -345,7 +344,6 @@ impl<'a> DefinitionsBuilder<'a> {
                 }
                 return; // We went through the relevant branches already
             }
-
             _ => {}
         }
         Visitors::visit_stmt(x, |x| self.stmt(x))

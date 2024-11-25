@@ -48,6 +48,7 @@ use crate::alt::exports::Exports;
 use crate::alt::expr::TypeCallArg;
 use crate::alt::table::Keyed;
 use crate::alt::table::TableKeyed;
+use crate::alt::util::inplace_dunder;
 use crate::ast::Ast;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
@@ -856,6 +857,16 @@ impl<'a> AnswersSolver<'a> {
             Binding::Expr(ann, e) => {
                 let ty = ann.map(|k| self.get_idx(k));
                 self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()))
+            }
+            Binding::AugAssign(x) => {
+                let base = self.expr(&x.target, None);
+                self.call_method(
+                    &base,
+                    &Name::new(inplace_dunder(x.op)),
+                    x.range,
+                    &[*x.value.clone()],
+                    &[],
+                )
             }
             Binding::IterableValue(ann, e) => {
                 let ty = ann.map(|k| self.get_idx(k));

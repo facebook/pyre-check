@@ -422,3 +422,82 @@ def f(c: C):
     return c.x  # E: Object of class `C` has no attribute `x`
     "#,
 );
+
+simple_test!(
+    test_type_alias_simple,
+    r#"
+from typing import assert_type
+type X = int
+def f(x: X):
+    assert_type(x, int)
+    "#,
+);
+
+simple_test!(
+    test_type_alias_generic,
+    r#"
+from typing import assert_type
+type X[T] = list[T]
+def f(x: X[int]):
+    assert_type(x, list[int])
+    "#,
+);
+
+simple_test!(
+    test_aug_assign_simple,
+    r#"
+x: list[int] = []
+x += [1]
+x += ["foo"]  # E: EXPECTED Literal['foo'] <: int
+"#,
+);
+
+simple_test!(
+    test_aug_assign_function,
+    r#"
+def foo(y: list[int]) -> None:
+    y += [1]
+    y += ["foo"]  # E: EXPECTED Literal['foo'] <: int
+    z: list[int] = []
+    z += [1]
+    z += ["foo"]  # E: EXPECTED Literal['foo'] <: int
+"#,
+);
+
+simple_test!(
+    test_aug_assign_attr,
+    r#"
+class C:
+    foo: list[int]
+
+    def __init__(self) -> None:
+        self.foo = []
+
+c: C = C()
+c.foo += [1]
+c.foo += ["foo"]  # E: EXPECTED Literal['foo'] <: int
+"#,
+);
+
+simple_test!(
+    test_aug_assign_attr_self,
+    r#"
+class C:
+    foo: list[int]
+
+    def __init__(self) -> None:
+        self.foo = []
+        self.foo += [1]
+        self.foo += ["foo"]  # E: EXPECTED Literal['foo'] <: int
+"#,
+);
+
+simple_test!(
+    test_aug_assign_subscript,
+    r#"
+x: list[list[int]] = []
+x += [[1]]
+x[0] += [1]
+x += [1]  # E: EXPECTED Literal[1] <: list[int]
+"#,
+);

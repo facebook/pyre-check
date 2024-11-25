@@ -13,6 +13,7 @@ use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprSubscript;
 use ruff_python_ast::Identifier;
+use ruff_python_ast::StmtAugAssign;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
 use ruff_text_size::Ranged;
@@ -218,6 +219,7 @@ pub enum Binding {
     /// If the annotation has a type inside it (e.g. `int` then use the annotation).
     /// If the annotation doesn't (e.g. it's `Final`), then use the binding.
     AnnotatedType(Idx<KeyAnnotation>, Box<Binding>),
+    AugAssign(StmtAugAssign),
     /// The Any type.
     AnyType(AnyStyle),
     /// The str type.
@@ -487,6 +489,7 @@ impl DisplayWith<Bindings> for Binding {
             Self::Class(c, _, _) => write!(f, "class {}", c.name.id),
             Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
+            Self::AugAssign(s) => write!(f, "augmented_assign {:?}", s),
             Self::AnyType(s) => write!(f, "anytype {s}"),
             Self::StrType => write!(f, "strtype"),
             Self::TypeParameter(q) => write!(f, "type_parameter {q}"),

@@ -515,7 +515,7 @@ impl<'a> BindingsBuilder<'a> {
             for comp in comps.iter() {
                 self.scopes.last_mut().stat.expr_lvalue(&comp.target);
                 let make_binding = |k| Binding::IterableValue(k, comp.iter.clone());
-                self.bind_target(&comp.target, &make_binding);
+                self.bind_target(&comp.target, &make_binding, true);
             }
         };
         match x {
@@ -631,11 +631,13 @@ impl<'a> BindingsBuilder<'a> {
         self.bind_key(&name.id, idx, annotation, false)
     }
 
+    // `should_ensure_expr` determines whether to call `ensure_expr` recursively in `bind_target`
     fn bind_unpacking(
         &mut self,
         elts: &[Expr],
         make_binding: &dyn Fn(Option<Idx<KeyAnnotation>>) -> Binding,
         range: TextRange,
+        should_ensure_expr: bool,
     ) {
         // An unpacking has zero or one splats (starred expressions).
         let mut splat = false;
@@ -652,7 +654,7 @@ impl<'a> BindingsBuilder<'a> {
                             UnpackedPosition::Slice(i, j),
                         )
                     };
-                    self.bind_target(&e.value, &make_nested_binding);
+                    self.bind_target(&e.value, &make_nested_binding, should_ensure_expr);
                 }
                 _ => {
                     let idx = if splat {
@@ -665,7 +667,7 @@ impl<'a> BindingsBuilder<'a> {
                     let make_nested_binding = |ann: Option<Idx<KeyAnnotation>>| {
                         Binding::UnpackedValue(Box::new(make_binding(ann)), range, idx.clone())
                     };
-                    self.bind_target(e, &make_nested_binding);
+                    self.bind_target(e, &make_nested_binding, should_ensure_expr);
                 }
             }
         }
@@ -702,11 +704,18 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    // `should_ensure_expr` determines whether to call `ensure_expr` recursively
     fn bind_target(
         &mut self,
         target: &Expr,
         make_binding: &dyn Fn(Option<Idx<KeyAnnotation>>) -> Binding,
+        should_ensure_expr: bool,
     ) {
+        let mut maybe_ensure_expr = |expr| {
+            if should_ensure_expr {
+                self.ensure_expr(expr)
+            }
+        };
         match target {
             Expr::Name(name) => {
                 let id = Ast::expr_name_identifier(name.clone());
@@ -716,7 +725,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.table.types.1.insert(idx, make_binding(ann));
             }
             Expr::Attribute(x) => {
-                self.ensure_expr(&x.value);
+                maybe_ensure_expr(&x.value);
                 let ann = self.table.insert(
                     KeyAnnotation::AttrAnnotation(x.range),
                     BindingAnnotation::AttrType(x.clone()),
@@ -726,8 +735,8 @@ impl<'a> BindingsBuilder<'a> {
                 self.table.insert(Key::Anon(x.range), binding);
             }
             Expr::Subscript(x) => {
-                self.ensure_expr(&x.value);
-                self.ensure_expr(&x.slice);
+                maybe_ensure_expr(&x.value);
+                maybe_ensure_expr(&x.slice);
                 let binding = make_binding(None);
                 self.table.insert(
                     Key::Anon(x.range),
@@ -735,10 +744,10 @@ impl<'a> BindingsBuilder<'a> {
                 );
             }
             Expr::Tuple(tup) => {
-                self.bind_unpacking(&tup.elts, make_binding, tup.range);
+                self.bind_unpacking(&tup.elts, make_binding, tup.range, should_ensure_expr);
             }
             Expr::List(lst) => {
-                self.bind_unpacking(&lst.elts, make_binding, lst.range);
+                self.bind_unpacking(&lst.elts, make_binding, lst.range, should_ensure_expr);
             }
             _ => self.todo("unrecognized assignment target", target),
         }
@@ -833,7 +842,6 @@ impl<'a> BindingsBuilder<'a> {
                 Key::Definition(name.clone()),
                 Binding::AnnotatedType(ann_key, Box::new(Binding::AnyType(AnyStyle::Implicit))),
             );
-
             self.scopes.last_mut().stat.add(name.id.clone(), name.range);
             self.bind_key(&name.id, bind_key, Some(ann_key), false);
         }
@@ -1138,7 +1146,7 @@ impl<'a> BindingsBuilder<'a> {
                             b
                         }
                     };
-                    self.bind_target(target, &make_binding)
+                    self.bind_target(target, &make_binding, true)
                 }
             }
             Stmt::AugAssign(x) => {
@@ -1146,7 +1154,11 @@ impl<'a> BindingsBuilder<'a> {
                     // For now, don't raise a todo, since we use it everywhere.
                     // Fix it later.
                 } else {
-                    self.todo("Bindings::stmt", &x)
+                    self.ensure_expr(&x.target);
+                    self.ensure_expr(&x.value);
+                    let make_binding =
+                        |_: Option<Idx<KeyAnnotation>>| Binding::AugAssign(x.clone());
+                    self.bind_target(&x.target, &make_binding, false);
                 }
             }
             Stmt::AnnAssign(mut x) => match *x.target {
@@ -1255,7 +1267,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.setup_loop(range);
                 self.ensure_expr(&x.iter);
                 let make_binding = |k| Binding::IterableValue(k, *x.iter.clone());
-                self.bind_target(&x.target, &make_binding);
+                self.bind_target(&x.target, &make_binding, true);
                 self.stmts(x.body.clone());
                 self.teardown_loop(range, x.orelse);
             }
@@ -1303,7 +1315,7 @@ impl<'a> BindingsBuilder<'a> {
                         let make_binding = |k: Option<Idx<KeyAnnotation>>| {
                             Binding::ContextValue(k, item.context_expr.clone(), kind)
                         };
-                        self.bind_target(opts, &make_binding);
+                        self.bind_target(opts, &make_binding, true);
                     } else {
                         self.table.insert(
                             Key::Anon(item.range()),
