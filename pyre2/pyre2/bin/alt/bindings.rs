@@ -1020,6 +1020,34 @@ impl<'a> BindingsBuilder<'a> {
         self.table
             .insert(KeyMro(x.name.clone()), BindingMro(self_type_key));
 
+        let mut keywords = SmallSet::new();
+        x.keywords().iter().for_each(|keyword| {
+            if let Some(name) = &keyword.arg {
+                self.ensure_expr(&keyword.value);
+                if keywords.insert(name.id.clone()) {
+                    self.table.insert(
+                        Key::ClassKeyword(x.name.clone(), name.id.clone()),
+                        Binding::ClassKeyword(keyword.value.clone()),
+                    );
+                } else {
+                    self.errors.add(
+                        &self.module_info,
+                        keyword.range(),
+                        format!("Duplicate keyword in class header of `{}`", x.name),
+                    )
+                }
+            } else {
+                self.errors.add(
+                    &self.module_info,
+                    keyword.range(),
+                    format!(
+                        "The use of unpacking in class header of `{}` is not supported",
+                        x.name
+                    ),
+                )
+            }
+        });
+
         let definition_key = self
             .table
             .types

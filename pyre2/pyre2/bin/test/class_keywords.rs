@@ -12,7 +12,7 @@ simple_test!(
     r#"
 def f(x: bool) -> bool: ...
 
-# TODO(stroxler): we should detect a type error here
-class A(foo=f(15)): pass
+class A(foo=f(15)):  # E: EXPECTED Literal[15] <: bool
+    pass
 "#,
 );

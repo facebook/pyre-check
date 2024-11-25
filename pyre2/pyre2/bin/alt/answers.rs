@@ -1036,6 +1036,7 @@ impl<'a> AnswersSolver<'a> {
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExported::Export(name.clone()))
                 .arc_clone(),
+            Binding::ClassKeyword(x) => self.expr(x, None),
             Binding::Class(x, fields, n_bases) => {
                 let tparams = self.type_params(&x.type_params);
                 let c = Class::new(

@@ -62,6 +62,8 @@ pub enum Key {
     Phi(Name, TextRange),
     /// The binding definition site, anywhere it occurs
     Anywhere(Name, TextRange),
+    /// A 'keyword argument' appearing in a class header, e.g. `metaclass`.
+    ClassKeyword(Identifier, Name),
 }
 
 /// Like `Key`, but used for things accessible in another module.
@@ -87,6 +89,7 @@ impl Ranged for Key {
             Self::Anon(r) => *r,
             Self::Phi(_, r) => *r,
             Self::Anywhere(_, r) => *r,
+            Self::ClassKeyword(c, _) => c.range,
         }
     }
 }
@@ -95,7 +98,7 @@ impl Ranged for KeyExported {
     fn range(&self) -> TextRange {
         match self {
             Self::Export(_) => TextRange::default(),
-            Self::ClassField(x, _) => x.range,
+            Self::ClassField(c, _) => c.range,
         }
     }
 }
@@ -234,6 +237,8 @@ pub enum Binding {
     /// The field names should be used to build `ClassField` keys for lookup.
     /// Track the number of base classes, use this to build `BaseClass` keys for lookup.
     Class(StmtClassDef, SmallSet<Name>, usize),
+    /// A class header keyword argument (e.g. the `metaclass`).
+    ClassKeyword(Expr),
     /// The Self type for a class, must point at a class.
     SelfType(Idx<Key>),
     /// A forward reference to another binding.
@@ -364,6 +369,7 @@ impl Display for Key {
             Self::Anon(r) => write!(f, "anon {r:?}"),
             Self::Phi(n, r) => write!(f, "phi {n} {r:?}"),
             Self::Anywhere(n, r) => write!(f, "anywhere {n} {r:?}"),
+            Self::ClassKeyword(x, n) => write!(f, "class_keyword {} {:?} . {}", x.id, x.range, n),
             Self::ReturnType(x) => write!(f, "return {} {:?}", x.id, x.range),
             Self::ReturnExpression(x, i) => write!(f, "return {} {:?} @ {i:?}", x.id, x.range),
         }
@@ -487,6 +493,7 @@ impl DisplayWith<Bindings> for Binding {
             Self::Function(x, _) => write!(f, "def {}", x.name.id),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::Class(c, _, _) => write!(f, "class {}", c.name.id),
+            Self::ClassKeyword(x) => write!(f, "class_keyword {}", m.display(x)),
             Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
             Self::AugAssign(s) => write!(f, "augmented_assign {:?}", s),
