@@ -33,15 +33,8 @@ protocol_subtype_2: Collection[int] = (1, 2, 3)
 # Sam: Callable, ParamSpec, Unpack
 _P = ParamSpec("_P")
 
-
 def complex_callable(func: Callable[_P, bool], *args: Unpack[tuple[str, str]]):
     pass
-
-
-# Danny: Operators
-operators = []
-operators += [True, 2 > 3]
-
 
 # Up for grabs: try
 def try_statement():
