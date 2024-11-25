@@ -29,6 +29,7 @@ use crate::alt::bindings::BindingEntry;
 use crate::alt::bindings::BindingTable;
 use crate::alt::bindings::Bindings;
 use crate::alt::exports::Exports;
+use crate::alt::exports::LookupExport;
 use crate::alt::loader::LoadResult;
 use crate::alt::loader::Loader;
 use crate::alt::loader::FAKE_MODULE;
@@ -145,7 +146,7 @@ impl Phase2 {
     fn new(
         timers: &mut Timers,
         phase1: &Phase1,
-        modules: &SmallMap<ModuleName, Exports>,
+        modules: &LookupExport,
         uniques: &UniqueFactory,
         config: &Config,
     ) -> Self {
@@ -262,7 +263,7 @@ fn run_phase1(
 fn run_phase2(
     timers: &mut Timers,
     phase1: &[Phase1],
-    modules: &SmallMap<ModuleName, Exports>,
+    modules: &LookupExport,
     uniques: &UniqueFactory,
     config: &Config,
     parallel: bool,
@@ -304,10 +305,12 @@ impl Driver {
 
         timers.add((timers_global_module(), Step::Startup, 0));
         let phase1 = run_phase1(timers, modules, config, timings.is_some(), load, parallel);
-        let exports = phase1
-            .iter()
-            .map(|v| (v.module_info.name(), v.exports.dupe()))
-            .collect();
+        let exports = LookupExport::from_map(
+            phase1
+                .iter()
+                .map(|v| (v.module_info.name(), v.exports.dupe()))
+                .collect(),
+        );
 
         let phase2 = run_phase2(timers, &phase1, &exports, &uniques, config, parallel);
 
@@ -527,7 +530,7 @@ fn info_eprintln(msg: String) {
 }
 
 fn make_stdlib(
-    exports: &SmallMap<ModuleName, Exports>,
+    exports: &LookupExport,
     answers: &SmallMap<ModuleName, Answers>,
     uniques: &UniqueFactory,
 ) -> Stdlib {

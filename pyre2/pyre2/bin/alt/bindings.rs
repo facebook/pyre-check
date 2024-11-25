@@ -59,7 +59,7 @@ use crate::alt::binding::RaisedException;
 use crate::alt::binding::SizeExpectation;
 use crate::alt::binding::UnpackedPosition;
 use crate::alt::definitions::Definitions;
-use crate::alt::exports::Exports;
+use crate::alt::exports::LookupExport;
 use crate::alt::table::Keyed;
 use crate::alt::table::TableKeyed;
 use crate::alt::util::is_ellipse;
@@ -118,7 +118,7 @@ impl Display for Bindings {
 
 struct BindingsBuilder<'a> {
     module_info: ModuleInfo,
-    modules: &'a SmallMap<ModuleName, Exports>,
+    modules: &'a LookupExport,
     config: &'a Config,
     errors: &'a ErrorCollector,
     uniques: &'a UniqueFactory,
@@ -144,7 +144,7 @@ impl Static {
         x: &[Stmt],
         module_info: &ModuleInfo,
         top_level: bool,
-        modules: &SmallMap<ModuleName, Exports>,
+        modules: &LookupExport,
         config: &Config,
     ) {
         let mut d = Definitions::new(x, module_info.name(), module_info.is_init(), config);
@@ -155,7 +155,7 @@ impl Static {
             self.add(name, range)
         }
         for (m, range) in d.import_all {
-            let extra = modules.get(&m).unwrap().wildcard(modules);
+            let extra = modules.get(m).wildcard(modules);
             for name in extra.iter() {
                 self.add(name.clone(), range)
             }
@@ -355,7 +355,7 @@ impl Bindings {
     pub fn new(
         x: Vec<Stmt>,
         module_info: ModuleInfo,
-        modules: &SmallMap<ModuleName, Exports>,
+        modules: &LookupExport,
         config: &Config,
         errors: &ErrorCollector,
         uniques: &UniqueFactory,
@@ -445,7 +445,7 @@ impl<'a> BindingsBuilder<'a> {
 
     fn inject_implicit(&mut self) {
         let builtins_module = ModuleName::builtins();
-        let builtins_export = self.modules.get(&builtins_module).unwrap();
+        let builtins_export = self.modules.get(builtins_module);
         for name in builtins_export.wildcard(self.modules).iter() {
             let key = Key::Import(name.clone(), TextRange::default());
             let idx = self
@@ -1413,7 +1413,7 @@ impl<'a> BindingsBuilder<'a> {
                 ) {
                     for x in x.names {
                         if &x.name == "*" {
-                            let module = self.modules.get(&m).unwrap();
+                            let module = self.modules.get(m);
                             for name in module.wildcard(self.modules).iter() {
                                 let key = Key::Import(name.clone(), x.range);
                                 let val = if module.contains(name, self.modules) {
@@ -1431,12 +1431,7 @@ impl<'a> BindingsBuilder<'a> {
                             }
                         } else {
                             let asname = x.asname.unwrap_or_else(|| x.name.clone());
-                            let val = if self
-                                .modules
-                                .get(&m)
-                                .unwrap()
-                                .contains(&x.name.id, self.modules)
-                            {
+                            let val = if self.modules.get(m).contains(&x.name.id, self.modules) {
                                 Binding::Import(m, x.name.id)
                             } else {
                                 self.errors.add(

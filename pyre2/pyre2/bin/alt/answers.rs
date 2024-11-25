@@ -44,7 +44,7 @@ use crate::alt::binding::UnpackedPosition;
 use crate::alt::bindings::BindingEntry;
 use crate::alt::bindings::BindingTable;
 use crate::alt::bindings::Bindings;
-use crate::alt::exports::Exports;
+use crate::alt::exports::LookupExport;
 use crate::alt::expr::TypeCallArg;
 use crate::alt::table::Keyed;
 use crate::alt::table::TableKeyed;
@@ -149,7 +149,7 @@ table!(
 
 #[derive(Debug, Clone)]
 pub struct AnswersSolver<'a> {
-    exports: &'a SmallMap<ModuleName, Exports>,
+    exports: &'a LookupExport,
     answers: &'a SmallMap<ModuleName, Answers<'a>>,
     current: &'a Answers<'a>,
     pub uniques: &'a UniqueFactory,
@@ -344,7 +344,7 @@ impl<'a> Answers<'a> {
 
     pub fn solve(
         &self,
-        exports: &SmallMap<ModuleName, Exports>,
+        exports: &LookupExport,
         answers: &SmallMap<ModuleName, Answers>,
         stdlib: &Stdlib,
         uniques: &'a UniqueFactory,
@@ -390,7 +390,7 @@ impl<'a> Answers<'a> {
         &self,
         module: ModuleName,
         name: &Name,
-        exports: &SmallMap<ModuleName, Exports>,
+        exports: &LookupExport,
         answers: &SmallMap<ModuleName, Answers<'_>>,
         uniques: &'a UniqueFactory,
     ) -> Option<Class> {
@@ -1279,7 +1279,7 @@ impl<'a> AnswersSolver<'a> {
     }
 
     pub fn get_import(&self, name: &Name, from: ModuleName, range: TextRange) -> Type {
-        let exports = self.exports.get(&from).unwrap();
+        let exports = self.exports.get(from);
         if !exports.contains(name, self.exports) {
             self.error(range, format!("No attribute `{name}` in module `{from}`",))
         } else {
