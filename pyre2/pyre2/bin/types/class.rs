@@ -229,12 +229,17 @@ impl ClassType {
         if targs.len() != tparams.len() {
             // Invariant violation: all type arguments should be constructed through
             // `check_and_sanitize_targs_for_class`, which should guarantee zippability.
+            /* TODO(stroxler): until this is enabled, there are edge cases with undefined
+               behavior. Needed because we are still working out how to handle recursion in
+               base classes.
             unreachable!(
                 "Encountered invalid type arguments of length {} in class `{}` (expected {})",
                 targs.len(),
                 self.name().id,
                 tparams.len(),
             );
+            */
+            return Substitution(SmallMap::new());
         }
         Substitution(
             tparams
