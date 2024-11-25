@@ -129,7 +129,7 @@ mod tests {
         Exports::new(&ast.body, &module_info, &Config::default())
     }
 
-    fn check(exports: &Exports, imports: &SmallMap<ModuleName, Exports>, all: &[&str]) {
+    fn eq_wildcards(exports: &Exports, imports: &SmallMap<ModuleName, Exports>, all: &[&str]) {
         assert_eq!(
             exports
                 .wildcard(imports)
@@ -143,7 +143,7 @@ mod tests {
     #[test]
     fn test_exports() {
         let simple = mk_exports("simple_val = 1\n_simple_val = 2", ModuleStyle::Executable);
-        check(&simple, &SmallMap::new(), &["simple_val"]);
+        eq_wildcards(&simple, &SmallMap::new(), &["simple_val"]);
 
         let imports = smallmap!(ModuleName::from_str("simple") => simple);
         let contents = r#"
@@ -159,12 +159,12 @@ _x = 2
         let executable = mk_exports(contents, ModuleStyle::Executable);
         let interface = mk_exports(contents, ModuleStyle::Interface);
 
-        check(
+        eq_wildcards(
             &executable,
             &imports,
             &["simple_val", "X", "Z", "Q", "baz", "test", "x"],
         );
-        check(&interface, &imports, &["Q", "test", "x"]);
+        eq_wildcards(&interface, &imports, &["Q", "test", "x"]);
 
         for x in [&executable, &interface] {
             assert!(x.contains(&Name::new("Z"), &imports));
@@ -181,7 +181,7 @@ _x = 2
         let b = mk_exports("from a import *", ModuleStyle::Interface);
         let imports = smallmap!(ModuleName::from_str("a") => a);
         assert!(b.contains(&Name::new("a"), &imports));
-        check(&b, &imports, &[]);
+        eq_wildcards(&b, &imports, &[]);
     }
 
     #[test]
@@ -192,8 +192,8 @@ _x = 2
             ModuleName::from_str("a") => a.dupe(),
             ModuleName::from_str("b") => b.dupe(),
         );
-        check(&a, &imports, &[]);
-        check(&b, &imports, &["x"]);
+        eq_wildcards(&a, &imports, &[]);
+        eq_wildcards(&b, &imports, &["x"]);
         assert!(b.contains(&Name::new("x"), &imports));
         assert!(!b.contains(&Name::new("y"), &imports));
     }
@@ -206,8 +206,8 @@ _x = 2
             ModuleName::from_str("a") => a.dupe(),
             ModuleName::from_str("b") => b.dupe(),
         );
-        check(&a, &imports, &[]);
-        check(&b, &imports, &[]);
+        eq_wildcards(&a, &imports, &[]);
+        eq_wildcards(&b, &imports, &[]);
         assert!(!a.contains(&Name::new("magic"), &imports));
         assert!(b.contains(&Name::new("magic"), &imports));
     }
