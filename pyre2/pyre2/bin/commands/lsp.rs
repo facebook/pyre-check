@@ -233,7 +233,6 @@ impl<'a> Server<'a> {
         self.driver = Driver::new(
             &modules.keys().copied().collect::<Vec<_>>(),
             &Config::default(),
-            false,
             None,
             true,
             &load,

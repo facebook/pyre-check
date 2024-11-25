@@ -76,7 +76,6 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
     let driver = Driver::new(
         &modules,
         &Config::default(),
-        args.common.debug,
         args.common.timings,
         args.common.parallel(),
         &load,

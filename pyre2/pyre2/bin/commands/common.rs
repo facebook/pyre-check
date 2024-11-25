@@ -9,8 +9,6 @@ use clap::Parser;
 
 #[derive(Debug, Parser, Clone)]
 pub struct CommonArgs {
-    #[clap(long = "debug")]
-    pub debug: bool,
     #[clap(
         long = "timings",
         default_missing_value = "5",

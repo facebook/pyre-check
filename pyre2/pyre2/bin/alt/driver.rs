@@ -179,7 +179,6 @@ fn run_phase1(
     config: &Config,
     quiet_errors: bool,
     load: &Loader,
-    debug: bool,
     parallel: bool,
 ) -> Vec<Phase1> {
     let mut todo = modules.to_owned();
@@ -228,9 +227,6 @@ fn run_phase1(
             quiet_errors,
             config,
         );
-        if debug {
-            eprintln!("\nExports for {name}:\n{}", p.exports);
-        }
         for x in my_errors {
             p.errors.add(&p.module_info, x.0, x.1);
         }
@@ -268,18 +264,13 @@ fn run_phase2(
     modules: &SmallMap<ModuleName, Exports>,
     uniques: &UniqueFactory,
     config: &Config,
-    debug: bool,
     parallel: bool,
 ) -> Vec<Phase2> {
     let f = |v: &Phase1| {
         let mut timers = Timers::new();
         let module_name = v.module_info.name();
         info!("Phase 2 for {module_name}");
-        let res = Phase2::new(&mut timers, v, modules, uniques, config);
-        if debug {
-            eprintln!("\nBindings for {module_name}:\n{}", res.bindings);
-        }
-        res
+        Phase2::new(&mut timers, v, modules, uniques, config)
     };
     let res = if parallel {
         phase1.par_iter().map(f).collect()
@@ -302,7 +293,6 @@ impl Driver {
     pub fn new(
         modules: &[ModuleName],
         config: &Config,
-        debug: bool,
         timings: Option<usize>,
         parallel: bool,
         load: &Loader,
@@ -312,21 +302,13 @@ impl Driver {
         let uniques = UniqueFactory::new();
 
         timers.add((timers_global_module(), Step::Startup, 0));
-        let phase1 = run_phase1(
-            timers,
-            modules,
-            config,
-            timings.is_some(),
-            load,
-            debug,
-            parallel,
-        );
+        let phase1 = run_phase1(timers, modules, config, timings.is_some(), load, parallel);
         let exports = phase1
             .iter()
             .map(|v| (v.module_info.name(), v.exports.dupe()))
             .collect();
 
-        let phase2 = run_phase2(timers, &phase1, &exports, &uniques, config, debug, parallel);
+        let phase2 = run_phase2(timers, &phase1, &exports, &uniques, config, parallel);
 
         let answers: SmallMap<ModuleName, Answers> = phase1
             .iter()

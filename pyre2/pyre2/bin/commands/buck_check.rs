@@ -157,7 +157,6 @@ fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonA
     Driver::new(
         &modules_to_check,
         &config,
-        common.debug,
         common.timings,
         common.parallel(),
         &lookup_module,
