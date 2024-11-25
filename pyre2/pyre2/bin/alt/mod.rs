@@ -14,6 +14,7 @@ pub mod driver;
 pub mod exports;
 pub mod expr;
 pub mod ide;
+pub mod loader;
 pub mod specials;
 pub mod table;
 pub mod util;

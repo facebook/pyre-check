@@ -29,6 +29,8 @@ use crate::alt::bindings::BindingEntry;
 use crate::alt::bindings::BindingTable;
 use crate::alt::bindings::Bindings;
 use crate::alt::exports::Exports;
+use crate::alt::loader::LoadResult;
+use crate::alt::loader::FAKE_MODULE;
 use crate::alt::table::Keyed;
 use crate::alt::table::TableKeyed;
 use crate::ast::Ast;
@@ -47,7 +49,6 @@ use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
 use crate::util::display::DisplayWith;
-use crate::util::fs_anyhow;
 use crate::util::prelude::SliceExt;
 use crate::util::small_map;
 use crate::util::timer::TimerContext;
@@ -72,34 +73,10 @@ enum Step {
     PrintErrors,
 }
 
-static FAKE_MODULE: &str = r#"
-from typing import Any
-def __getattr__(name: str) -> Any: ...
-"#;
-
 fn fake_path(module_name: ModuleName) -> PathBuf {
     // The generated fake module shouldn't have an errors, but lets make it clear
     // this is a fake path if it ever happens to leak into any output.
     PathBuf::from(format!("/fake/{module_name}.py"))
-}
-
-/// The result of trying to load a file.
-pub enum LoadResult {
-    Loaded(PathBuf, String),
-    FailedToLoad(PathBuf, anyhow::Error),
-    FailedToFind(anyhow::Error),
-}
-
-impl LoadResult {
-    pub fn from_path_result(path: anyhow::Result<PathBuf>) -> Self {
-        match path {
-            Ok(path) => match fs_anyhow::read_to_string(&path) {
-                Ok(code) => LoadResult::Loaded(path, code),
-                Err(err) => LoadResult::FailedToLoad(path, err),
-            },
-            Err(err) => LoadResult::FailedToFind(err),
-        }
-    }
 }
 
 #[derive(Debug)]

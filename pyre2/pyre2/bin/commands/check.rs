@@ -13,7 +13,7 @@ use clap::Parser;
 use starlark_map::small_map::SmallMap;
 
 use crate::alt::driver::Driver;
-use crate::alt::driver::LoadResult;
+use crate::alt::loader::LoadResult;
 use crate::commands::common::CommonArgs;
 use crate::commands::util::default_include;
 use crate::commands::util::find_module;

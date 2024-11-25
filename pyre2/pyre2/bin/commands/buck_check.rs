@@ -19,7 +19,7 @@ use tracing::info;
 use tracing::warn;
 
 use crate::alt::driver::Driver;
-use crate::alt::driver::LoadResult;
+use crate::alt::loader::LoadResult;
 use crate::commands::common::CommonArgs;
 use crate::config::Config;
 use crate::config::PythonVersion;

@@ -59,7 +59,7 @@ use serde::de::DeserializeOwned;
 use starlark_map::small_map::SmallMap;
 
 use crate::alt::driver::Driver;
-use crate::alt::driver::LoadResult;
+use crate::alt::loader::LoadResult;
 use crate::commands::util::default_include;
 use crate::commands::util::find_module;
 use crate::commands::util::module_from_path;
