@@ -1240,11 +1240,9 @@
     "Line 103: Unexpected errors ['EXPECTED Literal[False] <: TypeGuard[int]']",
     "Line 108: Unexpected errors ['EXPECTED Literal[False] <: TypeGuard[int]']",
     "Line 124: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
-    "Line 127: Unexpected errors ['EXPECTED Callable[[object], TypeGuard[int]] <: Callable[[object], bool]']",
     "Line 147: Unexpected errors ['EXPECTED Callable[[object], TypeGuard[int]] <: CallableBoolProto']",
     "Line 159: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
-    "Line 163: Unexpected errors ['EXPECTED bool <: TypeGuard[bool]', 'EXPECTED type[bool] <: UnionType | type | tuple[Unknown, ...]']",
-    "Line 167: Unexpected errors ['EXPECTED Callable[[object], TypeGuard[bool]] <: Callable[[object], TypeGuard[int]]']"
+    "Line 163: Unexpected errors ['EXPECTED bool <: TypeGuard[bool]', 'EXPECTED type[bool] <: UnionType | type | tuple[Unknown, ...]']"
   ],
   "narrowing_typeis.py": [
     "Line 105: Expected 1 errors",
@@ -1271,7 +1269,6 @@
     "Line 106: Unexpected errors ['EXPECTED Literal[False] <: TypeIs[int]']",
     "Line 111: Unexpected errors ['EXPECTED Literal[False] <: TypeIs[int]']",
     "Line 128: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
-    "Line 131: Unexpected errors ['EXPECTED Callable[[object], TypeIs[int]] <: Callable[[object], bool]']",
     "Line 151: Unexpected errors ['EXPECTED Callable[[object], TypeIs[int]] <: CallableBoolProto']",
     "Line 163: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 166: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",

@@ -111,6 +111,13 @@ impl<'a> Subset<'a> {
             (Type::Literal(l_lit), Type::Literal(u_lit)) => l_lit == u_lit,
             (Type::LiteralString, _) => self.is_subset_eq(&self.type_order.stdlib().str(), want),
             (Type::Type(l), Type::Type(u)) => self.is_subset_eq(l, u),
+            (Type::TypeGuard(l), Type::TypeGuard(u)) => {
+                // TypeGuard is covariant
+                self.is_subset_eq(l, u)
+            }
+            (Type::TypeGuard(_) | Type::TypeIs(_), _) => {
+                self.is_subset_eq(&self.type_order.stdlib().bool(), want)
+            }
             (Type::Ellipsis, Type::ClassType(c)) if c.name().id() == "EllipsisType" => {
                 // Bit of a weird case - pretty sure we should be modelling these slightly differently
                 // - probably not as a dedicated Type alternative.

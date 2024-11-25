@@ -111,8 +111,13 @@ impl Stdlib {
             )
         }
     }
+
+    pub fn bool_class_type(&self) -> ClassType {
+        Self::primitive_class_type(&self.bool)
+    }
+
     pub fn bool(&self) -> Type {
-        Self::primitive(&self.bool)
+        Type::class_type(self.bool_class_type())
     }
 
     pub fn int(&self) -> Type {

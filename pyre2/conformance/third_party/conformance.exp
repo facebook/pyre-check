@@ -17419,16 +17419,6 @@
     },
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED Callable[[object], TypeGuard[int]] <: Callable[[object], bool]",
-      "description": "EXPECTED Callable[[object], TypeGuard[int]] <: Callable[[object], bool]",
-      "line": 127,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 127
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "EXPECTED Callable[[object], TypeGuard[int]] <: Callable[[object], str]",
       "description": "EXPECTED Callable[[object], TypeGuard[int]] <: Callable[[object], str]",
@@ -17496,16 +17486,6 @@
       "name": "PyreError",
       "stop_column": 32,
       "stop_line": 163
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED Callable[[object], TypeGuard[bool]] <: Callable[[object], TypeGuard[int]]",
-      "description": "EXPECTED Callable[[object], TypeGuard[bool]] <: Callable[[object], TypeGuard[int]]",
-      "line": 167,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 167
     }
   ],
   "narrowing_typeis.py": [
@@ -17788,16 +17768,6 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 128
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED Callable[[object], TypeIs[int]] <: Callable[[object], bool]",
-      "description": "EXPECTED Callable[[object], TypeIs[int]] <: Callable[[object], bool]",
-      "line": 131,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 131
     },
     {
       "code": -2,
