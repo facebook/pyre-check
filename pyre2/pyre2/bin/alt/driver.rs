@@ -183,6 +183,7 @@ fn run_phase1(
 ) -> Vec<Phase1> {
     let mut todo = modules.to_owned();
     todo.push(ModuleName::builtins());
+    todo.extend(Stdlib::required());
 
     // List of imports, just used to put errors in the right place
     let imports = Mutex::new(todo.map(|x| Import {
