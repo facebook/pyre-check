@@ -140,6 +140,11 @@ mod tests {
         );
     }
 
+    #[must_use]
+    fn contains(exports: &Exports, imports: &SmallMap<ModuleName, Exports>, name: &str) -> bool {
+        exports.contains(&Name::new(name), imports)
+    }
+
     #[test]
     fn test_exports() {
         let simple = mk_exports("simple_val = 1\n_simple_val = 2", ModuleStyle::Executable);
@@ -167,11 +172,11 @@ _x = 2
         eq_wildcards(&interface, &imports, &["Q", "test", "x"]);
 
         for x in [&executable, &interface] {
-            assert!(x.contains(&Name::new("Z"), &imports));
-            assert!(x.contains(&Name::new("baz"), &imports));
-            assert!(!x.contains(&Name::new("magic"), &imports));
+            assert!(contains(x, &imports, "Z"));
+            assert!(contains(x, &imports, "baz"));
+            assert!(!contains(x, &imports, "magic"));
         }
-        assert!(executable.contains(&Name::new("simple_val"), &imports));
+        assert!(contains(&executable, &imports, "simple_val"));
     }
 
     #[test]
@@ -180,7 +185,7 @@ _x = 2
         let a = mk_exports("a = 1", ModuleStyle::Interface);
         let b = mk_exports("from a import *", ModuleStyle::Interface);
         let imports = smallmap!(ModuleName::from_str("a") => a);
-        assert!(b.contains(&Name::new("a"), &imports));
+        assert!(contains(&b, &imports, "a"));
         eq_wildcards(&b, &imports, &[]);
     }
 
@@ -194,8 +199,8 @@ _x = 2
         );
         eq_wildcards(&a, &imports, &[]);
         eq_wildcards(&b, &imports, &["x"]);
-        assert!(b.contains(&Name::new("x"), &imports));
-        assert!(!b.contains(&Name::new("y"), &imports));
+        assert!(contains(&b, &imports, "x"));
+        assert!(!contains(&b, &imports, "y"));
     }
 
     #[test]
@@ -208,7 +213,7 @@ _x = 2
         );
         eq_wildcards(&a, &imports, &[]);
         eq_wildcards(&b, &imports, &[]);
-        assert!(!a.contains(&Name::new("magic"), &imports));
-        assert!(b.contains(&Name::new("magic"), &imports));
+        assert!(!contains(&a, &imports, "magic"));
+        assert!(contains(&b, &imports, "magic"));
     }
 }
