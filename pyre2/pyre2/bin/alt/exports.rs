@@ -6,10 +6,12 @@
  */
 
 use std::fmt;
+use std::fmt::Debug;
 use std::fmt::Display;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use dupe::OptionDupedExt;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Stmt;
 use starlark_map::small_map::SmallMap;
@@ -22,19 +24,34 @@ use crate::graph::calculation::Calculation;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 
-#[derive(Clone, Debug, Default)]
-pub struct LookupExport(SmallMap<ModuleName, Exports>);
+pub struct LookupExport(Box<dyn Fn(ModuleName) -> Option<Exports> + Sync>);
+
+impl Debug for LookupExport {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LookupExport").finish_non_exhaustive()
+    }
+}
+
+impl Default for LookupExport {
+    fn default() -> Self {
+        Self::from_map(SmallMap::new())
+    }
+}
 
 impl LookupExport {
     pub fn from_map(map: SmallMap<ModuleName, Exports>) -> Self {
-        Self(map)
+        Self::from_fn(move |x| map.get(&x).duped())
     }
 
-    pub fn get_opt(&self, module: ModuleName) -> Option<&Exports> {
-        self.0.get(&module)
+    pub fn from_fn(f: impl Fn(ModuleName) -> Option<Exports> + Sync + 'static) -> Self {
+        Self(Box::new(f))
     }
 
-    pub fn get(&self, module: ModuleName) -> &Exports {
+    pub fn get_opt(&self, module: ModuleName) -> Option<Exports> {
+        self.0(module)
+    }
+
+    pub fn get(&self, module: ModuleName) -> Exports {
         match self.get_opt(module) {
             Some(x) => x,
             None => panic!("Internal error: failed to find `Export` for `{module}`"),
