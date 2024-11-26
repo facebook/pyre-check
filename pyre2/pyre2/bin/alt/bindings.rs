@@ -1143,13 +1143,13 @@ impl<'a> BindingsBuilder<'a> {
                     }) if name.id == "TypeVar" && !arguments.is_empty() => {
                         self.ensure_expr(&Expr::Name(name.clone()));
                         // The constraints (i.e., any positional arguments after the first)
-                        // and the "bound" keyword argument are types.
+                        // and some keyword arguments are types.
                         for arg in arguments.args[1..].iter_mut() {
                             self.ensure_type(arg, &mut BindingsBuilder::forward_lookup);
                         }
                         for kw in arguments.keywords.iter_mut() {
                             if let Some(id) = &kw.arg
-                                && id.id == "bound"
+                                && (id.id == "bound" || id.id == "default")
                             {
                                 self.ensure_type(
                                     &mut kw.value,

@@ -732,7 +732,6 @@
     "Line 23: Unexpected errors ['assert_type(type[slice], type[slice[int, int, int | None]]) failed']",
     "Line 24: Unexpected errors ['assert_type(slice[Any, Any, Any], slice[int, int, int | None]) failed']",
     "Line 25: Unexpected errors ['assert_type(slice[Any, Any, Any], slice[str, str, int | None]) failed', 'Expected 3 type arguments for class `slice`, got 1.']",
-    "Line 49: Unexpected errors [\"untype, got Literal['StopT']\"]",
     "Line 94: Unexpected errors ['assert_type(type[Bar], type[Bar[Any, list[Any]]]) failed']",
     "Line 95: Unexpected errors ['assert_type(type[Bar[Any, Any]], type[Bar[int, list[int]]]) failed', 'Expected 2 type arguments for class `Bar`, got 1.']",
     "Line 96: Unexpected errors ['assert_type(Bar[Any, Any], Bar[int, list[int]]) failed', 'Expected 2 type arguments for class `Bar`, got 1.']"

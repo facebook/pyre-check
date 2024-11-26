@@ -192,6 +192,8 @@ T1 = TypeVar('T1', bound='A')
 T2 = TypeVar('T2', bound='B')  # E: Could not find name `B`
 T3 = TypeVar('T3', 'A', int)
 T4 = TypeVar('T4', 'B', int)  # E: Could not find name `B`
+T5 = TypeVar('T5', default='A')
+T6 = TypeVar('T6', default='B')  # E: Could not find name `B`
 
 class A:
     pass

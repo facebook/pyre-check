@@ -10068,16 +10068,6 @@
     },
     {
       "code": -2,
-      "column": 38,
-      "concise_description": "untype, got Literal['StopT']",
-      "description": "untype, got Literal['StopT']",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 45,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(type[Bar], type[Bar[Any, list[Any]]]) failed",
       "description": "assert_type(type[Bar], type[Bar[Any, list[Any]]]) failed",
