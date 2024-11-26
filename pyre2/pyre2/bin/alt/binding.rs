@@ -100,6 +100,12 @@ impl Display for Key {
     }
 }
 
+impl DisplayWith<Bindings> for Key {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, _: &Bindings) -> fmt::Result {
+        write!(f, "{self}")
+    }
+}
+
 /// Like `Key`, but used for things accessible in another module.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum KeyExported {
@@ -345,98 +351,6 @@ impl Binding {
     }
 }
 
-/// Values that reutrn an annotation.
-#[derive(Clone, Debug)]
-pub enum BindingAnnotation {
-    /// The type is annotated to be this key, will have the outer type removed.
-    /// Optionally occuring within a class, in which case Self refers to this class.
-    AnnotateExpr(Expr, Option<Idx<Key>>),
-    /// A literal type we know statically.
-    Type(Type),
-    /// Type of an attribute.
-    AttrType(ExprAttribute),
-    /// A forward reference to another binding.
-    Forward(Idx<Key>),
-}
-
-/// Binding used to compute a `BaseClass`.
-///
-/// The `Expr` is the base class expression, from the containing class header.
-#[derive(Clone, Debug)]
-pub struct BindingBaseClass(pub Expr);
-
-/// Binding for the class `Mro`. The `Key` points to the definition of the class.
-#[derive(Clone, Debug)]
-pub struct BindingMro(pub Idx<Key>);
-
-/// Values that represent type parameters of either functions or classes.
-#[derive(Clone, Debug)]
-pub enum BindingTypeParams {
-    /// The first argument is any scoped type parameters.
-    /// The second argument tracks all names that appear in parameter and return annotations, which might
-    /// indicate legacy type parameters if they point to variable declarations.
-    Function(Vec<Quantified>, Vec<Idx<KeyLegacyTypeParam>>),
-    /// The first argument is a lookup for the class definition.
-    /// The second argument tracks all names that appear in bases, which might
-    /// indicate legacy type parameters if they point to variable declarations.
-    Class(Idx<Key>, Vec<Idx<KeyLegacyTypeParam>>),
-}
-
-#[derive(Clone, Debug)]
-pub struct BindingLegacyTypeParam(pub Idx<Key>);
-
-impl DisplayWith<Bindings> for BindingAnnotation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
-        match self {
-            Self::AnnotateExpr(x, self_type) => write!(
-                f,
-                "_: {}{}",
-                ctx.module_info().display(x),
-                match self_type {
-                    None => String::new(),
-                    Some(t) => format!(" (self {})", ctx.display(*t)),
-                }
-            ),
-            Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
-            Self::Type(t) => write!(f, "type {t}"),
-            Self::AttrType(attr) => write!(f, "type {attr:?}"),
-        }
-    }
-}
-
-impl DisplayWith<Bindings> for BindingBaseClass {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
-        write!(f, "base_class {}", ctx.module_info().display(&self.0),)
-    }
-}
-
-impl DisplayWith<Bindings> for BindingMro {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
-        write!(f, "mro {}", ctx.display(self.0))
-    }
-}
-
-impl DisplayWith<Bindings> for Key {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, _: &Bindings) -> fmt::Result {
-        write!(f, "{self}")
-    }
-}
-
-impl DisplayWith<Bindings> for BindingTypeParams {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
-        match self {
-            Self::Function(_, _) => write!(f, "function_type_params"),
-            Self::Class(id, _) => write!(f, "class_type_params {}", ctx.display(*id)),
-        }
-    }
-}
-
-impl DisplayWith<Bindings> for BindingLegacyTypeParam {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
-        write!(f, "legacy_type_param {}", ctx.display(self.0))
-    }
-}
-
 impl DisplayWith<Bindings> for Binding {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         let m = ctx.module_info();
@@ -569,5 +483,91 @@ impl DisplayWith<Bindings> for Binding {
                 )
             }
         }
+    }
+}
+
+/// Values that reutrn an annotation.
+#[derive(Clone, Debug)]
+pub enum BindingAnnotation {
+    /// The type is annotated to be this key, will have the outer type removed.
+    /// Optionally occuring within a class, in which case Self refers to this class.
+    AnnotateExpr(Expr, Option<Idx<Key>>),
+    /// A literal type we know statically.
+    Type(Type),
+    /// Type of an attribute.
+    AttrType(ExprAttribute),
+    /// A forward reference to another binding.
+    Forward(Idx<Key>),
+}
+
+impl DisplayWith<Bindings> for BindingAnnotation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        match self {
+            Self::AnnotateExpr(x, self_type) => write!(
+                f,
+                "_: {}{}",
+                ctx.module_info().display(x),
+                match self_type {
+                    None => String::new(),
+                    Some(t) => format!(" (self {})", ctx.display(*t)),
+                }
+            ),
+            Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
+            Self::Type(t) => write!(f, "type {t}"),
+            Self::AttrType(attr) => write!(f, "type {attr:?}"),
+        }
+    }
+}
+
+/// Binding used to compute a `BaseClass`.
+///
+/// The `Expr` is the base class expression, from the containing class header.
+#[derive(Clone, Debug)]
+pub struct BindingBaseClass(pub Expr);
+
+impl DisplayWith<Bindings> for BindingBaseClass {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        write!(f, "base_class {}", ctx.module_info().display(&self.0),)
+    }
+}
+
+/// Binding for the class `Mro`. The `Key` points to the definition of the class.
+#[derive(Clone, Debug)]
+pub struct BindingMro(pub Idx<Key>);
+
+impl DisplayWith<Bindings> for BindingMro {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        write!(f, "mro {}", ctx.display(self.0))
+    }
+}
+
+/// Values that represent type parameters of either functions or classes.
+#[derive(Clone, Debug)]
+pub enum BindingTypeParams {
+    /// The first argument is any scoped type parameters.
+    /// The second argument tracks all names that appear in parameter and return annotations, which might
+    /// indicate legacy type parameters if they point to variable declarations.
+    Function(Vec<Quantified>, Vec<Idx<KeyLegacyTypeParam>>),
+    /// The first argument is a lookup for the class definition.
+    /// The second argument tracks all names that appear in bases, which might
+    /// indicate legacy type parameters if they point to variable declarations.
+    Class(Idx<Key>, Vec<Idx<KeyLegacyTypeParam>>),
+}
+
+impl DisplayWith<Bindings> for BindingTypeParams {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        match self {
+            Self::Function(_, _) => write!(f, "function_type_params"),
+            Self::Class(id, _) => write!(f, "class_type_params {}", ctx.display(*id)),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct BindingLegacyTypeParam(pub Idx<Key>);
+
+impl DisplayWith<Bindings> for BindingLegacyTypeParam {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        write!(f, "legacy_type_param {}", ctx.display(self.0))
     }
 }
