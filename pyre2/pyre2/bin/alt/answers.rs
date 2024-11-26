@@ -405,8 +405,12 @@ impl<'a> Answers<'a> {
         match solver.get_import(name, module, TextRange::default()) {
             Type::ClassDef(cls) => Some(cls),
             ty => {
-                tracing::error!(
-                    "Did not expect non-class type `{ty}` for stdlib import `{module}.{name}`"
+                self.errors.add(
+                    self.bindings.module_info(),
+                    TextRange::default(),
+                    format!(
+                        "Did not expect non-class type `{ty}` for stdlib import `{module}.{name}`"
+                    ),
                 );
                 None
             }
