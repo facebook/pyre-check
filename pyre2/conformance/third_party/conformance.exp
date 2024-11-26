@@ -3730,16 +3730,6 @@
     },
     {
       "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED type[Proto9[?_, ?_]] <: object",
-      "description": "EXPECTED type[Proto9[?_, ?_]] <: object",
-      "line": 184,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 184
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
@@ -4544,32 +4534,12 @@
     },
     {
       "code": -2,
-      "column": 37,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
       "column": 14,
       "concise_description": "untype, got Literal[3]",
       "description": "untype, got Literal[3]",
       "line": 39,
       "name": "PyreError",
       "stop_column": 15,
-      "stop_line": 39
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 27,
       "stop_line": 39
     },
     {
@@ -4581,46 +4551,6 @@
       "name": "PyreError",
       "stop_column": 17,
       "stop_line": 40
-    },
-    {
-      "code": -2,
-      "column": 26,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 40,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 40
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 36,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 46,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 46
-    },
-    {
-      "code": -2,
-      "column": 45,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 48,
-      "stop_line": 47
     },
     {
       "code": -2,
@@ -10928,56 +10858,6 @@
   "generics_paramspec_specialization.py": [
     {
       "code": -2,
-      "column": 33,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 14,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 14
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 15,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
-      "column": 34,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 34,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
       "column": 27,
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Concatenate[int, P2]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Concatenate[int, P2]`",
@@ -11015,16 +10895,6 @@
       "name": "PyreError",
       "stop_column": 33,
       "stop_line": 40
-    },
-    {
-      "code": -2,
-      "column": 33,
-      "concise_description": "EXPECTED type[Any] <: object",
-      "description": "EXPECTED type[Any] <: object",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 49
     },
     {
       "code": -2,
@@ -17189,16 +17059,6 @@
     },
     {
       "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED type[?_] <: UnionType | type | tuple[Unknown, ...]",
-      "description": "EXPECTED type[?_] <: UnionType | type | tuple[Unknown, ...]",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "assert_type(set[object], set[int]) failed",
       "description": "assert_type(set[object], set[int]) failed",
@@ -20216,26 +20076,6 @@
       "name": "PyreError",
       "stop_column": 30,
       "stop_line": 84
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED type[Any] <: type",
-      "description": "EXPECTED type[Any] <: type",
-      "line": 85,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 85
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED type <: type[Any]",
-      "description": "EXPECTED type <: type[Any]",
-      "line": 86,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 86
     },
     {
       "code": -2,

@@ -501,3 +501,19 @@ x[0] += [1]
 x += [1]  # E: EXPECTED Literal[1] <: list[int]
 "#,
 );
+
+simple_test!(
+    test_assign_special_subtype,
+    r#"
+from types import NoneType, EllipsisType
+
+def foo(a: tuple[int, ...], b: NoneType, c: EllipsisType) -> None:
+    a2: tuple = a
+    b = None
+    b2: object = b
+    b3: None = b
+    b4: int | None = b
+    c = ...
+    c2: object = c
+"#,
+);

@@ -108,6 +108,10 @@ impl<'a> Subset<'a> {
                     .to_type();
                 self.is_subset_eq(&tuple_type, want)
             }
+            (Type::Tuple(Tuple::Unbounded(box left_elt)), _) => {
+                let tuple_type = self.type_order.stdlib().tuple(left_elt.clone()).to_type();
+                self.is_subset_eq(&tuple_type, want)
+            }
             (Type::Literal(lit), Type::LiteralString) => lit.is_string(),
             (Type::Literal(lit), t @ Type::ClassType(_)) => self.is_subset_eq(
                 &lit.general_class_type(self.type_order.stdlib()).to_type(),
@@ -118,6 +122,9 @@ impl<'a> Subset<'a> {
                 self.is_subset_eq(&self.type_order.stdlib().str().to_type(), want)
             }
             (Type::Type(l), Type::Type(u)) => self.is_subset_eq(l, u),
+            (Type::Type(_), _) => {
+                self.is_subset_eq(&self.type_order.stdlib().builtins_type().to_type(), want)
+            }
             (Type::TypeGuard(l), Type::TypeGuard(u)) => {
                 // TypeGuard is covariant
                 self.is_subset_eq(l, u)
@@ -125,10 +132,13 @@ impl<'a> Subset<'a> {
             (Type::TypeGuard(_) | Type::TypeIs(_), _) => {
                 self.is_subset_eq(&self.type_order.stdlib().bool().to_type(), want)
             }
-            (Type::Ellipsis, Type::ClassType(c)) if c.name().id() == "EllipsisType" => {
+            (Type::Ellipsis, _) => {
                 // Bit of a weird case - pretty sure we should be modelling these slightly differently
                 // - probably not as a dedicated Type alternative.
-                true
+                self.is_subset_eq(&self.type_order.stdlib().ellipsis_type().to_type(), want)
+            }
+            (Type::None, _) => {
+                self.is_subset_eq(&self.type_order.stdlib().none_type().to_type(), want)
             }
             (Type::Forall(_, _), _) => {
                 // FIXME: Probably need to do some kind of substitution here

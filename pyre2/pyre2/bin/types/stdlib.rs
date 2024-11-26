@@ -32,6 +32,9 @@ pub struct Stdlib {
     awaitable: Option<Class>,
     coroutine: Option<Class>,
     traceback_type: Option<Class>,
+    builtins_type: Option<Class>,
+    ellipsis_type: Option<Class>,
+    none_type: Option<Class>,
     // We want an owned ClassType for object because it allows the MRO code to clone less frequently.
     object_class_type: Option<ClassType>,
 }
@@ -61,11 +64,15 @@ impl Stdlib {
             dict: lookup_class(ModuleName::builtins(), &Name::new("dict")),
             set: lookup_class(ModuleName::builtins(), &Name::new("set")),
             tuple: lookup_class(ModuleName::builtins(), &Name::new("tuple")),
+            builtins_type: lookup_class(ModuleName::builtins(), &Name::new("type")),
+            ellipsis_type: lookup_class(ModuleName::types(), &Name::new("EllipsisType")),
+            none_type: lookup_class(ModuleName::types(), &Name::new("NoneType")),
             iterable: lookup_class(ModuleName::typing(), &Name::new("Iterable")),
             generator: lookup_class(ModuleName::typing(), &Name::new("Generator")),
             awaitable: lookup_class(ModuleName::typing(), &Name::new("Awaitable")),
             coroutine: lookup_class(ModuleName::typing(), &Name::new("Coroutine")),
             traceback_type: lookup_class(ModuleName::types(), &Name::new("TracebackType")),
+
             object_class_type: object
                 .map(|obj| ClassType::create_with_validated_targs(obj, TArgs::default())),
         }
@@ -110,6 +117,18 @@ impl Stdlib {
 
     pub fn bool(&self) -> ClassType {
         Self::primitive(&self.bool)
+    }
+
+    pub fn builtins_type(&self) -> ClassType {
+        Self::primitive(&self.builtins_type)
+    }
+
+    pub fn ellipsis_type(&self) -> ClassType {
+        Self::primitive(&self.ellipsis_type)
+    }
+
+    pub fn none_type(&self) -> ClassType {
+        Self::primitive(&self.none_type)
     }
 
     pub fn int(&self) -> ClassType {
