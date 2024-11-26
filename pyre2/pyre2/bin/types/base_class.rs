@@ -14,7 +14,6 @@ use ruff_text_size::TextRange;
 
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
-use crate::types::class::ClassType;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
 
@@ -60,13 +59,6 @@ impl BaseClass {
                 xs.extend(args);
             }
             _ => panic!("cannot apply base class"),
-        }
-    }
-
-    pub fn as_class_type(&self) -> Option<ClassType> {
-        match self {
-            BaseClass::Type(Type::ClassType(c)) => Some(c.clone()),
-            _ => None,
         }
     }
 

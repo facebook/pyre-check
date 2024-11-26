@@ -14,7 +14,6 @@ use std::sync::Arc;
 use vec1::Vec1;
 
 use crate::error::collector::ErrorCollector;
-use crate::types::base_class::BaseClass;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::Substitution;
@@ -84,12 +83,12 @@ impl Mro {
     /// `Generic`, `Protocol`, `NamedTuple`, and `object`.
     pub fn new(
         cls: &Class,
+        bases: Vec<ClassType>,
         get_mro: &dyn Fn(&Class) -> Arc<Mro>,
-        bases_of_class: &dyn Fn(&Class) -> Vec<Arc<BaseClass>>,
         get_substitution: &dyn Fn(&ClassType) -> Substitution,
         errors: &ErrorCollector,
     ) -> Mro {
-        match Linearization::new(cls, get_mro, bases_of_class, get_substitution, errors) {
+        match Linearization::new(cls, bases, get_mro, get_substitution, errors) {
             Linearization::Cyclic => Self::cyclic(),
             Linearization::Resolved(ancestor_chains) => {
                 let ancestors = Linearization::merge(cls, ancestor_chains, errors);
@@ -167,15 +166,11 @@ impl Linearization {
     /// - One consisting of the base classes themselves in the order defined.
     fn new(
         cls: &Class,
+        bases: Vec<ClassType>,
         get_mro: &dyn Fn(&Class) -> Arc<Mro>,
-        bases_of_class: &dyn Fn(&Class) -> Vec<Arc<BaseClass>>,
         get_substitution: &dyn Fn(&ClassType) -> Substitution,
         errors: &ErrorCollector,
     ) -> Linearization {
-        let bases = bases_of_class(cls)
-            .into_iter()
-            .filter_map(|base| base.as_class_type())
-            .collect();
         let mut bases = match Vec1::try_from_vec(bases) {
             Ok(bases) => bases,
             Err(_) => return Linearization::empty(),

@@ -168,11 +168,21 @@ impl<'a> AnswersSolver<'a> {
         QuantifiedVec(tparams.into_iter().collect())
     }
 
+    fn base_class_types(&self, class: &Class) -> Vec<ClassType> {
+        self.bases_of_class(class)
+            .iter()
+            .filter_map(|base| match base.deref() {
+                BaseClass::Type(Type::ClassType(c)) => Some(c.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
     pub fn mro_of(&self, cls: &Class) -> Mro {
         Mro::new(
             cls,
+            self.base_class_types(cls),
             &|cls| self.get_mro_for_class(cls),
-            &|cls| self.bases_of_class(cls),
             &|base| self.get_substitution(base),
             self.errors(),
         )
