@@ -326,3 +326,21 @@ def f2(c: C[Child, Parent]):
     f1(c)  # E: EXPECTED
     "#,
 );
+
+// TODO(stroxler)
+// This test exercises an edge case where naively using type analysis on base classes
+// can cause problems in the interaction of tparams validation and recursion.
+simple_test!(
+    test_generic_with_reference_to_self_in_base,
+    r#"
+from typing import Generic, TypeVar, Any
+
+T = TypeVar("T")
+
+class C(list[C[T]]):  # E: Expected 0 type arguments for class `C`, got 1.
+    t: T
+
+def f(c: C[int]):  # E: Expected 0 type arguments for class `C`, got 1
+    pass
+    "#,
+);
