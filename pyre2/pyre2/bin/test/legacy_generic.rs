@@ -333,14 +333,15 @@ def f2(c: C[Child, Parent]):
 simple_test!(
     test_generic_with_reference_to_self_in_base,
     r#"
-from typing import Generic, TypeVar, Any
+from typing import Generic, TypeVar, Any, assert_type
 
 T = TypeVar("T")
 
-class C(list[C[T]]):  # E: Expected 0 type arguments for class `C`, got 1.
+class C(list[C[T]]):
     t: T
 
-def f(c: C[int]):  # E: Expected 0 type arguments for class `C`, got 1
-    pass
+def f(c: C[int]):
+    assert_type(c.t, int)
+    assert_type(c[0], C[int])
     "#,
 );

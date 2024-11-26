@@ -10,6 +10,7 @@
 use std::fmt;
 use std::fmt::Display;
 
+use ruff_python_ast::Expr;
 use ruff_text_size::TextRange;
 
 use crate::error::collector::ErrorCollector;
@@ -25,7 +26,7 @@ pub enum BaseClass {
     TypedDict,
     Generic(Vec<Type>),
     Protocol(Vec<Type>),
-    Type(Type),
+    Expr(Expr),
 }
 
 impl Display for BaseClass {
@@ -35,16 +36,19 @@ impl Display for BaseClass {
             BaseClass::TypedDict => write!(f, "TypedDict"),
             BaseClass::Generic(xs) => write!(f, "Generic[{}]", commas_iter(|| xs.iter())),
             BaseClass::Protocol(xs) => write!(f, "Protocol[{}]", commas_iter(|| xs.iter())),
-            BaseClass::Type(t) => write!(f, "{t}"),
+            // TODO(stroxler): Do not use Debug here. Putting this off for now because I'm expecting
+            // to refactor in upcoming commits until this is an implementation detail of `classes.rs`,
+            // at which point we won't need Display at all anymore.
+            BaseClass::Expr(s) => write!(f, "Expr({s:?})"),
         }
     }
 }
 
 impl BaseClass {
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, f: impl FnMut(&'a mut Type)) {
         match self {
             BaseClass::Generic(xs) | BaseClass::Protocol(xs) => xs.iter_mut().for_each(f),
-            BaseClass::Type(t) => f(t),
+            BaseClass::Expr(_) => {}
             BaseClass::NamedTuple | BaseClass::TypedDict => {}
         }
     }

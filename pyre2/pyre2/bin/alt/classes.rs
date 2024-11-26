@@ -35,6 +35,7 @@ use crate::types::types::Quantified;
 use crate::types::types::QuantifiedVec;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
+use crate::visitors::Visitors;
 
 /// Class members can fail to be
 pub enum NoClassAttribute {
@@ -93,7 +94,7 @@ impl<'a> AnswersSolver<'a> {
             special_base_class
         } else {
             // This branch handles all other base classes.
-            BaseClass::Type(self.expr_untype(base_expr))
+            BaseClass::Expr(base_expr.clone())
         }
     }
 
@@ -104,8 +105,26 @@ impl<'a> AnswersSolver<'a> {
     /// If the base class is a "normal" generic base (not `Protocol` or `Generic`), then
     /// call `f` on each `Quantified` in left-to-right order.
     fn for_each_quantified_if_not_special(&self, base: &BaseClass, f: &mut impl FnMut(Quantified)) {
+        fn for_each_quantified_in_expr(
+            x: &Expr,
+            answers_solver: &AnswersSolver,
+            f: &mut impl FnMut(Quantified),
+        ) {
+            match x {
+                Expr::Name(_) => match answers_solver.expr(x, None) {
+                    Type::Type(box Type::Quantified(q)) => f(q),
+                    _ => {}
+                },
+                _ => {}
+            }
+            Visitors::visit_expr(x, &mut |x: &Expr| {
+                for_each_quantified_in_expr(x, answers_solver, f)
+            })
+        }
         match base {
-            BaseClass::Type(t) => t.for_each_quantified(f),
+            BaseClass::Expr(base) => Visitors::visit_expr(base, &mut |x: &Expr| {
+                for_each_quantified_in_expr(x, self, f)
+            }),
             _ => {}
         }
     }
@@ -172,7 +191,10 @@ impl<'a> AnswersSolver<'a> {
         self.bases_of_class(class)
             .iter()
             .filter_map(|base| match base.deref() {
-                BaseClass::Type(Type::ClassType(c)) => Some(c.clone()),
+                BaseClass::Expr(x) => match self.expr_untype(x) {
+                    Type::ClassType(c) => Some(c),
+                    _ => None,
+                },
                 _ => None,
             })
             .collect()

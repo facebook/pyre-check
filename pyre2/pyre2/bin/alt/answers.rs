@@ -254,7 +254,11 @@ impl Solve for KeyBaseClass {
     fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
 
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
-        BaseClass::Type(Type::any_implicit())
+        // TODO(stroxler): Putting a panic here is risky, but I am expecting to refactor
+        // within a few commits to make the base class handling internal to `classes.rs`
+        // and eliminate the binding, which will eliminate this kind of boilerplate
+        // altogether.
+        unreachable!("BaseClass cannot hit recursive cases without violating invariants");
     }
 
     fn visit_type_mut(v: &mut BaseClass, f: &mut dyn FnMut(&mut Type)) {
