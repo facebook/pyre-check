@@ -395,61 +395,59 @@ impl<'a> AnswersSolver<'a> {
         }
     }
 
-    fn attr_infer(&self, obj: Type, attr_name: &Name, range: TextRange) -> Type {
-        match as_class_attribute_base(obj.clone(), self.stdlib) {
-            Some(ClassAttributeBase::ClassType(class)) => {
-                self.get_instance_attribute_or_error(&class, attr_name, range)
-            }
-            Some(ClassAttributeBase::Any(style)) => style.propagate(),
-            None => match obj {
-                Type::Module(module) => match module.as_single_module() {
-                    Some(module_name) => self.get_import(attr_name, module_name, range),
-                    None => module.push_path(attr_name.clone()).to_type(),
-                },
-                Type::Type(box Type::Quantified(q)) if q.is_param_spec() && attr_name == "args" => {
-                    Type::type_form(Type::Args(q.id()))
+    fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
+        self.distribute_over_union(obj, |obj| {
+            match as_class_attribute_base(obj.clone(), self.stdlib) {
+                Some(ClassAttributeBase::ClassType(class)) => {
+                    self.get_instance_attribute_or_error(&class, attr_name, range)
                 }
-                Type::Type(box Type::Quantified(q))
-                    if q.is_param_spec() && attr_name == "kwargs" =>
-                {
-                    Type::type_form(Type::Kwargs(q.id()))
-                }
-                Type::ClassDef(cls) => self.get_class_attribute_or_error(&cls, attr_name, range),
-                Type::Type(box Type::ClassType(class)) => {
-                    self.get_class_attribute_or_error(class.class_object(), attr_name, range)
-                }
-                Type::Type(box Type::Any(style)) => style.propagate(),
-                Type::Union(members) => self.unions(
-                    &members
-                        .into_iter()
-                        .map(|ty| self.attr_infer(ty, attr_name, range))
-                        .collect::<Vec<_>>(),
-                ),
-                Type::TypeAlias(ta) => {
-                    if let Some(t) = ta.as_value() {
-                        self.attr_infer(t, attr_name, range)
-                    } else {
-                        self.error(
-                            range,
-                            format!("Cannot use type alias `{}` as a value", ta.name),
-                        )
+                Some(ClassAttributeBase::Any(style)) => style.propagate(),
+                None => match obj {
+                    Type::Module(module) => match module.as_single_module() {
+                        Some(module_name) => self.get_import(attr_name, module_name, range),
+                        None => module.push_path(attr_name.clone()).to_type(),
+                    },
+                    Type::Type(box Type::Quantified(q))
+                        if q.is_param_spec() && attr_name == "args" =>
+                    {
+                        Type::type_form(Type::Args(q.id()))
                     }
-                }
-                // Class and Any case already handled before
-                _ => self.error(
-                    range,
-                    format!(
-                        "TODO: Answers::expr_infer attribute: `{}`.{}",
-                        obj.deterministic_printing(),
-                        attr_name,
+                    Type::Type(box Type::Quantified(q))
+                        if q.is_param_spec() && attr_name == "kwargs" =>
+                    {
+                        Type::type_form(Type::Kwargs(q.id()))
+                    }
+                    Type::ClassDef(cls) => self.get_class_attribute_or_error(cls, attr_name, range),
+                    Type::Type(box Type::ClassType(class)) => {
+                        self.get_class_attribute_or_error(class.class_object(), attr_name, range)
+                    }
+                    Type::Type(box Type::Any(style)) => style.propagate(),
+                    Type::TypeAlias(ta) => {
+                        if let Some(t) = ta.as_value() {
+                            self.attr_infer(&t, attr_name, range)
+                        } else {
+                            self.error(
+                                range,
+                                format!("Cannot use type alias `{}` as a value", ta.name),
+                            )
+                        }
+                    }
+                    // Class and Any case already handled before
+                    _ => self.error(
+                        range,
+                        format!(
+                            "TODO: Answers::expr_infer attribute: `{}`.{}",
+                            obj.clone().deterministic_printing(),
+                            attr_name,
+                        ),
                     ),
-                ),
-            },
-        }
+                },
+            }
+        })
     }
 
     fn binop_infer(&self, x: &ExprBinOp) -> Type {
-        let binop_call = |op: Operator, lhs: Type, rhs: Type, range: TextRange| -> Type {
+        let binop_call = |op: Operator, lhs: &Type, rhs: Type, range: TextRange| -> Type {
             // TODO(yangdanny): handle reflected dunder methods
             let method_type = self.attr_infer(lhs, &Name::new(op.dunder()), range);
             self.as_callable_or_error(method_type, CallStyle::BinaryOp(op), range, |c| {
@@ -476,9 +474,7 @@ impl<'a> AnswersSolver<'a> {
         {
             return Type::type_form(self.union(&l, &r));
         }
-        self.distribute_over_union(&lhs, |lhs| {
-            binop_call(x.op, lhs.clone(), rhs.clone(), x.range)
-        })
+        self.distribute_over_union(&lhs, |lhs| binop_call(x.op, lhs, rhs.clone(), x.range))
     }
 
     /// When interpreted as static types (as opposed to when accounting for runtime
@@ -893,7 +889,7 @@ impl<'a> AnswersSolver<'a> {
             Expr::EllipsisLiteral(_) => Type::Ellipsis,
             Expr::Attribute(x) => {
                 let obj = self.expr_infer(&x.value);
-                self.attr_infer(obj, &x.attr.id, x.range)
+                self.attr_infer(&obj, &x.attr.id, x.range)
             }
             Expr::Subscript(x) => {
                 let xs = Ast::unpack_slice(&x.slice);
