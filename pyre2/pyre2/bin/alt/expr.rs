@@ -185,45 +185,28 @@ impl<'a> AnswersSolver<'a> {
         // Function to check an argument against the type hint (if any) on the corresponding parameter
         check_arg: &dyn Fn(&T, Option<&Type>),
     ) -> Type {
-        match as_class_attribute_base(ty.clone(), self.stdlib) {
-            Some(ClassAttributeBase::ClassType(class)) => {
-                let method_type = self.get_instance_attribute_or_error(&class, method_name, range);
-                self.as_callable_or_error(
-                    method_type,
-                    CallStyle::ClassAndMethod(class.name(), method_name),
-                    range,
-                    |c| self.call_infer(c, args, keywords, check_arg, range),
-                )
-            }
-            Some(ClassAttributeBase::Any(style)) => style.propagate(),
-            None => {
-                if let Type::Union(members) = ty {
-                    self.unions(
-                        &members
-                            .iter()
-                            .map(|ty| {
-                                self.call_method_generic(
-                                    ty,
-                                    method_name,
-                                    range,
-                                    args,
-                                    keywords,
-                                    check_arg,
-                                )
-                            })
-                            .collect::<Vec<_>>(),
-                    )
-                } else {
-                    self.error(
+        self.distribute_over_union(ty, |ty| {
+            match as_class_attribute_base(ty.clone(), self.stdlib) {
+                Some(ClassAttributeBase::ClassType(class)) => {
+                    let method_type =
+                        self.get_instance_attribute_or_error(&class, method_name, range);
+                    self.as_callable_or_error(
+                        method_type,
+                        CallStyle::ClassAndMethod(class.name(), method_name),
                         range,
-                        format!(
-                            "Expected class, got {}",
-                            ty.clone().deterministic_printing()
-                        ),
+                        |c| self.call_infer(c, args, keywords, check_arg, range),
                     )
                 }
+                Some(ClassAttributeBase::Any(style)) => style.propagate(),
+                None => self.error(
+                    range,
+                    format!(
+                        "Expected class, got {}",
+                        ty.clone().deterministic_printing()
+                    ),
+                ),
             }
-        }
+        })
     }
 
     pub fn call_method(
@@ -493,15 +476,9 @@ impl<'a> AnswersSolver<'a> {
         {
             return Type::type_form(self.union(&l, &r));
         }
-        match lhs {
-            Type::Union(members) => self.unions(
-                &members
-                    .into_iter()
-                    .map(|lhs| binop_call(x.op, lhs, rhs.clone(), x.range))
-                    .collect::<Vec<_>>(),
-            ),
-            _ => binop_call(x.op, lhs, rhs, x.range),
-        }
+        self.distribute_over_union(&lhs, |lhs| {
+            binop_call(x.op, lhs.clone(), rhs.clone(), x.range)
+        })
     }
 
     /// When interpreted as static types (as opposed to when accounting for runtime

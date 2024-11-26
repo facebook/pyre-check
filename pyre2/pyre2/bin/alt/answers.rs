@@ -1186,6 +1186,13 @@ impl<'a> AnswersSolver<'a> {
         }
     }
 
+    pub fn distribute_over_union(&self, ty: &Type, mut f: impl FnMut(&Type) -> Type) -> Type {
+        match ty {
+            Type::Union(tys) => self.unions(&tys.iter().map(f).collect::<Vec<_>>()),
+            _ => f(ty),
+        }
+    }
+
     pub fn unions(&self, xs: &[Type]) -> Type {
         self.solver().unions(xs.to_owned(), self.type_order())
     }
