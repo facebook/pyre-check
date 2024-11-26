@@ -842,20 +842,6 @@ impl<'a> AnswersSolver<'a> {
             }
             Expr::Call(x) => {
                 let ty_fun = self.expr_infer(&x.func);
-                let func_range = x.func.range();
-                let check_call = |ty: Type| -> Type {
-                    self.as_callable_or_error(ty.clone(), CallStyle::FreeForm, func_range, |c| {
-                        self.call_infer(
-                            c,
-                            &x.arguments.args,
-                            &x.arguments.keywords,
-                            &|arg, hint| {
-                                self.expr(arg, hint);
-                            },
-                            func_range,
-                        )
-                    })
-                };
                 if TypeVar::is_ctor(&ty_fun) {
                     Type::type_form(self.tyvar_from_arguments(&x.arguments).to_type())
                 } else if TypeVarTuple::is_ctor(&ty_fun)
@@ -866,10 +852,26 @@ impl<'a> AnswersSolver<'a> {
                     && let Some(name) = arguments_one_string(&x.arguments)
                 {
                     Type::type_form(ParamSpec::new(name, self.module_info().dupe()).to_type())
-                } else if let Type::Union(members) = ty_fun {
-                    self.unions(&members.into_iter().map(check_call).collect::<Vec<_>>())
                 } else {
-                    check_call(ty_fun.clone())
+                    let func_range = x.func.range();
+                    self.distribute_over_union(&ty_fun, |ty| {
+                        self.as_callable_or_error(
+                            ty.clone(),
+                            CallStyle::FreeForm,
+                            func_range,
+                            |c| {
+                                self.call_infer(
+                                    c,
+                                    &x.arguments.args,
+                                    &x.arguments.keywords,
+                                    &|arg, hint| {
+                                        self.expr(arg, hint);
+                                    },
+                                    func_range,
+                                )
+                            },
+                        )
+                    })
                 }
             }
             Expr::FString(x) => {
