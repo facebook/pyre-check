@@ -174,7 +174,7 @@ impl Linearization {
     ) -> Linearization {
         let bases = bases_of_class(cls)
             .into_iter()
-            .filter_map(|base| base.as_class_and_targs())
+            .filter_map(|base| base.as_class_type())
             .collect();
         let mut bases = match Vec1::try_from_vec(bases) {
             Ok(bases) => bases,

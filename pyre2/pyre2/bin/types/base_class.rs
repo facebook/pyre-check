@@ -63,7 +63,7 @@ impl BaseClass {
         }
     }
 
-    pub fn as_class_and_targs(&self) -> Option<ClassType> {
+    pub fn as_class_type(&self) -> Option<ClassType> {
         match self {
             BaseClass::Type(Type::ClassType(c)) => Some(c.clone()),
             _ => None,
