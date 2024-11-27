@@ -143,9 +143,9 @@ table!(
     pub struct Solutions(pub SolutionsEntry)
 );
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct AnswersSolver<'a, Ans: LookupAnswer> {
-    exports: &'a LookupExport,
+    exports: &'a dyn LookupExport,
     answers: Ans,
     current: &'a Answers,
     errors: &'a ErrorCollector,
@@ -160,7 +160,7 @@ pub trait LookupAnswer: Sized {
         &self,
         name: ModuleName,
         k: &K,
-        exports: &LookupExport,
+        exports: &dyn LookupExport,
         uniques: &UniqueFactory,
         stdlib: &Stdlib,
     ) -> Arc<K::Answer>
@@ -176,7 +176,7 @@ impl<'a> LookupAnswer
         &self,
         name: ModuleName,
         k: &K,
-        exports: &LookupExport,
+        exports: &dyn LookupExport,
         uniques: &UniqueFactory,
         stdlib: &Stdlib,
     ) -> Arc<K::Answer>
@@ -397,7 +397,7 @@ impl Answers {
 
     pub fn solve<Ans: LookupAnswer>(
         &self,
-        exports: &LookupExport,
+        exports: &dyn LookupExport,
         answers: Ans,
         bindings: &Bindings,
         errors: &ErrorCollector,
@@ -451,7 +451,7 @@ impl Answers {
         errors: &ErrorCollector,
         module: ModuleName,
         name: &Name,
-        exports: &LookupExport,
+        exports: &dyn LookupExport,
         answers: Ans,
         uniques: &UniqueFactory,
     ) -> Option<Class> {

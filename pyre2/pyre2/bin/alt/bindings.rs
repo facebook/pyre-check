@@ -118,7 +118,7 @@ impl Display for Bindings {
 
 struct BindingsBuilder<'a> {
     module_info: ModuleInfo,
-    modules: &'a LookupExport,
+    modules: &'a dyn LookupExport,
     config: &'a Config,
     errors: &'a ErrorCollector,
     uniques: &'a UniqueFactory,
@@ -144,7 +144,7 @@ impl Static {
         x: &[Stmt],
         module_info: &ModuleInfo,
         top_level: bool,
-        modules: &LookupExport,
+        modules: &dyn LookupExport,
         config: &Config,
     ) {
         let mut d = Definitions::new(x, module_info.name(), module_info.is_init(), config);
@@ -355,7 +355,7 @@ impl Bindings {
     pub fn new(
         x: Vec<Stmt>,
         module_info: ModuleInfo,
-        modules: &LookupExport,
+        modules: &dyn LookupExport,
         config: &Config,
         errors: &ErrorCollector,
         uniques: &UniqueFactory,

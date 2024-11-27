@@ -24,38 +24,20 @@ use crate::graph::calculation::Calculation;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 
-pub struct LookupExport(Box<dyn Fn(ModuleName) -> Option<Exports> + Sync>);
+pub trait LookupExport {
+    fn get_opt(&self, module: ModuleName) -> Option<Exports>;
 
-impl Debug for LookupExport {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("LookupExport").finish_non_exhaustive()
-    }
-}
-
-impl Default for LookupExport {
-    fn default() -> Self {
-        Self::from_map(SmallMap::new())
-    }
-}
-
-impl LookupExport {
-    pub fn from_map(map: SmallMap<ModuleName, Exports>) -> Self {
-        Self::from_fn(move |x| map.get(&x).duped())
-    }
-
-    pub fn from_fn(f: impl Fn(ModuleName) -> Option<Exports> + Sync + 'static) -> Self {
-        Self(Box::new(f))
-    }
-
-    pub fn get_opt(&self, module: ModuleName) -> Option<Exports> {
-        self.0(module)
-    }
-
-    pub fn get(&self, module: ModuleName) -> Exports {
+    fn get(&self, module: ModuleName) -> Exports {
         match self.get_opt(module) {
             Some(x) => x,
             None => panic!("Internal error: failed to find `Export` for `{module}`"),
         }
+    }
+}
+
+impl LookupExport for SmallMap<ModuleName, Exports> {
+    fn get_opt(&self, module: ModuleName) -> Option<Exports> {
+        self.get(&module).duped()
     }
 }
 
@@ -98,7 +80,7 @@ impl Exports {
     }
 
     /// What symbols will I get if I do `from <this_module> import *`?
-    pub fn wildcard(&self, modules: &LookupExport) -> Arc<SmallSet<Name>> {
+    pub fn wildcard(&self, modules: &dyn LookupExport) -> Arc<SmallSet<Name>> {
         let f = || {
             let mut result = SmallSet::new();
             for x in &self.0.definitions.dunder_all {
@@ -123,7 +105,7 @@ impl Exports {
         self.0.wildcard.calculate(f).unwrap_or_default()
     }
 
-    fn exports(&self, modules: &LookupExport) -> Arc<SmallSet<Name>> {
+    fn exports(&self, modules: &dyn LookupExport) -> Arc<SmallSet<Name>> {
         let f = || {
             let mut result = SmallSet::new();
             result.extend(self.0.definitions.definitions.keys().cloned());
@@ -135,7 +117,7 @@ impl Exports {
         self.0.exports.calculate(f).unwrap_or_default()
     }
 
-    pub fn contains(&self, name: &Name, imports: &LookupExport) -> bool {
+    pub fn contains(&self, name: &Name, imports: &dyn LookupExport) -> bool {
         self.exports(imports).contains(name)
     }
 }
@@ -166,7 +148,7 @@ mod tests {
         Exports::new(&ast.body, &module_info, &Config::default())
     }
 
-    fn eq_wildcards(exports: &Exports, imports: &LookupExport, all: &[&str]) {
+    fn eq_wildcards(exports: &Exports, imports: &dyn LookupExport, all: &[&str]) {
         assert_eq!(
             exports
                 .wildcard(imports)
@@ -178,16 +160,16 @@ mod tests {
     }
 
     #[must_use]
-    fn contains(exports: &Exports, imports: &LookupExport, name: &str) -> bool {
+    fn contains(exports: &Exports, imports: &dyn LookupExport, name: &str) -> bool {
         exports.contains(&Name::new(name), imports)
     }
 
     #[test]
     fn test_exports() {
         let simple = mk_exports("simple_val = 1\n_simple_val = 2", ModuleStyle::Executable);
-        eq_wildcards(&simple, &LookupExport::default(), &["simple_val"]);
+        eq_wildcards(&simple, &SmallMap::new(), &["simple_val"]);
 
-        let imports = LookupExport::from_map(smallmap! {ModuleName::from_str("simple") => simple});
+        let imports = smallmap! {ModuleName::from_str("simple") => simple};
         let contents = r#"
 from simple import *
 from bar import X, Y as Z, Q as Q
@@ -221,7 +203,7 @@ _x = 2
         // `a` is not in the `import *` of `b`, but it can be used as `b.a`
         let a = mk_exports("a = 1", ModuleStyle::Interface);
         let b = mk_exports("from a import *", ModuleStyle::Interface);
-        let imports = LookupExport::from_map(smallmap! {ModuleName::from_str("a") => a});
+        let imports = smallmap! {ModuleName::from_str("a") => a};
         assert!(contains(&b, &imports, "a"));
         eq_wildcards(&b, &imports, &[]);
     }
@@ -230,10 +212,10 @@ _x = 2
     fn test_cyclic() {
         let a = mk_exports("from b import *", ModuleStyle::Interface);
         let b = mk_exports("from a import *\nx = 1", ModuleStyle::Interface);
-        let imports = LookupExport::from_map(smallmap! {
+        let imports = smallmap! {
                 ModuleName::from_str("a") => a.dupe(),
                 ModuleName::from_str("b") => b.dupe(),
-        });
+        };
         eq_wildcards(&a, &imports, &[]);
         eq_wildcards(&b, &imports, &["x"]);
         assert!(contains(&b, &imports, "x"));
@@ -244,10 +226,10 @@ _x = 2
     fn over_export() {
         let a = mk_exports("from b import *", ModuleStyle::Executable);
         let b = mk_exports("from a import magic\n__all__ = []", ModuleStyle::Executable);
-        let imports = LookupExport::from_map(smallmap! {
+        let imports = smallmap! {
                 ModuleName::from_str("a") => a.dupe(),
                 ModuleName::from_str("b") => b.dupe(),
-        });
+        };
         eq_wildcards(&a, &imports, &[]);
         eq_wildcards(&b, &imports, &[]);
         assert!(!contains(&a, &imports, "magic"));
