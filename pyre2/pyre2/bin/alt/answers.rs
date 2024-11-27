@@ -447,12 +447,14 @@ impl<'a> AnswersSolver<'a> {
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
+        let new_current = self.answers.get(&name).unwrap();
         let new_answers = AnswersSolver {
-            current: self.answers.get(&name).unwrap(),
+            current: new_current,
             ..self.clone()
         };
         let mut ans = Arc::unwrap_or_clone(new_answers.get(k));
-        K::visit_type_mut(&mut ans, &mut |t| self.solver().deep_force_mut(t));
+        // Must force these variables using the solver associated with the module the type came from
+        K::visit_type_mut(&mut ans, &mut |t| new_current.solver.deep_force_mut(t));
         Arc::new(ans)
     }
 
