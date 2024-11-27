@@ -1225,6 +1225,8 @@ module DefineCallGraph = struct
 
   let is_empty = Location.SerializableMap.is_empty
 
+  let copy = Fn.id
+
   let for_test map =
     map
     |> Location.SerializableMap.to_alist
@@ -3357,8 +3359,10 @@ module HigherOrderCallGraph = struct
 
     val debug : bool
 
-    (* Inputs and outputs. *)
-    val mutable_define_call_graph : DefineCallGraph.t ref
+    val input_define_call_graph : DefineCallGraph.t
+
+    (* Outputs. *)
+    val output_define_call_graph : DefineCallGraph.t ref
   end) =
   struct
     let get_result = State.get TaintAccessPath.Root.LocalResult
@@ -3441,7 +3445,7 @@ module HigherOrderCallGraph = struct
         let ({ CallCallees.call_targets = existing_call_targets; higher_order_parameters; _ } as
             existing_call_callees)
           =
-          !Context.mutable_define_call_graph
+          Context.input_define_call_graph
           |> DefineCallGraph.resolve_call ~location ~call
           |> Option.value_exn
                ~message:
@@ -3534,12 +3538,12 @@ module HigherOrderCallGraph = struct
           else
             higher_order_parameters
         in
-        Context.mutable_define_call_graph :=
+        Context.output_define_call_graph :=
           DefineCallGraph.set_call_callees
             ~location
             ~expression_identifier:(call_identifier call)
             ~call_callees:{ existing_call_callees with call_targets; higher_order_parameters }
-            !Context.mutable_define_call_graph;
+            !Context.output_define_call_graph;
         let returned_callees =
           call_targets
           |> List.map ~f:(fun { CallTarget.target; _ } ->
@@ -3569,7 +3573,7 @@ module HigherOrderCallGraph = struct
         | ListComprehension _ -> CallTarget.Set.bottom, state
         | Name (Name.Identifier identifier) ->
             let global_callables =
-              !Context.mutable_define_call_graph
+              Context.input_define_call_graph
               |> DefineCallGraph.resolve_identifier ~location ~identifier
               |> Option.map ~f:(fun { IdentifierCallees.callable_targets; _ } ->
                      CallTarget.Set.of_list callable_targets)
@@ -3581,7 +3585,7 @@ module HigherOrderCallGraph = struct
             CallTarget.Set.join global_callables callables_from_variable, state
         | Name (Name.Attribute { base = _; attribute; special = _ }) ->
             let callables =
-              !Context.mutable_define_call_graph
+              Context.input_define_call_graph
               |> DefineCallGraph.resolve_attribute_access ~location ~attribute
               |> Option.map ~f:(fun { AttributeAccessCallees.callable_targets; _ } ->
                      CallTarget.Set.of_list callable_targets)
@@ -3664,7 +3668,9 @@ let higher_order_call_graph_of_define
     ~get_callee_model
   =
   let module Context = struct
-    let mutable_define_call_graph = ref define_call_graph
+    let input_define_call_graph = define_call_graph
+
+    let output_define_call_graph = ref (DefineCallGraph.copy define_call_graph)
 
     let qualifier = qualifier
 
@@ -3689,7 +3695,7 @@ let higher_order_call_graph_of_define
     >>| Fixpoint.get_result
     |> Option.value ~default:CallTarget.Set.bottom
   in
-  { HigherOrderCallGraph.returned_callables; call_graph = !Context.mutable_define_call_graph }
+  { HigherOrderCallGraph.returned_callables; call_graph = !Context.output_define_call_graph }
 
 
 let higher_order_call_graph_of_callable ~pyre_api ~define_call_graph ~callable ~get_callee_model =
