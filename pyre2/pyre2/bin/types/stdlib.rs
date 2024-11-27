@@ -50,7 +50,6 @@ impl Stdlib {
     }
 
     pub fn new(mut lookup_class: impl FnMut(ModuleName, &Name) -> Option<Class>) -> Self {
-        let object = lookup_class(ModuleName::builtins(), &Name::new("object"));
         Self {
             str: lookup_class(ModuleName::builtins(), &Name::new("str")),
             bool: lookup_class(ModuleName::builtins(), &Name::new("bool")),
@@ -73,7 +72,7 @@ impl Stdlib {
             coroutine: lookup_class(ModuleName::typing(), &Name::new("Coroutine")),
             traceback_type: lookup_class(ModuleName::types(), &Name::new("TracebackType")),
 
-            object_class_type: object
+            object_class_type: lookup_class(ModuleName::builtins(), &Name::new("object"))
                 .map(|obj| ClassType::create_with_validated_targs(obj, TArgs::default())),
         }
     }
