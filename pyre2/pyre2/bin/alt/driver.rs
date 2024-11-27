@@ -7,7 +7,6 @@
 
 use std::any::type_name_of_val;
 use std::mem;
-use std::path::PathBuf;
 use std::sync::Mutex;
 
 use dupe::Dupe;
@@ -30,6 +29,7 @@ use crate::alt::bindings::BindingTable;
 use crate::alt::bindings::Bindings;
 use crate::alt::exports::Exports;
 use crate::alt::exports::LookupExport;
+use crate::alt::loader::fake_path;
 use crate::alt::loader::LoadResult;
 use crate::alt::loader::Loader;
 use crate::alt::loader::FAKE_MODULE;
@@ -73,12 +73,6 @@ enum Step {
     Solve,
     Answers,
     PrintErrors,
-}
-
-fn fake_path(module_name: ModuleName) -> PathBuf {
-    // The generated fake module shouldn't have an errors, but lets make it clear
-    // this is a fake path if it ever happens to leak into any output.
-    PathBuf::from(format!("/fake/{module_name}.py"))
 }
 
 #[derive(Debug)]

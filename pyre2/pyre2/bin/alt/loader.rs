@@ -26,6 +26,12 @@ from typing import Any
 def __getattr__(name: str) -> Any: ...
 "#;
 
+pub fn fake_path(module_name: ModuleName) -> PathBuf {
+    // The generated fake module shouldn't have an errors, but lets make it clear
+    // this is a fake path if it ever happens to leak into any output.
+    PathBuf::from(format!("/fake/{module_name}.py"))
+}
+
 impl LoadResult {
     pub fn from_path_result(path: anyhow::Result<PathBuf>) -> Self {
         match path {
