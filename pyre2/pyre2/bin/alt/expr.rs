@@ -898,6 +898,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let xs = Ast::unpack_slice(&x.slice);
                 // FIXME: We don't deal properly with hint here, we should.
                 let mut fun = self.expr_infer(&x.value);
+                if let Type::Var(v) = fun {
+                    fun = self.solver().force_var(v);
+                }
                 if matches!(&fun, Type::ClassDef(t) if t.name() == "tuple") {
                     fun = Type::type_form(Type::SpecialForm(SpecialForm::Tuple));
                 }

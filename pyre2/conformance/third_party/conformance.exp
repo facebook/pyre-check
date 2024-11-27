@@ -1231,26 +1231,6 @@
     },
     {
       "code": -2,
-      "column": 40,
-      "concise_description": "Can't apply arguments to non-class, got @_",
-      "description": "Can't apply arguments to non-class, got @_",
-      "line": 72,
-      "name": "PyreError",
-      "stop_column": 62,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 81,
-      "concise_description": "Can't apply arguments to non-class, got @_",
-      "description": "Can't apply arguments to non-class, got @_",
-      "line": 77,
-      "name": "PyreError",
-      "stop_column": 109,
-      "stop_line": 77
-    },
-    {
-      "code": -2,
       "column": 37,
       "concise_description": "untype, got list[type[int] | type[str]]",
       "description": "untype, got list[type[int] | type[str]]",
@@ -1258,26 +1238,6 @@
       "name": "PyreError",
       "stop_column": 47,
       "stop_line": 82
-    },
-    {
-      "code": -2,
-      "column": 35,
-      "concise_description": "Can't apply arguments to non-class, got @_",
-      "description": "Can't apply arguments to non-class, got @_",
-      "line": 86,
-      "name": "PyreError",
-      "stop_column": 59,
-      "stop_line": 86
-    },
-    {
-      "code": -2,
-      "column": 40,
-      "concise_description": "Can't apply arguments to non-class, got @_",
-      "description": "Can't apply arguments to non-class, got @_",
-      "line": 88,
-      "name": "PyreError",
-      "stop_column": 62,
-      "stop_line": 88
     }
   ],
   "aliases_typealiastype.py": [
@@ -1303,16 +1263,6 @@
     },
     {
       "code": -2,
-      "column": 51,
-      "concise_description": "Can't apply arguments to non-class, got @_",
-      "description": "Can't apply arguments to non-class, got @_",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 64,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
       "column": 79,
       "concise_description": "EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "description": "EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
@@ -1320,16 +1270,6 @@
       "name": "PyreError",
       "stop_column": 83,
       "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 40,
-      "concise_description": "Can't apply arguments to non-class, got @_",
-      "description": "Can't apply arguments to non-class, got @_",
-      "line": 22,
-      "name": "PyreError",
-      "stop_column": 62,
-      "stop_line": 22
     },
     {
       "code": -2,
@@ -1500,16 +1440,6 @@
       "name": "PyreError",
       "stop_column": 65,
       "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 44,
-      "concise_description": "Can't apply arguments to non-class, got @_",
-      "description": "Can't apply arguments to non-class, got @_",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 58,
-      "stop_line": 47
     },
     {
       "code": -2,

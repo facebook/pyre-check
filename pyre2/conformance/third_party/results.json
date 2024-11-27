@@ -3,7 +3,7 @@
   "pass": 8,
   "fail": 125,
   "pass_rate": 0.06,
-  "differences": 1483,
+  "differences": 1481,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -19,7 +19,7 @@
     "aliases_implicit.py": 25,
     "aliases_newtype.py": 10,
     "aliases_recursive.py": 19,
-    "aliases_type_statement.py": 17,
+    "aliases_type_statement.py": 15,
     "aliases_typealiastype.py": 24,
     "aliases_variance.py": 3,
     "annotations_forward_refs.py": 9,

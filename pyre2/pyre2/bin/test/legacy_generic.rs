@@ -337,11 +337,11 @@ from typing import Generic, TypeVar, Any, assert_type
 
 T = TypeVar("T")
 
-class C(list[C[T]]):  # E: Can't apply arguments to non-class, got @_
+class C(list[C[T]]):
     t: T
 
 def f(c: C[int]):
     assert_type(c.t, int)
-    assert_type(c[0], Any)
+    assert_type(c[0], C[int])
     "#,
 );
