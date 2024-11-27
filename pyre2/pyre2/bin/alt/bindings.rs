@@ -42,7 +42,6 @@ use vec1::Vec1;
 
 use crate::alt::binding::Binding;
 use crate::alt::binding::BindingAnnotation;
-use crate::alt::binding::BindingBaseClass;
 use crate::alt::binding::BindingLegacyTypeParam;
 use crate::alt::binding::BindingMro;
 use crate::alt::binding::BindingTypeParams;
@@ -50,7 +49,6 @@ use crate::alt::binding::ContextManagerKind;
 use crate::alt::binding::FunctionKind;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyAnnotation;
-use crate::alt::binding::KeyBaseClass;
 use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
 use crate::alt::binding::KeyMro;
@@ -81,6 +79,7 @@ use crate::types::types::Quantified;
 use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
 use crate::util::display::DisplayWith;
+use crate::util::prelude::SliceExt;
 use crate::visitors::Visitors;
 
 #[derive(Clone, Dupe, Debug)]
@@ -986,11 +985,8 @@ impl<'a> BindingsBuilder<'a> {
             self.type_params(x);
         });
 
-        let n_bases = x.bases().len();
-
         let mut legacy_tparam_builder = LegacyTParamBuilder::new(x.type_params.is_some());
-
-        x.bases().iter().enumerate().for_each(|(i, base)| {
+        let bases = x.bases().map(|base| {
             let mut base = base.clone();
             // Forward refs are fine *inside* of a base expression in the type arguments,
             // but outermost class cannot be a forward ref.
@@ -1010,13 +1006,13 @@ impl<'a> BindingsBuilder<'a> {
             self.ensure_type(&mut base, &mut |lookup_name, name| {
                 legacy_tparam_builder.forward_lookup(lookup_name, name)
             });
-            self.table.insert(
-                KeyBaseClass(x.name.clone(), i),
-                BindingBaseClass(base.clone()),
-            );
+            base
         });
-        self.table
-            .insert(KeyMro(x.name.clone()), BindingMro(definition_key));
+
+        self.table.insert(
+            KeyMro(x.name.clone()),
+            BindingMro(definition_key, bases.clone()),
+        );
 
         let mut keywords = SmallSet::new();
         x.keywords().iter().for_each(|keyword| {
@@ -1046,10 +1042,6 @@ impl<'a> BindingsBuilder<'a> {
             }
         });
 
-        let legacy_tparams =
-            BindingTypeParams::Class(definition_key, legacy_tparam_builder.lookup_keys(self));
-        self.table
-            .insert(KeyTypeParams(x.name.clone()), legacy_tparams);
         legacy_tparam_builder.add_name_definitions(self);
 
         self.scopes.last_mut().stat.stmts(
@@ -1095,7 +1087,13 @@ impl<'a> BindingsBuilder<'a> {
         self.table
             .insert(Key::SelfType(x.name.clone()), self_binding);
 
-        self.bind_definition(&x.name.clone(), Binding::Class(x, fields, n_bases), None);
+        let legacy_tparams = legacy_tparam_builder.lookup_keys(self);
+
+        self.bind_definition(
+            &x.name.clone(),
+            Binding::Class(x, fields, bases, legacy_tparams),
+            None,
+        );
     }
 
     fn add_loop_exitpoint(&mut self, exit: LoopExit, range: TextRange) {

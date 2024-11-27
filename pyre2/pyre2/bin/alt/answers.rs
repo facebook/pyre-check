@@ -21,7 +21,6 @@ use starlark_map::small_map::SmallMap;
 
 use crate::alt::binding::Binding;
 use crate::alt::binding::BindingAnnotation;
-use crate::alt::binding::BindingBaseClass;
 use crate::alt::binding::BindingLegacyTypeParam;
 use crate::alt::binding::BindingMro;
 use crate::alt::binding::BindingTypeParams;
@@ -30,7 +29,6 @@ use crate::alt::binding::Exported;
 use crate::alt::binding::FunctionKind;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyAnnotation;
-use crate::alt::binding::KeyBaseClass;
 use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
 use crate::alt::binding::KeyMro;
@@ -62,7 +60,6 @@ use crate::table_try_for_each;
 use crate::type_order::TypeOrder;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
-use crate::types::base_class::BaseClass;
 use crate::types::callable::Arg;
 use crate::types::callable::Required;
 use crate::types::class::Class;
@@ -228,18 +225,6 @@ impl SolveRecursive for KeyAnnotation {
         v.ty.iter_mut().for_each(f);
     }
 }
-impl SolveRecursive for KeyBaseClass {
-    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
-        // TODO(stroxler): Putting a panic here is risky, but I am expecting to refactor
-        // within a few commits to make the base class handling internal to `classes.rs`
-        // and eliminate the binding, which will eliminate this kind of boilerplate
-        // altogether.
-        unreachable!("BaseClass cannot hit recursive cases without violating invariants");
-    }
-    fn visit_type_mut(v: &mut BaseClass, f: &mut dyn FnMut(&mut Type)) {
-        v.visit_mut(f);
-    }
-}
 impl SolveRecursive for KeyMro {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         Mro::cyclic()
@@ -320,14 +305,6 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExported {
 impl<Ans: LookupAnswer> Solve<Ans> for KeyAnnotation {
     fn solve(answers: &AnswersSolver<Ans>, binding: &BindingAnnotation) -> Arc<Annotation> {
         answers.solve_annotation(binding)
-    }
-
-    fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
-}
-
-impl<Ans: LookupAnswer> Solve<Ans> for KeyBaseClass {
-    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingBaseClass) -> Arc<BaseClass> {
-        answers.solve_base_class(binding)
     }
 
     fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
@@ -633,37 +610,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 tparams.extend(legacy_tparams);
                 QuantifiedVec(tparams)
             }
-            BindingTypeParams::Class(class_def, legacy_params) => {
-                match &*self.get_idx(*class_def) {
-                    Type::ClassDef(cls) => self.tparams_of(cls, legacy_params),
-                    _ => {
-                        unreachable!(
-                            "The key inside a ClassTypeParams binding must be a class type"
-                        )
-                    }
-                }
-            }
         };
         Arc::new(res)
     }
 
     fn solve_mro(&self, binding: &BindingMro) -> Arc<Mro> {
         match binding {
-            BindingMro(k) => {
+            BindingMro(k, bases) => {
                 let self_ty = self.get_idx(*k);
                 match &*self_ty {
-                    Type::ClassDef(cls) => Arc::new(self.mro_of(cls)),
+                    Type::ClassDef(cls) => Arc::new(self.mro_of(cls, bases)),
                     _ => {
                         unreachable!("The key inside an Mro binding must be a class type")
                     }
                 }
             }
-        }
-    }
-
-    fn solve_base_class(&self, binding: &BindingBaseClass) -> Arc<BaseClass> {
-        match binding {
-            BindingBaseClass(x) => Arc::new(self.base_class_of(x)),
         }
     }
 
@@ -1127,11 +1088,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .get_from_module(*m, &KeyExported::Export(name.clone()))
                 .arc_clone(),
             Binding::ClassKeyword(x) => self.expr(x, None),
-            Binding::Class(x, fields, n_bases) => {
-                Type::ClassDef(self.class_definition(x, fields.clone(), *n_bases))
+            Binding::Class(x, fields, bases, legacy_tparams) => {
+                Type::ClassDef(self.class_definition(x, fields.clone(), bases, legacy_tparams))
             }
             Binding::SelfType(k) => match &*self.get_idx(*k) {
-                Type::ClassDef(c) => c.self_type(self.get_tparams_for_class(c).deref()),
+                Type::ClassDef(c) => c.self_type(c.tparams()),
                 _ => unreachable!(),
             },
             Binding::Forward(k) => self.get_idx(*k).arc_clone(),

@@ -16,7 +16,6 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 
 use crate::types::annotation::Qualifier;
-use crate::types::base_class::BaseClass;
 use crate::types::types::NeverStyle;
 use crate::types::types::Type;
 
@@ -64,14 +63,6 @@ impl SpecialForm {
             SpecialForm::Never => Type::type_form(Type::Never(NeverStyle::Never)),
             SpecialForm::NoReturn => Type::type_form(Type::Never(NeverStyle::NoReturn)),
             _ => Type::type_form(Type::SpecialForm(self)),
-        }
-    }
-
-    pub fn to_base_class(self) -> Option<BaseClass> {
-        match self {
-            SpecialForm::Protocol => Some(BaseClass::Protocol(Vec::new())),
-            SpecialForm::Generic => Some(BaseClass::Generic(Vec::new())),
-            _ => None,
         }
     }
 

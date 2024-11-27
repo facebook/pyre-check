@@ -252,6 +252,7 @@ mod tests {
     use crate::types::type_var::Restriction;
     use crate::types::type_var::TypeVar;
     use crate::types::type_var::Variance;
+    use crate::types::types::QuantifiedVec;
 
     fn fake_class(name: &str, module: &str, range: u32) -> Class {
         let mi = ModuleInfo::new(
@@ -263,9 +264,8 @@ mod tests {
         Class::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
             mi,
-            SmallMap::new(),
+            QuantifiedVec::default(),
             SmallSet::new(),
-            0,
         )
     }
 

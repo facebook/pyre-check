@@ -112,7 +112,7 @@ impl Quantified {
 }
 
 /// We sometimes need a vector of these - mostly done to give them a nice Display.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct QuantifiedVec(pub Vec<Quantified>);
 
 impl Display for QuantifiedVec {

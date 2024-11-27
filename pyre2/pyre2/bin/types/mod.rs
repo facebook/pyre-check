@@ -6,7 +6,6 @@
  */
 
 pub mod annotation;
-pub mod base_class;
 pub mod callable;
 pub mod class;
 pub mod display;

@@ -32,7 +32,6 @@ use crate::util::display::DisplayWith;
 pub trait Exported {}
 
 impl Exported for KeyExported {}
-impl Exported for KeyBaseClass {}
 impl Exported for KeyMro {}
 impl Exported for KeyTypeParams {}
 
@@ -166,26 +165,6 @@ impl Display for KeyAnnotation {
     }
 }
 
-/// Key that refers to a `BaseClass`
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct KeyBaseClass(pub Identifier, pub usize);
-
-impl Ranged for KeyBaseClass {
-    fn range(&self) -> TextRange {
-        self.0.range
-    }
-}
-
-impl Display for KeyBaseClass {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "base_class {} {:?} [{}]",
-            self.0.id, self.0.range, self.1
-        )
-    }
-}
-
 /// Keys that refer to a class's `Mro` (which tracks its ancestors, in method
 /// resolution order).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -305,8 +284,14 @@ pub enum Binding {
     Import(ModuleName, Name),
     /// A class definition, but with the body stripped out.
     /// The field names should be used to build `ClassField` keys for lookup.
-    /// Track the number of base classes, use this to build `BaseClass` keys for lookup.
-    Class(StmtClassDef, SmallSet<Name>, usize),
+    /// The `Vec<Expr>` contains the base classes from the class header.
+    /// The `Vec<Idx<KeyLegacyTypeParam>>` contains binding information for possible legacy type params.
+    Class(
+        StmtClassDef,
+        SmallSet<Name>,
+        Vec<Expr>,
+        Vec<Idx<KeyLegacyTypeParam>>,
+    ),
     /// A class header keyword argument (e.g. the `metaclass`).
     ClassKeyword(Expr),
     /// The Self type for a class, must point at a class.
@@ -406,7 +391,7 @@ impl DisplayWith<Bindings> for Binding {
             }
             Self::Function(x, _) => write!(f, "def {}", x.name.id),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
-            Self::Class(c, _, _) => write!(f, "class {}", c.name.id),
+            Self::Class(c, _, _, _) => write!(f, "class {}", c.name.id),
             Self::ClassKeyword(x) => write!(f, "class_keyword {}", m.display(x)),
             Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
@@ -519,21 +504,11 @@ impl DisplayWith<Bindings> for BindingAnnotation {
     }
 }
 
-/// Binding used to compute a `BaseClass`.
-///
-/// The `Expr` is the base class expression, from the containing class header.
+/// Binding for the class `Mro`.
+/// The `Key` points to the definition of the class.
+/// The `Vec<Expr>` contains the base classes from the class header.
 #[derive(Clone, Debug)]
-pub struct BindingBaseClass(pub Expr);
-
-impl DisplayWith<Bindings> for BindingBaseClass {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
-        write!(f, "base_class {}", ctx.module_info().display(&self.0),)
-    }
-}
-
-/// Binding for the class `Mro`. The `Key` points to the definition of the class.
-#[derive(Clone, Debug)]
-pub struct BindingMro(pub Idx<Key>);
+pub struct BindingMro(pub Idx<Key>, pub Vec<Expr>);
 
 impl DisplayWith<Bindings> for BindingMro {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
@@ -548,17 +523,12 @@ pub enum BindingTypeParams {
     /// The second argument tracks all names that appear in parameter and return annotations, which might
     /// indicate legacy type parameters if they point to variable declarations.
     Function(Vec<Quantified>, Vec<Idx<KeyLegacyTypeParam>>),
-    /// The first argument is a lookup for the class definition.
-    /// The second argument tracks all names that appear in bases, which might
-    /// indicate legacy type parameters if they point to variable declarations.
-    Class(Idx<Key>, Vec<Idx<KeyLegacyTypeParam>>),
 }
 
 impl DisplayWith<Bindings> for BindingTypeParams {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, _ctx: &Bindings) -> fmt::Result {
         match self {
             Self::Function(_, _) => write!(f, "function_type_params"),
-            Self::Class(id, _) => write!(f, "class_type_params {}", ctx.display(*id)),
         }
     }
 }

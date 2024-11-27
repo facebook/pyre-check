@@ -34,9 +34,8 @@ pub struct Class(ArcId<ClassInner>);
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct ClassInner {
     qname: QName,
-    scoped_tparams: SmallMap<Name, Quantified>,
+    tparams: QuantifiedVec,
     fields: SmallSet<Name>,
-    n_bases: usize,
 }
 
 impl PartialOrd for ClassInner {
@@ -54,13 +53,14 @@ impl Ord for ClassInner {
 impl Display for ClassInner {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "class {}", self.qname.name)?;
-        if !self.scoped_tparams.is_empty() {
+        if !self.tparams.0.is_empty() {
             write!(
                 f,
                 "[{}]",
-                self.scoped_tparams
-                    .keys()
-                    .map(|x| x.as_str())
+                self.tparams
+                    .0
+                    .iter()
+                    .map(|_| "_")
                     .collect::<Vec<_>>()
                     .join(", ")
             )?;
@@ -80,15 +80,13 @@ impl Class {
     pub fn new(
         name: Identifier,
         module_info: ModuleInfo,
-        scoped_tparams: SmallMap<Name, Quantified>,
+        tparams: QuantifiedVec,
         fields: SmallSet<Name>,
-        n_bases: usize,
     ) -> Self {
         Self(ArcId::new(ClassInner {
             qname: QName::new(name, module_info),
-            scoped_tparams,
+            tparams,
             fields,
-            n_bases,
         }))
     }
 
@@ -112,12 +110,8 @@ impl Class {
         &self.0.qname
     }
 
-    pub fn scoped_tparams(&self) -> &SmallMap<Name, Quantified> {
-        &self.0.scoped_tparams
-    }
-
-    pub fn n_bases(&self) -> usize {
-        self.0.n_bases
+    pub fn tparams(&self) -> &QuantifiedVec {
+        &self.0.tparams
     }
 
     pub fn self_type(&self, tparams: &QuantifiedVec) -> Type {

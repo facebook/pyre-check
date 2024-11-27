@@ -15,20 +15,17 @@ use ruff_text_size::Ranged;
 
 use crate::alt::binding::Binding;
 use crate::alt::binding::BindingAnnotation;
-use crate::alt::binding::BindingBaseClass;
 use crate::alt::binding::BindingLegacyTypeParam;
 use crate::alt::binding::BindingMro;
 use crate::alt::binding::BindingTypeParams;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyAnnotation;
-use crate::alt::binding::KeyBaseClass;
 use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
 use crate::alt::binding::KeyMro;
 use crate::alt::binding::KeyTypeParams;
 use crate::alt::bindings::Bindings;
 use crate::types::annotation::Annotation;
-use crate::types::base_class::BaseClass;
 use crate::types::mro::Mro;
 use crate::types::types::LegacyTypeParameterLookup;
 use crate::types::types::QuantifiedVec;
@@ -51,10 +48,6 @@ impl Keyed for KeyExported {
 impl Keyed for KeyAnnotation {
     type Value = BindingAnnotation;
     type Answer = Annotation;
-}
-impl Keyed for KeyBaseClass {
-    type Value = BindingBaseClass;
-    type Answer = BaseClass;
 }
 impl Keyed for KeyMro {
     type Value = BindingMro;
@@ -89,7 +82,6 @@ macro_rules! table {
             $($vis)* types: $t<Key>,
             $($vis)* exported_types: $t<KeyExported>,
             $($vis)* annotations: $t<KeyAnnotation>,
-            $($vis)* base_classes: $t<KeyBaseClass>,
             $($vis)* mros: $t<KeyMro>,
             $($vis)* legacy_tparams: $t<KeyLegacyTypeParam>,
             $($vis)* tparams: $t<KeyTypeParams>,
@@ -111,12 +103,6 @@ macro_rules! table {
             type Value = $t<KeyAnnotation>;
             fn get(&self) -> &Self::Value { &self.annotations }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.annotations }
-        }
-
-        impl $crate::alt::table::TableKeyed<KeyBaseClass> for $name {
-            type Value = $t<KeyBaseClass>;
-            fn get(&self) -> &Self::Value { &self.base_classes }
-            fn get_mut(&mut self) -> &mut Self::Value { &mut self.base_classes }
         }
 
         impl $crate::alt::table::TableKeyed<KeyMro> for $name {
@@ -163,7 +149,6 @@ macro_rules! table_for_each(
         $f(&($e).types);
         $f(&($e).exported_types);
         $f(&($e).annotations);
-        $f(&($e).base_classes);
         $f(&($e).mros);
         $f(&($e).legacy_tparams);
         $f(&($e).tparams);
@@ -176,7 +161,6 @@ macro_rules! table_mut_for_each(
         $f(&mut ($e).types);
         $f(&mut ($e).exported_types);
         $f(&mut ($e).annotations);
-        $f(&mut ($e).base_classes);
         $f(&mut ($e).mros);
         $f(&mut ($e).legacy_tparams);
         $f(&mut ($e).tparams);
@@ -189,7 +173,6 @@ macro_rules! table_try_for_each(
         $f(&($e).types)?;
         $f(&($e).exported_types)?;
         $f(&($e).annotations)?;
-        $f(&($e).base_classes)?;
         $f(&($e).mros)?;
         $f(&($e).legacy_tparams)?;
         $f(&($e).tparams)?;
