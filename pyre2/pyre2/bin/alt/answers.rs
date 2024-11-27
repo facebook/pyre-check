@@ -96,7 +96,7 @@ pub struct Answers {
     table: AnswerTable,
 }
 
-type AnswerEntry<K> =
+pub type AnswerEntry<K> =
     IndexMap<K, Calculation<Arc<<K as Keyed>::Answer>, <K as SolveRecursive>::Recursive>>;
 
 table!(
