@@ -12,7 +12,11 @@ use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
+use ruff_python_ast::StmtClassDef;
+use ruff_python_ast::TypeParam;
+use ruff_python_ast::TypeParams;
 use ruff_text_size::TextRange;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use super::answers::AnswersSolver;
@@ -64,6 +68,59 @@ fn replace_return_type(ty: Type, ret: Type) -> Type {
 }
 
 impl<'a> AnswersSolver<'a> {
+    fn scoped_type_params(&self, x: &Option<Box<TypeParams>>) -> SmallMap<Name, Quantified> {
+        let mut names = Vec::new();
+        match x {
+            Some(box x) => {
+                for x in &x.type_params {
+                    match x {
+                        TypeParam::TypeVar(x) => names.push(&x.name),
+                        TypeParam::ParamSpec(_) => {
+                            self.error_todo("Answers::type_params", x);
+                        }
+                        TypeParam::TypeVarTuple(_) => {
+                            self.error_todo("Answers::type_params", x);
+                        }
+                    }
+                }
+            }
+            None => {}
+        }
+
+        fn get_quantified(t: &Type) -> Quantified {
+            match t {
+                Type::Type(box Type::Quantified(q)) => *q,
+                _ => unreachable!(),
+            }
+        }
+
+        names
+            .into_iter()
+            .map(|x| {
+                (
+                    x.id.clone(),
+                    get_quantified(&self.get(&Key::Definition(x.clone()))),
+                )
+            })
+            .collect()
+    }
+
+    pub fn class_definition(
+        &self,
+        x: &StmtClassDef,
+        fields: SmallSet<Name>,
+        n_bases: usize,
+    ) -> Class {
+        let tparams = self.scoped_type_params(&x.type_params);
+        Class::new(
+            x.name.clone(),
+            self.module_info().dupe(),
+            tparams,
+            fields.clone(),
+            n_bases,
+        )
+    }
+
     /// This helper deals with special cases where we want to intercept an `Expr`
     /// manually and create a special variant of `BaseClass` instead of calling
     /// `expr_untype` and creating a `BaseClass::Type`.

@@ -14,8 +14,6 @@ use std::sync::Arc;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
-use ruff_python_ast::TypeParam;
-use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::ordered_set::OrderedSet;
@@ -1047,15 +1045,7 @@ impl<'a> AnswersSolver<'a> {
                 .arc_clone(),
             Binding::ClassKeyword(x) => self.expr(x, None),
             Binding::Class(x, fields, n_bases) => {
-                let tparams = self.type_params(&x.type_params);
-                let c = Class::new(
-                    x.name.clone(),
-                    self.module_info().dupe(),
-                    tparams,
-                    fields.clone(),
-                    *n_bases,
-                );
-                Type::ClassDef(c)
+                Type::ClassDef(self.class_definition(x, fields.clone(), *n_bases))
             }
             Binding::SelfType(k) => match &*self.get_idx(*k) {
                 Type::ClassDef(c) => c.self_type(self.get_tparams_for_class(c).deref()),
@@ -1217,43 +1207,6 @@ impl<'a> AnswersSolver<'a> {
     pub fn error(&self, range: TextRange, msg: String) -> Type {
         self.errors().add(self.module_info(), range, msg);
         Type::any_error()
-    }
-
-    fn type_params(&self, x: &Option<Box<TypeParams>>) -> SmallMap<Name, Quantified> {
-        let mut names = Vec::new();
-        match x {
-            Some(box x) => {
-                for x in &x.type_params {
-                    match x {
-                        TypeParam::TypeVar(x) => names.push(&x.name),
-                        TypeParam::ParamSpec(_) => {
-                            self.error_todo("Answers::type_params", x);
-                        }
-                        TypeParam::TypeVarTuple(_) => {
-                            self.error_todo("Answers::type_params", x);
-                        }
-                    }
-                }
-            }
-            None => {}
-        }
-
-        fn get_quantified(t: &Type) -> Quantified {
-            match t {
-                Type::Type(box Type::Quantified(q)) => *q,
-                _ => unreachable!(),
-            }
-        }
-
-        names
-            .into_iter()
-            .map(|x| {
-                (
-                    x.id.clone(),
-                    get_quantified(&self.get(&Key::Definition(x.clone()))),
-                )
-            })
-            .collect()
     }
 
     /// Unwraps a type, originally evaluated as a value, so that it can be used as a type annotation.
