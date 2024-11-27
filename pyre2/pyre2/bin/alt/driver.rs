@@ -95,28 +95,26 @@ struct Phase1 {
 impl Phase1 {
     fn new(
         timers: &mut Timers,
-        module_name: ModuleName,
-        path: anyhow::Result<PathBuf>,
-        code: String,
-        module: ModModule,
-        should_type_check: bool,
+        module_info: ModuleInfo,
+        error: Option<anyhow::Error>,
         quiet_errors: bool,
         config: &Config,
     ) -> Self {
-        let expectations = Expectation::parse(&code);
-        let (path, error) = match path {
-            Ok(path) => (path, None),
-            Err(err) => (fake_path(module_name), Some(err)),
-        };
-        let module_info = ModuleInfo::new(module_name, path, code, should_type_check);
-        timers.add((module_name, Step::Startup, 0));
-        let exports = Exports::new(&module.body, &module_info, config);
-        timers.add((module_name, Step::Exports, 0));
         let errors = if quiet_errors {
             ErrorCollector::new_quiet()
         } else {
             ErrorCollector::new()
         };
+        let expectations = Expectation::parse(module_info.contents());
+        timers.add((module_info.name(), Step::Startup, 0));
+        let module = module_info.parse(&errors);
+        timers.add((
+            module_info.name(),
+            Step::Parse,
+            module_info.contents().len(),
+        ));
+        let exports = Exports::new(&module.body, &module_info, config);
+        timers.add((module_info.name(), Step::Exports, 0));
         Self {
             expectations,
             module_info,
@@ -213,22 +211,13 @@ fn run_phase1(
             LoadResult::FailedToFind(err) => (Err(err), FAKE_MODULE.to_owned()),
         };
         timers.add((*name, Step::Load, code.len()));
-        let (module, parse_errors) = Ast::parse(&code);
-        for err in parse_errors {
-            my_errors.push((err.location, format!("Parse error: {err}")));
-        }
-        timers.add((*name, Step::Parse, code.len()));
+        let (path, error) = match path {
+            Ok(path) => (path, None),
+            Err(err) => (fake_path(*name), Some(err)),
+        };
+        let module_info = ModuleInfo::new(*name, path, code, should_type_check);
         info!("Phase 1 for {name}");
-        let p = Phase1::new(
-            &mut timers,
-            *name,
-            path,
-            code,
-            module,
-            should_type_check,
-            quiet_errors,
-            config,
-        );
+        let p = Phase1::new(&mut timers, module_info, error, quiet_errors, config);
         for x in my_errors {
             p.errors.add(&p.module_info, x.0, x.1);
         }

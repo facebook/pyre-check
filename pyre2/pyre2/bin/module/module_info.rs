@@ -13,12 +13,15 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use ruff_python_ast::ModModule;
 use ruff_source_file::LineIndex;
 use ruff_source_file::OneIndexed;
 use ruff_source_file::SourceLocation;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
+use crate::ast::Ast;
+use crate::error::collector::ErrorCollector;
 use crate::module::ignore::Ignore;
 use crate::module::module_name::ModuleName;
 
@@ -130,9 +133,16 @@ impl ModuleInfo {
         &self.0.path
     }
 
-    #[allow(dead_code)] // Only used in tests
     pub fn contents(&self) -> &str {
         &self.0.contents
+    }
+
+    pub fn parse(&self, errors: &ErrorCollector) -> ModModule {
+        let (module, parse_errors) = Ast::parse(self.contents());
+        for err in parse_errors {
+            errors.add(self, err.location, format!("Parse error: {err}"));
+        }
+        module
     }
 
     pub fn is_init(&self) -> bool {
