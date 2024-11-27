@@ -57,7 +57,10 @@ impl Var {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Quantified {
+    /// Unique identifier
     unique: Unique,
+    /// Display name
+    name: Name,
     kind: QuantifiedKind,
 }
 
@@ -70,28 +73,29 @@ pub enum QuantifiedKind {
 
 impl Display for Quantified {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "?{}", self.unique)
+        write!(f, "{}", self.name)
     }
 }
 
 impl Quantified {
-    pub fn new(uniques: &UniqueFactory, kind: QuantifiedKind) -> Self {
+    pub fn new(uniques: &UniqueFactory, name: Name, kind: QuantifiedKind) -> Self {
         Quantified {
             unique: uniques.fresh(),
+            name,
             kind,
         }
     }
 
-    pub fn type_var(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques, QuantifiedKind::TypeVar)
+    pub fn type_var(uniques: &UniqueFactory, name: Name) -> Self {
+        Quantified::new(uniques, name, QuantifiedKind::TypeVar)
     }
 
-    pub fn param_spec(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques, QuantifiedKind::ParamSpec)
+    pub fn param_spec(uniques: &UniqueFactory, name: Name) -> Self {
+        Quantified::new(uniques, name, QuantifiedKind::ParamSpec)
     }
 
-    pub fn type_var_tuple(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques, QuantifiedKind::TypeVarTuple)
+    pub fn type_var_tuple(uniques: &UniqueFactory, name: Name) -> Self {
+        Quantified::new(uniques, name, QuantifiedKind::TypeVarTuple)
     }
 
     pub fn to_type(self) -> Type {

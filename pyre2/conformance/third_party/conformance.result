@@ -180,8 +180,8 @@
     "Line 190: Unexpected errors ['assert_type(Callable[[], Coroutine[Any, Any, AsyncIterator[int]]], Callable[[], AsyncIterator[int]]) failed']"
   ],
   "annotations_methods.py": [
-    "Line 19: Unexpected errors ['Expected a callable, got type[?_]']",
-    "Line 23: Unexpected errors ['Expected a callable, got type[?_]']",
+    "Line 19: Unexpected errors ['Expected a callable, got type[T]']",
+    "Line 23: Unexpected errors ['Expected a callable, got type[T]']",
     "Line 30: Unexpected errors ['assert_type(Any, A) failed']",
     "Line 31: Unexpected errors ['assert_type(Any, A) failed', \"Missing argument 'cls'\"]",
     "Line 35: Unexpected errors ['assert_type(Any, B) failed']",
@@ -376,10 +376,10 @@
     "Line 29: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\"]",
     "Line 35: Unexpected errors ['Expected a callable, got type[super]']",
     "Line 39: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\"]",
-    "Line 63: Unexpected errors ['Expected a callable, got type[?_]']",
-    "Line 71: Unexpected errors ['Expected a callable, got type[?_]']",
-    "Line 79: Unexpected errors ['Expected a callable, got type[?_]']",
-    "Line 80: Unexpected errors ['Expected a callable, got type[?_]']"
+    "Line 63: Unexpected errors ['Expected a callable, got type[T]']",
+    "Line 71: Unexpected errors ['Expected a callable, got type[T1]']",
+    "Line 79: Unexpected errors ['Expected a callable, got type[T2]']",
+    "Line 80: Unexpected errors ['Expected a callable, got type[T2]']"
   ],
   "constructors_callable.py": [
     "Line 35: Unexpected errors ['EXPECTED type[Class1] <: Callable[ParamSpec(@_), @_]']",
@@ -678,12 +678,12 @@
     "Line 55: Expected 1 errors",
     "Line 121: Expected 1 errors",
     "Line 191: Expected 1 errors",
-    "Line 19: Unexpected errors ['Expected `Sequence.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[Sequence[?_]], int], _PyreReadOnly_[?_]] | Callable[[_PyreReadOnly_[Sequence[?_]], slice[Error, Error, Error]], _PyreReadOnly_[Sequence[?_]]] | Callable[[Sequence[?_], int], ?_] | Callable[[Sequence[?_], slice[Error, Error, Error]], Sequence[?_]]']",
-    "Line 34: Unexpected errors ['TODO: Answers::expr_infer attribute: `?_`.__add__']",
+    "Line 19: Unexpected errors ['Expected `Sequence.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[Sequence[T]], int], _PyreReadOnly_[T]] | Callable[[_PyreReadOnly_[Sequence[T]], slice[Error, Error, Error]], _PyreReadOnly_[Sequence[T]]] | Callable[[Sequence[T], int], T] | Callable[[Sequence[T], slice[Error, Error, Error]], Sequence[T]]']",
+    "Line 34: Unexpected errors ['TODO: Answers::expr_infer attribute: `AnyStr`.__add__']",
     "Line 67: Unexpected errors ['assert_type(MyStr, str) failed']",
     "Line 68: Unexpected errors ['assert_type(MyStr, str) failed', 'EXPECTED str <: MyStr']",
-    "Line 92: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]', 'EXPECTED ?_ <: object']",
-    "Line 96: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]', 'EXPECTED ?_ <: object']",
+    "Line 92: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]', 'EXPECTED T <: object']",
+    "Line 96: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]', 'EXPECTED T <: object']",
     "Line 100: Unexpected errors ['EXPECTED str <: LiteralString', 'EXPECTED str <: LiteralString']",
     "Line 139: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument(s)', 'EXPECTED MyIter1[int] <: SupportsNext[@_]']",
     "Line 140: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument(s)', 'EXPECTED MyIter2[int] <: SupportsNext[@_]']",
@@ -738,7 +738,7 @@
   ],
   "generics_defaults_specialization.py": [
     "Line 30: Expected 1 errors",
-    "Line 25: Unexpected errors ['untype, got Forall[?_, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, ?_]]]]']",
+    "Line 25: Unexpected errors ['untype, got Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]']",
     "Line 26: Unexpected errors ['assert_type(Any, SomethingWithNoDefaults[int, str]) failed']",
     "Line 45: Unexpected errors ['assert_type(type[Bar], type[Bar[str]]) failed']",
     "Line 46: Unexpected errors ['assert_type(Bar[Any], Bar[str]) failed']",
@@ -766,14 +766,14 @@
     "Line 41: Expected 1 errors",
     "Line 60: Expected 1 errors",
     "Line 47: Unexpected errors ['assert_type(Any, int) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 53: Unexpected errors ['EXPECTED Callable[[Var[Args[_]], KwArgs[Kwargs[_]]], None] <: Callable[ParamSpec(?_), None]']",
+    "Line 53: Unexpected errors ['EXPECTED Callable[[Var[Args[_]], KwArgs[Kwargs[_]]], None] <: Callable[ParamSpec(P), None]']",
     "Line 56: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
     "Line 66: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
     "Line 68: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 74: Unexpected errors ['EXPECTED Callable[[Var[Args[_]], KwArgs[Kwargs[_]]], None] <: Callable[ParamSpec(?_), None]']",
+    "Line 74: Unexpected errors ['EXPECTED Callable[[Var[Args[_]], KwArgs[Kwargs[_]]], None] <: Callable[ParamSpec(P), None]']",
     "Line 79: Unexpected errors ['Answers::expr_infer wrong number of arguments to call']",
     "Line 82: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
-    "Line 85: Unexpected errors ['EXPECTED Callable[[Var[Args[_]], KwArgs[Kwargs[_]]], None] <: Callable[ParamSpec(?_), None]']",
+    "Line 85: Unexpected errors ['EXPECTED Callable[[Var[Args[_]], KwArgs[Kwargs[_]]], None] <: Callable[ParamSpec(P), None]']",
     "Line 89: Unexpected errors ['Answers::expr_infer wrong number of arguments to call', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 96: Unexpected errors ['EXPECTED Callable[[int, str], int] <: Callable[ParamSpec(@_), int]', 'EXPECTED Literal[1] <: Args[_]', \"EXPECTED Literal['A'] <: Args[_]\"]",
     "Line 97: Unexpected errors ['EXPECTED Callable[[int, str], int] <: Callable[ParamSpec(@_), int]', \"EXPECTED Literal['A'] <: Kwargs[_]\", 'EXPECTED Literal[1] <: Kwargs[_]']"
@@ -891,10 +891,10 @@
     "Line 77: Expected 1 errors",
     "Line 81: Expected 1 errors",
     "Line 13: Unexpected errors ['TODO: TypeVarTuple(TypeParamTypeVarTuple - Answers::type_params', 'TODO: ParamSpec(TypeParamParamSpec - Answers::type_params']",
-    "Line 14: Unexpected errors ['assert_type(type[?_], TypeVar) failed']",
-    "Line 15: Unexpected errors ['assert_type(type[?_], TypeVarTuple) failed']",
-    "Line 16: Unexpected errors ['assert_type(type[?_], ParamSpec) failed']",
-    "Line 33: Unexpected errors ['TODO: Answers::expr_infer attribute: `?_`.capitalize']"
+    "Line 14: Unexpected errors ['assert_type(type[T], TypeVar) failed']",
+    "Line 15: Unexpected errors ['assert_type(type[Ts], TypeVarTuple) failed']",
+    "Line 16: Unexpected errors ['assert_type(type[P], ParamSpec) failed']",
+    "Line 33: Unexpected errors ['TODO: Answers::expr_infer attribute: `T`.capitalize']"
   ],
   "generics_syntax_infer_variance.py": [
     "Line 28: Unexpected errors ['EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]']",
@@ -926,7 +926,7 @@
     "Line 124: Unexpected errors ['assert_type(Literal[0+3j], complex) failed']"
   ],
   "generics_type_erasure.py": [
-    "Line 15: Unexpected errors ['EXPECTED ?_ | None <: ?_']",
+    "Line 15: Unexpected errors ['EXPECTED T | None <: T']",
     "Line 56: Unexpected errors ['assert_type(Any, bytes) failed']"
   ],
   "generics_typevartuple_args.py": [
@@ -1214,17 +1214,17 @@
   "narrowing_typeguard.py": [
     "Line 102: Expected 1 errors",
     "Line 107: Expected 1 errors",
-    "Line 13: Unexpected errors ['EXPECTED bool <: TypeGuard[tuple[?_, ?_]]', 'EXPECTED tuple[?_, ...] <: _PyreReadOnly_[Sized]']",
+    "Line 13: Unexpected errors ['EXPECTED bool <: TypeGuard[tuple[T, T]]', 'EXPECTED tuple[T, ...] <: _PyreReadOnly_[Sized]']",
     "Line 17: Unexpected errors ['assert_type(tuple[str, ...], tuple[str, str]) failed']",
     "Line 24: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]']",
     "Line 25: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]', 'Expected `list.__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[object]]], Iterator[_PyreReadOnly_[object]]] | Callable[[list[object]], Iterator[object]]']",
-    "Line 28: Unexpected errors ['EXPECTED bool <: TypeGuard[set[?_]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]']",
+    "Line 28: Unexpected errors ['EXPECTED bool <: TypeGuard[set[T]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]']",
     "Line 32: Unexpected errors ['assert_type(set[object], set[int]) failed']",
     "Line 41: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 45: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 49: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 52: Unexpected errors ['EXPECTED bool <: TypeGuard[A]', 'Expected a callable, got type[type]']",
-    "Line 55: Unexpected errors ['EXPECTED bool <: TypeGuard[?_]', 'Expected a callable, got type[type]']",
+    "Line 55: Unexpected errors ['EXPECTED bool <: TypeGuard[T_A]', 'Expected a callable, got type[type]']",
     "Line 69: Unexpected errors ['assert_type(object, int) failed']",
     "Line 73: Unexpected errors ['assert_type(object, int) failed']",
     "Line 77: Unexpected errors ['assert_type(object, int) failed']",
@@ -1244,7 +1244,7 @@
     "Line 110: Expected 1 errors",
     "Line 195: Expected 1 errors",
     "Line 199: Expected 1 errors",
-    "Line 15: Unexpected errors ['EXPECTED bool <: TypeIs[tuple[?_, ?_]]', 'EXPECTED tuple[?_, ...] <: _PyreReadOnly_[Sized]']",
+    "Line 15: Unexpected errors ['EXPECTED bool <: TypeIs[tuple[T, T]]', 'EXPECTED tuple[T, ...] <: _PyreReadOnly_[Sized]']",
     "Line 19: Unexpected errors ['assert_type(tuple[str, ...], tuple[str, str]) failed']",
     "Line 28: Unexpected errors ['EXPECTED bool <: TypeIs[Awaitable[Any]]', 'EXPECTED type[Awaitable] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 35: Unexpected errors ['Expression is not awaitable']",
@@ -1253,7 +1253,7 @@
     "Line 49: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 53: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 56: Unexpected errors ['EXPECTED bool <: TypeIs[A]', 'Expected a callable, got type[type]']",
-    "Line 59: Unexpected errors ['EXPECTED bool <: TypeIs[?_]', 'Expected a callable, got type[type]']",
+    "Line 59: Unexpected errors ['EXPECTED bool <: TypeIs[T_A]', 'Expected a callable, got type[type]']",
     "Line 72: Unexpected errors ['assert_type(object, int) failed']",
     "Line 76: Unexpected errors ['assert_type(object, int) failed']",
     "Line 80: Unexpected errors ['assert_type(object, int) failed']",
@@ -1342,7 +1342,7 @@
     "Line 39: Unexpected errors ['EXPECTED Concrete1 <: Proto1[str, int]']",
     "Line 55: Unexpected errors ['EXPECTED Box[int] <: Box[float]']",
     "Line 65: Unexpected errors ['EXPECTED Sender[float] <: Sender[int]']",
-    "Line 87: Unexpected errors ['TODO: Answers::expr_infer attribute: `?_`.get_parent']",
+    "Line 87: Unexpected errors ['TODO: Answers::expr_infer attribute: `GenericHasParent`.get_parent']",
     "Line 144: Unexpected errors ['EXPECTED ConcreteHasProperty1 <: HasPropertyProto']",
     "Line 145: Unexpected errors ['EXPECTED ConcreteHasProperty2 <: HasPropertyProto']"
   ],
@@ -1413,7 +1413,7 @@
     "Line 92: Expected 1 errors",
     "Line 36: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr', 'Could not find name `x`']",
     "Line 60: Unexpected errors ['Could not find name `x`']",
-    "Line 81: Unexpected errors ['Expected a callable, got type[?_]']",
+    "Line 81: Unexpected errors ['Expected a callable, got type[T]']",
     "Line 98: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[int]`']",
     "Line 100: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Final[int]`']",
     "Line 109: Unexpected errors ['untype, got object']",
@@ -1468,7 +1468,7 @@
     "Line 21: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 32: Unexpected errors [\"EXPECTED Literal['whatever works'] <: int\"]",
     "Line 77: Unexpected errors ['EXPECTED None <: Never']",
-    "Line 96: Unexpected errors ['EXPECTED ClassB[Never] <: ClassB[?_]']"
+    "Line 96: Unexpected errors ['EXPECTED ClassB[Never] <: ClassB[U]']"
   ],
   "specialtypes_none.py": [
     "Line 24: Unexpected errors ['EXPECTED None <: Hashable']",
@@ -1487,7 +1487,7 @@
   "specialtypes_type.py": [
     "Line 70: Expected 1 errors",
     "Line 28: Unexpected errors ['Expected a callable, got type']",
-    "Line 39: Unexpected errors ['Expected a callable, got type[?_]']",
+    "Line 39: Unexpected errors ['Expected a callable, got type[U]']",
     "Line 42: Unexpected errors ['EXPECTED type[TeamUser] <: type']",
     "Line 44: Unexpected errors ['assert_type(Any, TeamUser) failed', 'EXPECTED type[TeamUser] <: type[@_]']",
     "Line 51: Unexpected errors ['Expected a callable, got type[BasicUser | ProUser]']",
@@ -1517,7 +1517,7 @@
     "Line 166: Unexpected errors ['EXPECTED type <: Callable[[int, int], int]']",
     "Line 169: Unexpected errors ['EXPECTED type <: type[int]']",
     "Line 170: Unexpected errors ['EXPECTED type <: type[Any]']",
-    "Line 175: Unexpected errors ['EXPECTED type <: type[?_]']"
+    "Line 175: Unexpected errors ['EXPECTED type <: type[T]']"
   ],
   "tuples_type_compat.py": [
     "Line 14: Unexpected errors ['EXPECTED tuple[int, int] <: tuple[float, complex]']",

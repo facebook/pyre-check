@@ -203,6 +203,6 @@ P = ParamSpec("P")
 def test(f: Callable[P, None]) -> Callable[P, None]:
     def inner(*args: P.args, **kwargs: P.kwargs) -> None:
         f(*args, **kwargs) # E: Answers::expr_infer wrong number of arguments to call
-    return inner # E: EXPECTED Callable[[Var[Args[_]], KwArgs[Kwargs[_]]], None] <: Callable[ParamSpec(?_), None]
+    return inner # E: EXPECTED Callable[[Var[Args[_]], KwArgs[Kwargs[_]]], None] <: Callable[ParamSpec(P), None]
 "#,
 );
