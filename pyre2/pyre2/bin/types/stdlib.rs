@@ -154,8 +154,8 @@ impl Stdlib {
         Self::primitive(&self.str)
     }
 
-    pub fn slice(&self) -> ClassType {
-        Self::primitive(&self.slice)
+    pub fn slice(&self, start_ty: Type, stop_ty: Type, step_ty: Type) -> ClassType {
+        Self::apply(&self.slice, vec![start_ty, stop_ty, step_ty])
     }
 
     pub fn base_exception(&self) -> ClassType {

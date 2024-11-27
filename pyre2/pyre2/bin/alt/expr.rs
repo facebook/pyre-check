@@ -1103,7 +1103,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         .collect(),
                 )
             }
-            Expr::Slice(_) => self.stdlib.slice().to_type(),
+            Expr::Slice(_) => {
+                // TODO(stroxler, yangdanny): slices are generic, we should not hard code to int.
+                let int = self.stdlib.int().to_type();
+                self.stdlib.slice(int.clone(), int.clone(), int).to_type()
+            }
             Expr::IpyEscapeCommand(_) => self.error_todo("Answers::expr_infer", x),
         }
     }
