@@ -1092,7 +1092,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Type::ClassDef(self.class_definition(x, fields.clone(), bases, legacy_tparams))
             }
             Binding::SelfType(k) => match &*self.get_idx(*k) {
-                Type::ClassDef(c) => c.self_type(c.tparams()),
+                Type::ClassDef(c) => c.self_type(),
                 _ => unreachable!(),
             },
             Binding::Forward(k) => self.get_idx(*k).arc_clone(),

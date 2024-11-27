@@ -114,9 +114,9 @@ impl Class {
         &self.0.tparams
     }
 
-    pub fn self_type(&self, tparams: &QuantifiedVec) -> Type {
+    pub fn self_type(&self) -> Type {
         let tparams_as_targs = TArgs::new(
-            tparams
+            self.tparams()
                 .as_slice()
                 .iter()
                 .map(|q| q.clone().to_type())

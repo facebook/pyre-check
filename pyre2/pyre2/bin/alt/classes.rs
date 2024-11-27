@@ -513,8 +513,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_init_method(&self, cls: &Class) -> Type {
         let init = Name::new("__init__");
         let init_ty = self.get_class_field(cls, &init);
-        let tparams = cls.tparams();
-        let ret = cls.self_type(tparams);
+        let ret = cls.self_type();
         match init_ty.as_deref() {
             Some(ty) => replace_return_type(strip_first_argument(ty), ret),
             None => Type::callable(Vec::new(), ret),
