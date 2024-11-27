@@ -7,7 +7,6 @@
 
 use std::fmt;
 use std::fmt::Debug;
-use std::fmt::Display;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -92,9 +91,7 @@ use crate::util::recurser::Recurser;
 ///
 /// We never issue contains queries on these maps.
 #[derive(Debug)]
-pub struct Answers<'a> {
-    bindings: &'a Bindings,
-    errors: &'a ErrorCollector,
+pub struct Answers {
     solver: Solver,
     table: AnswerTable,
 }
@@ -107,10 +104,10 @@ table!(
     pub struct AnswerTable(AnswerEntry)
 );
 
-impl<'a> Display for Answers<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fn go<'a, K: SolveRecursive>(
-            answers: &Answers<'a>,
+impl DisplayWith<Bindings> for Answers {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, bindings: &Bindings) -> fmt::Result {
+        fn go<K: SolveRecursive>(
+            bindings: &Bindings,
             entry: &AnswerEntry<K>,
             f: &mut fmt::Formatter<'_>,
         ) -> fmt::Result
@@ -118,13 +115,13 @@ impl<'a> Display for Answers<'a> {
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         {
             for (idx, answer) in entry.iter() {
-                let key = answers.bindings.idx_to_key(idx);
-                let value = answers.bindings.get(idx);
+                let key = bindings.idx_to_key(idx);
+                let value = bindings.get(idx);
                 writeln!(
                     f,
                     "{} = {} = {}",
                     key,
-                    value.display_with(answers.bindings),
+                    value.display_with(bindings),
                     match answer.get() {
                         Some(v) => v.to_string(),
                         None => "(unsolved)".to_owned(),
@@ -134,7 +131,7 @@ impl<'a> Display for Answers<'a> {
             Ok(())
         }
 
-        table_try_for_each!(self.table, |x| go(self, x, f));
+        table_try_for_each!(self.table, |x| go(bindings, x, f));
         Ok(())
     }
 }
@@ -150,7 +147,9 @@ table!(
 pub struct AnswersSolver<'a, Ans: LookupAnswer> {
     exports: &'a LookupExport,
     answers: Ans,
-    current: &'a Answers<'a>,
+    current: &'a Answers,
+    errors: &'a ErrorCollector,
+    bindings: &'a Bindings,
     pub uniques: &'a UniqueFactory,
     pub recurser: &'a Recurser<Var>,
     pub stdlib: &'a Stdlib,
@@ -170,7 +169,9 @@ pub trait LookupAnswer: Sized {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>;
 }
 
-impl<'a> LookupAnswer for &'a SmallMap<ModuleName, Answers<'a>> {
+impl<'a> LookupAnswer
+    for &'a SmallMap<ModuleName, (&'a Answers, &'a Bindings, &'a ErrorCollector)>
+{
     fn get<K: Solve<Self> + Exported>(
         &self,
         name: ModuleName,
@@ -183,8 +184,11 @@ impl<'a> LookupAnswer for &'a SmallMap<ModuleName, Answers<'a>> {
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
+        let (current, bindings, errors) = SmallMap::get(self, &name).unwrap();
         let new_answers = AnswersSolver {
-            current: SmallMap::get(self, &name).unwrap(),
+            current,
+            bindings,
+            errors,
             exports,
             answers: *self,
             uniques,
@@ -364,8 +368,8 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyTypeParams {
     fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
 }
 
-impl<'a> Answers<'a> {
-    pub fn new(bindings: &'a Bindings, errors: &'a ErrorCollector) -> Self {
+impl Answers {
+    pub fn new(bindings: &Bindings) -> Self {
         fn presize<K: SolveRecursive>(items: &mut AnswerEntry<K>, bindings: &Bindings)
         where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -380,8 +384,6 @@ impl<'a> Answers<'a> {
         table_mut_for_each!(&mut table, |items| presize(items, bindings));
 
         Self {
-            bindings,
-            errors,
             solver: Solver::new(),
             table,
         }
@@ -397,8 +399,10 @@ impl<'a> Answers<'a> {
         &self,
         exports: &LookupExport,
         answers: Ans,
+        bindings: &Bindings,
+        errors: &ErrorCollector,
         stdlib: &Stdlib,
-        uniques: &'a UniqueFactory,
+        uniques: &UniqueFactory,
     ) -> Solutions {
         let mut res = Solutions::default();
 
@@ -409,9 +413,9 @@ impl<'a> Answers<'a> {
             AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         {
-            items.reserve(answers.current.bindings.keys::<K>().len());
-            for idx in answers.current.bindings.keys::<K>() {
-                let k = answers.current.bindings.idx_to_key(idx);
+            items.reserve(answers.bindings.keys::<K>().len());
+            for idx in answers.bindings.keys::<K>() {
+                let k = answers.bindings.idx_to_key(idx);
                 let v = Arc::unwrap_or_clone(answers.get(k));
                 items.insert_once(idx, v);
             }
@@ -419,6 +423,8 @@ impl<'a> Answers<'a> {
         let answers_solver = AnswersSolver {
             stdlib,
             answers,
+            bindings,
+            errors,
             exports,
             uniques,
             recurser: &Recurser::new(),
@@ -441,16 +447,20 @@ impl<'a> Answers<'a> {
     /// This is used exclusively to bootstrap stdlib support.
     pub fn lookup_class_without_stdlib<Ans: LookupAnswer>(
         &self,
+        bindings: &Bindings,
+        errors: &ErrorCollector,
         module: ModuleName,
         name: &Name,
         exports: &LookupExport,
         answers: Ans,
-        uniques: &'a UniqueFactory,
+        uniques: &UniqueFactory,
     ) -> Option<Class> {
         let solver = AnswersSolver {
             stdlib: &Stdlib::for_bootstrapping(),
             uniques,
             answers,
+            bindings,
+            errors,
             exports,
             recurser: &Recurser::new(),
             current: self,
@@ -458,8 +468,8 @@ impl<'a> Answers<'a> {
         match solver.get_import(name, module, TextRange::default()) {
             Type::ClassDef(cls) => Some(cls),
             ty => {
-                self.errors.add(
-                    self.bindings.module_info(),
+                errors.add(
+                    bindings.module_info(),
                     TextRange::default(),
                     format!(
                         "Did not expect non-class type `{ty}` for stdlib import `{module}.{name}`"
@@ -478,15 +488,15 @@ enum Iterable {
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn bindings(&self) -> &Bindings {
-        self.current.bindings
+        self.bindings
     }
 
     pub fn errors(&self) -> &ErrorCollector {
-        self.current.errors
+        self.errors
     }
 
     pub fn module_info(&self) -> &ModuleInfo {
-        self.current.bindings.module_info()
+        self.bindings.module_info()
     }
 
     pub fn solver(&self) -> &Solver {

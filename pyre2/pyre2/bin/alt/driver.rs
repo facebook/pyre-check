@@ -314,23 +314,29 @@ impl Driver {
 
         let phase2 = run_phase2(timers, &phase1, &exports, &uniques, config, parallel);
 
-        let answers: SmallMap<ModuleName, Answers> = phase1
+        let answers = phase2.map(|p2| {
+            let ans = Answers::new(&p2.bindings);
+            timers.add((p2.name, Step::Answers, ans.len()));
+            ans
+        });
+        let answers_info: SmallMap<ModuleName, (&Answers, &Bindings, &ErrorCollector)> = phase1
             .iter()
             .zip(&phase2)
-            .map(|(p1, p2)| {
-                let ans = Answers::new(&p2.bindings, &p1.errors);
-                timers.add((p2.name, Step::Answers, ans.len()));
-                (p2.name, ans)
-            })
+            .zip(&answers)
+            .map(|((p1, p2), ans)| (p1.module_info.name(), (ans, &p2.bindings, &p1.errors)))
             .collect();
-        let stdlib = make_stdlib(&exports, &answers, &uniques);
+
+        let stdlib = make_stdlib(&exports, &answers_info, &uniques);
         let solutions = (if parallel {
             small_map::par_map
         } else {
             small_map::map
-        })(&answers, |_, x: &Answers| {
-            x.solve(&exports, &answers, &stdlib, &uniques)
-        });
+        })(
+            &answers_info,
+            |_, (answers, bindings, errors): &(&Answers, &Bindings, &ErrorCollector)| {
+                answers.solve(&exports, &answers_info, bindings, errors, &stdlib, &uniques)
+            },
+        );
         timers.add((timers_global_module(), Step::Solve, 0));
 
         if timings.is_some() {
@@ -364,7 +370,7 @@ impl Driver {
             Self::print_timings(timings, timers);
         }
 
-        mem::drop(answers);
+        mem::drop(answers_info);
         assert_eq!(phase1.len(), phase2.len());
         let expectations = phase1
             .iter()
@@ -531,14 +537,12 @@ fn info_eprintln(msg: String) {
 
 fn make_stdlib(
     exports: &LookupExport,
-    answers: &SmallMap<ModuleName, Answers>,
+    answers: &SmallMap<ModuleName, (&Answers, &Bindings, &ErrorCollector)>,
     uniques: &UniqueFactory,
 ) -> Stdlib {
     let lookup_class = |module: ModuleName, name: &Name| {
-        answers
-            .get(&module)
-            .unwrap()
-            .lookup_class_without_stdlib(module, name, exports, answers, uniques)
+        let (me, bindings, errors) = answers.get(&module).unwrap();
+        me.lookup_class_without_stdlib(bindings, errors, module, name, exports, answers, uniques)
     };
     Stdlib::new(lookup_class)
 }
