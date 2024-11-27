@@ -77,7 +77,7 @@ impl Stdlib {
             traceback_type: lookup_class(types, &Name::new("TracebackType")),
 
             object_class_type: lookup_class(builtins, &Name::new("object"))
-                .map(|obj| ClassType::create_with_validated_targs(obj, TArgs::default())),
+                .map(|obj| ClassType::new_for_stdlib(obj, TArgs::default())),
         }
     }
 
@@ -103,9 +103,8 @@ impl Stdlib {
     }
 
     fn primitive(cls: &Option<Class>) -> ClassType {
-        // NOTE: if we hardcode in invalid use of `primitive` here, we will panic later
-        // when performing substitutions.
-        ClassType::create_with_validated_targs(Self::unwrap_class(cls).clone(), TArgs::default())
+        // Note: this construction will panic if we incorrectly mark a generic type as primitive.
+        ClassType::new_for_stdlib(Self::unwrap_class(cls).clone(), TArgs::default())
     }
 
     pub fn object_class_type(&self) -> &ClassType {
@@ -163,9 +162,8 @@ impl Stdlib {
     }
 
     fn apply(cls: &Option<Class>, targs: Vec<Type>) -> ClassType {
-        // NOTE: if we hardcode in invalid use of `apply` here, we will panic later
-        // when performing substitutions.
-        ClassType::create_with_validated_targs(Self::unwrap_class(cls).clone(), TArgs::new(targs))
+        // Note: this construction will panic if we use `apply` with the wrong arity.
+        ClassType::new_for_stdlib(Self::unwrap_class(cls).clone(), TArgs::new(targs))
     }
 
     pub fn tuple(&self, x: Type) -> ClassType {

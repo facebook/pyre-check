@@ -122,7 +122,7 @@ impl Class {
                 .map(|q| q.clone().to_type())
                 .collect(),
         );
-        ClassType::create_with_validated_targs(self.clone(), tparams_as_targs).to_type()
+        ClassType::new(self.clone(), tparams_as_targs).to_type()
     }
 
     pub fn module_info(&self) -> &ModuleInfo {
@@ -194,11 +194,34 @@ impl Display for ClassType {
 }
 
 impl ClassType {
-    /// Create a ClassType. The caller must have validated that
-    /// the targs are correctly aligned with the `tparams`; failure to do so
-    /// will lead to panics downstream.
-    pub fn create_with_validated_targs(class: Class, targs: TArgs) -> Self {
+    fn new_impl(class: Class, targs: TArgs, extra_context: &str) -> Self {
+        let tparams = class.tparams();
+        if targs.0.len() != tparams.len() {
+            // Invariant violation: we should always have valid type arguments when
+            // constructing `ClassType`.
+            assert_eq!(
+                targs.0.len(),
+                tparams.len(),
+                "Encountered invalid type arguments in class{}.{}",
+                class.name(),
+                extra_context,
+            )
+        }
         Self(class, targs)
+    }
+
+    /// Create a class type.
+    /// The `targs` must match the `tparams`, if this fails we will panic.
+    pub fn new(class: Class, targs: TArgs) -> Self {
+        Self::new_impl(class, targs, "")
+    }
+
+    pub fn new_for_stdlib(class: Class, targs: TArgs) -> Self {
+        Self::new_impl(
+            class,
+            targs,
+            " This is caused by typeshed not matching the type checker assumptions about stdlib.",
+        )
     }
 
     pub fn class_object(&self) -> &Class {
@@ -228,16 +251,6 @@ impl ClassType {
     pub fn substitution(&self) -> Substitution {
         let tparams = self.tparams();
         let targs = &self.1.as_slice();
-        if targs.len() != tparams.len() {
-            // Invariant violation: all type arguments should be constructed through
-            // `check_and_sanitize_targs_for_class`, which should guarantee zippability.
-            unreachable!(
-                "Encountered invalid type arguments of length {} in class `{}` (expected {})",
-                targs.len(),
-                self.name().id,
-                tparams.len(),
-            );
-        }
         Substitution(
             tparams
                 .as_slice()

@@ -252,9 +252,13 @@ mod tests {
     use crate::types::type_var::Restriction;
     use crate::types::type_var::TypeVar;
     use crate::types::type_var::Variance;
+    use crate::types::types::Quantified;
+    use crate::types::types::QuantifiedKind;
     use crate::types::types::QuantifiedVec;
+    use crate::uniques::UniqueFactory;
+    use crate::util::prelude::SliceExt;
 
-    fn fake_class(name: &str, module: &str, range: u32) -> Class {
+    fn fake_class(name: &str, module: &str, range: u32, tparams: &[Quantified]) -> Class {
         let mi = ModuleInfo::new(
             ModuleName::from_str(module),
             PathBuf::from(module),
@@ -264,7 +268,7 @@ mod tests {
         Class::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
             mi,
-            QuantifiedVec::default(),
+            QuantifiedVec(tparams.map(|q| q.clone())),
             SmallSet::new(),
         )
     }
@@ -287,13 +291,23 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let foo1 = fake_class("foo", "mod.ule", 5);
-        let foo2 = fake_class("foo", "mod.ule", 8);
-        let foo3 = fake_class("foo", "ule", 3);
-        let bar = fake_class("bar", "mod.ule", 0);
+        let uniques = UniqueFactory::new();
+        let foo1 = fake_class("foo", "mod.ule", 5, &[]);
+        let foo2 = fake_class("foo", "mod.ule", 8, &[]);
+        let foo3 = fake_class("foo", "ule", 3, &[]);
+        let bar = fake_class(
+            "bar",
+            "mod.ule",
+            0,
+            &[Quantified::new(
+                &uniques,
+                Name::new("T"),
+                QuantifiedKind::TypeVar,
+            )],
+        );
 
         fn class_type(class: &Class, targs: TArgs) -> Type {
-            Type::ClassType(ClassType::create_with_validated_targs(class.clone(), targs))
+            Type::ClassType(ClassType::new(class.clone(), targs))
         }
 
         assert_eq!(
