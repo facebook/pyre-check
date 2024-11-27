@@ -29,10 +29,7 @@ use crate::alt::bindings::BindingTable;
 use crate::alt::bindings::Bindings;
 use crate::alt::exports::Exports;
 use crate::alt::exports::LookupExport;
-use crate::alt::loader::fake_path;
-use crate::alt::loader::LoadResult;
 use crate::alt::loader::Loader;
-use crate::alt::loader::FAKE_MODULE;
 use crate::alt::table::Keyed;
 use crate::alt::table::TableKeyed;
 use crate::ast::Ast;
@@ -191,29 +188,28 @@ fn run_phase1(
         transitive_closure
     })(todo, |name: &ModuleName| {
         let mut timers = Timers::new();
-        let mut my_errors = Vec::new();
         let (loaded, should_type_check) = load(*name);
-        let (path, code) = match loaded {
-            LoadResult::Loaded(path, code) => (Ok(path), code),
-            LoadResult::FailedToLoad(path, err) => {
-                my_errors.push((
-                    TextRange::default(),
-                    format!("Failed to load {name} from {}, got {err:#}", path.display()),
-                ));
-                (Ok(path), FAKE_MODULE.to_owned())
-            }
-            LoadResult::FailedToFind(err) => (Err(err), FAKE_MODULE.to_owned()),
-        };
-        timers.add((*name, Step::Load, code.len()));
-        let (path, error) = match path {
-            Ok(path) => (path, None),
-            Err(err) => (fake_path(*name), Some(err)),
-        };
-        let module_info = ModuleInfo::new(*name, path, code, should_type_check);
+        let components = loaded.components(*name);
+        timers.add((*name, Step::Load, components.code.len()));
+        let module_info =
+            ModuleInfo::new(*name, components.path, components.code, should_type_check);
         info!("Phase 1 for {name}");
-        let p = Phase1::new(&mut timers, module_info, error, quiet_errors, config);
-        for x in my_errors {
-            p.errors.add(&p.module_info, x.0, x.1);
+        let p = Phase1::new(
+            &mut timers,
+            module_info,
+            components.import_error,
+            quiet_errors,
+            config,
+        );
+        if let Some(err) = components.self_error {
+            p.errors.add(
+                &p.module_info,
+                TextRange::default(),
+                format!(
+                    "Failed to load {name} from {}, got {err:#}",
+                    p.module_info.path().display()
+                ),
+            );
         }
         let my_imports = p.imports();
         imports

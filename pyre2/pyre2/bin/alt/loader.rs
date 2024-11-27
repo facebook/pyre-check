@@ -21,12 +21,21 @@ pub enum LoadResult {
     FailedToFind(anyhow::Error),
 }
 
-pub static FAKE_MODULE: &str = r#"
+pub struct LoadResultComponents {
+    pub path: PathBuf,
+    pub code: String,
+    /// Found the file but failed to open it, raise an error in this file.
+    pub self_error: Option<anyhow::Error>,
+    /// File not found, raise an error in everyone who imports me.
+    pub import_error: Option<anyhow::Error>,
+}
+
+static FAKE_MODULE: &str = r#"
 from typing import Any
 def __getattr__(name: str) -> Any: ...
 "#;
 
-pub fn fake_path(module_name: ModuleName) -> PathBuf {
+fn fake_path(module_name: ModuleName) -> PathBuf {
     // The generated fake module shouldn't have an errors, but lets make it clear
     // this is a fake path if it ever happens to leak into any output.
     PathBuf::from(format!("/fake/{module_name}.py"))
@@ -40,6 +49,29 @@ impl LoadResult {
                 Err(err) => LoadResult::FailedToLoad(path, err),
             },
             Err(err) => LoadResult::FailedToFind(err),
+        }
+    }
+
+    pub fn components(self, module_name: ModuleName) -> LoadResultComponents {
+        match self {
+            LoadResult::Loaded(path, code) => LoadResultComponents {
+                path,
+                code,
+                self_error: None,
+                import_error: None,
+            },
+            LoadResult::FailedToLoad(path, err) => LoadResultComponents {
+                path,
+                code: FAKE_MODULE.to_owned(),
+                self_error: Some(err),
+                import_error: None,
+            },
+            LoadResult::FailedToFind(err) => LoadResultComponents {
+                path: fake_path(module_name),
+                code: FAKE_MODULE.to_owned(),
+                self_error: None,
+                import_error: Some(err),
+            },
         }
     }
 }
