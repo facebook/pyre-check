@@ -56,7 +56,10 @@ impl Var {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Quantified(Unique, QuantifiedKind);
+pub struct Quantified {
+    unique: Unique,
+    kind: QuantifiedKind,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum QuantifiedKind {
@@ -67,13 +70,16 @@ pub enum QuantifiedKind {
 
 impl Display for Quantified {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "?{}", self.0)
+        write!(f, "?{}", self.unique)
     }
 }
 
 impl Quantified {
     pub fn new(uniques: &UniqueFactory, kind: QuantifiedKind) -> Self {
-        Quantified(uniques.fresh(), kind)
+        Quantified {
+            unique: uniques.fresh(),
+            kind,
+        }
     }
 
     pub fn type_var(uniques: &UniqueFactory) -> Self {
@@ -93,15 +99,15 @@ impl Quantified {
     }
 
     pub fn is_param_spec(&self) -> bool {
-        matches!(self.1, QuantifiedKind::ParamSpec)
+        matches!(self.kind, QuantifiedKind::ParamSpec)
     }
 
     pub fn id(&self) -> Unique {
-        self.0
+        self.unique
     }
 
     pub fn zero(&mut self) {
-        self.0 = Unique::zero();
+        self.unique = Unique::zero();
     }
 }
 
