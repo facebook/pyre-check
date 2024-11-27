@@ -547,7 +547,7 @@ impl<'a> AnswersSolver<'a> {
             BindingTypeParams::Function(scoped, legacy) => {
                 let legacy_tparams: Vec<_> = legacy
                     .iter()
-                    .filter_map(|key| self.get_idx(*key).deref().parameter().copied())
+                    .filter_map(|key| self.get_idx(*key).deref().parameter().cloned())
                     .collect();
                 let mut tparams = scoped.clone();
                 tparams.extend(legacy_tparams);
@@ -719,11 +719,11 @@ impl<'a> AnswersSolver<'a> {
             }
             Type::TypeVar(ty_var) => {
                 let q = match seen.entry(ty_var.dupe()) {
-                    Entry::Occupied(e) => *e.get(),
+                    Entry::Occupied(e) => e.get().clone(),
                     Entry::Vacant(e) => {
                         let q = Quantified::type_var(self.uniques);
-                        e.insert(q);
-                        quantifieds.push(q);
+                        e.insert(q.clone());
+                        quantifieds.push(q.clone());
                         q
                     }
                 };
@@ -1081,7 +1081,7 @@ impl<'a> AnswersSolver<'a> {
             },
             Binding::AnyType(x) => Type::Any(*x),
             Binding::StrType => self.stdlib.str().to_type(),
-            Binding::TypeParameter(q) => Type::type_form(q.to_type()),
+            Binding::TypeParameter(q) => Type::type_form(q.clone().to_type()),
             Binding::Module(m, path, prev) => {
                 let prev = prev
                     .as_ref()
@@ -1114,7 +1114,7 @@ impl<'a> AnswersSolver<'a> {
                                 ),
                             );
                         }
-                        Type::type_form(q.to_type())
+                        Type::type_form(q.clone().to_type())
                     }
                     LegacyTypeParameterLookup::NotParameter(ty) => ty.clone(),
                 }

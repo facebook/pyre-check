@@ -809,7 +809,7 @@ impl<'a> BindingsBuilder<'a> {
                     (q, &x.name)
                 }
             };
-            qs.push(q);
+            qs.push(q.clone());
             self.scopes.last_mut().stat.add(name.id.clone(), name.range);
             self.bind_definition(name, Binding::TypeParameter(q), None);
         }

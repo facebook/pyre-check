@@ -121,7 +121,13 @@ impl Class {
     }
 
     pub fn self_type(&self, tparams: &QuantifiedVec) -> Type {
-        let tparams_as_targs = TArgs::new(tparams.as_slice().iter().map(|q| q.to_type()).collect());
+        let tparams_as_targs = TArgs::new(
+            tparams
+                .as_slice()
+                .iter()
+                .map(|q| q.clone().to_type())
+                .collect(),
+        );
         ClassType::create_with_validated_targs(self.clone(), tparams_as_targs).to_type()
     }
 
@@ -237,7 +243,7 @@ impl ClassType {
             tparams
                 .as_slice()
                 .iter()
-                .copied()
+                .cloned()
                 .zip(targs.iter().cloned())
                 .collect(),
         )

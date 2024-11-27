@@ -87,9 +87,9 @@ impl<'a> AnswersSolver<'a> {
             None => {}
         }
 
-        fn get_quantified(t: &Type) -> Quantified {
+        fn get_quantified(t: &Type) -> &Quantified {
             match t {
-                Type::Type(box Type::Quantified(q)) => *q,
+                Type::Type(box Type::Quantified(q)) => q,
                 _ => unreachable!(),
             }
         }
@@ -99,7 +99,7 @@ impl<'a> AnswersSolver<'a> {
             .map(|x| {
                 (
                     x.id.clone(),
-                    get_quantified(&self.get(&Key::Definition(x.clone()))),
+                    get_quantified(&self.get(&Key::Definition(x.clone()))).clone(),
                 )
             })
             .collect()
@@ -187,10 +187,10 @@ impl<'a> AnswersSolver<'a> {
     }
 
     pub fn tparams_of(&self, cls: &Class, legacy: &[Idx<KeyLegacyTypeParam>]) -> QuantifiedVec {
-        let scoped_tparams: SmallSet<_> = cls.scoped_tparams().values().copied().collect();
+        let scoped_tparams: SmallSet<_> = cls.scoped_tparams().values().cloned().collect();
         let legacy_quantifieds: SmallSet<_> = legacy
             .iter()
-            .filter_map(|key| self.get_idx(*key).deref().parameter().copied())
+            .filter_map(|key| self.get_idx(*key).deref().parameter().cloned())
             .collect();
         // TODO(stroxler): There are a lot of checks, such as that `Generic` only appears once
         // and no non-type-vars are used, that we can more easily detect in a dedictated class
@@ -201,10 +201,10 @@ impl<'a> AnswersSolver<'a> {
         for base in bases.iter() {
             match base.deref() {
                 BaseClass::Generic(ts) => {
-                    generic_tparams.extend(ts.iter().filter_map(|t| t.as_quantified()))
+                    generic_tparams.extend(ts.iter().filter_map(|t| t.as_quantified().cloned()))
                 }
                 BaseClass::Protocol(ts) if !ts.is_empty() => {
-                    protocol_tparams.extend(ts.iter().filter_map(|t| t.as_quantified()))
+                    protocol_tparams.extend(ts.iter().filter_map(|t| t.as_quantified().cloned()))
                 }
                 _ => {}
             }
