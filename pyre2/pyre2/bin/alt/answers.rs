@@ -531,8 +531,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        self.answers
-            .get(name, k, self.exports, self.uniques, self.stdlib)
+        if name == self.module_info().name() {
+            self.get(k)
+        } else {
+            self.answers
+                .get(name, k, self.exports, self.uniques, self.stdlib)
+        }
     }
 
     pub fn get_from_class<K: Solve<Ans> + Exported>(&self, cls: &Class, k: &K) -> Arc<K::Answer>
@@ -1331,7 +1335,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_import(&self, name: &Name, from: ModuleName, range: TextRange) -> Type {
         let exports = self.exports.get(from);
         if !exports.contains(name, self.exports) {
-            self.error(range, format!("No attribute `{name}` in module `{from}`",))
+            self.error(range, format!("No attribute `{name}` in module `{from}`"))
         } else {
             self.get_from_module(from, &KeyExported::Export(name.clone()))
                 .arc_clone()
