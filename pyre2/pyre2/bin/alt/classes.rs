@@ -20,6 +20,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use super::answers::AnswersSolver;
+use crate::alt::answers::LookupAnswer;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyBaseClass;
 use crate::alt::binding::KeyExported;
@@ -67,7 +68,7 @@ fn replace_return_type(ty: Type, ret: Type) -> Type {
     Type::forall(gs.to_owned(), ty)
 }
 
-impl<'a> AnswersSolver<'a> {
+impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn scoped_type_params(&self, x: &Option<Box<TypeParams>>) -> SmallMap<Name, Quantified> {
         let mut names = Vec::new();
         match x {
@@ -162,9 +163,9 @@ impl<'a> AnswersSolver<'a> {
     /// If the base class is a "normal" generic base (not `Protocol` or `Generic`), then
     /// call `f` on each `Quantified` in left-to-right order.
     fn for_each_quantified_if_not_special(&self, base: &BaseClass, f: &mut impl FnMut(Quantified)) {
-        fn for_each_quantified_in_expr(
+        fn for_each_quantified_in_expr<Ans: LookupAnswer>(
             x: &Expr,
-            answers_solver: &AnswersSolver,
+            answers_solver: &AnswersSolver<Ans>,
             f: &mut impl FnMut(Quantified),
         ) {
             match x {

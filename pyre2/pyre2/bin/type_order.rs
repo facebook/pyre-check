@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use dupe::Clone_;
+use dupe::Copy_;
+use dupe::Dupe_;
+
 use crate::alt::answers::AnswersSolver;
+use crate::alt::answers::LookupAnswer;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
@@ -16,11 +21,11 @@ use crate::types::stdlib::Stdlib;
 /// This is needed for cases like the nominal type order and structural types where
 /// the `Type` object itself does not contain enough information to determine
 /// subset relations.
-#[derive(Clone, Copy)]
-pub struct TypeOrder<'a>(&'a AnswersSolver<'a>);
+#[derive(Clone_, Copy_, Dupe_)]
+pub struct TypeOrder<'a, Ans: LookupAnswer>(&'a AnswersSolver<'a, Ans>);
 
-impl<'a> TypeOrder<'a> {
-    pub fn new(solver: &'a AnswersSolver<'a>) -> Self {
+impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
+    pub fn new(solver: &'a AnswersSolver<'a, Ans>) -> Self {
         Self(solver)
     }
 

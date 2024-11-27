@@ -23,6 +23,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use super::answers::AnswersSolver;
+use crate::alt::answers::LookupAnswer;
 use crate::alt::binding::Key;
 use crate::ast::Ast;
 use crate::dunder;
@@ -68,7 +69,7 @@ impl TypeCallArg {
     }
 }
 
-impl<'a> AnswersSolver<'a> {
+impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     // Helper method for inferring the type of a boolean operation over a sequence of values.
     fn boolop(&self, values: &[Expr], op: BoolOp) -> Type {
         let target = match op {

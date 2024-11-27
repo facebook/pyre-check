@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::alt::answers::LookupAnswer;
 use crate::solver::Subset;
 use crate::types::callable::Arg;
 use crate::types::callable::Args;
@@ -14,7 +15,7 @@ use crate::types::simplify::unions;
 use crate::types::tuple::Tuple;
 use crate::types::types::Type;
 
-impl<'a> Subset<'a> {
+impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
     /// Implementation of subset equality for Type, other than Var.
     pub fn is_subset_eq_impl(&mut self, got: &Type, want: &Type) -> bool {
         match (got, want) {

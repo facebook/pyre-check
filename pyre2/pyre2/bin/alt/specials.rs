@@ -10,6 +10,7 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
 use super::answers::AnswersSolver;
+use crate::alt::answers::LookupAnswer;
 use crate::types::callable::Arg;
 use crate::types::callable::Required;
 use crate::types::literal::Lit;
@@ -18,7 +19,7 @@ use crate::types::tuple::Tuple;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 
-impl<'a> AnswersSolver<'a> {
+impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn apply_special_form(
         &self,
         special_form: SpecialForm,

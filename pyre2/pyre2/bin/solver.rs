@@ -16,6 +16,7 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 
+use crate::alt::answers::LookupAnswer;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
 use crate::type_order::TypeOrder;
@@ -59,7 +60,7 @@ impl Variable {
     /// For some types of variables we should promote literals, for others we should not.
     /// E.g. `x = 1; while True: x = x` should be `Literal[1]` while
     /// `[1]` should be `List[int]`.
-    fn promote(&self, ty: Type, type_order: TypeOrder) -> Type {
+    fn promote<Ans: LookupAnswer>(&self, ty: Type, type_order: TypeOrder<Ans>) -> Type {
         if matches!(self, Variable::Contained | Variable::Quantified) {
             ty.promote_literals(type_order.stdlib())
         } else {
@@ -235,7 +236,11 @@ impl Solver {
     }
 
     /// Union a list of types together. In the process may cause some variables to be forced.
-    pub fn unions(&self, branches: Vec<Type>, type_order: TypeOrder) -> Type {
+    pub fn unions<Ans: LookupAnswer>(
+        &self,
+        branches: Vec<Type>,
+        type_order: TypeOrder<Ans>,
+    ) -> Type {
         if branches.is_empty() {
             return Type::never();
         }
@@ -278,11 +283,11 @@ impl Solver {
     }
 
     /// Record a variable that is used recursively.
-    pub fn record_recursive(
+    pub fn record_recursive<Ans: LookupAnswer>(
         &self,
         v: Var,
         t: Type,
-        type_order: TypeOrder,
+        type_order: TypeOrder<Ans>,
         errors: &ErrorCollector,
         module_info: &ModuleInfo,
         loc: TextRange,
@@ -337,7 +342,12 @@ impl Solver {
 
     /// Is `got <: want`? If you aren't sure, return `false`.
     /// May cause contained variables to be resolved to an answer.
-    pub fn is_subset_eq(&self, got: &Type, want: &Type, type_order: TypeOrder) -> bool {
+    pub fn is_subset_eq<Ans: LookupAnswer>(
+        &self,
+        got: &Type,
+        want: &Type,
+        type_order: TypeOrder<Ans>,
+    ) -> bool {
         Subset {
             solver: self,
             type_order,
@@ -350,15 +360,15 @@ impl Solver {
 
 /// A helper to implement subset erogonomically.
 /// Should only be used within `crate::subset`, which implements part of it.
-pub struct Subset<'a> {
+pub struct Subset<'a, Ans: LookupAnswer> {
     solver: &'a Solver,
-    pub type_order: TypeOrder<'a>,
+    pub type_order: TypeOrder<'a, Ans>,
     // True if we are doing a union, false if we are actually checking for subset.
     union: bool,
     gas: usize,
 }
 
-impl<'a> Subset<'a> {
+impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
     pub fn is_equal(&mut self, got: &Type, want: &Type) -> bool {
         self.is_subset_eq(got, want) && self.is_subset_eq(want, got)
     }

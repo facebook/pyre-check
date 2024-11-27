@@ -99,7 +99,8 @@ pub struct Answers<'a> {
     table: AnswerTable,
 }
 
-type AnswerEntry<K> = IndexMap<K, Calculation<Arc<<K as Keyed>::Answer>, <K as Solve>::Recursive>>;
+type AnswerEntry<K> =
+    IndexMap<K, Calculation<Arc<<K as Keyed>::Answer>, <K as SolveRecursive>::Recursive>>;
 
 table!(
     #[derive(Debug, Default)]
@@ -108,7 +109,7 @@ table!(
 
 impl<'a> Display for Answers<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fn go<'a, K: Solve>(
+        fn go<'a, K: SolveRecursive>(
             answers: &Answers<'a>,
             entry: &AnswerEntry<K>,
             f: &mut fmt::Formatter<'_>,
@@ -146,24 +147,31 @@ table!(
 );
 
 #[derive(Debug, Clone)]
-pub struct AnswersSolver<'a> {
+pub struct AnswersSolver<'a, Ans: LookupAnswer> {
     exports: &'a LookupExport,
-    answers: LookupAnswer<'a>,
+    answers: Ans,
     current: &'a Answers<'a>,
     pub uniques: &'a UniqueFactory,
     pub recurser: &'a Recurser<Var>,
     pub stdlib: &'a Stdlib,
 }
 
-#[derive(Debug, Clone, Dupe, Copy)]
-pub struct LookupAnswer<'a>(&'a SmallMap<ModuleName, Answers<'a>>);
+pub trait LookupAnswer: Sized {
+    fn get<K: Solve<Self> + Exported>(
+        &self,
+        name: ModuleName,
+        k: &K,
+        exports: &LookupExport,
+        uniques: &UniqueFactory,
+        stdlib: &Stdlib,
+    ) -> Arc<K::Answer>
+    where
+        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
+        BindingTable: TableKeyed<K, Value = BindingEntry<K>>;
+}
 
-impl<'a> LookupAnswer<'a> {
-    pub fn new(answers: &'a SmallMap<ModuleName, Answers<'a>>) -> Self {
-        Self(answers)
-    }
-
-    pub fn get<K: Solve + Exported>(
+impl<'a> LookupAnswer for &'a SmallMap<ModuleName, Answers<'a>> {
+    fn get<K: Solve<Self> + Exported>(
         &self,
         name: ModuleName,
         k: &K,
@@ -176,7 +184,7 @@ impl<'a> LookupAnswer<'a> {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
         let new_answers = AnswersSolver {
-            current: self.0.get(&name).unwrap(),
+            current: SmallMap::get(self, &name).unwrap(),
             exports,
             answers: *self,
             uniques,
@@ -190,102 +198,41 @@ impl<'a> LookupAnswer<'a> {
     }
 }
 
-pub trait Solve: Keyed {
+pub trait SolveRecursive: Keyed {
     type Recursive: Dupe = ();
-
-    fn solve(answers: &AnswersSolver, binding: &Self::Value) -> Arc<Self::Answer>;
-
-    fn recursive(answers: &AnswersSolver) -> Self::Recursive;
-
-    fn record_recursive(
-        _answers: &AnswersSolver,
-        _key: &Self,
-        _answer: Arc<Self::Answer>,
-        _recursive: Self::Recursive,
-    ) {
-    }
 
     fn promote_recursive(x: Self::Recursive) -> Self::Answer;
 
     fn visit_type_mut(v: &mut Self::Answer, f: &mut dyn FnMut(&mut Type));
 }
 
-impl Solve for Key {
+impl SolveRecursive for Key {
     type Recursive = Var;
-
-    fn solve(answers: &AnswersSolver, binding: &Binding) -> Arc<Type> {
-        answers.solve_binding(binding)
-    }
-
-    fn recursive(answers: &AnswersSolver) -> Self::Recursive {
-        answers.solver().fresh_recursive(answers.uniques)
-    }
-
-    fn record_recursive(answers: &AnswersSolver, key: &Key, answer: Arc<Type>, recursive: Var) {
-        answers.record_recursive(key.range(), answer, recursive);
-    }
-
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {
         Type::Var(x)
     }
-
     fn visit_type_mut(v: &mut Type, f: &mut dyn FnMut(&mut Type)) {
         f(v);
     }
 }
-
-impl Solve for KeyExported {
+impl SolveRecursive for KeyExported {
     type Recursive = Var;
-
-    fn solve(answers: &AnswersSolver, binding: &Binding) -> Arc<Type> {
-        answers.solve_binding(binding)
-    }
-
-    fn recursive(answers: &AnswersSolver) -> Self::Recursive {
-        answers.solver().fresh_recursive(answers.uniques)
-    }
-
-    fn record_recursive(
-        answers: &AnswersSolver,
-        key: &KeyExported,
-        answer: Arc<Type>,
-        recursive: Var,
-    ) {
-        answers.record_recursive(key.range(), answer, recursive);
-    }
-
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {
         Type::Var(x)
     }
-
     fn visit_type_mut(v: &mut Type, f: &mut dyn FnMut(&mut Type)) {
         f(v);
     }
 }
-
-impl Solve for KeyAnnotation {
-    fn solve(answers: &AnswersSolver, binding: &BindingAnnotation) -> Arc<Annotation> {
-        answers.solve_annotation(binding)
-    }
-
-    fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
-
+impl SolveRecursive for KeyAnnotation {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         Annotation::default()
     }
-
     fn visit_type_mut(v: &mut Annotation, f: &mut dyn FnMut(&mut Type)) {
         v.ty.iter_mut().for_each(f);
     }
 }
-
-impl Solve for KeyBaseClass {
-    fn solve(answers: &AnswersSolver, binding: &BindingBaseClass) -> Arc<BaseClass> {
-        answers.solve_base_class(binding)
-    }
-
-    fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
-
+impl SolveRecursive for KeyBaseClass {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         // TODO(stroxler): Putting a panic here is risky, but I am expecting to refactor
         // within a few commits to make the base class handling internal to `classes.rs`
@@ -293,66 +240,133 @@ impl Solve for KeyBaseClass {
         // altogether.
         unreachable!("BaseClass cannot hit recursive cases without violating invariants");
     }
-
     fn visit_type_mut(v: &mut BaseClass, f: &mut dyn FnMut(&mut Type)) {
         v.visit_mut(f);
     }
 }
-
-impl Solve for KeyMro {
-    fn solve(answers: &AnswersSolver, binding: &BindingMro) -> Arc<Mro> {
-        answers.solve_mro(binding)
-    }
-
-    fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
-
+impl SolveRecursive for KeyMro {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         Mro::cyclic()
     }
-
     fn visit_type_mut(v: &mut Mro, f: &mut dyn FnMut(&mut Type)) {
         v.visit_mut(f);
     }
 }
-
-impl Solve for KeyLegacyTypeParam {
-    fn solve(
-        answers: &AnswersSolver,
-        binding: &BindingLegacyTypeParam,
-    ) -> Arc<LegacyTypeParameterLookup> {
-        answers.solve_legacy_tparam(binding)
-    }
-
-    fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
-
+impl SolveRecursive for KeyLegacyTypeParam {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         LegacyTypeParameterLookup::NotParameter(Type::any_implicit())
     }
-
     fn visit_type_mut(v: &mut LegacyTypeParameterLookup, f: &mut dyn FnMut(&mut Type)) {
         v.not_parameter_mut().into_iter().for_each(f);
     }
 }
-
-impl Solve for KeyTypeParams {
-    fn solve(answers: &AnswersSolver, binding: &BindingTypeParams) -> Arc<QuantifiedVec> {
-        answers.solve_tparams(binding)
-    }
-
-    fn recursive(_answers: &AnswersSolver) -> Self::Recursive {}
-
+impl SolveRecursive for KeyTypeParams {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         QuantifiedVec(Vec::new())
     }
-
     fn visit_type_mut(_: &mut Self::Answer, _: &mut dyn FnMut(&mut Type)) {
         // There are no types in the answer
     }
 }
 
+pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
+    fn solve(answers: &AnswersSolver<Ans>, binding: &Self::Value) -> Arc<Self::Answer>;
+
+    fn recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive;
+
+    fn record_recursive(
+        _answers: &AnswersSolver<Ans>,
+        _key: &Self,
+        _answer: Arc<Self::Answer>,
+        _recursive: Self::Recursive,
+    ) {
+    }
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for Key {
+    fn solve(answers: &AnswersSolver<Ans>, binding: &Binding) -> Arc<Type> {
+        answers.solve_binding(binding)
+    }
+
+    fn recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive {
+        answers.solver().fresh_recursive(answers.uniques)
+    }
+
+    fn record_recursive(
+        answers: &AnswersSolver<Ans>,
+        key: &Key,
+        answer: Arc<Type>,
+        recursive: Var,
+    ) {
+        answers.record_recursive(key.range(), answer, recursive);
+    }
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyExported {
+    fn solve(answers: &AnswersSolver<Ans>, binding: &Binding) -> Arc<Type> {
+        answers.solve_binding(binding)
+    }
+
+    fn recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive {
+        answers.solver().fresh_recursive(answers.uniques)
+    }
+
+    fn record_recursive(
+        answers: &AnswersSolver<Ans>,
+        key: &KeyExported,
+        answer: Arc<Type>,
+        recursive: Var,
+    ) {
+        answers.record_recursive(key.range(), answer, recursive);
+    }
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyAnnotation {
+    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingAnnotation) -> Arc<Annotation> {
+        answers.solve_annotation(binding)
+    }
+
+    fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyBaseClass {
+    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingBaseClass) -> Arc<BaseClass> {
+        answers.solve_base_class(binding)
+    }
+
+    fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyMro {
+    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingMro) -> Arc<Mro> {
+        answers.solve_mro(binding)
+    }
+
+    fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyLegacyTypeParam {
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &BindingLegacyTypeParam,
+    ) -> Arc<LegacyTypeParameterLookup> {
+        answers.solve_legacy_tparam(binding)
+    }
+
+    fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyTypeParams {
+    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingTypeParams) -> Arc<QuantifiedVec> {
+        answers.solve_tparams(binding)
+    }
+
+    fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
+}
+
 impl<'a> Answers<'a> {
     pub fn new(bindings: &'a Bindings, errors: &'a ErrorCollector) -> Self {
-        fn presize<K: Solve>(items: &mut AnswerEntry<K>, bindings: &Bindings)
+        fn presize<K: SolveRecursive>(items: &mut AnswerEntry<K>, bindings: &Bindings)
         where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         {
@@ -379,17 +393,19 @@ impl<'a> Answers<'a> {
         res
     }
 
-    pub fn solve(
+    pub fn solve<Ans: LookupAnswer>(
         &self,
         exports: &LookupExport,
-        answers: LookupAnswer,
+        answers: Ans,
         stdlib: &Stdlib,
         uniques: &'a UniqueFactory,
     ) -> Solutions {
         let mut res = Solutions::default();
 
-        fn pre_solve<K: Solve>(items: &mut SolutionsEntry<K>, answers: &AnswersSolver)
-        where
+        fn pre_solve<Ans: LookupAnswer, K: Solve<Ans>>(
+            items: &mut SolutionsEntry<K>,
+            answers: &AnswersSolver<Ans>,
+        ) where
             AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         {
@@ -411,7 +427,7 @@ impl<'a> Answers<'a> {
         table_mut_for_each!(&mut res, |items| pre_solve(items, &answers_solver));
 
         // Now force all types to be fully resolved.
-        fn post_solve<K: Solve>(items: &mut SolutionsEntry<K>, solver: &Solver) {
+        fn post_solve<K: SolveRecursive>(items: &mut SolutionsEntry<K>, solver: &Solver) {
             for v in items.values_mut() {
                 K::visit_type_mut(v, &mut |x| solver.deep_force_mut(x));
             }
@@ -423,12 +439,12 @@ impl<'a> Answers<'a> {
     /// Resolve the type of global `name` in module `module`, assuming the
     /// resolution does not depend directly on the behavior of any stdlib types.
     /// This is used exclusively to bootstrap stdlib support.
-    pub fn lookup_class_without_stdlib(
+    pub fn lookup_class_without_stdlib<Ans: LookupAnswer>(
         &self,
         module: ModuleName,
         name: &Name,
         exports: &LookupExport,
-        answers: LookupAnswer,
+        answers: Ans,
         uniques: &'a UniqueFactory,
     ) -> Option<Class> {
         let solver = AnswersSolver {
@@ -460,7 +476,7 @@ enum Iterable {
     FixedLen(Vec<Type>),
 }
 
-impl<'a> AnswersSolver<'a> {
+impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn bindings(&self) -> &Bindings {
         self.current.bindings
     }
@@ -477,7 +493,11 @@ impl<'a> AnswersSolver<'a> {
         &self.current.solver
     }
 
-    pub fn get_from_module<K: Solve + Exported>(&self, name: ModuleName, k: &K) -> Arc<K::Answer>
+    pub fn get_from_module<K: Solve<Ans> + Exported>(
+        &self,
+        name: ModuleName,
+        k: &K,
+    ) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -486,7 +506,7 @@ impl<'a> AnswersSolver<'a> {
             .get(name, k, self.exports, self.uniques, self.stdlib)
     }
 
-    pub fn get_from_class<K: Solve + Exported>(&self, cls: &Class, k: &K) -> Arc<K::Answer>
+    pub fn get_from_class<K: Solve<Ans> + Exported>(&self, cls: &Class, k: &K) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -494,11 +514,11 @@ impl<'a> AnswersSolver<'a> {
         self.get_from_module(cls.module_info().name(), k)
     }
 
-    pub fn type_order(&self) -> TypeOrder {
+    pub fn type_order(&self) -> TypeOrder<Ans> {
         TypeOrder::new(self)
     }
 
-    pub fn get_idx<K: Solve>(&self, idx: Idx<K>) -> Arc<K::Answer>
+    pub fn get_idx<K: Solve<Ans>>(&self, idx: Idx<K>) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -529,7 +549,7 @@ impl<'a> AnswersSolver<'a> {
         }
     }
 
-    pub fn get<K: Solve>(&self, k: &K) -> Arc<K::Answer>
+    pub fn get<K: Solve<Ans>>(&self, k: &K) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
