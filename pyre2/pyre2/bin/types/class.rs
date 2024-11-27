@@ -205,6 +205,10 @@ impl ClassType {
         &self.0
     }
 
+    pub fn tparams(&self) -> &QuantifiedVec {
+        self.0.tparams()
+    }
+
     pub fn targs(&self) -> &TArgs {
         &self.1
     }

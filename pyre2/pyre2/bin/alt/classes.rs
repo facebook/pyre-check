@@ -184,7 +184,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn get_substitution(&self, class: &ClassType) -> Substitution {
-        class.substitution(class.class_object().tparams())
+        class.substitution(class.tparams())
     }
 
     /// If the base class is a "normal" generic base (not `Protocol` or `Generic`), then
@@ -374,8 +374,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn instantiate_class_member(&self, cls: &ClassType, ty: Type) -> Type {
-        cls.substitution(cls.class_object().tparams())
-            .substitute(ty)
+        cls.substitution(cls.tparams()).substitute(ty)
     }
 
     /// Get an ancestor `ClassType`, in terms of the type parameters of `class`.
