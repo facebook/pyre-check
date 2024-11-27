@@ -148,11 +148,46 @@ table!(
 #[derive(Debug, Clone)]
 pub struct AnswersSolver<'a> {
     exports: &'a LookupExport,
-    answers: &'a SmallMap<ModuleName, Answers<'a>>,
+    answers: LookupAnswer<'a>,
     current: &'a Answers<'a>,
     pub uniques: &'a UniqueFactory,
     pub recurser: &'a Recurser<Var>,
     pub stdlib: &'a Stdlib,
+}
+
+#[derive(Debug, Clone, Dupe, Copy)]
+pub struct LookupAnswer<'a>(&'a SmallMap<ModuleName, Answers<'a>>);
+
+impl<'a> LookupAnswer<'a> {
+    pub fn new(answers: &'a SmallMap<ModuleName, Answers<'a>>) -> Self {
+        Self(answers)
+    }
+
+    pub fn get<K: Solve + Exported>(
+        &self,
+        name: ModuleName,
+        k: &K,
+        exports: &LookupExport,
+        uniques: &UniqueFactory,
+        stdlib: &Stdlib,
+    ) -> Arc<K::Answer>
+    where
+        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
+        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+    {
+        let new_answers = AnswersSolver {
+            current: self.0.get(&name).unwrap(),
+            exports,
+            answers: *self,
+            uniques,
+            stdlib,
+            recurser: &Recurser::new(),
+        };
+        let mut ans = Arc::unwrap_or_clone(new_answers.get(k));
+        // Must force these variables using the solver associated with the module the type came from
+        K::visit_type_mut(&mut ans, &mut |t| new_answers.solver().deep_force_mut(t));
+        Arc::new(ans)
+    }
 }
 
 pub trait Solve: Keyed {
@@ -347,7 +382,7 @@ impl<'a> Answers<'a> {
     pub fn solve(
         &self,
         exports: &LookupExport,
-        answers: &SmallMap<ModuleName, Answers>,
+        answers: LookupAnswer,
         stdlib: &Stdlib,
         uniques: &'a UniqueFactory,
     ) -> Solutions {
@@ -393,7 +428,7 @@ impl<'a> Answers<'a> {
         module: ModuleName,
         name: &Name,
         exports: &LookupExport,
-        answers: &SmallMap<ModuleName, Answers<'_>>,
+        answers: LookupAnswer,
         uniques: &'a UniqueFactory,
     ) -> Option<Class> {
         let solver = AnswersSolver {
@@ -447,16 +482,8 @@ impl<'a> AnswersSolver<'a> {
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        let new_current = self.answers.get(&name).unwrap();
-        let new_answers = AnswersSolver {
-            current: new_current,
-            recurser: &Recurser::new(),
-            ..self.clone()
-        };
-        let mut ans = Arc::unwrap_or_clone(new_answers.get(k));
-        // Must force these variables using the solver associated with the module the type came from
-        K::visit_type_mut(&mut ans, &mut |t| new_current.solver.deep_force_mut(t));
-        Arc::new(ans)
+        self.answers
+            .get(name, k, self.exports, self.uniques, self.stdlib)
     }
 
     pub fn get_from_class<K: Solve + Exported>(&self, cls: &Class, k: &K) -> Arc<K::Answer>

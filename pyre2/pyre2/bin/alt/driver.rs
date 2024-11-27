@@ -22,6 +22,7 @@ use starlark_map::small_map::SmallMap;
 use tracing::info;
 
 use crate::alt::answers::Answers;
+use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
 use crate::alt::binding::Key;
@@ -329,7 +330,7 @@ impl Driver {
         } else {
             small_map::map
         })(&answers, |_, x: &Answers| {
-            x.solve(&exports, &answers, &stdlib, &uniques)
+            x.solve(&exports, LookupAnswer::new(&answers), &stdlib, &uniques)
         });
         timers.add((timers_global_module(), Step::Solve, 0));
 
@@ -535,10 +536,13 @@ fn make_stdlib(
     uniques: &UniqueFactory,
 ) -> Stdlib {
     let lookup_class = |module: ModuleName, name: &Name| {
-        answers
-            .get(&module)
-            .unwrap()
-            .lookup_class_without_stdlib(module, name, exports, answers, uniques)
+        answers.get(&module).unwrap().lookup_class_without_stdlib(
+            module,
+            name,
+            exports,
+            LookupAnswer::new(answers),
+            uniques,
+        )
     };
     Stdlib::new(lookup_class)
 }
