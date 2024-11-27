@@ -28,7 +28,6 @@ use crate::ast::Ast;
 use crate::graph::index::Idx;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
-use crate::types::class::Substitution;
 use crate::types::class::TArgs;
 use crate::types::literal::Lit;
 use crate::types::mro::Mro;
@@ -183,10 +182,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn get_substitution(&self, class: &ClassType) -> Substitution {
-        class.substitution(class.tparams())
-    }
-
     /// If the base class is a "normal" generic base (not `Protocol` or `Generic`), then
     /// call `f` on each `Quantified` in left-to-right order.
     fn for_each_quantified_if_not_special(&self, base: &BaseClass, f: &mut impl FnMut(Quantified)) {
@@ -291,7 +286,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             cls,
             bases,
             &|cls| self.get_mro_for_class(cls),
-            &|base| self.get_substitution(base),
             self.errors(),
         )
     }
@@ -374,7 +368,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn instantiate_class_member(&self, cls: &ClassType, ty: Type) -> Type {
-        cls.substitution(cls.tparams()).substitute(ty)
+        cls.substitution().substitute(ty)
     }
 
     /// Get an ancestor `ClassType`, in terms of the type parameters of `class`.
@@ -400,7 +394,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(class.clone())
         } else {
             self.get_ancestor(class.class_object(), want)
-                .map(|ancestor| ancestor.substitute(&self.get_substitution(class)))
+                .map(|ancestor| ancestor.substitute(&class.substitution()))
         }
     }
 

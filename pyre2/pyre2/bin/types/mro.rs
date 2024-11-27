@@ -16,7 +16,6 @@ use vec1::Vec1;
 use crate::error::collector::ErrorCollector;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
-use crate::types::class::Substitution;
 use crate::types::qname::QName;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
@@ -85,10 +84,9 @@ impl Mro {
         cls: &Class,
         bases: Vec<ClassType>,
         get_mro: &dyn Fn(&Class) -> Arc<Mro>,
-        get_substitution: &dyn Fn(&ClassType) -> Substitution,
         errors: &ErrorCollector,
     ) -> Mro {
-        match Linearization::new(cls, bases, get_mro, get_substitution, errors) {
+        match Linearization::new(cls, bases, get_mro, errors) {
             Linearization::Cyclic => Self::cyclic(),
             Linearization::Resolved(ancestor_chains) => {
                 let ancestors = Linearization::merge(cls, ancestor_chains, errors);
@@ -168,7 +166,6 @@ impl Linearization {
         cls: &Class,
         bases: Vec<ClassType>,
         get_mro: &dyn Fn(&Class) -> Arc<Mro>,
-        get_substitution: &dyn Fn(&ClassType) -> Substitution,
         errors: &ErrorCollector,
     ) -> Linearization {
         let mut bases = match Vec1::try_from_vec(bases) {
@@ -177,12 +174,11 @@ impl Linearization {
         };
         let mut ancestor_chains = Vec::new();
         for base in bases.iter() {
-            let base_substitution = get_substitution(base);
             match &*get_mro(base.class_object()) {
                 Mro(MroInner::Resolved(ancestors)) => {
                     let ancestors_through_base = ancestors
                         .iter()
-                        .map(|ancestor| ancestor.substitute(&base_substitution))
+                        .map(|ancestor| ancestor.substitute(&base.substitution()))
                         .rev()
                         .collect::<Vec<_>>();
                     ancestor_chains.push(AncestorChain::from_base_and_ancestors(

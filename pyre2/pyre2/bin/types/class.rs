@@ -225,7 +225,8 @@ impl ClassType {
         Self(self.0.dupe(), self.1.substitute(substitution))
     }
 
-    pub fn substitution(&self, tparams: &QuantifiedVec) -> Substitution {
+    pub fn substitution(&self) -> Substitution {
+        let tparams = self.tparams();
         let targs = &self.1.as_slice();
         if targs.len() != tparams.len() {
             // Invariant violation: all type arguments should be constructed through
