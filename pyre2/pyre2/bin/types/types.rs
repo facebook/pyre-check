@@ -109,10 +109,6 @@ impl Quantified {
     pub fn id(&self) -> Unique {
         self.unique
     }
-
-    pub fn zero(&mut self) {
-        self.unique = Unique::zero();
-    }
 }
 
 /// We sometimes need a vector of these - mostly done to give them a nice Display.
@@ -498,16 +494,6 @@ impl Type {
     pub fn deterministic_printing(self) -> Self {
         self.transform(|ty| {
             match ty {
-                Type::Forall(qs, _) => {
-                    // FIXME: Should store the name along side, and print that.
-                    for q in qs {
-                        q.zero();
-                    }
-                }
-                Type::Quantified(q) => {
-                    // FIXME: Should store the name along side, and print that.
-                    q.zero();
-                }
                 Type::Var(v) => {
                     // FIXME: Should mostly be forcing these before printing
                     v.zero();
