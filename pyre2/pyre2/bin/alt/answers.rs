@@ -450,6 +450,7 @@ impl<'a> AnswersSolver<'a> {
         let new_current = self.answers.get(&name).unwrap();
         let new_answers = AnswersSolver {
             current: new_current,
+            recurser: &Recurser::new(),
             ..self.clone()
         };
         let mut ans = Arc::unwrap_or_clone(new_answers.get(k));
