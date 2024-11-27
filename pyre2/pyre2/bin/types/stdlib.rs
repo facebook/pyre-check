@@ -50,29 +50,33 @@ impl Stdlib {
     }
 
     pub fn new(mut lookup_class: impl FnMut(ModuleName, &Name) -> Option<Class>) -> Self {
-        Self {
-            str: lookup_class(ModuleName::builtins(), &Name::new("str")),
-            bool: lookup_class(ModuleName::builtins(), &Name::new("bool")),
-            int: lookup_class(ModuleName::builtins(), &Name::new("int")),
-            bytes: lookup_class(ModuleName::builtins(), &Name::new("bytes")),
-            float: lookup_class(ModuleName::builtins(), &Name::new("float")),
-            complex: lookup_class(ModuleName::builtins(), &Name::new("complex")),
-            slice: lookup_class(ModuleName::builtins(), &Name::new("slice")),
-            base_exception: lookup_class(ModuleName::builtins(), &Name::new("BaseException")),
-            list: lookup_class(ModuleName::builtins(), &Name::new("list")),
-            dict: lookup_class(ModuleName::builtins(), &Name::new("dict")),
-            set: lookup_class(ModuleName::builtins(), &Name::new("set")),
-            tuple: lookup_class(ModuleName::builtins(), &Name::new("tuple")),
-            builtins_type: lookup_class(ModuleName::builtins(), &Name::new("type")),
-            ellipsis_type: lookup_class(ModuleName::types(), &Name::new("EllipsisType")),
-            none_type: lookup_class(ModuleName::types(), &Name::new("NoneType")),
-            iterable: lookup_class(ModuleName::typing(), &Name::new("Iterable")),
-            generator: lookup_class(ModuleName::typing(), &Name::new("Generator")),
-            awaitable: lookup_class(ModuleName::typing(), &Name::new("Awaitable")),
-            coroutine: lookup_class(ModuleName::typing(), &Name::new("Coroutine")),
-            traceback_type: lookup_class(ModuleName::types(), &Name::new("TracebackType")),
+        let builtins = ModuleName::builtins();
+        let types = ModuleName::types();
+        let typing = ModuleName::typing();
 
-            object_class_type: lookup_class(ModuleName::builtins(), &Name::new("object"))
+        Self {
+            str: lookup_class(builtins, &Name::new("str")),
+            bool: lookup_class(builtins, &Name::new("bool")),
+            int: lookup_class(builtins, &Name::new("int")),
+            bytes: lookup_class(builtins, &Name::new("bytes")),
+            float: lookup_class(builtins, &Name::new("float")),
+            complex: lookup_class(builtins, &Name::new("complex")),
+            slice: lookup_class(builtins, &Name::new("slice")),
+            base_exception: lookup_class(builtins, &Name::new("BaseException")),
+            list: lookup_class(builtins, &Name::new("list")),
+            dict: lookup_class(builtins, &Name::new("dict")),
+            set: lookup_class(builtins, &Name::new("set")),
+            tuple: lookup_class(builtins, &Name::new("tuple")),
+            builtins_type: lookup_class(builtins, &Name::new("type")),
+            ellipsis_type: lookup_class(types, &Name::new("EllipsisType")),
+            none_type: lookup_class(types, &Name::new("NoneType")),
+            iterable: lookup_class(typing, &Name::new("Iterable")),
+            generator: lookup_class(typing, &Name::new("Generator")),
+            awaitable: lookup_class(typing, &Name::new("Awaitable")),
+            coroutine: lookup_class(typing, &Name::new("Coroutine")),
+            traceback_type: lookup_class(types, &Name::new("TracebackType")),
+
+            object_class_type: lookup_class(builtins, &Name::new("object"))
                 .map(|obj| ClassType::create_with_validated_targs(obj, TArgs::default())),
         }
     }
