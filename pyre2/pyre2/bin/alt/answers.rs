@@ -185,19 +185,11 @@ impl<'a> LookupAnswer
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
         let (current, bindings, errors) = SmallMap::get(self, &name).unwrap();
-        let new_answers = AnswersSolver {
-            current,
-            bindings,
-            errors,
-            exports,
-            answers: *self,
-            uniques,
-            stdlib,
-            recurser: &Recurser::new(),
-        };
-        let mut ans = Arc::unwrap_or_clone(new_answers.get(k));
+        let mut ans = Arc::unwrap_or_clone(
+            current.solve_key(exports, self, bindings, errors, stdlib, uniques, k),
+        );
         // Must force these variables using the solver associated with the module the type came from
-        K::visit_type_mut(&mut ans, &mut |t| new_answers.solver().deep_force_mut(t));
+        K::visit_type_mut(&mut ans, &mut |t| current.solver.deep_force_mut(t));
         Arc::new(ans)
     }
 }
@@ -478,6 +470,33 @@ impl Answers {
                 None
             }
         }
+    }
+
+    pub fn solve_key<Ans: LookupAnswer, K: Solve<Ans>>(
+        &self,
+        exports: &dyn LookupExport,
+        answers: Ans,
+        bindings: &Bindings,
+        errors: &ErrorCollector,
+        stdlib: &Stdlib,
+        uniques: &UniqueFactory,
+        key: &K,
+    ) -> Arc<K::Answer>
+    where
+        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
+        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+    {
+        let solver = AnswersSolver {
+            stdlib,
+            uniques,
+            answers,
+            bindings,
+            errors,
+            exports,
+            recurser: &Recurser::new(),
+            current: self,
+        };
+        solver.get(key)
     }
 }
 
