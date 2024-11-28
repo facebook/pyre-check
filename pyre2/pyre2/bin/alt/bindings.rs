@@ -1091,7 +1091,7 @@ impl<'a> BindingsBuilder<'a> {
 
         self.bind_definition(
             &x.name.clone(),
-            Binding::Class(x, fields, bases, legacy_tparams),
+            Binding::ClassDef(x, fields, bases, legacy_tparams),
             None,
         );
     }
