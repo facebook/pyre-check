@@ -16,6 +16,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::types::callable::Arg;
+use crate::types::callable::Args;
 use crate::types::callable::Callable;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
@@ -192,6 +193,13 @@ impl AnyStyle {
         match self {
             Self::Implicit | Self::Error => Type::Any(self),
             Self::Explicit => Type::Any(Self::Implicit),
+        }
+    }
+
+    pub fn propagate_callable(self) -> Callable {
+        Callable {
+            args: Args::Ellipsis,
+            ret: self.propagate(),
         }
     }
 }

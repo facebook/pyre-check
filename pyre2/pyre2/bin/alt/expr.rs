@@ -134,10 +134,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None
                 }
             }
-            Type::Any(style) => Some(Callable {
-                args: Args::Ellipsis,
-                ret: style.propagate(),
-            }),
+            Type::Any(style) => Some(style.propagate_callable()),
             Type::TypeAlias(ta) => {
                 if let Some(t) = ta.as_value() {
                     self.as_callable(t)
@@ -198,7 +195,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         |c| self.call_infer(c, args, keywords, check_arg, range),
                     )
                 }
-                Some(ClassAttributeBase::Any(style)) => style.propagate(),
+                Some(ClassAttributeBase::Any(style)) => {
+                    self.call_infer(style.propagate_callable(), args, keywords, check_arg, range)
+                }
                 None => self.error(
                     range,
                     format!(

@@ -517,3 +517,23 @@ def foo(a: tuple[int, ...], b: NoneType, c: EllipsisType) -> None:
     c2: object = c
 "#,
 );
+
+simple_test!(
+    test_subscript_assign_any_check_rhs,
+    r#"
+from typing import Any
+def expect_str(x: str): ...
+def test(x: Any):
+    x[0] += expect_str(0) # E: EXPECTED Literal[0] <: str
+"#,
+);
+
+simple_test!(
+    test_aug_assign_any_check_rhs,
+    r#"
+from typing import Any
+def expect_str(x: str): ...
+def test(x: Any):
+    x += expect_str(0) # E: EXPECTED Literal[0] <: str
+"#,
+);
