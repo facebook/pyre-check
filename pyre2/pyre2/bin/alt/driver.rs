@@ -10,8 +10,6 @@ use std::mem;
 use std::sync::Mutex;
 
 use dupe::Dupe;
-use human_bytes::human_bytes;
-use memory_stats::memory_stats;
 use parse_display::Display;
 use rayon::prelude::*;
 use ruff_python_ast::name::Name;
@@ -48,6 +46,7 @@ use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
 use crate::util::display::DisplayWith;
+use crate::util::memory::MemoryUsage;
 use crate::util::prelude::SliceExt;
 use crate::util::small_map;
 use crate::util::timer::TimerContext;
@@ -334,8 +333,8 @@ impl Driver {
         info_eprintln(format!("Total errors: {}", error_count));
         let printing = timers.add((timers_global_module(), Step::PrintErrors, error_count));
 
-        if let Some(memory) = memory_stats() {
-            eprintln!("Memory usage: {}", human_bytes(memory.physical_mem as f64));
+        if let Some(memory) = MemoryUsage::new().physical {
+            eprintln!("Memory usage: {memory}");
         }
 
         let total = timers.total();

@@ -10,6 +10,7 @@
 pub mod arc_id;
 pub mod display;
 pub mod fs_anyhow;
+pub mod memory;
 pub mod panic;
 pub mod prelude;
 pub mod recurser;
