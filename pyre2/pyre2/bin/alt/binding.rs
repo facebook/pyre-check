@@ -271,6 +271,8 @@ pub enum Binding {
     /// If the annotation has a type inside it (e.g. `int` then use the annotation).
     /// If the annotation doesn't (e.g. it's `Final`), then use the binding.
     AnnotatedType(Idx<KeyAnnotation>, Box<Binding>),
+    /// A record of an "augmented assignment" statement like `x -= _`
+    /// or `a.b *= _`. These desugar to special method calls.
     AugAssign(StmtAugAssign),
     /// The Any type.
     AnyType(AnyStyle),
