@@ -537,3 +537,12 @@ def test(x: Any):
     x += expect_str(0) # E: EXPECTED Literal[0] <: str
 "#,
 );
+
+simple_test!(
+    test_aug_assign_error_check_rhs,
+    r#"
+def expect_str(x: str): ...
+def test(x: None):
+    x += expect_str(0) # E: Expected class, got None # E: EXPECTED Literal[0] <: str
+"#,
+);

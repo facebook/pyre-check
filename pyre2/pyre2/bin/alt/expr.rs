@@ -198,13 +198,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(ClassAttributeBase::Any(style)) => {
                     self.call_infer(style.propagate_callable(), args, keywords, check_arg, range)
                 }
-                None => self.error(
-                    range,
-                    format!(
-                        "Expected class, got {}",
-                        ty.clone().deterministic_printing()
-                    ),
-                ),
+                None => {
+                    let callable = self.error_callable(
+                        range,
+                        format!(
+                            "Expected class, got {}",
+                            ty.clone().deterministic_printing()
+                        ),
+                    );
+                    self.call_infer(callable, args, keywords, check_arg, range)
+                }
             }
         })
     }
