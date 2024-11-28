@@ -164,7 +164,8 @@ pub trait LookupAnswer: Sized {
     ) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
-        BindingTable: TableKeyed<K, Value = BindingEntry<K>>;
+        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+        Solutions: TableKeyed<K, Value = SolutionsEntry<K>>;
 }
 
 impl<'a> LookupAnswer
@@ -508,6 +509,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+        Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         if name == self.module_info().name() {
             self.get(k)
@@ -521,6 +523,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+        Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         self.get_from_module(cls.module_info().name(), k)
     }
