@@ -240,6 +240,12 @@ impl ClassType {
         &mut self.1
     }
 
+    /// Instantiate a type that is relative to the class type parameters
+    /// by substituting in the type arguments.
+    pub fn instantiate_member(&self, ty: Type) -> Type {
+        self.substitution().substitute(ty)
+    }
+
     /// Rewrite type arguments of some class relative to another.
     ///
     /// This is used to propagate instantiation of base class type parameters when computing

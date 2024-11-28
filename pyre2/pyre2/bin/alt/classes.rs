@@ -367,10 +367,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ClassType::new(cls.dupe(), targs)
     }
 
-    fn instantiate_class_member(&self, cls: &ClassType, ty: Type) -> Type {
-        cls.substitution().substitute(ty)
-    }
-
     /// Get an ancestor `ClassType`, in terms of the type parameters of `class`.
     fn get_ancestor(&self, class: &Class, want: &Class) -> Option<ClassType> {
         self.get_mro_for_class(class)
@@ -420,7 +416,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.get_class_field(ancestor.class_object(), name)
                         .as_deref()
                         .map(|ty| {
-                            let raw_member = self.instantiate_class_member(ancestor, ty.clone());
+                            let raw_member = ancestor.instantiate_member(ty.clone());
                             Arc::new(raw_member)
                         })
                 })
@@ -435,7 +431,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Type> {
         self.get_class_member(cls.class_object(), name)
             .map(|member_ty| {
-                let instantiated_ty = self.instantiate_class_member(cls, (*member_ty).clone());
+                let instantiated_ty = cls.instantiate_member((*member_ty).clone());
                 strip_first_argument(&instantiated_ty)
             })
     }
@@ -516,7 +512,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn get_constructor_for_class_type(&self, cls: &ClassType) -> Type {
         let init_ty = self.get_init_method(cls.class_object());
-        self.instantiate_class_member(cls, init_ty)
+        cls.instantiate_member(init_ty)
     }
 
     pub fn get_constructor_for_class_object(&self, cls: &Class) -> Type {
