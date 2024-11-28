@@ -146,15 +146,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn as_callable_or_error(
-        &self,
-        ty: Type,
-        call_style: CallStyle,
-        range: TextRange,
-        callable_to_type: impl FnOnce(Callable) -> Type,
-    ) -> Type {
+    fn as_callable_or_error(&self, ty: Type, call_style: CallStyle, range: TextRange) -> Callable {
         match self.as_callable(ty.clone()) {
-            Some(callable) => callable_to_type(callable),
+            Some(callable) => callable,
             None => {
                 let expect_message = match call_style {
                     CallStyle::ClassAndMethod(class, method) => {
@@ -165,7 +159,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     CallStyle::FreeForm => "Expected a callable".to_owned(),
                 };
-                self.error(
+                self.error_callable(
                     range,
                     format!("{}, got {}", expect_message, ty.deterministic_printing()),
                 )
@@ -184,7 +178,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         check_arg: &dyn Fn(&T, Option<&Type>),
     ) -> Type {
         self.distribute_over_union(ty, |ty| {
-            match as_class_attribute_base(ty.clone(), self.stdlib) {
+            let callable = match as_class_attribute_base(ty.clone(), self.stdlib) {
                 Some(ClassAttributeBase::ClassType(class)) => {
                     let method_type =
                         self.get_instance_attribute_or_error(&class, method_name, range);
@@ -192,23 +186,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         method_type,
                         CallStyle::ClassAndMethod(class.name(), method_name),
                         range,
-                        |c| self.call_infer(c, args, keywords, check_arg, range),
                     )
                 }
-                Some(ClassAttributeBase::Any(style)) => {
-                    self.call_infer(style.propagate_callable(), args, keywords, check_arg, range)
-                }
-                None => {
-                    let callable = self.error_callable(
-                        range,
-                        format!(
-                            "Expected class, got {}",
-                            ty.clone().deterministic_printing()
-                        ),
-                    );
-                    self.call_infer(callable, args, keywords, check_arg, range)
-                }
-            }
+                Some(ClassAttributeBase::Any(style)) => style.propagate_callable(),
+                None => self.error_callable(
+                    range,
+                    format!(
+                        "Expected class, got {}",
+                        ty.clone().deterministic_printing()
+                    ),
+                ),
+            };
+            self.call_infer(callable, args, keywords, check_arg, range)
         })
     }
 
@@ -453,19 +442,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let binop_call = |op: Operator, lhs: &Type, rhs: Type, range: TextRange| -> Type {
             // TODO(yangdanny): handle reflected dunder methods
             let method_type = self.attr_infer(lhs, &Name::new(op.dunder()), range);
-            self.as_callable_or_error(method_type, CallStyle::BinaryOp(op), range, |c| {
-                self.call_infer(
-                    c,
-                    &[TypeCallArg::new(rhs, range)],
-                    &[],
-                    &|arg, hint| {
-                        if let Some(hint) = hint {
-                            self.check_type(hint, &arg.ty, arg.range);
-                        }
-                    },
-                    range,
-                )
-            })
+            let callable = self.as_callable_or_error(method_type, CallStyle::BinaryOp(op), range);
+            self.call_infer(
+                callable,
+                &[TypeCallArg::new(rhs, range)],
+                &[],
+                &|arg, hint| {
+                    if let Some(hint) = hint {
+                        self.check_type(hint, &arg.ty, arg.range);
+                    }
+                },
+                range,
+            )
         };
         let lhs = self.expr_infer(&x.left);
         let rhs = self.expr_infer(&x.right);
@@ -858,21 +846,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     let func_range = x.func.range();
                     self.distribute_over_union(&ty_fun, |ty| {
-                        self.as_callable_or_error(
-                            ty.clone(),
-                            CallStyle::FreeForm,
-                            func_range,
-                            |c| {
-                                self.call_infer(
-                                    c,
-                                    &x.arguments.args,
-                                    &x.arguments.keywords,
-                                    &|arg, hint| {
-                                        self.expr(arg, hint);
-                                    },
-                                    func_range,
-                                )
+                        let callable =
+                            self.as_callable_or_error(ty.clone(), CallStyle::FreeForm, func_range);
+                        self.call_infer(
+                            callable,
+                            &x.arguments.args,
+                            &x.arguments.keywords,
+                            &|arg, hint| {
+                                self.expr(arg, hint);
                             },
+                            func_range,
                         )
                     })
                 }

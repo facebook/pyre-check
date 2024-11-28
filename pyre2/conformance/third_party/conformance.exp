@@ -21867,6 +21867,16 @@
     },
     {
       "code": -2,
+      "column": 53,
+      "concise_description": "TODO: Answers::apply_special_form cannot handle `ReadOnly[list[str]]`",
+      "description": "TODO: Answers::apply_special_form cannot handle `ReadOnly[list[str]]`",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 72,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "Expected `dict.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[dict[str, list[str] | str]], _PyreReadOnly_[str]], _PyreReadOnly_[list[str] | str]] | Callable[[dict[str, list[str] | str], str], list[str] | str]",
       "description": "Expected `dict.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[dict[str, list[str] | str]], _PyreReadOnly_[str]], _PyreReadOnly_[list[str] | str]] | Callable[[dict[str, list[str] | str], str], list[str] | str]",
@@ -22634,6 +22644,26 @@
       "name": "PyreError",
       "stop_column": 27,
       "stop_line": 73
+    },
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "TODO: Answers::apply_special_form cannot handle `Required[str]`",
+      "description": "TODO: Answers::apply_special_form cannot handle `Required[str]`",
+      "line": 74,
+      "name": "PyreError",
+      "stop_column": 46,
+      "stop_line": 74
+    },
+    {
+      "code": -2,
+      "column": 63,
+      "concise_description": "TODO: Answers::apply_special_form cannot handle `NotRequired[\"RecursiveMovie\"]`",
+      "description": "TODO: Answers::apply_special_form cannot handle `NotRequired[\"RecursiveMovie\"]`",
+      "line": 74,
+      "name": "PyreError",
+      "stop_column": 92,
+      "stop_line": 74
     }
   ],
   "typeddicts_type_consistency.py": [

@@ -539,10 +539,21 @@ def test(x: Any):
 );
 
 simple_test!(
-    test_aug_assign_error_check_rhs,
+    test_aug_assign_error_not_class_check_rhs,
     r#"
 def expect_str(x: str): ...
 def test(x: None):
     x += expect_str(0) # E: Expected class, got None # E: EXPECTED Literal[0] <: str
+"#,
+);
+
+simple_test!(
+    test_aug_assign_error_not_callable_check_rhs,
+    r#"
+def expect_str(x: str): ...
+class C:
+    __iadd__: None = None
+def test(x: C):
+    x += expect_str(0) # E: Expected `C.__iadd__` to be a callable, got None # E: EXPECTED Literal[0] <: str
 "#,
 );

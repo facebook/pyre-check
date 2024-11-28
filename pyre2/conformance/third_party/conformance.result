@@ -1619,7 +1619,7 @@
     "Line 21: Unexpected errors ['EXPECTED dict[str, list[@_] | str] <: Band']",
     "Line 23: Unexpected errors ['Object of class `Band` has no attribute `__setitem__`']",
     "Line 25: Unexpected errors ['Object of class `Band` has no attribute `__getitem__`']",
-    "Line 31: Unexpected errors ['Expected a callable, got object']",
+    "Line 31: Unexpected errors ['Expected a callable, got object', 'TODO: Answers::apply_special_form cannot handle `ReadOnly[list[str]]`']",
     "Line 37: Unexpected errors ['Expected `dict.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[dict[str, list[str] | str]], _PyreReadOnly_[str]], _PyreReadOnly_[list[str] | str]] | Callable[[dict[str, list[str] | str], str], list[str] | str]']",
     "Line 44: Unexpected errors ['untype, got object']",
     "Line 49: Unexpected errors ['EXPECTED dict[str, int | str] <: Movie1']",
@@ -1697,7 +1697,8 @@
     "Line 66: Unexpected errors ['untype, got object']",
     "Line 68: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[int]`']",
     "Line 70: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[Annotated[int, \"\"]]`']",
-    "Line 73: Unexpected errors ['Expected a callable, got object']"
+    "Line 73: Unexpected errors ['Expected a callable, got object']",
+    "Line 74: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[str]`', 'TODO: Answers::apply_special_form cannot handle `NotRequired[\"RecursiveMovie\"]`']"
   ],
   "typeddicts_type_consistency.py": [
     "Line 10: Unexpected errors ['untype, got object']",
