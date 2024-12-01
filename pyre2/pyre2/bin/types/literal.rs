@@ -24,6 +24,7 @@ use ruff_python_ast::Identifier;
 use ruff_python_ast::Number;
 use ruff_python_ast::UnaryOp;
 use ruff_text_size::TextRange;
+use static_assertions::assert_eq_size;
 
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
@@ -31,6 +32,8 @@ use crate::module::module_info::ModuleInfo;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
+
+assert_eq_size!(Lit, [u8; 56]);
 
 /// A literal value.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
