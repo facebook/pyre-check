@@ -145,7 +145,7 @@ table!(
 #[derive(Clone)]
 pub struct AnswersSolver<'a, Ans: LookupAnswer> {
     exports: &'a dyn LookupExport,
-    answers: Ans,
+    answers: &'a Ans,
     current: &'a Answers,
     errors: &'a ErrorCollector,
     bindings: &'a Bindings,
@@ -169,9 +169,7 @@ pub trait LookupAnswer: Sized {
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>;
 }
 
-impl<'a> LookupAnswer
-    for &'a SmallMap<ModuleName, (&'a Answers, &'a Bindings, &'a ErrorCollector)>
-{
+impl<'a> LookupAnswer for SmallMap<ModuleName, (&'a Answers, &'a Bindings, &'a ErrorCollector)> {
     fn get<K: Solve<Self> + Exported>(
         &self,
         name: ModuleName,
@@ -370,7 +368,7 @@ impl Answers {
     pub fn solve<Ans: LookupAnswer>(
         &self,
         exports: &dyn LookupExport,
-        answers: Ans,
+        answers: &Ans,
         bindings: &Bindings,
         errors: &ErrorCollector,
         stdlib: &Stdlib,
@@ -424,7 +422,7 @@ impl Answers {
         module: ModuleName,
         name: &Name,
         exports: &dyn LookupExport,
-        answers: Ans,
+        answers: &Ans,
         uniques: &UniqueFactory,
     ) -> Option<Class> {
         let solver = AnswersSolver {
@@ -455,7 +453,7 @@ impl Answers {
     pub fn solve_key<Ans: LookupAnswer, K: Solve<Ans>>(
         &self,
         exports: &dyn LookupExport,
-        answers: Ans,
+        answers: &Ans,
         bindings: &Bindings,
         errors: &ErrorCollector,
         stdlib: &Stdlib,
