@@ -8,9 +8,13 @@
 use std::fmt;
 use std::fmt::Display;
 
+use dupe::Dupe;
 use human_bytes::human_bytes;
 use memory_stats::memory_stats;
 
+#[derive(
+    Debug, Clone, Copy, Dupe, Default, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct Bytes(usize);
 
 impl Display for Bytes {
@@ -19,8 +23,19 @@ impl Display for Bytes {
     }
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct MemoryUsage {
     pub physical: Option<Bytes>,
+}
+
+impl Display for MemoryUsage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(physical) = self.physical {
+            write!(f, "physical {physical}")
+        } else {
+            write!(f, "unknown")
+        }
+    }
 }
 
 impl MemoryUsage {

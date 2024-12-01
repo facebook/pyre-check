@@ -333,9 +333,7 @@ impl Driver {
         info_eprintln(format!("Total errors: {}", error_count));
         let printing = timers.add((timers_global_module(), Step::PrintErrors, error_count));
 
-        if let Some(memory) = MemoryUsage::new().physical {
-            eprintln!("Memory usage: {memory}");
-        }
+        eprintln!("Memory usage: {}", MemoryUsage::new());
 
         let total = timers.total();
         info_eprintln(format!(
