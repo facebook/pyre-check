@@ -43,7 +43,7 @@ assert_eq_size!(KeyMro, [usize; 1]);
 assert_eq_size!(KeyTypeParams, [usize; 1]);
 assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 
-assert_eq_size!(Binding, [usize; 16]);
+assert_eq_size!(Binding, [usize; 12]);
 assert_eq_size!(BindingAnnotation, [usize; 10]);
 assert_eq_size!(BindingMro, [usize; 4]);
 assert_eq_size!(BindingTypeParams, [usize; 6]);
@@ -310,7 +310,7 @@ pub enum Binding {
     /// A type parameter.
     TypeParameter(Quantified),
     /// A function definition, but with the return/body stripped out.
-    Function(StmtFunctionDef, FunctionKind),
+    Function(Box<StmtFunctionDef>, FunctionKind),
     /// An import statement, typically with Self::Import.
     Import(ModuleName, Name),
     /// A class definition, but with the body stripped out.

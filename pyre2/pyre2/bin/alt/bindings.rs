@@ -954,7 +954,7 @@ impl<'a> BindingsBuilder<'a> {
                 .insert(method.name.id.clone(), method.instance_attributes.clone());
         }
 
-        self.bind_definition(&x.name.clone(), Binding::Function(x, kind), None);
+        self.bind_definition(&x.name.clone(), Binding::Function(Box::new(x), kind), None);
 
         let mut return_exprs = Vec::new();
         while self.returns.len() > return_count {
