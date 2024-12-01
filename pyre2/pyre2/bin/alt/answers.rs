@@ -1051,30 +1051,36 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 let mut args = Vec::with_capacity(x.parameters.len());
                 args.extend(x.parameters.posonlyargs.iter().map(|x| {
-                    let annot = self.get(&KeyAnnotation::Annotation(x.parameter.name.clone()));
+                    let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
+                        &x.parameter.name,
+                    )));
                     let ty = annot.get_type();
                     let required = check_default(&x.default, ty);
                     Arg::PosOnly(ty.clone(), required)
                 }));
                 args.extend(x.parameters.args.iter().map(|x| {
-                    let annot = self.get(&KeyAnnotation::Annotation(x.parameter.name.clone()));
+                    let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
+                        &x.parameter.name,
+                    )));
                     let ty = annot.get_type();
                     let required = check_default(&x.default, ty);
                     Arg::Pos(x.parameter.name.id.clone(), ty.clone(), required)
                 }));
                 args.extend(x.parameters.vararg.iter().map(|x| {
-                    let annot = self.get(&KeyAnnotation::Annotation(x.name.clone()));
+                    let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(&x.name)));
                     let ty = annot.get_type();
                     Arg::VarArg(ty.clone())
                 }));
                 args.extend(x.parameters.kwonlyargs.iter().map(|x| {
-                    let annot = self.get(&KeyAnnotation::Annotation(x.parameter.name.clone()));
+                    let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
+                        &x.parameter.name,
+                    )));
                     let ty = annot.get_type();
                     let required = check_default(&x.default, ty);
                     Arg::KwOnly(x.parameter.name.id.clone(), ty.clone(), required)
                 }));
                 args.extend(x.parameters.kwarg.iter().map(|x| {
-                    let annot = self.get(&KeyAnnotation::Annotation(x.name.clone()));
+                    let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(&x.name)));
                     let ty = annot.get_type();
                     Arg::Kwargs(ty.clone())
                 }));

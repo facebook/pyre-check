@@ -842,9 +842,10 @@ impl<'a> BindingsBuilder<'a> {
                     }
                 }
             };
-            let ann_key = self
-                .table
-                .insert(KeyAnnotation::Annotation(name.clone()), ann_val);
+            let ann_key = self.table.insert(
+                KeyAnnotation::Annotation(ShortIdentifier::new(name)),
+                ann_val,
+            );
             let bind_key = self.table.insert(
                 Key::Definition(ShortIdentifier::new(name)),
                 Binding::AnnotatedType(ann_key, Box::new(Binding::AnyType(AnyStyle::Implicit))),
@@ -959,7 +960,7 @@ impl<'a> BindingsBuilder<'a> {
             return_exprs.push(self.returns.pop().unwrap());
         }
         let return_ann = return_annotation.map(|x| {
-            let key = KeyAnnotation::ReturnAnnotation(func_name.clone());
+            let key = KeyAnnotation::ReturnAnnotation(ShortIdentifier::new(&func_name));
             self.table
                 .insert(key.clone(), BindingAnnotation::AnnotateExpr(*x, self_type))
         });
@@ -1202,7 +1203,7 @@ impl<'a> BindingsBuilder<'a> {
             Stmt::AnnAssign(mut x) => match *x.target {
                 Expr::Name(name) => {
                     let name = Ast::expr_name_identifier(name);
-                    let ann_key = KeyAnnotation::Annotation(name.clone());
+                    let ann_key = KeyAnnotation::Annotation(ShortIdentifier::new(&name));
                     self.ensure_type(&mut x.annotation, &mut BindingsBuilder::forward_lookup);
                     let ann_val = if let Some(special) = SpecialForm::new(&name.id, &x.annotation) {
                         BindingAnnotation::Type(special.to_type())

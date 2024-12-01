@@ -39,7 +39,7 @@ impl Exported for KeyTypeParams {}
 
 assert_eq_size!(Key, [usize; 5]);
 assert_eq_size!(KeyExported, [usize; 4]);
-assert_eq_size!(KeyAnnotation, [usize; 5]);
+assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
 assert_eq_size!(KeyMro, [usize; 4]);
 assert_eq_size!(KeyTypeParams, [usize; 4]);
 assert_eq_size!(KeyLegacyTypeParam, [usize; 4]);
@@ -158,9 +158,9 @@ impl DisplayWith<ModuleInfo> for KeyExported {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum KeyAnnotation {
     /// I am the annotation for this instance of a name.
-    Annotation(Identifier),
+    Annotation(ShortIdentifier),
     /// The return type annotation for a function.
-    ReturnAnnotation(Identifier),
+    ReturnAnnotation(ShortIdentifier),
     /// I am the annotation for the attribute at this range.
     AttrAnnotation(TextRange),
 }
@@ -168,18 +168,18 @@ pub enum KeyAnnotation {
 impl Ranged for KeyAnnotation {
     fn range(&self) -> TextRange {
         match self {
-            Self::Annotation(x) => x.range,
-            Self::ReturnAnnotation(x) => x.range,
+            Self::Annotation(x) => x.range(),
+            Self::ReturnAnnotation(x) => x.range(),
             Self::AttrAnnotation(r) => *r,
         }
     }
 }
 
 impl DisplayWith<ModuleInfo> for KeyAnnotation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, _: &ModuleInfo) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
         match self {
-            Self::Annotation(x) => write!(f, "annot {} {:?}", x.id, x.range),
-            Self::ReturnAnnotation(x) => write!(f, "return {} {:?}", x.id, x.range),
+            Self::Annotation(x) => write!(f, "annot {} {:?}", ctx.display(x), x.range()),
+            Self::ReturnAnnotation(x) => write!(f, "return {} {:?}", ctx.display(x), x.range()),
             Self::AttrAnnotation(r) => write!(f, "attr {:?}", r),
         }
     }
