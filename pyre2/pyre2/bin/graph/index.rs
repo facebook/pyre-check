@@ -70,10 +70,7 @@ impl<K: Eq + Hash + Debug> Index<K> {
     where
         K: Clone,
     {
-        let idx = Idx {
-            idx: self.map.len(),
-            phantom: PhantomData,
-        };
+        let idx = Idx::new(self.map.len());
         let res = self.map.insert(k.clone(), idx);
         if res.is_some() {
             panic!("Duplicate key: {k:?}");
@@ -82,10 +79,7 @@ impl<K: Eq + Hash + Debug> Index<K> {
     }
 
     pub fn insert_if_missing(&mut self, k: K) -> Idx<K> {
-        let idx = Idx {
-            idx: self.map.len(),
-            phantom: PhantomData,
-        };
+        let idx = Idx::new(self.map.len());
         *self.map.entry(k).or_insert(idx)
     }
 
@@ -102,7 +96,7 @@ impl<K: Eq + Hash + Debug> Index<K> {
     }
 
     pub fn idx_to_key(&self, idx: Idx<K>) -> &K {
-        self.map.get_index(idx.idx).unwrap().0
+        self.map.get_index(idx.idx()).unwrap().0
     }
 
     /// Does the index contain an element. Should be used very rarely.
