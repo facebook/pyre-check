@@ -471,10 +471,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     // TODO(stroxler, yangdanny) Enums can contain attributes that are not
                     // members, we eventually need to implement enough checks to know the
                     // difference.
-                    Ok(Type::Literal(Lit::Enum(
+                    Ok(Type::Literal(Lit::Enum(Box::new((
                         self.promote_to_class_type_silently(cls),
                         name.to_owned(),
-                    )))
+                    )))))
                 } else {
                     Ok(ty.as_ref().clone())
                 }

@@ -33,7 +33,7 @@ use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 
-assert_eq_size!(Lit, [u8; 48]);
+assert_eq_size!(Lit, [u8; 32]);
 
 /// A literal value.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -47,7 +47,7 @@ pub enum Lit {
     },
     Bool(bool),
     Bytes(Vec<u8>),
-    Enum(ClassType, Name),
+    Enum(Box<(ClassType, Name)>),
 }
 
 impl Display for Lit {
@@ -77,7 +77,7 @@ impl Display for Lit {
                 }
                 write!(f, "'")
             }
-            Lit::Enum(enumeration, member) => {
+            Lit::Enum(box (enumeration, member)) => {
                 let name = &enumeration.name();
                 write!(f, "{name}.{member}")
             }
@@ -118,7 +118,7 @@ impl Lit {
                 attr: member_name,
                 ctx: _,
             }) => match get_enum_class_type(Ast::expr_name_identifier(maybe_enum_name.clone())) {
-                Some(class_type) => Lit::Enum(class_type, member_name.id.to_owned()),
+                Some(class_type) => Lit::Enum(Box::new((class_type, member_name.id.to_owned()))),
                 _ => {
                     errors.todo(module_info, "Lit::from_expr", x);
                     Lit::Bool(false)
@@ -211,7 +211,7 @@ impl Lit {
             Lit::Bytes(_) => stdlib.bytes(),
             Lit::Float(_) => stdlib.float(),
             Lit::Complex { .. } => stdlib.complex(),
-            Lit::Enum(class_type, _) => class_type.clone(),
+            Lit::Enum(box (class_type, _)) => class_type.clone(),
         }
     }
 
