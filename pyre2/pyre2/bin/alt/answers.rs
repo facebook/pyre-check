@@ -1164,7 +1164,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 *r,
                                 format!(
                                     "Type parameter {} is not included in the type parameter list",
-                                    self.bindings().idx_to_key(*key).0
+                                    self.module_info()
+                                        .display(&self.bindings().idx_to_key(*key).0)
                                 ),
                             );
                         }

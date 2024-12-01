@@ -1653,7 +1653,7 @@ impl LegacyTParamBuilder {
                         .table
                         .legacy_tparams
                         .0
-                        .insert_if_missing(KeyLegacyTypeParam(id.clone())),
+                        .insert_if_missing(KeyLegacyTypeParam(ShortIdentifier::new(id))),
                     range_if_scoped_params_exist,
                 )
             })
@@ -1669,7 +1669,7 @@ impl LegacyTParamBuilder {
         for entry in self.legacy_tparams.values() {
             if let Some((identifier, key)) = entry {
                 builder.table.insert(
-                    KeyLegacyTypeParam(identifier.clone()),
+                    KeyLegacyTypeParam(ShortIdentifier::new(identifier)),
                     BindingLegacyTypeParam(*key),
                 );
                 builder
@@ -1681,7 +1681,7 @@ impl LegacyTParamBuilder {
                     .table
                     .legacy_tparams
                     .0
-                    .insert_if_missing(KeyLegacyTypeParam(identifier.clone()));
+                    .insert_if_missing(KeyLegacyTypeParam(ShortIdentifier::new(identifier)));
                 builder.bind_definition(
                     identifier,
                     // Note: we use None as the range here because the range is
@@ -1709,7 +1709,7 @@ impl LegacyTParamBuilder {
                     .table
                     .legacy_tparams
                     .0
-                    .insert_if_missing(KeyLegacyTypeParam(id.clone()))
+                    .insert_if_missing(KeyLegacyTypeParam(ShortIdentifier::new(id)))
             })
             .collect()
     }
