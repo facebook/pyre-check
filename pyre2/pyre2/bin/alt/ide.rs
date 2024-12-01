@@ -40,12 +40,8 @@ impl Driver {
 
     pub fn hover(&self, module: ModuleName, position: TextSize) -> Option<Type> {
         let id = self.identifier_at(module, position)?;
-        self.get_type_for_idx(
-            module,
-            self.get_bindings(module)?
-                .key_to_idx(&Key::Usage(ShortIdentifier::new(&id))),
-        )
-        .cloned()
+        self.get_type(module, &Key::Usage(ShortIdentifier::new(&id)))
+            .cloned()
     }
 
     fn key_to_definition(
@@ -116,12 +112,12 @@ impl Driver {
         let mut res = Vec::new();
         for idx in bindings.keys::<Key>() {
             match bindings.idx_to_key(idx) {
-                Key::ReturnType(id) => {
+                key @ Key::ReturnType(id) => {
                     match bindings.get(bindings.key_to_idx(&Key::Definition(id.clone()))) {
                         Binding::Function(x, _)
                             if !matches!(bindings.get(idx), &Binding::AnnotatedType(..)) =>
                         {
-                            if let Some(ty) = self.get_type_for_idx(module, idx)
+                            if let Some(ty) = self.get_type(module, key)
                                 && is_interesting_type(ty)
                             {
                                 res.push((x.parameters.range.end(), format!(" -> {ty}")));
@@ -136,10 +132,9 @@ impl Driver {
                         range: *range,
                     }));
                     if bindings.contains_key(&key)
-                        && let idx = bindings.key_to_idx(&key)
-                        && let Some(ty) = self.get_type_for_idx(module, idx)
+                        && let Some(ty) = self.get_type(module, &key)
                     {
-                        let idx_binding = match bindings.get(idx) {
+                        let idx_binding = match bindings.get(bindings.key_to_idx(&key)) {
                             Binding::NameAssign(_, _, b, _) => b,
                             b => b,
                         };

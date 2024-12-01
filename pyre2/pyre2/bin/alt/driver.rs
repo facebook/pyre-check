@@ -36,7 +36,6 @@ use crate::debug;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
 use crate::expectation::Expectation;
-use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::table_for_each;
@@ -447,8 +446,11 @@ impl Driver {
         self.phases.get(&module).map(|x| &x.1.bindings)
     }
 
-    pub fn get_type_for_idx(&self, module: ModuleName, idx: Idx<Key>) -> Option<&Type> {
-        self.solutions.get(&module)?.types.get(idx)
+    pub fn get_type(&self, module: ModuleName, key: &Key) -> Option<&Type> {
+        self.solutions
+            .get(&module)?
+            .types
+            .get(self.get_bindings(module)?.key_to_idx(key))
     }
 
     pub fn debug_info(&self, modules: &[ModuleName]) -> debug::Info {
