@@ -931,7 +931,8 @@ impl<'a> BindingsBuilder<'a> {
             tparams.unwrap_or_default(),
             legacy_tparam_builder.lookup_keys(self),
         );
-        self.table.insert(KeyTypeParams(func_name.clone()), value);
+        self.table
+            .insert(KeyTypeParams(ShortIdentifier::new(&func_name)), value);
 
         self.parameters(&mut x.parameters, &self_type);
 

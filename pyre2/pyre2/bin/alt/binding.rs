@@ -11,7 +11,6 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprSubscript;
-use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtAugAssign;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
@@ -41,7 +40,7 @@ assert_eq_size!(Key, [usize; 5]);
 assert_eq_size!(KeyExported, [usize; 4]);
 assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
 assert_eq_size!(KeyMro, [usize; 1]);
-assert_eq_size!(KeyTypeParams, [usize; 4]);
+assert_eq_size!(KeyTypeParams, [usize; 1]);
 assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 
 assert_eq_size!(Binding, [usize; 23]);
@@ -224,17 +223,22 @@ impl DisplayWith<ModuleInfo> for KeyLegacyTypeParam {
 
 /// Keys that refer to the `TypeParams` for a class or function.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct KeyTypeParams(pub Identifier);
+pub struct KeyTypeParams(pub ShortIdentifier);
 
 impl Ranged for KeyTypeParams {
     fn range(&self) -> TextRange {
-        self.0.range
+        self.0.range()
     }
 }
 
 impl DisplayWith<ModuleInfo> for KeyTypeParams {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, _: &ModuleInfo) -> fmt::Result {
-        write!(f, "type_params {} {:?}", self.0.id, self.0.range)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
+        write!(
+            f,
+            "type_params {} {:?}",
+            ctx.display(&self.0),
+            self.0.range()
+        )
     }
 }
 

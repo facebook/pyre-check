@@ -1094,7 +1094,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     ret
                 };
-                let qs = self.get(&KeyTypeParams(x.name.clone()));
+                let qs = self.get(&KeyTypeParams(ShortIdentifier::new(&x.name)));
                 Type::forall(qs.0.clone(), Type::callable(args, ret))
             }
             Binding::Import(m, name) => self
