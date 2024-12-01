@@ -43,7 +43,7 @@ assert_eq_size!(KeyMro, [usize; 1]);
 assert_eq_size!(KeyTypeParams, [usize; 1]);
 assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 
-assert_eq_size!(Binding, [usize; 23]);
+assert_eq_size!(Binding, [usize; 17]);
 assert_eq_size!(BindingAnnotation, [usize; 10]);
 assert_eq_size!(BindingMro, [usize; 4]);
 assert_eq_size!(BindingTypeParams, [usize; 6]);
@@ -318,7 +318,7 @@ pub enum Binding {
     /// The `Vec<Expr>` contains the base classes from the class header.
     /// The `Vec<Idx<KeyLegacyTypeParam>>` contains binding information for possible legacy type params.
     ClassDef(
-        StmtClassDef,
+        Box<StmtClassDef>,
         SmallSet<Name>,
         Vec<Expr>,
         Vec<Idx<KeyLegacyTypeParam>>,
