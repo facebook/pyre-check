@@ -62,7 +62,7 @@ pub struct Quantified {
     /// Unique identifier
     unique: Unique,
     /// Display name
-    name: Name,
+    name: Box<Name>,
     kind: QuantifiedKind,
 }
 
@@ -83,7 +83,7 @@ impl Quantified {
     pub fn new(uniques: &UniqueFactory, name: Name, kind: QuantifiedKind) -> Self {
         Quantified {
             unique: uniques.fresh(),
-            name,
+            name: Box::new(name),
             kind,
         }
     }
@@ -252,7 +252,7 @@ impl TypeAlias {
 }
 
 // We have a lot of types, want to make sure they stay a reasonable size
-assert_eq_size!(Type, [u8; 48]);
+assert_eq_size!(Type, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
