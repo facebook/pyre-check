@@ -7,6 +7,7 @@
 
 use std::fmt;
 
+use ruff_python_ast::ExprName;
 use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
@@ -20,6 +21,11 @@ pub struct ShortIdentifier(TextRange);
 impl ShortIdentifier {
     pub fn new(name: &Identifier) -> Self {
         Self(name.range)
+    }
+
+    pub fn expr_name(x: &ExprName) -> Self {
+        // Not represented as an Identifier, but literally in the source code in the same way
+        Self(x.range)
     }
 }
 

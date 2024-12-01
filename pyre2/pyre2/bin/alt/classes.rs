@@ -123,7 +123,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
         names
             .into_iter()
-            .map(|x| get_quantified(&self.get(&Key::Definition(x.clone()))).clone())
+            .map(|x| get_quantified(&self.get(&Key::Definition(ShortIdentifier::new(x)))).clone())
             .collect()
     }
 
@@ -152,7 +152,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// TODO(stroxler): See if there's a way to express this more clearly in the types.
     fn special_base_class(&self, base_expr: &Expr) -> Option<BaseClass> {
         if let Expr::Name(name) = base_expr {
-            match &*self.get(&Key::Usage(Ast::expr_name_identifier(name.clone()))) {
+            match &*self.get(&Key::Usage(ShortIdentifier::expr_name(name))) {
                 Type::Type(box Type::SpecialForm(special)) => match special {
                     SpecialForm::Protocol => Some(BaseClass::Protocol(Vec::new())),
                     SpecialForm::Generic => Some(BaseClass::Generic(Vec::new())),
@@ -525,7 +525,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Given an identifier, see whether it is bound to an enum class. If so,
     /// return a `ClassType` for the enum class, otherwise return `None`.
     pub fn get_enum_class_type(&self, name: Identifier) -> Option<ClassType> {
-        match self.get(&Key::Usage(name.clone())).deref() {
+        match self.get(&Key::Usage(ShortIdentifier::new(&name))).deref() {
             Type::ClassDef(class) if class.is_enum(&|c| self.get_mro_for_class(c)) => {
                 // TODO(stroxler): Eventually, we should raise type errors on generic Enum because
                 // this doesn't make semantic sense. But in the meantime we need to be robust against

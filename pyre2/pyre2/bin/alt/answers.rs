@@ -52,6 +52,7 @@ use crate::graph::index::Idx;
 use crate::graph::index_map::IndexMap;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::module::short_identifier::ShortIdentifier;
 use crate::solver::Solver;
 use crate::table;
 use crate::table_for_each;
@@ -1077,7 +1078,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let ty = annot.get_type();
                     Arg::Kwargs(ty.clone())
                 }));
-                let ret = self.get(&Key::ReturnType(x.name.clone())).arc_clone();
+                let ret = self
+                    .get(&Key::ReturnType(ShortIdentifier::new(&x.name)))
+                    .arc_clone();
                 let ret = if x.is_async {
                     self.stdlib
                         .coroutine(Type::any_implicit(), Type::any_implicit(), ret)

@@ -7,6 +7,7 @@
 
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
+use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
@@ -16,6 +17,7 @@ use crate::alt::binding::KeyExported;
 use crate::alt::driver::Driver;
 use crate::ast::Ast;
 use crate::module::module_name::ModuleName;
+use crate::module::short_identifier::ShortIdentifier;
 use crate::types::types::Type;
 use crate::visitors::Visitors;
 
@@ -40,7 +42,8 @@ impl Driver {
         let id = self.identifier_at(module, position)?;
         self.get_type_for_idx(
             module,
-            self.get_bindings(module)?.key_to_idx(&Key::Usage(id)),
+            self.get_bindings(module)?
+                .key_to_idx(&Key::Usage(ShortIdentifier::new(&id))),
         )
         .cloned()
     }
@@ -52,7 +55,7 @@ impl Driver {
         gas: isize,
     ) -> Option<(ModuleName, TextRange)> {
         if let Key::Definition(x) = key {
-            return Some((module, x.range));
+            return Some((module, x.range()));
         }
         let bindings = self.get_bindings(module)?;
         let idx = bindings.key_to_idx(key);
@@ -102,7 +105,7 @@ impl Driver {
         position: TextSize,
     ) -> Option<(ModuleName, TextRange)> {
         let id = self.identifier_at(module, position)?;
-        self.key_to_definition(module, &Key::Usage(id), 20)
+        self.key_to_definition(module, &Key::Usage(ShortIdentifier::new(&id)), 20)
     }
 
     pub fn inlay_hints(&self, module: ModuleName) -> Option<Vec<(TextSize, String)>> {
@@ -128,10 +131,10 @@ impl Driver {
                     }
                 }
                 Key::Anywhere(name, range) => {
-                    let key = Key::Definition(Identifier {
+                    let key = Key::Definition(ShortIdentifier::new(&Identifier {
                         id: name.clone(),
                         range: *range,
-                    });
+                    }));
                     if bindings.contains_key(&key)
                         && let idx = bindings.key_to_idx(&key)
                         && let Some(ty) = self.get_type_for_idx(module, idx)

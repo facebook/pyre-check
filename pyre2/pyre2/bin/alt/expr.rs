@@ -27,6 +27,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::binding::Key;
 use crate::ast::Ast;
 use crate::dunder;
+use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Arg;
 use crate::types::callable::Args;
 use crate::types::callable::Callable;
@@ -1026,7 +1027,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::Name(x) => match x.id.as_str() {
                 "Any" => Type::type_form(Type::any_explicit()),
                 _ => self
-                    .get(&Key::Usage(Ast::expr_name_identifier(x.clone())))
+                    .get(&Key::Usage(ShortIdentifier::expr_name(x)))
                     .arc_clone(),
             },
             Expr::List(x) => {
