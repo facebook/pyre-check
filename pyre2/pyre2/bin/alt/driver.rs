@@ -421,17 +421,16 @@ impl Driver {
         use crate::module::short_identifier::ShortIdentifier;
 
         let solutions = self.solutions.get(&module).unwrap();
-        let bindings = &self.phases.get(&module).unwrap().1.bindings;
 
         match solutions
             .exported_types
-            .get(bindings.key_to_idx(&KeyExported::Export(Name::new(name))))
+            .get(&KeyExported::Export(Name::new(name)))
         {
             Some(Type::ClassDef(cls)) => {
                 println!("Class {cls:?}");
                 let x = solutions
                     .mros
-                    .get(bindings.key_to_idx(&KeyMro(ShortIdentifier::new(cls.name()))));
+                    .get(&KeyMro(ShortIdentifier::new(cls.name())));
                 x
             }
             _ => None,
@@ -447,10 +446,7 @@ impl Driver {
     }
 
     pub fn get_type(&self, module: ModuleName, key: &Key) -> Option<&Type> {
-        self.solutions
-            .get(&module)?
-            .types
-            .get(self.get_bindings(module)?.key_to_idx(key))
+        self.solutions.get(&module)?.types.get(key)
     }
 
     pub fn debug_info(&self, modules: &[ModuleName]) -> debug::Info {
@@ -462,8 +458,8 @@ impl Driver {
         ) where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         {
-            for (idx, val) in t.iter() {
-                let key = phase2.bindings.idx_to_key(idx);
+            for (key, val) in t.iter() {
+                let idx = phase2.bindings.key_to_idx(key);
                 bindings.push(debug::Binding {
                     kind: type_name_of_val(key).rsplit_once(':').unwrap().1.to_owned(),
                     key: phase1.module_info.display(key).to_string(),

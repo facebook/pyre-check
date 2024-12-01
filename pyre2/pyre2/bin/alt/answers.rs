@@ -135,7 +135,7 @@ impl DisplayWith<Bindings> for Answers {
     }
 }
 
-pub type SolutionsEntry<K> = IndexMap<K, <K as Keyed>::Answer>;
+pub type SolutionsEntry<K> = SmallMap<K, <K as Keyed>::Answer>;
 
 table!(
     #[derive(Default, Debug, Clone)]
@@ -387,7 +387,7 @@ impl Answers {
             for idx in answers.bindings.keys::<K>() {
                 let k = answers.bindings.idx_to_key(idx);
                 let v = Arc::unwrap_or_clone(answers.get(k));
-                items.insert_once(idx, v);
+                items.insert(k.clone(), v);
             }
         }
         let answers_solver = AnswersSolver {
