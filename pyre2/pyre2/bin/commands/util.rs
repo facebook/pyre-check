@@ -10,13 +10,21 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
+use anyhow::Context as _;
 use tracing::info;
 
 use crate::module::module_name::ModuleName;
 
 pub fn default_include() -> anyhow::Result<Vec<PathBuf>> {
+    default_include_inner().context("calculating the default include path")
+}
+
+fn default_include_inner() -> anyhow::Result<Vec<PathBuf>> {
     // run the command hg root and get the output
-    let result = Command::new("hg").arg("root").output()?;
+    let result = Command::new("hg")
+        .arg("root")
+        .output()
+        .context("running `hg root`")?;
     let root = String::from_utf8(result.stdout)?;
     let root = root.trim();
     let stdlib = PathBuf::from(format!(
