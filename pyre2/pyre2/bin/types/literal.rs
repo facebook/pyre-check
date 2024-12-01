@@ -33,12 +33,12 @@ use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 
-assert_eq_size!(Lit, [u8; 32]);
+assert_eq_size!(Lit, [u8; 24]);
 
 /// A literal value.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Lit {
-    String(String),
+    String(Box<str>),
     Int(i64),
     Float(NotNan<f64>),
     Complex {
@@ -46,7 +46,7 @@ pub enum Lit {
         imag: NotNan<f64>,
     },
     Bool(bool),
-    Bytes(Vec<u8>),
+    Bytes(Box<[u8]>),
     Enum(Box<(ClassType, Name)>),
 }
 
@@ -147,7 +147,7 @@ impl Lit {
     }
 
     pub fn from_string_literal(x: &ExprStringLiteral) -> Self {
-        Lit::String(x.value.to_str().to_owned())
+        Lit::String(x.value.to_str().into())
     }
 
     pub fn from_bytes_literal(x: &ExprBytesLiteral) -> Self {
@@ -169,7 +169,7 @@ impl Lit {
                 }
             }
         }
-        Some(Lit::String(collected_literals.join("")))
+        Some(Lit::String(collected_literals.join("").into_boxed_str()))
     }
 
     pub fn from_number_literal(

@@ -382,7 +382,7 @@ mod tests {
     #[test]
     fn test_display_union() {
         let lit1 = Type::Literal(Lit::Bool(true));
-        let lit2 = Type::Literal(Lit::String("test".to_string()));
+        let lit2 = Type::Literal(Lit::String("test".into()));
         let nonlit1 = Type::None;
         let nonlit2 = Type::LiteralString;
 
