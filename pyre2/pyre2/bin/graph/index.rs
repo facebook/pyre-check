@@ -8,6 +8,7 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
+use std::num::NonZeroUsize;
 
 use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
@@ -25,7 +26,9 @@ impl<K> Default for Index<K> {
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct Idx<K> {
-    idx: usize,
+    // We use a NonZeroUsize to have an optimised representation for Option<Idx>.
+    // We treat it as usize, and inc/dec as we store.
+    idx: NonZeroUsize,
     phantom: PhantomData<K>,
 }
 
@@ -43,13 +46,13 @@ impl<K> Idx<K> {
     /// Should be used cautiously - make sure this is really a valid index first.
     pub fn new(idx: usize) -> Self {
         Idx {
-            idx,
+            idx: NonZeroUsize::new(idx + 1).unwrap(),
             phantom: PhantomData,
         }
     }
 
     pub fn idx(self) -> usize {
-        self.idx
+        self.idx.get() - 1
     }
 }
 
