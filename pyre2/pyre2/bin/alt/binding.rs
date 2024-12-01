@@ -19,6 +19,7 @@ use ruff_python_ast::StmtFunctionDef;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_set::SmallSet;
+use static_assertions::assert_eq_size;
 
 use crate::alt::bindings::Bindings;
 use crate::graph::index::Idx;
@@ -34,6 +35,19 @@ pub trait Exported {}
 impl Exported for KeyExported {}
 impl Exported for KeyMro {}
 impl Exported for KeyTypeParams {}
+
+assert_eq_size!(Key, [usize; 7]);
+assert_eq_size!(KeyExported, [usize; 7]);
+assert_eq_size!(KeyAnnotation, [usize; 5]);
+assert_eq_size!(KeyMro, [usize; 4]);
+assert_eq_size!(KeyTypeParams, [usize; 4]);
+assert_eq_size!(KeyLegacyTypeParam, [usize; 4]);
+
+assert_eq_size!(Binding, [usize; 23]);
+assert_eq_size!(BindingAnnotation, [usize; 10]);
+assert_eq_size!(BindingMro, [usize; 4]);
+assert_eq_size!(BindingTypeParams, [usize; 6]);
+assert_eq_size!(BindingLegacyTypeParam, [usize; 1]);
 
 /// Keys that refer to a `Type`.
 ///
