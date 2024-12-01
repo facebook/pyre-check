@@ -131,11 +131,11 @@ impl Class {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct TArgs(Vec<Type>);
+pub struct TArgs(Box<[Type]>);
 
 impl TArgs {
     pub fn new(targs: Vec<Type>) -> Self {
-        Self(targs)
+        Self(targs.into_boxed_slice())
     }
 
     pub fn as_slice(&self) -> &[Type] {
