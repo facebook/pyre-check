@@ -17738,16 +17738,6 @@
       "name": "PyreError",
       "stop_column": 33,
       "stop_line": 200
-    },
-    {
-      "code": -2,
-      "column": 44,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "line": 200,
-      "name": "PyreError",
-      "stop_column": 45,
-      "stop_line": 200
     }
   ],
   "overloads_basic.py": [

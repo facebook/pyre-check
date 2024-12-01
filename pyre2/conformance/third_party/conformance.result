@@ -1268,7 +1268,7 @@
     "Line 183: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 187: Unexpected errors ['EXPECTED bool <: TypeIs[bool]', 'EXPECTED type[bool] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 196: Unexpected errors ['EXPECTED bool <: TypeIs[str]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
-    "Line 200: Unexpected errors ['EXPECTED bool <: TypeIs[list[int]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]', 'TODO: Answers::solve_binding - Binding::IterableValue']"
+    "Line 200: Unexpected errors ['EXPECTED bool <: TypeIs[list[int]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']"
   ],
   "overloads_basic.py": [
     "Lines 62, 63: Expected error (tag 'func1')",

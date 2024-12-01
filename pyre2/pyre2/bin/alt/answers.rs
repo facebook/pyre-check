@@ -707,6 +707,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::LiteralString => Iterable::OfType(self.stdlib.str().to_type()),
             Type::Literal(lit) if lit.is_string() => Iterable::OfType(self.stdlib.str().to_type()),
             Type::Any(_) => Iterable::OfType(Type::any_implicit()),
+            Type::Var(v) if let Some(_guard) = self.recurser.recurse(*v) => {
+                self.iterate(&self.solver().force_var(*v), range)
+            }
             _ => Iterable::OfType(
                 self.error_todo("Answers::solve_binding - Binding::IterableValue", range),
             ),
