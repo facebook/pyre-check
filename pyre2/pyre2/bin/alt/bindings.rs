@@ -1108,7 +1108,12 @@ impl<'a> BindingsBuilder<'a> {
 
         self.bind_definition(
             &x.name.clone(),
-            Binding::ClassDef(Box::new(x), fields, bases, legacy_tparams),
+            Binding::ClassDef(
+                Box::new(x),
+                fields,
+                bases.into_boxed_slice(),
+                legacy_tparams.into_boxed_slice(),
+            ),
             None,
         );
     }

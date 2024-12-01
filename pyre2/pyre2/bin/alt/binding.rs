@@ -43,7 +43,7 @@ assert_eq_size!(KeyMro, [usize; 1]);
 assert_eq_size!(KeyTypeParams, [usize; 1]);
 assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 
-assert_eq_size!(Binding, [usize; 12]);
+assert_eq_size!(Binding, [usize; 11]);
 assert_eq_size!(BindingAnnotation, [usize; 10]);
 assert_eq_size!(BindingMro, [usize; 4]);
 assert_eq_size!(BindingTypeParams, [usize; 6]);
@@ -320,8 +320,8 @@ pub enum Binding {
     ClassDef(
         Box<StmtClassDef>,
         SmallSet<Name>,
-        Vec<Expr>,
-        Vec<Idx<KeyLegacyTypeParam>>,
+        Box<[Expr]>,
+        Box<[Idx<KeyLegacyTypeParam>]>,
     ),
     /// A class header keyword argument (e.g. the `metaclass`).
     ClassKeyword(Expr),
