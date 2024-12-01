@@ -40,7 +40,7 @@ impl Exported for KeyTypeParams {}
 assert_eq_size!(Key, [usize; 5]);
 assert_eq_size!(KeyExported, [usize; 4]);
 assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
-assert_eq_size!(KeyMro, [usize; 4]);
+assert_eq_size!(KeyMro, [usize; 1]);
 assert_eq_size!(KeyTypeParams, [usize; 4]);
 assert_eq_size!(KeyLegacyTypeParam, [usize; 4]);
 
@@ -188,17 +188,17 @@ impl DisplayWith<ModuleInfo> for KeyAnnotation {
 /// Keys that refer to a class's `Mro` (which tracks its ancestors, in method
 /// resolution order).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct KeyMro(pub Identifier);
+pub struct KeyMro(pub ShortIdentifier);
 
 impl Ranged for KeyMro {
     fn range(&self) -> TextRange {
-        self.0.range
+        self.0.range()
     }
 }
 
 impl DisplayWith<ModuleInfo> for KeyMro {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, _: &ModuleInfo) -> fmt::Result {
-        write!(f, "mro {} {:?}", self.0.id, self.0.range)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
+        write!(f, "mro {} {:?}", ctx.display(&self.0), self.0.range())
     }
 }
 

@@ -292,7 +292,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn get_mro_for_class(&self, cls: &Class) -> Arc<Mro> {
-        self.get_from_class(cls, &KeyMro(cls.name().clone()))
+        self.get_from_class(cls, &KeyMro(ShortIdentifier::new(cls.name())))
     }
 
     fn check_and_create_targs(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> TArgs {

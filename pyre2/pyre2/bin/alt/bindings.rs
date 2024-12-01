@@ -1022,7 +1022,7 @@ impl<'a> BindingsBuilder<'a> {
         });
 
         self.table.insert(
-            KeyMro(x.name.clone()),
+            KeyMro(ShortIdentifier::new(&x.name)),
             BindingMro(definition_key, bases.clone()),
         );
 

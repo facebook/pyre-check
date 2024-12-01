@@ -419,6 +419,7 @@ impl Driver {
     pub fn mro_of_export(&self, module: ModuleName, name: &str) -> Option<&Mro> {
         use crate::alt::binding::KeyExported;
         use crate::alt::binding::KeyMro;
+        use crate::module::short_identifier::ShortIdentifier;
 
         let solutions = self.solutions.get(&module).unwrap();
         let bindings = &self.phases.get(&module).unwrap().1.bindings;
@@ -431,7 +432,7 @@ impl Driver {
                 println!("Class {cls:?}");
                 let x = solutions
                     .mros
-                    .get(bindings.key_to_idx(&KeyMro(cls.name().clone())));
+                    .get(bindings.key_to_idx(&KeyMro(ShortIdentifier::new(cls.name()))));
                 x
             }
             _ => None,
