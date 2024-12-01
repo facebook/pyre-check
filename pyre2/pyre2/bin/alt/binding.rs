@@ -43,7 +43,7 @@ assert_eq_size!(KeyMro, [usize; 1]);
 assert_eq_size!(KeyTypeParams, [usize; 1]);
 assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 
-assert_eq_size!(Binding, [usize; 17]);
+assert_eq_size!(Binding, [usize; 16]);
 assert_eq_size!(BindingAnnotation, [usize; 10]);
 assert_eq_size!(BindingMro, [usize; 4]);
 assert_eq_size!(BindingTypeParams, [usize; 6]);
@@ -263,7 +263,7 @@ pub enum SizeExpectation {
 #[derive(Clone, Debug)]
 pub enum RaisedException {
     WithoutCause(Expr),
-    WithCause(Expr, Expr),
+    WithCause(Expr, Box<Expr>),
 }
 
 #[derive(Clone, Copy, Debug)]
