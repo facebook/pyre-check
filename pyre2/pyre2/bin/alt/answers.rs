@@ -118,7 +118,7 @@ impl DisplayWith<Bindings> for Answers {
                 writeln!(
                     f,
                     "{} = {} = {}",
-                    key,
+                    bindings.module_info().display(key),
                     value.display_with(bindings),
                     match answer.get() {
                         Some(v) => v.to_string(),
@@ -543,7 +543,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             panic!(
                 "Internal error: Answer not found: {}, {}",
                 self.module_info().name(),
-                self.bindings().idx_to_key(idx),
+                self.module_info().display(self.bindings().idx_to_key(idx)),
             )
         });
         let result = calculation.calculate_with_recursive(

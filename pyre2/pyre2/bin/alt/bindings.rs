@@ -106,7 +106,12 @@ impl Display for Bindings {
             f: &mut fmt::Formatter<'_>,
         ) -> fmt::Result {
             for (idx, k) in items.0.items() {
-                writeln!(f, "{} = {}", k, items.1.get_exists(idx).display_with(me))?;
+                writeln!(
+                    f,
+                    "{} = {}",
+                    me.module_info().display(k),
+                    items.1.get_exists(idx).display_with(me)
+                )?;
             }
             Ok(())
         }
@@ -309,7 +314,7 @@ impl Bindings {
     where
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        self.idx_to_key(idx)
+        self.module_info().display(self.idx_to_key(idx))
     }
 
     pub fn module_info(&self) -> &ModuleInfo {

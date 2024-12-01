@@ -25,6 +25,7 @@ use crate::alt::binding::KeyLegacyTypeParam;
 use crate::alt::binding::KeyMro;
 use crate::alt::binding::KeyTypeParams;
 use crate::alt::bindings::Bindings;
+use crate::module::module_info::ModuleInfo;
 use crate::types::annotation::Annotation;
 use crate::types::mro::Mro;
 use crate::types::types::LegacyTypeParameterLookup;
@@ -32,7 +33,7 @@ use crate::types::types::QuantifiedVec;
 use crate::types::types::Type;
 use crate::util::display::DisplayWith;
 
-pub trait Keyed: Hash + Eq + Clone + Display + Debug + Ranged + 'static {
+pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
     type Value: Debug + DisplayWith<Bindings>;
     type Answer: Clone + Debug + Display;
 }
