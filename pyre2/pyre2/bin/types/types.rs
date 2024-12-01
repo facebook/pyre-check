@@ -217,7 +217,7 @@ pub enum TypeAliasStyle {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TypeAlias {
-    pub name: Name,
+    pub name: Box<Name>,
     ty: Box<Type>,
     pub style: TypeAliasStyle,
 }
@@ -225,7 +225,7 @@ pub struct TypeAlias {
 impl TypeAlias {
     pub fn new(name: Name, ty: Type, style: TypeAliasStyle) -> Self {
         Self {
-            name,
+            name: Box::new(name),
             ty: Box::new(ty),
             style,
         }
