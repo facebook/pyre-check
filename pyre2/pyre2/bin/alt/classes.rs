@@ -26,6 +26,7 @@ use crate::alt::binding::KeyLegacyTypeParam;
 use crate::alt::binding::KeyMro;
 use crate::ast::Ast;
 use crate::graph::index::Idx;
+use crate::module::short_identifier::ShortIdentifier;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
@@ -398,7 +399,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if cls.contains(name) {
             let ty = self.get_from_class(
                 cls,
-                &KeyExported::ClassField(cls.name().clone(), name.clone()),
+                &KeyExported::ClassField(ShortIdentifier::new(cls.name()), name.clone()),
             );
             Some(ty)
         } else {

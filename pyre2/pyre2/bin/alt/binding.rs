@@ -24,6 +24,7 @@ use crate::alt::bindings::Bindings;
 use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::module::short_identifier::ShortIdentifier;
 use crate::types::types::AnyStyle;
 use crate::types::types::Quantified;
 use crate::types::types::Type;
@@ -37,7 +38,7 @@ impl Exported for KeyMro {}
 impl Exported for KeyTypeParams {}
 
 assert_eq_size!(Key, [usize; 7]);
-assert_eq_size!(KeyExported, [usize; 7]);
+assert_eq_size!(KeyExported, [usize; 4]);
 assert_eq_size!(KeyAnnotation, [usize; 5]);
 assert_eq_size!(KeyMro, [usize; 4]);
 assert_eq_size!(KeyTypeParams, [usize; 4]);
@@ -127,23 +128,23 @@ pub enum KeyExported {
     Export(Name),
     /// A reference to a field in a class.
     /// The range is the range of the class name, not the field name.
-    ClassField(Identifier, Name),
+    ClassField(ShortIdentifier, Name),
 }
 
 impl Ranged for KeyExported {
     fn range(&self) -> TextRange {
         match self {
             Self::Export(_) => TextRange::default(),
-            Self::ClassField(c, _) => c.range,
+            Self::ClassField(c, _) => c.range(),
         }
     }
 }
 
 impl DisplayWith<ModuleInfo> for KeyExported {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, _: &ModuleInfo) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
         match self {
             Self::Export(n) => write!(f, "export {n}"),
-            Self::ClassField(x, n) => write!(f, "field {} {:?} . {}", x.id, x.range, n),
+            Self::ClassField(x, n) => write!(f, "field {} {:?} . {}", ctx.display(x), x.range(), n),
         }
     }
 }

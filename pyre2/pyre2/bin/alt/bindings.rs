@@ -70,6 +70,7 @@ use crate::graph::index::Index;
 use crate::graph::index_map::IndexMap;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::module::short_identifier::ShortIdentifier;
 use crate::table;
 use crate::table_for_each;
 use crate::table_try_for_each;
@@ -1069,8 +1070,10 @@ impl<'a> BindingsBuilder<'a> {
                 val = Binding::AnnotatedType(*ann, Box::new(val));
             }
             fields.insert(name.clone());
-            self.table
-                .insert(KeyExported::ClassField(x.name.clone(), name.clone()), val);
+            self.table.insert(
+                KeyExported::ClassField(ShortIdentifier::new(&x.name), name.clone()),
+                val,
+            );
         }
         if let ScopeKind::ClassBody(body) = last_scope.kind {
             for (method_name, instance_attributes) in body.instance_attributes_by_method {
@@ -1078,8 +1081,10 @@ impl<'a> BindingsBuilder<'a> {
                     for (name, binding) in instance_attributes {
                         if !fields.contains(&name) {
                             fields.insert(name.clone());
-                            self.table
-                                .insert(KeyExported::ClassField(x.name.clone(), name), binding);
+                            self.table.insert(
+                                KeyExported::ClassField(ShortIdentifier::new(&x.name), name),
+                                binding,
+                            );
                         }
                     }
                 }
