@@ -14,6 +14,7 @@ use parse_display::Display;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
+use static_assertions::assert_eq_size;
 
 use crate::types::callable::Arg;
 use crate::types::callable::Args;
@@ -249,6 +250,9 @@ impl TypeAlias {
         *self.ty.clone()
     }
 }
+
+// We have a lot of types, want to make sure they stay a reasonable size
+assert_eq_size!(Type, [u8; 56]);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
