@@ -252,7 +252,7 @@ impl TypeAlias {
 }
 
 // We have a lot of types, want to make sure they stay a reasonable size
-assert_eq_size!(Type, [u8; 40]);
+assert_eq_size!(Type, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {

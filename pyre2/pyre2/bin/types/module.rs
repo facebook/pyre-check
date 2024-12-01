@@ -25,7 +25,7 @@ use crate::types::types::Type;
 /// the `SmallMap` on each access.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Module {
-    path: Vec<Name>,
+    path: Box<[Name]>,
     /// Use an OrderedMap so we have a table Hash/Ord instance.
     modules: Arc<OrderedSet<ModuleName>>,
 }
@@ -44,7 +44,7 @@ impl Module {
             "{name} {modules:?}"
         );
         Self {
-            path: vec![name],
+            path: Box::new([name]),
             modules: Arc::new(modules),
         }
     }
@@ -62,10 +62,11 @@ impl Module {
     }
 
     pub fn push_path(&self, component: Name) -> Self {
-        let mut path = self.path.clone();
+        let mut path = Vec::with_capacity(self.path.len() + 1);
+        path.extend(self.path.iter().cloned());
         path.push(component);
         Module {
-            path,
+            path: path.into_boxed_slice(),
             modules: self.modules.dupe(),
         }
     }
