@@ -33,7 +33,7 @@ use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 
-assert_eq_size!(Lit, [u8; 24]);
+assert_eq_size!(Lit, [usize; 3]);
 
 /// A literal value.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
