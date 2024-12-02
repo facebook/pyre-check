@@ -7,6 +7,7 @@
 
 use std::slice;
 
+use itertools::Either;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::Identifier;
@@ -14,6 +15,7 @@ use ruff_python_ast::ModModule;
 use ruff_python_ast::Parameter;
 use ruff_python_ast::ParameterWithDefault;
 use ruff_python_ast::Parameters;
+use ruff_python_ast::Pattern;
 use ruff_python_ast::PySourceType;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtIf;
@@ -180,5 +182,29 @@ impl Ast {
                 // Will raise an error later.
             }
         }
+    }
+
+    /// The [`Pattern`] type contains lvalues as both identifiers, and as expressions
+    /// which contain identifiers within them. The callback will be given whichever of those
+    /// it reaches first, and will not visit the identifiers contained within [`Expr`].
+    pub fn pattern_lvalue<'a>(
+        x: &'a Pattern,
+        f: &mut impl FnMut(Either<&'a Identifier, &'a Expr>),
+    ) {
+        match x {
+            Pattern::MatchValue(x) => f(Either::Right(&x.value)),
+            Pattern::MatchStar(x) => {
+                if let Some(x) = &x.name {
+                    f(Either::Left(x));
+                }
+            }
+            Pattern::MatchAs(x) => {
+                if let Some(x) = &x.name {
+                    f(Either::Left(x));
+                }
+            }
+            _ => {}
+        }
+        Visitors::visit_pattern(x, |x| Ast::pattern_lvalue(x, f));
     }
 }
