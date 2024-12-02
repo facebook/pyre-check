@@ -47,7 +47,7 @@ assert_eq_size!(Binding, [usize; 10]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
 assert_eq_size!(BindingMro, [usize; 4]);
 assert_eq_size!(BindingTypeParams, [usize; 6]);
-assert_eq_size!(BindingLegacyTypeParam, [usize; 1]);
+assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
 
 /// Keys that refer to a `Type`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
