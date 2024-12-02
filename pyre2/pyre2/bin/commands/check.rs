@@ -14,15 +14,15 @@ use anyhow::Context as _;
 use clap::Parser;
 use starlark_map::small_map::SmallMap;
 
-use crate::alt::driver::Driver;
-use crate::alt::loader::LoadResult;
-use crate::alt::state::State;
 use crate::commands::common::CommonArgs;
 use crate::commands::util::default_include;
 use crate::commands::util::find_module;
 use crate::commands::util::module_from_path;
 use crate::config::Config;
 use crate::error::legacy::LegacyErrors;
+use crate::state::driver::Driver;
+use crate::state::loader::LoadResult;
+use crate::state::state::State;
 use crate::util::fs_anyhow;
 use crate::util::memory::MemoryUsageTrace;
 

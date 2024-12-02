@@ -18,14 +18,14 @@ use starlark_map::small_map::SmallMap;
 use tracing::info;
 use tracing::warn;
 
-use crate::alt::driver::Driver;
-use crate::alt::loader::LoadResult;
 use crate::commands::common::CommonArgs;
 use crate::config::Config;
 use crate::config::PythonVersion;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::module::module_name::ModuleName;
+use crate::state::driver::Driver;
+use crate::state::loader::LoadResult;
 use crate::util::fs_anyhow;
 
 #[derive(Debug, Parser)]

@@ -14,10 +14,10 @@ use ruff_text_size::TextSize;
 use crate::alt::binding::Binding;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyExported;
-use crate::alt::driver::Driver;
 use crate::ast::Ast;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::state::driver::Driver;
 use crate::types::types::Type;
 use crate::visitors::Visitors;
 

@@ -9,10 +9,10 @@ use std::path::PathBuf;
 
 use starlark_map::small_map::SmallMap;
 
-use crate::alt::driver::Driver;
-use crate::alt::loader::LoadResult;
 use crate::config::Config;
 use crate::module::module_name::ModuleName;
+use crate::state::driver::Driver;
+use crate::state::loader::LoadResult;
 use crate::test::stdlib::Stdlib;
 use crate::util::trace::init_tracing;
 

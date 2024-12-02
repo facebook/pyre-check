@@ -9,8 +9,8 @@ use itertools::Itertools;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
-use crate::alt::driver::Driver;
 use crate::module::module_name::ModuleName;
+use crate::state::driver::Driver;
 use crate::test::stdlib::Stdlib;
 use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;

@@ -35,6 +35,7 @@ mod expectation;
 mod graph;
 mod module;
 mod solver;
+mod state;
 mod subset;
 mod test;
 mod type_order;

@@ -28,7 +28,6 @@ use crate::alt::bindings::BindingTable;
 use crate::alt::bindings::Bindings;
 use crate::alt::exports::Exports;
 use crate::alt::exports::LookupExport;
-use crate::alt::loader::Loader;
 use crate::alt::table::Keyed;
 use crate::alt::table::TableKeyed;
 use crate::ast::Ast;
@@ -39,6 +38,7 @@ use crate::error::error::Error;
 use crate::expectation::Expectation;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::state::loader::Loader;
 use crate::table_for_each;
 #[cfg(test)]
 use crate::types::mro::Mro;

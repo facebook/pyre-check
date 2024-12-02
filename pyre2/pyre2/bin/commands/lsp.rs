@@ -58,8 +58,6 @@ use ruff_text_size::TextSize;
 use serde::de::DeserializeOwned;
 use starlark_map::small_map::SmallMap;
 
-use crate::alt::driver::Driver;
-use crate::alt::loader::LoadResult;
 use crate::commands::util::default_include;
 use crate::commands::util::find_module;
 use crate::commands::util::module_from_path;
@@ -67,6 +65,8 @@ use crate::config::Config;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
+use crate::state::driver::Driver;
+use crate::state::loader::LoadResult;
 use crate::util::prelude::VecExt;
 
 #[derive(Debug, Parser, Clone)]
