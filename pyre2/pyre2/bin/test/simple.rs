@@ -918,3 +918,15 @@ async def test() -> None:
     await Foo()  # E: Expression is not awaitable
 "#,
 );
+
+simple_test!(
+    test_anywhere_binding,
+    r#"
+from typing import assert_type, Literal
+x = 1
+def foo():
+    assert_type(x, Literal['test', 1])
+foo()
+x = "test"
+"#,
+);
