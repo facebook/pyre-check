@@ -344,13 +344,6 @@ impl Bindings {
         &self.0.module_info
     }
 
-    pub fn contains_key<K: Keyed>(&self, k: &K) -> bool
-    where
-        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
-    {
-        self.0.table.get::<K>().0.contains(k)
-    }
-
     pub fn key_to_idx<K: Keyed>(&self, k: &K) -> Idx<K>
     where
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,

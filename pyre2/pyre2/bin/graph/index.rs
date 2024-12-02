@@ -104,6 +104,7 @@ impl<K: Eq + Hash + Debug> Index<K> {
     }
 
     /// Does the index contain an element. Should be used very rarely.
+    #[expect(dead_code)] // Logically part of the API
     pub fn contains(&self, key: &K) -> bool {
         self.map.contains_key(key)
     }
