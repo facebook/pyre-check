@@ -485,7 +485,11 @@ impl<'a> BindingsBuilder<'a> {
             } else if !matches!(scope.kind, ScopeKind::ClassBody(_))
                 && let Some(info) = scope.stat.0.get(&name.id)
             {
-                let (idx, _) = self.table.insert_anywhere(name.id.clone(), info.loc);
+                let idx = self
+                    .table
+                    .types
+                    .0
+                    .insert_if_missing(Key::Anywhere(name.id.clone(), info.loc));
                 return Some(idx);
             }
             barrier = barrier || scope.barrier;
