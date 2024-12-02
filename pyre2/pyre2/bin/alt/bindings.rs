@@ -56,6 +56,7 @@ use crate::alt::binding::KeyTypeParams;
 use crate::alt::binding::RaisedException;
 use crate::alt::binding::SizeExpectation;
 use crate::alt::binding::UnpackedPosition;
+use crate::alt::definitions::DefinitionStyle;
 use crate::alt::definitions::Definitions;
 use crate::alt::exports::LookupExport;
 use crate::alt::table::Keyed;
@@ -141,12 +142,27 @@ struct Static(SmallMap<Name, StaticInfo>);
 #[derive(Clone, Debug)]
 struct StaticInfo {
     loc: TextRange,
+    /// How many times this will be redefined
+    count: usize,
+    /// True if this is going to appear as a `Key::Import``.
+    /// A little fiddly to keep syncronised with the other field.
+    uses_key_import: bool,
 }
 
 impl Static {
-    fn add(&mut self, name: Name, loc: TextRange) {
+    fn add_with_count(&mut self, name: Name, loc: TextRange, count: usize) -> &mut StaticInfo {
         // Use whichever one we see first
-        self.0.entry(name).or_insert(StaticInfo { loc });
+        let res = self.0.entry(name).or_insert(StaticInfo {
+            loc,
+            count: 0,
+            uses_key_import: false,
+        });
+        res.count += count;
+        res
+    }
+
+    fn add(&mut self, name: Name, range: TextRange) {
+        self.add_with_count(name, range, 1);
     }
 
     fn stmts(
@@ -161,13 +177,14 @@ impl Static {
         if top_level && module_info.name() != ModuleName::builtins() {
             d.inject_implicit();
         }
-        for (name, (range, _, _)) in d.definitions {
-            self.add(name, range)
+        for (name, (range, defn, count)) in d.definitions {
+            self.add_with_count(name, range, count).uses_key_import =
+                defn == DefinitionStyle::ImportModule;
         }
         for (m, range) in d.import_all {
             let extra = modules.get(m).wildcard(modules);
             for name in extra.iter() {
-                self.add(name.clone(), range)
+                self.add_with_count(name.clone(), range, 1).uses_key_import = true;
             }
         }
     }
@@ -485,12 +502,21 @@ impl<'a> BindingsBuilder<'a> {
             } else if !matches!(scope.kind, ScopeKind::ClassBody(_))
                 && let Some(info) = scope.stat.0.get(&name.id)
             {
-                let idx = self
-                    .table
-                    .types
-                    .0
-                    .insert_if_missing(Key::Anywhere(name.id.clone(), info.loc));
-                return Some(idx);
+                let key = if info.count == 1 {
+                    if info.uses_key_import {
+                        Key::Import(name.id.clone(), info.loc)
+                    } else {
+                        // We are constructing an identifier, but it must have been one that we saw earlier
+                        assert_ne!(info.loc, TextRange::default());
+                        Key::Definition(ShortIdentifier::new(&Identifier {
+                            id: name.id.clone(),
+                            range: info.loc,
+                        }))
+                    }
+                } else {
+                    Key::Anywhere(name.id.clone(), info.loc)
+                };
+                return Some(self.table.types.0.insert_if_missing(key));
             }
             barrier = barrier || scope.barrier;
         }
@@ -743,7 +769,7 @@ impl<'a> BindingsBuilder<'a> {
         match target {
             Expr::Name(name) => {
                 let key = Key::Definition(ShortIdentifier::expr_name(name));
-                let idx = self.table.types.0.insert(key);
+                let idx = self.table.types.0.insert_if_missing(key);
                 let ann = self.bind_key(&name.id, idx, None, false);
                 self.table.types.1.insert(idx, make_binding(ann));
             }

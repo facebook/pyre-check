@@ -69,6 +69,7 @@ impl<K> Index<K> {
 }
 
 impl<K: Eq + Hash + Debug> Index<K> {
+    #[expect(dead_code)] // Logically part of the API
     pub fn insert(&mut self, k: K) -> Idx<K>
     where
         K: Clone,

@@ -40,6 +40,8 @@ pub enum DefinitionStyle {
     ImportAsEq,
     /// Imported from another module, e.g. `from x import y`
     Import,
+    /// Imported directly, e.g. `import x` or `import x.y` (both of which add `x`)
+    ImportModule,
 }
 
 /// Find the definitions available in a scope. Does not traverse inside classes/functions,
@@ -182,7 +184,7 @@ impl<'a> DefinitionsBuilder<'a> {
                         None => self.add_name(
                             &module.first_component(),
                             a.name.range,
-                            DefinitionStyle::Import,
+                            DefinitionStyle::ImportModule,
                         ),
                         Some(alias) => self.add_identifier(
                             alias,
