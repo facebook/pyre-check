@@ -320,3 +320,22 @@ simple_test!(
 from foo import bar  # E: Could not find import of `foo`  # E: Could not import `bar`
 "#,
 );
+
+simple_test!(
+    test_direct_import_toplevel,
+    r#"
+import typing
+
+typing.assert_type(None, None)
+"#,
+);
+
+simple_test!(
+    test_direct_import_function,
+    r#"
+import typing
+
+def foo():
+    typing.assert_type(None, None)
+"#,
+);
