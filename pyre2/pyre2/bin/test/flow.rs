@@ -523,3 +523,20 @@ except:
 assert_type(x, Literal[1, 2])  # E: assert_type(Literal[2], Literal[1, 2]) failed
 "#,
 );
+
+simple_test!(
+    test_match,
+    r#"
+from typing import assert_type
+
+def point() -> int:
+    return 3
+
+match point():  # E: TODO: StmtMatch - Bindings::stmt
+    case 1:  # E: unrecognized assignment target
+        x = 8
+    case q:
+        x = q
+assert_type(x, int)  # E: assert_type(Any, int) failed
+"#,
+);

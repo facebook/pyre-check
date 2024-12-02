@@ -1382,7 +1382,32 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 self.stmts(x.body.clone());
             }
-            Stmt::Match(x) => self.todo("Bindings::stmt", &x),
+            Stmt::Match(x) => {
+                self.todo("Bindings::stmt", &x);
+
+                // Very bad version that binds the right things
+                self.ensure_expr(&x.subject);
+                self.table.insert(
+                    Key::Anon(x.subject.range()),
+                    Binding::Expr(None, *x.subject),
+                );
+                for case in x.cases {
+                    Ast::pattern_lvalue(&case.pattern, &mut |x| match x {
+                        Either::Left(x) => {
+                            self.bind_definition(x, Binding::AnyType(AnyStyle::Error), None);
+                        }
+                        Either::Right(x) => {
+                            self.bind_target(x, &|_| Binding::AnyType(AnyStyle::Error), true);
+                        }
+                    });
+                    if let Some(guard) = case.guard {
+                        self.ensure_expr(&guard);
+                        self.table
+                            .insert(Key::Anon(guard.range()), Binding::Expr(None, *guard));
+                    }
+                    self.stmts(case.body);
+                }
+            }
             Stmt::Raise(x) => {
                 if let Some(exc) = x.exc {
                     self.ensure_expr(&exc);
