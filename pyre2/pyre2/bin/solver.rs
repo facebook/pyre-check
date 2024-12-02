@@ -321,7 +321,7 @@ impl Solver {
         match lock.get(&v) {
             Some(Variable::Answer(got)) => {
                 let got = got.clone();
-                mem::drop(lock);
+                drop(lock);
                 // We got forced into choosing a type to satisfy a subset constraint, so check we are OK with that.
                 if !self.is_subset_eq(&got, &t, type_order) {
                     self.error(&t, &got, errors, module_info, loc);
@@ -400,7 +400,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     variables.get(v2).cloned().unwrap_or_default(),
                 ) {
                     (Variable::Answer(t1), Variable::Answer(t2)) => {
-                        mem::drop(variables);
+                        drop(variables);
                         self.is_subset_eq(&t1, &t2)
                     }
                     (var_type, Variable::Answer(t2)) if should_force(&var_type) => {
@@ -434,7 +434,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 let mut variables = self.solver.variables.write().unwrap();
                 match variables.get(v1).cloned().unwrap_or_default() {
                     Variable::Answer(t1) => {
-                        mem::drop(variables);
+                        drop(variables);
                         self.is_subset_eq(&t1, t2)
                     }
                     var_type if should_force(&var_type) => {
@@ -448,7 +448,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 let mut variables = self.solver.variables.write().unwrap();
                 match variables.get(v2).cloned().unwrap_or_default() {
                     Variable::Answer(t2) => {
-                        mem::drop(variables);
+                        drop(variables);
                         self.is_subset_eq(t1, &t2)
                     }
                     var_type if should_force(&var_type) => {

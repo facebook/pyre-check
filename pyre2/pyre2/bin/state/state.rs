@@ -8,7 +8,6 @@
 use std::cell::Ref;
 use std::cell::RefCell;
 use std::cell::RefMut;
-use std::mem;
 use std::sync::Arc;
 
 use dupe::Dupe;
@@ -111,7 +110,7 @@ impl<'a> State<'a> {
             };
             let compute = todo.compute().0(&module_state.steps);
             let errors = module_state.errors.dupe();
-            mem::drop(module_state);
+            drop(module_state);
             if todo == Step::Bindings {
                 // We have captured the Ast, and must have already built Exports (we do it serially),
                 // so won't need the Ast again.
@@ -143,7 +142,7 @@ impl<'a> State<'a> {
         match Ref::filter_map(self.modules.borrow(), |x| x.get(&module)) {
             Ok(v) => v,
             Err(r) => {
-                mem::drop(r);
+                drop(r);
                 self.modules
                     .borrow_mut()
                     .insert(module, ModuleState::default());
@@ -242,7 +241,7 @@ impl<'a> State<'a> {
                 .filter(|(_, v)| v.steps.solutions.get().is_none())
                 .map(|(k, _)| *k)
                 .collect::<Vec<_>>();
-            mem::drop(modules);
+            drop(modules);
             for k in force {
                 self.demand(k, Step::Solutions);
             }

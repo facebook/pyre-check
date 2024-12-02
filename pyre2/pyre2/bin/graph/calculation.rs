@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::mem;
 use std::sync::Mutex;
 use std::thread;
 use std::thread::ThreadId;
@@ -103,7 +102,7 @@ impl<T: Dupe, R: Dupe> Calculation<T, R> {
             }
             Status::Calculated(v) => return Ok((v.dupe(), None)),
         }
-        mem::drop(lock);
+        drop(lock);
         let result = calculate();
         let mut lock = self.0.lock().unwrap();
         match &mut *lock {

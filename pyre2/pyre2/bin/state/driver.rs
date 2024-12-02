@@ -6,7 +6,6 @@
  */
 
 use std::any::type_name_of_val;
-use std::mem;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -356,7 +355,7 @@ impl Driver {
             Self::print_timings(timings, timers);
         }
 
-        mem::drop(answers_info);
+        drop(answers_info);
         assert_eq!(phase1.len(), phase2.len());
         let expectations = phase1
             .iter()
