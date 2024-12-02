@@ -12,6 +12,7 @@ use std::mem;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use dupe::OptionDupedExt;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
@@ -26,6 +27,7 @@ use crate::alt::binding::Exported;
 use crate::alt::binding::KeyExported;
 use crate::alt::bindings::BindingEntry;
 use crate::alt::bindings::BindingTable;
+use crate::alt::bindings::Bindings;
 use crate::alt::exports::Exports;
 use crate::alt::exports::LookupExport;
 use crate::alt::table::Keyed;
@@ -260,7 +262,6 @@ impl<'a> State<'a> {
         errors
     }
 
-    #[expect(dead_code)]
     pub fn run(&mut self) -> Vec<Error> {
         self.retain_memory = true;
         self.run_internal()
@@ -271,6 +272,20 @@ impl<'a> State<'a> {
         for module in self.modules.borrow_mut().values_mut() {
             module.clear();
         }
+    }
+
+    pub fn modules(&self) -> Vec<ModuleName> {
+        self.modules.borrow().keys().copied().collect()
+    }
+
+    pub fn get_bindings(&self, module: ModuleName) -> Option<Bindings> {
+        self.modules
+            .borrow()
+            .get(&module)?
+            .steps
+            .bindings
+            .get()
+            .duped()
     }
 
     /* Notes on how to move to incremental

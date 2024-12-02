@@ -20,6 +20,7 @@ use crate::commands::util::find_module;
 use crate::commands::util::module_from_path;
 use crate::config::Config;
 use crate::error::legacy::LegacyErrors;
+use crate::report;
 use crate::state::driver::Driver;
 use crate::state::loader::LoadResult;
 use crate::state::state::State;
@@ -40,6 +41,8 @@ pub struct Args {
     debug_info: Option<PathBuf>,
     #[clap(long = "state2")]
     state2: bool,
+    #[clap(long = "report-binding-memory")]
+    report_binding_memory: Option<PathBuf>,
 
     #[clap(flatten)]
     common: CommonArgs,
@@ -84,7 +87,11 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
         let mut state = State::new(&config, &load, args.common.parallel(), &modules);
-        let errors = state.run_one_shot();
+        let errors = if args.report_binding_memory.is_none() {
+            state.run_one_shot()
+        } else {
+            state.run()
+        };
         let stop = start.elapsed();
         memory_trace.stop();
         eprintln!(
@@ -92,6 +99,12 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
             errors.len(),
             memory_trace.peak()
         );
+        if let Some(path) = args.report_binding_memory {
+            fs_anyhow::write(
+                &path,
+                report::binding_memory::binding_memory(&state).as_bytes(),
+            )?;
+        }
     } else {
         let driver = Driver::new(
             &modules,

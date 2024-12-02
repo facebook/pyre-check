@@ -34,6 +34,7 @@ mod error;
 mod expectation;
 mod graph;
 mod module;
+mod report;
 mod solver;
 mod state;
 mod subset;
