@@ -4,7 +4,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 """
 Test that everything works well
@@ -18,7 +18,7 @@ import time
 from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
-from typing import Iterable
+from typing import Any, ContextManager, Generator, Iterable
 
 
 class Colors(Enum):
@@ -39,7 +39,7 @@ def print_running(msg: str) -> None:
 
 
 @contextmanager
-def timing():
+def timing() -> Generator[None, None, None]:
     start = time.time()
     yield
     duration = time.time() - start
@@ -49,7 +49,7 @@ def timing():
 def run(
     args: Iterable[str],
     capture_output: bool = False,
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess[str]:
     """
     Runs a command (args) in a new process.
     If the command fails, raise CalledProcessError.
