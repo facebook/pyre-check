@@ -26,6 +26,7 @@ use crate::types::types::Quantified;
 use crate::types::types::QuantifiedVec;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
+use crate::util::prelude::SliceExt;
 
 /// The name of a nominal type, e.g. `str`
 #[derive(Debug, Clone, Display, Dupe, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -115,13 +116,7 @@ impl Class {
     }
 
     pub fn self_type(&self) -> Type {
-        let tparams_as_targs = TArgs::new(
-            self.tparams()
-                .as_slice()
-                .iter()
-                .map(|q| q.clone().to_type())
-                .collect(),
-        );
+        let tparams_as_targs = TArgs::new(self.tparams().as_slice().map(|q| q.clone().to_type()));
         ClassType::new(self.clone(), tparams_as_targs).to_type()
     }
 
