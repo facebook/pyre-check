@@ -52,6 +52,9 @@ pub struct State<'a> {
     parallel: bool,
     stdlib: RefCell<Arc<Stdlib>>,
     modules: RefCell<SmallMap<ModuleName, ModuleState>>,
+
+    // Set to true to keep data around forever.
+    retain_memory: bool,
 }
 
 #[derive(Default)]
@@ -87,11 +90,14 @@ impl<'a> State<'a> {
                     .map(|x| (*x, ModuleState::default()))
                     .collect(),
             ),
+            retain_memory: true, // Will always be overwritten by entry points
         }
     }
 
     fn evict<T>(&self, module: ModuleName, f: fn(&mut ModuleSteps) -> &mut Info<T>) {
-        f(&mut self.modules.borrow_mut().get_mut(&module).unwrap().steps).clear();
+        if !self.retain_memory {
+            f(&mut self.modules.borrow_mut().get_mut(&module).unwrap().steps).clear();
+        }
     }
 
     fn demand(&self, module: ModuleName, step: Step) {
@@ -217,12 +223,9 @@ impl<'a> State<'a> {
         *self.stdlib.borrow_mut() = stdlib;
     }
 
-    /// Run, collecting all errors and destroying the state.
-    /// The state afterwards will be useful for timing queries.
-    /// Note we grab the `mut` only to stop other people accessing us simultaneously,
-    /// we don't actually need it.
-    pub fn run_one_shot(&mut self) -> Vec<Error> {
+    fn run_internal(&mut self) -> Vec<Error> {
         self.compute_stdlib();
+
         // ensure we have answers for everything, keep going until we don't discover any new modules
         let mut existing = 0;
         loop {
@@ -243,9 +246,24 @@ impl<'a> State<'a> {
             }
         }
 
-        let errors = self.collect_errors();
+        self.collect_errors()
+    }
+
+    /// Run, collecting all errors and destroying the state.
+    /// The state afterwards will be useful for timing queries.
+    /// Note we grab the `mut` only to stop other people accessing us simultaneously,
+    /// we don't actually need it.
+    pub fn run_one_shot(&mut self) -> Vec<Error> {
+        self.retain_memory = false;
+        let errors = self.run_internal();
         self.clear();
         errors
+    }
+
+    #[expect(dead_code)]
+    pub fn run(&mut self) -> Vec<Error> {
+        self.retain_memory = true;
+        self.run_internal()
     }
 
     fn clear(&mut self) {
