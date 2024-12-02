@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 
 import argparse
@@ -169,7 +169,7 @@ def diff_expected_errors(directory: str, test_case: str) -> List[str]:
 
 
 def compare_conformance_output(
-    directory: str, conformance_output: Dict[str, List[dict]]
+    directory: str, conformance_output: Dict[str, List[dict[str, str]]]
 ) -> Dict[str, List[str]]:
     """
     Compare conformance output with expected results in conformance test sources.
@@ -276,7 +276,7 @@ def get_conformance_output_separate(
     return outputs
 
 
-def collect_test_cases(directory) -> List[str]:
+def collect_test_cases(directory: str) -> List[str]:
     test_cases = []
     for root, _, files in os.walk(directory):
         for file in files:
