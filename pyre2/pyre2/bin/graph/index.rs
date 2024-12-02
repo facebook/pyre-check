@@ -96,3 +96,22 @@ impl<K: Eq + Hash + Debug> Index<K> {
         self.map.contains_key(key)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_index_insert_twice() {
+        let mut index = Index::new();
+        let idx1 = index.insert(1);
+        let idx2 = index.insert(3);
+        let idx3 = index.insert(1);
+        assert_eq!(idx1, idx3);
+        assert_ne!(idx1, idx2);
+        assert_eq!(
+            index.items().collect::<Vec<_>>(),
+            vec![(idx1, &1), (idx2, &3)]
+        );
+    }
+}
