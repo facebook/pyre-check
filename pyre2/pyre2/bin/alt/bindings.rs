@@ -827,10 +827,12 @@ impl<'a> BindingsBuilder<'a> {
             let module = self.module_info.name();
             panic!("Name `{name}` not found in static scope of module `{module}`")
         });
-        self.table
-            .insert_anywhere(name.clone(), info.loc)
-            .1
-            .insert(key);
+        if info.count > 1 || matches!(self.scopes.last().kind, ScopeKind::ClassBody(_)) {
+            self.table
+                .insert_anywhere(name.clone(), info.loc)
+                .1
+                .insert(key);
+        }
         annotation
     }
 
