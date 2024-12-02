@@ -8,6 +8,7 @@
 use std::any::type_name_of_val;
 use std::mem;
 use std::sync::Mutex;
+use std::time::Duration;
 
 use dupe::Dupe;
 use parse_display::Display;
@@ -46,6 +47,7 @@ use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
 use crate::util::display::DisplayWith;
 use crate::util::memory::MemoryUsage;
+use crate::util::memory::MemoryUsageTrace;
 use crate::util::prelude::SliceExt;
 use crate::util::small_map;
 use crate::util::timer::TimerContext;
@@ -276,6 +278,7 @@ impl Driver {
         parallel: bool,
         load: &Loader,
     ) -> Self {
+        let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let mut timers = Timers::new();
         let timers = &mut timers;
         let uniques = UniqueFactory::new();
@@ -333,6 +336,8 @@ impl Driver {
         let printing = timers.add((timers_global_module(), Step::PrintErrors, error_count));
 
         eprintln!("Memory usage: {}", MemoryUsage::new());
+        memory_trace.stop();
+        eprintln!("Memory peak : {}", memory_trace.peak());
 
         let total = timers.total();
         info_eprintln(format!(

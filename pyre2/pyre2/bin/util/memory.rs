@@ -5,8 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::cmp;
 use std::fmt;
 use std::fmt::Display;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::thread::sleep;
+use std::thread::spawn;
+use std::time::Duration;
 
 use dupe::Dupe;
 use human_bytes::human_bytes;
@@ -62,6 +68,14 @@ impl MemoryUsage {
             active: jemalloc.active,
         }
     }
+
+    pub fn max_by_field(x: &Self, y: &Self) -> Self {
+        Self {
+            physical: cmp::max(x.physical, y.physical),
+            allocated: cmp::max(x.allocated, y.allocated),
+            active: cmp::max(x.active, y.active),
+        }
+    }
 }
 
 pub struct JemallocStats {
@@ -97,5 +111,43 @@ fn get_jemalloc_stats() -> JemallocStats {
     JemallocStats {
         active: get_field(&v, "active"),
         allocated: get_field(&v, "allocated"),
+    }
+}
+
+pub struct MemoryUsageTrace {
+    /// Pair of (stop condition, values that were recorded).
+    /// Once stop is set to `true` we won't record any more results.
+    state: Arc<Mutex<(bool, MemoryUsage)>>,
+}
+
+impl MemoryUsageTrace {
+    pub fn start(frequency: Duration) -> Self {
+        let state = Arc::new(Mutex::new((false, MemoryUsage::new())));
+        let state2 = state.dupe();
+        spawn(move || {
+            loop {
+                sleep(frequency);
+                let mut lock = state2.lock().unwrap();
+                if lock.0 {
+                    break;
+                }
+                lock.1 = MemoryUsage::max_by_field(&lock.1, &MemoryUsage::new());
+            }
+        });
+        Self { state }
+    }
+
+    pub fn stop(&mut self) {
+        let mut lock = self.state.lock().unwrap();
+        if !lock.0 {
+            lock.0 = true;
+            // If we were running before, make sure we capture a final snapshot
+            lock.1 = MemoryUsage::max_by_field(&lock.1, &MemoryUsage::new());
+        }
+    }
+
+    /// Won't necessarily be a single MemoryUsage, but the peak across many.
+    pub fn peak(&self) -> MemoryUsage {
+        self.state.lock().unwrap().1.clone()
     }
 }
