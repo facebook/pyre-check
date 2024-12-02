@@ -1438,7 +1438,7 @@ impl<'a> BindingsBuilder<'a> {
                     self.ensure_expr(&exc);
                     let raised = if let Some(cause) = x.cause {
                         self.ensure_expr(&cause);
-                        RaisedException::WithCause(*exc, cause)
+                        RaisedException::WithCause(Box::new((*exc, *cause)))
                     } else {
                         RaisedException::WithoutCause(*exc)
                     };

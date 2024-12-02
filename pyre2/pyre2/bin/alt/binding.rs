@@ -263,7 +263,7 @@ pub enum SizeExpectation {
 #[derive(Clone, Debug)]
 pub enum RaisedException {
     WithoutCause(Expr),
-    WithCause(Expr, Box<Expr>),
+    WithCause(Box<(Expr, Expr)>),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -451,7 +451,7 @@ impl DisplayWith<Bindings> for Binding {
             Self::CheckRaisedException(RaisedException::WithoutCause(exc)) => {
                 write!(f, "raise {}", m.display(exc))
             }
-            Self::CheckRaisedException(RaisedException::WithCause(exc, cause)) => {
+            Self::CheckRaisedException(RaisedException::WithCause(box (exc, cause))) => {
                 write!(f, "raise {} from {}", m.display(exc), m.display(cause))
             }
             Self::Phi(xs) => {

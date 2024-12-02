@@ -1125,7 +1125,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.check_is_exception(exc, exc.range(), false);
                 Type::None // Unused
             }
-            Binding::CheckRaisedException(RaisedException::WithCause(exc, cause)) => {
+            Binding::CheckRaisedException(RaisedException::WithCause(box (exc, cause))) => {
                 self.check_is_exception(exc, exc.range(), false);
                 self.check_is_exception(cause, cause.range(), true);
                 Type::None // Unused
