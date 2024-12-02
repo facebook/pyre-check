@@ -11,6 +11,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::path::Path;
 
+use dupe::Dupe;
 use equivalent::Equivalent;
 use parse_display::Display;
 use ruff_python_ast::name::Name;
@@ -24,7 +25,7 @@ use thiserror::Error;
 
 static MODULE_NAME_INTERNER: Interner<String> = Interner::new();
 
-#[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Display)]
+#[derive(Clone, Dupe, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Display)]
 pub struct ModuleName(Intern<String>);
 
 impl Serialize for ModuleName {
