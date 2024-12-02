@@ -10,7 +10,6 @@ use std::cell::RefCell;
 use std::cell::RefMut;
 use std::mem;
 use std::sync::Arc;
-use std::time::Instant;
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
@@ -37,6 +36,7 @@ use crate::error::error::Error;
 use crate::expectation::Expectation;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::state::info::Info;
 use crate::state::loader::Loader;
 use crate::types::class::Class;
 use crate::types::stdlib::Stdlib;
@@ -52,43 +52,6 @@ pub struct State<'a> {
     uniques: UniqueFactory,
     modules: RefCell<SmallMap<ModuleName, ModuleState>>,
     stdlib: RefCell<Info<Arc<Stdlib>>>,
-}
-
-#[derive(Debug)]
-struct Info<T> {
-    time: Option<(Instant, Instant)>,
-    value: Option<T>,
-}
-
-impl<T> Default for Info<T> {
-    fn default() -> Self {
-        Self {
-            time: Default::default(),
-            value: Default::default(),
-        }
-    }
-}
-
-impl<T> Info<T> {
-    fn clear(&mut self) {
-        self.value = None;
-    }
-
-    fn start() -> Self {
-        let now = Instant::now();
-        Self {
-            time: Some((now, now)),
-            value: None,
-        }
-    }
-
-    fn stop(self, v: T) -> Self {
-        let now = Instant::now();
-        Self {
-            time: Some((self.time.map_or(now, |x| x.0), now)),
-            value: Some(v),
-        }
-    }
 }
 
 #[derive(Debug, Default)]
@@ -109,7 +72,7 @@ struct ModuleState {
 macro_rules! computes {
     ($self:ident, $module:ident, $field:ident) => {{
         let m = $self.get_module($module);
-        if let Some(v) = &m.$field.value {
+        if let Some(v) = m.$field.get() {
             return v.dupe();
         }
     }};
@@ -296,7 +259,7 @@ impl<'a> State<'a> {
     fn force_stdlib(&self) -> Arc<Stdlib> {
         {
             let stdlib = self.stdlib.borrow();
-            if let Some(v) = &stdlib.value {
+            if let Some(v) = stdlib.get() {
                 return v.dupe();
             }
         }
@@ -322,7 +285,7 @@ impl<'a> State<'a> {
             existing = new;
             let force = modules
                 .iter()
-                .filter(|(_, v)| v.solutions.value.is_none())
+                .filter(|(_, v)| v.solutions.get().is_none())
                 .map(|(k, _)| *k)
                 .collect::<Vec<_>>();
             mem::drop(modules);

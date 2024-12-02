@@ -7,5 +7,6 @@
 
 pub mod driver;
 pub mod ide;
+pub mod info;
 pub mod loader;
 pub mod state;
