@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
+use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::AnswerEntry;
@@ -20,6 +21,7 @@ use crate::alt::answers::AnswerTable;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::Solve;
 use crate::alt::binding::Exported;
+use crate::alt::binding::KeyExported;
 use crate::alt::bindings::BindingEntry;
 use crate::alt::bindings::BindingTable;
 use crate::alt::exports::Exports;
@@ -36,6 +38,7 @@ use crate::state::steps::ModuleSteps;
 use crate::state::steps::Step;
 use crate::types::class::Class;
 use crate::types::stdlib::Stdlib;
+use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
 
 pub struct State<'a> {
@@ -133,23 +136,21 @@ impl<'a> State<'a> {
     }
 
     fn lookup_stdlib(&self, module: ModuleName, name: &Name) -> Option<Class> {
-        self.demand(module, Step::Answers);
-        let (errors, bindings, answers) = self.grab(module, |x| {
-            (
-                x.errors.dupe(),
-                x.steps.bindings.get().unwrap().dupe(),
-                x.steps.answers.get().unwrap().dupe(),
-            )
-        });
-        answers.lookup_class_without_stdlib(
-            &bindings,
-            &errors,
-            module,
-            name,
-            self,
-            self,
-            &self.uniques,
-        )
+        let t = self.lookup_answer(module, &KeyExported::Export(name.clone()));
+        match t.arc_clone() {
+            Type::ClassDef(cls) => Some(cls),
+            ty => {
+                let m = self.get_module(module);
+                m.errors.add(
+                    &m.steps.module_info.get().unwrap().0,
+                    TextRange::default(),
+                    format!(
+                        "Did not expect non-class type `{ty}` for stdlib import `{module}.{name}`"
+                    ),
+                );
+                None
+            }
+        }
     }
 
     fn lookup_export(&self, module: ModuleName) -> Option<Exports> {
