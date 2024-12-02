@@ -136,12 +136,17 @@ struct BindingsBuilder<'a> {
 /// Many names may map to the same TextRange (e.g. from foo import *).
 /// But no other static will point at the same TextRange.
 #[derive(Default, Clone, Debug)]
-struct Static(SmallMap<Name, TextRange>);
+struct Static(SmallMap<Name, StaticInfo>);
+
+#[derive(Clone, Debug)]
+struct StaticInfo {
+    loc: TextRange,
+}
 
 impl Static {
-    fn add(&mut self, name: Name, range: TextRange) {
+    fn add(&mut self, name: Name, loc: TextRange) {
         // Use whichever one we see first
-        self.0.entry(name).or_insert(range);
+        self.0.entry(name).or_insert(StaticInfo { loc });
     }
 
     fn stmts(
@@ -384,7 +389,7 @@ impl Bindings {
             builder.inject_implicit();
         }
         builder.stmts(x);
-        for (k, range) in builder.scopes.last().stat.0.iter() {
+        for (k, static_info) in builder.scopes.last().stat.0.iter() {
             let info = builder.scopes.last().flow.info.get(k);
             let val = match info {
                 Some(FlowInfo {
@@ -398,7 +403,7 @@ impl Bindings {
                     // This might be because we haven't fully implemented all bindings, or because the two disagree. Just guess.
                     errors.add(
                         &module_info,
-                        *range,
+                        static_info.loc,
                         format!("Could not find flow binding for `{k}`"),
                     );
                     Binding::AnyType(AnyStyle::Error)
@@ -470,9 +475,9 @@ impl<'a> BindingsBuilder<'a> {
             if !barrier && let Some(flow) = scope.flow.info.get(&name.id) {
                 return Some(flow.key);
             } else if !matches!(scope.kind, ScopeKind::ClassBody(_))
-                && let Some(name_id) = scope.stat.0.get(&name.id)
+                && let Some(info) = scope.stat.0.get(&name.id)
             {
-                let (idx, _) = self.table.insert_anywhere(name.id.clone(), *name_id);
+                let (idx, _) = self.table.insert_anywhere(name.id.clone(), info.loc);
                 return Some(idx);
             }
             barrier = barrier || scope.barrier;
@@ -788,12 +793,12 @@ impl<'a> BindingsBuilder<'a> {
                 annotation
             }
         };
-        let defn_range = self.scopes.last().stat.0.get(name).unwrap_or_else(|| {
+        let info = self.scopes.last().stat.0.get(name).unwrap_or_else(|| {
             let module = self.module_info.name();
             panic!("Name `{name}` not found in static scope of module `{module}`")
         });
         self.table
-            .insert_anywhere(name.clone(), *defn_range)
+            .insert_anywhere(name.clone(), info.loc)
             .1
             .insert(key);
         annotation
@@ -1071,7 +1076,7 @@ impl<'a> BindingsBuilder<'a> {
         for (name, info) in last_scope.flow.info.iter() {
             let mut val = Binding::Forward(self.table.types.0.insert_if_missing(Key::Anywhere(
                 name.clone(),
-                *last_scope.stat.0.get(name).unwrap(),
+                last_scope.stat.0.get(name).unwrap().loc,
             )));
             if let Some(ann) = &info.ann {
                 val = Binding::AnnotatedType(*ann, Box::new(val));
