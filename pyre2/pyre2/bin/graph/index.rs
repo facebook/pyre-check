@@ -69,19 +69,6 @@ impl<K> Index<K> {
 }
 
 impl<K: Eq + Hash + Debug> Index<K> {
-    #[expect(dead_code)] // Logically part of the API
-    pub fn insert(&mut self, k: K) -> Idx<K>
-    where
-        K: Clone,
-    {
-        let idx = Idx::new(self.map.len());
-        let res = self.map.insert(k.clone(), idx);
-        if res.is_some() {
-            panic!("Duplicate key: {k:?}");
-        }
-        idx
-    }
-
     pub fn insert_if_missing(&mut self, k: K) -> Idx<K> {
         let idx = Idx::new(self.map.len());
         *self.map.entry(k).or_insert(idx)
