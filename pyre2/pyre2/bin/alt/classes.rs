@@ -273,22 +273,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn mro_of(&self, cls: &Class, bases: &[Expr]) -> Mro {
-        let bases: Vec<_> = bases
+        let base_mros: Vec<_> = bases
             .iter()
             .filter_map(|x| match self.base_class_of(x) {
                 BaseClass::Expr(x) => match self.expr_untype(&x) {
-                    Type::ClassType(c) => Some(c),
+                    Type::ClassType(c) => {
+                        let mro = self.get_mro_for_class(c.class_object());
+                        Some((c, mro))
+                    }
                     _ => None,
                 },
                 _ => None,
             })
             .collect();
-        Mro::new(
-            cls,
-            bases,
-            &|cls| self.get_mro_for_class(cls),
-            self.errors(),
-        )
+        Mro::new(cls, base_mros, self.errors())
     }
 
     pub fn get_mro_for_class(&self, cls: &Class) -> Arc<Mro> {

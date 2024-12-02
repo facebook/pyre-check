@@ -80,13 +80,8 @@ impl Mro {
     ///
     /// TODO: We currently omit some classes that are in the runtime MRO:
     /// `Generic`, `Protocol`, `NamedTuple`, and `object`.
-    pub fn new(
-        cls: &Class,
-        bases: Vec<ClassType>,
-        get_mro: &dyn Fn(&Class) -> Arc<Mro>,
-        errors: &ErrorCollector,
-    ) -> Mro {
-        match Linearization::new(cls, bases, get_mro, errors) {
+    pub fn new(cls: &Class, base_mros: Vec<(ClassType, Arc<Mro>)>, errors: &ErrorCollector) -> Mro {
+        match Linearization::new(cls, base_mros, errors) {
             Linearization::Cyclic => Self::cyclic(),
             Linearization::Resolved(ancestor_chains) => {
                 let ancestors = Linearization::merge(cls, ancestor_chains, errors);
@@ -164,17 +159,22 @@ impl Linearization {
     /// - One consisting of the base classes themselves in the order defined.
     fn new(
         cls: &Class,
-        bases: Vec<ClassType>,
-        get_mro: &dyn Fn(&Class) -> Arc<Mro>,
+        base_mros: Vec<(ClassType, Arc<Mro>)>,
         errors: &ErrorCollector,
     ) -> Linearization {
-        let mut bases = match Vec1::try_from_vec(bases) {
+        let bases = match Vec1::try_from_vec(
+            base_mros
+                .iter()
+                .rev()
+                .map(|(base, _)| base.clone())
+                .collect(),
+        ) {
             Ok(bases) => bases,
             Err(_) => return Linearization::empty(),
         };
         let mut ancestor_chains = Vec::new();
-        for base in bases.iter() {
-            match &*get_mro(base.class_object()) {
+        for (base, mro) in base_mros.iter() {
+            match &**mro {
                 Mro(MroInner::Resolved(ancestors)) => {
                     let ancestors_through_base = ancestors
                         .iter()
@@ -203,7 +203,6 @@ impl Linearization {
                 }
             }
         }
-        bases.reverse();
         ancestor_chains.push(AncestorChain(bases));
         Linearization::Resolved(ancestor_chains)
     }
