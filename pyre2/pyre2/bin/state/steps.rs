@@ -210,6 +210,7 @@ impl Step {
             ctx.errors,
             ctx.stdlib,
             ctx.uniques,
+            false,
         ))
     }
 }

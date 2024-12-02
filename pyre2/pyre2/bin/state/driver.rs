@@ -312,7 +312,15 @@ impl Driver {
         })(
             &answers_info,
             |_, (answers, bindings, errors): &(&Answers, &Bindings, &ErrorCollector)| {
-                answers.solve(&exports, &answers_info, bindings, errors, &stdlib, &uniques)
+                answers.solve(
+                    &exports,
+                    &answers_info,
+                    bindings,
+                    errors,
+                    &stdlib,
+                    &uniques,
+                    false,
+                )
             },
         );
         timers.add((timers_global_module(), Step::Solve, 0));
