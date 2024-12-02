@@ -154,7 +154,7 @@ impl Ast {
     }
 
     /// Calls a function on all of the names bound by this lvalue expression.
-    pub fn expr_lvalue(x: &Expr, f: &mut impl FnMut(&ExprName)) {
+    pub fn expr_lvalue<'a>(x: &'a Expr, f: &mut impl FnMut(&'a ExprName)) {
         match x {
             Expr::Name(x) => {
                 f(x);
