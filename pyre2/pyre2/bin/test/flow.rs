@@ -509,3 +509,17 @@ def magic_breakage(argument):
         raise
 "#,
 );
+
+simple_test!(
+    test_try,
+    r#"
+from typing import assert_type, Literal
+
+try:  # E: TODO: StmtTry - Bindings::stmt
+    x = 1
+except:
+    x = 2
+
+assert_type(x, Literal[1, 2])  # E: assert_type(Literal[2], Literal[1, 2]) failed
+"#,
+);

@@ -5111,6 +5111,26 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "assert_type(Class5, NoReturn) failed",
+      "description": "assert_type(Class5, NoReturn) failed",
+      "line": 76,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 76
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Missing argument 'x'",
+      "description": "Missing argument 'x'",
+      "line": 76,
+      "name": "PyreError",
+      "stop_column": 23,
+      "stop_line": 76
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Class6, Class6 | int) failed",
       "description": "assert_type(Class6, Class6 | int) failed",
@@ -5655,6 +5675,26 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "assert_type(Any, NoReturn) failed",
+      "description": "assert_type(Any, NoReturn) failed",
+      "line": 100,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 100
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 100,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 100
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "TODO: StmtTry - Bindings::stmt",
       "description": "TODO: StmtTry - Bindings::stmt",
@@ -5662,6 +5702,26 @@
       "name": "PyreError",
       "stop_column": 9,
       "stop_line": 107
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "assert_type(Any, NoReturn) failed",
+      "description": "assert_type(Any, NoReturn) failed",
+      "line": 105,
+      "name": "PyreError",
+      "stop_column": 38,
+      "stop_line": 105
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 105,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 105
     },
     {
       "code": -2,

@@ -1399,7 +1399,22 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 self.scopes.last_mut().flow.no_next = true;
             }
-            Stmt::Try(x) => self.todo("Bindings::stmt", &x),
+            Stmt::Try(x) => {
+                self.todo("Bindings::stmt", &x);
+
+                // FIXME: Not correct, just go through binding everything we need
+                self.stmts(x.body);
+                for h in x.handlers {
+                    let h = h.except_handler().unwrap(); // Only one variant for now
+                    // FIXME: Should be looking at h.type_ to get the type information
+                    if let Some(name) = h.name {
+                        self.bind_definition(&name, Binding::AnyType(AnyStyle::Error), None);
+                    }
+                    self.stmts(h.body);
+                }
+                self.stmts(x.orelse);
+                self.stmts(x.finalbody);
+            }
             Stmt::Assert(x) => {
                 self.ensure_expr(&x.test);
                 self.table
