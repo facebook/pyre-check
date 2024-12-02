@@ -69,7 +69,7 @@ impl<K> Index<K> {
 }
 
 impl<K: Eq + Hash + Debug> Index<K> {
-    pub fn insert_if_missing(&mut self, k: K) -> Idx<K> {
+    pub fn insert(&mut self, k: K) -> Idx<K> {
         let idx = Idx::new(self.map.len());
         *self.map.entry(k).or_insert(idx)
     }

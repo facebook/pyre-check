@@ -442,7 +442,7 @@ impl BindingTable {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
         let entry = self.get_mut::<K>();
-        let idx = entry.0.insert_if_missing(key);
+        let idx = entry.0.insert(key);
         entry.1.insert_once(idx, value);
         idx
     }
@@ -452,7 +452,7 @@ impl BindingTable {
         name: Name,
         range: TextRange,
     ) -> (Idx<Key>, &mut SmallSet<Idx<Key>>) {
-        let idx = self.types.0.insert_if_missing(Key::Anywhere(name, range));
+        let idx = self.types.0.insert(Key::Anywhere(name, range));
         match self
             .types
             .1
@@ -509,7 +509,7 @@ impl<'a> BindingsBuilder<'a> {
                 } else {
                     Key::Anywhere(name.id.clone(), info.loc)
                 };
-                return Some(self.table.types.0.insert_if_missing(key));
+                return Some(self.table.types.0.insert(key));
             }
             barrier = barrier || scope.barrier;
         }
@@ -762,7 +762,7 @@ impl<'a> BindingsBuilder<'a> {
         match target {
             Expr::Name(name) => {
                 let key = Key::Definition(ShortIdentifier::expr_name(name));
-                let idx = self.table.types.0.insert_if_missing(key);
+                let idx = self.table.types.0.insert(key);
                 let ann = self.bind_key(&name.id, idx, None, false);
                 self.table.types.1.insert(idx, make_binding(ann));
             }
@@ -923,12 +923,7 @@ impl<'a> BindingsBuilder<'a> {
         }
         let func_name = x.name.clone();
         let self_type = match &self.scopes.last().kind {
-            ScopeKind::ClassBody(body) => Some(
-                self.table
-                    .types
-                    .0
-                    .insert_if_missing(body.as_self_type_key()),
-            ),
+            ScopeKind::ClassBody(body) => Some(self.table.types.0.insert(body.as_self_type_key())),
             _ => None,
         };
 
@@ -1029,7 +1024,7 @@ impl<'a> BindingsBuilder<'a> {
             .table
             .types
             .0
-            .insert_if_missing(Key::Definition(ShortIdentifier::new(&x.name)));
+            .insert(Key::Definition(ShortIdentifier::new(&x.name)));
 
         x.type_params.iter().for_each(|x| {
             self.type_params(x);
@@ -1106,7 +1101,7 @@ impl<'a> BindingsBuilder<'a> {
         let last_scope = self.scopes.pop().unwrap();
         let mut fields = SmallSet::new();
         for (name, info) in last_scope.flow.info.iter() {
-            let mut val = Binding::Forward(self.table.types.0.insert_if_missing(Key::Anywhere(
+            let mut val = Binding::Forward(self.table.types.0.insert(Key::Anywhere(
                 name.clone(),
                 last_scope.stat.0.get(name).unwrap().loc,
             )));
@@ -1586,7 +1581,7 @@ impl<'a> BindingsBuilder<'a> {
                 .table
                 .types
                 .0
-                .insert_if_missing(Key::Phi(name.key().clone(), range));
+                .insert(Key::Phi(name.key().clone(), range));
             res.insert_hashed(name, FlowInfo::new(key, ann));
         }
         Flow {
@@ -1742,7 +1737,7 @@ impl LegacyTParamBuilder {
                         .table
                         .legacy_tparams
                         .0
-                        .insert_if_missing(KeyLegacyTypeParam(ShortIdentifier::new(id))),
+                        .insert(KeyLegacyTypeParam(ShortIdentifier::new(id))),
                     range_if_scoped_params_exist,
                 )
             })
@@ -1770,7 +1765,7 @@ impl LegacyTParamBuilder {
                     .table
                     .legacy_tparams
                     .0
-                    .insert_if_missing(KeyLegacyTypeParam(ShortIdentifier::new(identifier)));
+                    .insert(KeyLegacyTypeParam(ShortIdentifier::new(identifier)));
                 builder.bind_definition(
                     identifier,
                     // Note: we use None as the range here because the range is
@@ -1798,7 +1793,7 @@ impl LegacyTParamBuilder {
                     .table
                     .legacy_tparams
                     .0
-                    .insert_if_missing(KeyLegacyTypeParam(ShortIdentifier::new(id)))
+                    .insert(KeyLegacyTypeParam(ShortIdentifier::new(id)))
             })
             .collect()
     }
