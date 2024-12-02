@@ -497,3 +497,15 @@ def test():
                 continue
 "#,
 );
+
+simple_test!(
+    test_flow_crash2,
+    r#"
+def magic_breakage(argument):
+    for it in []:
+        continue
+        break
+    else:
+        raise
+"#,
+);

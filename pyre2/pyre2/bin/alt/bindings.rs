@@ -1569,7 +1569,14 @@ impl<'a> BindingsBuilder<'a> {
         if xs.len() == 1 && xs[0].no_next {
             return xs.pop().unwrap();
         }
-        let visible_branches = xs.into_iter().filter(|x| !x.no_next).collect::<Vec<_>>();
+        let (hidden_branches, mut visible_branches): (Vec<_>, Vec<_>) =
+            xs.into_iter().partition(|x| x.no_next);
+
+        // We normally go through the visible branches, but if nothing is visible no one is going to
+        // fill in the Phi keys we promised. So just given up and use the hidden branches instead.
+        if visible_branches.is_empty() {
+            visible_branches = hidden_branches;
+        }
 
         let names = visible_branches
             .iter()
