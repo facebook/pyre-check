@@ -342,7 +342,7 @@ impl Driver {
         info_eprintln(format!("Total errors: {}", error_count));
         let printing = timers.add((timers_global_module(), Step::PrintErrors, error_count));
 
-        eprintln!("Memory usage: {}", MemoryUsage::new());
+        eprintln!("Memory usage: {}", MemoryUsage::now());
         memory_trace.stop();
         eprintln!("Memory peak : {}", memory_trace.peak());
 

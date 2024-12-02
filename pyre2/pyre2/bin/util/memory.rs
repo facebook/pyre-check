@@ -60,7 +60,7 @@ impl Display for MemoryUsage {
 }
 
 impl MemoryUsage {
-    pub fn new() -> Self {
+    pub fn now() -> Self {
         let jemalloc = get_jemalloc_stats();
         Self {
             physical: memory_stats().map(|x| Bytes(x.physical_mem as u64)),
@@ -122,7 +122,7 @@ pub struct MemoryUsageTrace {
 
 impl MemoryUsageTrace {
     pub fn start(frequency: Duration) -> Self {
-        let state = Arc::new(Mutex::new((false, MemoryUsage::new())));
+        let state = Arc::new(Mutex::new((false, MemoryUsage::now())));
         let state2 = state.dupe();
         spawn(move || {
             loop {
@@ -131,7 +131,7 @@ impl MemoryUsageTrace {
                 if lock.0 {
                     break;
                 }
-                lock.1 = MemoryUsage::max_by_field(&lock.1, &MemoryUsage::new());
+                lock.1 = MemoryUsage::max_by_field(&lock.1, &MemoryUsage::now());
             }
         });
         Self { state }
@@ -142,7 +142,7 @@ impl MemoryUsageTrace {
         if !lock.0 {
             lock.0 = true;
             // If we were running before, make sure we capture a final snapshot
-            lock.1 = MemoryUsage::max_by_field(&lock.1, &MemoryUsage::new());
+            lock.1 = MemoryUsage::max_by_field(&lock.1, &MemoryUsage::now());
         }
     }
 
