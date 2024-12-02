@@ -61,6 +61,7 @@ def run(
     sys.stdout.flush()
     sys.stderr.flush()
     try:
+        # @lint-ignore FIXIT1 NoUnsafeExecRule
         result = subprocess.run(
             tuple(args),
             # We'd like to use the capture_output argument,
