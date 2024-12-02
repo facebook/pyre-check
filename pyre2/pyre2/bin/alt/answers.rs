@@ -1102,7 +1102,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .get_from_module(*m, &KeyExported::Export(name.clone()))
                 .arc_clone(),
             Binding::ClassKeyword(x) => self.expr(x, None),
-            Binding::ClassDef(x, fields, bases, legacy_tparams) => {
+            Binding::ClassDef(box (x, fields), bases, legacy_tparams) => {
                 Type::ClassDef(self.class_definition(x, fields.clone(), bases, legacy_tparams))
             }
             Binding::SelfType(k) => match &*self.get_idx(*k) {

@@ -43,7 +43,7 @@ assert_eq_size!(KeyMro, [usize; 1]);
 assert_eq_size!(KeyTypeParams, [usize; 1]);
 assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 
-assert_eq_size!(Binding, [usize; 10]);
+assert_eq_size!(Binding, [usize; 9]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
 assert_eq_size!(BindingMro, [usize; 4]);
 assert_eq_size!(BindingTypeParams, [usize; 6]);
@@ -318,8 +318,7 @@ pub enum Binding {
     /// The `Vec<Expr>` contains the base classes from the class header.
     /// The `Vec<Idx<KeyLegacyTypeParam>>` contains binding information for possible legacy type params.
     ClassDef(
-        Box<StmtClassDef>,
-        SmallSet<Name>,
+        Box<(StmtClassDef, SmallSet<Name>)>,
         Box<[Expr]>,
         Box<[Idx<KeyLegacyTypeParam>]>,
     ),
@@ -422,7 +421,7 @@ impl DisplayWith<Bindings> for Binding {
             }
             Self::Function(x, _) => write!(f, "def {}", x.name.id),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
-            Self::ClassDef(c, _, _, _) => write!(f, "class {}", c.name.id),
+            Self::ClassDef(box (c, _), _, _) => write!(f, "class {}", c.name.id),
             Self::ClassKeyword(x) => write!(f, "class_keyword {}", m.display(x)),
             Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
