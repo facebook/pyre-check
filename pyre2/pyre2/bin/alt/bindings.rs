@@ -730,10 +730,9 @@ impl<'a> BindingsBuilder<'a> {
         };
         match target {
             Expr::Name(name) => {
-                let id = Ast::expr_name_identifier(name.clone());
-                let key = Key::Definition(ShortIdentifier::new(&id));
+                let key = Key::Definition(ShortIdentifier::expr_name(name));
                 let idx = self.table.types.0.insert(key);
-                let ann = self.bind_key(&id.id, idx, None, false);
+                let ann = self.bind_key(&name.id, idx, None, false);
                 self.table.types.1.insert(idx, make_binding(ann));
             }
             Expr::Attribute(x) => {
