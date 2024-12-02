@@ -31,6 +31,10 @@ impl<T> Info<T> {
         self.value.as_ref()
     }
 
+    pub fn is_some(&self) -> bool {
+        self.value.is_some()
+    }
+
     pub fn start() -> Self {
         let now = Instant::now();
         Self {
@@ -45,5 +49,10 @@ impl<T> Info<T> {
             time: Some((self.time.map_or(now, |x| x.0), now)),
             value: Some(v),
         }
+    }
+
+    pub fn with(f: impl FnOnce() -> T) -> Self {
+        let info = Self::start();
+        info.stop(f())
     }
 }

@@ -13,19 +13,15 @@ use std::sync::Arc;
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
-use ruff_python_ast::ModModule;
 use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
-use crate::alt::answers::Answers;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::answers::Solutions;
 use crate::alt::answers::Solve;
 use crate::alt::binding::Exported;
 use crate::alt::bindings::BindingEntry;
 use crate::alt::bindings::BindingTable;
-use crate::alt::bindings::Bindings;
 use crate::alt::exports::Exports;
 use crate::alt::exports::LookupExport;
 use crate::alt::table::Keyed;
@@ -33,67 +29,35 @@ use crate::alt::table::TableKeyed;
 use crate::config::Config;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
-use crate::expectation::Expectation;
-use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
-use crate::state::info::Info;
 use crate::state::loader::Loader;
+use crate::state::steps::Context;
+use crate::state::steps::ModuleSteps;
+use crate::state::steps::Step;
 use crate::types::class::Class;
 use crate::types::stdlib::Stdlib;
 use crate::uniques::UniqueFactory;
 
 pub struct State<'a> {
-    // User supplied
     config: &'a Config,
     loader: &'a Loader<'a>,
-    #[expect(dead_code)] // Always single threaded for now
-    parallel: bool,
-    // Calculated
     uniques: UniqueFactory,
+    #[allow(dead_code)]
+    parallel: bool,
+    stdlib: RefCell<Arc<Stdlib>>,
     modules: RefCell<SmallMap<ModuleName, ModuleState>>,
-    stdlib: RefCell<Info<Arc<Stdlib>>>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct ModuleState {
-    /// I could not be found, so anyone who tries importing me
-    /// should raise an error.
-    finding_error: Option<anyhow::Error>,
     errors: Arc<ErrorCollector>,
-    module_info: Info<ModuleInfo>,
-    ast: Info<Arc<ModModule>>,
-    expectations: Info<Arc<Expectation>>,
-    exports: Info<Exports>,
-    bindings: Info<Bindings>,
-    answers: Info<Arc<Answers>>,
-    solutions: Info<Arc<Solutions>>,
-}
-
-macro_rules! computes {
-    ($self:ident, $module:ident, $field:ident) => {{
-        let m = $self.get_module($module);
-        if let Some(v) = m.$field.get() {
-            return v.dupe();
-        }
-    }};
+    steps: ModuleSteps,
 }
 
 impl ModuleState {
-    fn new() -> Self {
-        Self::default()
-    }
-
     fn clear(&mut self) {
-        // Note that we retain the timing information.
-        self.finding_error = None;
         self.errors = Arc::new(ErrorCollector::new());
-        self.module_info.clear();
-        self.ast.clear();
-        self.expectations.clear();
-        self.exports.clear();
-        self.bindings.clear();
-        self.answers.clear();
-        self.solutions.clear();
+        self.steps.clear();
     }
 }
 
@@ -107,23 +71,79 @@ impl<'a> State<'a> {
         Self {
             config,
             loader,
-            parallel,
             uniques: UniqueFactory::new(),
+            parallel,
+            stdlib: RefCell::new(Arc::new(Stdlib::for_bootstrapping())),
             modules: RefCell::new(
                 modules
                     .iter()
                     .chain(&Stdlib::required())
-                    .map(|x| (*x, ModuleState::new()))
+                    .map(|x| (*x, ModuleState::default()))
                     .collect(),
             ),
-            stdlib: RefCell::new(Info::start()),
         }
     }
 
+    fn demand(&self, module: ModuleName, step: Step) {
+        loop {
+            let module_state = self.get_module(module);
+            let todo = match step.compute_next(&module_state.steps) {
+                Some(todo) => todo,
+                None => return,
+            };
+            let compute = todo.compute().0(&module_state.steps);
+            let errors = module_state.errors.dupe();
+            mem::drop(module_state);
+            let stdlib = self.stdlib.borrow().dupe();
+            let set = compute(&Context {
+                name: module,
+                config: self.config,
+                loader: self.loader,
+                uniques: &self.uniques,
+                stdlib: &stdlib,
+                errors: &errors,
+                lookup: self,
+            });
+            set(&mut self.get_module_mut(module).steps);
+            if todo == step {
+                return; // Fast path - avoid asking again since we just did it.
+            }
+        }
+    }
+
+    fn get_module(&self, module: ModuleName) -> Ref<ModuleState> {
+        match Ref::filter_map(self.modules.borrow(), |x| x.get(&module)) {
+            Ok(v) => v,
+            Err(r) => {
+                mem::drop(r);
+                self.modules
+                    .borrow_mut()
+                    .insert(module, ModuleState::default());
+                Ref::map(self.modules.borrow(), |x| x.get(&module).unwrap())
+            }
+        }
+    }
+
+    fn get_module_mut(&self, module: ModuleName) -> RefMut<ModuleState> {
+        RefMut::map(self.modules.borrow_mut(), |x| x.entry(module).or_default())
+    }
+
+    fn grab<T: 'static>(&self, module: ModuleName, f: fn(&ModuleState) -> T) -> T {
+        f(&self.get_module(module))
+    }
+
     fn lookup_stdlib(&self, module: ModuleName, name: &Name) -> Option<Class> {
-        self.force_answers(module).lookup_class_without_stdlib(
-            &self.force_bindings(module),
-            &self.force_errors(module),
+        self.demand(module, Step::Answers);
+        let (errors, bindings, answers) = self.grab(module, |x| {
+            (
+                x.errors.dupe(),
+                x.steps.bindings.get().unwrap().dupe(),
+                x.steps.answers.get().unwrap().dupe(),
+            )
+        });
+        answers.lookup_class_without_stdlib(
+            &bindings,
+            &errors,
             module,
             name,
             self,
@@ -133,7 +153,8 @@ impl<'a> State<'a> {
     }
 
     fn lookup_export(&self, module: ModuleName) -> Option<Exports> {
-        Some(self.force_exports(module))
+        self.demand(module, Step::Exports);
+        Some(self.grab(module, |x| x.steps.exports.get().unwrap().dupe()))
     }
 
     fn lookup_answer<'b, K: Solve<Self> + Exported>(
@@ -145,15 +166,16 @@ impl<'a> State<'a> {
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        self.force_answers(module).solve_key(
-            self,
-            self,
-            &self.force_bindings(module),
-            &self.force_errors(module),
-            &self.force_stdlib(),
-            &self.uniques,
-            key,
-        )
+        self.demand(module, Step::Answers);
+        let (errors, bindings, answers) = self.grab(module, |x| {
+            (
+                x.errors.dupe(),
+                x.steps.bindings.get().unwrap().dupe(),
+                x.steps.answers.get().unwrap().dupe(),
+            )
+        });
+        let stdlib = self.stdlib.borrow().dupe();
+        answers.solve_key(self, self, &bindings, &errors, &stdlib, &self.uniques, key)
     }
 
     fn collect_errors(&self) -> Vec<Error> {
@@ -164,109 +186,9 @@ impl<'a> State<'a> {
         errors
     }
 
-    fn get_module(&self, module: ModuleName) -> Ref<ModuleState> {
-        match Ref::filter_map(self.modules.borrow(), |x| x.get(&module)) {
-            Ok(v) => v,
-            Err(r) => {
-                mem::drop(r);
-                self.modules.borrow_mut().insert(module, ModuleState::new());
-                Ref::map(self.modules.borrow(), |x| x.get(&module).unwrap())
-            }
-        }
-    }
-
-    fn get_module_mut(&self, module: ModuleName) -> RefMut<ModuleState> {
-        RefMut::map(self.modules.borrow_mut(), |x| x.entry(module).or_default())
-    }
-
-    fn force_answers(&self, module: ModuleName) -> Arc<Answers> {
-        computes!(self, module, answers);
-        let bindings = self.force_bindings(module);
-        let info = Info::start();
-        let answers = Arc::new(Answers::new(&bindings));
-        self.get_module_mut(module).answers = info.stop(answers.dupe());
-        answers
-    }
-
-    fn force_bindings(&self, module: ModuleName) -> Bindings {
-        computes!(self, module, bindings);
-        let module_info = self.force_module_info(module);
-        let errors = self.force_errors(module);
-        let ast = self.force_ast(module);
-        let info = Info::start();
-        let bindings = Bindings::new(
-            ast.body.clone(),
-            module_info,
-            self,
-            self.config,
-            &errors,
-            &self.uniques,
-        );
-        self.get_module_mut(module).bindings = info.stop(bindings.dupe());
-        bindings
-    }
-
-    fn force_module_info(&self, module: ModuleName) -> ModuleInfo {
-        computes!(self, module, module_info);
-        let info = Info::start();
-        let (load_result, should_type_check) = (self.loader)(module);
-        let components = load_result.components(module);
-        let module_info =
-            ModuleInfo::new(module, components.path, components.code, should_type_check);
-        self.get_module_mut(module).module_info = info.stop(module_info.dupe());
-        self.get_module_mut(module).finding_error = components.import_error;
-        module_info
-    }
-
-    fn force_errors(&self, module: ModuleName) -> Arc<ErrorCollector> {
-        self.get_module(module).errors.dupe()
-    }
-
-    fn force_ast(&self, module: ModuleName) -> Arc<ModModule> {
-        computes!(self, module, ast);
-        let errors = self.force_errors(module);
-        let module_info = self.force_module_info(module);
-        let info = Info::start();
-        let ast = Arc::new(module_info.parse(&errors));
-        self.get_module_mut(module).ast = info.stop(ast.dupe());
-        ast
-    }
-
-    fn force_exports(&self, module: ModuleName) -> Exports {
-        computes!(self, module, exports);
-        let module_info = self.force_module_info(module);
-        let ast = self.force_ast(module);
-        let info = Info::start();
-        let exports = Exports::new(&ast.body, &module_info, self.config);
-        self.get_module_mut(module).exports = info.stop(exports.dupe());
-        exports
-    }
-
-    /// Force a particular module to be loaded, all the way to answers.
-    fn force_solutions(&self, module: ModuleName) -> Arc<Solutions> {
-        computes!(self, module, solutions);
-        let errors = self.force_errors(module);
-        let stdlib = self.force_stdlib();
-        let answers = self.force_answers(module);
-        let bindings = self.force_bindings(module);
-        let info = Info::start();
-        let solutions =
-            Arc::new(answers.solve(self, self, &bindings, &errors, &stdlib, &self.uniques));
-        self.get_module_mut(module).solutions = info.stop(solutions.dupe());
-        solutions
-    }
-
-    fn force_stdlib(&self) -> Arc<Stdlib> {
-        {
-            let stdlib = self.stdlib.borrow();
-            if let Some(v) = stdlib.get() {
-                return v.dupe();
-            }
-        }
-        let info = Info::start();
+    fn compute_stdlib(&self) {
         let stdlib = Arc::new(Stdlib::new(|module, name| self.lookup_stdlib(module, name)));
-        *self.stdlib.borrow_mut() = info.stop(stdlib.dupe());
-        stdlib
+        *self.stdlib.borrow_mut() = stdlib;
     }
 
     /// Run, collecting all errors and destroying the state.
@@ -274,6 +196,7 @@ impl<'a> State<'a> {
     /// Note we grab the `mut` only to stop other people accessing us simultaneously,
     /// we don't actually need it.
     pub fn run_one_shot(&mut self) -> Vec<Error> {
+        self.compute_stdlib();
         // ensure we have answers for everything, keep going until we don't discover any new modules
         let mut existing = 0;
         loop {
@@ -285,12 +208,12 @@ impl<'a> State<'a> {
             existing = new;
             let force = modules
                 .iter()
-                .filter(|(_, v)| v.solutions.get().is_none())
+                .filter(|(_, v)| v.steps.solutions.get().is_none())
                 .map(|(k, _)| *k)
                 .collect::<Vec<_>>();
             mem::drop(modules);
             for k in force {
-                self.force_solutions(k);
+                self.demand(k, Step::Solutions);
             }
         }
 
@@ -300,7 +223,7 @@ impl<'a> State<'a> {
     }
 
     fn clear(&mut self) {
-        self.stdlib.borrow_mut().clear();
+        // Should we reset stdlib? Currently we don't.
         for module in self.modules.borrow_mut().values_mut() {
             module.clear();
         }
