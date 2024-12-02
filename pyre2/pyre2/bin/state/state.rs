@@ -19,6 +19,8 @@ use starlark_map::small_map::SmallMap;
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::answers::Solutions;
+use crate::alt::answers::SolutionsEntry;
 use crate::alt::answers::Solve;
 use crate::alt::binding::Exported;
 use crate::alt::binding::KeyExported;
@@ -32,6 +34,7 @@ use crate::config::Config;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
 use crate::module::module_name::ModuleName;
+use crate::state::info::Info;
 use crate::state::loader::Loader;
 use crate::state::steps::Context;
 use crate::state::steps::ModuleSteps;
@@ -87,6 +90,10 @@ impl<'a> State<'a> {
         }
     }
 
+    fn evict<T>(&self, module: ModuleName, f: fn(&mut ModuleSteps) -> &mut Info<T>) {
+        f(&mut self.modules.borrow_mut().get_mut(&module).unwrap().steps).clear();
+    }
+
     fn demand(&self, module: ModuleName, step: Step) {
         loop {
             let module_state = self.get_module(module);
@@ -97,6 +104,11 @@ impl<'a> State<'a> {
             let compute = todo.compute().0(&module_state.steps);
             let errors = module_state.errors.dupe();
             mem::drop(module_state);
+            if todo == Step::Bindings {
+                // We have captured the Ast, and must have already built Exports (we do it serially),
+                // so won't need the Ast again.
+                self.evict(module, |x| &mut x.ast);
+            }
             let stdlib = self.stdlib.borrow().dupe();
             let set = compute(&Context {
                 name: module,
@@ -108,6 +120,11 @@ impl<'a> State<'a> {
                 lookup: self,
             });
             set(&mut self.get_module_mut(module).steps);
+            if todo == Step::Solutions {
+                // From now on we can use the answers directly, so evict the bindings/answers.
+                self.evict(module, |x| &mut x.bindings);
+                self.evict(module, |x| &mut x.answers);
+            }
             if todo == step {
                 return; // Fast path - avoid asking again since we just did it.
             }
@@ -166,7 +183,15 @@ impl<'a> State<'a> {
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+        Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
+        {
+            // if we happen to have solutions available, use them instead
+            if let Some(solutions) = self.get_module(module).steps.solutions.get() {
+                return Arc::new(TableKeyed::<K>::get(&**solutions).get(key).unwrap().clone());
+            }
+        }
+
         self.demand(module, Step::Answers);
         let (errors, bindings, answers) = self.grab(module, |x| {
             (
@@ -265,6 +290,7 @@ impl LookupAnswer for State<'_> {
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+        Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         self.lookup_answer(name, k)
     }

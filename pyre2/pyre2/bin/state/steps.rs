@@ -185,7 +185,7 @@ impl Step {
         ast: Arc<ModModule>,
     ) -> Bindings {
         Bindings::new(
-            ast.body.clone(),
+            Arc::unwrap_or_clone(ast).body,
             module_info.0,
             ctx.lookup,
             ctx.config,
@@ -210,7 +210,7 @@ impl Step {
             ctx.errors,
             ctx.stdlib,
             ctx.uniques,
-            false,
+            true,
         ))
     }
 }
