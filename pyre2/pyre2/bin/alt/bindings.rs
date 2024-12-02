@@ -345,7 +345,15 @@ impl Bindings {
     where
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        self.0.table.get::<K>().1.get_exists(idx)
+        self.0.table.get::<K>().1.get(idx).unwrap_or_else(|| {
+            let key = self.idx_to_key(idx);
+            panic!(
+                "Internal error: key lacking binding, module={}, path={}, key={}, key-debug={key:?}",
+                self.module_info().name(),
+                self.module_info().path().display(),
+                self.module_info().display(key),
+            )
+        })
     }
 
     pub fn idx_to_key<K: Keyed>(&self, idx: Idx<K>) -> &K
