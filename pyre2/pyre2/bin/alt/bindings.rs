@@ -156,7 +156,7 @@ impl Static {
         if top_level && module_info.name() != ModuleName::builtins() {
             d.inject_implicit();
         }
-        for (name, (range, _)) in d.definitions {
+        for (name, (range, _, _)) in d.definitions {
             self.add(name, range)
         }
         for (m, range) in d.import_all {

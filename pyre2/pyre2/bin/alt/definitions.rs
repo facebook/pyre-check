@@ -48,7 +48,8 @@ pub struct Definitions {
     /// All the things defined in this module, along with a position pointing at the name.
     /// While the range will be a place it is defined, there is no guarantee it is the first/last or otherwise.
     /// If the definition occurs multiple times, the lowest `DefinitionStyle`` is used (e.g. prefer `Local`).
-    pub definitions: SmallMap<Name, (TextRange, DefinitionStyle)>,
+    /// The number is the distinct times this variable was defined.
+    pub definitions: SmallMap<Name, (TextRange, DefinitionStyle, usize)>,
     /// All the modules that are imported with `from x import *`.
     pub import_all: SmallMap<ModuleName, TextRange>,
     /// The `__all__` variable contents.
@@ -125,7 +126,7 @@ impl Definitions {
                 self.dunder_all.push(DunderAllEntry::Module(*x));
             }
         }
-        for (name, (_, defn)) in self.definitions.iter() {
+        for (name, (_, defn, _)) in self.definitions.iter() {
             if !name.starts_with('_')
                 && (style == ModuleStyle::Executable
                     || matches!(defn, DefinitionStyle::Local | DefinitionStyle::ImportAsEq))
@@ -145,9 +146,12 @@ impl<'a> DefinitionsBuilder<'a> {
 
     fn add_name(&mut self, x: &Name, range: TextRange, style: DefinitionStyle) {
         match self.inner.definitions.entry(x.clone()) {
-            Entry::Occupied(mut e) => e.get_mut().1 = cmp::min(e.get().1, style),
+            Entry::Occupied(mut e) => {
+                e.get_mut().1 = cmp::min(e.get().1, style);
+                e.get_mut().2 += 1;
+            }
             Entry::Vacant(e) => {
-                e.insert((range, style));
+                e.insert((range, style, 1));
             }
         }
     }
