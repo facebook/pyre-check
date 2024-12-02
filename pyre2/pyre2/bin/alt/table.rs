@@ -34,6 +34,7 @@ use crate::types::types::Type;
 use crate::util::display::DisplayWith;
 
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
+    const EXPORTED: bool = false;
     type Value: Debug + DisplayWith<Bindings>;
     type Answer: Clone + Debug + Display;
 }
@@ -43,6 +44,7 @@ impl Keyed for Key {
     type Answer = Type;
 }
 impl Keyed for KeyExported {
+    const EXPORTED: bool = true;
     type Value = Binding;
     type Answer = Type;
 }
@@ -51,6 +53,7 @@ impl Keyed for KeyAnnotation {
     type Answer = Annotation;
 }
 impl Keyed for KeyMro {
+    const EXPORTED: bool = true;
     type Value = BindingMro;
     type Answer = Mro;
 }
@@ -59,6 +62,7 @@ impl Keyed for KeyLegacyTypeParam {
     type Answer = LegacyTypeParameterLookup;
 }
 impl Keyed for KeyTypeParams {
+    const EXPORTED: bool = true;
     type Value = BindingTypeParams;
     type Answer = QuantifiedVec;
 }

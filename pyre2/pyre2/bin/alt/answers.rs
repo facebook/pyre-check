@@ -510,6 +510,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
+        assert!(K::EXPORTED);
         if name == self.module_info().name() {
             self.get(k)
         } else {
