@@ -185,6 +185,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.get_instance_attribute_or_error(&class, method_name, range);
                     self.as_callable_or_error(method_type, CallStyle::Method(method_name), range)
                 }
+                Some(AttributeBase::ClassObject(class)) => {
+                    let method_type = self.get_class_attribute_or_error(&class, method_name, range);
+                    self.as_callable_or_error(method_type, CallStyle::Method(method_name), range)
+                }
                 Some(AttributeBase::Any(style)) => style.propagate_callable(),
                 None => self.error_callable(
                     range,
@@ -390,6 +394,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(AttributeBase::ClassInstance(class)) => {
                     self.get_instance_attribute_or_error(&class, attr_name, range)
                 }
+                Some(AttributeBase::ClassObject(class)) => {
+                    self.get_class_attribute_or_error(&class, attr_name, range)
+                }
                 Some(AttributeBase::Any(style)) => style.propagate(),
                 None => match obj {
                     Type::Module(module) => match module.as_single_module() {
@@ -405,10 +412,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         if q.is_param_spec() && attr_name == "kwargs" =>
                     {
                         Type::type_form(Type::Kwargs(q.id()))
-                    }
-                    Type::ClassDef(cls) => self.get_class_attribute_or_error(cls, attr_name, range),
-                    Type::Type(box Type::ClassType(class)) => {
-                        self.get_class_attribute_or_error(class.class_object(), attr_name, range)
                     }
                     Type::Type(box Type::Any(style)) => style.propagate(),
                     Type::TypeAlias(ta) => {

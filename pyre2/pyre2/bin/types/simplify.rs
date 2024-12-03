@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use dupe::Dupe;
+
+use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
@@ -37,6 +40,7 @@ pub fn unions(xs: Vec<Type>) -> Type {
 
 pub enum AttributeBase {
     ClassInstance(ClassType),
+    ClassObject(Class),
     Any(AnyStyle),
 }
 
@@ -60,6 +64,10 @@ pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
                 None
             }
         }
+        Type::ClassDef(cls) => Some(AttributeBase::ClassObject(cls)),
+        Type::Type(box Type::ClassType(class)) => {
+            Some(AttributeBase::ClassObject(class.class_object().dupe()))
+        }
         // TODO: check to see which ones should have class representations
         Type::Union(_)
         | Type::Never(_)
@@ -72,7 +80,6 @@ pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         | Type::Forall(_, _)
         | Type::Unpack(_)
         | Type::Quantified(_)
-        | Type::ClassDef(_)
         | Type::Var(_)
         | Type::Module(_)
         | Type::ParamSpec(_)
