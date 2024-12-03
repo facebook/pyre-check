@@ -67,3 +67,12 @@ class A(foo=f(15)):  # E: EXPECTED Literal[15] <: bool
     pass
 "#,
 );
+
+simple_test!(
+    test_metaclass_must_subclass_type,
+    r#"
+class BadMeta: pass
+class A(metaclass=BadMeta):
+    pass
+"#,
+);
