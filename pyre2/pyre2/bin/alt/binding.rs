@@ -16,6 +16,7 @@ use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
@@ -45,7 +46,7 @@ assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 
 assert_eq_size!(Binding, [usize; 9]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
-assert_eq_size!(BindingMro, [usize; 4]);
+assert_eq_size!(BindingMro, [usize; 8]);
 assert_eq_size!(BindingTypeParams, [usize; 6]);
 assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
 
@@ -72,8 +73,6 @@ pub enum Key {
     Phi(Name, TextRange),
     /// The binding definition site, anywhere it occurs
     Anywhere(Name, TextRange),
-    /// A 'keyword argument' appearing in a class header, e.g. `metaclass`.
-    ClassKeyword(ShortIdentifier, Name),
 }
 
 impl Ranged for Key {
@@ -88,7 +87,6 @@ impl Ranged for Key {
             Self::Anon(r) => *r,
             Self::Phi(_, r) => *r,
             Self::Anywhere(_, r) => *r,
-            Self::ClassKeyword(c, _) => c.range(),
         }
     }
 }
@@ -103,13 +101,6 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::Anon(r) => write!(f, "anon {r:?}"),
             Self::Phi(n, r) => write!(f, "phi {n} {r:?}"),
             Self::Anywhere(n, r) => write!(f, "anywhere {n} {r:?}"),
-            Self::ClassKeyword(x, n) => write!(
-                f,
-                "class_keyword {} {:?} . {}",
-                ctx.display(x),
-                x.range(),
-                n
-            ),
             Self::ReturnType(x) => write!(f, "return {} {:?}", ctx.display(x), x.range()),
             Self::ReturnExpression(x, i) => {
                 write!(f, "return {} {:?} @ {i:?}", ctx.display(x), x.range())
@@ -322,8 +313,6 @@ pub enum Binding {
         Box<[Expr]>,
         Box<[Idx<KeyLegacyTypeParam>]>,
     ),
-    /// A class header keyword argument (e.g. the `metaclass`).
-    ClassKeyword(Expr),
     /// The Self type for a class, must point at a class.
     SelfType(Idx<Key>),
     /// A forward reference to another binding.
@@ -422,7 +411,6 @@ impl DisplayWith<Bindings> for Binding {
             Self::Function(x, _) => write!(f, "def {}", x.name.id),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::ClassDef(box (c, _), _, _) => write!(f, "class {}", c.name.id),
-            Self::ClassKeyword(x) => write!(f, "class_keyword {}", m.display(x)),
             Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
             Self::AugAssign(s) => write!(f, "augmented_assign {:?}", s),
@@ -534,11 +522,17 @@ impl DisplayWith<Bindings> for BindingAnnotation {
     }
 }
 
-/// Binding for the class `Mro`.
+// TODO(stroxler) Rename this; I'm deferring it for now because it would lead to difficult
+// merge conflicts with outstanding diffs.
+//
+/// Binding for the class's metadata (type level information derived from the class header - this
+/// includes the MRO, the class keywords, and the metaclass).
+///
 /// The `Key` points to the definition of the class.
 /// The `Vec<Expr>` contains the base classes from the class header.
+/// The `SmallMap<Name, Expr>` contains the class keywords from the class header.
 #[derive(Clone, Debug)]
-pub struct BindingMro(pub Idx<Key>, pub Vec<Expr>);
+pub struct BindingMro(pub Idx<Key>, pub Vec<Expr>, pub SmallMap<Name, Expr>);
 
 impl DisplayWith<Bindings> for BindingMro {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {

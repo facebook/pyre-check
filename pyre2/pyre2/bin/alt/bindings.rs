@@ -1054,21 +1054,14 @@ impl<'a> BindingsBuilder<'a> {
             base
         });
 
-        self.table.insert(
-            KeyMro(ShortIdentifier::new(&x.name)),
-            BindingMro(definition_key, bases.clone()),
-        );
-
-        let mut keywords = SmallSet::new();
+        let mut keywords = SmallMap::new();
         x.keywords().iter().for_each(|keyword| {
             if let Some(name) = &keyword.arg {
                 self.ensure_expr(&keyword.value);
-                if keywords.insert(name.id.clone()) {
-                    self.table.insert(
-                        Key::ClassKeyword(ShortIdentifier::new(&x.name), name.id.clone()),
-                        Binding::ClassKeyword(keyword.value.clone()),
-                    );
-                } else {
+                if keywords
+                    .insert(name.id.clone(), keyword.value.clone())
+                    .is_some()
+                {
                     self.errors.add(
                         &self.module_info,
                         keyword.range(),
@@ -1086,6 +1079,11 @@ impl<'a> BindingsBuilder<'a> {
                 )
             }
         });
+
+        self.table.insert(
+            KeyMro(ShortIdentifier::new(&x.name)),
+            BindingMro(definition_key, bases.clone(), keywords),
+        );
 
         legacy_tparam_builder.add_name_definitions(self);
 

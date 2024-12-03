@@ -16,6 +16,7 @@ use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::TextRange;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use super::answers::AnswersSolver;
@@ -272,7 +273,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         QuantifiedVec(tparams.into_iter().collect())
     }
 
-    pub fn mro_of(&self, cls: &Class, bases: &[Expr]) -> Mro {
+    pub fn mro_of(&self, cls: &Class, bases: &[Expr], keywords: &SmallMap<Name, Expr>) -> Mro {
         let base_mros: Vec<_> = bases
             .iter()
             .filter_map(|x| match self.base_class_of(x) {
@@ -286,6 +287,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 _ => None,
             })
             .collect();
+        keywords.values().for_each(|x| {
+            self.expr(x, None);
+        });
         Mro::new(cls, base_mros, self.errors())
     }
 

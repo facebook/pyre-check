@@ -631,10 +631,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn solve_mro(&self, binding: &BindingMro) -> Arc<Mro> {
         match binding {
-            BindingMro(k, bases) => {
+            BindingMro(k, bases, keywords) => {
                 let self_ty = self.get_idx(*k);
                 match &*self_ty {
-                    Type::ClassDef(cls) => Arc::new(self.mro_of(cls, bases)),
+                    Type::ClassDef(cls) => Arc::new(self.mro_of(cls, bases, keywords)),
                     _ => {
                         unreachable!("The key inside an Mro binding must be a class type")
                     }
@@ -1113,7 +1113,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExported::Export(name.clone()))
                 .arc_clone(),
-            Binding::ClassKeyword(x) => self.expr(x, None),
             Binding::ClassDef(box (x, fields), bases, legacy_tparams) => {
                 Type::ClassDef(self.class_definition(x, fields.clone(), bases, legacy_tparams))
             }
