@@ -543,7 +543,7 @@ simple_test!(
     r#"
 def expect_str(x: str): ...
 def test(x: None):
-    x += expect_str(0) # E: Expected class, got None # E: EXPECTED Literal[0] <: str
+    x += expect_str(0) # E: Object of class `NoneType` has no attribute `__iadd__` # E: EXPECTED Literal[0] <: str
 "#,
 );
 

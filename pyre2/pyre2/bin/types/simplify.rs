@@ -79,12 +79,12 @@ pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         Type::TypeVarTuple(_) => Some(AttributeBase::ClassInstance(stdlib.type_var_tuple())),
         Type::Args(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_args())),
         Type::Kwargs(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_kwargs())),
+        Type::None => Some(AttributeBase::ClassInstance(stdlib.none_type())),
         // TODO: check to see which ones should have class representations
         Type::Union(_)
         | Type::Never(_)
         | Type::Callable(_)
         | Type::Ellipsis
-        | Type::None
         | Type::SpecialForm(_)
         | Type::Type(_)
         | Type::Intersect(_)

@@ -765,7 +765,7 @@ class A:
     def __iter__(self) -> None:
         return None
 def f(x: A):
-    for _ in x:  # E: Expected class, got None
+    for _ in x:  # E: Object of class `NoneType` has no attribute `__next__`
         pass
     "#,
 );
