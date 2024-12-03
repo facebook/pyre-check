@@ -8,6 +8,7 @@
 use std::sync::Arc;
 
 use dupe::Dupe;
+use enum_iterator::Sequence;
 use parse_display::Display;
 use ruff_python_ast::ModModule;
 
@@ -57,8 +58,9 @@ impl ModuleSteps {
     }
 }
 
-#[derive(Debug, Clone, Copy, Dupe, Eq, PartialEq, PartialOrd, Ord, Display)]
-#[repr(u8)]
+#[derive(
+    Debug, Clone, Copy, Dupe, Eq, PartialEq, PartialOrd, Ord, Display, Sequence
+)]
 pub enum Step {
     ModuleInfo,
     Ast,
@@ -96,38 +98,6 @@ macro_rules! compute_step {
 }
 
 impl Step {
-    fn from_u8(value: u8) -> Option<Self> {
-        match value {
-            0 => Some(Self::ModuleInfo),
-            1 => Some(Self::Ast),
-            2 => Some(Self::Exports),
-            3 => Some(Self::Bindings),
-            4 => Some(Self::Answers),
-            5 => Some(Self::Solutions),
-            _ => None,
-        }
-    }
-
-    fn to_u8(self) -> u8 {
-        self as u8
-    }
-
-    pub fn prev(self) -> Option<Self> {
-        Self::from_u8(self.to_u8().checked_sub(1)?)
-    }
-
-    pub fn next(self) -> Option<Self> {
-        Self::from_u8(self.to_u8().checked_add(1)?)
-    }
-
-    pub fn first() -> Self {
-        Self::ModuleInfo
-    }
-
-    pub fn last() -> Self {
-        Self::Solutions
-    }
-
     pub fn check(self, steps: &ModuleSteps) -> bool {
         match self {
             Step::ModuleInfo => steps.module_info.is_some(),
@@ -139,6 +109,14 @@ impl Step {
         }
     }
 
+    pub fn first() -> Self {
+        Sequence::first().unwrap()
+    }
+
+    pub fn last() -> Self {
+        Sequence::last().unwrap()
+    }
+
     /// If you want to have access to the given step, the next step to compute is returned.
     /// None means the step is already available.
     pub fn compute_next(self, steps: &ModuleSteps) -> Option<Self> {
@@ -146,7 +124,7 @@ impl Step {
             return None;
         }
         let mut res = self;
-        while let Some(prev) = res.prev()
+        while let Some(prev) = res.previous()
             && !prev.check(steps)
         {
             res = prev;

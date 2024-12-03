@@ -15,6 +15,7 @@ path = "bin/main.rs"
 [dependencies]
 anyhow = "1.0.86"
 clap = { version = "4.5.20", features = ["derive", "env", "string", "unicode", "wrap_help"] }
+enum-iterator = "1.4.1"
 equivalent = "1.0"
 human_bytes = "0.4.3"
 itertools = "0.13.0"

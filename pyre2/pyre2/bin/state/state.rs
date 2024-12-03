@@ -13,6 +13,7 @@ use std::sync::RwLock;
 
 use dupe::Dupe;
 use dupe::OptionDupedExt;
+use enum_iterator::Sequence;
 use parking_lot::FairMutex;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
