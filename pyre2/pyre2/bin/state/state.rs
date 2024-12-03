@@ -13,6 +13,7 @@ use std::sync::RwLock;
 
 use dupe::Dupe;
 use dupe::OptionDupedExt;
+use parking_lot::FairMutex;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
@@ -78,7 +79,6 @@ pub struct State<'a> {
     config: &'a Config,
     loader: &'a Loader<'a>,
     uniques: UniqueFactory,
-    #[allow(dead_code)]
     parallel: bool,
     stdlib: RwLock<Arc<Stdlib>>,
     modules: RwLock<SmallMap<ModuleName, Arc<ModuleState>>>,
@@ -93,6 +93,13 @@ pub struct State<'a> {
 
 #[derive(Default)]
 struct ModuleState {
+    // BIG WARNING: This must be a FairMutex or you run into deadlocks.
+    // Imagine module Foo is having demand Solutions in one thread, and demand Exports in another.
+    // If the first thread ends up computing each entry in turn, it might starve the Exports waiting.
+    // If the Solutions for Foo depends on the Answers of Bar, and the Answers of Bar was the one who
+    // asked for the Exports of Foo, then you get a deadlock.
+    // A fair mutex means that everyone asking for Exports will be released before you move to the next step.
+    lock: FairMutex<()>,
     errors: ErrorCollector,
     steps: RwLock<ModuleSteps>,
 }
@@ -150,9 +157,21 @@ impl<'a> State<'a> {
         loop {
             let module_state = self.get_module(module);
             let lock = module_state.steps.read().unwrap();
-            let todo = match step.compute_next(&lock) {
-                Some(todo) => todo,
-                None => break,
+            if step.check(&lock) {
+                return;
+            }
+            drop(lock);
+            let _compute_lock = module_state.lock.lock();
+            let lock = module_state.steps.read().unwrap();
+
+            // BIG WARNING: We do Step::Solutions.compute_next, NOT step.compute_next.
+            // The reason being that we may evict Answers, and later ask for Answers,
+            // which would then say Answers needed to be computed. But because we only ever
+            // evict earlier things in the list when computing later things, if we always
+            // ask from the end we get the right thing, not the evicted thing.
+            let todo = match Step::Solutions.compute_next(&lock) {
+                Some(todo) if todo <= step => todo,
+                _ => break,
             };
             computed = true;
             let compute = todo.compute().0(&lock);
@@ -262,6 +281,9 @@ impl<'a> State<'a> {
         let module_state = self.get_module(module);
         let (bindings, answers) = {
             let steps = module_state.steps.read().unwrap();
+            if let Some(solutions) = steps.solutions.get() {
+                return Arc::new(TableKeyed::<K>::get(&**solutions).get(key).unwrap().clone());
+            }
             (
                 steps.bindings.get().unwrap().dupe(),
                 steps.answers.get().unwrap().dupe(),
@@ -292,9 +314,7 @@ impl<'a> State<'a> {
         *self.stdlib.write().unwrap() = stdlib;
     }
 
-    fn run_internal(&mut self) -> Vec<Error> {
-        self.compute_stdlib();
-
+    fn work(&self) {
         // ensure we have answers for everything, keep going until we don't discover any new modules
         loop {
             let mut lock = self.todo.lock().unwrap();
@@ -304,6 +324,21 @@ impl<'a> State<'a> {
             };
             drop(lock);
             self.demand(x.module, Step::last());
+        }
+    }
+
+    fn run_internal(&mut self) -> Vec<Error> {
+        self.compute_stdlib();
+
+        if self.parallel {
+            rayon::scope(|s| {
+                for _ in 1..rayon::current_num_threads() {
+                    s.spawn(|_| self.work());
+                }
+                self.work();
+            });
+        } else {
+            self.work();
         }
 
         self.collect_errors()
