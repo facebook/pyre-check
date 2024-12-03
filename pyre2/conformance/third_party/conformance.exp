@@ -8722,16 +8722,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "TODO: StmtMatch - Bindings::stmt",
-      "description": "TODO: StmtMatch - Bindings::stmt",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
@@ -8779,16 +8769,6 @@
       "name": "PyreError",
       "stop_column": 51,
       "stop_line": 53
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: StmtMatch - Bindings::stmt",
-      "description": "TODO: StmtMatch - Bindings::stmt",
-      "line": 57,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 63
     },
     {
       "code": -2,
@@ -20531,16 +20511,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "TODO: StmtMatch - Bindings::stmt",
-      "description": "TODO: StmtMatch - Bindings::stmt",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 51,
-      "stop_line": 103
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed",
       "description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed",
@@ -20568,16 +20538,6 @@
       "name": "PyreError",
       "stop_column": 51,
       "stop_line": 103
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: StmtMatch - Bindings::stmt",
-      "description": "TODO: StmtMatch - Bindings::stmt",
-      "line": 113,
-      "name": "PyreError",
-      "stop_column": 53,
-      "stop_line": 117
     },
     {
       "code": -2,

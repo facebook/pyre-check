@@ -1397,15 +1397,17 @@ impl<'a> BindingsBuilder<'a> {
                 self.stmts(x.body.clone());
             }
             Stmt::Match(x) => {
-                self.todo("Bindings::stmt", &x);
-
-                // Very bad version that binds the right things
                 self.ensure_expr(&x.subject);
                 self.table.insert(
                     Key::Anon(x.subject.range()),
                     Binding::Expr(None, *x.subject),
                 );
+                let mut exhaustive = false;
+                let range = x.range;
+                let mut branches = Vec::new();
                 for case in x.cases {
+                    let mut base = self.scopes.last().flow.clone();
+                    // TODO: don't use Any here
                     Ast::pattern_lvalue(&case.pattern, &mut |x| match x {
                         Either::Left(x) => {
                             self.bind_definition(x, Binding::AnyType(AnyStyle::Error), None);
@@ -1420,7 +1422,17 @@ impl<'a> BindingsBuilder<'a> {
                             .insert(Key::Anon(guard.range()), Binding::Expr(None, *guard));
                     }
                     self.stmts(case.body);
+                    mem::swap(&mut self.scopes.last_mut().flow, &mut base);
+                    branches.push(base);
+                    if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
+                        exhaustive = true;
+                        break;
+                    }
                 }
+                if !exhaustive {
+                    branches.push(self.scopes.last().flow.clone());
+                }
+                self.scopes.last_mut().flow = self.merge_flow(branches, range, false);
             }
             Stmt::Raise(x) => {
                 if let Some(exc) = x.exc {
