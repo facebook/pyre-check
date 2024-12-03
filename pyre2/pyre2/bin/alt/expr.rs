@@ -33,6 +33,7 @@ use crate::types::callable::Args;
 use crate::types::callable::Callable;
 use crate::types::callable::Required;
 use crate::types::literal::Lit;
+use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
 use crate::types::simplify::as_attribute_base;
 use crate::types::simplify::AttributeBase;
@@ -187,6 +188,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Some(AttributeBase::ClassObject(class)) => {
                     let method_type = self.get_class_attribute_or_error(&class, method_name, range);
+                    self.as_callable_or_error(method_type, CallStyle::Method(method_name), range)
+                }
+                Some(AttributeBase::Module(module)) => {
+                    let method_type = self.lookup_module_attr(&module, method_name, range);
                     self.as_callable_or_error(method_type, CallStyle::Method(method_name), range)
                 }
                 Some(AttributeBase::Any(style)) => style.propagate_callable(),
@@ -388,6 +393,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn lookup_module_attr(&self, module: &Module, attr_name: &Name, range: TextRange) -> Type {
+        match module.as_single_module() {
+            Some(module_name) => self.get_import(attr_name, module_name, range),
+            None => module.push_path(attr_name.clone()).to_type(),
+        }
+    }
+
     fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
         self.distribute_over_union(obj, |obj| {
             match as_attribute_base(obj.clone(), self.stdlib) {
@@ -397,12 +409,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(AttributeBase::ClassObject(class)) => {
                     self.get_class_attribute_or_error(&class, attr_name, range)
                 }
+                Some(AttributeBase::Module(module)) => {
+                    self.lookup_module_attr(&module, attr_name, range)
+                }
                 Some(AttributeBase::Any(style)) => style.propagate(),
                 None => match obj {
-                    Type::Module(module) => match module.as_single_module() {
-                        Some(module_name) => self.get_import(attr_name, module_name, range),
-                        None => module.push_path(attr_name.clone()).to_type(),
-                    },
                     Type::Type(box Type::Quantified(q))
                         if q.is_param_spec() && attr_name == "args" =>
                     {

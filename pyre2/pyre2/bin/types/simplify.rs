@@ -9,6 +9,7 @@ use dupe::Dupe;
 
 use crate::types::class::Class;
 use crate::types::class::ClassType;
+use crate::types::module::Module;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
 use crate::types::types::AnyStyle;
@@ -41,6 +42,7 @@ pub fn unions(xs: Vec<Type>) -> Type {
 pub enum AttributeBase {
     ClassInstance(ClassType),
     ClassObject(Class),
+    Module(Module),
     Any(AnyStyle),
 }
 
@@ -68,6 +70,7 @@ pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         Type::Type(box Type::ClassType(class)) => {
             Some(AttributeBase::ClassObject(class.class_object().dupe()))
         }
+        Type::Module(module) => Some(AttributeBase::Module(module)),
         // TODO: check to see which ones should have class representations
         Type::Union(_)
         | Type::Never(_)
@@ -81,7 +84,6 @@ pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         | Type::Unpack(_)
         | Type::Quantified(_)
         | Type::Var(_)
-        | Type::Module(_)
         | Type::ParamSpec(_)
         | Type::TypeVar(_)
         | Type::Kwargs(_)
