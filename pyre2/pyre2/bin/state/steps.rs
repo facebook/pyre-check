@@ -45,6 +45,7 @@ pub struct ModuleSteps {
     pub answers: Info<Arc<Answers>>,
     pub solutions: Info<Arc<Solutions>>,
 }
+
 impl ModuleSteps {
     pub fn clear(&mut self) {
         self.module_info.clear();
@@ -56,7 +57,7 @@ impl ModuleSteps {
     }
 }
 
-#[derive(Debug, Clone, Copy, Dupe, Eq, PartialEq, Display)]
+#[derive(Debug, Clone, Copy, Dupe, Eq, PartialEq, PartialOrd, Ord, Display)]
 #[repr(u8)]
 pub enum Step {
     ModuleInfo,
@@ -113,6 +114,18 @@ impl Step {
 
     pub fn prev(self) -> Option<Self> {
         Self::from_u8(self.to_u8().checked_sub(1)?)
+    }
+
+    pub fn next(self) -> Option<Self> {
+        Self::from_u8(self.to_u8().checked_add(1)?)
+    }
+
+    pub fn first() -> Self {
+        Self::ModuleInfo
+    }
+
+    pub fn last() -> Self {
+        Self::Solutions
     }
 
     pub fn check(self, steps: &ModuleSteps) -> bool {

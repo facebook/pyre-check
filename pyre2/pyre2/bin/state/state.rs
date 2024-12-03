@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::sync::RwLock;
 
 use dupe::Dupe;
@@ -43,6 +46,34 @@ use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
 
+#[derive(Debug, Clone, Copy)]
+struct HeapItem {
+    /// The next Step that needs doing for this module.
+    /// The Eq/Ord impls only look at the step.
+    step: Step,
+    module: ModuleName,
+}
+
+impl Ord for HeapItem {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.step.cmp(&other.step)
+    }
+}
+
+impl PartialOrd for HeapItem {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Eq for HeapItem {}
+
+impl PartialEq for HeapItem {
+    fn eq(&self, other: &Self) -> bool {
+        self.step == other.step
+    }
+}
+
 pub struct State<'a> {
     config: &'a Config,
     loader: &'a Loader<'a>,
@@ -51,6 +82,10 @@ pub struct State<'a> {
     parallel: bool,
     stdlib: RwLock<Arc<Stdlib>>,
     modules: RwLock<SmallMap<ModuleName, Arc<ModuleState>>>,
+    /// Items we still need to process. Stored in a max heap, so that
+    /// the highest step (the module that is closest to being finished)
+    /// gets picked first, ensuring we release its memory quickly.
+    todo: Mutex<BinaryHeap<HeapItem>>,
 
     // Set to true to keep data around forever.
     retain_memory: bool,
@@ -90,6 +125,16 @@ impl<'a> State<'a> {
                     .map(|x| (*x, Default::default()))
                     .collect(),
             ),
+            todo: Mutex::new(
+                modules
+                    .iter()
+                    .chain(&stdlib_modules)
+                    .map(|x| HeapItem {
+                        step: Step::first(),
+                        module: *x,
+                    })
+                    .collect(),
+            ),
             retain_memory: true, // Will always be overwritten by entry points
         }
     }
@@ -101,13 +146,15 @@ impl<'a> State<'a> {
     }
 
     fn demand(&self, module: ModuleName, step: Step) {
+        let mut computed = false;
         loop {
             let module_state = self.get_module(module);
             let lock = module_state.steps.read().unwrap();
             let todo = match step.compute_next(&lock) {
                 Some(todo) => todo,
-                None => return,
+                None => break,
             };
+            computed = true;
             let compute = todo.compute().0(&lock);
             drop(lock);
             if todo == Step::Bindings {
@@ -133,8 +180,14 @@ impl<'a> State<'a> {
                 self.evict(&mut lock.answers);
             }
             if todo == step {
-                return; // Fast path - avoid asking again since we just did it.
+                break; // Fast path - avoid asking again since we just did it.
             }
+        }
+        if computed && let Some(next) = step.next() {
+            self.todo
+                .lock()
+                .unwrap()
+                .push(HeapItem { step: next, module });
         }
     }
 
@@ -243,23 +296,14 @@ impl<'a> State<'a> {
         self.compute_stdlib();
 
         // ensure we have answers for everything, keep going until we don't discover any new modules
-        let mut existing = 0;
         loop {
-            let modules = self.modules.read().unwrap();
-            let new = modules.len();
-            if new == existing {
-                break;
-            }
-            existing = new;
-            let force = modules
-                .iter()
-                .filter(|(_, v)| v.steps.read().unwrap().solutions.get().is_none())
-                .map(|(k, _)| *k)
-                .collect::<Vec<_>>();
-            drop(modules);
-            for k in force {
-                self.demand(k, Step::Solutions);
-            }
+            let mut lock = self.todo.lock().unwrap();
+            let x = match lock.pop() {
+                Some(x) => x,
+                None => break,
+            };
+            drop(lock);
+            self.demand(x.module, Step::last());
         }
 
         self.collect_errors()
