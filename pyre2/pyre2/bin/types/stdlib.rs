@@ -31,6 +31,9 @@ pub struct Stdlib {
     generator: Option<Class>,
     awaitable: Option<Class>,
     coroutine: Option<Class>,
+    type_var: Option<Class>,
+    param_spec: Option<Class>,
+    type_var_tuple: Option<Class>,
     traceback_type: Option<Class>,
     builtins_type: Option<Class>,
     ellipsis_type: Option<Class>,
@@ -74,6 +77,9 @@ impl Stdlib {
             generator: lookup_class(typing, &Name::new("Generator")),
             awaitable: lookup_class(typing, &Name::new("Awaitable")),
             coroutine: lookup_class(typing, &Name::new("Coroutine")),
+            type_var: lookup_class(typing, &Name::new("TypeVar")),
+            param_spec: lookup_class(typing, &Name::new("ParamSpec")),
+            type_var_tuple: lookup_class(typing, &Name::new("TypeVarTuple")),
             traceback_type: lookup_class(types, &Name::new("TracebackType")),
 
             object_class_type: lookup_class(builtins, &Name::new("object"))
@@ -196,6 +202,18 @@ impl Stdlib {
 
     pub fn coroutine(&self, yield_ty: Type, send_ty: Type, return_ty: Type) -> ClassType {
         Self::apply(&self.coroutine, vec![yield_ty, send_ty, return_ty])
+    }
+
+    pub fn type_var(&self) -> ClassType {
+        Self::primitive(&self.type_var)
+    }
+
+    pub fn param_spec(&self) -> ClassType {
+        Self::primitive(&self.param_spec)
+    }
+
+    pub fn type_var_tuple(&self) -> ClassType {
+        Self::primitive(&self.type_var_tuple)
     }
 
     pub fn traceback_type(&self) -> ClassType {

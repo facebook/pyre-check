@@ -194,6 +194,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let method_type = self.lookup_module_attr(&module, method_name, range);
                     self.as_callable_or_error(method_type, CallStyle::Method(method_name), range)
                 }
+                Some(AttributeBase::Quantified(q)) => {
+                    let method_type = q.as_value(self.stdlib).to_type();
+                    self.as_callable_or_error(method_type, CallStyle::Method(method_name), range)
+                }
                 Some(AttributeBase::Any(style)) => style.propagate_callable(),
                 None => self.error_callable(
                     range,
@@ -412,18 +416,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(AttributeBase::Module(module)) => {
                     self.lookup_module_attr(&module, attr_name, range)
                 }
+                Some(AttributeBase::Quantified(q)) => {
+                    if q.is_param_spec() && attr_name == "args" {
+                        Type::type_form(Type::Args(q.id()))
+                    } else if q.is_param_spec() && attr_name == "kwargs" {
+                        Type::type_form(Type::Kwargs(q.id()))
+                    } else {
+                        self.get_instance_attribute_or_error(
+                            &q.as_value(self.stdlib),
+                            attr_name,
+                            range,
+                        )
+                    }
+                }
                 Some(AttributeBase::Any(style)) => style.propagate(),
                 None => match obj {
-                    Type::Type(box Type::Quantified(q))
-                        if q.is_param_spec() && attr_name == "args" =>
-                    {
-                        Type::type_form(Type::Args(q.id()))
-                    }
-                    Type::Type(box Type::Quantified(q))
-                        if q.is_param_spec() && attr_name == "kwargs" =>
-                    {
-                        Type::type_form(Type::Kwargs(q.id()))
-                    }
                     Type::Type(box Type::Any(style)) => style.propagate(),
                     Type::TypeAlias(ta) => {
                         if let Some(t) = ta.as_value() {

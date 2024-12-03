@@ -13,6 +13,7 @@ use crate::types::module::Module;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
 use crate::types::types::AnyStyle;
+use crate::types::types::Quantified;
 use crate::types::types::Type;
 
 pub fn unions(xs: Vec<Type>) -> Type {
@@ -43,6 +44,7 @@ pub enum AttributeBase {
     ClassInstance(ClassType),
     ClassObject(Class),
     Module(Module),
+    Quantified(Quantified),
     Any(AnyStyle),
 }
 
@@ -70,6 +72,7 @@ pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         Type::Type(box Type::ClassType(class)) => {
             Some(AttributeBase::ClassObject(class.class_object().dupe()))
         }
+        Type::Type(box Type::Quantified(q)) => Some(AttributeBase::Quantified(q)),
         Type::Module(module) => Some(AttributeBase::Module(module)),
         // TODO: check to see which ones should have class representations
         Type::Union(_)

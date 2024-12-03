@@ -81,6 +81,9 @@ class TypeVar:
 class ParamSpec:
     def __init__(self, name: str) -> None: ...
 
+class TypeVarTuple:
+    def __init__(self, name: str) -> None: ...
+
 def reveal_type(obj, /):
     return obj
 

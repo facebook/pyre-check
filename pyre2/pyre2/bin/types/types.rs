@@ -104,6 +104,14 @@ impl Quantified {
         Type::Quantified(self)
     }
 
+    pub fn as_value(&self, stdlib: &Stdlib) -> ClassType {
+        match self.kind {
+            QuantifiedKind::TypeVar => stdlib.type_var(),
+            QuantifiedKind::ParamSpec => stdlib.param_spec(),
+            QuantifiedKind::TypeVarTuple => stdlib.type_var_tuple(),
+        }
+    }
+
     pub fn is_param_spec(&self) -> bool {
         matches!(self.kind, QuantifiedKind::ParamSpec)
     }
