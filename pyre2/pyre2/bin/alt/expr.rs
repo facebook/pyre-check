@@ -180,7 +180,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         self.distribute_over_union(ty, |ty| {
             let callable = match as_attribute_base(ty.clone(), self.stdlib) {
-                Some(AttributeBase::ClassType(class)) => {
+                Some(AttributeBase::ClassInstance(class)) => {
                     let method_type =
                         self.get_instance_attribute_or_error(&class, method_name, range);
                     self.as_callable_or_error(method_type, CallStyle::Method(method_name), range)
@@ -387,7 +387,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
         self.distribute_over_union(obj, |obj| {
             match as_attribute_base(obj.clone(), self.stdlib) {
-                Some(AttributeBase::ClassType(class)) => {
+                Some(AttributeBase::ClassInstance(class)) => {
                     self.get_instance_attribute_or_error(&class, attr_name, range)
                 }
                 Some(AttributeBase::Any(style)) => style.propagate(),
