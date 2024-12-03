@@ -94,8 +94,8 @@
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
     "Line 9: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 21: Unexpected errors [\"Missing argument 'flush'\", 'Cannot use type alias `GoodAlias1` as a value']",
-    "Line 22: Unexpected errors [\"Missing argument 'flush'\", 'Cannot use type alias `GoodAlias1` as a value']",
+    "Line 21: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED Callable[[], Any] <: object']",
+    "Line 22: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED Callable[[], tuple[ParamSpec | TypeVar | TypeVarTuple, ...]] <: object']",
     "Line 82: Unexpected errors ['untype, got list[type[int] | type[str]]']"
   ],
   "aliases_typealiastype.py": [

@@ -36,6 +36,7 @@ pub struct Stdlib {
     param_spec_args: Option<Class>,
     param_spec_kwargs: Option<Class>,
     type_var_tuple: Option<Class>,
+    type_alias_type: Option<Class>,
     traceback_type: Option<Class>,
     builtins_type: Option<Class>,
     ellipsis_type: Option<Class>,
@@ -84,6 +85,7 @@ impl Stdlib {
             param_spec_args: lookup_class(typing, &Name::new("ParamSpecArgs")),
             param_spec_kwargs: lookup_class(typing, &Name::new("ParamSpecKwargs")),
             type_var_tuple: lookup_class(typing, &Name::new("TypeVarTuple")),
+            type_alias_type: lookup_class(typing, &Name::new("TypeAliasType")),
             traceback_type: lookup_class(types, &Name::new("TracebackType")),
 
             object_class_type: lookup_class(builtins, &Name::new("object"))
@@ -226,6 +228,10 @@ impl Stdlib {
 
     pub fn param_spec_kwargs(&self) -> ClassType {
         Self::primitive(&self.param_spec_kwargs)
+    }
+
+    pub fn type_alias_type(&self) -> ClassType {
+        Self::primitive(&self.type_alias_type)
     }
 
     pub fn traceback_type(&self) -> ClassType {

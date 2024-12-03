@@ -126,7 +126,7 @@ type X3 = int
 
 X1.__add__  # ok
 X2.__add__  # ok
-X3.__add__  # E: Cannot use type alias `X3`
+X3.__add__  # E: Object of class `TypeAliasType` has no attribute `__add__`
     "#,
 );
 

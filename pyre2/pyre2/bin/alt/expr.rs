@@ -137,13 +137,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Type::Any(style) => Some(style.propagate_callable()),
-            Type::TypeAlias(ta) => {
-                if let Some(t) = ta.as_value() {
-                    self.as_callable(t)
-                } else {
-                    None
-                }
-            }
+            Type::TypeAlias(ta) => self.as_callable(ta.as_value(self.stdlib)),
             _ => None,
         }
     }
@@ -443,27 +437,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .get_instance_attribute(&self.stdlib.builtins_type(), attr_name)
                     .unwrap_or_else(|| style.propagate()),
                 Some(AttributeBase::Any(style)) => style.propagate(),
-                None => match obj {
-                    Type::TypeAlias(ta) => {
-                        if let Some(t) = ta.as_value() {
-                            self.attr_infer(&t, attr_name, range)
-                        } else {
-                            self.error(
-                                range,
-                                format!("Cannot use type alias `{}` as a value", ta.name),
-                            )
-                        }
-                    }
-                    // Class and Any case already handled before
-                    _ => self.error(
-                        range,
-                        format!(
-                            "TODO: Answers::expr_infer attribute: `{}`.{}",
-                            obj.clone().deterministic_printing(),
-                            attr_name,
-                        ),
+                None => self.error(
+                    range,
+                    format!(
+                        "TODO: Answers::expr_infer attribute: `{}`.{}",
+                        obj.clone().deterministic_printing(),
+                        attr_name,
                     ),
-                },
+                ),
             }
         })
     }

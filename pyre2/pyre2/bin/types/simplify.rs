@@ -64,13 +64,7 @@ pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         Type::Literal(lit) => Some(AttributeBase::ClassInstance(lit.general_class_type(stdlib))),
         Type::TypeGuard(_) | Type::TypeIs(_) => Some(AttributeBase::ClassInstance(stdlib.bool())),
         Type::Any(style) => Some(AttributeBase::Any(style)),
-        Type::TypeAlias(ta) => {
-            if let Some(t) = ta.as_value() {
-                as_attribute_base(t, stdlib)
-            } else {
-                None
-            }
-        }
+        Type::TypeAlias(ta) => as_attribute_base(ta.as_value(stdlib), stdlib),
         Type::ClassDef(cls) => Some(AttributeBase::ClassObject(cls)),
         Type::Type(box Type::ClassType(class)) => {
             Some(AttributeBase::ClassObject(class.class_object().dupe()))
