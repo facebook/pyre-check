@@ -11,6 +11,8 @@ use std::fmt::Formatter;
 use std::iter;
 use std::sync::Arc;
 
+use ruff_python_ast::name::Name;
+use starlark_map::small_map::SmallMap;
 use vec1::Vec1;
 
 use crate::error::collector::ErrorCollector;
@@ -22,11 +24,11 @@ use crate::types::types::Type;
 use crate::util::display::commas_iter;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ClassMetadata(Mro);
+pub struct ClassMetadata(Mro, Keywords);
 
 impl Display for ClassMetadata {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "ClassMetadata({})", self.0)
+        write!(f, "ClassMetadata({}, {})", self.0, self.1)
     }
 }
 
@@ -34,13 +36,22 @@ impl ClassMetadata {
     pub fn new(
         cls: &Class,
         bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
+        keywords: SmallMap<Name, Type>,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
-        ClassMetadata(Mro::new(cls, bases_with_metadata, errors))
+        ClassMetadata(
+            Mro::new(cls, bases_with_metadata, errors),
+            Keywords(keywords),
+        )
     }
 
     pub fn recursive() -> Self {
-        ClassMetadata(Mro::Cyclic)
+        ClassMetadata(Mro::Cyclic, Keywords::default())
+    }
+
+    #[allow(dead_code)] // This is used in tests now, and will be needed later in production.
+    pub fn keywords(&self) -> &SmallMap<Name, Type> {
+        &self.1.0
     }
 
     pub fn ancestors<'a>(&'a self, stdlib: &'a Stdlib) -> impl Iterator<Item = &'a ClassType> {
@@ -57,6 +68,21 @@ impl ClassMetadata {
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         self.0.visit_mut(&mut f)
+    }
+}
+
+/// A struct representing the keywords in a class header, e.g. for
+/// `Class A(foo=True): ...` we will have `"foo": Literal[True]`.
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+struct Keywords(SmallMap<Name, Type>);
+
+impl Display for Keywords {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(
+            f,
+            "[{}]",
+            commas_iter(|| self.0.iter().map(|(n, ty)| format!("{n}: {ty}")))
+        )
     }
 }
 
@@ -201,7 +227,7 @@ impl Linearization {
         let mut ancestor_chains = Vec::new();
         for (base, mro) in bases_with_metadata.iter() {
             match &**mro {
-                ClassMetadata(Mro::Resolved(ancestors)) => {
+                ClassMetadata(Mro::Resolved(ancestors), _) => {
                     let ancestors_through_base = ancestors
                         .iter()
                         .map(|ancestor| ancestor.substitute(&base.substitution()))
@@ -214,7 +240,7 @@ impl Linearization {
                 }
                 // None and Cyclic both indicate a cycle, the distinction just
                 // depends on how exactly the recursion in resolving keys plays out.
-                ClassMetadata(Mro::Cyclic) => {
+                ClassMetadata(Mro::Cyclic, _) => {
                     errors.add(
                         cls.module_info(),
                         cls.name().range,

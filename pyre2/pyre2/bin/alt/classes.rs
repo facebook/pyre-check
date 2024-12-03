@@ -259,10 +259,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 _ => None,
             })
             .collect();
-        keywords.values().for_each(|x| {
-            self.expr(x, None);
-        });
-        ClassMetadata::new(cls, bases_with_metadata, self.errors())
+        let keywords: SmallMap<_, _> = keywords
+            .iter()
+            .map(|(n, x)| (n.clone(), self.expr(x, None)))
+            .collect();
+        ClassMetadata::new(cls, bases_with_metadata, keywords, self.errors())
     }
 
     pub fn get_metadata_for_class(&self, cls: &Class) -> Arc<ClassMetadata> {
