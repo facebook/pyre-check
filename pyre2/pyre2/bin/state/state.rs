@@ -152,16 +152,6 @@ impl<'a> State<'a> {
             .dupe()
     }
 
-    fn grab<T: 'static>(
-        &self,
-        module: ModuleName,
-        f: for<'b> fn(&'b Arc<ErrorCollector>, &'b ModuleSteps) -> T,
-    ) -> T {
-        let module_state = self.get_module(module);
-        let lock = module_state.steps.read().unwrap();
-        f(&module_state.errors, &lock)
-    }
-
     fn lookup_stdlib(&self, module: ModuleName, name: &Name) -> Option<Class> {
         let t = self.lookup_answer(module, &KeyExported::Export(name.clone()));
         match t.arc_clone() {
@@ -182,7 +172,13 @@ impl<'a> State<'a> {
 
     fn lookup_export(&self, module: ModuleName) -> Option<Exports> {
         self.demand(module, Step::Exports);
-        Some(self.grab(module, |_, steps| steps.exports.get().unwrap().dupe()))
+        self.get_module(module)
+            .steps
+            .read()
+            .unwrap()
+            .exports
+            .get()
+            .duped()
     }
 
     fn lookup_answer<'b, K: Solve<Self> + Exported>(
@@ -210,15 +206,24 @@ impl<'a> State<'a> {
         }
 
         self.demand(module, Step::Answers);
-        let (errors, bindings, answers) = self.grab(module, |errors, steps| {
+        let module_state = self.get_module(module);
+        let (bindings, answers) = {
+            let steps = module_state.steps.read().unwrap();
             (
-                errors.dupe(),
                 steps.bindings.get().unwrap().dupe(),
                 steps.answers.get().unwrap().dupe(),
             )
-        });
+        };
         let stdlib = self.stdlib.read().unwrap().dupe();
-        answers.solve_key(self, self, &bindings, &errors, &stdlib, &self.uniques, key)
+        answers.solve_key(
+            self,
+            self,
+            &bindings,
+            &module_state.errors,
+            &stdlib,
+            &self.uniques,
+            key,
+        )
     }
 
     fn collect_errors(&self) -> Vec<Error> {
