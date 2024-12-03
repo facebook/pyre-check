@@ -301,7 +301,12 @@ pub enum Binding {
     /// A type parameter.
     TypeParameter(Quantified),
     /// A function definition, but with the return/body stripped out.
-    Function(Box<StmtFunctionDef>, FunctionKind),
+    /// The `Vec<Idx<LegacyTypeParam>>` contains binding information for possible legacy type params.
+    Function(
+        Box<StmtFunctionDef>,
+        FunctionKind,
+        Box<[Idx<KeyLegacyTypeParam>]>,
+    ),
     /// An import statement, typically with Self::Import.
     Import(ModuleName, Name),
     /// A class definition, but with the body stripped out.
@@ -408,7 +413,7 @@ impl DisplayWith<Bindings> for Binding {
                     range
                 )
             }
-            Self::Function(x, _) => write!(f, "def {}", x.name.id),
+            Self::Function(x, _, _) => write!(f, "def {}", x.name.id),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::ClassDef(box (c, _), _, _) => write!(f, "class {}", c.name.id),
             Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),

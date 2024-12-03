@@ -13,6 +13,8 @@ use std::sync::Arc;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
+use ruff_python_ast::TypeParam;
+use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::ordered_set::OrderedSet;
@@ -907,6 +909,35 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         enter_type
     }
 
+    pub fn scoped_type_params(&self, x: &Option<Box<TypeParams>>) -> Vec<Quantified> {
+        let mut names = Vec::new();
+        match x {
+            Some(box x) => {
+                for x in &x.type_params {
+                    let name = match x {
+                        TypeParam::TypeVar(x) => &x.name,
+                        TypeParam::ParamSpec(x) => &x.name,
+                        TypeParam::TypeVarTuple(x) => &x.name,
+                    };
+                    names.push(name);
+                }
+            }
+            None => {}
+        }
+
+        fn get_quantified(t: &Type) -> &Quantified {
+            match t {
+                Type::Type(box Type::Quantified(q)) => q,
+                _ => unreachable!(),
+            }
+        }
+
+        names
+            .into_iter()
+            .map(|x| get_quantified(&self.get(&Key::Definition(ShortIdentifier::new(x)))).clone())
+            .collect()
+    }
+
     fn solve_binding(&self, binding: &Binding) -> Arc<Type> {
         // Replace any solved recursive variables with their answers.
         // We call self.unions() to simplify cases like
@@ -1049,7 +1080,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Type::None // Unused
             }
-            Binding::Function(x, kind) => {
+            Binding::Function(x, kind, legacy_tparam_keys) => {
                 let check_default = |default: &Option<Box<Expr>>, ty: &Type| {
                     let mut required = Required::Required;
                     if let Some(default) = default {
@@ -1107,8 +1138,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     ret
                 };
-                let qs = self.get(&KeyTypeParams(ShortIdentifier::new(&x.name)));
-                Type::forall(qs.0.clone(), Type::callable(args, ret))
+                let mut tparams = self.scoped_type_params(&x.type_params);
+                let legacy_tparams = legacy_tparam_keys
+                    .iter()
+                    .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
+                tparams.extend(legacy_tparams);
+                Type::forall(tparams, Type::callable(args, ret))
             }
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExported::Export(name.clone()))

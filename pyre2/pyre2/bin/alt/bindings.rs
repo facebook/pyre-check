@@ -959,10 +959,9 @@ impl<'a> BindingsBuilder<'a> {
             self.scopes.push(Scope::method(func_name.clone()));
         }
 
-        let value = BindingTypeParams::Function(
-            tparams.unwrap_or_default(),
-            legacy_tparam_builder.lookup_keys(self),
-        );
+        let legacy_tparams = legacy_tparam_builder.lookup_keys(self);
+        let value =
+            BindingTypeParams::Function(tparams.unwrap_or_default(), legacy_tparams.clone());
         self.table
             .insert(KeyTypeParams(ShortIdentifier::new(&func_name)), value);
 
@@ -986,7 +985,11 @@ impl<'a> BindingsBuilder<'a> {
                 .insert(method.name.id.clone(), method.instance_attributes.clone());
         }
 
-        self.bind_definition(&x.name.clone(), Binding::Function(Box::new(x), kind), None);
+        self.bind_definition(
+            &x.name.clone(),
+            Binding::Function(Box::new(x), kind, legacy_tparams.into_boxed_slice()),
+            None,
+        );
 
         let mut return_exprs = Vec::new();
         while self.returns.len() > return_count {

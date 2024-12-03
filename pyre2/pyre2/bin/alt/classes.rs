@@ -13,8 +13,6 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtClassDef;
-use ruff_python_ast::TypeParam;
-use ruff_python_ast::TypeParams;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
@@ -96,35 +94,6 @@ fn replace_return_type(ty: Type, ret: Type) -> Type {
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    fn scoped_type_params(&self, x: &Option<Box<TypeParams>>) -> SmallSet<Quantified> {
-        let mut names = Vec::new();
-        match x {
-            Some(box x) => {
-                for x in &x.type_params {
-                    let name = match x {
-                        TypeParam::TypeVar(x) => &x.name,
-                        TypeParam::ParamSpec(x) => &x.name,
-                        TypeParam::TypeVarTuple(x) => &x.name,
-                    };
-                    names.push(name);
-                }
-            }
-            None => {}
-        }
-
-        fn get_quantified(t: &Type) -> &Quantified {
-            match t {
-                Type::Type(box Type::Quantified(q)) => q,
-                _ => unreachable!(),
-            }
-        }
-
-        names
-            .into_iter()
-            .map(|x| get_quantified(&self.get(&Key::Definition(ShortIdentifier::new(x)))).clone())
-            .collect()
-    }
-
     pub fn class_definition(
         &self,
         x: &StmtClassDef,
@@ -211,7 +180,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn class_tparams(
         &self,
         name: &Identifier,
-        scoped_tparams: SmallSet<Quantified>,
+        scoped_tparams: Vec<Quantified>,
         bases: Vec<BaseClass>,
         legacy: &[Idx<KeyLegacyTypeParam>],
     ) -> QuantifiedVec {
@@ -245,7 +214,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
         }
         // Initialized the tparams: combine scoped and explicit type parameters
-        let mut tparams = scoped_tparams;
+        let mut tparams = SmallSet::new();
+        tparams.extend(scoped_tparams);
         tparams.extend(generic_tparams);
         tparams.extend(protocol_tparams);
         // Handle implicit tparams: if a Quantified was bound at this scope and is not yet
