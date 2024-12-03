@@ -227,7 +227,7 @@ impl SolveRecursive for KeyAnnotation {
 }
 impl SolveRecursive for KeyClassMetadata {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
-        ClassMetadata::cyclic()
+        ClassMetadata::recursive()
     }
     fn visit_type_mut(v: &mut ClassMetadata, f: &mut dyn FnMut(&mut Type)) {
         v.visit_mut(f);

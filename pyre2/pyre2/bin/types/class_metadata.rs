@@ -24,6 +24,42 @@ use crate::util::display::commas_iter;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassMetadata(Mro);
 
+impl Display for ClassMetadata {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "ClassMetadata({})", self.0)
+    }
+}
+
+impl ClassMetadata {
+    pub fn new(
+        cls: &Class,
+        bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
+        errors: &ErrorCollector,
+    ) -> ClassMetadata {
+        ClassMetadata(Mro::new(cls, bases_with_metadata, errors))
+    }
+
+    pub fn recursive() -> Self {
+        ClassMetadata(Mro::Cyclic)
+    }
+
+    pub fn ancestors<'a>(&'a self, stdlib: &'a Stdlib) -> impl Iterator<Item = &'a ClassType> {
+        self.ancestors_no_object()
+            .iter()
+            .chain(iter::once(stdlib.object_class_type()))
+    }
+
+    /// The MRO doesn't track `object` directly for efficiency, since it always comes last, and
+    /// some use cases (for example checking if the type is an enum) do not care about `object`.
+    pub fn ancestors_no_object(&self) -> &[ClassType] {
+        self.0.ancestors_no_object()
+    }
+
+    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+        self.0.visit_mut(&mut f)
+    }
+}
+
 /// A struct representing a class's ancestors, in method resolution order (MRO)
 /// and after dropping cycles and nonlinearizable inheritance.
 ///
@@ -47,9 +83,9 @@ enum Mro {
     Cyclic,
 }
 
-impl Display for ClassMetadata {
+impl Display for Mro {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match &self.0 {
+        match self {
             Mro::Resolved(xs) => {
                 write!(f, "[{}]", commas_iter(|| xs.iter()))
             }
@@ -66,7 +102,7 @@ impl Display for ClassName<'_> {
     }
 }
 
-impl ClassMetadata {
+impl Mro {
     /// Compute all ancestors the method resolution order (MRO).
     ///
     /// Each ancestor is paired with `targs: TArgs` representing type
@@ -84,41 +120,27 @@ impl ClassMetadata {
         cls: &Class,
         bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
         errors: &ErrorCollector,
-    ) -> ClassMetadata {
+    ) -> Self {
         match Linearization::new(cls, bases_with_metadata, errors) {
-            Linearization::Cyclic => Self::cyclic(),
+            Linearization::Cyclic => Self::Cyclic,
             Linearization::Resolved(ancestor_chains) => {
                 let ancestors = Linearization::merge(cls, ancestor_chains, errors);
-                Self::resolved(ancestors)
+                Self::Resolved(ancestors)
             }
         }
-    }
-
-    pub fn cyclic() -> Self {
-        ClassMetadata(Mro::Cyclic)
-    }
-
-    pub fn resolved(ancestors: Vec<ClassType>) -> Self {
-        ClassMetadata(Mro::Resolved(ancestors))
-    }
-
-    pub fn ancestors<'a>(&'a self, stdlib: &'a Stdlib) -> impl Iterator<Item = &'a ClassType> {
-        self.ancestors_no_object()
-            .iter()
-            .chain(iter::once(stdlib.object_class_type()))
     }
 
     /// The MRO doesn't track `object` directly for efficiency, since it always comes last, and
     /// some use cases (for example checking if the type is an enum) do not care about `object`.
     pub fn ancestors_no_object(&self) -> &[ClassType] {
-        match &self.0 {
+        match self {
             Mro::Resolved(ancestors) => ancestors,
             Mro::Cyclic => &[],
         }
     }
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
-        match self.0 {
+        match self {
             Mro::Resolved(ref mut ancestors) => {
                 ancestors.iter_mut().for_each(|c| c.visit_mut(&mut f))
             }
