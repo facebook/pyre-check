@@ -46,6 +46,9 @@ pub enum AttributeBase {
     Module(Module),
     Quantified(Quantified),
     Any(AnyStyle),
+    /// type[Any] is a special case where attribute lookups first check the
+    /// builtin `type` class before falling back to `Any`.
+    TypeAny(AnyStyle),
 }
 
 pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
@@ -73,6 +76,7 @@ pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
             Some(AttributeBase::ClassObject(class.class_object().dupe()))
         }
         Type::Type(box Type::Quantified(q)) => Some(AttributeBase::Quantified(q)),
+        Type::Type(box Type::Any(style)) => Some(AttributeBase::TypeAny(style)),
         Type::Module(module) => Some(AttributeBase::Module(module)),
         Type::TypeVar(_) => Some(AttributeBase::ClassInstance(stdlib.type_var())),
         Type::ParamSpec(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec())),

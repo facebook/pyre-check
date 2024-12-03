@@ -20080,8 +20080,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, tuple[type, ...]) failed",
-      "description": "assert_type(Any, tuple[type, ...]) failed",
+      "concise_description": "assert_type(Callable[[], tuple[type, ...]], tuple[type, ...]) failed",
+      "description": "assert_type(Callable[[], tuple[type, ...]], tuple[type, ...]) failed",
       "line": 102,
       "name": "PyreError",
       "stop_column": 45,
@@ -20130,8 +20130,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, tuple[type, ...]) failed",
-      "description": "assert_type(Any, tuple[type, ...]) failed",
+      "concise_description": "assert_type(Callable[[], tuple[type, ...]], tuple[type, ...]) failed",
+      "description": "assert_type(Callable[[], tuple[type, ...]], tuple[type, ...]) failed",
       "line": 110,
       "name": "PyreError",
       "stop_column": 45,

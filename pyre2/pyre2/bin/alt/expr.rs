@@ -198,6 +198,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let method_type = q.as_value(self.stdlib).to_type();
                     self.as_callable_or_error(method_type, CallStyle::Method(method_name), range)
                 }
+                Some(AttributeBase::TypeAny(style)) => {
+                    match self.get_instance_attribute(&self.stdlib.builtins_type(), method_name) {
+                        None => style.propagate_callable(),
+                        Some(method_type) => self.as_callable_or_error(
+                            method_type,
+                            CallStyle::Method(method_name),
+                            range,
+                        ),
+                    }
+                }
                 Some(AttributeBase::Any(style)) => style.propagate_callable(),
                 None => self.error_callable(
                     range,
@@ -429,9 +439,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         )
                     }
                 }
+                Some(AttributeBase::TypeAny(style)) => self
+                    .get_instance_attribute(&self.stdlib.builtins_type(), attr_name)
+                    .unwrap_or_else(|| style.propagate()),
                 Some(AttributeBase::Any(style)) => style.propagate(),
                 None => match obj {
-                    Type::Type(box Type::Any(style)) => style.propagate(),
                     Type::TypeAlias(ta) => {
                         if let Some(t) = ta.as_value() {
                             self.attr_infer(&t, attr_name, range)
