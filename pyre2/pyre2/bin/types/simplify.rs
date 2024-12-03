@@ -35,29 +35,27 @@ pub fn unions(xs: Vec<Type>) -> Type {
     }
 }
 
-pub enum ClassAttributeBase {
+pub enum AttributeBase {
     ClassType(ClassType),
     Any(AnyStyle),
 }
 
-pub fn as_class_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<ClassAttributeBase> {
+pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
     match ty {
-        Type::ClassType(class_type) => Some(ClassAttributeBase::ClassType(class_type)),
+        Type::ClassType(class_type) => Some(AttributeBase::ClassType(class_type)),
         Type::Tuple(Tuple::Unbounded(box element)) => {
-            Some(ClassAttributeBase::ClassType(stdlib.tuple(element)))
+            Some(AttributeBase::ClassType(stdlib.tuple(element)))
         }
-        Type::Tuple(Tuple::Concrete(elements)) => Some(ClassAttributeBase::ClassType(
-            stdlib.tuple(unions(elements)),
-        )),
-        Type::LiteralString => Some(ClassAttributeBase::ClassType(stdlib.str())),
-        Type::Literal(lit) => Some(ClassAttributeBase::ClassType(
-            lit.general_class_type(stdlib),
-        )),
-        Type::TypeGuard(_) | Type::TypeIs(_) => Some(ClassAttributeBase::ClassType(stdlib.bool())),
-        Type::Any(style) => Some(ClassAttributeBase::Any(style)),
+        Type::Tuple(Tuple::Concrete(elements)) => {
+            Some(AttributeBase::ClassType(stdlib.tuple(unions(elements))))
+        }
+        Type::LiteralString => Some(AttributeBase::ClassType(stdlib.str())),
+        Type::Literal(lit) => Some(AttributeBase::ClassType(lit.general_class_type(stdlib))),
+        Type::TypeGuard(_) | Type::TypeIs(_) => Some(AttributeBase::ClassType(stdlib.bool())),
+        Type::Any(style) => Some(AttributeBase::Any(style)),
         Type::TypeAlias(ta) => {
             if let Some(t) = ta.as_value() {
-                as_class_attribute_base(t, stdlib)
+                as_attribute_base(t, stdlib)
             } else {
                 None
             }

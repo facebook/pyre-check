@@ -34,8 +34,8 @@ use crate::types::callable::Callable;
 use crate::types::callable::Required;
 use crate::types::literal::Lit;
 use crate::types::param_spec::ParamSpec;
-use crate::types::simplify::as_class_attribute_base;
-use crate::types::simplify::ClassAttributeBase;
+use crate::types::simplify::as_attribute_base;
+use crate::types::simplify::AttributeBase;
 use crate::types::special_form::SpecialForm;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::Restriction;
@@ -179,13 +179,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         check_arg: &dyn Fn(&T, Option<&Type>),
     ) -> Type {
         self.distribute_over_union(ty, |ty| {
-            let callable = match as_class_attribute_base(ty.clone(), self.stdlib) {
-                Some(ClassAttributeBase::ClassType(class)) => {
+            let callable = match as_attribute_base(ty.clone(), self.stdlib) {
+                Some(AttributeBase::ClassType(class)) => {
                     let method_type =
                         self.get_instance_attribute_or_error(&class, method_name, range);
                     self.as_callable_or_error(method_type, CallStyle::Method(method_name), range)
                 }
-                Some(ClassAttributeBase::Any(style)) => style.propagate_callable(),
+                Some(AttributeBase::Any(style)) => style.propagate_callable(),
                 None => self.error_callable(
                     range,
                     format!(
@@ -386,11 +386,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
         self.distribute_over_union(obj, |obj| {
-            match as_class_attribute_base(obj.clone(), self.stdlib) {
-                Some(ClassAttributeBase::ClassType(class)) => {
+            match as_attribute_base(obj.clone(), self.stdlib) {
+                Some(AttributeBase::ClassType(class)) => {
                     self.get_instance_attribute_or_error(&class, attr_name, range)
                 }
-                Some(ClassAttributeBase::Any(style)) => style.propagate(),
+                Some(AttributeBase::Any(style)) => style.propagate(),
                 None => match obj {
                     Type::Module(module) => match module.as_single_module() {
                         Some(module_name) => self.get_import(attr_name, module_name, range),
