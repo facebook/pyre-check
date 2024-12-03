@@ -17,19 +17,16 @@ use crate::alt::binding::Binding;
 use crate::alt::binding::BindingAnnotation;
 use crate::alt::binding::BindingClassMetadata;
 use crate::alt::binding::BindingLegacyTypeParam;
-use crate::alt::binding::BindingTypeParams;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyAnnotation;
 use crate::alt::binding::KeyClassMetadata;
 use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
-use crate::alt::binding::KeyTypeParams;
 use crate::alt::bindings::Bindings;
 use crate::module::module_info::ModuleInfo;
 use crate::types::annotation::Annotation;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::types::LegacyTypeParameterLookup;
-use crate::types::types::QuantifiedVec;
 use crate::types::types::Type;
 use crate::util::display::DisplayWith;
 
@@ -61,11 +58,6 @@ impl Keyed for KeyLegacyTypeParam {
     type Value = BindingLegacyTypeParam;
     type Answer = LegacyTypeParameterLookup;
 }
-impl Keyed for KeyTypeParams {
-    const EXPORTED: bool = true;
-    type Value = BindingTypeParams;
-    type Answer = QuantifiedVec;
-}
 
 pub trait TableKeyed<K> {
     type Value;
@@ -89,7 +81,6 @@ macro_rules! table {
             $($vis)* annotations: $t<KeyAnnotation>,
             $($vis)* mros: $t<KeyClassMetadata>,
             $($vis)* legacy_tparams: $t<KeyLegacyTypeParam>,
-            $($vis)* tparams: $t<KeyTypeParams>,
         }
 
         impl $crate::alt::table::TableKeyed<Key> for $name {
@@ -122,12 +113,6 @@ macro_rules! table {
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.legacy_tparams }
         }
 
-        impl $crate::alt::table::TableKeyed<KeyTypeParams> for $name {
-            type Value = $t<KeyTypeParams>;
-            fn get(&self) -> &Self::Value { &self.tparams }
-            fn get_mut(&mut self) -> &mut Self::Value { &mut self.tparams }
-        }
-
         impl $name {
             #[allow(dead_code)]
             fn get<K>(&self) -> &<Self as $crate::alt::table::TableKeyed<K>>::Value
@@ -156,7 +141,6 @@ macro_rules! table_for_each(
         $f(&($e).annotations);
         $f(&($e).mros);
         $f(&($e).legacy_tparams);
-        $f(&($e).tparams);
     };
 );
 
@@ -168,7 +152,6 @@ macro_rules! table_mut_for_each(
         $f(&mut ($e).annotations);
         $f(&mut ($e).mros);
         $f(&mut ($e).legacy_tparams);
-        $f(&mut ($e).tparams);
     };
 );
 
@@ -180,6 +163,5 @@ macro_rules! table_try_for_each(
         $f(&($e).annotations)?;
         $f(&($e).mros)?;
         $f(&($e).legacy_tparams)?;
-        $f(&($e).tparams)?;
     };
 );

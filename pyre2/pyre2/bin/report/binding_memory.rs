@@ -18,7 +18,6 @@ use crate::alt::binding::KeyAnnotation;
 use crate::alt::binding::KeyClassMetadata;
 use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
-use crate::alt::binding::KeyTypeParams;
 use crate::alt::bindings::BindingEntry;
 use crate::alt::bindings::BindingTable;
 use crate::alt::bindings::Bindings;

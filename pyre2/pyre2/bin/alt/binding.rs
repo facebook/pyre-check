@@ -35,19 +35,16 @@ pub trait Exported {}
 
 impl Exported for KeyExported {}
 impl Exported for KeyClassMetadata {}
-impl Exported for KeyTypeParams {}
 
 assert_eq_size!(Key, [usize; 5]);
 assert_eq_size!(KeyExported, [usize; 4]);
 assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
 assert_eq_size!(KeyClassMetadata, [usize; 1]);
-assert_eq_size!(KeyTypeParams, [usize; 1]);
 assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 
 assert_eq_size!(Binding, [usize; 9]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
 assert_eq_size!(BindingClassMetadata, [usize; 8]);
-assert_eq_size!(BindingTypeParams, [usize; 6]);
 assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
 
 /// Keys that refer to a `Type`.
@@ -206,27 +203,6 @@ impl DisplayWith<ModuleInfo> for KeyLegacyTypeParam {
         write!(
             f,
             "legacy_type_param {} {:?}",
-            ctx.display(&self.0),
-            self.0.range()
-        )
-    }
-}
-
-/// Keys that refer to the `TypeParams` for a class or function.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct KeyTypeParams(pub ShortIdentifier);
-
-impl Ranged for KeyTypeParams {
-    fn range(&self) -> TextRange {
-        self.0.range()
-    }
-}
-
-impl DisplayWith<ModuleInfo> for KeyTypeParams {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
-        write!(
-            f,
-            "type_params {} {:?}",
             ctx.display(&self.0),
             self.0.range()
         )
@@ -542,23 +518,6 @@ pub struct BindingClassMetadata(pub Idx<Key>, pub Vec<Expr>, pub SmallMap<Name, 
 impl DisplayWith<Bindings> for BindingClassMetadata {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         write!(f, "mro {}", ctx.display(self.0))
-    }
-}
-
-/// Values that represent type parameters of either functions or classes.
-#[derive(Clone, Debug)]
-pub enum BindingTypeParams {
-    /// The first argument is any scoped type parameters.
-    /// The second argument tracks all names that appear in parameter and return annotations, which might
-    /// indicate legacy type parameters if they point to variable declarations.
-    Function(Vec<Quantified>, Vec<Idx<KeyLegacyTypeParam>>),
-}
-
-impl DisplayWith<Bindings> for BindingTypeParams {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, _ctx: &Bindings) -> fmt::Result {
-        match self {
-            Self::Function(_, _) => write!(f, "function_type_params"),
-        }
     }
 }
 

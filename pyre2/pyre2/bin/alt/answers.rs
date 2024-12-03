@@ -25,7 +25,6 @@ use crate::alt::binding::Binding;
 use crate::alt::binding::BindingAnnotation;
 use crate::alt::binding::BindingClassMetadata;
 use crate::alt::binding::BindingLegacyTypeParam;
-use crate::alt::binding::BindingTypeParams;
 use crate::alt::binding::ContextManagerKind;
 use crate::alt::binding::Exported;
 use crate::alt::binding::FunctionKind;
@@ -34,7 +33,6 @@ use crate::alt::binding::KeyAnnotation;
 use crate::alt::binding::KeyClassMetadata;
 use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
-use crate::alt::binding::KeyTypeParams;
 use crate::alt::binding::RaisedException;
 use crate::alt::binding::SizeExpectation;
 use crate::alt::binding::UnpackedPosition;
@@ -75,7 +73,6 @@ use crate::types::type_var::TypeVar;
 use crate::types::types::AnyStyle;
 use crate::types::types::LegacyTypeParameterLookup;
 use crate::types::types::Quantified;
-use crate::types::types::QuantifiedVec;
 use crate::types::types::Type;
 use crate::types::types::TypeAlias;
 use crate::types::types::TypeAliasStyle;
@@ -244,14 +241,6 @@ impl SolveRecursive for KeyLegacyTypeParam {
         v.not_parameter_mut().into_iter().for_each(f);
     }
 }
-impl SolveRecursive for KeyTypeParams {
-    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
-        QuantifiedVec(Vec::new())
-    }
-    fn visit_type_mut(_: &mut Self::Answer, _: &mut dyn FnMut(&mut Type)) {
-        // There are no types in the answer
-    }
-}
 
 pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
     fn solve(answers: &AnswersSolver<Ans>, binding: &Self::Value) -> Arc<Self::Answer>;
@@ -327,14 +316,6 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyLegacyTypeParam {
         binding: &BindingLegacyTypeParam,
     ) -> Arc<LegacyTypeParameterLookup> {
         answers.solve_legacy_tparam(binding)
-    }
-
-    fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
-}
-
-impl<Ans: LookupAnswer> Solve<Ans> for KeyTypeParams {
-    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingTypeParams) -> Arc<QuantifiedVec> {
-        answers.solve_tparams(binding)
     }
 
     fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
@@ -614,21 +595,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             ty => Arc::new(LegacyTypeParameterLookup::NotParameter(ty.clone())),
         }
-    }
-
-    fn solve_tparams(&self, binding: &BindingTypeParams) -> Arc<QuantifiedVec> {
-        let res = match binding {
-            BindingTypeParams::Function(scoped, legacy) => {
-                let legacy_tparams: Vec<_> = legacy
-                    .iter()
-                    .filter_map(|key| self.get_idx(*key).deref().parameter().cloned())
-                    .collect();
-                let mut tparams = scoped.clone();
-                tparams.extend(legacy_tparams);
-                QuantifiedVec(tparams)
-            }
-        };
-        Arc::new(res)
     }
 
     fn solve_mro(&self, binding: &BindingClassMetadata) -> Arc<ClassMetadata> {

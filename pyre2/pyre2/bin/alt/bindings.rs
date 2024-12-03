@@ -44,7 +44,6 @@ use crate::alt::binding::Binding;
 use crate::alt::binding::BindingAnnotation;
 use crate::alt::binding::BindingClassMetadata;
 use crate::alt::binding::BindingLegacyTypeParam;
-use crate::alt::binding::BindingTypeParams;
 use crate::alt::binding::ContextManagerKind;
 use crate::alt::binding::FunctionKind;
 use crate::alt::binding::Key;
@@ -52,7 +51,6 @@ use crate::alt::binding::KeyAnnotation;
 use crate::alt::binding::KeyClassMetadata;
 use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
-use crate::alt::binding::KeyTypeParams;
 use crate::alt::binding::RaisedException;
 use crate::alt::binding::SizeExpectation;
 use crate::alt::binding::UnpackedPosition;
@@ -960,10 +958,6 @@ impl<'a> BindingsBuilder<'a> {
         }
 
         let legacy_tparams = legacy_tparam_builder.lookup_keys(self);
-        let value =
-            BindingTypeParams::Function(tparams.unwrap_or_default(), legacy_tparams.clone());
-        self.table
-            .insert(KeyTypeParams(ShortIdentifier::new(&func_name)), value);
 
         self.parameters(&mut x.parameters, &self_type);
 
