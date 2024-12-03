@@ -157,8 +157,9 @@ impl<'a> State<'a> {
         loop {
             let module_state = self.get_module(module);
             let lock = module_state.steps.read().unwrap();
-            if step.check(&lock) {
-                return;
+            match Step::Solutions.compute_next(&lock) {
+                Some(todo) if todo <= step => {}
+                _ => break,
             }
             drop(lock);
             let _compute_lock = module_state.lock.lock();
