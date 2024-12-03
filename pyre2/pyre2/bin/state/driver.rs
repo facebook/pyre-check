@@ -40,7 +40,7 @@ use crate::module::module_name::ModuleName;
 use crate::state::loader::Loader;
 use crate::table_for_each;
 #[cfg(test)]
-use crate::types::mro::Mro;
+use crate::types::class_metadata::ClassMetadata;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
@@ -427,9 +427,13 @@ impl Driver {
     }
 
     #[cfg(test)]
-    pub fn mro_of_export(&self, module: ModuleName, name: &str) -> Option<&Mro> {
+    pub fn class_metadata_of_export(
+        &self,
+        module: ModuleName,
+        name: &str,
+    ) -> Option<&ClassMetadata> {
+        use crate::alt::binding::KeyClassMetadata;
         use crate::alt::binding::KeyExported;
-        use crate::alt::binding::KeyMro;
         use crate::module::short_identifier::ShortIdentifier;
 
         let solutions = self.solutions.get(&module).unwrap();
@@ -442,7 +446,7 @@ impl Driver {
                 println!("Class {cls:?}");
                 let x = solutions
                     .mros
-                    .get(&KeyMro(ShortIdentifier::new(cls.name())));
+                    .get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
                 x
             }
             _ => None,

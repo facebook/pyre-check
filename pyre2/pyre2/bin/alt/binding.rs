@@ -34,19 +34,19 @@ use crate::util::display::DisplayWith;
 pub trait Exported {}
 
 impl Exported for KeyExported {}
-impl Exported for KeyMro {}
+impl Exported for KeyClassMetadata {}
 impl Exported for KeyTypeParams {}
 
 assert_eq_size!(Key, [usize; 5]);
 assert_eq_size!(KeyExported, [usize; 4]);
 assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
-assert_eq_size!(KeyMro, [usize; 1]);
+assert_eq_size!(KeyClassMetadata, [usize; 1]);
 assert_eq_size!(KeyTypeParams, [usize; 1]);
 assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 
 assert_eq_size!(Binding, [usize; 9]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
-assert_eq_size!(BindingMro, [usize; 8]);
+assert_eq_size!(BindingClassMetadata, [usize; 8]);
 assert_eq_size!(BindingTypeParams, [usize; 6]);
 assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
 
@@ -178,15 +178,15 @@ impl DisplayWith<ModuleInfo> for KeyAnnotation {
 /// Keys that refer to a class's `Mro` (which tracks its ancestors, in method
 /// resolution order).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct KeyMro(pub ShortIdentifier);
+pub struct KeyClassMetadata(pub ShortIdentifier);
 
-impl Ranged for KeyMro {
+impl Ranged for KeyClassMetadata {
     fn range(&self) -> TextRange {
         self.0.range()
     }
 }
 
-impl DisplayWith<ModuleInfo> for KeyMro {
+impl DisplayWith<ModuleInfo> for KeyClassMetadata {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
         write!(f, "mro {} {:?}", ctx.display(&self.0), self.0.range())
     }
@@ -532,9 +532,9 @@ impl DisplayWith<Bindings> for BindingAnnotation {
 /// The `Vec<Expr>` contains the base classes from the class header.
 /// The `SmallMap<Name, Expr>` contains the class keywords from the class header.
 #[derive(Clone, Debug)]
-pub struct BindingMro(pub Idx<Key>, pub Vec<Expr>, pub SmallMap<Name, Expr>);
+pub struct BindingClassMetadata(pub Idx<Key>, pub Vec<Expr>, pub SmallMap<Name, Expr>);
 
-impl DisplayWith<Bindings> for BindingMro {
+impl DisplayWith<Bindings> for BindingClassMetadata {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         write!(f, "mro {}", ctx.display(self.0))
     }

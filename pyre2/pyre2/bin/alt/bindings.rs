@@ -42,16 +42,16 @@ use vec1::Vec1;
 
 use crate::alt::binding::Binding;
 use crate::alt::binding::BindingAnnotation;
+use crate::alt::binding::BindingClassMetadata;
 use crate::alt::binding::BindingLegacyTypeParam;
-use crate::alt::binding::BindingMro;
 use crate::alt::binding::BindingTypeParams;
 use crate::alt::binding::ContextManagerKind;
 use crate::alt::binding::FunctionKind;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyAnnotation;
+use crate::alt::binding::KeyClassMetadata;
 use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
-use crate::alt::binding::KeyMro;
 use crate::alt::binding::KeyTypeParams;
 use crate::alt::binding::RaisedException;
 use crate::alt::binding::SizeExpectation;
@@ -1081,8 +1081,8 @@ impl<'a> BindingsBuilder<'a> {
         });
 
         self.table.insert(
-            KeyMro(ShortIdentifier::new(&x.name)),
-            BindingMro(definition_key, bases.clone(), keywords),
+            KeyClassMetadata(ShortIdentifier::new(&x.name)),
+            BindingClassMetadata(definition_key, bases.clone(), keywords),
         );
 
         legacy_tparam_builder.add_name_definitions(self);

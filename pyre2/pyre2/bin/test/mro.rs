@@ -10,21 +10,25 @@ use crate::state::driver::Driver;
 use crate::test::stdlib::Stdlib;
 use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;
-use crate::types::mro::Mro;
+use crate::types::class_metadata::ClassMetadata;
 
 fn mk_driver(code: &str) -> (ModuleName, Driver) {
     let driver = simple_test_driver(Stdlib::new(), TestEnv::one("main", code));
     (ModuleName::from_str("main"), driver)
 }
 
-fn get_mro<'b, 'a>(name: &'b str, module_name: ModuleName, driver: &'a Driver) -> &'a Mro {
+fn get_class_metadata<'b, 'a>(
+    name: &'b str,
+    module_name: ModuleName,
+    driver: &'a Driver,
+) -> &'a ClassMetadata {
     driver
-        .mro_of_export(module_name, name)
+        .class_metadata_of_export(module_name, name)
         .unwrap_or_else(|| panic!("No MRO for {name}"))
 }
 
 fn get_mro_names(name: &str, module_name: ModuleName, driver: &Driver) -> Vec<String> {
-    get_mro(name, module_name, driver)
+    get_class_metadata(name, module_name, driver)
         .ancestors_no_object()
         .iter()
         .map(|cls| cls.name().as_str().to_owned())

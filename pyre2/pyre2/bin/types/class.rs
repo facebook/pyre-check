@@ -20,7 +20,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::module::module_info::ModuleInfo;
-use crate::types::mro::Mro;
+use crate::types::class_metadata::ClassMetadata;
 use crate::types::qname::QName;
 use crate::types::types::Quantified;
 use crate::types::types::QuantifiedVec;
@@ -91,7 +91,7 @@ impl Class {
         }))
     }
 
-    pub fn is_enum(&self, get_mro: &dyn Fn(&Class) -> Arc<Mro>) -> bool {
+    pub fn is_enum(&self, get_mro: &dyn Fn(&Class) -> Arc<ClassMetadata>) -> bool {
         // TODO(yangdanny): we need to check the metaclass in the future
         get_mro(self)
             .ancestors_no_object()

@@ -22,17 +22,17 @@ use starlark_map::small_set::SmallSet;
 use super::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::binding::Key;
+use crate::alt::binding::KeyClassMetadata;
 use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
-use crate::alt::binding::KeyMro;
 use crate::ast::Ast;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
+use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Lit;
-use crate::types::mro::Mro;
 use crate::types::special_form::SpecialForm;
 use crate::types::types::Quantified;
 use crate::types::types::QuantifiedVec;
@@ -273,14 +273,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         QuantifiedVec(tparams.into_iter().collect())
     }
 
-    pub fn mro_of(&self, cls: &Class, bases: &[Expr], keywords: &SmallMap<Name, Expr>) -> Mro {
-        let base_mros: Vec<_> = bases
+    pub fn class_metadata_of(
+        &self,
+        cls: &Class,
+        bases: &[Expr],
+        keywords: &SmallMap<Name, Expr>,
+    ) -> ClassMetadata {
+        let bases_with_metadata: Vec<_> = bases
             .iter()
             .filter_map(|x| match self.base_class_of(x) {
                 BaseClass::Expr(x) => match self.expr_untype(&x) {
                     Type::ClassType(c) => {
-                        let mro = self.get_mro_for_class(c.class_object());
-                        Some((c, mro))
+                        let class_metadata = self.get_metadata_for_class(c.class_object());
+                        Some((c, class_metadata))
                     }
                     _ => None,
                 },
@@ -290,11 +295,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords.values().for_each(|x| {
             self.expr(x, None);
         });
-        Mro::new(cls, base_mros, self.errors())
+        ClassMetadata::new(cls, bases_with_metadata, self.errors())
     }
 
-    pub fn get_mro_for_class(&self, cls: &Class) -> Arc<Mro> {
-        self.get_from_class(cls, &KeyMro(ShortIdentifier::new(cls.name())))
+    pub fn get_metadata_for_class(&self, cls: &Class) -> Arc<ClassMetadata> {
+        self.get_from_class(cls, &KeyClassMetadata(ShortIdentifier::new(cls.name())))
     }
 
     fn check_and_create_targs(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> TArgs {
@@ -372,7 +377,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Get an ancestor `ClassType`, in terms of the type parameters of `class`.
     fn get_ancestor(&self, class: &Class, want: &Class) -> Option<ClassType> {
-        self.get_mro_for_class(class)
+        self.get_metadata_for_class(class)
             .ancestors(self.stdlib)
             .find(|ancestor| ancestor.class_object() == want)
             .cloned()
@@ -413,7 +418,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Some(member) = self.get_class_field(cls, name) {
             Some(member)
         } else {
-            self.get_mro_for_class(cls)
+            self.get_metadata_for_class(cls)
                 .ancestors(self.stdlib)
                 .filter_map(|ancestor| {
                     self.get_class_field(ancestor.class_object(), name)
@@ -470,7 +475,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(ty) => {
                 if self.depends_on_class_type_parameter(cls, ty.as_ref()) {
                     Err(NoClassAttribute::IsGenericMember)
-                } else if cls.is_enum(&|c| self.get_mro_for_class(c)) {
+                } else if cls.is_enum(&|c| self.get_metadata_for_class(c)) {
                     // TODO(stroxler, yangdanny) Enums can contain attributes that are not
                     // members, we eventually need to implement enough checks to know the
                     // difference.
@@ -528,7 +533,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// return a `ClassType` for the enum class, otherwise return `None`.
     pub fn get_enum_class_type(&self, name: Identifier) -> Option<ClassType> {
         match self.get(&Key::Usage(ShortIdentifier::new(&name))).deref() {
-            Type::ClassDef(class) if class.is_enum(&|c| self.get_mro_for_class(c)) => {
+            Type::ClassDef(class) if class.is_enum(&|c| self.get_metadata_for_class(c)) => {
                 // TODO(stroxler): Eventually, we should raise type errors on generic Enum because
                 // this doesn't make semantic sense. But in the meantime we need to be robust against
                 // this possibility.
