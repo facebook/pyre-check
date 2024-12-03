@@ -33,6 +33,8 @@ pub struct Stdlib {
     coroutine: Option<Class>,
     type_var: Option<Class>,
     param_spec: Option<Class>,
+    param_spec_args: Option<Class>,
+    param_spec_kwargs: Option<Class>,
     type_var_tuple: Option<Class>,
     traceback_type: Option<Class>,
     builtins_type: Option<Class>,
@@ -79,6 +81,8 @@ impl Stdlib {
             coroutine: lookup_class(typing, &Name::new("Coroutine")),
             type_var: lookup_class(typing, &Name::new("TypeVar")),
             param_spec: lookup_class(typing, &Name::new("ParamSpec")),
+            param_spec_args: lookup_class(typing, &Name::new("ParamSpecArgs")),
+            param_spec_kwargs: lookup_class(typing, &Name::new("ParamSpecKwargs")),
             type_var_tuple: lookup_class(typing, &Name::new("TypeVarTuple")),
             traceback_type: lookup_class(types, &Name::new("TracebackType")),
 
@@ -214,6 +218,14 @@ impl Stdlib {
 
     pub fn type_var_tuple(&self) -> ClassType {
         Self::primitive(&self.type_var_tuple)
+    }
+
+    pub fn param_spec_args(&self) -> ClassType {
+        Self::primitive(&self.param_spec_args)
+    }
+
+    pub fn param_spec_kwargs(&self) -> ClassType {
+        Self::primitive(&self.param_spec_kwargs)
     }
 
     pub fn traceback_type(&self) -> ClassType {

@@ -74,6 +74,11 @@ pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         }
         Type::Type(box Type::Quantified(q)) => Some(AttributeBase::Quantified(q)),
         Type::Module(module) => Some(AttributeBase::Module(module)),
+        Type::TypeVar(_) => Some(AttributeBase::ClassInstance(stdlib.type_var())),
+        Type::ParamSpec(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec())),
+        Type::TypeVarTuple(_) => Some(AttributeBase::ClassInstance(stdlib.type_var_tuple())),
+        Type::Args(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_args())),
+        Type::Kwargs(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_kwargs())),
         // TODO: check to see which ones should have class representations
         Type::Union(_)
         | Type::Never(_)
@@ -86,11 +91,6 @@ pub fn as_attribute_base(ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         | Type::Forall(_, _)
         | Type::Unpack(_)
         | Type::Quantified(_)
-        | Type::Var(_)
-        | Type::ParamSpec(_)
-        | Type::TypeVar(_)
-        | Type::Kwargs(_)
-        | Type::Args(_)
-        | Type::TypeVarTuple(_) => None,
+        | Type::Var(_) => None,
     }
 }
