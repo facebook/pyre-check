@@ -93,7 +93,7 @@ pub struct State<'a> {
 
 #[derive(Default)]
 struct ModuleState {
-    errors: Arc<ErrorCollector>,
+    errors: ErrorCollector,
     steps: RwLock<ModuleSteps>,
 }
 
