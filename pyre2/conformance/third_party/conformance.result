@@ -42,7 +42,7 @@
     "Line 89: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED map[@_] <: LiteralString', 'EXPECTED map[@_] <: str', 'Expected 0 positional argument(s)']",
     "Line 92: Unexpected errors ['Expected 0 positional argument(s)']",
     "Line 94: Unexpected errors ['TODO: Lambda(ExprLambda - Answers::expr_infer']",
-    "Line 95: Unexpected errors ['Expected `list.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]']",
+    "Line 95: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]']",
     "Line 127: Unexpected errors ['Expected a callable, got type[list]']",
     "Line 128: Unexpected errors ['assert_type(Any, list[str]) failed']",
     "Line 130: Unexpected errors ['Expected a callable, got type[list[int]]']",
@@ -166,7 +166,7 @@
     "Line 149: Unexpected errors ['TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer']",
     "Line 150: Unexpected errors ['EXPECTED None <: Generator[int, None, None]', 'TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer']",
     "Line 154: Unexpected errors [\"Missing argument 'result'\", 'EXPECTED Literal[1] <: float']",
-    "Line 159: Unexpected errors ['EXPECTED None <: AsyncGenerator[str, None]', 'Expected `list.__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]']",
+    "Line 159: Unexpected errors ['EXPECTED None <: AsyncGenerator[str, None]', 'Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]']",
     "Line 160: Unexpected errors [\"Missing argument 'result'\", 'EXPECTED Literal[1] <: float']",
     "Line 161: Unexpected errors ['TODO: ExprYield - Answers::expr_infer']",
     "Line 167: Unexpected errors ['assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed']",
@@ -585,7 +585,7 @@
   "directives_cast.py": [
     "Line 16: Expected 1 errors",
     "Line 10: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED Generator[int, None, None] <: SupportsNext[@_]', 'Expected 0 positional argument(s)', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
-    "Line 11: Unexpected errors ['EXPECTED type[str] <: object', 'Expected `list.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[object]], SupportsIndex], _PyreReadOnly_[object]] | Callable[[_PyreReadOnly_[list[object]], slice[Error, Error, Error]], list[_PyreReadOnly_[object]]] | Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]']",
+    "Line 11: Unexpected errors ['EXPECTED type[str] <: object', 'Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[object]], SupportsIndex], _PyreReadOnly_[object]] | Callable[[_PyreReadOnly_[list[object]], slice[Error, Error, Error]], list[_PyreReadOnly_[object]]] | Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]']",
     "Line 13: Unexpected errors ['EXPECTED type[int] <: object']"
   ],
   "directives_deprecated.py": [
@@ -674,14 +674,14 @@
     "Line 68: Expected 1 errors",
     "Line 45: Unexpected errors ['assert_type(Iterator[Any], Iterator[int]) failed', 'Expected 1 more positional argument(s)', 'EXPECTED LinkedList[int] <: Callable[[], @_]']",
     "Line 46: Unexpected errors ['EXPECTED Literal[1] <: _PyreReadOnly_[object]']",
-    "Line 58: Unexpected errors ['assert_type(Any, int) failed', 'Expected `MyDict.__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]']"
+    "Line 58: Unexpected errors ['assert_type(Any, int) failed', 'Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]']"
   ],
   "generics_basic.py": [
     "Line 49: Expected 1 errors",
     "Line 55: Expected 1 errors",
     "Line 121: Expected 1 errors",
     "Line 191: Expected 1 errors",
-    "Line 19: Unexpected errors ['Expected `Sequence.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[Sequence[T]], int], _PyreReadOnly_[T]] | Callable[[_PyreReadOnly_[Sequence[T]], slice[Error, Error, Error]], _PyreReadOnly_[Sequence[T]]] | Callable[[Sequence[T], int], T] | Callable[[Sequence[T], slice[Error, Error, Error]], Sequence[T]]']",
+    "Line 19: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[Sequence[T]], int], _PyreReadOnly_[T]] | Callable[[_PyreReadOnly_[Sequence[T]], slice[Error, Error, Error]], _PyreReadOnly_[Sequence[T]]] | Callable[[Sequence[T], int], T] | Callable[[Sequence[T], slice[Error, Error, Error]], Sequence[T]]']",
     "Line 34: Unexpected errors ['TODO: Answers::expr_infer attribute: `AnyStr`.__add__']",
     "Line 67: Unexpected errors ['assert_type(MyStr, str) failed']",
     "Line 68: Unexpected errors ['assert_type(MyStr, str) failed', 'EXPECTED str <: MyStr']",
@@ -690,8 +690,8 @@
     "Line 100: Unexpected errors ['EXPECTED str <: LiteralString', 'EXPECTED str <: LiteralString']",
     "Line 139: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument(s)', 'EXPECTED MyIter1[int] <: SupportsNext[@_]']",
     "Line 140: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument(s)', 'EXPECTED MyIter2[int] <: SupportsNext[@_]']",
-    "Line 154: Unexpected errors ['assert_type(Any, int) failed', 'Expected `MyMap1.__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]']",
-    "Line 155: Unexpected errors ['assert_type(Any, int) failed', 'Expected `MyMap2.__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]']",
+    "Line 154: Unexpected errors ['assert_type(Any, int) failed', 'Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]']",
+    "Line 155: Unexpected errors ['assert_type(Any, int) failed', 'Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]']",
     "Line 182: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED MyIterableAny <: Callable[[], @_]']"
   ],
   "generics_defaults.py": [
@@ -834,10 +834,10 @@
     "Line 18: Unexpected errors ['assert_type(Callable[[], ParentA], ParentA) failed']",
     "Line 19: Unexpected errors ['assert_type(Callable[[], ParentA], ChildA) failed']",
     "Line 35: Unexpected errors ['assert_type(ChildB, Self) failed']",
-    "Line 37: Unexpected errors ['assert_type(Any, Self) failed', 'Expected `list.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[Self]], SupportsIndex], _PyreReadOnly_[Self]] | Callable[[_PyreReadOnly_[list[Self]], slice[Error, Error, Error]], list[_PyreReadOnly_[Self]]] | Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]']",
+    "Line 37: Unexpected errors ['assert_type(Any, Self) failed', 'Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[Self]], SupportsIndex], _PyreReadOnly_[Self]] | Callable[[_PyreReadOnly_[list[Self]], slice[Error, Error, Error]], list[_PyreReadOnly_[Self]]] | Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]']",
     "Line 38: Unexpected errors ['assert_type(ParentB, Self) failed']",
     "Line 42: Unexpected errors ['assert_type(ChildB, type[Self]) failed']",
-    "Line 44: Unexpected errors ['assert_type(Any, Self) failed', 'Expected `list.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[Self]], SupportsIndex], _PyreReadOnly_[Self]] | Callable[[_PyreReadOnly_[list[Self]], slice[Error, Error, Error]], list[_PyreReadOnly_[Self]]] | Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]']",
+    "Line 44: Unexpected errors ['assert_type(Any, Self) failed', 'Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[Self]], SupportsIndex], _PyreReadOnly_[Self]] | Callable[[_PyreReadOnly_[list[Self]], slice[Error, Error, Error]], list[_PyreReadOnly_[Self]]] | Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]']",
     "Line 45: Unexpected errors ['assert_type(ParentB, Self) failed']"
   ],
   "generics_self_attributes.py": [
@@ -1219,7 +1219,7 @@
     "Line 13: Unexpected errors ['EXPECTED bool <: TypeGuard[tuple[T, T]]', 'EXPECTED tuple[T, ...] <: _PyreReadOnly_[Sized]']",
     "Line 17: Unexpected errors ['assert_type(tuple[str, ...], tuple[str, str]) failed']",
     "Line 24: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]']",
-    "Line 25: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]', 'Expected `list.__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[object]]], Iterator[_PyreReadOnly_[object]]] | Callable[[list[object]], Iterator[object]]']",
+    "Line 25: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]', 'Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[object]]], Iterator[_PyreReadOnly_[object]]] | Callable[[list[object]], Iterator[object]]']",
     "Line 28: Unexpected errors ['EXPECTED bool <: TypeGuard[set[T]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]']",
     "Line 32: Unexpected errors ['assert_type(set[object], set[int]) failed']",
     "Line 41: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
@@ -1277,8 +1277,8 @@
   "overloads_basic.py": [
     "Lines 62, 63: Expected error (tag 'func1')",
     "Lines 74, 75: Expected error (tag 'func2')",
-    "Line 35: Unexpected errors ['assert_type(Any, int) failed', 'Expected `Bytes.__getitem__` to be a callable, got Callable[[Bytes, int], int] | Callable[[Bytes, int | slice[Error, Error, Error]], bytes | int] | Callable[[Bytes, slice[Error, Error, Error]], bytes]']",
-    "Line 36: Unexpected errors ['assert_type(Any, bytes) failed', 'Expected `Bytes.__getitem__` to be a callable, got Callable[[Bytes, int], int] | Callable[[Bytes, int | slice[Error, Error, Error]], bytes | int] | Callable[[Bytes, slice[Error, Error, Error]], bytes]']"
+    "Line 35: Unexpected errors ['assert_type(Any, int) failed', 'Expected `__getitem__` to be a callable, got Callable[[Bytes, int], int] | Callable[[Bytes, int | slice[Error, Error, Error]], bytes | int] | Callable[[Bytes, slice[Error, Error, Error]], bytes]']",
+    "Line 36: Unexpected errors ['assert_type(Any, bytes) failed', 'Expected `__getitem__` to be a callable, got Callable[[Bytes, int], int] | Callable[[Bytes, int | slice[Error, Error, Error]], bytes | int] | Callable[[Bytes, slice[Error, Error, Error]], bytes]']"
   ],
   "protocols_class_objects.py": [
     "Line 29: Expected 1 errors",
@@ -1340,7 +1340,7 @@
     "Line 39: Unexpected errors ['EXPECTED ImplicitColor <: PColor']"
   ],
   "protocols_generic.py": [
-    "Line 33: Unexpected errors ['Expected `list.__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]']",
+    "Line 33: Unexpected errors ['Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]']",
     "Line 39: Unexpected errors ['EXPECTED Concrete1 <: Proto1[str, int]']",
     "Line 55: Unexpected errors ['EXPECTED Box[int] <: Box[float]']",
     "Line 65: Unexpected errors ['EXPECTED Sender[float] <: Sender[int]']",
@@ -1629,7 +1629,7 @@
     "Line 23: Unexpected errors ['Object of class `Band` has no attribute `__setitem__`']",
     "Line 25: Unexpected errors ['Object of class `Band` has no attribute `__getitem__`']",
     "Line 31: Unexpected errors ['Expected a callable, got object', 'TODO: Answers::apply_special_form cannot handle `ReadOnly[list[str]]`']",
-    "Line 37: Unexpected errors ['Expected `dict.__getitem__` to be a callable, got Callable[[_PyreReadOnly_[dict[str, list[str] | str]], _PyreReadOnly_[str]], _PyreReadOnly_[list[str] | str]] | Callable[[dict[str, list[str] | str], str], list[str] | str]']",
+    "Line 37: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[dict[str, list[str] | str]], _PyreReadOnly_[str]], _PyreReadOnly_[list[str] | str]] | Callable[[dict[str, list[str] | str], str], list[str] | str]']",
     "Line 44: Unexpected errors ['untype, got object']",
     "Line 49: Unexpected errors ['EXPECTED dict[str, int | str] <: Movie1']",
     "Line 54: Unexpected errors ['untype, got object']",

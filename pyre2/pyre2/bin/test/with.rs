@@ -84,7 +84,7 @@ class Foo:
     ) -> None:
         ...
 
-with Foo() as foo:  # E: Expected `Foo.__enter__` to be a callable, got int
+with Foo() as foo:  # E: Expected `__enter__` to be a callable, got int
     pass
     "#,
 );
@@ -97,7 +97,7 @@ class Foo:
     def __enter__(self) -> int: ...
     __exit__: int = 42
 
-with Foo() as foo:  # E: Expected `Foo.__exit__` to be a callable, got int
+with Foo() as foo:  # E: Expected `__exit__` to be a callable, got int
     pass
     "#,
 );

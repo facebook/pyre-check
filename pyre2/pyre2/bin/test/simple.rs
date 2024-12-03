@@ -690,7 +690,7 @@ def f(x: list[int], y: dict[str, bool]) -> None:
     c = C()
     c[0]  # E: Object of class `C` has no attribute `__getitem__`
     d = D()
-    d[0]  # E: Expected `D.__getitem__` to be a callable, got int
+    d[0]  # E: Expected `__getitem__` to be a callable, got int
 "#,
 );
 
@@ -751,9 +751,9 @@ class B:
         return self
     __next__: str
 def f(x: A, y: B):
-    for _ in x:  # E: Expected `A.__iter__` to be a callable, got bool
+    for _ in x:  # E: Expected `__iter__` to be a callable, got bool
         pass
-    for _ in y:  # E: Expected `B.__next__` to be a callable, got str
+    for _ in y:  # E: Expected `__next__` to be a callable, got str
         pass
     "#,
 );

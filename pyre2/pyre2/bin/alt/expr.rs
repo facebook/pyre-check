@@ -46,7 +46,7 @@ use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 
 enum CallStyle<'a> {
-    ClassAndMethod(&'a Identifier, &'a Name),
+    Method(&'a Name),
     BinaryOp(Operator),
     FreeForm,
 }
@@ -152,8 +152,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(callable) => callable,
             None => {
                 let expect_message = match call_style {
-                    CallStyle::ClassAndMethod(class, method) => {
-                        format!("Expected `{}.{}` to be a callable", class, method)
+                    CallStyle::Method(method) => {
+                        format!("Expected `{}` to be a callable", method)
                     }
                     CallStyle::BinaryOp(op) => {
                         format!("Expected `{}` to be a callable", op.dunder())
@@ -183,11 +183,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(ClassAttributeBase::ClassType(class)) => {
                     let method_type =
                         self.get_instance_attribute_or_error(&class, method_name, range);
-                    self.as_callable_or_error(
-                        method_type,
-                        CallStyle::ClassAndMethod(class.name(), method_name),
-                        range,
-                    )
+                    self.as_callable_or_error(method_type, CallStyle::Method(method_name), range)
                 }
                 Some(ClassAttributeBase::Any(style)) => style.propagate_callable(),
                 None => self.error_callable(
