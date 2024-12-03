@@ -7652,7 +7652,23 @@ let test_expand_enum_functional_syntax =
       import enum
       from enum import Enum
 
-      class Color(enum.Enum):
+      class Color(Enum):
+        RED = enum.auto()
+        GREEN = enum.auto()
+        BLUE = enum.auto()
+  |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_expand
+           {|
+      from enum import IntEnum
+
+      Color = IntEnum("Color", ["RED", "GREEN", "BLUE"])
+  |}
+           {|
+      import enum
+      from enum import IntEnum
+
+      class Color(IntEnum):
         RED = enum.auto()
         GREEN = enum.auto()
         BLUE = enum.auto()
@@ -7668,7 +7684,7 @@ let test_expand_enum_functional_syntax =
       import enum
       from enum import Enum
 
-      class Color(enum.Enum):
+      class Color(Enum):
         RED = enum.auto()
         GREEN = enum.auto()
         BLUE = enum.auto()

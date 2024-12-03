@@ -4743,13 +4743,20 @@ let expand_enum_functional_syntax
   =
   let scopes = lazy (Scope.ScopeStack.create source) in
   let is_enum =
-    create_callee_name_matcher_from_references ~qualifier ~scopes [Reference.create "enum.Enum"]
+    create_callee_name_matcher_from_references
+      ~qualifier
+      ~scopes
+      [
+        Reference.create "enum.Enum";
+        Reference.create "enum.StrEnum";
+        Reference.create "enum.IntEnum";
+      ]
   in
   let expand_enum_functional_declaration
       needs_enum_import_so_far
       ({ Node.location; value } as statement)
     =
-    let enum_class_declaration ~class_name members =
+    let enum_class_declaration ~class_name base_class members =
       let assignments =
         let field_for_member = function
           | {
@@ -4780,12 +4787,7 @@ let expand_enum_functional_syntax
         | assignments -> assignments
       in
       let base_arguments =
-        [
-          {
-            Call.Argument.name = None;
-            value = Node.create ~location (Expression.Name (create_name ~location "enum.Enum"));
-          };
-        ]
+        [{ Call.Argument.name = None; value = Node.create ~location (Expression.Name base_class) }]
       in
       Statement.Class
         {
@@ -4837,7 +4839,7 @@ let expand_enum_functional_syntax
         }
       when is_enum callee_name ->
         let expanded_declaration =
-          enum_class_declaration ~class_name:(Reference.create class_name) members
+          enum_class_declaration ~class_name:(Reference.create class_name) callee_name members
         in
         true, { statement with Node.value = expanded_declaration }
     | _ -> needs_enum_import_so_far, statement
