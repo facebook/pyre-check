@@ -142,6 +142,10 @@ impl ErrorCollector {
         self.errors.lock().unwrap().len()
     }
 
+    pub fn clear(&self) {
+        self.errors.lock().unwrap().items.clear();
+    }
+
     pub fn collect(&self) -> Vec<Error> {
         self.errors
             .lock()
