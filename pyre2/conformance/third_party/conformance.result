@@ -893,7 +893,6 @@
     "Line 73: Expected 1 errors",
     "Line 77: Expected 1 errors",
     "Line 81: Expected 1 errors",
-    "Line 13: Unexpected errors ['TODO: TypeVarTuple(TypeParamTypeVarTuple - Answers::type_params', 'TODO: ParamSpec(TypeParamParamSpec - Answers::type_params']",
     "Line 14: Unexpected errors ['assert_type(type[T], TypeVar) failed']",
     "Line 15: Unexpected errors ['assert_type(type[Ts], TypeVarTuple) failed']",
     "Line 16: Unexpected errors ['assert_type(type[P], ParamSpec) failed']",

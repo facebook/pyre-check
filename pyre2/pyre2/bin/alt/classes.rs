@@ -101,15 +101,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match x {
             Some(box x) => {
                 for x in &x.type_params {
-                    match x {
-                        TypeParam::TypeVar(x) => names.push(&x.name),
-                        TypeParam::ParamSpec(_) => {
-                            self.error_todo("Answers::type_params", x);
-                        }
-                        TypeParam::TypeVarTuple(_) => {
-                            self.error_todo("Answers::type_params", x);
-                        }
-                    }
+                    let name = match x {
+                        TypeParam::TypeVar(x) => &x.name,
+                        TypeParam::ParamSpec(x) => &x.name,
+                        TypeParam::TypeVarTuple(x) => &x.name,
+                    };
+                    names.push(name);
                 }
             }
             None => {}

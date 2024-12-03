@@ -11524,26 +11524,6 @@
   "generics_syntax_declarations.py": [
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "TODO: TypeVarTuple(TypeParamTypeVarTuple - Answers::type_params",
-      "description": "TODO: TypeVarTuple(TypeParamTypeVarTuple - Answers::type_params",
-      "line": 13,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 13
-    },
-    {
-      "code": -2,
-      "column": 26,
-      "concise_description": "TODO: ParamSpec(TypeParamParamSpec - Answers::type_params",
-      "description": "TODO: ParamSpec(TypeParamParamSpec - Answers::type_params",
-      "line": 13,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 13
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "assert_type(type[T], TypeVar) failed",
       "description": "assert_type(type[T], TypeVar) failed",
