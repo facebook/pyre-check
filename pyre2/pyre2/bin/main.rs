@@ -29,7 +29,7 @@ mod alt;
 mod ast;
 mod commands;
 mod config;
-mod debug;
+mod debug_info;
 mod dunder;
 mod error;
 mod expectation;

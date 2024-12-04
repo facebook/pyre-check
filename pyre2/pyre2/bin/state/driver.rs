@@ -25,7 +25,7 @@ use crate::alt::exports::Exports;
 use crate::alt::exports::LookupExport;
 use crate::ast::Ast;
 use crate::config::Config;
-use crate::debug::DebugInfo;
+use crate::debug_info::DebugInfo;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
 use crate::expectation::Expectation;
