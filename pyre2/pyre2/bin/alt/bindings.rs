@@ -1059,11 +1059,12 @@ impl<'a> BindingsBuilder<'a> {
                     .insert(name.id.clone(), keyword.value.clone())
                     .is_some()
                 {
-                    self.errors.add(
-                        &self.module_info,
-                        keyword.range(),
-                        format!("Duplicate keyword in class header of `{}`", x.name),
-                    )
+                    // TODO(stroxler) We should use a Vec rather than a Map in the binding
+                    // so that we can still type check the values associated with
+                    // duplicate keywords.
+                    //
+                    // For now, we get a type error from the parser but never
+                    // check the expression.
                 }
             } else {
                 self.errors.add(
