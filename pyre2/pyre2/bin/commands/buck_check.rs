@@ -156,10 +156,10 @@ fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonA
     };
     Driver::new(
         &modules_to_check,
-        &config,
-        common.timings,
-        common.parallel(),
         &lookup_module,
+        &config,
+        common.parallel(),
+        common.timings,
     )
     .errors_in_checked_modules()
 }

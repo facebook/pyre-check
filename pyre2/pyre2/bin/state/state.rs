@@ -99,11 +99,11 @@ impl ModuleState {
 
 impl<'a> State<'a> {
     pub fn new(
-        config: Config,
+        modules: &[ModuleName],
         loader: Box<Loader<'a>>,
+        config: Config,
         parallel: bool,
         print_errors_immediately: bool,
-        modules: &[ModuleName],
     ) -> Self {
         let stdlib_modules = Stdlib::required();
         Self {

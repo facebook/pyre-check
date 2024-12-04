@@ -92,7 +92,7 @@ pub fn simple_test_driver(stdlib: Stdlib, env: TestEnv) -> Driver {
         (loaded, true)
     };
     let config = Config::default();
-    Driver::new(&modules, &config, None, true, &lookup)
+    Driver::new(&modules, &lookup, &config, true, None)
 }
 
 /// Should only be used from the `simple_test!` macro.

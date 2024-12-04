@@ -232,10 +232,10 @@ impl<'a> Server<'a> {
         };
         self.driver = Driver::new(
             &modules.keys().copied().collect::<Vec<_>>(),
-            &Config::default(),
-            None,
-            true,
             &load,
+            &Config::default(),
+            true,
+            None,
         );
         let mut diags: SmallMap<&Path, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.keys() {

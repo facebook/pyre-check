@@ -267,10 +267,10 @@ pub struct Driver {
 impl Driver {
     pub fn new(
         modules: &[ModuleName],
-        config: &Config,
-        timings: Option<usize>,
-        parallel: bool,
         load: &Loader,
+        config: &Config,
+        parallel: bool,
+        timings: Option<usize>,
     ) -> Self {
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let mut timers = Timers::new();
