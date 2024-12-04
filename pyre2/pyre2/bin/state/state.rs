@@ -192,12 +192,14 @@ impl<'a> State<'a> {
                 errors: &module_state.errors,
                 lookup: self,
             });
-            set(&mut module_state.steps.write().unwrap());
-            if todo == Step::Solutions {
-                // From now on we can use the answers directly, so evict the bindings/answers.
-                let mut lock = module_state.steps.write().unwrap();
-                self.evict(&mut lock.bindings);
-                self.evict(&mut lock.answers);
+            {
+                let mut module_write = module_state.steps.write().unwrap();
+                set(&mut module_write);
+                if todo == Step::Solutions {
+                    // From now on we can use the answers directly, so evict the bindings/answers.
+                    self.evict(&mut module_write.bindings);
+                    self.evict(&mut module_write.answers);
+                }
             }
             if todo == step {
                 break; // Fast path - avoid asking again since we just did it.
