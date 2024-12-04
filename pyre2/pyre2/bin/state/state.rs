@@ -225,22 +225,15 @@ impl<'a> State<'a> {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
+        let module_state = self.get_module(module);
         {
             // if we happen to have solutions available, use them instead
-            if let Some(solutions) = self
-                .get_module(module)
-                .steps
-                .read()
-                .unwrap()
-                .solutions
-                .get()
-            {
+            if let Some(solutions) = module_state.steps.read().unwrap().solutions.get() {
                 return Arc::new(TableKeyed::<K>::get(&**solutions).get(key).unwrap().clone());
             }
         }
 
         self.demand(module, Step::Answers);
-        let module_state = self.get_module(module);
         let answers = {
             let steps = module_state.steps.read().unwrap();
             if let Some(solutions) = steps.solutions.get() {
