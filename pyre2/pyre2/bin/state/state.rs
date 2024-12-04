@@ -311,9 +311,7 @@ impl<'a> State<'a> {
     /// we don't actually need it.
     pub fn run_one_shot(&mut self) -> Vec<Error> {
         self.retain_memory = false;
-        let errors = self.run_internal();
-        self.clear();
-        errors
+        self.run_internal()
     }
 
     pub fn run(&mut self) -> Vec<Error> {
@@ -321,6 +319,7 @@ impl<'a> State<'a> {
         self.run_internal()
     }
 
+    #[expect(dead_code)]
     fn clear(&mut self) {
         // Should we reset stdlib? Currently we don't.
         for module in self.modules.get_mut().unwrap().values_mut() {

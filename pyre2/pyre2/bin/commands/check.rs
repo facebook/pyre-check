@@ -6,6 +6,7 @@
  */
 
 use std::ffi::OsStr;
+use std::mem;
 use std::path::PathBuf;
 use std::time::Duration;
 use std::time::Instant;
@@ -104,6 +105,11 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
                 &path,
                 report::binding_memory::binding_memory(&state).as_bytes(),
             )?;
+        }
+        if args.repeat == 1 {
+            // We have allocated a bunch of memory, that we will never need, and are exiting the program.
+            // Rather than deallocate it, just leak it, and let the OS clean up for us.
+            mem::forget(state);
         }
     } else {
         let driver = Driver::new(
