@@ -126,7 +126,7 @@ fn read_manifest_files(
 
 fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonArgs) -> Vec<Error> {
     let modules_to_check: Vec<_> = sourcedb.sources.keys().copied().collect();
-    let lookup_module = |name| {
+    let loader = move |name| {
         let path = sourcedb.sources.get(&name).or_else(|| {
             match (
                 sourcedb.dependencies.get(&name),
@@ -156,7 +156,7 @@ fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonA
     };
     Driver::new(
         &modules_to_check,
-        &lookup_module,
+        Box::new(loader),
         &config,
         common.parallel(),
         common.timings,

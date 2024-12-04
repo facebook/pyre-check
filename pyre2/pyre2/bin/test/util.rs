@@ -81,7 +81,7 @@ pub fn simple_test_driver(stdlib: Stdlib, env: TestEnv) -> Driver {
         .copied()
         .chain(env.0.keys().copied())
         .collect::<Vec<_>>();
-    let lookup = |name: ModuleName| {
+    let loader = move |name: ModuleName| {
         let loaded = if let Some((path, contents)) = env.0.get(&name) {
             LoadResult::Loaded(path.to_owned(), contents.to_owned())
         } else if let Some(contents) = stdlib.lookup_content(name) {
@@ -92,7 +92,7 @@ pub fn simple_test_driver(stdlib: Stdlib, env: TestEnv) -> Driver {
         (loaded, true)
     };
     let config = Config::default();
-    Driver::new(&modules, &lookup, &config, true, None)
+    Driver::new(&modules, Box::new(loader), &config, true, None)
 }
 
 /// Should only be used from the `simple_test!` macro.

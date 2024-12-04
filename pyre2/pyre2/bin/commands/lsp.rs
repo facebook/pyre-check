@@ -219,7 +219,8 @@ impl<'a> Server<'a> {
             .keys()
             .map(|x| (module_from_path(x), x))
             .collect::<SmallMap<_, _>>();
-        let load = |name: ModuleName| {
+        let module_names = modules.keys().copied().collect::<Vec<_>>();
+        let loader = |name: ModuleName| {
             let loaded = if let Some(path) = modules.get(&name) {
                 LoadResult::Loaded(
                     (*path).clone(),
@@ -231,8 +232,8 @@ impl<'a> Server<'a> {
             (loaded, modules.contains_key(&name))
         };
         self.driver = Driver::new(
-            &modules.keys().copied().collect::<Vec<_>>(),
-            &load,
+            &module_names,
+            Box::new(loader),
             &Config::default(),
             true,
             None,

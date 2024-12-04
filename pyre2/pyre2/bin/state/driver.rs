@@ -162,7 +162,7 @@ fn run_phase1(
     modules: &[ModuleName],
     config: &Config,
     quiet_errors: bool,
-    load: &Loader,
+    loader: &Loader,
     parallel: bool,
 ) -> Vec<Phase1> {
     let mut todo = modules.to_owned();
@@ -182,7 +182,7 @@ fn run_phase1(
         transitive_closure
     })(todo, |name: &ModuleName| {
         let mut timers = Timers::new();
-        let (loaded, should_type_check) = load(*name);
+        let (loaded, should_type_check) = loader(*name);
         let components = loaded.components(*name);
         timers.add((*name, Step::Load, components.code.len()));
         let module_info =
@@ -267,7 +267,7 @@ pub struct Driver {
 impl Driver {
     pub fn new(
         modules: &[ModuleName],
-        load: &Loader,
+        loader: Box<Loader>,
         config: &Config,
         parallel: bool,
         timings: Option<usize>,
@@ -278,7 +278,14 @@ impl Driver {
         let uniques = UniqueFactory::new();
 
         timers.add((timers_global_module(), Step::Startup, 0));
-        let phase1 = run_phase1(timers, modules, config, timings.is_some(), load, parallel);
+        let phase1 = run_phase1(
+            timers,
+            modules,
+            config,
+            timings.is_some(),
+            &*loader,
+            parallel,
+        );
         let exports: SmallMap<_, _> = phase1
             .iter()
             .map(|v| (v.module_info.name(), v.exports.dupe()))
