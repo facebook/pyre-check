@@ -86,7 +86,7 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
     let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
     let start = Instant::now();
     let mut state = State::new(
-        &config,
+        config,
         &load,
         args.common.parallel(),
         args.common.timings.is_none(),

@@ -50,7 +50,7 @@ use crate::util::enum_heap::EnumHeap;
 use crate::util::prelude::SliceExt;
 
 pub struct State<'a> {
-    config: &'a Config,
+    config: Config,
     loader: &'a Loader<'a>,
     uniques: UniqueFactory,
     parallel: bool,
@@ -99,7 +99,7 @@ impl ModuleState {
 
 impl<'a> State<'a> {
     pub fn new(
-        config: &'a Config,
+        config: Config,
         loader: &'a Loader<'a>,
         parallel: bool,
         print_errors_immediately: bool,
@@ -164,7 +164,7 @@ impl<'a> State<'a> {
             let stdlib = self.stdlib.read().unwrap().dupe();
             let set = compute(&Context {
                 name: module,
-                config: self.config,
+                config: &self.config,
                 loader: self.loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
