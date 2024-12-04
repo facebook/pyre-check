@@ -121,23 +121,32 @@ impl Quantified {
     }
 }
 
-/// We sometimes need a vector of these - mostly done to give them a nice Display.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct QuantifiedVec(pub Vec<Quantified>);
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TParam {
+    quantified: Quantified,
+}
 
-impl Display for QuantifiedVec {
+/// Wraps a vector of type parameters to give them a nice Display and convenient access methods.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TParams(pub Vec<TParam>);
+
+impl Display for TParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[{}]", commas_iter(|| self.0.iter()))
+        write!(f, "[{}]", commas_iter(|| self.quantified()))
     }
 }
 
-impl QuantifiedVec {
+impl TParams {
+    pub fn new(qs: Vec<Quantified>) -> Self {
+        Self(qs.into_iter().map(|q| TParam { quantified: q }).collect())
+    }
+
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
-    pub fn as_slice(&self) -> &[Quantified] {
-        &self.0
+    pub fn quantified(&self) -> impl Iterator<Item = &Quantified> {
+        self.0.iter().map(|x| &x.quantified)
     }
 }
 

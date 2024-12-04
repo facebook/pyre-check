@@ -23,10 +23,9 @@ use crate::module::module_info::ModuleInfo;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::qname::QName;
 use crate::types::types::Quantified;
-use crate::types::types::QuantifiedVec;
+use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
-use crate::util::prelude::SliceExt;
 
 /// The name of a nominal type, e.g. `str`
 #[derive(Debug, Clone, Display, Dupe, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -35,7 +34,7 @@ pub struct Class(ArcId<ClassInner>);
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct ClassInner {
     qname: QName,
-    tparams: QuantifiedVec,
+    tparams: TParams,
     fields: SmallSet<Name>,
 }
 
@@ -59,8 +58,7 @@ impl Display for ClassInner {
                 f,
                 "[{}]",
                 self.tparams
-                    .0
-                    .iter()
+                    .quantified()
                     .map(|_| "_")
                     .collect::<Vec<_>>()
                     .join(", ")
@@ -81,7 +79,7 @@ impl Class {
     pub fn new(
         name: Identifier,
         module_info: ModuleInfo,
-        tparams: QuantifiedVec,
+        tparams: TParams,
         fields: SmallSet<Name>,
     ) -> Self {
         Self(ArcId::new(ClassInner {
@@ -111,12 +109,17 @@ impl Class {
         &self.0.qname
     }
 
-    pub fn tparams(&self) -> &QuantifiedVec {
+    pub fn tparams(&self) -> &TParams {
         &self.0.tparams
     }
 
     pub fn self_type(&self) -> Type {
-        let tparams_as_targs = TArgs::new(self.tparams().as_slice().map(|q| q.clone().to_type()));
+        let tparams_as_targs = TArgs::new(
+            self.tparams()
+                .quantified()
+                .map(|q| q.clone().to_type())
+                .collect(),
+        );
         ClassType::new(self.clone(), tparams_as_targs).to_type()
     }
 
@@ -223,7 +226,7 @@ impl ClassType {
         &self.0
     }
 
-    pub fn tparams(&self) -> &QuantifiedVec {
+    pub fn tparams(&self) -> &TParams {
         self.0.tparams()
     }
 
@@ -254,8 +257,7 @@ impl ClassType {
         let targs = &self.1.as_slice();
         Substitution(
             tparams
-                .as_slice()
-                .iter()
+                .quantified()
                 .cloned()
                 .zip(targs.iter().cloned())
                 .collect(),

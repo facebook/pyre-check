@@ -254,7 +254,7 @@ mod tests {
     use crate::types::type_var::Variance;
     use crate::types::types::Quantified;
     use crate::types::types::QuantifiedKind;
-    use crate::types::types::QuantifiedVec;
+    use crate::types::types::TParams;
     use crate::uniques::UniqueFactory;
     use crate::util::prelude::SliceExt;
 
@@ -268,7 +268,7 @@ mod tests {
         Class::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
             mi,
-            QuantifiedVec(tparams.map(|q| q.clone())),
+            TParams::new(tparams.map(|q| q.clone())),
             SmallSet::new(),
         )
     }
