@@ -32,6 +32,7 @@ use crate::alt::exports::LookupExport;
 use crate::alt::table::Keyed;
 use crate::alt::table::TableKeyed;
 use crate::config::Config;
+use crate::debug_info::DebugInfo;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
 use crate::module::module_name::ModuleName;
@@ -44,6 +45,7 @@ use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
 use crate::util::enum_heap::EnumHeap;
+use crate::util::prelude::SliceExt;
 
 pub struct State<'a> {
     config: &'a Config,
@@ -369,6 +371,20 @@ impl<'a> State<'a> {
             .answers
             .get()
             .map(|x| x.0.dupe())
+    }
+
+    pub fn debug_info(&self, modules: &[ModuleName]) -> DebugInfo {
+        let owned = modules.map(|x| {
+            let module = self.get_module(*x);
+            let steps = module.steps.read().unwrap();
+            (
+                steps.module_info.get().unwrap().0.dupe(),
+                module.dupe(),
+                steps.answers.get().unwrap().dupe(),
+                steps.solutions.get().unwrap().dupe(),
+            )
+        });
+        DebugInfo::new(&owned.map(|x| (&x.0, &x.1.errors, &x.2.0, &*x.3)))
     }
 
     /* Notes on how to move to incremental

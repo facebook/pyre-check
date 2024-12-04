@@ -95,7 +95,7 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
             args.common.timings.is_none(),
             &modules,
         );
-        if args.report_binding_memory.is_none() {
+        if args.report_binding_memory.is_none() && args.debug_info.is_none() {
             state.run_one_shot()
         } else {
             state.run()
@@ -113,6 +113,13 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
             number_thousands(error_count),
             memory_trace.peak()
         );
+        if let Some(debug_info) = args.debug_info {
+            let mut output = serde_json::to_string_pretty(&state.debug_info(&modules))?;
+            if debug_info.extension() == Some(OsStr::new("js")) {
+                output = format!("var data = {output}");
+            }
+            fs_anyhow::write(&debug_info, output.as_bytes())?;
+        }
         if let Some(path) = args.report_binding_memory {
             fs_anyhow::write(
                 &path,
