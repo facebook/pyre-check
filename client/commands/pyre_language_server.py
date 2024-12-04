@@ -505,7 +505,7 @@ def log_exceptions_factory(
     return log_exceptions
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class PyreLanguageServer(PyreLanguageServerApi):
     # Channel to send responses to the editor
     output_channel: connections.AsyncTextWriter
@@ -518,7 +518,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
     index_querier: daemon_querier.AbstractDaemonQuerier
     document_formatter: Optional[AbstractDocumentFormatter]
     client_type_error_handler: type_error_handler.ClientTypeErrorHandler
-    ongoing_type_checks: int = 0
 
     async def write_telemetry(
         self,
@@ -746,14 +745,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 f"Querying Buck for type errors: `{' '.join(type_check_parameters)}`"
             )
 
-            self.ongoing_type_checks += 1
+            self.server_state.ongoing_type_checks += 1
             type_check = await asyncio.create_subprocess_exec(
                 *type_check_parameters,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout_data, stderr_data = await type_check.communicate()
-            self.ongoing_type_checks -= 1
+            self.server_state.ongoing_type_checks -= 1
 
             stdout_text = stdout_data.decode("utf-8")
             stderr_text = stderr_data.decode("utf-8")
@@ -765,7 +764,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         error_message = None
         # return now if buck build was unsuccessful or not preempted
         result_status = BuckTypeCheckStatus.from_returncode(
-            type_check.returncode, remaining_tasks=self.ongoing_type_checks
+            type_check.returncode, remaining_tasks=self.server_state.ongoing_type_checks
         )
         if result_status != BuckTypeCheckStatus.SUCCESS:
             if result_status not in (
@@ -900,14 +899,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 f"Getting files for type checker from Buck: `{' '.join(query_parameters)}`"
             )
 
-            self.ongoing_type_checks += 1
+            self.server_state.ongoing_type_checks += 1
             type_checked_files_query = await asyncio.create_subprocess_exec(
                 *query_parameters,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
             stdout_data, stderr_data = await type_checked_files_query.communicate()
-            self.ongoing_type_checks -= 1
+            self.server_state.ongoing_type_checks -= 1
 
         if type_checked_files_query.returncode != 0:
             stderr = stderr_data.decode("utf-8")
@@ -2323,7 +2322,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         )
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class CodeNavigationServerApi(PyreLanguageServer):
     pass
 

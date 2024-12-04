@@ -112,3 +112,5 @@ class ServerState:
     client_register_event: Optional[asyncio.Event] = None
 
     pyautotargets_lock: Lock = dataclasses.field(default_factory=asyncio.Lock)
+
+    ongoing_type_checks: int = 0
