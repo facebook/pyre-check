@@ -256,7 +256,7 @@ fn run_phase2(
     res
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct Driver {
     errors: Vec<Error>,
     expectations: SmallMap<ModuleName, Expectation>,
