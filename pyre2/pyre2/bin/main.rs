@@ -19,6 +19,7 @@
 #![feature(let_chains)]
 #![feature(if_let_guard)]
 #![feature(associated_type_defaults)]
+#![feature(associated_const_equality)]
 
 use util::panic::exit_on_panic;
 

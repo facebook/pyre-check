@@ -25,7 +25,6 @@ use crate::alt::binding::BindingAnnotation;
 use crate::alt::binding::BindingClassMetadata;
 use crate::alt::binding::BindingLegacyTypeParam;
 use crate::alt::binding::ContextManagerKind;
-use crate::alt::binding::Exported;
 use crate::alt::binding::FunctionKind;
 use crate::alt::binding::Key;
 use crate::alt::binding::KeyAnnotation;
@@ -153,7 +152,7 @@ pub struct AnswersSolver<'a, Ans: LookupAnswer> {
 }
 
 pub trait LookupAnswer: Sized {
-    fn get<K: Solve<Self> + Exported>(
+    fn get<K: Solve<Self> + Keyed<EXPORTED = true>>(
         &self,
         name: ModuleName,
         k: &K,
@@ -168,7 +167,7 @@ pub trait LookupAnswer: Sized {
 }
 
 impl<'a> LookupAnswer for SmallMap<ModuleName, (&'a Answers, &'a Bindings, &'a ErrorCollector)> {
-    fn get<K: Solve<Self> + Exported>(
+    fn get<K: Solve<Self> + Keyed<EXPORTED = true>>(
         &self,
         name: ModuleName,
         k: &K,
@@ -493,7 +492,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self.current.solver
     }
 
-    pub fn get_from_module<K: Solve<Ans> + Exported>(
+    pub fn get_from_module<K: Solve<Ans> + Keyed<EXPORTED = true>>(
         &self,
         name: ModuleName,
         k: &K,
@@ -503,7 +502,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
-        assert!(K::EXPORTED);
         if name == self.module_info().name() {
             self.get(k)
         } else {
@@ -512,7 +510,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get_from_class<K: Solve<Ans> + Exported>(&self, cls: &Class, k: &K) -> Arc<K::Answer>
+    pub fn get_from_class<K: Solve<Ans> + Keyed<EXPORTED = true>>(
+        &self,
+        cls: &Class,
+        k: &K,
+    ) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,

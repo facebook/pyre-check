@@ -30,12 +30,6 @@ use crate::types::types::Quantified;
 use crate::types::types::Type;
 use crate::util::display::DisplayWith;
 
-/// A Key that can be accessed from another module.
-pub trait Exported {}
-
-impl Exported for KeyExported {}
-impl Exported for KeyClassMetadata {}
-
 assert_eq_size!(Key, [usize; 5]);
 assert_eq_size!(KeyExported, [usize; 4]);
 assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize

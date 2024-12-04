@@ -25,7 +25,6 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
 use crate::alt::answers::Solve;
-use crate::alt::binding::Exported;
 use crate::alt::binding::KeyExported;
 use crate::alt::bindings::BindingEntry;
 use crate::alt::bindings::BindingTable;
@@ -255,7 +254,7 @@ impl<'a> State<'a> {
             .duped()
     }
 
-    fn lookup_answer<'b, K: Solve<Self> + Exported>(
+    fn lookup_answer<'b, K: Solve<Self> + Keyed<EXPORTED = true>>(
         &'b self,
         module: ModuleName,
         key: &K,
@@ -410,7 +409,7 @@ impl LookupExport for State<'_> {
 }
 
 impl LookupAnswer for State<'_> {
-    fn get<K: Solve<Self> + Exported>(
+    fn get<K: Solve<Self> + Keyed<EXPORTED = true>>(
         &self,
         name: ModuleName,
         k: &K,
