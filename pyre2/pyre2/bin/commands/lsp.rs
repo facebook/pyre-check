@@ -8,6 +8,7 @@
 use std::path::Path;
 use std::path::PathBuf;
 
+use anyhow::anyhow;
 use clap::Parser;
 use lsp_server::Connection;
 use lsp_server::Message;
@@ -194,7 +195,18 @@ impl<'a> Server<'a> {
             send,
             initialize_params,
             include,
-            driver: Driver::default(),
+            driver: Driver::new(
+                &[],
+                Box::new(|_| {
+                    (
+                        LoadResult::FailedToFind(anyhow!("Failed during init")),
+                        false,
+                    )
+                }),
+                &Config::default(),
+                true,
+                None,
+            ),
             open_files: Default::default(),
         }
     }
