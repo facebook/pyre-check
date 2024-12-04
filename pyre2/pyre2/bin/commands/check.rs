@@ -107,6 +107,7 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
         }
         let printing = start.elapsed();
         memory_trace.stop();
+        state.print_error_summary();
         eprintln!(
             "{} errors, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
             number_thousands(error_count),

@@ -291,6 +291,14 @@ impl<'a> State<'a> {
         }
     }
 
+    pub fn print_error_summary(&self) {
+        for (error, count) in
+            ErrorCollector::summarise(self.modules.read().unwrap().values().map(|x| &x.errors))
+        {
+            eprintln!("{count} instances of {error}");
+        }
+    }
+
     fn compute_stdlib(&self) {
         let stdlib = Arc::new(Stdlib::new(|module, name| self.lookup_stdlib(module, name)));
         *self.stdlib.write().unwrap() = stdlib;
