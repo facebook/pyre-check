@@ -119,6 +119,19 @@ impl<Ctx, T: DisplayWith<Ctx>> DisplayWith<Ctx> for Rc<T> {
     }
 }
 
+/// Print a number using commas between thousands.
+pub fn number_thousands(x: usize) -> impl Display {
+    // Taken from https://stackoverflow.com/a/67834588
+    x.to_string()
+        .as_bytes()
+        .rchunks(3)
+        .rev()
+        .map(std::str::from_utf8)
+        .collect::<Result<Vec<&str>, _>>()
+        .unwrap()
+        .join(",")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -138,5 +151,16 @@ mod tests {
     #[test]
     fn test_fmt() {
         assert_eq!(Fmt(|f| write!(f, "hello")).to_string(), "hello");
+    }
+
+    #[test]
+    fn test_number_thousands() {
+        assert_eq!(number_thousands(0).to_string(), "0");
+        assert_eq!(number_thousands(1).to_string(), "1");
+        assert_eq!(number_thousands(10).to_string(), "10");
+        assert_eq!(number_thousands(100).to_string(), "100");
+        assert_eq!(number_thousands(1000).to_string(), "1,000");
+        assert_eq!(number_thousands(123456).to_string(), "123,456");
+        assert_eq!(number_thousands(1040030009).to_string(), "1,040,030,009");
     }
 }

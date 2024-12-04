@@ -26,6 +26,7 @@ use crate::report;
 use crate::state::driver::Driver;
 use crate::state::loader::LoadResult;
 use crate::state::state::State;
+use crate::util::display::number_thousands;
 use crate::util::fs_anyhow;
 use crate::util::memory::MemoryUsageTrace;
 
@@ -111,7 +112,7 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
         memory_trace.stop();
         eprintln!(
             "{} errors, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
-            errors.len(),
+            number_thousands(errors.len()),
             memory_trace.peak()
         );
         if let Some(path) = args.report_binding_memory {
