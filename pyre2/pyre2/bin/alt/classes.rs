@@ -15,6 +15,7 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtClassDef;
+use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
@@ -262,12 +263,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             })
             .collect();
         let (metaclasses, keywords): (Vec<_>, SmallMap<_, _>) =
-            keywords
-                .iter()
-                .partition_map(|(n, x)| match (n.as_str(), self.expr(x, None)) {
-                    ("metaclass", ty) => Either::Left(ty),
-                    (_, ty) => Either::Right((n.clone(), ty.clone())),
-                });
+            keywords.iter().partition_map(|(n, x)| match n.as_str() {
+                "metaclass" => Either::Left(x),
+                _ => Either::Right((n.clone(), self.expr(x, None))),
+            });
         let metaclass =
             self.calculate_metaclass(cls, metaclasses.into_iter().next(), &bases_with_metadata);
         ClassMetadata::new(cls, bases_with_metadata, metaclass, keywords, self.errors())
@@ -276,10 +275,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn calculate_metaclass(
         &self,
         cls: &Class,
-        raw_metaclass: Option<Type>,
+        raw_metaclass: Option<&Expr>,
         bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
     ) -> Option<ClassType> {
-        let direct_meta = self.direct_metaclass(cls, raw_metaclass);
+        let direct_meta = raw_metaclass.and_then(|x| self.direct_metaclass(cls, x));
         if let Some(metaclass) = direct_meta {
             Some(metaclass)
         } else {
@@ -306,40 +305,39 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // the right metaclass when the code is valid, but failing to catch cases that crash at runtime.
     }
 
-    fn direct_metaclass(&self, cls: &Class, raw_metaclass: Option<Type>) -> Option<ClassType> {
-        raw_metaclass.and_then(|ty|
-            // TODO(stroxler) Improve the error locations here.
-            match self.untype(ty, cls.name().range) {
-                Type::ClassType(meta) => {
-                    if self.solver().is_subset_eq(
-                            &Type::ClassType(meta.clone()),
-                            &Type::ClassType(self.stdlib.builtins_type()),
-                            self.type_order()
-                    ) {
-                            Some(meta)
-                    } else {
-                        self.error(
-                            cls.name().range,
-                            format!(
-                                "Metaclass of `{}` has type `{}` which is not a subclass of `type`",
-                                cls.name().id,
-                                Type::ClassType(meta),
-                            )
-                        );
-                        None
-                    }
-                }
-                ty => {
+    fn direct_metaclass(&self, cls: &Class, raw_metaclass: &Expr) -> Option<ClassType> {
+        match self.expr_untype(raw_metaclass) {
+            Type::ClassType(meta) => {
+                if self.solver().is_subset_eq(
+                    &Type::ClassType(meta.clone()),
+                    &Type::ClassType(self.stdlib.builtins_type()),
+                    self.type_order(),
+                ) {
+                    Some(meta)
+                } else {
                     self.error(
-                        cls.name().range,
+                        raw_metaclass.range(),
                         format!(
-                            "Metaclass of `{}` has type `{}` is not a simple class type.",
-                            cls.name().id, ty,
-                        )
+                            "Metaclass of `{}` has type `{}` which is not a subclass of `type`",
+                            cls.name().id,
+                            Type::ClassType(meta),
+                        ),
                     );
                     None
                 }
-            })
+            }
+            ty => {
+                self.error(
+                    cls.name().range,
+                    format!(
+                        "Metaclass of `{}` has type `{}` is not a simple class type.",
+                        cls.name().id,
+                        ty,
+                    ),
+                );
+                None
+            }
+        }
     }
 
     pub fn get_metadata_for_class(&self, cls: &Class) -> Arc<ClassMetadata> {
