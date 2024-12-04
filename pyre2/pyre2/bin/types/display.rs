@@ -269,7 +269,7 @@ mod tests {
         Class::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
             mi,
-            TParams(tparams.map(|q| TParam::new(Name::new(q.id().to_string()), q.clone()))),
+            TParams(tparams.map(|q| TParam::new(Name::new(q.id().to_string()), *q))),
             SmallSet::new(),
         )
     }

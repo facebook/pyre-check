@@ -179,12 +179,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .collect::<SmallSet<_>>();
         let legacy_map = legacy_tparams
             .iter()
-            .map(|p| (p.quantified.clone(), p))
+            .map(|p| (p.quantified, p))
             .collect::<SmallMap<_, _>>();
 
         let lookup_tparam = |t: &Type| {
             if let Some(q) = t.as_quantified()
-                && let Some(p) = legacy_map.get(q)
+                && let Some(p) = legacy_map.get(&q)
             {
                 Some((*p).clone())
             } else {

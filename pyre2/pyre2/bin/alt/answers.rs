@@ -757,11 +757,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::TypeVar(ty_var) => {
                 let q = match seen.entry(ty_var.dupe()) {
-                    Entry::Occupied(e) => e.get().clone(),
+                    Entry::Occupied(e) => *e.get(),
                     Entry::Vacant(e) => {
                         let q = Quantified::type_var(self.uniques);
-                        e.insert(q.clone());
-                        tparams.push(TParam::new(ty_var.qname().id().clone(), q.clone()));
+                        e.insert(q);
+                        tparams.push(TParam::new(ty_var.qname().id().clone(), q));
                         q
                     }
                 };
@@ -892,9 +892,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None => Vec::new(),
         };
 
-        fn get_quantified(t: &Type) -> &Quantified {
+        fn get_quantified(t: &Type) -> Quantified {
             match t {
-                Type::Type(box Type::Quantified(q)) => q,
+                Type::Type(box Type::Quantified(q)) => *q,
                 _ => unreachable!(),
             }
         }
@@ -904,7 +904,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .map(|x| {
                 TParam::new(
                     x.id.clone(),
-                    get_quantified(&self.get(&Key::Definition(ShortIdentifier::new(x)))).clone(),
+                    get_quantified(&self.get(&Key::Definition(ShortIdentifier::new(x)))),
                 )
             })
             .collect()
@@ -1154,7 +1154,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             },
             Binding::AnyType(x) => Type::Any(*x),
             Binding::StrType => self.stdlib.str().to_type(),
-            Binding::TypeParameter(q) => Type::type_form(q.clone().to_type()),
+            Binding::TypeParameter(q) => Type::type_form(q.to_type()),
             Binding::Module(m, path, prev) => {
                 let prev = prev
                     .as_ref()
@@ -1188,7 +1188,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 ),
                             );
                         }
-                        Type::type_form(p.quantified.clone().to_type())
+                        Type::type_form(p.quantified.to_type())
                     }
                     LegacyTypeParameterLookup::NotParameter(ty) => ty.clone(),
                 }

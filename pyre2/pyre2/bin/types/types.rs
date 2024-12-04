@@ -57,7 +57,7 @@ impl Var {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Quantified {
     /// Unique identifier
     unique: Unique,
@@ -468,23 +468,23 @@ impl Type {
     ) -> (Vec<Var>, Self) {
         let mp: SmallMap<Quantified, Type> = gargs
             .iter()
-            .map(|x| (x.clone(), Var::new(uniques).to_type()))
+            .map(|x| (*x, Var::new(uniques).to_type()))
             .collect();
         let res = self.subst(&mp);
         (mp.into_values().map(|x| x.as_var().unwrap()).collect(), res)
     }
 
-    pub fn for_each_quantified(&self, f: &mut impl FnMut(&Quantified)) {
+    pub fn for_each_quantified(&self, f: &mut impl FnMut(Quantified)) {
         self.universe(|x| {
             if let Type::Quantified(x) = x {
-                f(x);
+                f(*x);
             }
         })
     }
 
     pub fn collect_quantifieds(&self, acc: &mut SmallSet<Quantified>) {
         self.for_each_quantified(&mut |q| {
-            acc.insert(q.clone());
+            acc.insert(q);
         });
     }
 
@@ -630,9 +630,9 @@ impl Type {
         self
     }
 
-    pub fn as_quantified(&self) -> Option<&Quantified> {
+    pub fn as_quantified(&self) -> Option<Quantified> {
         match self {
-            Type::Quantified(q) => Some(q),
+            Type::Quantified(q) => Some(*q),
             _ => None,
         }
     }

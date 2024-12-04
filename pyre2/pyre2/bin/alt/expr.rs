@@ -120,7 +120,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::Forall(params, t) => {
                 let t: Type = self.solver().fresh_quantified(
-                    params.quantified().cloned().collect::<Vec<_>>().as_slice(),
+                    params.quantified().copied().collect::<Vec<_>>().as_slice(),
                     *t,
                     self.uniques,
                 );
@@ -908,7 +908,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::Forall(params, ty) => {
                         let param_map = params
                             .quantified()
-                            .cloned()
+                            .copied()
                             .zip(xs.map(|x| self.expr_untype(x)))
                             .collect::<SmallMap<_, _>>();
                         ty.subst(&param_map)

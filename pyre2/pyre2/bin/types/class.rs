@@ -107,12 +107,8 @@ impl Class {
     }
 
     pub fn self_type(&self) -> Type {
-        let tparams_as_targs = TArgs::new(
-            self.tparams()
-                .quantified()
-                .map(|q| q.clone().to_type())
-                .collect(),
-        );
+        let tparams_as_targs =
+            TArgs::new(self.tparams().quantified().map(|q| q.to_type()).collect());
         ClassType::new(self.clone(), tparams_as_targs).to_type()
     }
 
@@ -251,7 +247,7 @@ impl ClassType {
         Substitution(
             tparams
                 .quantified()
-                .cloned()
+                .copied()
                 .zip(targs.iter().cloned())
                 .collect(),
         )
