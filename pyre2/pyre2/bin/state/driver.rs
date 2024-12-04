@@ -25,7 +25,7 @@ use crate::alt::exports::Exports;
 use crate::alt::exports::LookupExport;
 use crate::ast::Ast;
 use crate::config::Config;
-use crate::debug;
+use crate::debug::DebugInfo;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
 use crate::expectation::Expectation;
@@ -457,8 +457,8 @@ impl Driver {
         self.solutions.get(&module)?.types.get(key)
     }
 
-    pub fn debug_info(&self, modules: &[ModuleName]) -> debug::Info {
-        debug::Info::new(&modules.map(|x| {
+    pub fn debug_info(&self, modules: &[ModuleName]) -> DebugInfo {
+        DebugInfo::new(&modules.map(|x| {
             let (phase1, phase2) = self.phases.get(x).unwrap();
             (
                 &phase1.module_info,

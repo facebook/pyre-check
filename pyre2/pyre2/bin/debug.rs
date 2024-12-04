@@ -26,7 +26,7 @@ use crate::util::display::DisplayWith;
 use crate::util::prelude::SliceExt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Info {
+pub struct DebugInfo {
     modules: SmallMap<ModuleName, Module>,
 }
 
@@ -51,7 +51,7 @@ struct Error {
     message: String,
 }
 
-impl Info {
+impl DebugInfo {
     pub fn new(modules: &[(&ModuleInfo, &ErrorCollector, &Bindings, &Solutions)]) -> Self {
         fn f<K: Keyed>(
             t: &SolutionsEntry<K>,
