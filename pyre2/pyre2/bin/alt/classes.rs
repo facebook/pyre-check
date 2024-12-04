@@ -268,11 +268,45 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ("metaclass", ty) => Either::Left(ty),
                     (_, ty) => Either::Right((n.clone(), ty.clone())),
                 });
-        let metaclass = self.validated_metaclass(cls, metaclasses.into_iter().next());
+        let metaclass =
+            self.calculate_metaclass(cls, metaclasses.into_iter().next(), &bases_with_metadata);
         ClassMetadata::new(cls, bases_with_metadata, metaclass, keywords, self.errors())
     }
 
-    fn validated_metaclass(&self, cls: &Class, raw_metaclass: Option<Type>) -> Option<ClassType> {
+    fn calculate_metaclass(
+        &self,
+        cls: &Class,
+        raw_metaclass: Option<Type>,
+        bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
+    ) -> Option<ClassType> {
+        let direct_meta = self.direct_metaclass(cls, raw_metaclass);
+        if let Some(metaclass) = direct_meta {
+            Some(metaclass)
+        } else {
+            let mut inherited_meta: Option<ClassType> = None;
+            for m in bases_with_metadata
+                .iter()
+                .filter_map(|(_, m)| m.metaclass())
+            {
+                let accept_m = match &inherited_meta {
+                    None => true,
+                    Some(inherited) => self.solver().is_subset_eq(
+                        &Type::ClassType(m.clone()),
+                        &Type::ClassType(inherited.clone()),
+                        self.type_order(),
+                    ),
+                };
+                if accept_m {
+                    inherited_meta = Some(m.clone());
+                }
+            }
+            inherited_meta
+        }
+        // TODO(stroxler): Make sure inherited metaclasses are compatible; we are currently producing
+        // the right metaclass when the code is valid, but failing to catch cases that crash at runtime.
+    }
+
+    fn direct_metaclass(&self, cls: &Class, raw_metaclass: Option<Type>) -> Option<ClassType> {
         raw_metaclass.and_then(|ty|
             // TODO(stroxler) Improve the error locations here.
             match self.untype(ty, cls.name().range) {

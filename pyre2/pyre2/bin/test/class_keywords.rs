@@ -66,16 +66,35 @@ class A(foo=True): pass
 }
 
 #[test]
-fn test_directly_specified_metaclass() {
+fn test_direct_metaclass() {
     let (module_name, driver) = mk_driver(
         r#"
-class M(type): pass
-class A(metaclass=M): pass
+class M0(type): pass
+class M1(M0): pass
+class B(metaclass=M0): pass
+class C(B, metaclass=M1): pass
 "#,
     );
     assert_eq!(
-        get_metaclass("A", module_name, &driver).unwrap().name().id,
-        "M"
+        get_metaclass("C", module_name, &driver).unwrap().name().id,
+        "M1"
+    );
+}
+
+#[test]
+fn test_inherited_metaclass() {
+    let (module_name, driver) = mk_driver(
+        r#"
+class M0(type): pass
+class M1(M0): pass
+class B0(metaclass=M0): pass
+class B1(metaclass=M1): pass
+class C(B0, B1): pass
+"#,
+    );
+    assert_eq!(
+        get_metaclass("C", module_name, &driver).unwrap().name().id,
+        "M1"
     );
 }
 
