@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// TODO(ndmitchell): I'm working on deleting this module entire, don't hack out random pieces in the meantime.
+#![allow(dead_code)]
+
 use std::sync::Mutex;
 use std::time::Duration;
 
