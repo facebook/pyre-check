@@ -39,7 +39,6 @@ use crate::types::types::Quantified;
 use crate::types::types::QuantifiedVec;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
-use crate::visitors::Visitors;
 
 /// Class members can fail to be
 pub enum NoClassAttribute {
@@ -153,33 +152,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    /// If the base class is a "normal" generic base (not `Protocol` or `Generic`), then
-    /// call `f` on each `Quantified` in left-to-right order.
-    fn for_each_quantified_if_not_special(&self, base: &BaseClass, f: &mut impl FnMut(Quantified)) {
-        fn for_each_quantified_in_expr<Ans: LookupAnswer>(
-            x: &Expr,
-            answers_solver: &AnswersSolver<Ans>,
-            f: &mut impl FnMut(Quantified),
-        ) {
-            match x {
-                Expr::Name(_) => match answers_solver.expr(x, None) {
-                    Type::Type(box Type::Quantified(q)) => f(q),
-                    _ => {}
-                },
-                _ => {}
-            }
-            Visitors::visit_expr(x, &mut |x: &Expr| {
-                for_each_quantified_in_expr(x, answers_solver, f)
-            })
-        }
-        match base {
-            BaseClass::Expr(base) => Visitors::visit_expr(base, &mut |x: &Expr| {
-                for_each_quantified_in_expr(x, self, f)
-            }),
-            _ => {}
-        }
-    }
-
     fn class_tparams(
         &self,
         name: &Identifier,
@@ -224,21 +196,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // Handle implicit tparams: if a Quantified was bound at this scope and is not yet
         // in tparams, we add it. These will be added in left-to-right order.
         let implicit_tparams_okay = tparams.is_empty();
-        for base in bases.iter() {
-            self.for_each_quantified_if_not_special(base, &mut |q| {
-                if !tparams.contains(&q) && legacy_quantifieds.contains(&q) {
-                    if !implicit_tparams_okay {
-                        self.error(
-                            name.range,
-                            format!(
-                                "Class `{}` uses type variables not specified in `Generic` or `Protocol` base",
-                                name.id,
-                            ),
-                        );
-                    }
-                    tparams.insert(q);
+        for q in legacy_quantifieds.into_iter() {
+            if !tparams.contains(&q) {
+                if !implicit_tparams_okay {
+                    self.error(
+                        name.range,
+                        format!(
+                            "Class `{}` uses type variables not specified in `Generic` or `Protocol` base",
+                            name.id,
+                        ),
+                    );
                 }
-            });
+                tparams.insert(q);
+            }
         }
         QuantifiedVec(tparams.into_iter().collect())
     }
