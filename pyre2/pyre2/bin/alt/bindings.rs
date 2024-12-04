@@ -838,11 +838,9 @@ impl<'a> BindingsBuilder<'a> {
         let mut qs = Vec::new();
         for x in x.iter() {
             let q = match x {
-                TypeParam::TypeVar(x) => Quantified::type_var(self.uniques, x.name.id.clone()),
-                TypeParam::ParamSpec(x) => Quantified::param_spec(self.uniques, x.name.id.clone()),
-                TypeParam::TypeVarTuple(x) => {
-                    Quantified::type_var_tuple(self.uniques, x.name.id.clone())
-                }
+                TypeParam::TypeVar(_) => Quantified::type_var(self.uniques),
+                TypeParam::ParamSpec(_) => Quantified::param_spec(self.uniques),
+                TypeParam::TypeVarTuple(_) => Quantified::type_var_tuple(self.uniques),
             };
             qs.push(q.clone());
             let name = Ast::type_param_id(x);

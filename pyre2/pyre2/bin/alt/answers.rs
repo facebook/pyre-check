@@ -585,22 +585,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Arc<LegacyTypeParameterLookup> {
         match &*self.get_idx(binding.0) {
             Type::Type(box Type::TypeVar(x)) => {
-                let q = Quantified::type_var(self.uniques, x.qname().name.id.clone());
-                Arc::new(LegacyTypeParameterLookup::Parameter(TParam {
-                    quantified: q,
-                }))
+                let q = Quantified::type_var(self.uniques);
+                Arc::new(LegacyTypeParameterLookup::Parameter(TParam::new(
+                    x.qname().id().clone(),
+                    q,
+                )))
             }
             Type::Type(box Type::TypeVarTuple(x)) => {
-                let q = Quantified::type_var_tuple(self.uniques, x.qname().name.id.clone());
-                Arc::new(LegacyTypeParameterLookup::Parameter(TParam {
-                    quantified: q,
-                }))
+                let q = Quantified::type_var_tuple(self.uniques);
+                Arc::new(LegacyTypeParameterLookup::Parameter(TParam::new(
+                    x.qname().id().clone(),
+                    q,
+                )))
             }
             Type::Type(box Type::ParamSpec(x)) => {
-                let q = Quantified::param_spec(self.uniques, x.qname().name.id.clone());
-                Arc::new(LegacyTypeParameterLookup::Parameter(TParam {
-                    quantified: q,
-                }))
+                let q = Quantified::param_spec(self.uniques);
+                Arc::new(LegacyTypeParameterLookup::Parameter(TParam::new(
+                    x.qname().id().clone(),
+                    q,
+                )))
             }
             ty => Arc::new(LegacyTypeParameterLookup::NotParameter(ty.clone())),
         }
@@ -756,11 +759,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let q = match seen.entry(ty_var.dupe()) {
                     Entry::Occupied(e) => e.get().clone(),
                     Entry::Vacant(e) => {
-                        let q = Quantified::type_var(self.uniques, ty_var.qname().name.id.clone());
+                        let q = Quantified::type_var(self.uniques);
                         e.insert(q.clone());
-                        tparams.push(TParam {
-                            quantified: q.clone(),
-                        });
+                        tparams.push(TParam::new(ty_var.qname().id().clone(), q.clone()));
                         q
                     }
                 };
@@ -900,9 +901,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
         names
             .into_iter()
-            .map(|x| TParam {
-                quantified: get_quantified(&self.get(&Key::Definition(ShortIdentifier::new(x))))
-                    .clone(),
+            .map(|x| {
+                TParam::new(
+                    x.id.clone(),
+                    get_quantified(&self.get(&Key::Definition(ShortIdentifier::new(x)))).clone(),
+                )
             })
             .collect()
     }

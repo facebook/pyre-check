@@ -61,8 +61,6 @@ impl Var {
 pub struct Quantified {
     /// Unique identifier
     unique: Unique,
-    /// Display name
-    name: Box<Name>,
     kind: QuantifiedKind,
 }
 
@@ -75,29 +73,28 @@ pub enum QuantifiedKind {
 
 impl Display for Quantified {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)
+        write!(f, "?_")
     }
 }
 
 impl Quantified {
-    pub fn new(uniques: &UniqueFactory, name: Name, kind: QuantifiedKind) -> Self {
+    pub fn new(uniques: &UniqueFactory, kind: QuantifiedKind) -> Self {
         Quantified {
             unique: uniques.fresh(),
-            name: Box::new(name),
             kind,
         }
     }
 
-    pub fn type_var(uniques: &UniqueFactory, name: Name) -> Self {
-        Quantified::new(uniques, name, QuantifiedKind::TypeVar)
+    pub fn type_var(uniques: &UniqueFactory) -> Self {
+        Quantified::new(uniques, QuantifiedKind::TypeVar)
     }
 
-    pub fn param_spec(uniques: &UniqueFactory, name: Name) -> Self {
-        Quantified::new(uniques, name, QuantifiedKind::ParamSpec)
+    pub fn param_spec(uniques: &UniqueFactory) -> Self {
+        Quantified::new(uniques, QuantifiedKind::ParamSpec)
     }
 
-    pub fn type_var_tuple(uniques: &UniqueFactory, name: Name) -> Self {
-        Quantified::new(uniques, name, QuantifiedKind::TypeVarTuple)
+    pub fn type_var_tuple(uniques: &UniqueFactory) -> Self {
+        Quantified::new(uniques, QuantifiedKind::TypeVarTuple)
     }
 
     pub fn to_type(self) -> Type {
@@ -123,7 +120,24 @@ impl Quantified {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParam {
+    /// Display name
+    pub name: Box<Name>,
     pub quantified: Quantified,
+}
+
+impl Display for TParam {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+impl TParam {
+    pub fn new(name: Name, quantified: Quantified) -> Self {
+        Self {
+            name: Box::new(name),
+            quantified,
+        }
+    }
 }
 
 /// Wraps a vector of type parameters to give them a nice Display and convenient access methods.
@@ -132,7 +146,7 @@ pub struct TParams(pub Vec<TParam>);
 
 impl Display for TParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[{}]", commas_iter(|| self.quantified()))
+        write!(f, "[{}]", commas_iter(|| self.0.iter()))
     }
 }
 
@@ -163,7 +177,7 @@ pub enum LegacyTypeParameterLookup {
 impl Display for LegacyTypeParameterLookup {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Parameter(p) => write!(f, "{}", p.quantified.name),
+            Self::Parameter(p) => write!(f, "{}", p.name),
             Self::NotParameter(ty) => write!(f, "{ty}"),
         }
     }

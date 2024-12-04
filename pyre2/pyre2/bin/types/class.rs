@@ -26,6 +26,7 @@ use crate::types::types::Quantified;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
+use crate::util::display::commas_iter;
 
 /// The name of a nominal type, e.g. `str`
 #[derive(Debug, Clone, Display, Dupe, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -54,15 +55,7 @@ impl Display for ClassInner {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "class {}", self.qname.name)?;
         if !self.tparams.0.is_empty() {
-            write!(
-                f,
-                "[{}]",
-                self.tparams
-                    .quantified()
-                    .map(|_| "_")
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            )?;
+            write!(f, "[{}]", commas_iter(|| self.tparams.0.iter()))?;
         }
         writeln!(f, ": ...")
     }

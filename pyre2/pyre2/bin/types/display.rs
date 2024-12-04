@@ -195,7 +195,7 @@ impl<'a> TypeDisplayContext<'a> {
                 write!(
                     f,
                     "Forall[{}]",
-                    commas_iter(|| append(uniques.quantified(), [self.display(ty)]))
+                    commas_iter(|| append(uniques.0.iter(), [self.display(ty)]))
                 )
             }
             Type::Type(ty) => write!(f, "type[{}]", self.display(ty)),
@@ -269,9 +269,7 @@ mod tests {
         Class::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
             mi,
-            TParams(tparams.map(|q| TParam {
-                quantified: q.clone(),
-            })),
+            TParams(tparams.map(|q| TParam::new(Name::new(q.id().to_string()), q.clone()))),
             SmallSet::new(),
         )
     }
@@ -302,11 +300,7 @@ mod tests {
             "bar",
             "mod.ule",
             0,
-            &[Quantified::new(
-                &uniques,
-                Name::new("T"),
-                QuantifiedKind::TypeVar,
-            )],
+            &[Quantified::new(&uniques, QuantifiedKind::TypeVar)],
         );
 
         fn class_type(class: &Class, targs: TArgs) -> Type {
