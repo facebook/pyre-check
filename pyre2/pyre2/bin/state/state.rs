@@ -37,7 +37,6 @@ use crate::config::Config;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
 use crate::module::module_name::ModuleName;
-use crate::state::info::Info;
 use crate::state::loader::Loader;
 use crate::state::steps::Context;
 use crate::state::steps::ModuleSteps;
@@ -146,12 +145,6 @@ impl<'a> State<'a> {
         }
     }
 
-    fn evict<T>(&self, info: &mut Info<T>) {
-        if !self.retain_memory {
-            info.clear();
-        }
-    }
-
     fn demand(&self, module: ModuleName, step: Step) {
         let module_state = self.get_module(module);
         let mut computed = false;
@@ -177,10 +170,10 @@ impl<'a> State<'a> {
             computed = true;
             let compute = todo.compute().0(&lock);
             drop(lock);
-            if todo == Step::Bindings {
+            if todo == Step::Bindings && !self.retain_memory {
                 // We have captured the Ast, and must have already built Exports (we do it serially),
                 // so won't need the Ast again.
-                self.evict(&mut module_state.steps.write().unwrap().ast);
+                module_state.steps.write().unwrap().ast.clear();
             }
             let stdlib = self.stdlib.read().unwrap().dupe();
             let set = compute(&Context {
@@ -195,10 +188,10 @@ impl<'a> State<'a> {
             {
                 let mut module_write = module_state.steps.write().unwrap();
                 set(&mut module_write);
-                if todo == Step::Solutions {
+                if todo == Step::Solutions && !self.retain_memory {
                     // From now on we can use the answers directly, so evict the bindings/answers.
-                    self.evict(&mut module_write.bindings);
-                    self.evict(&mut module_write.answers);
+                    module_write.bindings.clear();
+                    module_write.answers.clear();
                 }
             }
             if todo == step {
