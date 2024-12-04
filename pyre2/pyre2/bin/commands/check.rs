@@ -87,7 +87,7 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
     let start = Instant::now();
     let mut state = State::new(
         config,
-        &load,
+        Box::new(load),
         args.common.parallel(),
         args.common.timings.is_none(),
         &modules,

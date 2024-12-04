@@ -51,7 +51,7 @@ use crate::util::prelude::SliceExt;
 
 pub struct State<'a> {
     config: Config,
-    loader: &'a Loader<'a>,
+    loader: Box<Loader<'a>>,
     uniques: UniqueFactory,
     parallel: bool,
     print_errors_immediately: bool,
@@ -100,7 +100,7 @@ impl ModuleState {
 impl<'a> State<'a> {
     pub fn new(
         config: Config,
-        loader: &'a Loader<'a>,
+        loader: Box<Loader<'a>>,
         parallel: bool,
         print_errors_immediately: bool,
         modules: &[ModuleName],
@@ -165,7 +165,7 @@ impl<'a> State<'a> {
             let set = compute(&Context {
                 name: module,
                 config: &self.config,
-                loader: self.loader,
+                loader: &*self.loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
                 errors: &module_state.errors,
