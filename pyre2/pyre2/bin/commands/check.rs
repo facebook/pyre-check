@@ -14,7 +14,6 @@ use std::time::Instant;
 use anyhow::Context as _;
 use clap::Parser;
 use starlark_map::small_map::SmallMap;
-use tracing::error;
 
 use crate::commands::common::CommonArgs;
 use crate::commands::util::default_include;
@@ -101,18 +100,16 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
         } else {
             state.run()
         };
-        let errors = state.collect_errors();
+        let error_count = state.count_errors();
         let computing = start.elapsed();
         if args.common.timings.is_some() {
-            for err in &errors {
-                error!("{err}");
-            }
+            state.print_errors();
         }
         let printing = start.elapsed();
         memory_trace.stop();
         eprintln!(
             "{} errors, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
-            number_thousands(errors.len()),
+            number_thousands(error_count),
             memory_trace.peak()
         );
         if let Some(path) = args.report_binding_memory {

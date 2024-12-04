@@ -267,12 +267,28 @@ impl<'a> State<'a> {
         )
     }
 
+    #[expect(dead_code)] // I expect this will be used later
     pub fn collect_errors(&self) -> Vec<Error> {
         let mut errors = Vec::new();
         for module in self.modules.read().unwrap().values() {
             errors.extend(module.errors.collect());
         }
         errors
+    }
+
+    pub fn count_errors(&self) -> usize {
+        self.modules
+            .read()
+            .unwrap()
+            .values()
+            .map(|x| x.errors.len())
+            .sum()
+    }
+
+    pub fn print_errors(&self) {
+        for module in self.modules.read().unwrap().values() {
+            module.errors.print();
+        }
     }
 
     fn compute_stdlib(&self) {
