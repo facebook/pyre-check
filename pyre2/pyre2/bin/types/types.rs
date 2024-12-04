@@ -121,7 +121,7 @@ impl Quantified {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParam {
     /// Display name
-    pub name: Box<Name>,
+    pub name: Name,
     pub quantified: Quantified,
 }
 
@@ -133,10 +133,7 @@ impl Display for TParam {
 
 impl TParam {
     pub fn new(name: Name, quantified: Quantified) -> Self {
-        Self {
-            name: Box::new(name),
-            quantified,
-        }
+        Self { name, quantified }
     }
 }
 
