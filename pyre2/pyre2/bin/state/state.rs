@@ -170,6 +170,7 @@ impl<'a> State<'a> {
                 stdlib: &stdlib,
                 errors: &module_state.errors,
                 lookup: self,
+                retain_memory: self.retain_memory,
             });
             {
                 let mut module_write = module_state.steps.write().unwrap();
