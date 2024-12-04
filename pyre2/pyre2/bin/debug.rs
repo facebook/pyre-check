@@ -27,28 +27,28 @@ use crate::util::prelude::SliceExt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Info {
-    pub modules: SmallMap<ModuleName, Module>,
+    modules: SmallMap<ModuleName, Module>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Module {
-    pub bindings: Vec<Binding>,
-    pub errors: Vec<Error>,
+struct Module {
+    bindings: Vec<Binding>,
+    errors: Vec<Error>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Binding {
-    pub kind: String,
-    pub key: String,
-    pub location: String,
-    pub binding: String,
-    pub result: String,
+struct Binding {
+    kind: String,
+    key: String,
+    location: String,
+    binding: String,
+    result: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Error {
-    pub location: String,
-    pub message: String,
+struct Error {
+    location: String,
+    message: String,
 }
 
 impl Info {
