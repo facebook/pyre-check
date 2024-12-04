@@ -42,8 +42,7 @@ pub struct ModuleSteps {
     pub module_info: Info<(ModuleInfo, Arc<Option<anyhow::Error>>)>,
     pub ast: Info<Arc<ModModule>>,
     pub exports: Info<Exports>,
-    pub bindings: Info<Bindings>,
-    pub answers: Info<Arc<Answers>>,
+    pub answers: Info<Arc<(Bindings, Answers)>>,
     pub solutions: Info<Arc<Solutions>>,
 }
 
@@ -52,7 +51,6 @@ impl ModuleSteps {
         self.module_info.clear();
         self.ast.clear();
         self.exports.clear();
-        self.bindings.clear();
         self.answers.clear();
         self.solutions.clear();
     }
@@ -65,7 +63,6 @@ pub enum Step {
     ModuleInfo,
     Ast,
     Exports,
-    Bindings,
     Answers,
     Solutions,
 }
@@ -103,7 +100,6 @@ impl Step {
             Step::ModuleInfo => steps.module_info.is_some(),
             Step::Ast => steps.ast.is_some(),
             Step::Exports => steps.exports.is_some(),
-            Step::Bindings => steps.bindings.is_some(),
             Step::Answers => steps.answers.is_some(),
             Step::Solutions => steps.solutions.is_some(),
         }
@@ -137,9 +133,8 @@ impl Step {
             Step::ModuleInfo => compute_step!(<Lookup> module_info =),
             Step::Ast => compute_step!(<Lookup> ast = module_info),
             Step::Exports => compute_step!(<Lookup> exports = module_info, ast),
-            Step::Bindings => compute_step!(<Lookup> bindings = module_info, ast),
-            Step::Answers => compute_step!(<Lookup> answers = bindings),
-            Step::Solutions => compute_step!(<Lookup> solutions = bindings, answers),
+            Step::Answers => compute_step!(<Lookup> answers = module_info, ast),
+            Step::Solutions => compute_step!(<Lookup> solutions = answers),
         }
     }
 
@@ -170,34 +165,31 @@ impl Step {
         Exports::new(&ast.body, &module_info.0, ctx.config)
     }
 
-    fn bindings<Lookup: LookupExport>(
+    fn answers<Lookup: LookupExport>(
         ctx: &Context<Lookup>,
         module_info: (ModuleInfo, Arc<Option<anyhow::Error>>),
         ast: Arc<ModModule>,
-    ) -> Bindings {
-        Bindings::new(
+    ) -> Arc<(Bindings, Answers)> {
+        let bindings = Bindings::new(
             Arc::unwrap_or_clone(ast).body,
             module_info.0,
             ctx.lookup,
             ctx.config,
             ctx.errors,
             ctx.uniques,
-        )
-    }
-
-    fn answers<Lookup>(_ctx: &Context<Lookup>, bindings: Bindings) -> Arc<Answers> {
-        Arc::new(Answers::new(&bindings))
+        );
+        let answers = Answers::new(&bindings);
+        Arc::new((bindings, answers))
     }
 
     fn solutions<Lookup: LookupExport + LookupAnswer>(
         ctx: &Context<Lookup>,
-        bindings: Bindings,
-        answers: Arc<Answers>,
+        answers: Arc<(Bindings, Answers)>,
     ) -> Arc<Solutions> {
-        Arc::new(answers.solve(
+        Arc::new(answers.1.solve(
             ctx.lookup,
             ctx.lookup,
-            &bindings,
+            &answers.0,
             ctx.errors,
             ctx.stdlib,
             ctx.uniques,

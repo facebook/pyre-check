@@ -170,7 +170,7 @@ impl<'a> State<'a> {
             computed = true;
             let compute = todo.compute().0(&lock);
             drop(lock);
-            if todo == Step::Bindings && !self.retain_memory {
+            if todo == Step::Answers && !self.retain_memory {
                 // We have captured the Ast, and must have already built Exports (we do it serially),
                 // so won't need the Ast again.
                 module_state.steps.write().unwrap().ast.clear();
@@ -190,7 +190,6 @@ impl<'a> State<'a> {
                 set(&mut module_write);
                 if todo == Step::Solutions && !self.retain_memory {
                     // From now on we can use the answers directly, so evict the bindings/answers.
-                    module_write.bindings.clear();
                     module_write.answers.clear();
                 }
             }
@@ -275,21 +274,18 @@ impl<'a> State<'a> {
 
         self.demand(module, Step::Answers);
         let module_state = self.get_module(module);
-        let (bindings, answers) = {
+        let answers = {
             let steps = module_state.steps.read().unwrap();
             if let Some(solutions) = steps.solutions.get() {
                 return Arc::new(TableKeyed::<K>::get(&**solutions).get(key).unwrap().clone());
             }
-            (
-                steps.bindings.get().unwrap().dupe(),
-                steps.answers.get().unwrap().dupe(),
-            )
+            steps.answers.get().unwrap().dupe()
         };
         let stdlib = self.stdlib.read().unwrap().dupe();
-        answers.solve_key(
+        answers.1.solve_key(
             self,
             self,
-            &bindings,
+            &answers.0,
             &module_state.errors,
             &stdlib,
             &self.uniques,
@@ -375,9 +371,9 @@ impl<'a> State<'a> {
             .steps
             .read()
             .unwrap()
-            .bindings
+            .answers
             .get()
-            .duped()
+            .map(|x| x.0.dupe())
     }
 
     /* Notes on how to move to incremental
