@@ -3265,6 +3265,17 @@ struct
               (ref
                  { pyre_in_context; assignment_target = Some { location = Node.location target } })
             target
+      (* Control flow statements should NOT be visited, since they are lowered down during the
+         control flow graph building. *)
+      | Statement.If _
+      | Statement.Class _
+      | Statement.Define _
+      | Statement.For _
+      | Statement.Match _
+      | Statement.While _
+      | Statement.With _
+      | Statement.Try _ ->
+          ()
       | _ ->
           CalleeVisitor.visit_statement
             ~state:(ref { pyre_in_context; assignment_target = None })
