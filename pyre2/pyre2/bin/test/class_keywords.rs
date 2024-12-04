@@ -13,6 +13,7 @@ use crate::state::driver::Driver;
 use crate::test::stdlib::Stdlib;
 use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;
+use crate::types::class::ClassType;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Lit;
 use crate::types::types::Type;
@@ -44,6 +45,12 @@ fn get_class_keyword(
         .cloned()
 }
 
+fn get_metaclass(class_name: &str, module_name: ModuleName, driver: &Driver) -> Option<ClassType> {
+    get_class_metadata(class_name, module_name, driver)
+        .metaclass()
+        .cloned()
+}
+
 #[test]
 fn test_look_up_class_keywords() {
     let (module_name, driver) = mk_driver(
@@ -56,6 +63,20 @@ class A(foo=True): pass
         Some(Type::Literal(Lit::Bool(true))),
     );
     assert_eq!(get_class_keyword("A", "bar", module_name, &driver), None,);
+}
+
+#[test]
+fn test_directly_specified_metaclass() {
+    let (module_name, driver) = mk_driver(
+        r#"
+class M(type): pass
+class A(metaclass=M): pass
+"#,
+    );
+    assert_eq!(
+        get_metaclass("A", module_name, &driver).unwrap().name().id,
+        "M"
+    );
 }
 
 simple_test!(
@@ -72,7 +93,7 @@ simple_test!(
     test_metaclass_must_subclass_type,
     r#"
 class BadMeta: pass
-class A(metaclass=BadMeta):
+class A(metaclass=BadMeta):  # E: Metaclass of `A` has type `BadMeta` which is not a subclass of `type`
     pass
 "#,
 );

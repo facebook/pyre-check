@@ -24,7 +24,7 @@ use crate::types::types::Type;
 use crate::util::display::commas_iter;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ClassMetadata(Mro, Keywords);
+pub struct ClassMetadata(Mro, Metaclass, Keywords);
 
 impl Display for ClassMetadata {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -36,22 +36,29 @@ impl ClassMetadata {
     pub fn new(
         cls: &Class,
         bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
+        metaclass: Option<ClassType>,
         keywords: SmallMap<Name, Type>,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         ClassMetadata(
             Mro::new(cls, bases_with_metadata, errors),
+            Metaclass(metaclass),
             Keywords(keywords),
         )
     }
 
     pub fn recursive() -> Self {
-        ClassMetadata(Mro::Cyclic, Keywords::default())
+        ClassMetadata(Mro::Cyclic, Metaclass::default(), Keywords::default())
+    }
+
+    #[allow(dead_code)] // This is used in tests now, and will be needed later in production.
+    pub fn metaclass(&self) -> Option<&ClassType> {
+        self.1.0.as_ref()
     }
 
     #[allow(dead_code)] // This is used in tests now, and will be needed later in production.
     pub fn keywords(&self) -> &SmallMap<Name, Type> {
-        &self.1.0
+        &self.2.0
     }
 
     pub fn ancestors<'a>(&'a self, stdlib: &'a Stdlib) -> impl Iterator<Item = &'a ClassType> {
@@ -71,8 +78,25 @@ impl ClassMetadata {
     }
 }
 
+/// A struct representing a class's metaclass. A value of `None` indicates
+/// no explicit metaclass, in which case the default metaclass is `type`.
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+struct Metaclass(Option<ClassType>);
+
+impl Display for Metaclass {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match &self.0 {
+            Some(metaclass) => write!(f, "{metaclass}"),
+            None => write!(f, "type"),
+        }
+    }
+}
+
 /// A struct representing the keywords in a class header, e.g. for
 /// `Class A(foo=True): ...` we will have `"foo": Literal[True]`.
+///
+/// The `metaclass` keyword is not included, since we store the metaclass
+/// separately as part of `ClassMetadata`.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 struct Keywords(SmallMap<Name, Type>);
 
@@ -227,7 +251,7 @@ impl Linearization {
         let mut ancestor_chains = Vec::new();
         for (base, mro) in bases_with_metadata.iter() {
             match &**mro {
-                ClassMetadata(Mro::Resolved(ancestors), _) => {
+                ClassMetadata(Mro::Resolved(ancestors), _, _) => {
                     let ancestors_through_base = ancestors
                         .iter()
                         .map(|ancestor| ancestor.substitute(&base.substitution()))
@@ -240,7 +264,7 @@ impl Linearization {
                 }
                 // None and Cyclic both indicate a cycle, the distinction just
                 // depends on how exactly the recursion in resolving keys plays out.
-                ClassMetadata(Mro::Cyclic, _) => {
+                ClassMetadata(Mro::Cyclic, _, _) => {
                     errors.add(
                         cls.module_info(),
                         cls.name().range,

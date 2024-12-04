@@ -9,6 +9,8 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use itertools::Either;
+use itertools::Itertools;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
@@ -259,11 +261,51 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 _ => None,
             })
             .collect();
-        let keywords: SmallMap<_, _> = keywords
-            .iter()
-            .map(|(n, x)| (n.clone(), self.expr(x, None)))
-            .collect();
-        ClassMetadata::new(cls, bases_with_metadata, keywords, self.errors())
+        let (metaclasses, keywords): (Vec<_>, SmallMap<_, _>) =
+            keywords
+                .iter()
+                .partition_map(|(n, x)| match (n.as_str(), self.expr(x, None)) {
+                    ("metaclass", ty) => Either::Left(ty),
+                    (_, ty) => Either::Right((n.clone(), ty.clone())),
+                });
+        let metaclass = self.validated_metaclass(cls, metaclasses.into_iter().next());
+        ClassMetadata::new(cls, bases_with_metadata, metaclass, keywords, self.errors())
+    }
+
+    fn validated_metaclass(&self, cls: &Class, raw_metaclass: Option<Type>) -> Option<ClassType> {
+        raw_metaclass.and_then(|ty|
+            // TODO(stroxler) Improve the error locations here.
+            match self.untype(ty, cls.name().range) {
+                Type::ClassType(meta) => {
+                    if self.solver().is_subset_eq(
+                            &Type::ClassType(meta.clone()),
+                            &Type::ClassType(self.stdlib.builtins_type()),
+                            self.type_order()
+                    ) {
+                            Some(meta)
+                    } else {
+                        self.error(
+                            cls.name().range,
+                            format!(
+                                "Metaclass of `{}` has type `{}` which is not a subclass of `type`",
+                                cls.name().id,
+                                Type::ClassType(meta),
+                            )
+                        );
+                        None
+                    }
+                }
+                ty => {
+                    self.error(
+                        cls.name().range,
+                        format!(
+                            "Metaclass of `{}` has type `{}` is not a simple class type.",
+                            cls.name().id, ty,
+                        )
+                    );
+                    None
+                }
+            })
     }
 
     pub fn get_metadata_for_class(&self, cls: &Class) -> Arc<ClassMetadata> {
