@@ -88,11 +88,12 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
         let mut state = State::new(&config, &load, args.common.parallel(), &modules);
-        let errors = if args.report_binding_memory.is_none() {
+        if args.report_binding_memory.is_none() {
             state.run_one_shot()
         } else {
             state.run()
         };
+        let errors = state.collect_errors();
         let stop = start.elapsed();
         memory_trace.stop();
         eprintln!(

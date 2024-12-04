@@ -262,7 +262,7 @@ impl<'a> State<'a> {
         )
     }
 
-    fn collect_errors(&self) -> Vec<Error> {
+    pub fn collect_errors(&self) -> Vec<Error> {
         let mut errors = Vec::new();
         for module in self.modules.read().unwrap().values() {
             errors.extend(module.errors.collect());
@@ -288,7 +288,7 @@ impl<'a> State<'a> {
         }
     }
 
-    fn run_internal(&mut self) -> Vec<Error> {
+    fn run_internal(&mut self) {
         self.compute_stdlib();
 
         if self.parallel {
@@ -301,20 +301,18 @@ impl<'a> State<'a> {
         } else {
             self.work();
         }
-
-        self.collect_errors()
     }
 
     /// Run, collecting all errors and destroying the state.
     /// The state afterwards will be useful for timing queries.
     /// Note we grab the `mut` only to stop other people accessing us simultaneously,
     /// we don't actually need it.
-    pub fn run_one_shot(&mut self) -> Vec<Error> {
+    pub fn run_one_shot(&mut self) {
         self.retain_memory = false;
         self.run_internal()
     }
 
-    pub fn run(&mut self) -> Vec<Error> {
+    pub fn run(&mut self) {
         self.retain_memory = true;
         self.run_internal()
     }
