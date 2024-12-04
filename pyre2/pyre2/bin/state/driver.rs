@@ -267,7 +267,7 @@ pub struct Driver {
 impl Driver {
     pub fn new(
         modules: &[ModuleName],
-        loader: Box<Loader>,
+        loader: Box<Loader<'static>>,
         config: &Config,
         parallel: bool,
         timings: Option<usize>,

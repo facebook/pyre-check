@@ -217,17 +217,17 @@ impl<'a> Server<'a> {
         let modules = self
             .open_files
             .keys()
-            .map(|x| (module_from_path(x), x))
+            .map(|x| (module_from_path(x), x.clone()))
             .collect::<SmallMap<_, _>>();
         let module_names = modules.keys().copied().collect::<Vec<_>>();
-        let loader = |name: ModuleName| {
+
+        let open_files = self.open_files.clone(); // Not good, but all of this is a hack
+        let include = self.include.clone();
+        let loader = move |name: ModuleName| {
             let loaded = if let Some(path) = modules.get(&name) {
-                LoadResult::Loaded(
-                    (*path).clone(),
-                    self.open_files.get(*path).unwrap().1.clone(),
-                )
+                LoadResult::Loaded((*path).clone(), open_files.get(path).unwrap().1.clone())
             } else {
-                LoadResult::from_path_result(find_module(name, &self.include))
+                LoadResult::from_path_result(find_module(name, &include))
             };
             (loaded, modules.contains_key(&name))
         };
