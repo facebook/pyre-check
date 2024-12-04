@@ -61,7 +61,6 @@ pub struct State<'a> {
     retain_memory: bool,
 }
 
-#[derive(Default)]
 struct ModuleState {
     // BIG WARNING: This must be a FairMutex or you run into deadlocks.
     // Imagine module Foo is having demand Solutions in one thread, and demand Exports in another.
@@ -72,6 +71,16 @@ struct ModuleState {
     lock: FairMutex<()>,
     errors: ErrorCollector,
     steps: RwLock<ModuleSteps>,
+}
+
+impl Default for ModuleState {
+    fn default() -> Self {
+        Self {
+            lock: Default::default(),
+            errors: ErrorCollector::new_quiet(),
+            steps: Default::default(),
+        }
+    }
 }
 
 impl ModuleState {
