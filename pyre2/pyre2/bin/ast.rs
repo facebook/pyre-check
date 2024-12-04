@@ -19,6 +19,7 @@ use ruff_python_ast::Pattern;
 use ruff_python_ast::PySourceType;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtIf;
+use ruff_python_ast::TypeParam;
 use ruff_python_parser::parse_expression_range;
 use ruff_python_parser::parse_unchecked_source;
 use ruff_python_parser::ParseError;
@@ -206,5 +207,13 @@ impl Ast {
             _ => {}
         }
         Visitors::visit_pattern(x, |x| Ast::pattern_lvalue(x, f));
+    }
+
+    pub fn type_param_id(x: &TypeParam) -> &Identifier {
+        match x {
+            TypeParam::TypeVar(x) => &x.name,
+            TypeParam::ParamSpec(x) => &x.name,
+            TypeParam::TypeVarTuple(x) => &x.name,
+        }
     }
 }
