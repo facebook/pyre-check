@@ -14,6 +14,7 @@ use std::time::Instant;
 use anyhow::Context as _;
 use clap::Parser;
 use starlark_map::small_map::SmallMap;
+use tracing::error;
 
 use crate::commands::common::CommonArgs;
 use crate::commands::util::default_include;
@@ -87,17 +88,29 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
     if args.state2 {
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
-        let mut state = State::new(&config, &load, args.common.parallel(), &modules);
+        let mut state = State::new(
+            &config,
+            &load,
+            args.common.parallel(),
+            args.common.timings.is_none(),
+            &modules,
+        );
         if args.report_binding_memory.is_none() {
             state.run_one_shot()
         } else {
             state.run()
         };
         let errors = state.collect_errors();
-        let stop = start.elapsed();
+        let computing = start.elapsed();
+        if args.common.timings.is_some() {
+            for err in &errors {
+                error!("{err}");
+            }
+        }
+        let printing = start.elapsed();
         memory_trace.stop();
         eprintln!(
-            "{} errors, took {stop:.2?}, peak memory {}",
+            "{} errors, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
             errors.len(),
             memory_trace.peak()
         );

@@ -50,6 +50,7 @@ pub struct State<'a> {
     loader: &'a Loader<'a>,
     uniques: UniqueFactory,
     parallel: bool,
+    print_errors_immediately: bool,
     stdlib: RwLock<Arc<Stdlib>>,
     modules: RwLock<SmallMap<ModuleName, Arc<ModuleState>>>,
     /// Items we still need to process. Stored in a max heap, so that
@@ -73,17 +74,19 @@ struct ModuleState {
     steps: RwLock<ModuleSteps>,
 }
 
-impl Default for ModuleState {
-    fn default() -> Self {
+impl ModuleState {
+    fn new(print_errors_immediately: bool) -> Self {
         Self {
-            lock: Default::default(),
-            errors: ErrorCollector::new_quiet(),
-            steps: Default::default(),
+            lock: FairMutex::new(()),
+            errors: if print_errors_immediately {
+                ErrorCollector::new()
+            } else {
+                ErrorCollector::new_quiet()
+            },
+            steps: RwLock::new(ModuleSteps::default()),
         }
     }
-}
 
-impl ModuleState {
     fn clear(&self) {
         self.errors.clear();
         self.steps.write().unwrap().clear();
@@ -95,6 +98,7 @@ impl<'a> State<'a> {
         config: &'a Config,
         loader: &'a Loader<'a>,
         parallel: bool,
+        print_errors_immediately: bool,
         modules: &[ModuleName],
     ) -> Self {
         let stdlib_modules = Stdlib::required();
@@ -103,12 +107,13 @@ impl<'a> State<'a> {
             loader,
             uniques: UniqueFactory::new(),
             parallel,
+            print_errors_immediately,
             stdlib: RwLock::new(Arc::new(Stdlib::for_bootstrapping())),
             modules: RwLock::new(
                 modules
                     .iter()
                     .chain(&stdlib_modules)
-                    .map(|x| (*x, Default::default()))
+                    .map(|x| (*x, Arc::new(ModuleState::new(print_errors_immediately))))
                     .collect(),
             ),
             todo: Mutex::new(
@@ -191,7 +196,7 @@ impl<'a> State<'a> {
             .write()
             .unwrap()
             .entry(module)
-            .or_default()
+            .or_insert_with(|| Arc::new(ModuleState::new(self.print_errors_immediately)))
             .dupe()
     }
 
