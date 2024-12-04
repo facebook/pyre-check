@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::any::type_name_of_val;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -20,15 +19,10 @@ use tracing::info;
 
 use crate::alt::answers::Answers;
 use crate::alt::answers::Solutions;
-use crate::alt::answers::SolutionsEntry;
 use crate::alt::binding::Key;
-use crate::alt::bindings::BindingEntry;
-use crate::alt::bindings::BindingTable;
 use crate::alt::bindings::Bindings;
 use crate::alt::exports::Exports;
 use crate::alt::exports::LookupExport;
-use crate::alt::table::Keyed;
-use crate::alt::table::TableKeyed;
 use crate::ast::Ast;
 use crate::config::Config;
 use crate::debug;
@@ -38,13 +32,11 @@ use crate::expectation::Expectation;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::Loader;
-use crate::table_for_each;
 #[cfg(test)]
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
-use crate::util::display::DisplayWith;
 use crate::util::memory::MemoryUsage;
 use crate::util::memory::MemoryUsageTrace;
 use crate::util::prelude::SliceExt;
@@ -466,55 +458,15 @@ impl Driver {
     }
 
     pub fn debug_info(&self, modules: &[ModuleName]) -> debug::Info {
-        fn f<K: Keyed>(
-            t: &SolutionsEntry<K>,
-            phase1: &Phase1,
-            phase2: &Phase2,
-            bindings: &mut Vec<debug::Binding>,
-        ) where
-            BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
-        {
-            for (key, val) in t.iter() {
-                let idx = phase2.bindings.key_to_idx(key);
-                bindings.push(debug::Binding {
-                    kind: type_name_of_val(key).rsplit_once(':').unwrap().1.to_owned(),
-                    key: phase1.module_info.display(key).to_string(),
-                    location: phase1.module_info.source_range(key.range()).to_string(),
-                    binding: phase2
-                        .bindings
-                        .get(idx)
-                        .display_with(&phase2.bindings)
-                        .to_string(),
-                    result: val.to_string(),
-                })
-            }
-        }
-
-        debug::Info {
-            modules: modules
-                .iter()
-                .map(|x| {
-                    let mut bindings = Vec::new();
-                    let (phase1, phase2) = self.phases.get(x).unwrap();
-                    table_for_each!(self.solutions.get(x).unwrap(), |t| f(
-                        t,
-                        phase1,
-                        phase2,
-                        &mut bindings
-                    ));
-                    let errors = self
-                        .errors
-                        .iter()
-                        .filter(|e| e.module_name() == *x)
-                        .map(|e| debug::Error {
-                            location: e.source_range().to_string(),
-                            message: e.msg.clone(),
-                        })
-                        .collect();
-                    (*x, debug::Module { bindings, errors })
-                })
-                .collect(),
-        }
+        debug::Info::new(&modules.map(|x| {
+            let (phase1, phase2) = self.phases.get(x).unwrap();
+            (
+                &phase1.module_info,
+                &phase1.errors,
+                &phase2.bindings,
+                self.solutions.get(x).unwrap(),
+            )
+        }))
     }
 }
 
