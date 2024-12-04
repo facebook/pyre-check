@@ -123,7 +123,7 @@ impl Quantified {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParam {
-    quantified: Quantified,
+    pub quantified: Quantified,
 }
 
 /// Wraps a vector of type parameters to give them a nice Display and convenient access methods.
@@ -137,10 +137,6 @@ impl Display for TParams {
 }
 
 impl TParams {
-    pub fn new(qs: Vec<Quantified>) -> Self {
-        Self(qs.into_iter().map(|q| TParam { quantified: q }).collect())
-    }
-
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -160,23 +156,23 @@ impl TParams {
 // represents that variable as a type parameter.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum LegacyTypeParameterLookup {
-    Parameter(Quantified),
+    Parameter(TParam),
     NotParameter(Type),
 }
 
 impl Display for LegacyTypeParameterLookup {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Parameter(q) => write!(f, "{q}"),
+            Self::Parameter(p) => write!(f, "{}", p.quantified.name),
             Self::NotParameter(ty) => write!(f, "{ty}"),
         }
     }
 }
 
 impl LegacyTypeParameterLookup {
-    pub fn parameter(&self) -> Option<&Quantified> {
+    pub fn parameter(&self) -> Option<&TParam> {
         match self {
-            Self::Parameter(q) => Some(q),
+            Self::Parameter(p) => Some(p),
             Self::NotParameter(_) => None,
         }
     }
