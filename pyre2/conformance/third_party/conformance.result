@@ -739,7 +739,7 @@
   ],
   "generics_defaults_specialization.py": [
     "Line 30: Expected 1 errors",
-    "Line 25: Unexpected errors ['untype, got Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, ?_]]]]']",
+    "Line 25: Unexpected errors ['untype, got Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]']",
     "Line 26: Unexpected errors ['assert_type(Any, SomethingWithNoDefaults[int, str]) failed']",
     "Line 45: Unexpected errors ['assert_type(type[Bar], type[Bar[str]]) failed']",
     "Line 46: Unexpected errors ['assert_type(Bar[Any], Bar[str]) failed']",
@@ -1016,7 +1016,7 @@
     "Line 52: Unexpected errors ['assert_type(Any, tuple[str, Array[Any]]) failed', 'Expected 1 type argument for class `Array`, got 0.']",
     "Line 59: Unexpected errors ['Class `Array2` uses type variables not specified in `Generic` or `Protocol` base', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 63: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 67: Unexpected errors ['untype, got Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[?_, Any]]]]']",
+    "Line 67: Unexpected errors ['untype, got Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, Any]]]]']",
     "Line 68: Unexpected errors ['assert_type(Any, Array2[Any, Any]) failed']",
     "Line 76: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[float, Error]]]\"]",
     "Line 80: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[float, Error]]]\"]",

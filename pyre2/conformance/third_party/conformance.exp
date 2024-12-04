@@ -10101,8 +10101,8 @@
     {
       "code": -2,
       "column": 15,
-      "concise_description": "untype, got Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, ?_]]]]",
-      "description": "untype, got Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, ?_]]]]",
+      "concise_description": "untype, got Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]",
+      "description": "untype, got Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]",
       "line": 25,
       "name": "PyreError",
       "stop_column": 22,
@@ -13813,8 +13813,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "untype, got Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[?_, Any]]]]",
-      "description": "untype, got Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[?_, Any]]]]",
+      "concise_description": "untype, got Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, Any]]]]",
+      "description": "untype, got Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, Any]]]]",
       "line": 67,
       "name": "PyreError",
       "stop_column": 23,
