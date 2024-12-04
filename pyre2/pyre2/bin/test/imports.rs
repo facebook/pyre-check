@@ -315,9 +315,16 @@ x = foo.bar  # E: No attribute `bar` in module `foo`
 );
 
 simple_test!(
-    test_missing_import,
+    test_missing_import_named,
     r#"
 from foo import bar  # E: Could not find import of `foo`  # E: Could not import `bar`
+"#,
+);
+
+simple_test!(
+    test_missing_import_star,
+    r#"
+from foo import *  # E: Could not find import of `foo`
 "#,
 );
 
