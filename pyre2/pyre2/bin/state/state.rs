@@ -16,6 +16,7 @@ use parking_lot::FairMutex;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
+use tracing::info;
 
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
@@ -35,6 +36,7 @@ use crate::config::Config;
 use crate::debug_info::DebugInfo;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
+use crate::expectation::Expectation;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::Loader;
 use crate::state::steps::Context;
@@ -385,6 +387,26 @@ impl<'a> State<'a> {
             )
         });
         DebugInfo::new(&owned.map(|x| (&x.0, &x.1.errors, &x.2.0, &*x.3)))
+    }
+
+    pub fn collect_checked_errors(&self) -> Vec<Error> {
+        self.modules
+            .read()
+            .unwrap()
+            .values()
+            .flat_map(|x| x.errors.collect())
+            .filter(|x| x.is_in_checked_module())
+            .collect()
+    }
+
+    pub fn check_against_expectations(&self) -> anyhow::Result<()> {
+        for (name, module) in self.modules.read().unwrap().iter() {
+            info!("Check for {name}");
+            let steps = module.steps.read().unwrap();
+            Expectation::parse(steps.module_info.get().unwrap().0.contents())
+                .check(&module.errors.collect())?;
+        }
+        Ok(())
     }
 
     /* Notes on how to move to incremental

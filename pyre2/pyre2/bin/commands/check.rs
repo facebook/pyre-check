@@ -126,6 +126,15 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
                 report::binding_memory::binding_memory(&state).as_bytes(),
             )?;
         }
+        if let Some(path) = args.output_path {
+            let errors = state.collect_checked_errors();
+            let legacy_errors = LegacyErrors::from_errors(&errors);
+            let output_bytes = serde_json::to_string_pretty(&legacy_errors)
+                .with_context(|| "failed to serialize JSON value to bytes")?;
+            fs_anyhow::write(&path, output_bytes.as_bytes())?;
+        } else {
+            state.check_against_expectations()?;
+        }
         if args.repeat == 1 {
             // We have allocated a bunch of memory, that we will never need, and are exiting the program.
             // Rather than deallocate it, just leak it, and let the OS clean up for us.
