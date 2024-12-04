@@ -118,8 +118,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let constructor = self.get_constructor_for_class_type(&cls);
                 self.as_callable(constructor)
             }
-            Type::Forall(qs, t) => {
-                let t: Type = self.solver().fresh_quantified(&qs, *t, self.uniques);
+            Type::Forall(params, t) => {
+                let t: Type = self.solver().fresh_quantified(
+                    params.quantified().cloned().collect::<Vec<_>>().as_slice(),
+                    *t,
+                    self.uniques,
+                );
                 self.as_callable(t)
             }
             Type::Var(v) if let Some(_guard) = self.recurser.recurse(v) => {
@@ -901,9 +905,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     fun = Type::type_form(Type::SpecialForm(SpecialForm::Tuple));
                 }
                 match fun {
-                    Type::Forall(quantifieds, ty) => {
-                        let param_map = quantifieds
-                            .into_iter()
+                    Type::Forall(params, ty) => {
+                        let param_map = params
+                            .quantified()
+                            .cloned()
                             .zip(xs.map(|x| self.expr_untype(x)))
                             .collect::<SmallMap<_, _>>();
                         ty.subst(&param_map)

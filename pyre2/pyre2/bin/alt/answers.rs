@@ -71,6 +71,7 @@ use crate::types::type_var::TypeVar;
 use crate::types::types::AnyStyle;
 use crate::types::types::LegacyTypeParameterLookup;
 use crate::types::types::Quantified;
+use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::types::types::TypeAlias;
 use crate::types::types::TypeAliasStyle;
@@ -797,7 +798,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if quantifieds.is_empty() {
             ta
         } else {
-            Type::Forall(quantifieds, Box::new(ta))
+            Type::Forall(TParams::new(quantifieds), Box::new(ta))
         }
     }
 
@@ -1100,7 +1101,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .iter()
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
                 tparams.extend(legacy_tparams);
-                Type::forall(tparams, Type::callable(args, ret))
+                Type::forall(TParams::new(tparams), Type::callable(args, ret))
             }
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExported::Export(name.clone()))
@@ -1217,17 +1218,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = self.solve_binding_inner(binding);
                 let ta = self.as_type_alias(name, TypeAliasStyle::Scoped, ty, *range);
                 match ta {
-                    Type::Forall(other_qs, inner_ta) => {
+                    Type::Forall(other_params, inner_ta) => {
                         self.error(
                             *range,
                             format!("Type parameters used in `{name}` but not declared"),
                         );
                         let mut all_qs = self.scoped_type_params(params);
-                        all_qs.extend(other_qs);
-                        Type::Forall(all_qs, inner_ta)
+                        all_qs.extend(other_params.quantified().cloned());
+                        Type::Forall(TParams::new(all_qs), inner_ta)
                     }
                     Type::TypeAlias(_) if params.is_some() => {
-                        Type::Forall(self.scoped_type_params(params), Box::new(ta))
+                        Type::Forall(TParams::new(self.scoped_type_params(params)), Box::new(ta))
                     }
                     _ => ta,
                 }

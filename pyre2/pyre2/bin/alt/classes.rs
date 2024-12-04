@@ -83,7 +83,14 @@ fn strip_first_argument(ty: &Type) -> Type {
         }
         _ => ty.clone(),
     };
-    Type::forall(gs.to_owned(), ty)
+    Type::forall(
+        if let Some(gs) = gs {
+            gs.to_owned()
+        } else {
+            TParams::new(Vec::new())
+        },
+        ty,
+    )
 }
 
 fn replace_return_type(ty: Type, ret: Type) -> Type {
@@ -92,7 +99,14 @@ fn replace_return_type(ty: Type, ret: Type) -> Type {
         Type::Callable(c) => Type::callable(c.args.as_list().unwrap().to_owned(), ret),
         _ => ty.clone(),
     };
-    Type::forall(gs.to_owned(), ty)
+    Type::forall(
+        if let Some(gs) = gs {
+            gs.to_owned()
+        } else {
+            TParams::new(Vec::new())
+        },
+        ty,
+    )
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -566,7 +580,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_constructor_for_class_object(&self, cls: &Class) -> Type {
         let init_ty = self.get_init_method(cls);
         let tparams = cls.tparams();
-        Type::forall(tparams.quantified().cloned().collect(), init_ty)
+        Type::forall(tparams.clone(), init_ty)
     }
 
     /// Given an identifier, see whether it is bound to an enum class. If so,

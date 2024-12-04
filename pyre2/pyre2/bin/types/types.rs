@@ -121,13 +121,13 @@ impl Quantified {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParam {
     quantified: Quantified,
 }
 
 /// Wraps a vector of type parameters to give them a nice Display and convenient access methods.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParams(pub Vec<TParam>);
 
 impl Display for TParams {
@@ -294,7 +294,7 @@ pub enum Type {
     ClassType(ClassType),
     Tuple(Tuple),
     Module(Module),
-    Forall(Vec<Quantified>, Box<Type>),
+    Forall(TParams, Box<Type>),
     Var(Var),
     Quantified(Quantified),
     TypeGuard(Box<Type>),
@@ -370,22 +370,22 @@ impl Type {
         }
     }
 
-    pub fn as_forall(&self) -> (&[Quantified], &Type) {
+    pub fn as_forall(&self) -> (Option<&TParams>, &Type) {
         match self {
-            Type::Forall(uniques, ty) => (uniques, ty),
-            _ => (&[], self),
+            Type::Forall(uniques, ty) => (Some(uniques), ty),
+            _ => (None, self),
         }
     }
 
-    pub fn forall(mut uniques: Vec<Quantified>, ty: Type) -> Self {
+    pub fn forall(mut uniques: TParams, ty: Type) -> Self {
         let ty = match ty {
             Type::Forall(vars2, ty) => {
-                uniques.extend(vars2);
+                uniques.0.extend(vars2.0);
                 *ty
             }
             _ => ty,
         };
-        if uniques.is_empty() {
+        if uniques.0.is_empty() {
             ty
         } else {
             Type::Forall(uniques, Box::new(ty))

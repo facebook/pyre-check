@@ -195,7 +195,7 @@ impl<'a> TypeDisplayContext<'a> {
                 write!(
                     f,
                     "Forall[{}]",
-                    commas_iter(|| append(uniques, [self.display(ty)]))
+                    commas_iter(|| append(uniques.quantified(), [self.display(ty)]))
                 )
             }
             Type::Type(ty) => write!(f, "type[{}]", self.display(ty)),
