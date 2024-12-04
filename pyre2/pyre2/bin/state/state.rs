@@ -153,9 +153,9 @@ impl<'a> State<'a> {
     }
 
     fn demand(&self, module: ModuleName, step: Step) {
+        let module_state = self.get_module(module);
         let mut computed = false;
         loop {
-            let module_state = self.get_module(module);
             let lock = module_state.steps.read().unwrap();
             match Step::Solutions.compute_next(&lock) {
                 Some(todo) if todo <= step => {}
