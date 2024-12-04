@@ -821,7 +821,6 @@
   "generics_scoping.py": [
     "Line 50: Expected 1 errors",
     "Line 54: Expected 1 errors",
-    "Line 65: Expected 1 errors",
     "Line 75: Expected 1 errors",
     "Line 78: Expected 1 errors",
     "Line 87: Expected 1 errors",
@@ -882,8 +881,6 @@
   ],
   "generics_syntax_compatibility.py": [],
   "generics_syntax_declarations.py": [
-    "Line 19: Expected 1 errors",
-    "Line 27: Expected 1 errors",
     "Line 46: Expected 1 errors",
     "Line 50: Expected 1 errors",
     "Line 62: Expected 1 errors",

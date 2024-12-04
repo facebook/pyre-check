@@ -10960,6 +10960,16 @@
     },
     {
       "code": -2,
+      "column": 11,
+      "concise_description": "Redundant type parameter declaration",
+      "description": "Redundant type parameter declaration",
+      "line": 65,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 65
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "Expected a callable, got type[list[TypeVar[T]]]",
       "description": "Expected a callable, got type[list[TypeVar[T]]]",
@@ -11511,6 +11521,26 @@
       "name": "PyreError",
       "stop_column": 30,
       "stop_line": 16
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "Redundant type parameter declaration",
+      "description": "Redundant type parameter declaration",
+      "line": 19,
+      "name": "PyreError",
+      "stop_column": 13,
+      "stop_line": 19
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "Redundant type parameter declaration",
+      "description": "Redundant type parameter declaration",
+      "line": 27,
+      "name": "PyreError",
+      "stop_column": 13,
+      "stop_line": 27
     },
     {
       "code": -2,

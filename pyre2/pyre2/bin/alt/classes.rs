@@ -183,13 +183,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .collect::<SmallMap<_, _>>();
 
         let lookup_tparam = |t: &Type| {
-            if let Some(q) = t.as_quantified()
-                && let Some(p) = legacy_map.get(&q)
-            {
-                Some((*p).clone())
-            } else {
-                None
+            let q = t.as_quantified()?;
+            let p = legacy_map.get(&q);
+            if p.is_none() {
+                self.error(
+                    name.range,
+                    "Redundant type parameter declaration".to_owned(),
+                );
             }
+            p.map(|x| (*x).clone())
         };
 
         // TODO(stroxler): There are a lot of checks, such as that `Generic` only appears once

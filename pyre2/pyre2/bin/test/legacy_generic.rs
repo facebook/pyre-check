@@ -345,3 +345,12 @@ def f(c: C[int]):
     assert_type(c[0], C[int])
     "#,
 );
+
+simple_test!(
+    test_redundant_generic_base,
+    r#"
+from typing import Generic
+class C[T](Generic[T]):  # E: Redundant
+    pass
+    "#,
+);
