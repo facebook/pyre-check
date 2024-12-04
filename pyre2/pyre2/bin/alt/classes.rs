@@ -279,14 +279,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
     ) -> Option<ClassType> {
         let direct_meta = raw_metaclass.and_then(|x| self.direct_metaclass(cls, x));
-        if let Some(metaclass) = direct_meta {
+        let base_metaclasses: Vec<_> = bases_with_metadata
+            .iter()
+            .filter_map(|(b, metadata)| metadata.metaclass().map(|m| (&b.name().id, m)))
+            .collect();
+        let metaclass = if let Some(metaclass) = direct_meta {
             Some(metaclass)
         } else {
             let mut inherited_meta: Option<ClassType> = None;
-            for m in bases_with_metadata
-                .iter()
-                .filter_map(|(_, m)| m.metaclass())
-            {
+            for (_, m) in base_metaclasses.iter() {
+                let m = (*m).clone();
                 let accept_m = match &inherited_meta {
                     None => true,
                     Some(inherited) => self.solver().is_subset_eq(
@@ -296,15 +298,41 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ),
                 };
                 if accept_m {
-                    inherited_meta = Some(m.clone());
+                    inherited_meta = Some(m);
                 }
             }
             inherited_meta
+        };
+        // It is a runtime error to define a class whose metaclass (whether
+        // specified directly or through inheritance) is not a subtype of all
+        // base class metaclasses.
+        if let Some(metaclass) = &metaclass {
+            let metaclass_type = Type::ClassType(metaclass.clone());
+            for (base_name, m) in base_metaclasses.iter() {
+                let base_metaclass_type = Type::ClassType((*m).clone());
+                if !self.solver().is_subset_eq(
+                    &metaclass_type,
+                    &base_metaclass_type,
+                    self.type_order(),
+                ) {
+                    self.error(
+                            cls.name().range,
+                            format!(
+                                "Class `{}` has metaclass `{}` which is not a subclass of metaclass `{}` from base class `{}`",
+                                cls.name().id,
+                                metaclass_type,
+                                base_metaclass_type,
+                                base_name,
+                            )
+                        );
+                }
+            }
         }
-        // TODO(stroxler): Make sure inherited metaclasses are compatible; we are currently producing
-        // the right metaclass when the code is valid, but failing to catch cases that crash at runtime.
+        metaclass
     }
 
+    // TODO(stroxler): Make sure inherited metaclasses are compatible; we are currently producing
+    // the right metaclass when the code is valid, but failing to catch cases that crash at runtime.
     fn direct_metaclass(&self, cls: &Class, raw_metaclass: &Expr) -> Option<ClassType> {
         match self.expr_untype(raw_metaclass) {
             Type::ClassType(meta) => {

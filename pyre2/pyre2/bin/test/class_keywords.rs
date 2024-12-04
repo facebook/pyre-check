@@ -116,3 +116,26 @@ class A(metaclass=BadMeta):  # E: Metaclass of `A` has type `BadMeta` which is n
     pass
 "#,
 );
+
+simple_test!(
+    test_direct_metaclass_collides_with_base,
+    r#"
+class M0(type): pass
+class M1(type): pass
+class B(metaclass=M0): pass
+class A(B, metaclass=M1):  # E:  Class `A` has metaclass `M1` which is not a subclass of metaclass `M0` from base class `B`
+    pass
+"#,
+);
+
+simple_test!(
+    test_inherited_metaclass_collides_with_base,
+    r#"
+class M0(type): pass
+class M1(type): pass
+class B0(metaclass=M0): pass
+class B1(metaclass=M1): pass
+class A(B0, B1):  # E:  Class `A` has metaclass `M0` which is not a subclass of metaclass `M1` from base class `B1`
+    pass
+"#,
+);
