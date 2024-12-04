@@ -14,6 +14,7 @@ use ruff_python_ast::ExprSubscript;
 use ruff_python_ast::StmtAugAssign;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
+use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
@@ -21,6 +22,7 @@ use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
 use crate::alt::bindings::Bindings;
+use crate::ast::Ast;
 use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
@@ -316,7 +318,7 @@ pub enum Binding {
     /// can error on bad type forms in type aliases.
     NameAssign(Name, Option<Idx<KeyAnnotation>>, Box<Binding>, TextRange),
     /// A type alias declared with the `type` soft keyword
-    ScopedTypeAlias(Name, Vec<Quantified>, Box<Binding>, TextRange),
+    ScopedTypeAlias(Name, Option<Box<TypeParams>>, Box<Binding>, TextRange),
 }
 
 impl Binding {
@@ -445,16 +447,17 @@ impl DisplayWith<Bindings> for Binding {
                     binding.display_with(ctx)
                 )
             }
-            Self::ScopedTypeAlias(name, qs, binding, _r) if qs.is_empty() => {
+            Self::ScopedTypeAlias(name, None, binding, _r) => {
                 write!(f, "type {} = {}", name, binding.display_with(ctx))
             }
-            Self::ScopedTypeAlias(name, qs, binding, _r) => {
+            Self::ScopedTypeAlias(name, Some(params), binding, _r) => {
                 write!(
                     f,
                     "type {}[{}] = {}",
                     name,
-                    qs.iter()
-                        .map(|q| format!("{q}"))
+                    params
+                        .iter()
+                        .map(|p| format!("{}", Ast::type_param_id(p)))
                         .collect::<Vec<_>>()
                         .join(", "),
                     binding.display_with(ctx)

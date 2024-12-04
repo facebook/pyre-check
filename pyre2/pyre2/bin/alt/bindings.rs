@@ -1310,16 +1310,14 @@ impl<'a> BindingsBuilder<'a> {
             },
             Stmt::TypeAlias(mut x) => {
                 if let Expr::Name(name) = *x.name {
-                    let qs = if let Some(params) = x.type_params {
-                        self.type_params(&params)
-                    } else {
-                        Vec::new()
-                    };
+                    if let Some(ref params) = x.type_params {
+                        self.type_params(params);
+                    }
                     self.ensure_type(&mut x.value, &mut BindingsBuilder::forward_lookup);
                     let expr_binding = Binding::Expr(None, *x.value);
                     let binding = Binding::ScopedTypeAlias(
                         name.id.clone(),
-                        qs,
+                        x.type_params.map(Box::new),
                         Box::new(expr_binding),
                         x.range,
                     );

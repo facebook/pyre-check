@@ -1213,7 +1213,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     _ => ty,
                 }
             }
-            Binding::ScopedTypeAlias(name, qs, binding, range) => {
+            Binding::ScopedTypeAlias(name, params, binding, range) => {
                 let ty = self.solve_binding_inner(binding);
                 let ta = self.as_type_alias(name, TypeAliasStyle::Scoped, ty, *range);
                 match ta {
@@ -1222,11 +1222,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             *range,
                             format!("Type parameters used in `{name}` but not declared"),
                         );
-                        let mut all_qs = qs.clone();
+                        let mut all_qs = self.scoped_type_params(params);
                         all_qs.extend(other_qs);
                         Type::Forall(all_qs, inner_ta)
                     }
-                    Type::TypeAlias(_) if !qs.is_empty() => Type::Forall(qs.clone(), Box::new(ta)),
+                    Type::TypeAlias(_) if params.is_some() => {
+                        Type::Forall(self.scoped_type_params(params), Box::new(ta))
+                    }
                     _ => ta,
                 }
             }
