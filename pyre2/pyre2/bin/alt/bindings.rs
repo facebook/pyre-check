@@ -348,7 +348,12 @@ impl Bindings {
     where
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        self.0.table.get::<K>().0.key_to_idx(k)
+        self.0.table.get::<K>().0.key_to_idx(k).unwrap_or_else(|| {
+            panic!(
+                "key_to_idx - key not found, module {}, key {k:?}",
+                self.0.module_info.name()
+            )
+        })
     }
 
     pub fn get<K: Keyed>(&self, idx: Idx<K>) -> &K::Value

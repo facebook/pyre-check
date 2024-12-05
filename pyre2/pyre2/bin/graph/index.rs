@@ -82,11 +82,8 @@ impl<K: Eq + Hash + Debug> Index<K> {
         }
     }
 
-    pub fn key_to_idx(&self, k: &K) -> Idx<K> {
-        match self.map.get_index_of(k) {
-            Some(idx) => Idx::new(idx),
-            None => panic!("Key not found: {k:?}"),
-        }
+    pub fn key_to_idx(&self, k: &K) -> Option<Idx<K>> {
+        self.map.get_index_of(k).map(Idx::new)
     }
 
     pub fn idx_to_key(&self, idx: Idx<K>) -> &K {
