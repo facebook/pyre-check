@@ -65,8 +65,8 @@ use crate::config::Config;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
-use crate::state::driver::Driver;
 use crate::state::loader::LoadResult;
+use crate::state::state::State;
 use crate::util::prelude::VecExt;
 
 #[derive(Debug, Parser, Clone)]
@@ -80,7 +80,7 @@ struct Server<'a> {
     #[expect(dead_code)] // we'll use it later on
     initialize_params: InitializeParams,
     include: Vec<PathBuf>,
-    driver: Driver,
+    state: State<'static>,
     open_files: SmallMap<PathBuf, (i32, String)>,
 }
 
@@ -194,7 +194,7 @@ impl<'a> Server<'a> {
             send,
             initialize_params,
             include,
-            driver: Driver::new(
+            state: State::new(
                 &[],
                 Box::new(|_| {
                     (
@@ -202,9 +202,9 @@ impl<'a> Server<'a> {
                         false,
                     )
                 }),
-                &Config::default(),
+                Config::default(),
                 true,
-                None,
+                false,
             ),
             open_files: Default::default(),
         }
@@ -242,18 +242,18 @@ impl<'a> Server<'a> {
             };
             (loaded, modules.contains_key(&name))
         };
-        self.driver = Driver::new(
+        self.state = State::new(
             &module_names,
             Box::new(loader),
-            &Config::default(),
+            Config::default(),
             true,
-            None,
+            false,
         );
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.keys() {
             diags.insert(x.as_path().to_owned(), Vec::new());
         }
-        for e in self.driver.errors() {
+        for e in self.state.collect_errors() {
             diags
                 .entry(e.path().to_owned())
                 .or_default()
@@ -301,11 +301,11 @@ impl<'a> Server<'a> {
 
     fn goto_definition(&self, params: GotoDefinitionParams) -> Option<GotoDefinitionResponse> {
         let module = url_to_module(&params.text_document_position_params.text_document.uri);
-        let info = self.driver.module_info(module)?;
+        let info = self.state.get_module_info(module)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let (module, range) = self.driver.0.goto_definition(module, range)?;
+        let (module, range) = self.state.goto_definition(module, range)?;
         let path = find_module(module, &self.include).ok()?;
-        let info = self.driver.module_info(module)?;
+        let info = self.state.get_module_info(module)?;
         let path = std::fs::canonicalize(&path).unwrap_or(path);
         Some(GotoDefinitionResponse::Scalar(Location {
             uri: Url::from_file_path(path).unwrap(),
@@ -322,9 +322,9 @@ impl<'a> Server<'a> {
 
     fn hover(&self, params: HoverParams) -> Option<Hover> {
         let module = url_to_module(&params.text_document_position_params.text_document.uri);
-        let info = self.driver.module_info(module)?;
+        let info = self.state.get_module_info(module)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let t = self.driver.0.hover(module, range)?;
+        let t = self.state.hover(module, range)?;
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: MarkupKind::PlainText,
@@ -336,8 +336,8 @@ impl<'a> Server<'a> {
 
     fn inlay_hints(&self, params: InlayHintParams) -> Option<Vec<InlayHint>> {
         let module = url_to_module(&params.text_document.uri);
-        let info = self.driver.module_info(module)?;
-        let t = self.driver.0.inlay_hints(module)?;
+        let info = self.state.get_module_info(module)?;
+        let t = self.state.inlay_hints(module)?;
         Some(t.into_map(|x| {
             let position = text_size_to_position(&info, x.0);
             InlayHint {
