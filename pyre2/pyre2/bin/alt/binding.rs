@@ -500,9 +500,6 @@ impl DisplayWith<Bindings> for BindingAnnotation {
     }
 }
 
-// TODO(stroxler) Rename this; I'm deferring it for now because it would lead to difficult
-// merge conflicts with outstanding diffs.
-//
 /// Binding for the class's metadata (type level information derived from the class header - this
 /// includes the MRO, the class keywords, and the metaclass).
 ///

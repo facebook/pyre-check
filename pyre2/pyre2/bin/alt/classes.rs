@@ -340,8 +340,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         metaclass
     }
 
-    // TODO(stroxler): Make sure inherited metaclasses are compatible; we are currently producing
-    // the right metaclass when the code is valid, but failing to catch cases that crash at runtime.
     fn direct_metaclass(&self, cls: &Class, raw_metaclass: &Expr) -> Option<ClassType> {
         match self.expr_untype(raw_metaclass) {
             Type::ClassType(meta) => {

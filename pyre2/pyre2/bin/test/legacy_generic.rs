@@ -327,7 +327,6 @@ def f2(c: C[Child, Parent]):
     "#,
 );
 
-// TODO(stroxler)
 // This test exercises an edge case where naively using type analysis on base classes
 // can cause problems in the interaction of tparams validation and recursion.
 simple_test!(
