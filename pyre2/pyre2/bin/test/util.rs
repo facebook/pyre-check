@@ -11,7 +11,6 @@ use anyhow::anyhow;
 use starlark_map::small_map::SmallMap;
 
 use crate::config::Config;
-use crate::error::error::Error;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::LoadResult;
 use crate::state::loader::Loader;
@@ -21,22 +20,10 @@ use crate::util::trace::init_tracing;
 
 #[macro_export]
 macro_rules! simple_test {
-    ($name:ident, $imports:expr, $contents:expr, $error_check:expr, ) => {
+    ($name:ident, $imports:expr, $contents:expr,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
-            $crate::test::util::simple_test_for_macro(
-                $imports,
-                $contents,
-                file!(),
-                line!(),
-                Some($error_check),
-            )
-        }
-    };
-    ($name:ident, $imports:expr, $contents:expr, ) => {
-        #[test]
-        fn $name() -> anyhow::Result<()> {
-            $crate::test::util::simple_test_for_macro($imports, $contents, file!(), line!(), None)
+            $crate::test::util::simple_test_for_macro($imports, $contents, file!(), line!())
         }
     };
     ($name:ident, $contents:expr,) => {
@@ -47,7 +34,6 @@ macro_rules! simple_test {
                 $contents,
                 file!(),
                 line!(),
-                None,
             )
         }
     };
@@ -129,7 +115,6 @@ pub fn simple_test_for_macro(
     contents: &str,
     file: &str,
     line: u32,
-    error_check: Option<fn(&[Error]) -> anyhow::Result<()>>,
 ) -> anyhow::Result<()> {
     init_tracing(true, true);
     let mut start_line = line as usize + 1;
@@ -142,8 +127,5 @@ pub fn simple_test_for_macro(
         file,
     );
     let state = simple_test_driver(env);
-    match error_check {
-        None => state.check_against_expectations(),
-        Some(check) => check(&state.collect_errors()),
-    }
+    state.check_against_expectations()
 }
