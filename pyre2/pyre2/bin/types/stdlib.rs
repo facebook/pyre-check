@@ -46,15 +46,6 @@ pub struct Stdlib {
 }
 
 impl Stdlib {
-    /// Those modules required to service the builtins.
-    pub fn required() -> Vec<ModuleName> {
-        vec![
-            ModuleName::builtins(),
-            ModuleName::typing(),
-            ModuleName::types(),
-        ]
-    }
-
     pub fn new(mut lookup_class: impl FnMut(ModuleName, &Name) -> Option<Class>) -> Self {
         let builtins = ModuleName::builtins();
         let types = ModuleName::types();

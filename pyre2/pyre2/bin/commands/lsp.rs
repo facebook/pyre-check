@@ -195,7 +195,6 @@ impl<'a> Server<'a> {
             initialize_params,
             include,
             state: State::new(
-                &[],
                 Box::new(|_| {
                     (
                         LoadResult::FailedToFind(anyhow!("Failed during init")),
@@ -242,13 +241,8 @@ impl<'a> Server<'a> {
             };
             (loaded, modules.contains_key(&name))
         };
-        self.state = State::new(
-            &module_names,
-            Box::new(loader),
-            Config::default(),
-            true,
-            false,
-        );
+        self.state = State::new(Box::new(loader), Config::default(), true, false);
+        self.state.run(&module_names);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.keys() {
             diags.insert(x.as_path().to_owned(), Vec::new());

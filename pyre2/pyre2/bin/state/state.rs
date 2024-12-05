@@ -93,13 +93,11 @@ impl ModuleState {
 
 impl<'a> State<'a> {
     pub fn new(
-        modules: &[ModuleName],
         loader: Box<Loader<'a>>,
         config: Config,
         parallel: bool,
         print_errors_immediately: bool,
     ) -> Self {
-        let stdlib_modules = Stdlib::required();
         Self {
             config,
             loader,
@@ -107,20 +105,8 @@ impl<'a> State<'a> {
             parallel,
             print_errors_immediately,
             stdlib: RwLock::new(Arc::new(Stdlib::for_bootstrapping())),
-            modules: RwLock::new(
-                modules
-                    .iter()
-                    .chain(&stdlib_modules)
-                    .map(|x| (*x, Arc::new(ModuleState::new(print_errors_immediately))))
-                    .collect(),
-            ),
-            todo: Mutex::new(
-                modules
-                    .iter()
-                    .chain(&stdlib_modules)
-                    .map(|x| (Step::first(), *x))
-                    .collect(),
-            ),
+            modules: Default::default(),
+            todo: Default::default(),
             retain_memory: true, // Will always be overwritten by entry points
         }
     }
@@ -388,7 +374,14 @@ impl<'a> State<'a> {
         }
     }
 
-    fn run_internal(&mut self) {
+    fn run_internal(&mut self, modules: &[ModuleName]) {
+        {
+            let mut lock = self.todo.lock().unwrap();
+            for m in modules {
+                lock.push_fifo(Step::first(), *m);
+            }
+        }
+
         self.compute_stdlib();
 
         if self.parallel {
@@ -407,14 +400,14 @@ impl<'a> State<'a> {
     /// The state afterwards will be useful for timing queries.
     /// Note we grab the `mut` only to stop other people accessing us simultaneously,
     /// we don't actually need it.
-    pub fn run_one_shot(&mut self) {
+    pub fn run_one_shot(&mut self, modules: &[ModuleName]) {
         self.retain_memory = false;
-        self.run_internal()
+        self.run_internal(modules)
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self, modules: &[ModuleName]) {
         self.retain_memory = true;
-        self.run_internal()
+        self.run_internal(modules)
     }
 
     #[expect(dead_code)]
