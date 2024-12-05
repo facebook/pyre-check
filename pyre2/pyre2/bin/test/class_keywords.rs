@@ -10,28 +10,11 @@ use ruff_python_ast::name::Name;
 use crate::module::module_name::ModuleName;
 use crate::simple_test;
 use crate::state::driver::Driver;
-use crate::test::stdlib::Stdlib;
-use crate::test::util::simple_test_driver;
-use crate::test::util::TestEnv;
+use crate::test::mro::get_class_metadata;
+use crate::test::mro::mk_driver;
 use crate::types::class::ClassType;
-use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Lit;
 use crate::types::types::Type;
-
-fn mk_driver(code: &str) -> (ModuleName, Driver) {
-    let driver = simple_test_driver(Stdlib::new(), TestEnv::one("main", code));
-    (ModuleName::from_str("main"), driver)
-}
-
-fn get_class_metadata<'b, 'a>(
-    name: &'b str,
-    module_name: ModuleName,
-    driver: &'a Driver,
-) -> ClassMetadata {
-    driver
-        .class_metadata_of_export(module_name, name)
-        .unwrap_or_else(|| panic!("No MRO for {name}"))
-}
 
 fn get_class_keyword(
     class_name: &str,

@@ -12,12 +12,12 @@ use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;
 use crate::types::class_metadata::ClassMetadata;
 
-fn mk_driver(code: &str) -> (ModuleName, Driver) {
+pub fn mk_driver(code: &str) -> (ModuleName, Driver) {
     let driver = simple_test_driver(Stdlib::new(), TestEnv::one("main", code));
     (ModuleName::from_str("main"), driver)
 }
 
-fn get_class_metadata<'b, 'a>(
+pub fn get_class_metadata<'b, 'a>(
     name: &'b str,
     module_name: ModuleName,
     driver: &'a Driver,
