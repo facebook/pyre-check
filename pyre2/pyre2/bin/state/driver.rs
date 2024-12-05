@@ -19,8 +19,6 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::Loader;
 use crate::state::state::State;
-#[cfg(test)]
-use crate::types::class_metadata::ClassMetadata;
 use crate::types::types::Type;
 
 pub struct Driver(State<'static>);
@@ -62,35 +60,6 @@ impl Driver {
     #[cfg(test)]
     pub fn check_against_expectations(&self) -> anyhow::Result<()> {
         self.0.check_against_expectations()
-    }
-
-    #[cfg(test)]
-    pub fn class_metadata_of_export(
-        &self,
-        module: ModuleName,
-        name: &str,
-    ) -> Option<ClassMetadata> {
-        use ruff_python_ast::name::Name;
-
-        use crate::alt::binding::KeyClassMetadata;
-        use crate::alt::binding::KeyExported;
-        use crate::module::short_identifier::ShortIdentifier;
-
-        let solutions = self.get_solutions(module).unwrap();
-
-        match solutions
-            .exported_types
-            .get(&KeyExported::Export(Name::new(name)))
-        {
-            Some(Type::ClassDef(cls)) => {
-                println!("Class {cls:?}");
-                let x = solutions
-                    .mros
-                    .get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
-                x.cloned()
-            }
-            _ => None,
-        }
     }
 
     pub fn get_mod_module(&self, module: ModuleName) -> Option<Arc<ModModule>> {

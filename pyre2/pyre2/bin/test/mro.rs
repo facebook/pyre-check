@@ -5,12 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use ruff_python_ast::name::Name;
+
+use crate::alt::binding::KeyClassMetadata;
+use crate::alt::binding::KeyExported;
 use crate::module::module_name::ModuleName;
+use crate::module::short_identifier::ShortIdentifier;
 use crate::state::driver::Driver;
 use crate::test::stdlib::Stdlib;
 use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;
 use crate::types::class_metadata::ClassMetadata;
+use crate::types::types::Type;
 
 pub fn mk_driver(code: &str) -> (ModuleName, Driver) {
     let driver = simple_test_driver(Stdlib::new(), TestEnv::one("main", code));
@@ -22,9 +28,22 @@ pub fn get_class_metadata<'b, 'a>(
     module_name: ModuleName,
     driver: &'a Driver,
 ) -> ClassMetadata {
-    driver
-        .class_metadata_of_export(module_name, name)
-        .unwrap_or_else(|| panic!("No MRO for {name}"))
+    let solutions = driver.get_solutions(module_name).unwrap();
+
+    let res = match solutions
+        .exported_types
+        .get(&KeyExported::Export(Name::new(name)))
+    {
+        Some(Type::ClassDef(cls)) => {
+            println!("Class {cls:?}");
+            let x = solutions
+                .mros
+                .get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
+            x.cloned()
+        }
+        _ => None,
+    };
+    res.unwrap_or_else(|| panic!("No MRO for {name}"))
 }
 
 fn get_mro_names(name: &str, module_name: ModuleName, driver: &Driver) -> Vec<String> {
