@@ -14,6 +14,7 @@ use crate::config::Config;
 use crate::error::error::Error;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::LoadResult;
+use crate::state::loader::Loader;
 use crate::state::state::State;
 use crate::test::stdlib::Stdlib;
 use crate::util::trace::init_tracing;
@@ -97,6 +98,22 @@ impl TestEnv {
             (default_path(module_name), Err(err.to_owned())),
         );
     }
+
+    pub fn to_loader(self, stdlib: Stdlib) -> Box<Loader<'static>> {
+        Box::new(move |name: ModuleName| {
+            let loaded = if let Some((path, contents)) = self.0.get(&name) {
+                match contents {
+                    Ok(contents) => LoadResult::Loaded(path.to_owned(), contents.to_owned()),
+                    Err(err) => LoadResult::FailedToLoad(path.to_owned(), anyhow!(err.to_owned())),
+                }
+            } else if let Some(contents) = stdlib.lookup_content(name) {
+                LoadResult::Loaded(default_path(name), contents.to_owned())
+            } else {
+                LoadResult::FailedToFind(anyhow!("Module not given in test suite"))
+            };
+            (loaded, true)
+        })
+    }
 }
 
 pub fn simple_test_driver(stdlib: Stdlib, env: TestEnv) -> State<'static> {
@@ -105,20 +122,13 @@ pub fn simple_test_driver(stdlib: Stdlib, env: TestEnv) -> State<'static> {
         .copied()
         .chain(env.0.keys().copied())
         .collect::<Vec<_>>();
-    let loader = move |name: ModuleName| {
-        let loaded = if let Some((path, contents)) = env.0.get(&name) {
-            match contents {
-                Ok(contents) => LoadResult::Loaded(path.to_owned(), contents.to_owned()),
-                Err(err) => LoadResult::FailedToLoad(path.to_owned(), anyhow!(err.to_owned())),
-            }
-        } else if let Some(contents) = stdlib.lookup_content(name) {
-            LoadResult::Loaded(default_path(name), contents.to_owned())
-        } else {
-            LoadResult::FailedToFind(anyhow!("Module not given in test suite"))
-        };
-        (loaded, true)
-    };
-    let mut state = State::new(&modules, Box::new(loader), Config::default(), true, true);
+    let mut state = State::new(
+        &modules,
+        env.to_loader(stdlib),
+        Config::default(),
+        true,
+        true,
+    );
     state.run();
     state
 }
