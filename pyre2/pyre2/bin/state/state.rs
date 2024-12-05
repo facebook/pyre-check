@@ -156,7 +156,7 @@ impl<'a> State<'a> {
             };
             let imports = if todo == Step::Solutions {
                 Some((
-                    lock.module_info.get().unwrap().0.dupe(),
+                    lock.load.get().unwrap().module_info.dupe(),
                     lock.exports.get().unwrap().dupe(),
                 ))
             } else {
@@ -181,9 +181,9 @@ impl<'a> State<'a> {
                         .steps
                         .read()
                         .unwrap()
-                        .module_info
+                        .load
                         .get()
-                        .and_then(|x| x.1.as_deref())
+                        .and_then(|x| x.import_error.as_deref())
                     {
                         module_state.errors.add(
                             &module_info,
@@ -241,7 +241,7 @@ impl<'a> State<'a> {
     fn add_error(&self, module: ModuleName, range: TextRange, msg: String) {
         let m = self.get_module(module);
         m.errors.add(
-            &m.steps.read().unwrap().module_info.get().unwrap().0,
+            &m.steps.read().unwrap().load.get().unwrap().module_info,
             range,
             msg,
         );
@@ -433,9 +433,9 @@ impl<'a> State<'a> {
             .steps
             .read()
             .unwrap()
-            .module_info
+            .load
             .get()
-            .map(|x| x.0.dupe())
+            .map(|x| x.module_info.dupe())
     }
 
     pub fn get_ast(&self, module: ModuleName) -> Option<Arc<ruff_python_ast::ModModule>> {
@@ -469,7 +469,7 @@ impl<'a> State<'a> {
             let module = self.get_module(*x);
             let steps = module.steps.read().unwrap();
             (
-                steps.module_info.get().unwrap().0.dupe(),
+                steps.load.get().unwrap().module_info.dupe(),
                 module.dupe(),
                 steps.answers.get().unwrap().dupe(),
                 steps.solutions.get().unwrap().dupe(),
@@ -492,7 +492,7 @@ impl<'a> State<'a> {
         for (name, module) in self.modules.read().unwrap().iter() {
             info!("Check for {name}");
             let steps = module.steps.read().unwrap();
-            Expectation::parse(steps.module_info.get().unwrap().0.contents())
+            Expectation::parse(steps.load.get().unwrap().module_info.contents())
                 .check(&module.errors.collect())?;
         }
         Ok(())

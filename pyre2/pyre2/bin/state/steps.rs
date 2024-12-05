@@ -41,9 +41,15 @@ pub struct Context<'a, Lookup> {
     pub retain_memory: bool,
 }
 
+#[derive(Debug)]
+pub struct Load {
+    pub module_info: ModuleInfo,
+    pub import_error: Option<anyhow::Error>,
+}
+
 #[derive(Debug, Default)]
 pub struct ModuleSteps {
-    pub module_info: Info<(ModuleInfo, Arc<Option<anyhow::Error>>)>,
+    pub load: Info<Arc<Load>>,
     pub ast: Info<Arc<ModModule>>,
     pub exports: Info<Arc<(Imports, Exports)>>,
     pub answers: Info<Arc<(Bindings, Answers)>>,
@@ -52,7 +58,7 @@ pub struct ModuleSteps {
 
 impl ModuleSteps {
     pub fn clear(&mut self) {
-        self.module_info.clear();
+        self.load.clear();
         self.ast.clear();
         self.exports.clear();
         self.answers.clear();
@@ -64,7 +70,7 @@ impl ModuleSteps {
     Debug, Clone, Copy, Dupe, Eq, PartialEq, PartialOrd, Ord, Display, Sequence
 )]
 pub enum Step {
-    ModuleInfo,
+    Load,
     Ast,
     Exports,
     Answers,
@@ -114,7 +120,7 @@ impl Imports {
 impl Step {
     pub fn check(self, steps: &ModuleSteps) -> bool {
         match self {
-            Step::ModuleInfo => steps.module_info.is_some(),
+            Step::Load => steps.load.is_some(),
             Step::Ast => steps.ast.is_some(),
             Step::Exports => steps.exports.is_some(),
             Step::Answers => steps.answers.is_some(),
@@ -147,15 +153,15 @@ impl Step {
 
     pub fn compute<Lookup: LookupExport + LookupAnswer>(self) -> ComputeStep<Lookup> {
         match self {
-            Step::ModuleInfo => compute_step!(<Lookup> module_info =),
-            Step::Ast => compute_step!(<Lookup> ast = module_info),
-            Step::Exports => compute_step!(<Lookup> exports = module_info, ast),
-            Step::Answers => compute_step!(<Lookup> answers = module_info, ast),
+            Step::Load => compute_step!(<Lookup> load =),
+            Step::Ast => compute_step!(<Lookup> ast = load),
+            Step::Exports => compute_step!(<Lookup> exports = load, ast),
+            Step::Answers => compute_step!(<Lookup> answers = load, ast),
             Step::Solutions => compute_step!(<Lookup> solutions = answers),
         }
     }
 
-    fn module_info<Lookup>(ctx: &Context<Lookup>) -> (ModuleInfo, Arc<Option<anyhow::Error>>) {
+    fn load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
         let (load_result, should_type_check) = (ctx.loader)(ctx.name);
         let components = load_result.components(ctx.name);
         let module_info = ModuleInfo::new(
@@ -175,34 +181,34 @@ impl Step {
                 ),
             );
         }
-        (module_info, Arc::new(components.import_error))
+        Arc::new(Load {
+            module_info,
+            import_error: components.import_error,
+        })
     }
 
-    fn ast<Lookup>(
-        ctx: &Context<Lookup>,
-        module_info: (ModuleInfo, Arc<Option<anyhow::Error>>),
-    ) -> Arc<ModModule> {
-        Arc::new(module_info.0.parse(ctx.errors))
+    fn ast<Lookup>(ctx: &Context<Lookup>, load: Arc<Load>) -> Arc<ModModule> {
+        Arc::new(load.module_info.parse(ctx.errors))
     }
 
     fn exports<Lookup>(
         ctx: &Context<Lookup>,
-        module_info: (ModuleInfo, Arc<Option<anyhow::Error>>),
+        load: Arc<Load>,
         ast: Arc<ModModule>,
     ) -> Arc<(Imports, Exports)> {
-        let imports = Imports::new(&module_info.0, &ast);
-        let exports = Exports::new(&ast.body, &module_info.0, ctx.config);
+        let imports = Imports::new(&load.module_info, &ast);
+        let exports = Exports::new(&ast.body, &load.module_info, ctx.config);
         Arc::new((imports, exports))
     }
 
     fn answers<Lookup: LookupExport>(
         ctx: &Context<Lookup>,
-        module_info: (ModuleInfo, Arc<Option<anyhow::Error>>),
+        load: Arc<Load>,
         ast: Arc<ModModule>,
     ) -> Arc<(Bindings, Answers)> {
         let bindings = Bindings::new(
             Arc::unwrap_or_clone(ast).body,
-            module_info.0,
+            load.module_info.dupe(),
             ctx.lookup,
             ctx.config,
             ctx.errors,
