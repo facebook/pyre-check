@@ -23,11 +23,7 @@ pub fn mk_state(code: &str) -> (ModuleName, State<'static>) {
     (ModuleName::from_str("main"), state)
 }
 
-pub fn get_class_metadata<'b, 'a>(
-    name: &'b str,
-    module_name: ModuleName,
-    state: &'a State,
-) -> ClassMetadata {
+pub fn get_class_metadata(name: &str, module_name: ModuleName, state: &State) -> ClassMetadata {
     let solutions = state.get_solutions(module_name).unwrap();
 
     let res = match solutions
