@@ -40,7 +40,7 @@ pub fn run() -> anyhow::Result<()> {
     match args {
         Args::ExpectTest(args) => {
             init_tracing(args.verbose, false);
-            args.args.run()
+            args.args.run(true)
         }
         Args::BuckCheck(args) => {
             init_tracing(args.verbose, false);

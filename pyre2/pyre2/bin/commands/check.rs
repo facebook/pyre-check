@@ -38,8 +38,6 @@ pub struct Args {
     output: Option<PathBuf>,
     #[clap(long, short = 'I')]
     include: Vec<PathBuf>,
-    #[clap(long, default_value = "1")]
-    repeat: usize,
     /// Produce debugging information about the type checking process.
     #[clap(long)]
     debug_info: Option<PathBuf>,
@@ -60,99 +58,91 @@ pub struct Args {
 }
 
 impl Args {
-    pub fn run(self) -> anyhow::Result<()> {
-        let mut last = Ok(());
-        for _ in 0..self.repeat {
-            last = run_once(self.clone());
-        }
-        last
-    }
-}
-
-pub fn run_once(args: Args) -> anyhow::Result<()> {
-    let include = if args.include.is_empty() {
-        default_include()?
-    } else {
-        args.include
-    };
-
-    if args.files.is_empty() {
-        return Ok(());
-    }
-
-    let to_check = args
-        .files
-        .iter()
-        .map(|x| (module_from_path(x), x.clone()))
-        .collect::<SmallMap<_, _>>();
-    let error_style = if args.common.timings.is_some() {
-        ErrorStyle::Delayed
-    } else {
-        ErrorStyle::Immediate
-    };
-    let load = |name| {
-        let path = match to_check.get(&name) {
-            Some(path) => Ok(path.clone()),
-            None => find_module(name, &include),
+    pub fn run(self, allow_forget: bool) -> anyhow::Result<()> {
+        let args = self;
+        let include = if args.include.is_empty() {
+            default_include()?
+        } else {
+            args.include
         };
-        (LoadResult::from_path_result(path), error_style)
-    };
-    let modules = to_check.keys().copied().collect::<Vec<_>>();
 
-    let config = match &args.python_version {
-        None => Config::default(),
-        Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),
-    };
-
-    let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
-    let start = Instant::now();
-    let mut state = State::new(Box::new(load), config, args.common.parallel());
-    if args.report_binding_memory.is_none() && args.debug_info.is_none() {
-        state.run_one_shot(&modules)
-    } else {
-        state.run(&modules)
-    };
-    let error_count = state.count_errors();
-    let computing = start.elapsed();
-    if args.common.timings.is_some() {
-        state.print_errors();
-    }
-    let printing = start.elapsed();
-    memory_trace.stop();
-    if let Some(limit) = args.summarize_errors {
-        state.print_error_summary(limit);
-    }
-    eprintln!(
-        "{} errors, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
-        number_thousands(error_count),
-        memory_trace.peak()
-    );
-    if let Some(debug_info) = args.debug_info {
-        let mut output = serde_json::to_string_pretty(&state.debug_info(&modules))?;
-        if debug_info.extension() == Some(OsStr::new("js")) {
-            output = format!("var data = {output}");
+        if args.files.is_empty() {
+            return Ok(());
         }
-        fs_anyhow::write(&debug_info, output.as_bytes())?;
+
+        let to_check = args
+            .files
+            .iter()
+            .map(|x| (module_from_path(x), x.clone()))
+            .collect::<SmallMap<_, _>>();
+        let error_style = if args.common.timings.is_some() {
+            ErrorStyle::Delayed
+        } else {
+            ErrorStyle::Immediate
+        };
+        let load = |name| {
+            let path = match to_check.get(&name) {
+                Some(path) => Ok(path.clone()),
+                None => find_module(name, &include),
+            };
+            (LoadResult::from_path_result(path), error_style)
+        };
+        let modules = to_check.keys().copied().collect::<Vec<_>>();
+        let config = match &args.python_version {
+            None => Config::default(),
+            Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),
+        };
+
+        let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
+        let start = Instant::now();
+        let mut state = State::new(Box::new(load), config, args.common.parallel());
+        if args.report_binding_memory.is_none() && args.debug_info.is_none() {
+            state.run_one_shot(&modules)
+        } else {
+            state.run(&modules)
+        };
+        let error_count = state.count_errors();
+        let computing = start.elapsed();
+        if args.common.timings.is_some() {
+            state.print_errors();
+        }
+        let printing = start.elapsed();
+        memory_trace.stop();
+        if let Some(limit) = args.summarize_errors {
+            state.print_error_summary(limit);
+        }
+        eprintln!(
+            "{} errors, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
+            number_thousands(error_count),
+            memory_trace.peak()
+        );
+        if let Some(debug_info) = args.debug_info {
+            let mut output = serde_json::to_string_pretty(&state.debug_info(&modules))?;
+            if debug_info.extension() == Some(OsStr::new("js")) {
+                output = format!("var data = {output}");
+            }
+            fs_anyhow::write(&debug_info, output.as_bytes())?;
+        }
+        if let Some(path) = args.report_binding_memory {
+            fs_anyhow::write(
+                &path,
+                report::binding_memory::binding_memory(&state).as_bytes(),
+            )?;
+        }
+        if let Some(path) = args.output {
+            let errors = state.collect_errors();
+            let legacy_errors = LegacyErrors::from_errors(&errors);
+            let output_bytes = serde_json::to_string_pretty(&legacy_errors)
+                .with_context(|| "failed to serialize JSON value to bytes")?;
+            fs_anyhow::write(&path, output_bytes.as_bytes())?;
+        } else {
+            state.check_against_expectations()?;
+        }
+        if allow_forget {
+            // We have allocated a bunch of memory, that we will never need, and are exiting the program.
+            // Rather than deallocate it, just leak it, and let the OS clean up for us.
+            mem::forget(state);
+        }
+        Ok(())
     }
-    if let Some(path) = args.report_binding_memory {
-        fs_anyhow::write(
-            &path,
-            report::binding_memory::binding_memory(&state).as_bytes(),
-        )?;
-    }
-    if let Some(path) = args.output {
-        let errors = state.collect_errors();
-        let legacy_errors = LegacyErrors::from_errors(&errors);
-        let output_bytes = serde_json::to_string_pretty(&legacy_errors)
-            .with_context(|| "failed to serialize JSON value to bytes")?;
-        fs_anyhow::write(&path, output_bytes.as_bytes())?;
-    } else {
-        state.check_against_expectations()?;
-    }
-    if args.repeat == 1 {
-        // We have allocated a bunch of memory, that we will never need, and are exiting the program.
-        // Rather than deallocate it, just leak it, and let the OS clean up for us.
-        mem::forget(state);
-    }
-    Ok(())
 }
