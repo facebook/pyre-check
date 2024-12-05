@@ -26,6 +26,7 @@ use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprSubscript;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Parameters;
+use ruff_python_ast::Pattern;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
@@ -1153,6 +1154,56 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    // Traverse a pattern and bind all the names; value_binding is the thing that's being matched on
+    fn bind_pattern(&mut self, pattern: Pattern, value_binding: Binding) {
+        match pattern {
+            Pattern::MatchValue(p) => {
+                self.ensure_expr(&p.value);
+            }
+            Pattern::MatchStar(p) => {
+                if let Some(name) = &p.name {
+                    self.todo("MatchStar", p.range);
+                    self.bind_definition(name, Binding::AnyType(AnyStyle::Error), None);
+                }
+            }
+            Pattern::MatchAs(p) => {
+                if let Some(name) = &p.name {
+                    self.bind_definition(name, value_binding.clone(), None);
+                }
+                if let Some(box pattern) = p.pattern {
+                    self.bind_pattern(pattern, value_binding)
+                }
+            }
+            Pattern::MatchSequence(x) => {
+                self.todo("MatchSequence", x.range);
+                x.patterns
+                    .iter()
+                    .for_each(|x| self.bind_pattern(x.clone(), Binding::AnyType(AnyStyle::Error)))
+            }
+            Pattern::MatchMapping(x) => {
+                self.todo("MatchMapping", x.range);
+                x.patterns
+                    .iter()
+                    .for_each(|x| self.bind_pattern(x.clone(), Binding::AnyType(AnyStyle::Error)))
+            }
+            Pattern::MatchClass(x) => {
+                self.todo("MatchClass", x.range);
+                x.arguments
+                    .patterns
+                    .iter()
+                    .chain(x.arguments.keywords.iter().map(|x| &x.pattern))
+                    .for_each(|x| self.bind_pattern(x.clone(), Binding::AnyType(AnyStyle::Error)))
+            }
+            Pattern::MatchOr(x) => {
+                self.todo("MatchOr", x.range);
+                x.patterns
+                    .iter()
+                    .for_each(|x| self.bind_pattern(x.clone(), Binding::AnyType(AnyStyle::Error)))
+            }
+            _ => {}
+        }
+    }
+
     /// Evaluate the statements and update the bindings.
     /// Every statement should end up in the bindings, perhaps with a location that is never used.
     fn stmt(&mut self, x: Stmt) {
@@ -1390,24 +1441,19 @@ impl<'a> BindingsBuilder<'a> {
             }
             Stmt::Match(x) => {
                 self.ensure_expr(&x.subject);
-                self.table.insert(
+                let key = self.table.insert(
                     Key::Anon(x.subject.range()),
-                    Binding::Expr(None, *x.subject),
+                    Binding::Expr(None, *x.subject.clone()),
                 );
                 let mut exhaustive = false;
                 let range = x.range;
                 let mut branches = Vec::new();
                 for case in x.cases {
                     let mut base = self.scopes.last().flow.clone();
-                    // TODO: don't use Any here
-                    Ast::pattern_lvalue(&case.pattern, &mut |x| match x {
-                        Either::Left(x) => {
-                            self.bind_definition(x, Binding::AnyType(AnyStyle::Error), None);
-                        }
-                        Either::Right(x) => {
-                            self.bind_target(x, &|_| Binding::AnyType(AnyStyle::Error), true);
-                        }
-                    });
+                    if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
+                        exhaustive = true;
+                    }
+                    self.bind_pattern(case.pattern, Binding::Forward(key));
                     if let Some(guard) = case.guard {
                         self.ensure_expr(&guard);
                         self.table
@@ -1416,8 +1462,7 @@ impl<'a> BindingsBuilder<'a> {
                     self.stmts(case.body);
                     mem::swap(&mut self.scopes.last_mut().flow, &mut base);
                     branches.push(base);
-                    if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
-                        exhaustive = true;
+                    if exhaustive {
                         break;
                     }
                 }

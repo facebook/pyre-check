@@ -7,7 +7,6 @@
 
 use std::slice;
 
-use itertools::Either;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::Identifier;
@@ -185,23 +184,18 @@ impl Ast {
         }
     }
 
-    /// The [`Pattern`] type contains lvalues as both identifiers, and as expressions
-    /// which contain identifiers within them. The callback will be given whichever of those
-    /// it reaches first, and will not visit the identifiers contained within [`Expr`].
-    pub fn pattern_lvalue<'a>(
-        x: &'a Pattern,
-        f: &mut impl FnMut(Either<&'a Identifier, &'a Expr>),
-    ) {
+    /// The [`Pattern`] type contains lvalues as identifiers. Although some patterns like
+    /// MatchValue contain [`Expr`], those do not contain lvalues and thus are ignored.
+    pub fn pattern_lvalue<'a>(x: &'a Pattern, f: &mut impl FnMut(&'a Identifier)) {
         match x {
-            Pattern::MatchValue(x) => f(Either::Right(&x.value)),
             Pattern::MatchStar(x) => {
                 if let Some(x) = &x.name {
-                    f(Either::Left(x));
+                    f(x);
                 }
             }
             Pattern::MatchAs(x) => {
                 if let Some(x) = &x.name {
-                    f(Either::Left(x));
+                    f(x);
                 }
             }
             _ => {}

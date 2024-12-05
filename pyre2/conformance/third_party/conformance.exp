@@ -8722,6 +8722,16 @@
     },
     {
       "code": -2,
+      "column": 14,
+      "concise_description": "TODO: MatchOr",
+      "description": "TODO: MatchOr",
+      "line": 30,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
       "column": 13,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
@@ -8769,6 +8779,16 @@
       "name": "PyreError",
       "stop_column": 51,
       "stop_line": 53
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "TODO: MatchOr",
+      "description": "TODO: MatchOr",
+      "line": 58,
+      "name": "PyreError",
+      "stop_column": 51,
+      "stop_line": 58
     },
     {
       "code": -2,
@@ -20381,6 +20401,16 @@
     },
     {
       "code": -2,
+      "column": 14,
+      "concise_description": "TODO: MatchSequence",
+      "description": "TODO: MatchSequence",
+      "line": 93,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 93
+    },
+    {
+      "code": -2,
       "column": 13,
       "concise_description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed",
       "description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed",
@@ -20388,6 +20418,16 @@
       "name": "PyreError",
       "stop_column": 41,
       "stop_line": 95
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "TODO: MatchSequence",
+      "description": "TODO: MatchSequence",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 97
     },
     {
       "code": -2,
@@ -20401,6 +20441,16 @@
     },
     {
       "code": -2,
+      "column": 14,
+      "concise_description": "TODO: MatchSequence",
+      "description": "TODO: MatchSequence",
+      "line": 101,
+      "name": "PyreError",
+      "stop_column": 23,
+      "stop_line": 101
+    },
+    {
+      "code": -2,
       "column": 13,
       "concise_description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, str, int]) failed",
       "description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, str, int]) failed",
@@ -20408,6 +20458,26 @@
       "name": "PyreError",
       "stop_column": 51,
       "stop_line": 103
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "TODO: MatchSequence",
+      "description": "TODO: MatchSequence",
+      "line": 114,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 114
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "TODO: MatchClass",
+      "description": "TODO: MatchClass",
+      "line": 114,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 114
     },
     {
       "code": -2,

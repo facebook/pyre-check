@@ -7,7 +7,6 @@
 
 use std::cmp;
 
-use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::ExceptHandler;
 use ruff_python_ast::Expr;
@@ -169,10 +168,7 @@ impl<'a> DefinitionsBuilder<'a> {
     }
 
     fn pattern(&mut self, x: &Pattern) {
-        Ast::pattern_lvalue(x, &mut |x| match x {
-            Either::Left(x) => self.add_identifier(x, DefinitionStyle::Local),
-            Either::Right(x) => self.expr_lvalue(x),
-        });
+        Ast::pattern_lvalue(x, &mut |x| self.add_identifier(x, DefinitionStyle::Local));
     }
 
     fn stmt(&mut self, x: &Stmt) {

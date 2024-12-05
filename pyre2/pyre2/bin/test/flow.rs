@@ -533,10 +533,10 @@ def point() -> int:
     return 3
 
 match point():
-    case 1:  # E: unrecognized assignment target
+    case 1:
         x = 8
     case q:
         x = q
-assert_type(x, int)  # E: assert_type(Literal[8] | Any, int) failed
+assert_type(x, int)  # E: assert_type(Literal[8] | int, int) failed
 "#,
 );
