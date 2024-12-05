@@ -479,13 +479,9 @@ impl<'a> State<'a> {
     }
 
     pub fn collect_checked_errors(&self) -> Vec<Error> {
-        self.modules
-            .read()
-            .unwrap()
-            .values()
-            .flat_map(|x| x.errors.collect())
-            .filter(|x| x.is_in_checked_module())
-            .collect()
+        let mut errors = self.collect_errors();
+        errors.retain(|x| x.is_in_checked_module());
+        errors
     }
 
     pub fn check_against_expectations(&self) -> anyhow::Result<()> {
