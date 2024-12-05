@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use starlark_map::small_map::SmallMap;
+//! A minimal stdlib that is meant to be approximately the same as from typeshed,
+//! but only contain the bits that matter for our tests.
 
 use crate::module::module_name::ModuleName;
 
@@ -126,24 +127,12 @@ class NoneType: ...
 class TracebackType: ...
 "#;
 
-pub struct Stdlib(SmallMap<ModuleName, &'static str>);
-
-impl Stdlib {
-    pub fn new() -> Self {
-        Self(
-            [
-                ("builtins", BUILTINS),
-                ("typing", TYPING),
-                ("types", TYPES),
-                ("enum", ENUM),
-            ]
-            .iter()
-            .map(|(k, v)| (ModuleName::from_str(k), *v))
-            .collect(),
-        )
-    }
-
-    pub fn lookup_content(&self, m: ModuleName) -> Option<&'static str> {
-        self.0.get(&m).copied()
+pub fn lookup_test_stdlib(module: ModuleName) -> Option<&'static str> {
+    match module.as_str() {
+        "builtins" => Some(BUILTINS),
+        "typing" => Some(TYPING),
+        "types" => Some(TYPES),
+        "enum" => Some(ENUM),
+        _ => None,
     }
 }

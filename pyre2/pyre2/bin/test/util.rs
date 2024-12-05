@@ -16,7 +16,7 @@ use crate::module::module_name::ModuleName;
 use crate::state::loader::LoadResult;
 use crate::state::loader::Loader;
 use crate::state::state::State;
-use crate::test::stdlib::Stdlib;
+use crate::test::stdlib::lookup_test_stdlib;
 use crate::util::trace::init_tracing;
 
 #[macro_export]
@@ -99,14 +99,14 @@ impl TestEnv {
         );
     }
 
-    pub fn to_loader(self, stdlib: Stdlib) -> Box<Loader<'static>> {
+    pub fn to_loader(self) -> Box<Loader<'static>> {
         Box::new(move |name: ModuleName| {
             let loaded = if let Some((path, contents)) = self.0.get(&name) {
                 match contents {
                     Ok(contents) => LoadResult::Loaded(path.to_owned(), contents.to_owned()),
                     Err(err) => LoadResult::FailedToLoad(path.to_owned(), anyhow!(err.to_owned())),
                 }
-            } else if let Some(contents) = stdlib.lookup_content(name) {
+            } else if let Some(contents) = lookup_test_stdlib(name) {
                 LoadResult::Loaded(default_path(name), contents.to_owned())
             } else {
                 LoadResult::FailedToFind(anyhow!("Module not given in test suite"))
@@ -117,15 +117,8 @@ impl TestEnv {
 }
 
 pub fn simple_test_driver(env: TestEnv) -> State<'static> {
-    let stdlib = Stdlib::new();
     let modules = env.0.keys().copied().collect::<Vec<_>>();
-    let mut state = State::new(
-        &modules,
-        env.to_loader(stdlib),
-        Config::default(),
-        true,
-        true,
-    );
+    let mut state = State::new(&modules, env.to_loader(), Config::default(), true, true);
     state.run();
     state
 }
