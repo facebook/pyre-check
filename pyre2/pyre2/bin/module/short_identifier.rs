@@ -69,7 +69,7 @@ mod tests {
             "hello_world = Baz123.attribute".to_owned(),
             false,
         );
-        let module = module_info.parse(&ErrorCollector::new());
+        let module = module_info.parse(&ErrorCollector::default());
         let show = |x: &ShortIdentifier| module_info.display(x).to_string();
         if let Stmt::Assign(StmtAssign {
             targets: x1,

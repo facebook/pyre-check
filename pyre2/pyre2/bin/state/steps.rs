@@ -171,7 +171,7 @@ impl Step {
             components.code,
             error_style != ErrorStyle::Never,
         );
-        let errors = ErrorCollector::with_style(error_style);
+        let errors = ErrorCollector::new(error_style);
         if let Some(err) = components.self_error {
             errors.add(
                 &module_info,

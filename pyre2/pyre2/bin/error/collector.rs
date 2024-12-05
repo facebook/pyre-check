@@ -110,12 +110,7 @@ impl Display for ErrorCollector {
 }
 
 impl ErrorCollector {
-    #[allow(dead_code)] // Cleanup still in progress
-    pub fn new() -> Self {
-        Self::with_style(ErrorStyle::Immediate)
-    }
-
-    pub fn with_style(style: ErrorStyle) -> Self {
+    pub fn new(style: ErrorStyle) -> Self {
         Self {
             style,
             errors: Mutex::new(Default::default()),
@@ -203,7 +198,7 @@ mod tests {
 
     #[test]
     fn test_error_collector() {
-        let errors = ErrorCollector::new();
+        let errors = ErrorCollector::default();
         let mi = ModuleInfo::new(
             ModuleName::from_name(&Name::new("main")),
             Path::new("main.py").to_owned(),
