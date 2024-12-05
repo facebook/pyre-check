@@ -8,6 +8,7 @@
 use std::ffi::OsStr;
 use std::mem;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -20,6 +21,7 @@ use crate::commands::util::default_include;
 use crate::commands::util::find_module;
 use crate::commands::util::module_from_path;
 use crate::config::Config;
+use crate::config::PythonVersion;
 use crate::error::legacy::LegacyErrors;
 use crate::report;
 use crate::state::loader::LoadResult;
@@ -42,6 +44,8 @@ pub struct Args {
     debug_info: Option<PathBuf>,
     #[clap(long = "report-binding-memory")]
     report_binding_memory: Option<PathBuf>,
+    #[clap(long)]
+    python_version: Option<String>,
 
     #[clap(flatten)]
     common: CommonArgs,
@@ -81,7 +85,11 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
         (LoadResult::from_path_result(path), true)
     };
     let modules = to_check.keys().copied().collect::<Vec<_>>();
-    let config = Config::default();
+
+    let config = match &args.python_version {
+        None => Config::default(),
+        Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),
+    };
 
     let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
     let start = Instant::now();
