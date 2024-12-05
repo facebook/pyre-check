@@ -50,10 +50,6 @@ impl<K> TimerContext<K> {
         d
     }
 
-    pub fn total(&self) -> Duration {
-        self.items.iter().map(|(_, d)| d).sum()
-    }
-
     pub fn ordered(&mut self) -> &[(K, Duration)] {
         // We never return the list anything other than ordered by duration,
         // so we can just sort in place.

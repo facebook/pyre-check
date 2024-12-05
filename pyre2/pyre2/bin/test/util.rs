@@ -143,6 +143,6 @@ pub fn simple_test_for_macro(
     let driver = simple_test_driver(Stdlib::new(), env);
     match error_check {
         None => driver.check_against_expectations(),
-        Some(check) => check(driver.errors()),
+        Some(check) => check(&driver.errors()),
     }
 }

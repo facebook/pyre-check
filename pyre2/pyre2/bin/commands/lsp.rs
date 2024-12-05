@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::path::Path;
 use std::path::PathBuf;
 
 use anyhow::anyhow;
@@ -250,20 +249,23 @@ impl<'a> Server<'a> {
             true,
             None,
         );
-        let mut diags: SmallMap<&Path, Vec<Diagnostic>> = SmallMap::new();
+        let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.keys() {
-            diags.insert(x.as_path(), Vec::new());
+            diags.insert(x.as_path().to_owned(), Vec::new());
         }
         for e in self.driver.errors() {
-            diags.entry(e.path()).or_default().push(Diagnostic {
-                range: source_range_to_range(e.source_range()),
-                severity: Some(lsp_types::DiagnosticSeverity::ERROR),
-                message: e.msg().to_owned(),
-                ..Default::default()
-            });
+            diags
+                .entry(e.path().to_owned())
+                .or_default()
+                .push(Diagnostic {
+                    range: source_range_to_range(e.source_range()),
+                    severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+                    message: e.msg().to_owned(),
+                    ..Default::default()
+                });
         }
         for (path, diags) in diags {
-            let path = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_owned());
+            let path = std::fs::canonicalize(&path).unwrap_or(path);
             match Url::from_file_path(&path) {
                 Ok(uri) => self.publish_diagnostics(uri, diags, None),
                 Err(_) => eprint!("Unable to convert path to uri: {path:?}"),

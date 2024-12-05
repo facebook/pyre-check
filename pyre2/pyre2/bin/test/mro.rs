@@ -21,7 +21,7 @@ fn get_class_metadata<'b, 'a>(
     name: &'b str,
     module_name: ModuleName,
     driver: &'a Driver,
-) -> &'a ClassMetadata {
+) -> ClassMetadata {
     driver
         .class_metadata_of_export(module_name, name)
         .unwrap_or_else(|| panic!("No MRO for {name}"))

@@ -34,14 +34,13 @@ impl Driver {
             }
         }
         let mut res = None;
-        Visitors::visit_mod_expr(mod_module, |x| f(x, position, &mut res));
+        Visitors::visit_mod_expr(&mod_module, |x| f(x, position, &mut res));
         res
     }
 
     pub fn hover(&self, module: ModuleName, position: TextSize) -> Option<Type> {
         let id = self.identifier_at(module, position)?;
         self.get_type(module, &Key::Usage(ShortIdentifier::new(&id)))
-            .cloned()
     }
 
     fn key_to_definition(
@@ -118,7 +117,7 @@ impl Driver {
                             if !matches!(bindings.get(idx), &Binding::AnnotatedType(..)) =>
                         {
                             if let Some(ty) = self.get_type(module, key)
-                                && is_interesting_type(ty)
+                                && is_interesting_type(&ty)
                             {
                                 res.push((x.parameters.range.end(), format!(" -> {ty}")));
                             }
@@ -133,7 +132,7 @@ impl Driver {
                     };
                     if let Binding::Expr(None, e) = idx_binding
                         && is_interesting_expr(e)
-                        && is_interesting_type(ty)
+                        && is_interesting_type(&ty)
                     {
                         let ty = format!(": {}", ty);
                         res.push((key.range().end(), ty));

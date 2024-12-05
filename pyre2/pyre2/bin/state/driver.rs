@@ -8,8 +8,8 @@
 // TODO(ndmitchell): I'm working on deleting this module entire, don't hack out random pieces in the meantime.
 #![allow(dead_code)]
 
+use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::Duration;
 
 use dupe::Dupe;
 use parse_display::Display;
@@ -35,15 +35,13 @@ use crate::expectation::Expectation;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::Loader;
+use crate::state::state::State;
 #[cfg(test)]
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
-use crate::util::memory::MemoryUsage;
-use crate::util::memory::MemoryUsageTrace;
 use crate::util::prelude::SliceExt;
-use crate::util::small_map;
 use crate::util::timer::TimerContext;
 use crate::util::transitive_closure::transitive_closure;
 use crate::util::transitive_closure::transitive_closure_par;
@@ -256,12 +254,7 @@ fn run_phase2(
     res
 }
 
-pub struct Driver {
-    errors: Vec<Error>,
-    expectations: SmallMap<ModuleName, Expectation>,
-    solutions: SmallMap<ModuleName, Solutions>,
-    phases: SmallMap<ModuleName, (Phase1, Phase2)>,
-}
+pub struct Driver(State<'static>);
 
 impl Driver {
     pub fn new(
@@ -271,108 +264,14 @@ impl Driver {
         parallel: bool,
         timings: Option<usize>,
     ) -> Self {
-        let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
-        let mut timers = Timers::new();
-        let timers = &mut timers;
-        let uniques = UniqueFactory::new();
-
-        timers.add((timers_global_module(), Step::Startup, 0));
-        let phase1 = run_phase1(
-            timers,
-            modules,
-            config,
-            timings.is_some(),
-            &*loader,
-            parallel,
-        );
-        let exports: SmallMap<_, _> = phase1
-            .iter()
-            .map(|v| (v.module_info.name(), v.exports.dupe()))
-            .collect();
-
-        let phase2 = run_phase2(timers, &phase1, &exports, &uniques, config, parallel);
-
-        let answers = phase2.map(|p2| {
-            let ans = Answers::new(&p2.bindings);
-            timers.add((p2.name, Step::Answers, ans.len()));
-            ans
-        });
-        let answers_info: SmallMap<ModuleName, (&Answers, &Bindings, &ErrorCollector)> = phase1
-            .iter()
-            .zip(&phase2)
-            .zip(&answers)
-            .map(|((p1, p2), ans)| (p1.module_info.name(), (ans, &p2.bindings, &p1.errors)))
-            .collect();
-
-        let stdlib = make_stdlib(&exports, &answers_info, &uniques);
-        let solutions = (if parallel {
-            small_map::par_map
-        } else {
-            small_map::map
-        })(
-            &answers_info,
-            |_, (answers, bindings, errors): &(&Answers, &Bindings, &ErrorCollector)| {
-                answers.solve(
-                    &exports,
-                    &answers_info,
-                    bindings,
-                    errors,
-                    &stdlib,
-                    &uniques,
-                    false,
-                )
-            },
-        );
-        timers.add((timers_global_module(), Step::Solve, 0));
-
+        let mut state = State::new(modules, loader, config.clone(), parallel, timings.is_none());
+        state.run();
         if timings.is_some() {
-            for p1 in &phase1 {
-                p1.errors.print();
-            }
+            state.print_errors();
         }
-        let error_count = phase1.iter().map(|x| x.errors.len()).sum();
-        let mut errors = Vec::with_capacity(error_count);
-        for p in &phase1 {
-            errors.extend(p.errors.collect());
-        }
-        for (error, count) in ErrorCollector::summarise(phase1.iter().map(|x| &x.errors)) {
-            eprintln!("{count} instances of {error}");
-        }
-
         // Print this on both stderr and stdout, since handy to have in either dump
-        info_eprintln(format!("Total errors: {}", error_count));
-        let printing = timers.add((timers_global_module(), Step::PrintErrors, error_count));
-
-        eprintln!("Memory usage: {}", MemoryUsage::now());
-        memory_trace.stop();
-        eprintln!("Memory peak : {}", memory_trace.peak());
-
-        let total = timers.total();
-        info_eprintln(format!(
-            "Took {total:.2?} (excluding print {:.2?})",
-            total - printing
-        ));
-        if let Some(timings) = timings {
-            Self::print_timings(timings, timers);
-        }
-
-        drop(answers_info);
-        assert_eq!(phase1.len(), phase2.len());
-        let expectations = phase1
-            .iter()
-            .map(|v| (v.module_info.name(), v.expectations.clone()))
-            .collect();
-        let mut phases = SmallMap::with_capacity(phase1.len());
-        for (p1, p2) in phase1.into_iter().zip(phase2) {
-            assert_eq!(p1.module_info.name(), p2.name);
-            phases.insert(p2.name, (p1, p2));
-        }
-        Driver {
-            errors,
-            expectations,
-            solutions,
-            phases,
-        }
+        info_eprintln(format!("Total errors: {}", state.count_errors()));
+        Driver(state)
     }
 
     fn print_timings(count: usize, timers: &mut TimerContext<(ModuleName, Step, usize)>) {
@@ -397,12 +296,12 @@ impl Driver {
         }
     }
 
-    pub fn errors(&self) -> &[Error] {
-        &self.errors
+    pub fn errors(&self) -> Vec<Error> {
+        self.0.collect_errors()
     }
 
     pub fn errors_in_checked_modules(&self) -> Vec<Error> {
-        self.errors
+        self.errors()
             .iter()
             .filter(|x| x.is_in_checked_module())
             .cloned()
@@ -410,21 +309,11 @@ impl Driver {
     }
 
     pub fn module_info(&self, module: ModuleName) -> Option<ModuleInfo> {
-        self.phases.get(&module).map(|x| x.0.module_info.dupe())
+        self.0.get_module_info(module)
     }
 
     pub fn check_against_expectations(&self) -> anyhow::Result<()> {
-        for (name, expect) in &self.expectations {
-            info!("Check for {name}");
-            let errs = self
-                .errors
-                .iter()
-                .filter(|e| e.module_name() == *name)
-                .cloned()
-                .collect::<Vec<_>>();
-            expect.check(&errs)?;
-        }
-        Ok(())
+        self.0.check_against_expectations()
     }
 
     #[cfg(test)]
@@ -432,12 +321,12 @@ impl Driver {
         &self,
         module: ModuleName,
         name: &str,
-    ) -> Option<&ClassMetadata> {
+    ) -> Option<ClassMetadata> {
         use crate::alt::binding::KeyClassMetadata;
         use crate::alt::binding::KeyExported;
         use crate::module::short_identifier::ShortIdentifier;
 
-        let solutions = self.solutions.get(&module).unwrap();
+        let solutions = self.get_solutions(module).unwrap();
 
         match solutions
             .exported_types
@@ -448,34 +337,30 @@ impl Driver {
                 let x = solutions
                     .mros
                     .get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
-                x
+                x.cloned()
             }
             _ => None,
         }
     }
 
-    pub fn get_mod_module(&self, module: ModuleName) -> Option<&ModModule> {
-        self.phases.get(&module).map(|x| &x.0.module)
+    pub fn get_mod_module(&self, module: ModuleName) -> Option<Arc<ModModule>> {
+        self.0.get_ast(module)
     }
 
-    pub fn get_bindings(&self, module: ModuleName) -> Option<&Bindings> {
-        self.phases.get(&module).map(|x| &x.1.bindings)
+    pub fn get_bindings(&self, module: ModuleName) -> Option<Bindings> {
+        self.0.get_bindings(module)
     }
 
-    pub fn get_type(&self, module: ModuleName, key: &Key) -> Option<&Type> {
-        self.solutions.get(&module)?.types.get(key)
+    pub fn get_solutions(&self, module: ModuleName) -> Option<Arc<Solutions>> {
+        self.0.get_solutions(module)
+    }
+
+    pub fn get_type(&self, module: ModuleName, key: &Key) -> Option<Type> {
+        self.get_solutions(module)?.types.get(key).cloned()
     }
 
     pub fn debug_info(&self, modules: &[ModuleName]) -> DebugInfo {
-        DebugInfo::new(&modules.map(|x| {
-            let (phase1, phase2) = self.phases.get(x).unwrap();
-            (
-                &phase1.module_info,
-                &phase1.errors,
-                &phase2.bindings,
-                self.solutions.get(x).unwrap(),
-            )
-        }))
+        self.0.debug_info(modules)
     }
 }
 

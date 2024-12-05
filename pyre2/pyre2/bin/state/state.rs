@@ -10,6 +10,7 @@ use std::sync::Mutex;
 use std::sync::RwLock;
 
 use dupe::Dupe;
+use dupe::OptionDupedExt;
 use enum_iterator::Sequence;
 use parking_lot::FairMutex;
 use ruff_python_ast::name::Name;
@@ -36,6 +37,7 @@ use crate::debug_info::DebugInfo;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
 use crate::expectation::Expectation;
+use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::Loader;
 use crate::state::steps::Context;
@@ -303,7 +305,6 @@ impl<'a> State<'a> {
         )
     }
 
-    #[expect(dead_code)] // I expect this will be used later
     pub fn collect_errors(&self) -> Vec<Error> {
         let mut errors = Vec::new();
         for module in self.modules.read().unwrap().values() {
@@ -405,6 +406,45 @@ impl<'a> State<'a> {
             .answers
             .get()
             .map(|x| x.0.dupe())
+    }
+
+    pub fn get_module_info(&self, module: ModuleName) -> Option<ModuleInfo> {
+        self.modules
+            .read()
+            .unwrap()
+            .get(&module)?
+            .steps
+            .read()
+            .unwrap()
+            .module_info
+            .get()
+            .map(|x| x.0.dupe())
+    }
+
+    pub fn get_ast(&self, module: ModuleName) -> Option<Arc<ruff_python_ast::ModModule>> {
+        self.modules
+            .read()
+            .unwrap()
+            .get(&module)?
+            .steps
+            .read()
+            .unwrap()
+            .ast
+            .get()
+            .duped()
+    }
+
+    pub fn get_solutions(&self, module: ModuleName) -> Option<Arc<Solutions>> {
+        self.modules
+            .read()
+            .unwrap()
+            .get(&module)?
+            .steps
+            .read()
+            .unwrap()
+            .solutions
+            .get()
+            .duped()
     }
 
     pub fn debug_info(&self, modules: &[ModuleName]) -> DebugInfo {

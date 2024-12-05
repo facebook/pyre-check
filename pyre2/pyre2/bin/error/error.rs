@@ -14,7 +14,6 @@ use ruff_text_size::TextRange;
 
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
-use crate::module::module_name::ModuleName;
 
 #[derive(Debug, Clone)]
 pub struct Error {
@@ -54,10 +53,6 @@ impl Error {
 
     pub fn msg(&self) -> &str {
         &self.msg
-    }
-
-    pub fn module_name(&self) -> ModuleName {
-        self.info.name()
     }
 
     pub fn is_in_checked_module(&self) -> bool {
