@@ -17,13 +17,17 @@ use crate::alt::binding::KeyExported;
 use crate::ast::Ast;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
-use crate::state::driver::Driver;
+use crate::state::state::State;
 use crate::types::types::Type;
 use crate::visitors::Visitors;
 
-impl Driver {
+impl<'a> State<'a> {
+    pub fn get_type(&self, module: ModuleName, key: &Key) -> Option<Type> {
+        self.get_solutions(module)?.types.get(key).cloned()
+    }
+
     fn identifier_at(&self, module: ModuleName, position: TextSize) -> Option<Identifier> {
-        let mod_module = self.get_mod_module(module)?;
+        let mod_module = self.get_ast(module)?;
         fn f(x: &Expr, find: TextSize, res: &mut Option<Identifier>) {
             if let Expr::Name(x) = x
                 && x.range.contains_inclusive(find)

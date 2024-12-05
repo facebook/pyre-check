@@ -5,21 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::sync::Arc;
-
-use ruff_python_ast::ModModule;
 use tracing::info;
 
-use crate::alt::answers::Solutions;
-use crate::alt::binding::Key;
-use crate::alt::bindings::Bindings;
 use crate::config::Config;
 use crate::error::error::Error;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::Loader;
 use crate::state::state::State;
-use crate::types::types::Type;
 
 pub struct Driver(pub State<'static>);
 
@@ -47,22 +40,6 @@ impl Driver {
 
     pub fn module_info(&self, module: ModuleName) -> Option<ModuleInfo> {
         self.0.get_module_info(module)
-    }
-
-    pub fn get_mod_module(&self, module: ModuleName) -> Option<Arc<ModModule>> {
-        self.0.get_ast(module)
-    }
-
-    pub fn get_bindings(&self, module: ModuleName) -> Option<Bindings> {
-        self.0.get_bindings(module)
-    }
-
-    pub fn get_solutions(&self, module: ModuleName) -> Option<Arc<Solutions>> {
-        self.0.get_solutions(module)
-    }
-
-    pub fn get_type(&self, module: ModuleName, key: &Key) -> Option<Type> {
-        self.get_solutions(module)?.types.get(key).cloned()
     }
 }
 

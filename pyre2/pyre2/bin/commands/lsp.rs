@@ -303,7 +303,7 @@ impl<'a> Server<'a> {
         let module = url_to_module(&params.text_document_position_params.text_document.uri);
         let info = self.driver.module_info(module)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let (module, range) = self.driver.goto_definition(module, range)?;
+        let (module, range) = self.driver.0.goto_definition(module, range)?;
         let path = find_module(module, &self.include).ok()?;
         let info = self.driver.module_info(module)?;
         let path = std::fs::canonicalize(&path).unwrap_or(path);
@@ -324,7 +324,7 @@ impl<'a> Server<'a> {
         let module = url_to_module(&params.text_document_position_params.text_document.uri);
         let info = self.driver.module_info(module)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let t = self.driver.hover(module, range)?;
+        let t = self.driver.0.hover(module, range)?;
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: MarkupKind::PlainText,
@@ -337,7 +337,7 @@ impl<'a> Server<'a> {
     fn inlay_hints(&self, params: InlayHintParams) -> Option<Vec<InlayHint>> {
         let module = url_to_module(&params.text_document.uri);
         let info = self.driver.module_info(module)?;
-        let t = self.driver.inlay_hints(module)?;
+        let t = self.driver.0.inlay_hints(module)?;
         Some(t.into_map(|x| {
             let position = text_size_to_position(&info, x.0);
             InlayHint {

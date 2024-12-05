@@ -10,7 +10,7 @@ use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
 use crate::module::module_name::ModuleName;
-use crate::state::driver::Driver;
+use crate::state::state::State;
 use crate::test::stdlib::Stdlib;
 use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;
@@ -28,7 +28,7 @@ static CODE: &str = r#"
 10: class B(A): pass
 "#;
 
-fn mk_driver() -> (ModuleName, Driver) {
+fn mk_state() -> (ModuleName, State<'static>) {
     let code = CODE
         .lines()
         .enumerate()
@@ -39,15 +39,15 @@ fn mk_driver() -> (ModuleName, Driver) {
             if line.is_empty() { line } else { &line[1..] }
         })
         .join("\n");
-    let driver = simple_test_driver(Stdlib::new(), TestEnv::one("main", &code));
-    assert_eq!(driver.count_errors(), 0);
-    (ModuleName::from_str("main"), Driver(driver))
+    let state = simple_test_driver(Stdlib::new(), TestEnv::one("main", &code));
+    assert_eq!(state.count_errors(), 0);
+    (ModuleName::from_str("main"), state)
 }
 
 /// Find the TextRange of the given needle on the line, but must occur
 fn at_after(line_no: usize, before: &str, needle: &str) -> TextRange {
-    let (module, driver) = mk_driver();
-    let info = driver.module_info(module).unwrap();
+    let (module, state) = mk_state();
+    let info = state.get_module_info(module).unwrap();
     let line = info.contents().lines().nth(line_no - 1).unwrap();
     let (pre1, post1) = line.split_once(before).unwrap();
     let (pre2, _) = post1.split_once(needle).unwrap();
@@ -62,29 +62,26 @@ fn at(line_no: usize, needle: &str) -> TextRange {
 
 #[test]
 fn test_hover() {
-    let (module, driver) = mk_driver();
+    let (module, state) = mk_state();
     assert_eq!(
-        driver
-            .hover(module, at(4, "x").start())
-            .unwrap()
-            .to_string(),
+        state.hover(module, at(4, "x").start()).unwrap().to_string(),
         "list[int]"
     );
     assert_eq!(
-        driver.hover(module, at(4, "x").end()).unwrap().to_string(),
+        state.hover(module, at(4, "x").end()).unwrap().to_string(),
         "list[int]"
     );
     assert_eq!(
-        driver.hover(module, at(6, "f").end()).unwrap().to_string(),
+        state.hover(module, at(6, "f").end()).unwrap().to_string(),
         "Callable[[list[int], str, Literal[42]], list[int]]"
     );
 }
 
 #[test]
 fn test_inlay_hint() {
-    let (module, driver) = mk_driver();
+    let (module, state) = mk_state();
     assert_eq!(
-        driver.inlay_hints(module).unwrap(),
+        state.inlay_hints(module).unwrap(),
         vec![
             (at(3, ")").end(), " -> list[int]".to_owned()),
             (at(6, "yyy").end(), ": list[int]".to_owned()),
@@ -94,17 +91,17 @@ fn test_inlay_hint() {
 
 #[test]
 fn test_goto_definition() {
-    let (module, driver) = mk_driver();
+    let (module, state) = mk_state();
     assert_eq!(
-        driver.goto_definition(module, at(6, "f").start()),
+        state.goto_definition(module, at(6, "f").start()),
         Some((module, at_after(3, "def", "f")))
     );
     assert_eq!(
-        driver.goto_definition(module, at(3, "Liter").end()),
+        state.goto_definition(module, at(3, "Liter").end()),
         Some((module, at(1, "Literal")))
     );
     assert_eq!(
-        driver.goto_definition(module, at(10, "A").start()),
+        state.goto_definition(module, at(10, "A").start()),
         Some((module, at_after(9, "class", "A")))
     );
 }
