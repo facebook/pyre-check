@@ -356,6 +356,24 @@ assert_type(C.x, Literal[1])
 );
 
 simple_test!(
+    test_nested_class_attribute_with_inheritance,
+    r#"
+from typing import assert_type
+
+class B:
+    class Nested:
+        x: int
+
+class C(B):
+    pass
+
+N0: B.Nested = C.Nested()
+N1: C.Nested = B.Nested()
+assert_type(N1.x, int)
+"#,
+);
+
+simple_test!(
     test_class_generic_attribute_lookup,
     r#"
 class C[T]:
