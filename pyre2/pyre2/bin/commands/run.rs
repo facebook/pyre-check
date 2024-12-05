@@ -9,6 +9,10 @@ use clap::Parser;
 
 use crate::util::trace::init_tracing;
 
+/// Set this to true to run profiling of fast jobs.
+/// Will run this repeatedly.
+const PROFILING: bool = false;
+
 #[derive(Debug, Parser)]
 struct Standard<T: clap::Args> {
     /// Enable verbose logging.
@@ -21,7 +25,9 @@ struct Standard<T: clap::Args> {
 
 impl<T: clap::Args> Standard<T> {
     fn init_tracing(&self) {
-        init_tracing(self.verbose, false);
+        if !PROFILING {
+            init_tracing(self.verbose, false);
+        }
     }
 }
 
@@ -42,11 +48,20 @@ enum Args {
 
 /// Run based on the command line arguments.
 pub fn run() -> anyhow::Result<()> {
+    if PROFILING {
+        loop {
+            let _ = run_once(false);
+        }
+    }
+    run_once(true)
+}
+
+fn run_once(allow_forget: bool) -> anyhow::Result<()> {
     let args = Args::parse();
     match args {
         Args::ExpectTest(args) => {
             args.init_tracing();
-            args.args.run(true)
+            args.args.run(allow_forget)
         }
         Args::BuckCheck(args) => {
             args.init_tracing();
