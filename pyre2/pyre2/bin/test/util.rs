@@ -13,8 +13,8 @@ use starlark_map::small_map::SmallMap;
 use crate::config::Config;
 use crate::error::error::Error;
 use crate::module::module_name::ModuleName;
-use crate::state::driver::Driver;
 use crate::state::loader::LoadResult;
+use crate::state::state::State;
 use crate::test::stdlib::Stdlib;
 use crate::util::trace::init_tracing;
 
@@ -99,7 +99,7 @@ impl TestEnv {
     }
 }
 
-pub fn simple_test_driver(stdlib: Stdlib, env: TestEnv) -> Driver {
+pub fn simple_test_driver(stdlib: Stdlib, env: TestEnv) -> State<'static> {
     let modules = stdlib
         .modules()
         .copied()
@@ -118,8 +118,9 @@ pub fn simple_test_driver(stdlib: Stdlib, env: TestEnv) -> Driver {
         };
         (loaded, true)
     };
-    let config = Config::default();
-    Driver::new(&modules, Box::new(loader), &config, true, None)
+    let mut state = State::new(&modules, Box::new(loader), Config::default(), true, true);
+    state.run();
+    state
 }
 
 /// Should only be used from the `simple_test!` macro.
@@ -140,9 +141,9 @@ pub fn simple_test_for_macro(
         &format!("{}{}", "\n".repeat(start_line), contents),
         file,
     );
-    let driver = simple_test_driver(Stdlib::new(), env);
+    let state = simple_test_driver(Stdlib::new(), env);
     match error_check {
-        None => driver.check_against_expectations(),
-        Some(check) => check(&driver.errors()),
+        None => state.check_against_expectations(),
+        Some(check) => check(&state.collect_errors()),
     }
 }

@@ -21,7 +21,7 @@ use crate::state::loader::Loader;
 use crate::state::state::State;
 use crate::types::types::Type;
 
-pub struct Driver(State<'static>);
+pub struct Driver(pub State<'static>);
 
 impl Driver {
     pub fn new(
@@ -55,11 +55,6 @@ impl Driver {
 
     pub fn module_info(&self, module: ModuleName) -> Option<ModuleInfo> {
         self.0.get_module_info(module)
-    }
-
-    #[cfg(test)]
-    pub fn check_against_expectations(&self) -> anyhow::Result<()> {
-        self.0.check_against_expectations()
     }
 
     pub fn get_mod_module(&self, module: ModuleName) -> Option<Arc<ModModule>> {

@@ -20,7 +20,7 @@ use crate::types::types::Type;
 
 pub fn mk_driver(code: &str) -> (ModuleName, Driver) {
     let driver = simple_test_driver(Stdlib::new(), TestEnv::one("main", code));
-    (ModuleName::from_str("main"), driver)
+    (ModuleName::from_str("main"), Driver(driver))
 }
 
 pub fn get_class_metadata<'b, 'a>(

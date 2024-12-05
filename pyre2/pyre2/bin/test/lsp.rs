@@ -40,8 +40,8 @@ fn mk_driver() -> (ModuleName, Driver) {
         })
         .join("\n");
     let driver = simple_test_driver(Stdlib::new(), TestEnv::one("main", &code));
-    assert_eq!(driver.errors().len(), 0);
-    (ModuleName::from_str("main"), driver)
+    assert_eq!(driver.count_errors(), 0);
+    (ModuleName::from_str("main"), Driver(driver))
 }
 
 /// Find the TextRange of the given needle on the line, but must occur
