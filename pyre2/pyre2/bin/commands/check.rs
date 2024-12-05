@@ -35,7 +35,7 @@ use crate::util::memory::MemoryUsageTrace;
 pub struct Args {
     files: Vec<PathBuf>,
     #[arg(long = "output", short = 'o')]
-    output_path: Option<PathBuf>,
+    output: Option<PathBuf>,
     #[clap(long = "include", short = 'I')]
     include: Vec<PathBuf>,
     #[clap(long = "repeat", default_value = "1")]
@@ -140,7 +140,7 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
             report::binding_memory::binding_memory(&state).as_bytes(),
         )?;
     }
-    if let Some(path) = args.output_path {
+    if let Some(path) = args.output {
         let errors = state.collect_errors();
         let legacy_errors = LegacyErrors::from_errors(&errors);
         let output_bytes = serde_json::to_string_pretty(&legacy_errors)
