@@ -346,3 +346,26 @@ def foo():
     typing.assert_type(None, None)
 "#,
 );
+
+fn env_import_fail_to_load() -> TestEnv {
+    let mut env = TestEnv::new();
+    env.add_error("foo", "Disk go urk");
+    env
+}
+
+simple_test!(
+    test_import_fail_to_load,
+    env_import_fail_to_load(),
+    r#"
+import foo
+"#,
+    |errs| {
+        assert_eq!(errs.len(), 1);
+        assert!(
+            errs[0]
+                .to_string()
+                .contains("foo.py:1:1: Failed to load foo from foo.py, got Disk go urk")
+        );
+        Ok(())
+    },
+);
