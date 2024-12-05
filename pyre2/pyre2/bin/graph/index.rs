@@ -69,7 +69,7 @@ impl<K> Index<K> {
     }
 }
 
-impl<K: Eq + Hash + Debug> Index<K> {
+impl<K: Eq + Hash> Index<K> {
     pub fn insert(&mut self, k: K) -> Idx<K> {
         let h = Hashed::new(k);
         match self.map.get_index_of_hashed(h.as_ref()) {
