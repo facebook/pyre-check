@@ -55,7 +55,6 @@ pub struct State<'a> {
     loader: Box<Loader<'a>>,
     uniques: UniqueFactory,
     parallel: bool,
-    print_errors_immediately: bool,
     stdlib: RwLock<Arc<Stdlib>>,
     modules: RwLock<SmallMap<ModuleName, Arc<ModuleState>>>,
     /// Items we still need to process. Stored in a max heap, so that
@@ -67,6 +66,7 @@ pub struct State<'a> {
     retain_memory: bool,
 }
 
+#[derive(Default)]
 struct ModuleState {
     // BIG WARNING: This must be a FairMutex or you run into deadlocks.
     // Imagine module Foo is having demand Solutions in one thread, and demand Exports in another.
@@ -79,31 +79,18 @@ struct ModuleState {
 }
 
 impl ModuleState {
-    fn new(#[expect(unused_variables)] print_errors_immediately: bool) -> Self {
-        Self {
-            lock: FairMutex::new(()),
-            steps: RwLock::new(ModuleSteps::default()),
-        }
-    }
-
     fn clear(&self) {
         self.steps.write().unwrap().clear();
     }
 }
 
 impl<'a> State<'a> {
-    pub fn new(
-        loader: Box<Loader<'a>>,
-        config: Config,
-        parallel: bool,
-        print_errors_immediately: bool,
-    ) -> Self {
+    pub fn new(loader: Box<Loader<'a>>, config: Config, parallel: bool) -> Self {
         Self {
             config,
             loader,
             uniques: UniqueFactory::new(),
             parallel,
-            print_errors_immediately,
             stdlib: RwLock::new(Arc::new(Stdlib::for_bootstrapping())),
             modules: Default::default(),
             todo: Default::default(),
@@ -212,7 +199,7 @@ impl<'a> State<'a> {
             .write()
             .unwrap()
             .entry(module)
-            .or_insert_with(|| Arc::new(ModuleState::new(self.print_errors_immediately)))
+            .or_default()
             .dupe()
     }
 

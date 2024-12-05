@@ -203,7 +203,6 @@ impl<'a> Server<'a> {
                 }),
                 Config::default(),
                 true,
-                false,
             ),
             open_files: Default::default(),
         }
@@ -241,7 +240,7 @@ impl<'a> Server<'a> {
             };
             (loaded, modules.contains_key(&name))
         };
-        self.state = State::new(Box::new(loader), Config::default(), true, false);
+        self.state = State::new(Box::new(loader), Config::default(), true);
         self.state.run(&module_names);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.keys() {

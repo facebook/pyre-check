@@ -154,7 +154,7 @@ fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonA
             sourcedb.sources.contains_key(&name),
         )
     };
-    let mut state = State::new(Box::new(loader), config, common.parallel(), true);
+    let mut state = State::new(Box::new(loader), config, common.parallel());
     state.run_one_shot(&modules_to_check);
     state.collect_checked_errors()
 }

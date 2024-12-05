@@ -104,7 +104,7 @@ impl TestEnv {
 
 pub fn simple_test_driver(env: TestEnv) -> State<'static> {
     let modules = env.0.keys().copied().collect::<Vec<_>>();
-    let mut state = State::new(env.to_loader(), Config::default(), true, true);
+    let mut state = State::new(env.to_loader(), Config::default(), true);
     state.run(&modules);
     state
 }
