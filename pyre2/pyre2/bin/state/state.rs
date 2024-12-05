@@ -75,25 +75,18 @@ struct ModuleState {
     // asked for the Exports of Foo, then you get a deadlock.
     // A fair mutex means that everyone asking for Exports will be released before you move to the next step.
     lock: FairMutex<()>,
-    errors: ErrorCollector,
     steps: RwLock<ModuleSteps>,
 }
 
 impl ModuleState {
-    fn new(print_errors_immediately: bool) -> Self {
+    fn new(#[expect(unused_variables)] print_errors_immediately: bool) -> Self {
         Self {
             lock: FairMutex::new(()),
-            errors: if print_errors_immediately {
-                ErrorCollector::new()
-            } else {
-                ErrorCollector::new_quiet()
-            },
             steps: RwLock::new(ModuleSteps::default()),
         }
     }
 
     fn clear(&self) {
-        self.errors.clear();
         self.steps.write().unwrap().clear();
     }
 }
@@ -156,7 +149,7 @@ impl<'a> State<'a> {
             };
             let imports = if todo == Step::Solutions {
                 Some((
-                    lock.load.get().unwrap().module_info.dupe(),
+                    lock.load.get().unwrap().dupe(),
                     lock.exports.get().unwrap().dupe(),
                 ))
             } else {
@@ -171,7 +164,7 @@ impl<'a> State<'a> {
                 module_state.steps.write().unwrap().ast.clear();
             }
 
-            if let Some((module_info, imports)) = imports {
+            if let Some((load, imports)) = imports {
                 // We need a single spot to inject "I could not find import", but we want to do that
                 // after we can be sure our dependencies have been loaded (we don't want to demand them for an error),
                 // so we do it right at the end.
@@ -185,8 +178,8 @@ impl<'a> State<'a> {
                         .get()
                         .and_then(|x| x.import_error.as_deref())
                     {
-                        module_state.errors.add(
-                            &module_info,
+                        load.errors.add(
+                            &load.module_info,
                             *range,
                             format!("Could not find import of `{}`, {err:#}", importing),
                         );
@@ -201,7 +194,6 @@ impl<'a> State<'a> {
                 loader: &*self.loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
-                errors: &module_state.errors,
                 lookup: self,
                 retain_memory: self.retain_memory,
             });
@@ -239,12 +231,16 @@ impl<'a> State<'a> {
     }
 
     fn add_error(&self, module: ModuleName, range: TextRange, msg: String) {
-        let m = self.get_module(module);
-        m.errors.add(
-            &m.steps.read().unwrap().load.get().unwrap().module_info,
-            range,
-            msg,
-        );
+        let load = self
+            .get_module(module)
+            .steps
+            .read()
+            .unwrap()
+            .load
+            .get()
+            .unwrap()
+            .dupe();
+        load.errors.add(&load.module_info, range, msg);
     }
 
     fn lookup_stdlib(&self, module: ModuleName, name: &Name) -> Option<Class> {
@@ -303,19 +299,22 @@ impl<'a> State<'a> {
         }
 
         self.demand(module, Step::Answers);
-        let answers = {
+        let (load, answers) = {
             let steps = module_state.steps.read().unwrap();
             if let Some(solutions) = steps.solutions.get() {
                 return Arc::new(TableKeyed::<K>::get(&**solutions).get(key).unwrap().clone());
             }
-            steps.answers.get().unwrap().dupe()
+            (
+                steps.load.get().unwrap().dupe(),
+                steps.answers.get().unwrap().dupe(),
+            )
         };
         let stdlib = self.stdlib.read().unwrap().dupe();
         answers.1.solve_key(
             self,
             self,
             &answers.0,
-            &module_state.errors,
+            &load.errors,
             &stdlib,
             &self.uniques,
             key,
@@ -325,7 +324,10 @@ impl<'a> State<'a> {
     pub fn collect_errors(&self) -> Vec<Error> {
         let mut errors = Vec::new();
         for module in self.modules.read().unwrap().values() {
-            errors.extend(module.errors.collect());
+            let steps = module.steps.read().unwrap();
+            if let Some(load) = steps.load.get() {
+                errors.extend(load.errors.collect());
+            }
         }
         errors
     }
@@ -335,20 +337,35 @@ impl<'a> State<'a> {
             .read()
             .unwrap()
             .values()
-            .map(|x| x.errors.len())
+            .map(|x| {
+                x.steps
+                    .read()
+                    .unwrap()
+                    .load
+                    .get()
+                    .map_or(0, |x| x.errors.len())
+            })
             .sum()
     }
 
     pub fn print_errors(&self) {
         for module in self.modules.read().unwrap().values() {
-            module.errors.print();
+            let steps = module.steps.read().unwrap();
+            if let Some(load) = steps.load.get() {
+                load.errors.print();
+            }
         }
     }
 
     pub fn print_error_summary(&self) {
-        for (error, count) in
-            ErrorCollector::summarise(self.modules.read().unwrap().values().map(|x| &x.errors))
-        {
+        let loads = self
+            .modules
+            .read()
+            .unwrap()
+            .values()
+            .filter_map(|x| x.steps.read().unwrap().load.get().duped())
+            .collect::<Vec<_>>();
+        for (error, count) in ErrorCollector::summarise(loads.iter().map(|x| &x.errors)) {
             eprintln!("{count} instances of {error}");
         }
     }
@@ -469,13 +486,12 @@ impl<'a> State<'a> {
             let module = self.get_module(*x);
             let steps = module.steps.read().unwrap();
             (
-                steps.load.get().unwrap().module_info.dupe(),
-                module.dupe(),
+                steps.load.get().unwrap().dupe(),
                 steps.answers.get().unwrap().dupe(),
                 steps.solutions.get().unwrap().dupe(),
             )
         });
-        DebugInfo::new(&owned.map(|x| (&x.0, &x.1.errors, &x.2.0, &*x.3)))
+        DebugInfo::new(&owned.map(|x| (&x.0.module_info, &x.0.errors, &x.1.0, &*x.2)))
     }
 
     pub fn collect_checked_errors(&self) -> Vec<Error> {
@@ -488,8 +504,8 @@ impl<'a> State<'a> {
         for (name, module) in self.modules.read().unwrap().iter() {
             info!("Check for {name}");
             let steps = module.steps.read().unwrap();
-            Expectation::parse(steps.load.get().unwrap().module_info.contents())
-                .check(&module.errors.collect())?;
+            let load = steps.load.get().unwrap();
+            Expectation::parse(load.module_info.contents()).check(&load.errors.collect())?;
         }
         Ok(())
     }

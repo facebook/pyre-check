@@ -116,6 +116,7 @@ impl ErrorCollector {
         }
     }
 
+    #[expect(dead_code)] // Gone missing in the meantime
     pub fn new_quiet() -> Self {
         Self {
             quiet: true,
@@ -140,10 +141,6 @@ impl ErrorCollector {
 
     pub fn len(&self) -> usize {
         self.errors.lock().unwrap().len()
-    }
-
-    pub fn clear(&self) {
-        self.errors.lock().unwrap().items.clear();
     }
 
     pub fn collect(&self) -> Vec<Error> {

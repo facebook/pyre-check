@@ -36,13 +36,13 @@ pub struct Context<'a, Lookup> {
     pub loader: &'a Loader<'a>,
     pub uniques: &'a UniqueFactory,
     pub stdlib: &'a Stdlib,
-    pub errors: &'a ErrorCollector,
     pub lookup: &'a Lookup,
     pub retain_memory: bool,
 }
 
 #[derive(Debug)]
 pub struct Load {
+    pub errors: ErrorCollector,
     pub module_info: ModuleInfo,
     pub import_error: Option<anyhow::Error>,
 }
@@ -157,7 +157,7 @@ impl Step {
             Step::Ast => compute_step!(<Lookup> ast = load),
             Step::Exports => compute_step!(<Lookup> exports = load, ast),
             Step::Answers => compute_step!(<Lookup> answers = load, ast),
-            Step::Solutions => compute_step!(<Lookup> solutions = answers),
+            Step::Solutions => compute_step!(<Lookup> solutions = load, answers),
         }
     }
 
@@ -170,8 +170,9 @@ impl Step {
             components.code,
             should_type_check,
         );
+        let errors = ErrorCollector::new();
         if let Some(err) = components.self_error {
-            ctx.errors.add(
+            errors.add(
                 &module_info,
                 TextRange::default(),
                 format!(
@@ -182,13 +183,14 @@ impl Step {
             );
         }
         Arc::new(Load {
+            errors,
             module_info,
             import_error: components.import_error,
         })
     }
 
-    fn ast<Lookup>(ctx: &Context<Lookup>, load: Arc<Load>) -> Arc<ModModule> {
-        Arc::new(load.module_info.parse(ctx.errors))
+    fn ast<Lookup>(_ctx: &Context<Lookup>, load: Arc<Load>) -> Arc<ModModule> {
+        Arc::new(load.module_info.parse(&load.errors))
     }
 
     fn exports<Lookup>(
@@ -211,7 +213,7 @@ impl Step {
             load.module_info.dupe(),
             ctx.lookup,
             ctx.config,
-            ctx.errors,
+            &load.errors,
             ctx.uniques,
         );
         let answers = Answers::new(&bindings);
@@ -220,13 +222,14 @@ impl Step {
 
     fn solutions<Lookup: LookupExport + LookupAnswer>(
         ctx: &Context<Lookup>,
+        load: Arc<Load>,
         answers: Arc<(Bindings, Answers)>,
     ) -> Arc<Solutions> {
         Arc::new(answers.1.solve(
             ctx.lookup,
             ctx.lookup,
             &answers.0,
-            ctx.errors,
+            &load.errors,
             ctx.stdlib,
             ctx.uniques,
             !ctx.retain_memory,
