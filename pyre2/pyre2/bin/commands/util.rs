@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::Context as _;
-use tracing::info;
+use tracing::debug;
 
 use crate::module::module_name::ModuleName;
 
@@ -51,7 +51,7 @@ pub fn find_module(name: ModuleName, include: &[PathBuf]) -> anyhow::Result<Path
         for suffix in &possibilities {
             let path = include.join(suffix);
             if path.exists() {
-                info!("Found {name} at {}", path.display());
+                debug!("Found {name} at {}", path.display());
                 return Ok(path);
             }
         }
