@@ -248,6 +248,15 @@ impl<'a> State<'a> {
     }
 
     fn lookup_stdlib(&self, module: ModuleName, name: &Name) -> Option<Class> {
+        if !self.lookup_export(module).unwrap().contains(name, self) {
+            self.add_error(
+                module,
+                TextRange::default(),
+                format!("Stdlib import failure, was expecting {module} to contain {name}"),
+            );
+            return None;
+        }
+
         let t = self.lookup_answer(module, &KeyExported::Export(name.clone()));
         match t.arc_clone() {
             Type::ClassDef(cls) => Some(cls),
