@@ -45,6 +45,13 @@ pub struct Args {
     debug_info: Option<PathBuf>,
     #[clap(long = "report-binding-memory")]
     report_binding_memory: Option<PathBuf>,
+    #[clap(
+        long,
+        default_missing_value = "5",
+        require_equals = true,
+        num_args = 0..=1
+    )]
+    summarize_errors: Option<usize>,
     #[clap(long)]
     python_version: Option<String>,
 
@@ -112,7 +119,9 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
     }
     let printing = start.elapsed();
     memory_trace.stop();
-    state.print_error_summary();
+    if let Some(limit) = args.summarize_errors {
+        state.print_error_summary(limit);
+    }
     eprintln!(
         "{} errors, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
         number_thousands(error_count),

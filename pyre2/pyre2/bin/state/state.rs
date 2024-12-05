@@ -330,7 +330,7 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn print_error_summary(&self) {
+    pub fn print_error_summary(&self, limit: usize) {
         let loads = self
             .modules
             .read()
@@ -338,7 +338,10 @@ impl<'a> State<'a> {
             .values()
             .filter_map(|x| x.steps.read().unwrap().load.get().duped())
             .collect::<Vec<_>>();
-        for (error, count) in ErrorCollector::summarise(loads.iter().map(|x| &x.errors)) {
+        let mut items = ErrorCollector::summarise(loads.iter().map(|x| &x.errors));
+        items.reverse();
+        items.truncate(limit);
+        for (error, count) in items.iter().rev() {
             eprintln!("{count} instances of {error}");
         }
     }
