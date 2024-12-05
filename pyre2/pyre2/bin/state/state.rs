@@ -10,7 +10,6 @@ use std::sync::Mutex;
 use std::sync::RwLock;
 
 use dupe::Dupe;
-use dupe::OptionDupedExt;
 use enum_iterator::Sequence;
 use parking_lot::FairMutex;
 use ruff_python_ast::name::Name;
@@ -153,6 +152,14 @@ impl<'a> State<'a> {
                 Some(todo) if todo <= step => todo,
                 _ => break,
             };
+            let imports = if todo == Step::Solutions {
+                Some((
+                    lock.module_info.get().unwrap().0.dupe(),
+                    lock.exports.get().unwrap().dupe(),
+                ))
+            } else {
+                None
+            };
             computed = true;
             let compute = todo.compute().0(&lock);
             drop(lock);
@@ -161,6 +168,30 @@ impl<'a> State<'a> {
                 // so won't need the Ast again.
                 module_state.steps.write().unwrap().ast.clear();
             }
+
+            if let Some((module_info, imports)) = imports {
+                // We need a single spot to inject "I could not find import", but we want to do that
+                // after we can be sure our dependencies have been loaded (we don't want to demand them for an error),
+                // so we do it right at the end.
+                for (importing, range) in imports.0.imports.iter() {
+                    if let Some(err) = self
+                        .get_module(*importing)
+                        .steps
+                        .read()
+                        .unwrap()
+                        .module_info
+                        .get()
+                        .and_then(|x| x.1.as_deref())
+                    {
+                        module_state.errors.add(
+                            &module_info,
+                            *range,
+                            format!("Could not find import of `{}`, {err:#}", importing),
+                        );
+                    }
+                }
+            }
+
             let stdlib = self.stdlib.read().unwrap().dupe();
             let set = compute(&Context {
                 name: module,
@@ -231,7 +262,7 @@ impl<'a> State<'a> {
             .unwrap()
             .exports
             .get()
-            .duped()
+            .map(|x| x.1.dupe())
     }
 
     fn lookup_answer<'b, K: Solve<Self> + Keyed<EXPORTED = true>>(
