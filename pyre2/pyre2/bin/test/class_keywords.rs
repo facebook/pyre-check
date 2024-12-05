@@ -9,9 +9,9 @@ use ruff_python_ast::name::Name;
 
 use crate::module::module_name::ModuleName;
 use crate::simple_test;
-use crate::state::driver::Driver;
+use crate::state::state::State;
 use crate::test::mro::get_class_metadata;
-use crate::test::mro::mk_driver;
+use crate::test::mro::mk_state;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::types::Type;
@@ -20,37 +20,37 @@ fn get_class_keyword(
     class_name: &str,
     keyword_name: &str,
     module_name: ModuleName,
-    driver: &Driver,
+    state: &State,
 ) -> Option<Type> {
-    get_class_metadata(class_name, module_name, driver)
+    get_class_metadata(class_name, module_name, state)
         .keywords()
         .get(&Name::new(keyword_name))
         .cloned()
 }
 
-fn get_metaclass(class_name: &str, module_name: ModuleName, driver: &Driver) -> Option<ClassType> {
-    get_class_metadata(class_name, module_name, driver)
+fn get_metaclass(class_name: &str, module_name: ModuleName, state: &State) -> Option<ClassType> {
+    get_class_metadata(class_name, module_name, state)
         .metaclass()
         .cloned()
 }
 
 #[test]
 fn test_look_up_class_keywords() {
-    let (module_name, driver) = mk_driver(
+    let (module_name, state) = mk_state(
         r#"
 class A(foo=True): pass
 "#,
     );
     assert_eq!(
-        get_class_keyword("A", "foo", module_name, &driver),
+        get_class_keyword("A", "foo", module_name, &state),
         Some(Type::Literal(Lit::Bool(true))),
     );
-    assert_eq!(get_class_keyword("A", "bar", module_name, &driver), None,);
+    assert_eq!(get_class_keyword("A", "bar", module_name, &state), None,);
 }
 
 #[test]
 fn test_direct_metaclass() {
-    let (module_name, driver) = mk_driver(
+    let (module_name, state) = mk_state(
         r#"
 class M0(type): pass
 class M1(M0): pass
@@ -59,14 +59,14 @@ class C(B, metaclass=M1): pass
 "#,
     );
     assert_eq!(
-        get_metaclass("C", module_name, &driver).unwrap().name().id,
+        get_metaclass("C", module_name, &state).unwrap().name().id,
         "M1"
     );
 }
 
 #[test]
 fn test_inherited_metaclass() {
-    let (module_name, driver) = mk_driver(
+    let (module_name, state) = mk_state(
         r#"
 class M0(type): pass
 class M1(M0): pass
@@ -76,7 +76,7 @@ class C(B0, B1): pass
 "#,
     );
     assert_eq!(
-        get_metaclass("C", module_name, &driver).unwrap().name().id,
+        get_metaclass("C", module_name, &state).unwrap().name().id,
         "M1"
     );
 }

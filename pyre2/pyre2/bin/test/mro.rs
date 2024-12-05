@@ -11,24 +11,24 @@ use crate::alt::binding::KeyClassMetadata;
 use crate::alt::binding::KeyExported;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
-use crate::state::driver::Driver;
+use crate::state::state::State;
 use crate::test::stdlib::Stdlib;
 use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::types::Type;
 
-pub fn mk_driver(code: &str) -> (ModuleName, Driver) {
-    let driver = simple_test_driver(Stdlib::new(), TestEnv::one("main", code));
-    (ModuleName::from_str("main"), Driver(driver))
+pub fn mk_state(code: &str) -> (ModuleName, State<'static>) {
+    let state = simple_test_driver(Stdlib::new(), TestEnv::one("main", code));
+    (ModuleName::from_str("main"), state)
 }
 
 pub fn get_class_metadata<'b, 'a>(
     name: &'b str,
     module_name: ModuleName,
-    driver: &'a Driver,
+    state: &'a State,
 ) -> ClassMetadata {
-    let solutions = driver.get_solutions(module_name).unwrap();
+    let solutions = state.get_solutions(module_name).unwrap();
 
     let res = match solutions
         .exported_types
@@ -46,21 +46,21 @@ pub fn get_class_metadata<'b, 'a>(
     res.unwrap_or_else(|| panic!("No MRO for {name}"))
 }
 
-fn get_mro_names(name: &str, module_name: ModuleName, driver: &Driver) -> Vec<String> {
-    get_class_metadata(name, module_name, driver)
+fn get_mro_names(name: &str, module_name: ModuleName, state: &State) -> Vec<String> {
+    get_class_metadata(name, module_name, state)
         .ancestors_no_object()
         .iter()
         .map(|cls| cls.name().as_str().to_owned())
         .collect()
 }
 
-fn assert_no_errors(driver: &Driver) {
-    assert_eq!(driver.errors().len(), 0, "Expected no errors.");
+fn assert_no_errors(state: &State) {
+    assert_eq!(state.count_errors(), 0, "Expected no errors.");
 }
 
-fn assert_has_error(driver: &Driver, error_msg: &str, assertion_msg: &str) {
-    driver
-        .errors()
+fn assert_has_error(state: &State, error_msg: &str, assertion_msg: &str) {
+    state
+        .collect_errors()
         .iter()
         .find(|e| e.msg().contains(error_msg))
         .unwrap_or_else(|| panic!("{assertion_msg}"));
@@ -68,7 +68,7 @@ fn assert_has_error(driver: &Driver, error_msg: &str, assertion_msg: &str) {
 
 #[test]
 fn test_mro_simple_chain() {
-    let (module_name, driver) = mk_driver(
+    let (module_name, driver) = mk_state(
         r#"
 class A: pass
 class B(A): pass
@@ -85,7 +85,7 @@ class C(B): pass
 
 #[test]
 fn test_mro_triangle() {
-    let (module_name, driver) = mk_driver(
+    let (module_name, driver) = mk_state(
         r#"
 class A: pass
 class B(A): pass
@@ -103,7 +103,7 @@ class C(B, A): pass
 
 #[test]
 fn test_mro_butterfly() {
-    let (module_name, driver) = mk_driver(
+    let (module_name, driver) = mk_state(
         r#"
 class A: pass
 class B: pass
@@ -127,7 +127,7 @@ class D(B, A): pass
 // This is a convenient test since the article walks through algorithm execution in detail.
 #[test]
 fn test_mro_wikipedia_example() {
-    let (module_name, driver) = mk_driver(
+    let (module_name, driver) = mk_state(
         r#"
 class O: pass
 class A(O): pass
@@ -164,7 +164,7 @@ class Z(K1, K3, K2): pass
 
 #[test]
 fn test_mro_nonlinearizable_simple() {
-    let (module_name, driver) = mk_driver(
+    let (module_name, driver) = mk_state(
         r#"
 class A: pass
 class B(A): pass
@@ -186,38 +186,36 @@ class D(C): pass  # we will still record the MRO up until a linearization failur
 
 #[test]
 fn test_mro_cyclic() {
-    let (module_name, driver) = mk_driver(
+    let (module_name, state) = mk_state(
         r#"
 class A(C): pass
 class B(A): pass
 class C(B): pass
 "#,
     );
-    for error in driver.errors() {
-        println!("{}", error.msg());
-    }
+    state.print_errors();
     assert_has_error(
-        &driver,
+        &state,
         "Class `main.A` inheriting from `main.C` creates a cycle.",
         "No error for cyclical inheritance chain at `main.A`.",
     );
     assert_has_error(
-        &driver,
+        &state,
         "Class `main.B` inheriting from `main.A` creates a cycle.",
         "No error for cyclical inheritance chain at `main.B`.",
     );
     assert_has_error(
-        &driver,
+        &state,
         "Class `main.C` inheriting from `main.B` creates a cycle.",
         "No error for cyclical inheritance chain at `main.C`.",
     );
     // The current logic is essentially correct but has bad UX because we only actually
     // error where we detect the cycle, other classes silently produce an MRO right up
     // to the cycle (note that A even appears in the ancestors of A!).
-    let mro_a = get_mro_names("A", module_name, &driver);
+    let mro_a = get_mro_names("A", module_name, &state);
     assert_eq!(mro_a.len(), 0);
-    let mro_b = get_mro_names("B", module_name, &driver);
+    let mro_b = get_mro_names("B", module_name, &state);
     assert_eq!(mro_b.len(), 0);
-    let mro_c = get_mro_names("C", module_name, &driver);
+    let mro_c = get_mro_names("C", module_name, &state);
     assert_eq!(mro_c.len(), 0);
 }
