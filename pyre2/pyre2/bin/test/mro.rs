@@ -12,14 +12,13 @@ use crate::alt::binding::KeyExported;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::state::state::State;
-use crate::test::stdlib::Stdlib;
 use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::types::Type;
 
 pub fn mk_state(code: &str) -> (ModuleName, State<'static>) {
-    let state = simple_test_driver(Stdlib::new(), TestEnv::one("main", code));
+    let state = simple_test_driver(TestEnv::one("main", code));
     (ModuleName::from_str("main"), state)
 }
 

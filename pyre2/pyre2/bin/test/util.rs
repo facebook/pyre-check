@@ -116,7 +116,8 @@ impl TestEnv {
     }
 }
 
-pub fn simple_test_driver(stdlib: Stdlib, env: TestEnv) -> State<'static> {
+pub fn simple_test_driver(env: TestEnv) -> State<'static> {
+    let stdlib = Stdlib::new();
     let modules = stdlib
         .modules()
         .copied()
@@ -151,7 +152,7 @@ pub fn simple_test_for_macro(
         &format!("{}{}", "\n".repeat(start_line), contents),
         file,
     );
-    let state = simple_test_driver(Stdlib::new(), env);
+    let state = simple_test_driver(env);
     match error_check {
         None => state.check_against_expectations(),
         Some(check) => check(&state.collect_errors()),

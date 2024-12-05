@@ -11,7 +11,6 @@ use ruff_text_size::TextSize;
 
 use crate::module::module_name::ModuleName;
 use crate::state::state::State;
-use crate::test::stdlib::Stdlib;
 use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;
 
@@ -39,7 +38,7 @@ fn mk_state() -> (ModuleName, State<'static>) {
             if line.is_empty() { line } else { &line[1..] }
         })
         .join("\n");
-    let state = simple_test_driver(Stdlib::new(), TestEnv::one("main", &code));
+    let state = simple_test_driver(TestEnv::one("main", &code));
     assert_eq!(state.count_errors(), 0);
     (ModuleName::from_str("main"), state)
 }
