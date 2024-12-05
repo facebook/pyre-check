@@ -238,14 +238,22 @@ impl<'a> State<'a> {
             .dupe()
     }
 
+    fn add_error(&self, module: ModuleName, range: TextRange, msg: String) {
+        let m = self.get_module(module);
+        m.errors.add(
+            &m.steps.read().unwrap().module_info.get().unwrap().0,
+            range,
+            msg,
+        );
+    }
+
     fn lookup_stdlib(&self, module: ModuleName, name: &Name) -> Option<Class> {
         let t = self.lookup_answer(module, &KeyExported::Export(name.clone()));
         match t.arc_clone() {
             Type::ClassDef(cls) => Some(cls),
             ty => {
-                let m = self.get_module(module);
-                m.errors.add(
-                    &m.steps.read().unwrap().module_info.get().unwrap().0,
+                self.add_error(
+                    module,
                     TextRange::default(),
                     format!(
                         "Did not expect non-class type `{ty}` for stdlib import `{module}.{name}`"
