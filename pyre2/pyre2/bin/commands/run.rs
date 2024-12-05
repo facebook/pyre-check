@@ -19,6 +19,12 @@ struct Standard<T: clap::Args> {
     args: T,
 }
 
+impl<T: clap::Args> Standard<T> {
+    fn init_tracing(&self) {
+        init_tracing(self.verbose, false);
+    }
+}
+
 #[derive(Debug, Parser)]
 #[command(name = "pyre2")]
 #[command(about = "Next generation of Pyre type checker", long_about = None)]
@@ -39,15 +45,15 @@ pub fn run() -> anyhow::Result<()> {
     let args = Args::parse();
     match args {
         Args::ExpectTest(args) => {
-            init_tracing(args.verbose, false);
+            args.init_tracing();
             args.args.run(true)
         }
         Args::BuckCheck(args) => {
-            init_tracing(args.verbose, false);
+            args.init_tracing();
             args.args.run()
         }
         Args::Lsp(args) => {
-            init_tracing(args.verbose, false);
+            args.init_tracing();
             args.args.run()
         }
     }
