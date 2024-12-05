@@ -55,10 +55,6 @@ impl Error {
         &self.msg
     }
 
-    pub fn is_in_checked_module(&self) -> bool {
-        self.info.should_type_check()
-    }
-
     pub fn is_ignored(&self) -> bool {
         self.info.is_ignored(self.source_range(), &self.msg)
     }

@@ -474,12 +474,6 @@ impl<'a> State<'a> {
         DebugInfo::new(&owned.map(|x| (&x.0.module_info, &x.0.errors, &x.1.0, &*x.2)))
     }
 
-    pub fn collect_checked_errors(&self) -> Vec<Error> {
-        let mut errors = self.collect_errors();
-        errors.retain(|x| x.is_in_checked_module());
-        errors
-    }
-
     pub fn check_against_expectations(&self) -> anyhow::Result<()> {
         for (name, module) in self.modules.read().unwrap().iter() {
             info!("Check for {name}");

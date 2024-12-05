@@ -23,7 +23,6 @@ use crate::alt::exports::LookupExport;
 use crate::ast::Ast;
 use crate::config::Config;
 use crate::error::collector::ErrorCollector;
-use crate::error::style::ErrorStyle;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::state::info::Info;
@@ -165,12 +164,7 @@ impl Step {
     fn load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
         let (load_result, error_style) = (ctx.loader)(ctx.name);
         let components = load_result.components(ctx.name);
-        let module_info = ModuleInfo::new(
-            ctx.name,
-            components.path,
-            components.code,
-            error_style != ErrorStyle::Never,
-        );
+        let module_info = ModuleInfo::new(ctx.name, components.path, components.code);
         let errors = ErrorCollector::new(error_style);
         if let Some(err) = components.self_error {
             errors.add(

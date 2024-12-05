@@ -63,7 +63,6 @@ struct ModuleInfoInner {
     index: LineIndex,
     ignore: Ignore,
     contents: String,
-    should_type_check: bool,
 }
 
 #[derive(Debug, Clone, Dupe, Copy, PartialEq, Eq, Hash)]
@@ -76,7 +75,7 @@ pub enum ModuleStyle {
 
 impl ModuleInfo {
     /// Create a new ModuleInfo. Will NOT read the `path`, but use the value from `contents` instead.
-    pub fn new(name: ModuleName, path: PathBuf, contents: String, should_type_check: bool) -> Self {
+    pub fn new(name: ModuleName, path: PathBuf, contents: String) -> Self {
         let index = LineIndex::from_source_text(&contents);
         let ignore = Ignore::new(&contents);
         Self(Arc::new(ModuleInfoInner {
@@ -85,7 +84,6 @@ impl ModuleInfo {
             index,
             ignore,
             contents,
-            should_type_check,
         }))
     }
 
@@ -147,10 +145,6 @@ impl ModuleInfo {
 
     pub fn is_init(&self) -> bool {
         self.0.path.file_stem() == Some(OsStr::new("__init__"))
-    }
-
-    pub fn should_type_check(&self) -> bool {
-        self.0.should_type_check
     }
 
     pub fn name(&self) -> ModuleName {

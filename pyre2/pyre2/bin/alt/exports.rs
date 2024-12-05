@@ -139,12 +139,7 @@ mod tests {
         } else {
             "foo.py"
         });
-        let module_info = ModuleInfo::new(
-            ModuleName::from_str("foo"),
-            path,
-            contents.to_owned(),
-            false,
-        );
+        let module_info = ModuleInfo::new(ModuleName::from_str("foo"), path, contents.to_owned());
         Exports::new(&ast.body, &module_info, &Config::default())
     }
 

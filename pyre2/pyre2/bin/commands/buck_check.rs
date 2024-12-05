@@ -161,7 +161,7 @@ fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonA
     };
     let mut state = State::new(Box::new(loader), config, common.parallel());
     state.run_one_shot(&modules_to_check);
-    state.collect_checked_errors()
+    state.collect_errors()
 }
 
 fn write_output_to_file(path: &Path, legacy_errors: &LegacyErrors) -> anyhow::Result<()> {

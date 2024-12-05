@@ -67,7 +67,6 @@ mod tests {
             ModuleName::from_str("foo"),
             Path::new("foo.py").to_owned(),
             "hello_world = Baz123.attribute".to_owned(),
-            false,
         );
         let module = module_info.parse(&ErrorCollector::default());
         let show = |x: &ShortIdentifier| module_info.display(x).to_string();

@@ -283,7 +283,6 @@ mod tests {
             ModuleName::from_str(module),
             PathBuf::from(module),
             "1234567890".to_owned(),
-            false,
         );
         Class::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
@@ -298,7 +297,6 @@ mod tests {
             ModuleName::from_str(module),
             PathBuf::from(module),
             "1234567890".to_owned(),
-            false,
         );
         TypeVar::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),

@@ -203,7 +203,6 @@ mod tests {
             ModuleName::from_name(&Name::new("main")),
             Path::new("main.py").to_owned(),
             "contents".to_owned(),
-            true,
         );
         errors.add(
             &mi,
