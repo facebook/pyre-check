@@ -271,15 +271,13 @@ assert_type(foo.x, int)
 );
 
 fn env_export_all_wrongly() -> TestEnv {
-    let mut t = TestEnv::new();
-    t.add(
+    TestEnv::one(
         "foo",
         r#"
 __all__ = ['bad_definition']
 __all__.extend(bad_module.__all__)  # E: Could not find name `bad_module`
 "#,
-    );
-    t
+    )
 }
 
 simple_test!(
@@ -299,9 +297,7 @@ from foo import *  # E: Could not import `bad_definition` from `foo`
 );
 
 fn env_blank() -> TestEnv {
-    let mut t = TestEnv::new();
-    t.add("foo", "");
-    t
+    TestEnv::one("foo", "")
 }
 
 simple_test!(

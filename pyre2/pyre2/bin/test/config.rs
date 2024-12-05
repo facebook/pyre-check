@@ -9,15 +9,13 @@ use crate::simple_test;
 use crate::test::util::TestEnv;
 
 fn sys() -> TestEnv {
-    let mut env = TestEnv::new();
-    env.add(
+    TestEnv::one(
         "sys",
         r#"
 version_info = (3, 12)
 platform = "linux"
 "#,
-    );
-    env
+    )
 }
 
 simple_test!(
