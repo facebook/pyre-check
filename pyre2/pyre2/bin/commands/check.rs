@@ -34,16 +34,16 @@ use crate::util::memory::MemoryUsageTrace;
 #[derive(Debug, Parser, Clone)]
 pub struct Args {
     files: Vec<PathBuf>,
-    #[arg(long = "output", short = 'o')]
+    #[arg(long, short = 'o')]
     output: Option<PathBuf>,
-    #[clap(long = "include", short = 'I')]
+    #[clap(long, short = 'I')]
     include: Vec<PathBuf>,
-    #[clap(long = "repeat", default_value = "1")]
+    #[clap(long, default_value = "1")]
     repeat: usize,
     /// Produce debugging information about the type checking process.
-    #[clap(long = "debug-info")]
+    #[clap(long)]
     debug_info: Option<PathBuf>,
-    #[clap(long = "report-binding-memory")]
+    #[clap(long)]
     report_binding_memory: Option<PathBuf>,
     #[clap(
         long,
