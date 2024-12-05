@@ -770,7 +770,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if tparams.is_empty() {
             ta
         } else {
-            Type::Forall(TParams(tparams), Box::new(ta))
+            Type::Forall(TParams::new(tparams), Box::new(ta))
         }
     }
 
@@ -1078,7 +1078,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .iter()
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
                 tparams.extend(legacy_tparams);
-                Type::forall(TParams(tparams), Type::callable(args, ret))
+                Type::forall(TParams::new(tparams), Type::callable(args, ret))
             }
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExported::Export(name.clone()))
@@ -1201,11 +1201,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             format!("Type parameters used in `{name}` but not declared"),
                         );
                         let mut all_params = self.scoped_type_params(params);
-                        all_params.extend(other_params.0);
-                        Type::Forall(TParams(all_params), inner_ta)
+                        all_params.extend(other_params.iter().cloned());
+                        Type::Forall(TParams::new(all_params), inner_ta)
                     }
                     Type::TypeAlias(_) if params.is_some() => {
-                        Type::Forall(TParams(self.scoped_type_params(params)), Box::new(ta))
+                        Type::Forall(TParams::new(self.scoped_type_params(params)), Box::new(ta))
                     }
                     _ => ta,
                 }

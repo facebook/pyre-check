@@ -54,8 +54,8 @@ impl Ord for ClassInner {
 impl Display for ClassInner {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "class {}", self.qname.name)?;
-        if !self.tparams.0.is_empty() {
-            write!(f, "[{}]", commas_iter(|| self.tparams.0.iter()))?;
+        if !self.tparams.is_empty() {
+            write!(f, "[{}]", commas_iter(|| self.tparams.iter()))?;
         }
         writeln!(f, ": ...")
     }

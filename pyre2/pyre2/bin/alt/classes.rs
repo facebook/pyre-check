@@ -87,7 +87,7 @@ fn strip_first_argument(ty: &Type) -> Type {
         if let Some(gs) = gs {
             gs.to_owned()
         } else {
-            TParams(Vec::new())
+            TParams::new(Vec::new())
         },
         ty,
     )
@@ -103,7 +103,7 @@ fn replace_return_type(ty: Type, ret: Type) -> Type {
         if let Some(gs) = gs {
             gs.to_owned()
         } else {
-            TParams(Vec::new())
+            TParams::new(Vec::new())
         },
         ty,
     )
@@ -249,7 +249,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 tparams.insert(p.clone());
             }
         }
-        TParams(tparams.into_iter().collect())
+        TParams::new(tparams.into_iter().collect())
     }
 
     pub fn class_metadata_of(
@@ -407,7 +407,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         _range: Option<TextRange>,
     ) -> TArgs {
         let tparams = cls.tparams();
-        if tparams.0.is_empty() {
+        if tparams.is_empty() {
             TArgs::default()
         } else {
             // TODO(stroxler): We should error here, but the error needs to be

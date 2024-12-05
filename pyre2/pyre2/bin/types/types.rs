@@ -139,7 +139,7 @@ impl TParam {
 
 /// Wraps a vector of type parameters to give them a nice Display and convenient access methods.
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TParams(pub Vec<TParam>);
+pub struct TParams(Vec<TParam>);
 
 impl Display for TParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -148,8 +148,20 @@ impl Display for TParams {
 }
 
 impl TParams {
+    pub fn new(tparams: Vec<TParam>) -> Self {
+        Self(tparams)
+    }
+
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &TParam> {
+        self.0.iter()
     }
 
     pub fn quantified(&self) -> impl Iterator<Item = &Quantified> {
