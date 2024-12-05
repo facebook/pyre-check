@@ -45,14 +45,6 @@ impl Driver {
         self.0.collect_errors()
     }
 
-    pub fn errors_in_checked_modules(&self) -> Vec<Error> {
-        self.errors()
-            .iter()
-            .filter(|x| x.is_in_checked_module())
-            .cloned()
-            .collect()
-    }
-
     pub fn module_info(&self, module: ModuleName) -> Option<ModuleInfo> {
         self.0.get_module_info(module)
     }

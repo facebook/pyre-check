@@ -24,8 +24,8 @@ use crate::config::PythonVersion;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::module::module_name::ModuleName;
-use crate::state::driver::Driver;
 use crate::state::loader::LoadResult;
+use crate::state::state::State;
 use crate::util::fs_anyhow;
 
 #[derive(Debug, Parser)]
@@ -154,14 +154,15 @@ fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonA
             sourcedb.sources.contains_key(&name),
         )
     };
-    Driver::new(
+    let mut state = State::new(
         &modules_to_check,
         Box::new(loader),
-        &config,
+        config,
         common.parallel(),
-        common.timings,
-    )
-    .errors_in_checked_modules()
+        true,
+    );
+    state.run_one_shot();
+    state.collect_checked_errors()
 }
 
 fn write_output_to_file(path: &Path, legacy_errors: &LegacyErrors) -> anyhow::Result<()> {
