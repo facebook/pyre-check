@@ -164,6 +164,17 @@ impl Step {
             components.code,
             should_type_check,
         );
+        if let Some(err) = components.self_error {
+            ctx.errors.add(
+                &module_info,
+                TextRange::default(),
+                format!(
+                    "Failed to load {} from {}, got {err:#}",
+                    ctx.name,
+                    module_info.path().display()
+                ),
+            );
+        }
         (module_info, Arc::new(components.import_error))
     }
 
