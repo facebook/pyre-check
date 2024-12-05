@@ -8,3 +8,4 @@
 pub mod collector;
 pub mod error;
 pub mod legacy;
+pub mod style;

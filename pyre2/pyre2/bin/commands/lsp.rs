@@ -62,6 +62,7 @@ use crate::commands::util::default_include;
 use crate::commands::util::find_module;
 use crate::commands::util::module_from_path;
 use crate::config::Config;
+use crate::error::style::ErrorStyle;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
@@ -198,7 +199,7 @@ impl<'a> Server<'a> {
                 Box::new(|_| {
                     (
                         LoadResult::FailedToFind(anyhow!("Failed during init")),
-                        false,
+                        ErrorStyle::Never,
                     )
                 }),
                 Config::default(),
@@ -238,7 +239,14 @@ impl<'a> Server<'a> {
             } else {
                 LoadResult::from_path_result(find_module(name, &include))
             };
-            (loaded, modules.contains_key(&name))
+            (
+                loaded,
+                if modules.contains_key(&name) {
+                    ErrorStyle::Delayed
+                } else {
+                    ErrorStyle::Never
+                },
+            )
         };
         self.state = State::new(Box::new(loader), Config::default(), true);
         self.state.run(&module_names);

@@ -7,12 +7,13 @@
 
 use std::path::PathBuf;
 
+use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::util::fs_anyhow;
 
 /// A function that loads a module, given the `ModuleName`.
 /// Returns a `LoadResult` and a boolean indicating whether to report errors from the module or not.
-pub type Loader<'a> = dyn Fn(ModuleName) -> (LoadResult, bool) + Sync + 'a;
+pub type Loader<'a> = dyn Fn(ModuleName) -> (LoadResult, ErrorStyle) + Sync + 'a;
 
 /// The result of trying to load a file.
 pub enum LoadResult {

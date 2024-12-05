@@ -11,6 +11,7 @@ use anyhow::anyhow;
 use starlark_map::small_map::SmallMap;
 
 use crate::config::Config;
+use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::LoadResult;
 use crate::state::loader::Loader;
@@ -97,7 +98,7 @@ impl TestEnv {
             } else {
                 LoadResult::FailedToFind(anyhow!("Module not given in test suite"))
             };
-            (loaded, true)
+            (loaded, ErrorStyle::Immediate)
         })
     }
 }

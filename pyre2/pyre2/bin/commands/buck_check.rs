@@ -23,6 +23,7 @@ use crate::config::Config;
 use crate::config::PythonVersion;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
+use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::LoadResult;
 use crate::state::state::State;
@@ -151,7 +152,11 @@ fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonA
                 path.cloned()
                     .ok_or_else(|| anyhow!("Not a dependency or typeshed")),
             ),
-            sourcedb.sources.contains_key(&name),
+            if sourcedb.sources.contains_key(&name) {
+                ErrorStyle::Immediate
+            } else {
+                ErrorStyle::Never
+            },
         )
     };
     let mut state = State::new(Box::new(loader), config, common.parallel());

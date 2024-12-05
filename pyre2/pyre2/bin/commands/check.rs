@@ -23,6 +23,7 @@ use crate::commands::util::module_from_path;
 use crate::config::Config;
 use crate::config::PythonVersion;
 use crate::error::legacy::LegacyErrors;
+use crate::error::style::ErrorStyle;
 use crate::report;
 use crate::state::loader::LoadResult;
 use crate::state::state::State;
@@ -77,12 +78,17 @@ pub fn run_once(args: Args) -> anyhow::Result<()> {
         .iter()
         .map(|x| (module_from_path(x), x.clone()))
         .collect::<SmallMap<_, _>>();
+    let error_style = if args.common.timings.is_some() {
+        ErrorStyle::Delayed
+    } else {
+        ErrorStyle::Immediate
+    };
     let load = |name| {
         let path = match to_check.get(&name) {
             Some(path) => Ok(path.clone()),
             None => find_module(name, &include),
         };
-        (LoadResult::from_path_result(path), true)
+        (LoadResult::from_path_result(path), error_style)
     };
     let modules = to_check.keys().copied().collect::<Vec<_>>();
 

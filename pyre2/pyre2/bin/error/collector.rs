@@ -22,6 +22,7 @@ use starlark_map::small_map::SmallMap;
 use tracing::error;
 
 use crate::error::error::Error;
+use crate::error::style::ErrorStyle;
 use crate::module::module_info::ModuleInfo;
 
 /// Wrapped to provide custom Ord/Eq etc.
@@ -95,7 +96,7 @@ impl ModuleErrors {
 // Deliberately don't implement Clone,
 #[derive(Debug, Default)]
 pub struct ErrorCollector {
-    quiet: bool,
+    style: ErrorStyle,
     errors: Mutex<ModuleErrors>,
 }
 
@@ -109,30 +110,29 @@ impl Display for ErrorCollector {
 }
 
 impl ErrorCollector {
+    #[allow(dead_code)] // Cleanup still in progress
     pub fn new() -> Self {
-        Self {
-            quiet: false,
-            errors: Mutex::new(Default::default()),
-        }
+        Self::with_style(ErrorStyle::Immediate)
     }
 
-    #[expect(dead_code)] // Gone missing in the meantime
-    pub fn new_quiet() -> Self {
+    pub fn with_style(style: ErrorStyle) -> Self {
         Self {
-            quiet: true,
+            style,
             errors: Mutex::new(Default::default()),
         }
     }
 
     pub fn add_error(&self, err: Error) {
-        if !self.quiet {
-            error!("{err}");
-        }
         if err.is_ignored() {
-            // We might want to do something with this later, but for now just ignore it.
+            // Should we record these anyway? Not clear.
             return;
         }
-        self.errors.lock().unwrap().push(err);
+        if self.style == ErrorStyle::Immediate {
+            error!("{err}");
+        }
+        if self.style != ErrorStyle::Never {
+            self.errors.lock().unwrap().push(err);
+        }
     }
 
     pub fn add(&self, module_info: &ModuleInfo, range: TextRange, msg: String) {
