@@ -15,6 +15,7 @@ use std::time::Instant;
 use anyhow::Context as _;
 use clap::Parser;
 use starlark_map::small_map::SmallMap;
+use tracing::info;
 
 use crate::commands::common::CommonArgs;
 use crate::commands::util::default_include;
@@ -111,7 +112,7 @@ impl Args {
         if let Some(limit) = args.summarize_errors {
             state.print_error_summary(limit);
         }
-        eprintln!(
+        info!(
             "{} errors, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
             number_thousands(error_count),
             memory_trace.peak()
