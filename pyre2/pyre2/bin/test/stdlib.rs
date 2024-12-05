@@ -146,8 +146,4 @@ impl Stdlib {
     pub fn lookup_content(&self, m: ModuleName) -> Option<&'static str> {
         self.0.get(&m).copied()
     }
-
-    pub fn modules(&self) -> impl Iterator<Item = &ModuleName> {
-        self.0.keys()
-    }
 }

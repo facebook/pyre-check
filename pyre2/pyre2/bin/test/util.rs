@@ -118,11 +118,7 @@ impl TestEnv {
 
 pub fn simple_test_driver(env: TestEnv) -> State<'static> {
     let stdlib = Stdlib::new();
-    let modules = stdlib
-        .modules()
-        .copied()
-        .chain(env.0.keys().copied())
-        .collect::<Vec<_>>();
+    let modules = env.0.keys().copied().collect::<Vec<_>>();
     let mut state = State::new(
         &modules,
         env.to_loader(stdlib),
