@@ -33,6 +33,7 @@ pub struct LoadResultComponents {
 static FAKE_MODULE: &str = r#"
 from typing import Any
 def __getattr__(name: str) -> Any: ...
+__all__ = []
 "#;
 
 fn fake_path(module_name: ModuleName) -> PathBuf {
