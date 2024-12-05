@@ -5,254 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// TODO(ndmitchell): I'm working on deleting this module entire, don't hack out random pieces in the meantime.
-#![allow(dead_code)]
-
 use std::sync::Arc;
-use std::sync::Mutex;
 
-use dupe::Dupe;
-use parse_display::Display;
-use rayon::prelude::*;
-use ruff_python_ast::name::Name;
 use ruff_python_ast::ModModule;
-use ruff_text_size::TextRange;
-use starlark_map::small_map::SmallMap;
 use tracing::info;
 
-use crate::alt::answers::Answers;
 use crate::alt::answers::Solutions;
 use crate::alt::binding::Key;
 use crate::alt::bindings::Bindings;
-use crate::alt::exports::Exports;
-use crate::alt::exports::LookupExport;
-use crate::ast::Ast;
 use crate::config::Config;
-use crate::debug_info::DebugInfo;
-use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
-use crate::expectation::Expectation;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::Loader;
 use crate::state::state::State;
 #[cfg(test)]
 use crate::types::class_metadata::ClassMetadata;
-use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
-use crate::uniques::UniqueFactory;
-use crate::util::prelude::SliceExt;
-use crate::util::timer::TimerContext;
-use crate::util::transitive_closure::transitive_closure;
-use crate::util::transitive_closure::transitive_closure_par;
-
-fn timers_global_module() -> ModuleName {
-    ModuleName::from_str("(global)")
-}
-
-type Timers = TimerContext<(ModuleName, Step, usize)>;
-
-#[derive(Copy, Clone, Dupe, Debug, PartialEq, Eq, Hash, Display)]
-enum Step {
-    Startup,
-    Load,
-    Parse,
-    Exports,
-    Bindings,
-    Solve,
-    Answers,
-    PrintErrors,
-}
-
-#[derive(Debug)]
-struct Phase1 {
-    expectations: Expectation,
-    module_info: ModuleInfo,
-    errors: ErrorCollector,
-    module: ModModule,
-    exports: Exports,
-    /// Set only if the path doesn't exist, so the importer is wrong
-    error: Option<anyhow::Error>,
-}
-
-impl Phase1 {
-    fn new(
-        timers: &mut Timers,
-        module_info: ModuleInfo,
-        error: Option<anyhow::Error>,
-        quiet_errors: bool,
-        config: &Config,
-    ) -> Self {
-        let errors = if quiet_errors {
-            ErrorCollector::new_quiet()
-        } else {
-            ErrorCollector::new()
-        };
-        let expectations = Expectation::parse(module_info.contents());
-        timers.add((module_info.name(), Step::Startup, 0));
-        let module = module_info.parse(&errors);
-        timers.add((
-            module_info.name(),
-            Step::Parse,
-            module_info.contents().len(),
-        ));
-        let exports = Exports::new(&module.body, &module_info, config);
-        timers.add((module_info.name(), Step::Exports, 0));
-        Self {
-            expectations,
-            module_info,
-            errors,
-            module,
-            exports,
-            error,
-        }
-    }
-
-    fn imports(&self) -> SmallMap<ModuleName, TextRange> {
-        Ast::imports(
-            &self.module,
-            self.module_info.name(),
-            self.module_info.is_init(),
-        )
-    }
-}
-
-#[derive(Debug)]
-struct Phase2 {
-    name: ModuleName,
-    bindings: Bindings,
-}
-
-impl Phase2 {
-    fn new(
-        timers: &mut Timers,
-        phase1: &Phase1,
-        modules: &dyn LookupExport,
-        uniques: &UniqueFactory,
-        config: &Config,
-    ) -> Self {
-        let bindings = Bindings::new(
-            phase1.module.body.clone(),
-            phase1.module_info.dupe(),
-            modules,
-            config,
-            &phase1.errors,
-            uniques,
-        );
-        timers.add((phase1.module_info.name(), Step::Bindings, bindings.len()));
-        Self {
-            name: phase1.module_info.name(),
-            bindings,
-        }
-    }
-}
-
-/// `name` was imported from `importer` at position `range`
-#[derive(Debug)]
-struct Import {
-    name: ModuleName,
-    importer: ModuleName,
-    range: TextRange,
-}
-
-fn run_phase1(
-    timers: &mut Timers,
-    modules: &[ModuleName],
-    config: &Config,
-    quiet_errors: bool,
-    loader: &Loader,
-    parallel: bool,
-) -> Vec<Phase1> {
-    let mut todo = modules.to_owned();
-    todo.push(ModuleName::builtins());
-    todo.extend(Stdlib::required());
-
-    // List of imports, just used to put errors in the right place
-    let imports = Mutex::new(todo.map(|x| Import {
-        name: *x,
-        importer: *x,
-        range: TextRange::default(),
-    }));
-
-    let done = (if parallel {
-        transitive_closure_par
-    } else {
-        transitive_closure
-    })(todo, |name: &ModuleName| {
-        let mut timers = Timers::new();
-        let (loaded, should_type_check) = loader(*name);
-        let components = loaded.components(*name);
-        timers.add((*name, Step::Load, components.code.len()));
-        let module_info =
-            ModuleInfo::new(*name, components.path, components.code, should_type_check);
-        info!("Phase 1 for {name}");
-        let p = Phase1::new(
-            &mut timers,
-            module_info,
-            components.import_error,
-            quiet_errors,
-            config,
-        );
-        if let Some(err) = components.self_error {
-            p.errors.add(
-                &p.module_info,
-                TextRange::default(),
-                format!(
-                    "Failed to load {name} from {}, got {err:#}",
-                    p.module_info.path().display()
-                ),
-            );
-        }
-        let my_imports = p.imports();
-        imports
-            .lock()
-            .unwrap()
-            .extend(my_imports.iter().map(|(n, range)| Import {
-                name: *n,
-                importer: *name,
-                range: *range,
-            }));
-        (p, my_imports.into_keys().collect())
-    });
-    // We can no longer tell parse from load, so dump it into parse which usually dominates
-    timers.add((timers_global_module(), Step::Parse, 0));
-
-    for import in imports.into_inner().unwrap() {
-        let loaded = done.get(&import.name).unwrap();
-        if let Some(err) = &loaded.error {
-            let loader = done.get(&import.importer).unwrap();
-            loader.errors.add(
-                &loader.module_info,
-                import.range,
-                format!("Could not find import of `{}`, {err:#}", import.name),
-            );
-        }
-    }
-    done.into_values().collect()
-}
-
-fn run_phase2(
-    timers: &mut Timers,
-    phase1: &[Phase1],
-    modules: &(dyn LookupExport + Sync),
-    uniques: &UniqueFactory,
-    config: &Config,
-    parallel: bool,
-) -> Vec<Phase2> {
-    let f = |v: &Phase1| {
-        let mut timers = Timers::new();
-        let module_name = v.module_info.name();
-        info!("Phase 2 for {module_name}");
-        Phase2::new(&mut timers, v, modules, uniques, config)
-    };
-    let res = if parallel {
-        phase1.par_iter().map(f).collect()
-    } else {
-        phase1.map(f)
-    };
-    timers.add((timers_global_module(), Step::Bindings, 0));
-    res
-}
 
 pub struct Driver(State<'static>);
 
@@ -274,28 +43,6 @@ impl Driver {
         Driver(state)
     }
 
-    fn print_timings(count: usize, timers: &mut TimerContext<(ModuleName, Step, usize)>) {
-        eprintln!("Expensive operations");
-        for ((module, step, number), time) in timers.ordered().iter().take(count) {
-            eprintln!(
-                "  {module} {step}{}: {time:.2?}",
-                if *number == 0 {
-                    String::new()
-                } else {
-                    format!(" ({number})")
-                }
-            );
-        }
-        eprintln!("Expensive modules");
-        for (module, time) in timers.grouped(|x| x.0).iter().take(count) {
-            eprintln!("  {module}: {time:.2?}");
-        }
-        eprintln!("Expensive steps");
-        for (step, time) in timers.grouped(|x| x.1).iter().take(count) {
-            eprintln!("  {step}: {time:.2?}");
-        }
-    }
-
     pub fn errors(&self) -> Vec<Error> {
         self.0.collect_errors()
     }
@@ -312,6 +59,7 @@ impl Driver {
         self.0.get_module_info(module)
     }
 
+    #[cfg(test)]
     pub fn check_against_expectations(&self) -> anyhow::Result<()> {
         self.0.check_against_expectations()
     }
@@ -322,6 +70,8 @@ impl Driver {
         module: ModuleName,
         name: &str,
     ) -> Option<ClassMetadata> {
+        use ruff_python_ast::name::Name;
+
         use crate::alt::binding::KeyClassMetadata;
         use crate::alt::binding::KeyExported;
         use crate::module::short_identifier::ShortIdentifier;
@@ -358,26 +108,10 @@ impl Driver {
     pub fn get_type(&self, module: ModuleName, key: &Key) -> Option<Type> {
         self.get_solutions(module)?.types.get(key).cloned()
     }
-
-    pub fn debug_info(&self, modules: &[ModuleName]) -> DebugInfo {
-        self.0.debug_info(modules)
-    }
 }
 
 /// Some messages are useful to have in both stdout and stderr, so print them twice
 fn info_eprintln(msg: String) {
     info!("{}", msg);
     eprintln!("{}", msg);
-}
-
-fn make_stdlib(
-    exports: &dyn LookupExport,
-    answers: &SmallMap<ModuleName, (&Answers, &Bindings, &ErrorCollector)>,
-    uniques: &UniqueFactory,
-) -> Stdlib {
-    let lookup_class = |module: ModuleName, name: &Name| {
-        let (me, bindings, errors) = answers.get(&module).unwrap();
-        me.lookup_class_without_stdlib(bindings, errors, module, name, exports, answers, uniques)
-    };
-    Stdlib::new(lookup_class)
 }

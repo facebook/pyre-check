@@ -407,44 +407,6 @@ impl Answers {
         res
     }
 
-    /// Resolve the type of global `name` in module `module`, assuming the
-    /// resolution does not depend directly on the behavior of any stdlib types.
-    /// This is used exclusively to bootstrap stdlib support.
-    pub fn lookup_class_without_stdlib<Ans: LookupAnswer>(
-        &self,
-        bindings: &Bindings,
-        errors: &ErrorCollector,
-        module: ModuleName,
-        name: &Name,
-        exports: &dyn LookupExport,
-        answers: &Ans,
-        uniques: &UniqueFactory,
-    ) -> Option<Class> {
-        let solver = AnswersSolver {
-            stdlib: &Stdlib::for_bootstrapping(),
-            uniques,
-            answers,
-            bindings,
-            errors,
-            exports,
-            recurser: &Recurser::new(),
-            current: self,
-        };
-        match solver.get_import(name, module, TextRange::default()) {
-            Type::ClassDef(cls) => Some(cls),
-            ty => {
-                errors.add(
-                    bindings.module_info(),
-                    TextRange::default(),
-                    format!(
-                        "Did not expect non-class type `{ty}` for stdlib import `{module}.{name}`"
-                    ),
-                );
-                None
-            }
-        }
-    }
-
     pub fn solve_key<Ans: LookupAnswer, K: Solve<Ans>>(
         &self,
         exports: &dyn LookupExport,
