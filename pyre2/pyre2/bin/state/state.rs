@@ -16,7 +16,6 @@ use parking_lot::FairMutex;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
-use tracing::info;
 
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
@@ -478,11 +477,11 @@ impl<'a> State<'a> {
     }
 
     pub fn check_against_expectations(&self) -> anyhow::Result<()> {
-        for (name, module) in self.modules.read().unwrap().iter() {
-            info!("Check for {name}");
+        for module in self.modules.read().unwrap().values() {
             let steps = module.steps.read().unwrap();
             let load = steps.load.get().unwrap();
-            Expectation::parse(load.module_info.contents()).check(&load.errors.collect())?;
+            Expectation::parse(load.module_info.dupe(), load.module_info.contents())
+                .check(&load.errors.collect())?;
         }
         Ok(())
     }

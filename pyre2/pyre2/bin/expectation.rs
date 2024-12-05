@@ -6,9 +6,11 @@
  */
 
 use crate::error::error::Error;
+use crate::module::module_info::ModuleInfo;
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Expectation {
+    module: ModuleInfo,
     error: Vec<(usize, String)>,
 }
 
@@ -20,8 +22,11 @@ impl Expectation {
         }
     }
 
-    pub fn parse(s: &str) -> Self {
-        let mut res = Self::default();
+    pub fn parse(module: ModuleInfo, s: &str) -> Self {
+        let mut res = Self {
+            module,
+            error: Vec::new(),
+        };
         for (line_no, line) in s.lines().enumerate() {
             res.parse_line(line_no + 1, line)
         }
@@ -31,7 +36,8 @@ impl Expectation {
     pub fn check(&self, errors: &[Error]) -> anyhow::Result<()> {
         if self.error.len() != errors.len() {
             Err(anyhow::anyhow!(
-                "Expected {} errors, but got {}",
+                "Expectations failed for {}: expected {} errors, but got {}",
+                self.module.path().display(),
                 self.error.len(),
                 errors.len(),
             ))
@@ -41,7 +47,10 @@ impl Expectation {
                     .iter()
                     .any(|e| e.msg().contains(msg) && e.source_range().start.row.get() == *line_no)
                 {
-                    return Err(anyhow::anyhow!("Can't find error (line {line_no}): {msg}"));
+                    return Err(anyhow::anyhow!(
+                        "Expectations failed for {}: can't find error (line {line_no}): {msg}",
+                        self.module.path().display()
+                    ));
                 }
             }
             Ok(())
