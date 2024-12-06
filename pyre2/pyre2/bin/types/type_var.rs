@@ -13,6 +13,7 @@ use ruff_python_ast::Arguments;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Keyword;
+use starlark_map::small_set::SmallSet;
 
 use crate::module::module_info::ModuleInfo;
 use crate::types::qname::QName;
@@ -110,29 +111,32 @@ pub struct TypeVarArgs<'a> {
 impl<'a> TypeVarArgs<'a> {
     pub fn from_arguments(arguments: &'a Arguments) -> Self {
         let mut res = Self::default();
-        match arguments.args.first() {
-            Some(x) => res.name = Some(x),
-            _ => {}
-        }
-        res.constraints = arguments.args.iter().skip(1).collect();
-        for kw in arguments.keywords.iter() {
+        let mut seen = SmallSet::new();
+        for kw in &arguments.keywords {
             match &kw.arg {
-                Some(id) if id.id == "bound" => {
-                    res.bound = Some(&kw.value);
-                }
-                Some(id) if id.id == "default" => {
-                    res.default = Some(&kw.value);
-                }
-                Some(id) if id.id == "covariant" => {
-                    res.covariant = Some(&kw.value);
-                }
-                Some(id) if id.id == "contravariant" => {
-                    res.contravariant = Some(&kw.value);
-                }
-                Some(id) if id.id == "infer_variance" => {
-                    res.infer_variance = Some(&kw.value);
+                Some(id) => {
+                    if !seen.insert(id) {
+                        res.unknown.push(kw);
+                        continue;
+                    }
+                    match id.id.as_str() {
+                        "bound" => res.bound = Some(&kw.value),
+                        "default" => res.default = Some(&kw.value),
+                        "covariant" => res.covariant = Some(&kw.value),
+                        "contravariant" => res.contravariant = Some(&kw.value),
+                        "infer_variance" => res.infer_variance = Some(&kw.value),
+                        "name" => res.name = Some(&kw.value),
+                        _ => res.unknown.push(kw),
+                    }
                 }
                 _ => res.unknown.push(kw),
+            }
+        }
+        for x in &arguments.args {
+            if res.name.is_none() {
+                res.name = Some(x)
+            } else {
+                res.constraints.push(x)
             }
         }
         res

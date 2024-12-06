@@ -1257,7 +1257,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.ensure_expr(&Expr::Name(name.clone()));
                         // The constraints (i.e., any positional arguments after the first)
                         // and some keyword arguments are types.
-                        for arg in arguments.args[1..].iter_mut() {
+                        for arg in arguments.args.iter_mut().skip(1) {
                             self.ensure_type(arg, &mut BindingsBuilder::forward_lookup);
                         }
                         for kw in arguments.keywords.iter_mut() {

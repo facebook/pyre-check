@@ -185,6 +185,14 @@ T = TypeVar(x)  # E: Expected first argument of TypeVar to be a string literal
 );
 
 simple_test!(
+    test_tvar_keyword_name,
+    r#"
+from typing import TypeVar
+T = TypeVar(name = "T")
+    "#,
+);
+
+simple_test!(
     test_tvar_unexpected_keyword,
     r#"
 from typing import TypeVar
