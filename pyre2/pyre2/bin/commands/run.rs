@@ -5,6 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::env::args_os;
+use std::ffi::OsString;
+
+use anyhow::Context as _;
+use argfile::Argument;
 use clap::Parser;
 
 use crate::util::trace::init_tracing;
@@ -55,9 +60,24 @@ pub fn run() -> anyhow::Result<()> {
     }
     run_once(true)
 }
+/// Do `@` file expansion
+pub fn get_args() -> anyhow::Result<Vec<OsString>> {
+    // Most programs drop empty lines, so we do too.
+    fn parse_file_skipping_blanks(content: &str, prefix: char) -> Vec<Argument> {
+        let mut res = argfile::parse_fromfile(content, prefix);
+        res.retain(|x| match x {
+            Argument::PassThrough(arg) => !arg.is_empty(),
+            _ => true,
+        });
+        res
+    }
+
+    argfile::expand_args_from(args_os(), parse_file_skipping_blanks, argfile::PREFIX)
+        .context("When parsing @arg files")
+}
 
 fn run_once(allow_forget: bool) -> anyhow::Result<()> {
-    let args = Args::parse();
+    let args = Args::parse_from(get_args()?);
     match args {
         Args::ExpectTest(args) => {
             args.init_tracing();
