@@ -713,7 +713,7 @@ impl<'a> BindingsBuilder<'a> {
                         UnpackedPosition::Index(i)
                     };
                     let make_nested_binding = |ann: Option<Idx<KeyAnnotation>>| {
-                        Binding::UnpackedValue(Box::new(make_binding(ann)), range, idx.clone())
+                        Binding::UnpackedValue(Box::new(make_binding(ann)), range, idx)
                     };
                     self.bind_target(e, &make_nested_binding, should_ensure_expr);
                 }

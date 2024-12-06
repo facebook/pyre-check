@@ -7,6 +7,7 @@
 
 use std::fmt;
 
+use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
@@ -205,7 +206,7 @@ impl DisplayWith<ModuleInfo> for KeyLegacyTypeParam {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Dupe, Debug)]
 pub enum UnpackedPosition {
     /// Zero-based index
     Index(usize),
