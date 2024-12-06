@@ -11451,6 +11451,16 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 34
+    },
+    {
+      "code": -2,
+      "column": 23,
+      "concise_description": "Could not find name `S`",
+      "description": "Could not find name `S`",
+      "line": 81,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 81
     }
   ],
   "generics_syntax_infer_variance.py": [

@@ -841,11 +841,16 @@ impl<'a> BindingsBuilder<'a> {
         annotation
     }
 
-    fn type_params(&mut self, x: &TypeParams) -> Vec<Quantified> {
+    fn type_params(&mut self, x: &mut TypeParams) -> Vec<Quantified> {
         let mut qs = Vec::new();
-        for x in x.iter() {
+        for x in x.type_params.iter_mut() {
             let q = match x {
-                TypeParam::TypeVar(_) => Quantified::type_var(self.uniques),
+                TypeParam::TypeVar(x) => {
+                    if let Some(bound) = &mut x.bound {
+                        self.ensure_type(bound, &mut BindingsBuilder::forward_lookup);
+                    }
+                    Quantified::type_var(self.uniques)
+                }
                 TypeParam::ParamSpec(_) => Quantified::param_spec(self.uniques),
                 TypeParam::TypeVarTuple(_) => Quantified::type_var_tuple(self.uniques),
             };
@@ -928,7 +933,7 @@ impl<'a> BindingsBuilder<'a> {
 
         let tparams = x
             .type_params
-            .as_ref()
+            .as_mut()
             .map(|tparams| self.type_params(tparams));
 
         let mut legacy_tparam_builder = LegacyTParamBuilder::new(tparams.is_some());
@@ -1022,7 +1027,7 @@ impl<'a> BindingsBuilder<'a> {
             .0
             .insert(Key::Definition(ShortIdentifier::new(&x.name)));
 
-        x.type_params.iter().for_each(|x| {
+        x.type_params.iter_mut().for_each(|x| {
             self.type_params(x);
         });
 
@@ -1374,7 +1379,7 @@ impl<'a> BindingsBuilder<'a> {
             },
             Stmt::TypeAlias(mut x) => {
                 if let Expr::Name(name) = *x.name {
-                    if let Some(ref params) = x.type_params {
+                    if let Some(params) = &mut x.type_params {
                         self.type_params(params);
                     }
                     self.ensure_type(&mut x.value, &mut BindingsBuilder::forward_lookup);
