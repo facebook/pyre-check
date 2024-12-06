@@ -1067,8 +1067,7 @@
     "Lines 125, 126: Expected error (tag 'CoContra_Child2')",
     "Lines 131, 132: Expected error (tag 'CoContra_Child3')",
     "Lines 141, 142: Expected error (tag 'CoContra_Child5')",
-    "Lines 195, 196: Expected error (tag 'ContraToContraToContra_WithTA')",
-    "Line 39: Unexpected errors ['EXPECTED ImmutableList[Manager] <: ImmutableList[Employee]']"
+    "Lines 195, 196: Expected error (tag 'ContraToContraToContra_WithTA')"
   ],
   "generics_variance_inference.py": [
     "Line 26: Unexpected errors ['EXPECTED ClassA[float, int, int] <: ClassA[float, int, float]']",
@@ -1115,8 +1114,7 @@
     "Line 130: Unexpected errors ['EXPECTED Container[str] <: Container[LiteralString]']",
     "Line 165: Unexpected errors ['assert_type(Any, C) failed']",
     "Line 166: Unexpected errors ['assert_type(Any, B) failed']",
-    "Line 167: Unexpected errors ['assert_type(Any, A) failed', 'Expected 0 positional argument(s)']",
-    "Line 175: Unexpected errors ['EXPECTED Sequence[LiteralString] <: Sequence[str]']"
+    "Line 167: Unexpected errors ['assert_type(Any, A) failed', 'Expected 0 positional argument(s)']"
   ],
   "literals_parameterizations.py": [
     "Line 46: Expected 1 errors",
@@ -1160,7 +1158,6 @@
     "Line 43: Expected 1 errors",
     "Line 14: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]']",
     "Line 15: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]']",
-    "Line 18: Unexpected errors [\"EXPECTED tuple[Literal['x'], Literal['y']] <: Iterable[str] | str\"]",
     "Line 19: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]']",
     "Line 20: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]']",
     "Line 24: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point3, type[tuple[Any, ...]]]']",
@@ -1200,8 +1197,8 @@
     "Line 13: Unexpected errors ['EXPECTED bool <: TypeGuard[tuple[?_, ?_]]', 'EXPECTED tuple[?_, ...] <: _PyreReadOnly_[Sized]']",
     "Line 17: Unexpected errors ['assert_type(tuple[str, ...], tuple[str, str]) failed']",
     "Line 24: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]']",
-    "Line 25: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]', 'Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[object]]], Iterator[_PyreReadOnly_[object]]] | Callable[[list[object]], Iterator[object]]']",
-    "Line 28: Unexpected errors ['EXPECTED bool <: TypeGuard[set[?_]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]']",
+    "Line 25: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]', 'Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[object]]], Iterator[_PyreReadOnly_[object]]] | Callable[[list[object]], Iterator[object]]']",
+    "Line 28: Unexpected errors ['EXPECTED bool <: TypeGuard[set[?_]]']",
     "Line 32: Unexpected errors ['assert_type(set[object], set[int]) failed']",
     "Line 41: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 45: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
@@ -1253,7 +1250,7 @@
     "Line 183: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 187: Unexpected errors ['EXPECTED bool <: TypeIs[bool]', 'EXPECTED type[bool] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 196: Unexpected errors ['EXPECTED bool <: TypeIs[str]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
-    "Line 200: Unexpected errors ['EXPECTED bool <: TypeIs[list[int]]', 'EXPECTED Generator[bool, None, None] <: Iterable[object]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']"
+    "Line 200: Unexpected errors ['EXPECTED bool <: TypeIs[list[int]]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']"
   ],
   "overloads_basic.py": [
     "Lines 62, 63: Expected error (tag 'func1')",
@@ -1448,8 +1445,7 @@
     "Line 16: Unexpected errors ['EXPECTED None <: NoReturn', 'Expected 0 positional argument(s)']",
     "Line 21: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 32: Unexpected errors [\"EXPECTED Literal['whatever works'] <: int\"]",
-    "Line 77: Unexpected errors ['EXPECTED None <: Never']",
-    "Line 96: Unexpected errors ['EXPECTED ClassB[Never] <: ClassB[?_]']"
+    "Line 77: Unexpected errors ['EXPECTED None <: Never']"
   ],
   "specialtypes_none.py": [
     "Line 24: Unexpected errors ['EXPECTED None <: Hashable']",

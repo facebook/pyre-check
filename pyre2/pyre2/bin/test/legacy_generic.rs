@@ -317,7 +317,6 @@ class C(Generic[T1, T2]):  # E: A type parameter without a default cannot follow
     "#,
 );
 
-// TODO: support declared variance
 simple_test!(
     test_variance,
     r#"
@@ -333,7 +332,7 @@ class Child(Parent):
 def f1(c: C[Parent, Child]):
     f2(c)  # E: EXPECTED
 def f2(c: C[Child, Parent]):
-    f1(c)  # E: EXPECTED
+    f1(c)
     "#,
 );
 

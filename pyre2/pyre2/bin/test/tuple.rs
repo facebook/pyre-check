@@ -124,11 +124,10 @@ x: list[int] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: list[int]
     "#,
 );
 
-// TODO: this should not be an error
 simple_test!(
     test_empty_tuple_hint,
     r#"
 from typing import Iterable
-x: Iterable[str] = ()  # E: EXPECTED tuple[()] <: Iterable[str]
+x: Iterable[str] = ()
     "#,
 );

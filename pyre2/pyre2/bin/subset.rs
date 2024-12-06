@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use itertools::izip;
+
 use crate::alt::answers::LookupAnswer;
 use crate::solver::Subset;
 use crate::types::callable::Arg;
@@ -13,6 +15,8 @@ use crate::types::callable::Required;
 use crate::types::class::TArgs;
 use crate::types::simplify::unions;
 use crate::types::tuple::Tuple;
+use crate::types::type_var::Variance;
+use crate::types::types::TParams;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
@@ -69,7 +73,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             (Type::ClassType(got), Type::ClassType(want)) => {
                 match self.type_order.as_superclass(got, want.class_object()) {
-                    Some(got) => self.is_eq_targs(got.targs(), want.targs()),
+                    Some(got) => self.check_targs(got.targs(), want.targs(), want.tparams()),
                     None => false,
                 }
             }
@@ -152,9 +156,18 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         }
     }
 
-    pub fn is_eq_targs(&mut self, got: &TArgs, want: &TArgs) -> bool {
-        for (got_arg, want_arg) in got.as_slice().iter().zip(want.as_slice()) {
-            if !self.is_equal(got_arg, want_arg) {
+    fn check_targs(&mut self, got: &TArgs, want: &TArgs, params: &TParams) -> bool {
+        let got = got.as_slice();
+        let want = want.as_slice();
+        assert_eq!(got.len(), want.len());
+        assert_eq!(want.len(), params.len());
+        for (got_arg, want_arg, param) in izip!(got, want, params.iter(),) {
+            let result = match param.variance {
+                Variance::Covariant => self.is_subset_eq(got_arg, want_arg),
+                Variance::Contravariant => self.is_subset_eq(want_arg, got_arg),
+                Variance::Invariant => self.is_equal(got_arg, want_arg),
+            };
+            if !result {
                 return false;
             }
         }

@@ -163,3 +163,19 @@ y: Alias = [1]
 z: Alias = [[1, 2]]
 "#,
 );
+
+simple_test!(
+    test_container_variance,
+    r#"
+from typing import Iterable
+type X1[T] = Iterable[T]
+type X2[T] = list[T]
+def f1(x: X1[int]):
+    pass
+def f2(x: X2[int]):
+    pass
+def g(x: list[bool]):
+    f1(x)
+    f2(x)  # E: EXPECTED
+    "#,
+);

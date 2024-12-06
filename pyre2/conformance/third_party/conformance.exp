@@ -14535,16 +14535,6 @@
       "name": "PyreError",
       "stop_column": 55,
       "stop_line": 14
-    },
-    {
-      "code": -2,
-      "column": 38,
-      "concise_description": "EXPECTED ImmutableList[Manager] <: ImmutableList[Employee]",
-      "description": "EXPECTED ImmutableList[Manager] <: ImmutableList[Employee]",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 46,
-      "stop_line": 39
     }
   ],
   "generics_variance_inference.py": [
@@ -15382,16 +15372,6 @@
       "name": "PyreError",
       "stop_column": 24,
       "stop_line": 171
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED Sequence[LiteralString] <: Sequence[str]",
-      "description": "EXPECTED Sequence[LiteralString] <: Sequence[str]",
-      "line": 175,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 175
     }
   ],
   "literals_parameterizations.py": [
@@ -16163,16 +16143,6 @@
     },
     {
       "code": -2,
-      "column": 31,
-      "concise_description": "EXPECTED tuple[Literal['x'], Literal['y']] <: Iterable[str] | str",
-      "description": "EXPECTED tuple[Literal['x'], Literal['y']] <: Iterable[str] | str",
-      "line": 18,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 18
-    },
-    {
-      "code": -2,
       "column": 8,
       "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]",
       "description": "Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]",
@@ -16729,16 +16699,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Generator[bool, None, None] <: Iterable[object]",
-      "description": "EXPECTED Generator[bool, None, None] <: Iterable[object]",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
       "column": 30,
       "concise_description": "EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]",
       "description": "EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]",
@@ -16765,16 +16725,6 @@
       "line": 28,
       "name": "PyreError",
       "stop_column": 49,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Generator[bool, None, None] <: Iterable[object]",
-      "description": "EXPECTED Generator[bool, None, None] <: Iterable[object]",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 48,
       "stop_line": 28
     },
     {
@@ -17517,16 +17467,6 @@
       "line": 200,
       "name": "PyreError",
       "stop_column": 46,
-      "stop_line": 200
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Generator[bool, None, None] <: Iterable[object]",
-      "description": "EXPECTED Generator[bool, None, None] <: Iterable[object]",
-      "line": 200,
-      "name": "PyreError",
-      "stop_column": 45,
       "stop_line": 200
     },
     {
@@ -19470,16 +19410,6 @@
       "name": "PyreError",
       "stop_column": 22,
       "stop_line": 86
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED ClassB[Never] <: ClassB[?_]",
-      "description": "EXPECTED ClassB[Never] <: ClassB[?_]",
-      "line": 96,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 96
     },
     {
       "code": -2,
