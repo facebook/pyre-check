@@ -607,13 +607,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
         }
         let variance = if covariant {
-            Variance::Covariant
+            Some(Variance::Covariant)
         } else if contravariant {
-            Variance::Contravariant
+            Some(Variance::Contravariant)
         } else if infer_variance {
-            Variance::Inferred
+            None
         } else {
-            Variance::Invariant
+            Some(Variance::Invariant)
         };
         TypeVar::new(
             name,

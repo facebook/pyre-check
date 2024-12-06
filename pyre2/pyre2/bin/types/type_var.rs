@@ -33,12 +33,11 @@ pub enum Restriction {
     Unrestricted,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub enum Variance {
     Covariant,
     Contravariant,
     Invariant,
-    Inferred,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
@@ -46,7 +45,8 @@ struct TypeVarInner {
     qname: QName,
     restriction: Restriction,
     default: Option<Type>,
-    variance: Variance,
+    /// The variance if known, or None for infer_variance=True
+    variance: Option<Variance>,
 }
 
 impl TypeVar {
@@ -55,7 +55,7 @@ impl TypeVar {
         module: ModuleInfo,
         restriction: Restriction,
         default: Option<Type>,
-        variance: Variance,
+        variance: Option<Variance>,
     ) -> Self {
         Self(ArcId::new(TypeVarInner {
             qname: QName::new(name, module),
@@ -71,6 +71,10 @@ impl TypeVar {
 
     pub fn default(&self) -> Option<&Type> {
         self.0.default.as_ref()
+    }
+
+    pub fn variance(&self) -> Option<Variance> {
+        self.0.variance
     }
 
     pub fn to_type(&self) -> Type {

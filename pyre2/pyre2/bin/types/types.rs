@@ -28,6 +28,7 @@ use crate::types::special_form::SpecialForm;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::TypeVar;
+use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::uniques::Unique;
 use crate::uniques::UniqueFactory;
@@ -124,6 +125,8 @@ pub struct TParamInfo {
     pub name: Name,
     pub quantified: Quantified,
     pub default: Option<Type>,
+    /// The variance if known, or None for infer_variance=True or a scoped type parameter
+    pub variance: Option<Variance>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -132,6 +135,7 @@ pub struct TParam {
     pub name: Name,
     pub quantified: Quantified,
     pub default: Option<Type>,
+    pub variance: Variance,
 }
 
 impl Display for TParam {
@@ -169,6 +173,9 @@ impl TParams {
                 name: tparam.name,
                 quantified: tparam.quantified,
                 default,
+                // Classes set the variance before getting here. For functions and aliases, the variance isn't meaningful;
+                // it doesn't matter what we set it to as long as we make it non-None to indicate that it's not missing.
+                variance: tparam.variance.unwrap_or(Variance::Invariant),
             });
         }
         if error {

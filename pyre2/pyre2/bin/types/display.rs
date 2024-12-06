@@ -291,6 +291,7 @@ mod tests {
                 name: Name::new(q.id().to_string()),
                 quantified: *q,
                 default: None,
+                variance: Some(Variance::Invariant),
             }))
             .expect("test code"),
             SmallSet::new(),
@@ -308,7 +309,7 @@ mod tests {
             mi,
             Restriction::Unrestricted,
             None,
-            Variance::Invariant,
+            Some(Variance::Invariant),
         )
     }
 

@@ -68,6 +68,7 @@ use crate::types::module::Module;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::TypeVar;
+use crate::types::type_var::Variance;
 use crate::types::types::AnyStyle;
 use crate::types::types::LegacyTypeParameterLookup;
 use crate::types::types::Quantified;
@@ -553,6 +554,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     name: x.qname().id().clone(),
                     quantified: q,
                     default: x.default().cloned(),
+                    variance: x.variance(),
                 }))
             }
             Type::Type(box Type::TypeVarTuple(x)) => {
@@ -561,6 +563,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     name: x.qname().id().clone(),
                     quantified: q,
                     default: None,
+                    variance: Some(Variance::Invariant),
                 }))
             }
             Type::Type(box Type::ParamSpec(x)) => {
@@ -569,6 +572,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     name: x.qname().id().clone(),
                     quantified: q,
                     default: None,
+                    variance: Some(Variance::Invariant),
                 }))
             }
             ty => Arc::new(LegacyTypeParameterLookup::NotParameter(ty.clone())),
@@ -731,6 +735,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             name: ty_var.qname().id().clone(),
                             quantified: q,
                             default: ty_var.default().cloned(),
+                            variance: ty_var.variance(),
                         });
                         q
                     }
@@ -875,6 +880,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &self.get(&Key::Definition(ShortIdentifier::new(name))),
                         ),
                         default,
+                        variance: None,
                     });
                 }
                 params
