@@ -9,13 +9,6 @@ use clap::Parser;
 
 #[derive(Debug, Parser, Clone)]
 pub struct CommonArgs {
-    #[clap(
-        long,
-        default_missing_value = "5",
-        require_equals = true,
-        num_args = 0..=1
-    )]
-    pub timings: Option<usize>,
     #[clap(long, short = 'j', default_value = "0")]
     threads: usize,
 }
