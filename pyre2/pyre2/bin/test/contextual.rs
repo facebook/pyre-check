@@ -131,9 +131,10 @@ x: list[int] = {1}  # E: EXPECTED set[int] <: list[int]
 simple_test!(
     test_dict_hint,
     r#"
-from typing import Iterable, MutableMapping
+from typing import Iterable, MutableMapping, Literal
 x: dict[str, int] = {"a": 1}
 x: dict[str, int] = {"a": "oops"}  # E: EXPECTED Literal['oops'] <: int
+x: dict[str, Literal[1]] = {"a": 2} # E: EXPECTED Literal[2] <: Literal[1]
 x: MutableMapping[str, int] = {"a": 1}
 x: Iterable[str] = {"a": 1}
 x: Iterable[int] = {"oops": 1}  # E: EXPECTED Literal['oops'] <: int

@@ -27,6 +27,7 @@ use starlark_map::small_set::SmallSet;
 use super::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::binding::Key;
+use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
 use crate::dunder;
 use crate::module::short_identifier::ShortIdentifier;
@@ -632,31 +633,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Dict(x) => {
-                let key_value_ty = hint.and_then(|ty| {
-                    // We check `dict[key_var, value_var]` against the hint to make sure it's a
-                    // superclass of dict, then check the dict elements against the vars, which
-                    // have been solved to the hint's contained types.
-                    let key_var = self.solver().fresh_contained(self.uniques);
-                    let value_var = self.solver().fresh_contained(self.uniques);
-                    let dict_type = self
-                        .stdlib
-                        .dict(Type::Var(key_var), Type::Var(value_var))
-                        .to_type();
-                    if self
-                        .solver()
-                        .is_subset_eq(&dict_type, ty, self.type_order())
-                    {
-                        Some((
-                            self.solver().force_var(key_var),
-                            self.solver().force_var(value_var),
-                        ))
-                    } else {
-                        None
-                    }
-                });
+                let hint = hint.and_then(|ty| self.unwrap_dict(ty));
                 if x.is_empty() {
-                    match key_value_ty {
-                        Some((key_ty, value_ty)) => self.stdlib.dict(key_ty, value_ty).to_type(),
+                    match hint {
+                        Some(x) => x.to_type(self.stdlib),
                         None => self
                             .stdlib
                             .dict(
@@ -666,8 +646,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             .to_type(),
                     }
                 } else {
-                    let (key_hint, value_hint) = match key_value_ty {
-                        Some((key_ty, value_ty)) => (Some(key_ty), Some(value_ty)),
+                    let (key_hint, value_hint) = match hint {
+                        Some(UnwrappedDict { key, value }) => (Some(key), Some(value)),
                         None => (None, None),
                     };
                     let key_tys: Vec<Type> = x

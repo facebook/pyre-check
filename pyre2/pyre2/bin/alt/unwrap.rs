@@ -9,8 +9,25 @@ use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::types::class::ClassType;
+use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::types::types::Var;
+
+pub struct UnwrappedDict {
+    pub key: Type,
+    pub value: Type,
+}
+
+impl UnwrappedDict {
+    pub fn to_class_type(self, stdlib: &Stdlib) -> ClassType {
+        stdlib.dict(self.key, self.value)
+    }
+
+    pub fn to_type(self, stdlib: &Stdlib) -> Type {
+        self.to_class_type(stdlib).to_type()
+    }
+}
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn fresh_var(&self) -> Var {
@@ -34,6 +51,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(range, "Expression is not awaitable".to_owned())
         } else {
             self.force_var(var)
+        }
+    }
+
+    pub fn unwrap_dict(&self, ty: &Type) -> Option<UnwrappedDict> {
+        let key = self.fresh_var();
+        let value = self.fresh_var();
+        let dict_type = self.stdlib.dict(key.to_type(), value.to_type()).to_type();
+        if self.is_subset_eq(&dict_type, ty) {
+            Some(UnwrappedDict {
+                key: self.force_var(key),
+                value: self.force_var(value),
+            })
+        } else {
+            None
         }
     }
 }
