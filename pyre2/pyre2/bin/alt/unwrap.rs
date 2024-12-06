@@ -67,4 +67,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         }
     }
+
+    pub fn unwrap_set(&self, ty: &Type) -> Option<Type> {
+        let elem = self.fresh_var();
+        let set_type = self.stdlib.set(elem.to_type()).to_type();
+        if self.is_subset_eq(&set_type, ty) {
+            Some(self.force_var(elem))
+        } else {
+            None
+        }
+    }
 }

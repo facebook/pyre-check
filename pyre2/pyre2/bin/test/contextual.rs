@@ -116,10 +116,10 @@ for xs in [[B()]]:
 simple_test!(
     test_set_hint,
     r#"
-from typing import Iterable, MutableSet
-
+from typing import Iterable, MutableSet, Literal
 x: set[int] = {1}
 x: set[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
+x: set[Literal[1]] = {2}  # E: EXPECTED Literal[2] <: Literal[1]
 x: MutableSet[int] = {1}
 x: MutableSet[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
 x: Iterable[int] = {1}

@@ -684,29 +684,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Set(x) => {
-                let elem_ty = hint.and_then(|ty| {
-                    // We check `set[var]` against the hint to make sure it's a superclass of set,
-                    // then check the set elements against `var`, which has been solved to the
-                    // hint's contained type.
-                    let var = self.solver().fresh_contained(self.uniques);
-                    let set_type = self.stdlib.set(Type::Var(var)).to_type();
-                    if self.solver().is_subset_eq(&set_type, ty, self.type_order()) {
-                        Some(self.solver().force_var(var))
-                    } else {
-                        None
-                    }
-                });
-
+                let hint = hint.and_then(|ty| self.unwrap_set(ty));
                 if x.is_empty() {
-                    let elem_ty = match elem_ty {
+                    let elem_ty = match hint {
                         None => self.solver().fresh_contained(self.uniques).to_type(),
                         Some(elem_ty) => elem_ty,
                     };
                     self.stdlib.set(elem_ty).to_type()
                 } else {
                     let tys = x.elts.map(|x| {
-                        let t = self.expr(x, elem_ty.as_ref());
-                        self.promote(t, elem_ty.as_ref())
+                        let t = self.expr(x, hint.as_ref());
+                        self.promote(t, hint.as_ref())
                     });
                     self.stdlib.set(self.unions(&tys)).to_type()
                 }
