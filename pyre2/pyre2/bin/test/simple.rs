@@ -936,6 +936,17 @@ async def test() -> None:
 );
 
 simple_test!(
+    test_await_literal,
+    r#"
+from typing import Awaitable, Literal
+class Foo(Awaitable[Literal[42]]):
+    pass
+async def test() -> Literal[42]:
+    return await Foo()
+"#,
+);
+
+simple_test!(
     test_await_non_awaitable,
     r#"
 async def test() -> None:

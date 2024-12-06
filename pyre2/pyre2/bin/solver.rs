@@ -40,6 +40,8 @@ enum Variable {
     Quantified,
     /// A variable caused by recursion, e.g. `x = f(); def f(): return x`
     Recursive,
+    /// A variable that used to decompose a type, e.g. getting T from Awaitable[T]
+    Unwrap,
     /// A variable we have solved
     Answer(Type),
 }
@@ -51,6 +53,7 @@ impl Display for Variable {
             Variable::Contained => write!(f, "Contained"),
             Variable::Quantified => write!(f, "Quantified"),
             Variable::Recursive => write!(f, "Recursive"),
+            Variable::Unwrap => write!(f, "Unwrap"),
             Variable::Answer(t) => write!(f, "{t}"),
         }
     }
@@ -191,6 +194,13 @@ impl Solver {
             .write()
             .unwrap()
             .insert(v, Variable::Contained);
+        v
+    }
+
+    // Generate a fresh variable used to decompose a type, e.g. getting T from Awaitable[T]
+    pub fn fresh_unwrap(&self, uniques: &UniqueFactory) -> Var {
+        let v = Var::new(uniques);
+        self.variables.write().unwrap().insert(v, Variable::Unwrap);
         v
     }
 

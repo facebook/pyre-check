@@ -504,7 +504,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     // If `error_range` is None, do not report errors
     pub fn unwrap_awaitable(&self, ty: Type, error_range: Option<TextRange>) -> Type {
-        let var = self.solver().fresh_contained(self.uniques);
+        let var = self.solver().fresh_unwrap(self.uniques);
         let awaitable_ty = self.stdlib.awaitable(Type::Var(var)).to_type();
         let is_awaitable = self
             .solver()
