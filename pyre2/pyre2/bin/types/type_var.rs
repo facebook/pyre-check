@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::fmt;
 use std::fmt::Display;
-use std::fmt::{self};
 
 use dupe::Dupe;
 use ruff_python_ast::Identifier;
