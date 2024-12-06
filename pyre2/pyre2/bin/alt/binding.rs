@@ -319,6 +319,8 @@ pub enum Binding {
     NameAssign(Name, Option<Idx<KeyAnnotation>>, Box<Binding>, TextRange),
     /// A type alias declared with the `type` soft keyword
     ScopedTypeAlias(Name, Option<Box<TypeParams>>, Box<Binding>, TextRange),
+    /// An entry in a MatchMapping. The Key looks up the value being matched, the Expr is the key we're extracting.
+    PatternMatchMapping(Expr, Idx<Key>),
 }
 
 impl Binding {
@@ -461,6 +463,14 @@ impl DisplayWith<Bindings> for Binding {
                         .collect::<Vec<_>>()
                         .join(", "),
                     binding.display_with(ctx)
+                )
+            }
+            Self::PatternMatchMapping(mapping_key, binding_key) => {
+                write!(
+                    f,
+                    "PatternMatchMapping {} = {}",
+                    m.display(mapping_key),
+                    ctx.display(*binding_key),
                 )
             }
         }

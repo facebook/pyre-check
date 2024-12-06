@@ -540,3 +540,17 @@ match point():
 assert_type(x, int)  # E: assert_type(Literal[8] | int, int) failed
 "#,
 );
+
+simple_test!(
+    test_match_mapping,
+    r#"
+from typing import assert_type
+
+x: dict[str, int] = { "a": 1, "b": 2, "c": 3 }
+
+match x:
+    case { "a": 1, "b": y, **c }:
+        assert_type(y, int)
+        assert_type(c, dict[str, int])
+"#,
+);

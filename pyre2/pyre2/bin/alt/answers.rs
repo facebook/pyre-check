@@ -1210,6 +1210,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     _ => ta,
                 }
             }
+            Binding::PatternMatchMapping(mapping_key, binding_key) => {
+                // TODO: check that value is a mapping
+                let key_ty = self.expr(mapping_key, None);
+                let binding_ty = self.get_idx(*binding_key).arc_clone();
+                let arg = TypeCallArg::new(key_ty, mapping_key.range());
+                self.call_method_with_types(
+                    &binding_ty,
+                    &dunder::GETITEM,
+                    mapping_key.range(),
+                    &[arg],
+                )
+            }
         }
     }
 

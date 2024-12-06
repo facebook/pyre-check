@@ -198,6 +198,11 @@ impl Ast {
                     f(x);
                 }
             }
+            Pattern::MatchMapping(x) => {
+                if let Some(x) = &x.rest {
+                    f(x);
+                }
+            }
             _ => {}
         }
         Visitors::visit_pattern(x, |x| Ast::pattern_lvalue(x, f));

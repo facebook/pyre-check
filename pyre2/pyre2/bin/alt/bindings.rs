@@ -1159,8 +1159,8 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    // Traverse a pattern and bind all the names; value_binding is the thing that's being matched on
-    fn bind_pattern(&mut self, pattern: Pattern, value_binding: Binding) {
+    // Traverse a pattern and bind all the names; key is the reference for the value that's being matched on
+    fn bind_pattern(&mut self, pattern: Pattern, key: Idx<Key>) {
         match pattern {
             Pattern::MatchValue(p) => {
                 self.ensure_expr(&p.value);
@@ -1173,37 +1173,46 @@ impl<'a> BindingsBuilder<'a> {
             }
             Pattern::MatchAs(p) => {
                 if let Some(name) = &p.name {
-                    self.bind_definition(name, value_binding.clone(), None);
+                    self.bind_definition(name, Binding::Forward(key), None);
                 }
                 if let Some(box pattern) = p.pattern {
-                    self.bind_pattern(pattern, value_binding)
+                    self.bind_pattern(pattern, key)
                 }
             }
             Pattern::MatchSequence(x) => {
                 self.todo("MatchSequence", x.range);
                 x.patterns
-                    .iter()
-                    .for_each(|x| self.bind_pattern(x.clone(), Binding::AnyType(AnyStyle::Error)))
+                    .into_iter()
+                    .for_each(|x| self.bind_pattern(x, key))
             }
             Pattern::MatchMapping(x) => {
-                self.todo("MatchMapping", x.range);
-                x.patterns
-                    .iter()
-                    .for_each(|x| self.bind_pattern(x.clone(), Binding::AnyType(AnyStyle::Error)))
+                x.keys
+                    .into_iter()
+                    .zip(x.patterns)
+                    .for_each(|(key_expr, pattern)| {
+                        let mapping_key = self.table.insert(
+                            Key::Anon(key_expr.range()),
+                            Binding::PatternMatchMapping(key_expr, key),
+                        );
+                        self.bind_pattern(pattern, mapping_key)
+                    });
+                if let Some(rest) = x.rest {
+                    self.bind_definition(&rest, Binding::Forward(key), None);
+                }
             }
             Pattern::MatchClass(x) => {
                 self.todo("MatchClass", x.range);
                 x.arguments
                     .patterns
-                    .iter()
-                    .chain(x.arguments.keywords.iter().map(|x| &x.pattern))
-                    .for_each(|x| self.bind_pattern(x.clone(), Binding::AnyType(AnyStyle::Error)))
+                    .into_iter()
+                    .chain(x.arguments.keywords.into_iter().map(|x| x.pattern))
+                    .for_each(|x| self.bind_pattern(x, key))
             }
             Pattern::MatchOr(x) => {
                 self.todo("MatchOr", x.range);
                 x.patterns
-                    .iter()
-                    .for_each(|x| self.bind_pattern(x.clone(), Binding::AnyType(AnyStyle::Error)))
+                    .into_iter()
+                    .for_each(|x| self.bind_pattern(x, key))
             }
             _ => {}
         }
@@ -1458,7 +1467,7 @@ impl<'a> BindingsBuilder<'a> {
                     if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
                         exhaustive = true;
                     }
-                    self.bind_pattern(case.pattern, Binding::Forward(key));
+                    self.bind_pattern(case.pattern, key);
                     if let Some(guard) = case.guard {
                         self.ensure_expr(&guard);
                         self.table
