@@ -6,6 +6,9 @@
  */
 
 use std::ffi::OsStr;
+use std::fs::File;
+use std::io::BufWriter;
+use std::io::Write;
 use std::mem;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -39,6 +42,9 @@ pub struct Args {
     output: Option<PathBuf>,
     #[clap(long, short = 'I')]
     include: Vec<PathBuf>,
+    /// Write the errors to a file, instead of printing them.
+    #[clap(long)]
+    report_errors: Option<PathBuf>,
     /// Produce debugging information about the type checking process.
     #[clap(long)]
     debug_info: Option<PathBuf>,
@@ -76,7 +82,7 @@ impl Args {
             .iter()
             .map(|x| (module_from_path(x), x.clone()))
             .collect::<SmallMap<_, _>>();
-        let error_style = if args.common.timings.is_some() {
+        let error_style = if args.report_errors.is_some() {
             ErrorStyle::Delayed
         } else {
             ErrorStyle::Immediate
@@ -104,8 +110,12 @@ impl Args {
         };
         let error_count = state.count_errors();
         let computing = start.elapsed();
-        if args.common.timings.is_some() {
-            state.print_errors();
+        if let Some(file) = args.report_errors {
+            let mut file = BufWriter::new(File::create(file)?);
+            for e in state.collect_errors() {
+                writeln!(file, "{e}")?;
+            }
+            file.flush()?;
         }
         let printing = start.elapsed();
         memory_trace.stop();

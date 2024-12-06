@@ -320,6 +320,7 @@ impl<'a> State<'a> {
             .sum()
     }
 
+    #[allow(dead_code)] // Reasonable part of the API, not currently used
     pub fn print_errors(&self) {
         for module in self.modules.read().unwrap().values() {
             let steps = module.steps.read().unwrap();
