@@ -35,7 +35,7 @@ and in `client`.
 - In VS Code, go to Extensions, click on the "..." button in the Extensions bar,
   select "Install from VSIX" and then select the `pyre2-1.0.0.vsix` file that
   was produced.
-- Build the minipyre binary with `buck2 build minipyre @fbcode//mode/opt --show-output`
+- Build the Pyre2 binary with `buck2 build pyre2 @fbcode//mode/opt --show-output`
   and either:
   1. Put it on your `$PATH`.
   2. Add the `pyre2.lspPath` configuration key to point at it.

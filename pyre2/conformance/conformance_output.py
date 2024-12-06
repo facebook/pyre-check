@@ -185,14 +185,14 @@ def compare_conformance_output(
     return messages
 
 
-def get_minipyre_command(test: bool) -> list[str]:
+def get_pyre2_command(test: bool) -> list[str]:
     command = ["buck2"]
     if test:
-        command += ["--isolation-dir", "minipyre"]
+        command += ["--isolation-dir", "pyre2"]
     return command + [
         "run",
         "--reuse-current-config",
-        "fbcode//tools/pyre/pyre2:minipyre",
+        "fbcode//tools/pyre/pyre2:pyre2",
         "--",
         "expect-test",
     ]
@@ -212,7 +212,7 @@ def get_conformance_output(
     outputs = defaultdict(lambda: [])
     with tempfile.NamedTemporaryFile() as tmp_file:
         cmd = (
-            get_minipyre_command(test)
+            get_pyre2_command(test)
             + [
                 "--output",
                 tmp_file.name,
@@ -240,7 +240,7 @@ def get_conformance_output_separate(
 ) -> Dict[str, List[Dict[str, Any]]]:
     """
     Run minpyre on conformance test suite, parse and group the output by file
-    This function runs minipyre separately for each file, which is slower but more robust to failures
+    This function runs Pyre2 separately for each file, which is slower but more robust to failures
     """
     files_to_check = []
     for root, _, files in os.walk(directory):
@@ -251,7 +251,7 @@ def get_conformance_output_separate(
     for file in files_to_check:
         with tempfile.NamedTemporaryFile() as tmp_file:
             cmd = (
-                get_minipyre_command(test)
+                get_pyre2_command(test)
                 + [
                     "--output",
                     tmp_file.name,
@@ -296,7 +296,7 @@ def main() -> None:
         "--mode", "-m", choices=["update", "check", "compare", "test"], default="update"
     )
     parser.add_argument(
-        "--separate", action="store_true", help="run minipyre separately for each case"
+        "--separate", action="store_true", help="run Pyre2 separately for each case"
     )
     args = parser.parse_args()
     if args.separate:
