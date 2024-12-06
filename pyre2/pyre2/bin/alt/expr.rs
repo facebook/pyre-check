@@ -1006,22 +1006,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::Tuple(x) => {
                 let ts = match hint {
                     Some(Type::Tuple(Tuple::Concrete(elts))) if elts.len() == x.elts.len() => elts,
-                    Some(ty) => {
-                        // We check `tuple[var, ...]` against the hint to make sure it's a superclass of tuple,
-                        // then check the tuple elements against `var`, which has been solved to the
-                        // hint's contained type.
-                        let var = self.solver().fresh_contained(self.uniques);
-                        let tuple_type = self.stdlib.tuple(Type::Var(var)).to_type();
-                        if self
-                            .solver()
-                            .is_subset_eq(&tuple_type, ty, self.type_order())
-                        {
-                            let elem_ty = self.solver().force_var(var);
-                            &vec![elem_ty; x.elts.len()]
-                        } else {
-                            &Vec::new()
-                        }
-                    }
+                    Some(ty) => match self.unwrap_tuple(ty) {
+                        Some(elem_ty) => &vec![elem_ty; x.elts.len()],
+                        None => &Vec::new(),
+                    },
                     None => &Vec::new(),
                 };
                 Type::tuple(
