@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::slice;
+
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Arguments;
@@ -86,7 +88,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for (i, value) in values.iter().enumerate() {
             let t = self.expr_infer(value);
             if should_shortcircuit(&t) {
-                types.push(t.clone());
+                types.push(t);
                 break;
             }
             // If we reach the last value, we should always keep it.
@@ -101,7 +103,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     }
                 }
-                _ => types.push(t.clone()),
+                _ => types.push(t),
             }
         }
         self.unions(&types)
@@ -554,19 +556,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for kw in arguments.keywords.iter() {
             match &kw.arg {
                 Some(id) if id.id == "bound" => {
-                    bound = Some(self.expr_untype(&kw.value.clone()));
+                    bound = Some(self.expr_untype(&kw.value));
                 }
                 Some(id) if id.id == "default" => {
-                    default = Some(self.expr_untype(&kw.value.clone()));
+                    default = Some(self.expr_untype(&kw.value));
                 }
                 Some(id) if id.id == "covariant" => {
-                    covariant = self.literal_bool_infer(&kw.value.clone());
+                    covariant = self.literal_bool_infer(&kw.value);
                 }
                 Some(id) if id.id == "contravariant" => {
-                    contravariant = self.literal_bool_infer(&kw.value.clone());
+                    contravariant = self.literal_bool_infer(&kw.value);
                 }
                 Some(id) if id.id == "infer_variance" => {
-                    infer_variance = self.literal_bool_infer(&kw.value.clone());
+                    infer_variance = self.literal_bool_infer(&kw.value);
                 }
                 Some(id) => {
                     self.error(
@@ -750,7 +752,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if x.is_empty() {
                     let elem_ty = match elem_ty {
                         None => self.solver().fresh_contained(self.uniques).to_type(),
-                        Some(elem_ty) => elem_ty.clone(),
+                        Some(elem_ty) => elem_ty,
                     };
                     self.stdlib.set(elem_ty).to_type()
                 } else {
@@ -1012,7 +1014,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     &Type::Tuple(Tuple::Concrete(elts)),
                                     &dunder::GETITEM,
                                     x.range,
-                                    &[*x.slice.clone()],
+                                    slice::from_ref(&x.slice),
                                     &[],
                                 ),
                             }
@@ -1022,13 +1024,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &Type::Tuple(Tuple::Unbounded(elt)),
                         &dunder::GETITEM,
                         x.range,
-                        &[*x.slice.clone()],
+                        slice::from_ref(&x.slice),
                         &[],
                     ),
                     Type::Any(style) => style.propagate(),
-                    Type::ClassType(_) => {
-                        self.call_method(&fun, &dunder::GETITEM, x.range, &[*x.slice.clone()], &[])
-                    }
+                    Type::ClassType(_) => self.call_method(
+                        &fun,
+                        &dunder::GETITEM,
+                        x.range,
+                        slice::from_ref(&x.slice),
+                        &[],
+                    ),
                     t => self.error(
                         x.range,
                         format!(
@@ -1064,7 +1070,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if x.is_empty() {
                     let elem_ty = match elem_ty {
                         None => self.solver().fresh_contained(self.uniques).to_type(),
-                        Some(elem_ty) => elem_ty.clone(),
+                        Some(elem_ty) => elem_ty,
                     };
                     self.stdlib.list(elem_ty).to_type()
                 } else {
