@@ -554,3 +554,16 @@ match x:
         assert_type(c, dict[str, int])
 "#,
 );
+
+simple_test!(
+    test_empty_loop,
+    r#"
+# These generate syntax that is illegal, but reachable with parser error recovery
+
+for x in []:
+pass  # E: Expected an indented block
+
+while True:
+pass  # E: Expected an indented block
+"#,
+);

@@ -1397,20 +1397,18 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Stmt::For(x) => {
-                let range = TextRange::new(x.range.start(), x.body.last().unwrap().range().end());
-                self.setup_loop(range);
+                self.setup_loop(x.range);
                 self.ensure_expr(&x.iter);
                 let make_binding = |k| Binding::IterableValue(k, *x.iter.clone());
                 self.bind_target(&x.target, &make_binding, true);
                 self.stmts(x.body);
-                self.teardown_loop(range, x.orelse);
+                self.teardown_loop(x.range, x.orelse);
             }
             Stmt::While(x) => {
-                let range = TextRange::new(x.range.start(), x.body.last().unwrap().range().end());
-                self.setup_loop(range);
+                self.setup_loop(x.range);
                 self.ensure_expr(&x.test);
                 self.stmts(x.body);
-                self.teardown_loop(range, x.orelse);
+                self.teardown_loop(x.range, x.orelse);
             }
             Stmt::If(x) => {
                 // Need to deal with type guards in future.
