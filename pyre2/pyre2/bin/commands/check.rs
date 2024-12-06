@@ -77,11 +77,17 @@ impl Args {
             return Ok(());
         }
 
-        let to_check = args
-            .files
-            .iter()
-            .map(|x| (module_from_path(x, &include), x.clone()))
-            .collect::<SmallMap<_, _>>();
+        let mut to_check = SmallMap::with_capacity(args.files.len());
+        for file in &args.files {
+            let module = module_from_path(file, &include);
+            if let Some(old_file) = to_check.insert(module, file) {
+                return Err(anyhow::anyhow!(
+                    "Two files map to the same module: `{}` and `{}` both map to `{module}`",
+                    file.display(),
+                    old_file.display()
+                ));
+            }
+        }
         let error_style = if args.report_errors.is_some() {
             ErrorStyle::Delayed
         } else {
@@ -89,7 +95,7 @@ impl Args {
         };
         let load = |name| {
             let path = match to_check.get(&name) {
-                Some(path) => Ok(path.clone()),
+                Some(path) => Ok((*path).clone()),
                 None => find_module(name, &include),
             };
             (LoadResult::from_path_result(path), error_style)
