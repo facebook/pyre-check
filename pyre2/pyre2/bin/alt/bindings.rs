@@ -412,8 +412,10 @@ impl Bindings {
             builder.inject_implicit();
         }
         builder.stmts(x);
-        for (k, static_info) in builder.scopes.last().stat.0.iter() {
-            let info = builder.scopes.last().flow.info.get(k);
+        assert_eq!(builder.scopes.len(), 1);
+        let last_scope = builder.scopes.to_vec().pop().unwrap();
+        for (k, static_info) in last_scope.stat.0 {
+            let info = last_scope.flow.info.get(&k);
             let val = match info {
                 Some(FlowInfo {
                     key,
@@ -432,7 +434,7 @@ impl Bindings {
                     Binding::AnyType(AnyStyle::Error)
                 }
             };
-            builder.table.insert(KeyExported::Export(k.clone()), val);
+            builder.table.insert(KeyExported::Export(k), val);
         }
         Self(Arc::new(BindingsInner {
             module_info,
