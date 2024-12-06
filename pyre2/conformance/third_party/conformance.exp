@@ -9566,6 +9566,16 @@
   "generics_defaults.py": [
     {
       "code": -2,
+      "column": 7,
+      "concise_description": "A type parameter without a default cannot follow one with a default",
+      "description": "A type parameter without a default cannot follow one with a default",
+      "line": 24,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 24
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "assert_type(type[NoNonDefaults], type[NoNonDefaults[str, int]]) failed",
       "description": "assert_type(type[NoNonDefaults], type[NoNonDefaults[str, int]]) failed",
@@ -9883,6 +9893,16 @@
       "name": "PyreError",
       "stop_column": 27,
       "stop_line": 127
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "A type parameter without a default cannot follow one with a default",
+      "description": "A type parameter without a default cannot follow one with a default",
+      "line": 138,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 138
     },
     {
       "code": -2,

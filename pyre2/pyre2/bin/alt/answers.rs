@@ -71,7 +71,6 @@ use crate::types::type_var::TypeVar;
 use crate::types::types::AnyStyle;
 use crate::types::types::LegacyTypeParameterLookup;
 use crate::types::types::Quantified;
-use crate::types::types::TParam;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -778,10 +777,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if tparams.is_empty() {
             ta
         } else {
-            Type::Forall(
-                TParams::new(tparams.into_iter().map(TParam::new).collect()),
-                Box::new(ta),
-            )
+            Type::Forall(self.type_params(range, tparams), Box::new(ta))
         }
     }
 
@@ -884,6 +880,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 params
             }
             None => Vec::new(),
+        }
+    }
+
+    pub fn type_params(&self, range: TextRange, info: Vec<TParamInfo>) -> TParams {
+        match TParams::new(info) {
+            Ok(validated_tparams) => validated_tparams,
+            Err(fixed_tparams) => {
+                self.error(
+                    range,
+                    "A type parameter without a default cannot follow one with a default"
+                        .to_owned(),
+                );
+                fixed_tparams
+            }
         }
     }
 
@@ -1093,7 +1103,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
                 tparams.extend(legacy_tparams);
                 Type::forall(
-                    TParams::new(tparams.into_iter().map(TParam::new).collect()),
+                    self.type_params(x.range, tparams),
                     Type::callable(args, ret),
                 )
             }
@@ -1217,21 +1227,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             *range,
                             format!("Type parameters used in `{name}` but not declared"),
                         );
-                        let mut all_params = self
-                            .scoped_type_params(params)
-                            .into_iter()
-                            .map(TParam::new)
-                            .collect::<Vec<_>>();
-                        all_params.extend(other_params.iter().cloned());
-                        Type::Forall(TParams::new(all_params), inner_ta)
+                        let mut all_params = self.scoped_type_params(params);
+                        all_params.extend(other_params.iter().map(|p| TParamInfo {
+                            name: p.name.clone(),
+                            quantified: p.quantified,
+                            default: p.default.clone(),
+                        }));
+                        Type::Forall(self.type_params(*range, all_params), inner_ta)
                     }
                     Type::TypeAlias(_) if params.is_some() => Type::Forall(
-                        TParams::new(
-                            self.scoped_type_params(params)
-                                .into_iter()
-                                .map(TParam::new)
-                                .collect(),
-                        ),
+                        self.type_params(*range, self.scoped_type_params(params)),
                         Box::new(ta),
                     ),
                     _ => ta,

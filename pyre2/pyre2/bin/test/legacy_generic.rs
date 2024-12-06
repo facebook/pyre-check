@@ -307,6 +307,17 @@ def f9(c1: C[int, str], c2: C[str]):  # E: Expected 2 type arguments
     "#,
 );
 
+simple_test!(
+    test_bad_default_order,
+    r#"
+from typing import Generic, TypeVar
+T1 = TypeVar('T1', default=int)
+T2 = TypeVar('T2')
+class C(Generic[T1, T2]):  # E: A type parameter without a default cannot follow one with a default
+    pass
+    "#,
+);
+
 // TODO: support declared variance
 simple_test!(
     test_variance,

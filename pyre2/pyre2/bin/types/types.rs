@@ -131,6 +131,7 @@ pub struct TParam {
     /// Display name
     pub name: Name,
     pub quantified: Quantified,
+    pub default: Option<Type>,
 }
 
 impl Display for TParam {
@@ -139,16 +140,8 @@ impl Display for TParam {
     }
 }
 
-impl TParam {
-    pub fn new(info: TParamInfo) -> Self {
-        Self {
-            name: info.name,
-            quantified: info.quantified,
-        }
-    }
-}
-
-/// Wraps a vector of type parameters to give them a nice Display and convenient access methods.
+/// Wraps a vector of type parameters. The constructor ensures that
+/// type parameters without defaults never follow ones with defaults.
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParams(Vec<TParam>);
 
@@ -159,8 +152,30 @@ impl Display for TParams {
 }
 
 impl TParams {
-    pub fn new(tparams: Vec<TParam>) -> Self {
-        Self(tparams)
+    pub fn new(info: Vec<TParamInfo>) -> Result<Self, Self> {
+        let mut error = false;
+        let mut tparams: Vec<TParam> = Vec::new();
+        for tparam in info {
+            let default = if tparam.default.is_none()
+                && tparams.last().map_or(false, |p| p.default.is_some())
+            {
+                // Missing default.
+                error = true;
+                Some(Type::any_error())
+            } else {
+                tparam.default
+            };
+            tparams.push(TParam {
+                name: tparam.name,
+                quantified: tparam.quantified,
+                default,
+            });
+        }
+        if error {
+            Err(Self(tparams))
+        } else {
+            Ok(Self(tparams))
+        }
     }
 
     pub fn len(&self) -> usize {

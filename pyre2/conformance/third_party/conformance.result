@@ -695,7 +695,6 @@
     "Line 182: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED MyIterableAny <: Callable[[], @_]']"
   ],
   "generics_defaults.py": [
-    "Line 24: Expected 1 errors",
     "Line 104: Expected 1 errors",
     "Line 111: Expected 1 errors",
     "Line 30: Unexpected errors ['assert_type(type[NoNonDefaults], type[NoNonDefaults[str, int]]) failed']",

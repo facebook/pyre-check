@@ -273,7 +273,6 @@ mod tests {
     use crate::types::type_var::Variance;
     use crate::types::types::Quantified;
     use crate::types::types::QuantifiedKind;
-    use crate::types::types::TParam;
     use crate::types::types::TParamInfo;
     use crate::types::types::TParams;
     use crate::uniques::UniqueFactory;
@@ -288,13 +287,12 @@ mod tests {
         Class::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
             mi,
-            TParams::new(tparams.map(|q| {
-                TParam::new(TParamInfo {
-                    name: Name::new(q.id().to_string()),
-                    quantified: *q,
-                    default: None,
-                })
-            })),
+            TParams::new(tparams.map(|q| TParamInfo {
+                name: Name::new(q.id().to_string()),
+                quantified: *q,
+                default: None,
+            }))
+            .expect("test code"),
             SmallSet::new(),
         )
     }

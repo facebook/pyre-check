@@ -35,7 +35,6 @@ use crate::types::class::TArgs;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
-use crate::types::types::TParam;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -84,14 +83,7 @@ fn strip_first_argument(ty: &Type) -> Type {
         }
         _ => ty.clone(),
     };
-    Type::forall(
-        if let Some(gs) = gs {
-            gs.to_owned()
-        } else {
-            TParams::new(Vec::new())
-        },
-        ty,
-    )
+    Type::forall(gs.cloned().unwrap_or_default(), ty)
 }
 
 fn replace_return_type(ty: Type, ret: Type) -> Type {
@@ -100,14 +92,7 @@ fn replace_return_type(ty: Type, ret: Type) -> Type {
         Type::Callable(c) => Type::callable(c.args.as_list().unwrap().to_owned(), ret),
         _ => ty.clone(),
     };
-    Type::forall(
-        if let Some(gs) = gs {
-            gs.to_owned()
-        } else {
-            TParams::new(Vec::new())
-        },
-        ty,
-    )
+    Type::forall(gs.cloned().unwrap_or_default(), ty)
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -250,7 +235,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 tparams.insert(p.clone());
             }
         }
-        TParams::new(tparams.into_iter().map(TParam::new).collect())
+        self.type_params(name.range, tparams.into_iter().collect())
     }
 
     pub fn class_metadata_of(
