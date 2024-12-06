@@ -14,4 +14,5 @@ pub mod exports;
 pub mod expr;
 pub mod specials;
 pub mod table;
+pub mod unwrap;
 pub mod util;

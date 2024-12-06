@@ -502,20 +502,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    // If `error_range` is None, do not report errors
-    pub fn unwrap_awaitable(&self, ty: Type, error_range: Option<TextRange>) -> Type {
-        let var = self.solver().fresh_unwrap(self.uniques);
-        let awaitable_ty = self.stdlib.awaitable(Type::Var(var)).to_type();
-        let is_awaitable = self
-            .solver()
-            .is_subset_eq(&ty, &awaitable_ty, self.type_order());
-        if !is_awaitable && let Some(range) = error_range {
-            self.error(range, "Expression is not awaitable".to_owned())
-        } else {
-            self.solver().force_var(var)
-        }
-    }
-
     fn literal_bool_infer(&self, x: &Expr) -> bool {
         let ty = self.expr_infer(x);
         match ty {
@@ -770,7 +756,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Await(x) => {
                 let awaiting_ty = self.expr_infer(&x.value);
-                self.unwrap_awaitable(awaiting_ty, Some(x.range()))
+                self.unwrap_awaitable(&awaiting_ty, Some(x.range()))
             }
             Expr::Yield(x) => self.error_todo("Answers::expr_infer", x),
             Expr::YieldFrom(_) => self.error_todo("Answers::expr_infer", x),

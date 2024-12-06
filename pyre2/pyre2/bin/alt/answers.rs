@@ -804,7 +804,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.call_method_with_types(context_manager_type, &dunder::ENTER, range, &[])
             }
             ContextManagerKind::Async => self.unwrap_awaitable(
-                self.call_method_with_types(context_manager_type, &dunder::AENTER, range, &[]),
+                &self.call_method_with_types(context_manager_type, &dunder::AENTER, range, &[]),
                 None,
             ),
         }
@@ -839,7 +839,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &exit_arg_types,
             ),
             ContextManagerKind::Async => self.unwrap_awaitable(
-                self.call_method_with_types(
+                &self.call_method_with_types(
                     context_manager_type,
                     &dunder::AEXIT,
                     range,
