@@ -114,7 +114,6 @@ impl Args {
         } else {
             state.run(&modules)
         };
-        let error_count = state.count_errors();
         let computing = start.elapsed();
         if let Some(file) = args.report_errors {
             let mut file = BufWriter::new(File::create(file)?);
@@ -129,8 +128,9 @@ impl Args {
             state.print_error_summary(limit);
         }
         info!(
-            "{} errors, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
-            number_thousands(error_count),
+            "{} errors, {} modules, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
+            number_thousands(state.count_errors()),
+            number_thousands(state.module_count()),
             memory_trace.peak()
         );
         if let Some(debug_info) = args.debug_info {

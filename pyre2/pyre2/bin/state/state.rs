@@ -333,6 +333,10 @@ impl<'a> State<'a> {
         errors
     }
 
+    pub fn module_count(&self) -> usize {
+        self.modules.read().unwrap().len()
+    }
+
     pub fn count_errors(&self) -> usize {
         self.modules
             .read()
