@@ -80,7 +80,7 @@ impl Args {
         let to_check = args
             .files
             .iter()
-            .map(|x| (module_from_path(x), x.clone()))
+            .map(|x| (module_from_path(x, &include), x.clone()))
             .collect::<SmallMap<_, _>>();
         let error_style = if args.report_errors.is_some() {
             ErrorStyle::Delayed

@@ -227,7 +227,7 @@ impl<'a> Server<'a> {
         let modules = self
             .open_files
             .keys()
-            .map(|x| (module_from_path(x), x.clone()))
+            .map(|x| (module_from_path(x, &self.include), x.clone()))
             .collect::<SmallMap<_, _>>();
         let module_names = modules.keys().copied().collect::<Vec<_>>();
 
@@ -301,7 +301,10 @@ impl<'a> Server<'a> {
     }
 
     fn goto_definition(&self, params: GotoDefinitionParams) -> Option<GotoDefinitionResponse> {
-        let module = url_to_module(&params.text_document_position_params.text_document.uri);
+        let module = url_to_module(
+            &params.text_document_position_params.text_document.uri,
+            &self.include,
+        );
         let info = self.state.get_module_info(module)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
         let (module, range) = self.state.goto_definition(module, range)?;
@@ -322,7 +325,10 @@ impl<'a> Server<'a> {
     }
 
     fn hover(&self, params: HoverParams) -> Option<Hover> {
-        let module = url_to_module(&params.text_document_position_params.text_document.uri);
+        let module = url_to_module(
+            &params.text_document_position_params.text_document.uri,
+            &self.include,
+        );
         let info = self.state.get_module_info(module)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
         let t = self.state.hover(module, range)?;
@@ -336,7 +342,7 @@ impl<'a> Server<'a> {
     }
 
     fn inlay_hints(&self, params: InlayHintParams) -> Option<Vec<InlayHint>> {
-        let module = url_to_module(&params.text_document.uri);
+        let module = url_to_module(&params.text_document.uri, &self.include);
         let info = self.state.get_module_info(module)?;
         let t = self.state.inlay_hints(module)?;
         Some(t.into_map(|x| {
@@ -380,8 +386,8 @@ fn position_to_text_size(info: &ModuleInfo, position: lsp_types::Position) -> Te
     info.to_text_size(position.line, position.character)
 }
 
-fn url_to_module(uri: &Url) -> ModuleName {
-    module_from_path(&uri.to_file_path().unwrap())
+fn url_to_module(uri: &Url, include: &[PathBuf]) -> ModuleName {
+    module_from_path(&uri.to_file_path().unwrap(), include)
 }
 
 fn as_notification<T>(x: &Notification) -> Option<T::Params>
