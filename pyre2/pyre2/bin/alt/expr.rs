@@ -43,6 +43,7 @@ use crate::types::special_form::SpecialForm;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
+use crate::types::type_var::TypeVarArgs;
 use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::Type;
@@ -530,10 +531,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn tyvar_from_arguments(&self, arguments: &Arguments) -> TypeVar {
-        let name = match arguments.args.first() {
+        let args = TypeVarArgs::from_arguments(arguments);
+
+        let name = match args.name {
             Some(Expr::StringLiteral(x)) => Identifier::new(Name::new(x.value.to_str()), x.range),
             _ => {
-                let msg = if arguments.args.is_empty() {
+                let msg = if args.name.is_none() {
                     "Missing `name` argument to TypeVar"
                 } else {
                     "Expected first argument of TypeVar to be a string literal"
@@ -543,46 +546,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Identifier::new(Name::new("unknown"), arguments.range)
             }
         };
-        let constraints = if arguments.args.len() > 1 {
-            arguments.args[1..].map(|arg| self.expr_untype(arg))
-        } else {
-            Vec::new()
-        };
-        let mut bound = None;
-        let mut default = None;
-        let mut covariant = false;
-        let mut contravariant = false;
-        let mut infer_variance = false;
-        for kw in arguments.keywords.iter() {
-            match &kw.arg {
-                Some(id) if id.id == "bound" => {
-                    bound = Some(self.expr_untype(&kw.value));
-                }
-                Some(id) if id.id == "default" => {
-                    default = Some(self.expr_untype(&kw.value));
-                }
-                Some(id) if id.id == "covariant" => {
-                    covariant = self.literal_bool_infer(&kw.value);
-                }
-                Some(id) if id.id == "contravariant" => {
-                    contravariant = self.literal_bool_infer(&kw.value);
-                }
-                Some(id) if id.id == "infer_variance" => {
-                    infer_variance = self.literal_bool_infer(&kw.value);
-                }
-                Some(id) => {
-                    self.error(
-                        kw.range,
-                        format!("Unexpected keyword argument `{}` to TypeVar", id.id),
-                    );
-                }
-                None => {
-                    self.error(
-                        kw.range,
-                        "Unexpected anonymous keyword to TypeVar".to_owned(),
-                    );
-                }
-            }
+        let constraints = args.constraints.map(|x| self.expr_untype(x));
+        let bound = args.bound.map(|x| self.expr_untype(x));
+        let default = args.default.map(|x| self.expr_untype(x));
+        let covariant = args.covariant.map_or(false, |x| self.literal_bool_infer(x));
+        let contravariant = args
+            .contravariant
+            .map_or(false, |x| self.literal_bool_infer(x));
+        let infer_variance = args
+            .infer_variance
+            .map_or(false, |x| self.literal_bool_infer(x));
+
+        for kw in args.unknown {
+            self.error(
+                kw.range,
+                match &kw.arg {
+                    Some(id) => format!("Unexpected keyword argument `{}` to TypeVar", id.id),
+                    None => "Unexpected anonymous keyword to TypeVar".to_owned(),
+                },
+            );
         }
         let restriction = if let Some(bound) = bound {
             if !constraints.is_empty() {

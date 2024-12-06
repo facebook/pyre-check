@@ -9,7 +9,10 @@ use std::fmt;
 use std::fmt::Display;
 
 use dupe::Dupe;
+use ruff_python_ast::Arguments;
+use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
+use ruff_python_ast::Keyword;
 
 use crate::module::module_info::ModuleInfo;
 use crate::types::qname::QName;
@@ -89,5 +92,49 @@ impl TypeVar {
         matches!(
             x, Type::ClassDef(cls)
             if cls.name() == "TypeVar" && matches!(cls.module_info().name().as_str(), "typing" | "typing_extensions"))
+    }
+}
+
+#[derive(Default, Debug)]
+pub struct TypeVarArgs<'a> {
+    pub name: Option<&'a Expr>,
+    pub constraints: Vec<&'a Expr>,
+    pub bound: Option<&'a Expr>,
+    pub default: Option<&'a Expr>,
+    pub covariant: Option<&'a Expr>,
+    pub contravariant: Option<&'a Expr>,
+    pub infer_variance: Option<&'a Expr>,
+    pub unknown: Vec<&'a Keyword>,
+}
+
+impl<'a> TypeVarArgs<'a> {
+    pub fn from_arguments(arguments: &'a Arguments) -> Self {
+        let mut res = Self::default();
+        match arguments.args.first() {
+            Some(x) => res.name = Some(x),
+            _ => {}
+        }
+        res.constraints = arguments.args.iter().skip(1).collect();
+        for kw in arguments.keywords.iter() {
+            match &kw.arg {
+                Some(id) if id.id == "bound" => {
+                    res.bound = Some(&kw.value);
+                }
+                Some(id) if id.id == "default" => {
+                    res.default = Some(&kw.value);
+                }
+                Some(id) if id.id == "covariant" => {
+                    res.covariant = Some(&kw.value);
+                }
+                Some(id) if id.id == "contravariant" => {
+                    res.contravariant = Some(&kw.value);
+                }
+                Some(id) if id.id == "infer_variance" => {
+                    res.infer_variance = Some(&kw.value);
+                }
+                _ => res.unknown.push(kw),
+            }
+        }
+        res
     }
 }
