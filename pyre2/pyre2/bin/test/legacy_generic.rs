@@ -158,6 +158,32 @@ T = TypeVar()  # E: Missing `name` argument
     "#,
 );
 
+// TODO: This should be an error
+simple_test!(
+    test_tvar_wrong_name,
+    r#"
+from typing import TypeVar
+T = TypeVar("Z")
+    "#,
+);
+
+simple_test!(
+    test_tvar_wrong_name_expr,
+    r#"
+from typing import TypeVar
+T = TypeVar(17)  # E: Expected first argument of TypeVar to be a string literal
+    "#,
+);
+
+simple_test!(
+    test_tvar_wrong_name_bind,
+    r#"
+from typing import TypeVar
+x = "test"
+T = TypeVar(x)  # E: Expected first argument of TypeVar to be a string literal
+    "#,
+);
+
 simple_test!(
     test_tvar_unexpected_keyword,
     r#"
