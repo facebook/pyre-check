@@ -984,7 +984,7 @@ impl<'a> BindingsBuilder<'a> {
         }
 
         self.bind_definition(
-            &x.name.clone(),
+            &func_name,
             Binding::Function(Box::new(x), kind, legacy_tparams.into_boxed_slice()),
             None,
         );
@@ -994,9 +994,10 @@ impl<'a> BindingsBuilder<'a> {
             return_exprs.push(self.returns.pop().unwrap());
         }
         let return_ann = return_annotation.map(|x| {
-            let key = KeyAnnotation::ReturnAnnotation(ShortIdentifier::new(&func_name));
-            self.table
-                .insert(key.clone(), BindingAnnotation::AnnotateExpr(*x, self_type))
+            self.table.insert(
+                KeyAnnotation::ReturnAnnotation(ShortIdentifier::new(&func_name)),
+                BindingAnnotation::AnnotateExpr(*x, self_type),
+            )
         });
         let mut return_expr_keys = SmallSet::with_capacity(return_exprs.len());
         for x in return_exprs {
@@ -1272,7 +1273,7 @@ impl<'a> BindingsBuilder<'a> {
                     }
                     _ => self.ensure_expr(&value),
                 }
-                for target in x.targets.iter() {
+                for target in x.targets {
                     let make_binding = |k: Option<Idx<KeyAnnotation>>| {
                         let b = Binding::Expr(k, value.clone());
                         if let Some(name) = &name {
@@ -1281,7 +1282,7 @@ impl<'a> BindingsBuilder<'a> {
                             b
                         }
                     };
-                    self.bind_target(target, &make_binding, true)
+                    self.bind_target(&target, &make_binding, true)
                 }
             }
             Stmt::AugAssign(x) => {
@@ -1367,12 +1368,10 @@ impl<'a> BindingsBuilder<'a> {
                         Key::Anon(attr.range),
                         Binding::Eq(ann_key, attr_key, attr.attr.id),
                     );
-                    if let Some(v) = &x.value {
-                        self.ensure_expr(v);
-                        self.table.insert(
-                            Key::Anon(v.range()),
-                            Binding::Expr(Some(ann_key), *v.clone()),
-                        );
+                    if let Some(v) = x.value {
+                        self.ensure_expr(&v);
+                        self.table
+                            .insert(Key::Anon(v.range()), Binding::Expr(Some(ann_key), *v));
                     }
                 }
                 _ => self.todo("Bindings::stmt AnnAssign", &x),
@@ -1401,14 +1400,14 @@ impl<'a> BindingsBuilder<'a> {
                 self.ensure_expr(&x.iter);
                 let make_binding = |k| Binding::IterableValue(k, *x.iter.clone());
                 self.bind_target(&x.target, &make_binding, true);
-                self.stmts(x.body.clone());
+                self.stmts(x.body);
                 self.teardown_loop(range, x.orelse);
             }
             Stmt::While(x) => {
                 let range = TextRange::new(x.range.start(), x.body.last().unwrap().range().end());
                 self.setup_loop(range);
                 self.ensure_expr(&x.test);
-                self.stmts(x.body.clone());
+                self.stmts(x.body);
                 self.teardown_loop(range, x.orelse);
             }
             Stmt::If(x) => {
@@ -1442,27 +1441,27 @@ impl<'a> BindingsBuilder<'a> {
                 } else {
                     ContextManagerKind::Sync
                 };
-                for item in x.items.iter() {
+                for item in x.items {
                     self.ensure_expr(&item.context_expr);
-                    if let Some(opts) = &item.optional_vars {
+                    if let Some(opts) = item.optional_vars {
                         let make_binding = |k: Option<Idx<KeyAnnotation>>| {
                             Binding::ContextValue(k, item.context_expr.clone(), kind)
                         };
-                        self.bind_target(opts, &make_binding, true);
+                        self.bind_target(&opts, &make_binding, true);
                     } else {
                         self.table.insert(
                             Key::Anon(item.range()),
-                            Binding::ContextValue(None, item.context_expr.clone(), kind),
+                            Binding::ContextValue(None, item.context_expr, kind),
                         );
                     }
                 }
-                self.stmts(x.body.clone());
+                self.stmts(x.body);
             }
             Stmt::Match(x) => {
                 self.ensure_expr(&x.subject);
                 let key = self.table.insert(
                     Key::Anon(x.subject.range()),
-                    Binding::Expr(None, *x.subject.clone()),
+                    Binding::Expr(None, *x.subject),
                 );
                 let mut exhaustive = false;
                 let range = x.range;
