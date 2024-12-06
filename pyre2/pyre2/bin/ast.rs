@@ -215,4 +215,12 @@ impl Ast {
             TypeParam::TypeVarTuple(x) => &x.name,
         }
     }
+
+    pub fn type_param_default(x: &TypeParam) -> Option<&Expr> {
+        match x {
+            TypeParam::TypeVar(x) => x.default.as_deref(),
+            TypeParam::ParamSpec(x) => x.default.as_deref(),
+            TypeParam::TypeVarTuple(x) => x.default.as_deref(),
+        }
+    }
 }

@@ -69,6 +69,10 @@ impl TypeVar {
         &self.0.qname
     }
 
+    pub fn default(&self) -> Option<&Type> {
+        self.0.default.as_ref()
+    }
+
     pub fn to_type(&self) -> Type {
         Type::TypeVar(self.dupe())
     }

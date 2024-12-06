@@ -118,6 +118,14 @@ impl Quantified {
     }
 }
 
+/// Bundles together type param info for passing around while building TParams.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TParamInfo {
+    pub name: Name,
+    pub quantified: Quantified,
+    pub default: Option<Type>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParam {
     /// Display name
@@ -132,8 +140,11 @@ impl Display for TParam {
 }
 
 impl TParam {
-    pub fn new(name: Name, quantified: Quantified) -> Self {
-        Self { name, quantified }
+    pub fn new(info: TParamInfo) -> Self {
+        Self {
+            name: info.name,
+            quantified: info.quantified,
+        }
     }
 }
 
@@ -179,7 +190,7 @@ impl TParams {
 // represents that variable as a type parameter.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum LegacyTypeParameterLookup {
-    Parameter(TParam),
+    Parameter(TParamInfo),
     NotParameter(Type),
 }
 
@@ -193,7 +204,7 @@ impl Display for LegacyTypeParameterLookup {
 }
 
 impl LegacyTypeParameterLookup {
-    pub fn parameter(&self) -> Option<&TParam> {
+    pub fn parameter(&self) -> Option<&TParamInfo> {
         match self {
             Self::Parameter(p) => Some(p),
             Self::NotParameter(_) => None,

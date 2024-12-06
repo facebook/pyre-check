@@ -72,6 +72,7 @@ use crate::types::types::AnyStyle;
 use crate::types::types::LegacyTypeParameterLookup;
 use crate::types::types::Quantified;
 use crate::types::types::TParam;
+use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::types::types::TypeAlias;
@@ -549,24 +550,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match &*self.get_idx(binding.0) {
             Type::Type(box Type::TypeVar(x)) => {
                 let q = Quantified::type_var(self.uniques);
-                Arc::new(LegacyTypeParameterLookup::Parameter(TParam::new(
-                    x.qname().id().clone(),
-                    q,
-                )))
+                Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
+                    name: x.qname().id().clone(),
+                    quantified: q,
+                    default: x.default().cloned(),
+                }))
             }
             Type::Type(box Type::TypeVarTuple(x)) => {
                 let q = Quantified::type_var_tuple(self.uniques);
-                Arc::new(LegacyTypeParameterLookup::Parameter(TParam::new(
-                    x.qname().id().clone(),
-                    q,
-                )))
+                Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
+                    name: x.qname().id().clone(),
+                    quantified: q,
+                    default: None,
+                }))
             }
             Type::Type(box Type::ParamSpec(x)) => {
                 let q = Quantified::param_spec(self.uniques);
-                Arc::new(LegacyTypeParameterLookup::Parameter(TParam::new(
-                    x.qname().id().clone(),
-                    q,
-                )))
+                Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
+                    name: x.qname().id().clone(),
+                    quantified: q,
+                    default: None,
+                }))
             }
             ty => Arc::new(LegacyTypeParameterLookup::NotParameter(ty.clone())),
         }
@@ -701,7 +705,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         ty: &mut Type,
         seen: &mut SmallMap<TypeVar, Quantified>,
-        tparams: &mut Vec<TParam>,
+        tparams: &mut Vec<TParamInfo>,
     ) {
         match ty {
             Type::Union(ts) => {
@@ -724,7 +728,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Entry::Vacant(e) => {
                         let q = Quantified::type_var(self.uniques);
                         e.insert(q);
-                        tparams.push(TParam::new(ty_var.qname().id().clone(), q));
+                        tparams.push(TParamInfo {
+                            name: ty_var.qname().id().clone(),
+                            quantified: q,
+                            default: ty_var.default().cloned(),
+                        });
                         q
                     }
                 };
@@ -770,7 +778,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if tparams.is_empty() {
             ta
         } else {
-            Type::Forall(TParams::new(tparams), Box::new(ta))
+            Type::Forall(
+                TParams::new(tparams.into_iter().map(TParam::new).collect()),
+                Box::new(ta),
+            )
         }
     }
 
@@ -849,28 +860,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         enter_type
     }
 
-    pub fn scoped_type_params(&self, x: &Option<Box<TypeParams>>) -> Vec<TParam> {
-        let names = match x {
-            Some(box x) => x.type_params.iter().map(Ast::type_param_id).collect(),
-            None => Vec::new(),
-        };
-
-        fn get_quantified(t: &Type) -> Quantified {
-            match t {
-                Type::Type(box Type::Quantified(q)) => *q,
-                _ => unreachable!(),
+    pub fn scoped_type_params(&self, x: &Option<Box<TypeParams>>) -> Vec<TParamInfo> {
+        match x {
+            Some(box x) => {
+                fn get_quantified(t: &Type) -> Quantified {
+                    match t {
+                        Type::Type(box Type::Quantified(q)) => *q,
+                        _ => unreachable!(),
+                    }
+                }
+                let mut params = Vec::new();
+                for raw_param in x.type_params.iter() {
+                    let name = Ast::type_param_id(raw_param);
+                    let default = Ast::type_param_default(raw_param).map(|e| self.expr_untype(e));
+                    params.push(TParamInfo {
+                        name: name.id.clone(),
+                        quantified: get_quantified(
+                            &self.get(&Key::Definition(ShortIdentifier::new(name))),
+                        ),
+                        default,
+                    });
+                }
+                params
             }
+            None => Vec::new(),
         }
-
-        names
-            .into_iter()
-            .map(|x| {
-                TParam::new(
-                    x.id.clone(),
-                    get_quantified(&self.get(&Key::Definition(ShortIdentifier::new(x)))),
-                )
-            })
-            .collect()
     }
 
     fn solve_binding(&self, binding: &Binding) -> Arc<Type> {
@@ -1078,7 +1092,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .iter()
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
                 tparams.extend(legacy_tparams);
-                Type::forall(TParams::new(tparams), Type::callable(args, ret))
+                Type::forall(
+                    TParams::new(tparams.into_iter().map(TParam::new).collect()),
+                    Type::callable(args, ret),
+                )
             }
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExported::Export(name.clone()))
@@ -1200,13 +1217,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             *range,
                             format!("Type parameters used in `{name}` but not declared"),
                         );
-                        let mut all_params = self.scoped_type_params(params);
+                        let mut all_params = self
+                            .scoped_type_params(params)
+                            .into_iter()
+                            .map(TParam::new)
+                            .collect::<Vec<_>>();
                         all_params.extend(other_params.iter().cloned());
                         Type::Forall(TParams::new(all_params), inner_ta)
                     }
-                    Type::TypeAlias(_) if params.is_some() => {
-                        Type::Forall(TParams::new(self.scoped_type_params(params)), Box::new(ta))
-                    }
+                    Type::TypeAlias(_) if params.is_some() => Type::Forall(
+                        TParams::new(
+                            self.scoped_type_params(params)
+                                .into_iter()
+                                .map(TParam::new)
+                                .collect(),
+                        ),
+                        Box::new(ta),
+                    ),
                     _ => ta,
                 }
             }

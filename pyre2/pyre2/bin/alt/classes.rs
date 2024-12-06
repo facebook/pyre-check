@@ -36,6 +36,7 @@ use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
 use crate::types::types::TParam;
+use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
@@ -169,7 +170,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn class_tparams(
         &self,
         name: &Identifier,
-        scoped_tparams: Vec<TParam>,
+        scoped_tparams: Vec<TParamInfo>,
         bases: Vec<BaseClass>,
         legacy: &[Idx<KeyLegacyTypeParam>],
     ) -> TParams {
@@ -249,7 +250,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 tparams.insert(p.clone());
             }
         }
-        TParams::new(tparams.into_iter().collect())
+        TParams::new(tparams.into_iter().map(TParam::new).collect())
     }
 
     pub fn class_metadata_of(
