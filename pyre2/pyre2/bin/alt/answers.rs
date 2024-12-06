@@ -13,6 +13,7 @@ use std::sync::Arc;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
+use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
@@ -67,6 +68,7 @@ use crate::types::class_metadata::ClassMetadata;
 use crate::types::module::Module;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
+use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
 use crate::types::type_var::Variance;
 use crate::types::types::AnyStyle;
@@ -80,6 +82,7 @@ use crate::types::types::TypeAliasStyle;
 use crate::types::types::Var;
 use crate::uniques::UniqueFactory;
 use crate::util::display::DisplayWith;
+use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
 
 /// Invariants:
@@ -553,6 +556,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
                     name: x.qname().id().clone(),
                     quantified: q,
+                    restriction: x.restriction().clone(),
                     default: x.default().cloned(),
                     variance: x.variance(),
                 }))
@@ -562,6 +566,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
                     name: x.qname().id().clone(),
                     quantified: q,
+                    restriction: Restriction::Unrestricted,
                     default: None,
                     variance: Some(Variance::Invariant),
                 }))
@@ -571,6 +576,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
                     name: x.qname().id().clone(),
                     quantified: q,
+                    restriction: Restriction::Unrestricted,
                     default: None,
                     variance: Some(Variance::Invariant),
                 }))
@@ -734,6 +740,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         tparams.push(TParamInfo {
                             name: ty_var.qname().id().clone(),
                             quantified: q,
+                            restriction: Restriction::Unrestricted,
                             default: ty_var.default().cloned(),
                             variance: ty_var.variance(),
                         });
@@ -873,12 +880,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let mut params = Vec::new();
                 for raw_param in x.type_params.iter() {
                     let name = Ast::type_param_id(raw_param);
+                    let restriction = match raw_param {
+                        TypeParam::TypeVar(tv) => match &tv.bound {
+                            Some(box Expr::Tuple(tup)) => {
+                                Restriction::Constraints(tup.elts.map(|e| self.expr_untype(e)))
+                            }
+                            Some(e) => Restriction::Bound(self.expr_untype(e)),
+                            None => Restriction::Unrestricted,
+                        },
+                        _ => Restriction::Unrestricted,
+                    };
                     let default = Ast::type_param_default(raw_param).map(|e| self.expr_untype(e));
                     params.push(TParamInfo {
                         name: name.id.clone(),
                         quantified: get_quantified(
                             &self.get(&Key::Definition(ShortIdentifier::new(name))),
                         ),
+                        restriction,
                         default,
                         variance: None,
                     });

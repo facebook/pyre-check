@@ -27,6 +27,7 @@ use crate::types::param_spec::ParamSpec;
 use crate::types::special_form::SpecialForm;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
+use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
 use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
@@ -124,6 +125,7 @@ impl Quantified {
 pub struct TParamInfo {
     pub name: Name,
     pub quantified: Quantified,
+    pub restriction: Restriction,
     pub default: Option<Type>,
     /// The variance if known, or None for infer_variance=True or a scoped type parameter
     pub variance: Option<Variance>,
@@ -134,6 +136,7 @@ pub struct TParam {
     /// Display name
     pub name: Name,
     pub quantified: Quantified,
+    pub restriction: Restriction,
     pub default: Option<Type>,
     pub variance: Variance,
 }
@@ -158,7 +161,7 @@ impl Display for TParams {
 impl TParams {
     pub fn new(info: Vec<TParamInfo>) -> Result<Self, Self> {
         let mut error = false;
-        let mut tparams: Vec<TParam> = Vec::new();
+        let mut tparams: Vec<TParam> = Vec::with_capacity(info.len());
         for tparam in info {
             let default = if tparam.default.is_none()
                 && tparams.last().map_or(false, |p| p.default.is_some())
@@ -172,6 +175,7 @@ impl TParams {
             tparams.push(TParam {
                 name: tparam.name,
                 quantified: tparam.quantified,
+                restriction: tparam.restriction,
                 default,
                 // Classes set the variance before getting here. For functions and aliases, the variance isn't meaningful;
                 // it doesn't matter what we set it to as long as we make it non-None to indicate that it's not missing.

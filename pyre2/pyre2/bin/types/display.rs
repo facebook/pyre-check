@@ -290,6 +290,7 @@ mod tests {
             TParams::new(tparams.map(|q| TParamInfo {
                 name: Name::new(q.id().to_string()),
                 quantified: *q,
+                restriction: Restriction::Unrestricted,
                 default: None,
                 variance: Some(Variance::Invariant),
             }))

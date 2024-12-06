@@ -11454,6 +11454,36 @@
     },
     {
       "code": -2,
+      "column": 17,
+      "concise_description": "untype, got list[type[int] | type[str]]",
+      "description": "untype, got list[type[int] | type[str]]",
+      "line": 50,
+      "name": "PyreError",
+      "stop_column": 27,
+      "stop_line": 50
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "untype, got tuple[type[bytes], type[str]]",
+      "description": "untype, got tuple[type[bytes], type[str]]",
+      "line": 73,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 73
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "untype, got Literal[3]",
+      "description": "untype, got Literal[3]",
+      "line": 77,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 77
+    },
+    {
+      "code": -2,
       "column": 23,
       "concise_description": "Could not find name `S`",
       "description": "Could not find name `S`",
@@ -11756,6 +11786,16 @@
     }
   ],
   "generics_syntax_scoping.py": [
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "untype, got int",
+      "description": "untype, got int",
+      "line": 18,
+      "name": "PyreError",
+      "stop_column": 27,
+      "stop_line": 18
+    },
     {
       "code": -2,
       "column": 1,

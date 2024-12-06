@@ -26,7 +26,7 @@ impl Display for TypeVar {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub enum Restriction {
     Constraints(Vec<Type>),
     Bound(Type),
@@ -67,6 +67,10 @@ impl TypeVar {
 
     pub fn qname(&self) -> &QName {
         &self.0.qname
+    }
+
+    pub fn restriction(&self) -> &Restriction {
+        &self.0.restriction
     }
 
     pub fn default(&self) -> Option<&Type> {
