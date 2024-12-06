@@ -135,6 +135,24 @@ Box[int]("oops")  # E: Literal['oops'] <: int
 );
 
 simple_test!(
+    test_generic_init_in_generic_class,
+    r#"
+from typing import assert_type
+class Box[T]:
+    def __init__[S](self, x: S, y: S):
+        pass
+    def wrap(self, x: bool) -> Box[Box[T]]:
+        if x:
+            return Box(self, self)  # ok
+        else:
+            return Box(self, 42)  # E: EXPECTED Literal[42] <: Box[?_]
+b = Box[int]("hello", "world")
+assert_type(b, Box[int])
+assert_type(b.wrap(True), Box[Box[int]])
+    "#,
+);
+
+simple_test!(
     test_list_class_basic,
     r#"
 from typing import assert_type

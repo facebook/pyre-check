@@ -77,23 +77,19 @@ impl BaseClass {
 }
 
 fn strip_first_argument(ty: &Type) -> Type {
-    let (gs, ty) = ty.as_forall();
-    let ty = match ty {
+    ty.apply_under_forall(|t| match t {
         Type::Callable(c) if c.args_len() >= Some(1) => {
             Type::callable(c.args.as_list().unwrap()[1..].to_owned(), c.ret.clone())
         }
-        _ => ty.clone(),
-    };
-    Type::forall(gs.cloned().unwrap_or_default(), ty)
+        _ => t.clone(),
+    })
 }
 
 fn replace_return_type(ty: Type, ret: Type) -> Type {
-    let (gs, ty) = ty.as_forall();
-    let ty = match ty {
-        Type::Callable(c) => Type::callable(c.args.as_list().unwrap().to_owned(), ret),
-        _ => ty.clone(),
-    };
-    Type::forall(gs.cloned().unwrap_or_default(), ty)
+    ty.apply_under_forall(|t| match t {
+        Type::Callable(c) => Type::callable(c.args.as_list().unwrap().to_owned(), ret.clone()),
+        _ => t.clone(),
+    })
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -605,7 +601,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_constructor_for_class_object(&self, cls: &Class) -> Type {
         let init_ty = self.get_init_method(cls);
         let tparams = cls.tparams();
-        Type::forall(tparams.clone(), init_ty)
+        Type::Forall(tparams.clone(), Box::new(init_ty))
     }
 
     /// Given an identifier, see whether it is bound to an enum class. If so,

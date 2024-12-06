@@ -415,28 +415,6 @@ impl Type {
         }
     }
 
-    pub fn as_forall(&self) -> (Option<&TParams>, &Type) {
-        match self {
-            Type::Forall(uniques, ty) => (Some(uniques), ty),
-            _ => (None, self),
-        }
-    }
-
-    pub fn forall(mut uniques: TParams, ty: Type) -> Self {
-        let ty = match ty {
-            Type::Forall(vars2, ty) => {
-                uniques.0.extend(vars2.0);
-                *ty
-            }
-            _ => ty,
-        };
-        if uniques.0.is_empty() {
-            ty
-        } else {
-            Type::Forall(uniques, Box::new(ty))
-        }
-    }
-
     pub fn callable(args: Vec<Arg>, ret: Type) -> Self {
         Type::Callable(Box::new(Callable::list(args, ret)))
     }
@@ -447,6 +425,13 @@ impl Type {
 
     pub fn callable_param_spec(p: Type, ret: Type) -> Self {
         Type::Callable(Box::new(Callable::param_spec(p, ret)))
+    }
+
+    pub fn apply_under_forall(&self, f: impl Fn(&Type) -> Type) -> Self {
+        match self {
+            Type::Forall(gs, ty) => Type::Forall(gs.clone(), Box::new(ty.apply_under_forall(f))),
+            _ => f(self),
+        }
     }
 
     pub fn type_form(inner: Type) -> Self {

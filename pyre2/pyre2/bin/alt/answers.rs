@@ -1102,10 +1102,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .iter()
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
                 tparams.extend(legacy_tparams);
-                Type::forall(
-                    self.type_params(x.range, tparams),
-                    Type::callable(args, ret),
-                )
+                let callable = Type::callable(args, ret);
+                if tparams.is_empty() {
+                    callable
+                } else {
+                    Type::Forall(self.type_params(x.range, tparams), Box::new(callable))
+                }
             }
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExported::Export(name.clone()))
@@ -1222,19 +1224,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = self.solve_binding_inner(binding);
                 let ta = self.as_type_alias(name, TypeAliasStyle::Scoped, ty, *range);
                 match ta {
-                    Type::Forall(other_params, inner_ta) => {
-                        self.error(
-                            *range,
-                            format!("Type parameters used in `{name}` but not declared"),
-                        );
-                        let mut all_params = self.scoped_type_params(params);
-                        all_params.extend(other_params.iter().map(|p| TParamInfo {
-                            name: p.name.clone(),
-                            quantified: p.quantified,
-                            default: p.default.clone(),
-                        }));
-                        Type::Forall(self.type_params(*range, all_params), inner_ta)
-                    }
+                    Type::Forall(..) => self.error(
+                        *range,
+                        format!("Type parameters used in `{name}` but not declared"),
+                    ),
                     Type::TypeAlias(_) if params.is_some() => Type::Forall(
                         self.type_params(*range, self.scoped_type_params(params)),
                         Box::new(ta),
