@@ -45,7 +45,7 @@ impl Tuple {
         let content = match self {
             Self::Concrete(elts) => {
                 if elts.is_empty() {
-                    "()".to_string()
+                    "()".to_owned()
                 } else {
                     format!("{}", commas_iter(|| elts.iter().map(&wrap)))
                 }

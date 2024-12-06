@@ -46,7 +46,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 match types.as_slice() {
                     [Type::Ellipsis, Type::Ellipsis] => self.error(
                         arguments[0].range(),
-                        "Invalid position for `...`".to_string(),
+                        "Invalid position for `...`".to_owned(),
                     ),
                     [t, Type::Ellipsis] => {
                         Type::type_form(Type::Tuple(Tuple::unbounded(t.clone())))
@@ -54,10 +54,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     _ => {
                         for (index, value) in arguments.iter().enumerate() {
                             if matches!(types[index], Type::Ellipsis) {
-                                return self.error(
-                                    value.range(),
-                                    "Invalid position for `...`".to_string(),
-                                );
+                                return self
+                                    .error(value.range(), "Invalid position for `...`".to_owned());
                             }
                         }
                         Type::type_form(Type::Tuple(Tuple::concrete(types)))

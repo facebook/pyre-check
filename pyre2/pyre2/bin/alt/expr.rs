@@ -603,7 +603,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         {
             self.error(
                 arguments.range,
-                "Contradictory variance specifications".to_string(),
+                "Contradictory variance specifications".to_owned(),
             );
         }
         let variance = if covariant {

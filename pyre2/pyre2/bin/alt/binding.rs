@@ -367,7 +367,7 @@ impl DisplayWith<Bindings> for Binding {
                     UnpackedPosition::ReverseIndex(i) => format!("-{i}"),
                     UnpackedPosition::Slice(i, j) => {
                         let end = match j {
-                            0 => "".to_string(),
+                            0 => "".to_owned(),
                             _ => format!("-{j}"),
                         };
                         format!("{}:{}", i, end)
