@@ -698,18 +698,7 @@
     "Line 104: Expected 1 errors",
     "Line 111: Expected 1 errors",
     "Line 30: Unexpected errors ['assert_type(type[NoNonDefaults], type[NoNonDefaults[str, int]]) failed']",
-    "Line 31: Unexpected errors ['assert_type(type[NoNonDefaults[Any, Any]], type[NoNonDefaults[str, int]]) failed', 'Expected 2 type arguments for class `NoNonDefaults`, got 1.']",
-    "Line 38: Unexpected errors ['assert_type(type[OneDefault[Any, Any]], type[OneDefault[float, bool]]) failed', 'Expected 2 type arguments for class `OneDefault`, got 1.']",
-    "Line 39: Unexpected errors ['assert_type(OneDefault[Any, Any], OneDefault[float, bool]) failed', 'Expected 2 type arguments for class `OneDefault`, got 1.']",
     "Line 45: Unexpected errors ['assert_type(type[AllTheDefaults], type[AllTheDefaults[Any, Any, str, int, bool]]) failed']",
-    "Line 46: Unexpected errors ['assert_type(type[AllTheDefaults[Any, Any, Any, Any, Any]], type[AllTheDefaults[int, complex, str, int, bool]]) failed']",
-    "Line 47: Unexpected errors ['Expected 5 type arguments for class `AllTheDefaults`, got 2.']",
-    "Line 52: Unexpected errors ['assert_type(type[AllTheDefaults[Any, Any, Any, Any, Any]], type[AllTheDefaults[int, complex, str, int, bool]]) failed']",
-    "Line 53: Unexpected errors ['Expected 5 type arguments for class `AllTheDefaults`, got 2.']",
-    "Line 55: Unexpected errors ['assert_type(type[AllTheDefaults[Any, Any, Any, Any, Any]], type[AllTheDefaults[int, complex, str, int, bool]]) failed']",
-    "Line 56: Unexpected errors ['Expected 5 type arguments for class `AllTheDefaults`, got 3.']",
-    "Line 59: Unexpected errors ['assert_type(type[AllTheDefaults[Any, Any, Any, Any, Any]], type[AllTheDefaults[int, complex, str, int, bool]]) failed']",
-    "Line 60: Unexpected errors ['Expected 5 type arguments for class `AllTheDefaults`, got 4.']",
     "Line 76: Unexpected errors ['untype, got ParamSpec']",
     "Line 79: Unexpected errors ['assert_type(type[Class_ParamSpec], type[Class_ParamSpec]) failed', 'Expected 0 type arguments for class `Class_ParamSpec`, got 2.']",
     "Line 80: Unexpected errors ['Expected 0 type arguments for class `Class_ParamSpec`, got 2.']",
@@ -733,19 +722,17 @@
     "Line 78: Expected 1 errors",
     "Line 23: Unexpected errors ['assert_type(type[slice], type[slice[int, int, int | None]]) failed']",
     "Line 24: Unexpected errors ['assert_type(slice[Any, Any, Any], slice[int, int, int | None]) failed']",
-    "Line 25: Unexpected errors ['assert_type(slice[Any, Any, Any], slice[str, str, int | None]) failed', 'Expected 3 type arguments for class `slice`, got 1.']",
+    "Line 25: Unexpected errors ['assert_type(slice[str, TypeVar[StartT], int | None], slice[str, str, int | None]) failed']",
     "Line 94: Unexpected errors ['assert_type(type[Bar], type[Bar[Any, list[Any]]]) failed']",
-    "Line 95: Unexpected errors ['assert_type(type[Bar[Any, Any]], type[Bar[int, list[int]]]) failed', 'Expected 2 type arguments for class `Bar`, got 1.']",
-    "Line 96: Unexpected errors ['assert_type(Bar[Any, Any], Bar[int, list[int]]) failed', 'Expected 2 type arguments for class `Bar`, got 1.']"
+    "Line 95: Unexpected errors ['assert_type(type[Bar[int, list[TypeVar[Z1]]]], type[Bar[int, list[int]]]) failed']",
+    "Line 96: Unexpected errors ['assert_type(Bar[int, list[TypeVar[Z1]]], Bar[int, list[int]]) failed']"
   ],
   "generics_defaults_specialization.py": [
     "Line 30: Expected 1 errors",
     "Line 25: Unexpected errors ['untype, got Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]']",
     "Line 26: Unexpected errors ['assert_type(Any, SomethingWithNoDefaults[int, str]) failed']",
     "Line 45: Unexpected errors ['assert_type(type[Bar], type[Bar[str]]) failed']",
-    "Line 46: Unexpected errors ['assert_type(Bar[Any], Bar[str]) failed']",
-    "Line 50: Unexpected errors ['Expected 2 type arguments for class `SubclassMe`, got 1.']",
-    "Line 53: Unexpected errors ['assert_type(Any, str) failed']"
+    "Line 46: Unexpected errors ['assert_type(Bar[Any], Bar[str]) failed']"
   ],
   "generics_paramspec_basic.py": [
     "Line 10: Expected 1 errors",
@@ -999,8 +986,8 @@
     "Line 18: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'Expected 1 type argument for class `Array`, got 2.']",
     "Line 22: Unexpected errors ['Expected 1 type argument for class `Array`, got 3.', 'Expected 1 type argument for class `Array`, got 3.']",
     "Line 29: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'Expected 1 type argument for class `Array`, got 3.']",
-    "Line 30: Unexpected errors ['assert_type(Array[Any] | Any, Array[Any]) failed', \"Missing argument 'self'\", 'Expected 1 type argument for class `Array`, got 2.']",
-    "Line 31: Unexpected errors ['assert_type(Array[Any] | Any, Array[Any]) failed', \"Missing argument 'self'\", 'Expected 1 type argument for class `Array`, got 3.']"
+    "Line 30: Unexpected errors ['assert_type(Array[TypeVar[Axis2]] | Array[TypeVar[Axis3]] | Any, Array[?_]) failed', \"Missing argument 'self'\", 'Expected 1 type argument for class `Array`, got 2.']",
+    "Line 31: Unexpected errors ['assert_type(Array[TypeVar[Axis2]] | Array[TypeVar[Axis3]] | Any, Array[?_]) failed', \"Missing argument 'self'\", 'Expected 1 type argument for class `Array`, got 3.']"
   ],
   "generics_typevartuple_specialization.py": [
     "Line 16: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",

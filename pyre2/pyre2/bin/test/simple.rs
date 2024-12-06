@@ -855,9 +855,9 @@ y: Literal[x]  # E: TODO: Name(ExprName - Lit::from_expr
 simple_test!(
     test_invalid_type_arguments,
     r#"
-from typing import assert_type, Any
+from typing import assert_type
 x: list[int, int] = []  # E: Expected 1 type argument for class `list`, got 2
-assert_type(x, list[Any])
+assert_type(x, list[int])
     "#,
 );
 

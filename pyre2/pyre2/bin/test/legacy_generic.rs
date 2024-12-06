@@ -292,7 +292,6 @@ def f(c: C[int, str]):
     "#,
 );
 
-// TODO: support TypeVar defaults
 simple_test!(
     test_default,
     r#"
@@ -301,9 +300,9 @@ T1 = TypeVar('T1')
 T2 = TypeVar('T2', default=int)
 class C(Generic[T1, T2]):
     pass
-def f9(c1: C[int, str], c2: C[str]):  # E: Expected 2 type arguments
+def f9(c1: C[int, str], c2: C[str]):
     assert_type(c1, C[int, str])
-    assert_type(c2, C[str, int])  # E: assert_type
+    assert_type(c2, C[str, int])
     "#,
 );
 

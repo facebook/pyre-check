@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 use dupe::Dupe;
 use itertools::Either;
+use itertools::EitherOrBoth;
 use itertools::Itertools;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
@@ -367,21 +368,36 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn check_and_create_targs(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> TArgs {
         let tparams = cls.tparams();
-        if targs.len() == tparams.len() {
-            TArgs::new(targs)
-        } else {
-            self.error(
-                range,
-                format!(
-                    "Expected {} type argument{} for class `{}`, got {}.",
-                    tparams.len(),
-                    if tparams.len() == 1 { "" } else { "s" },
-                    cls.name(),
-                    targs.len()
-                ),
-            );
-            TArgs::new(vec![Type::any_error(); tparams.len()])
+        let nargs = targs.len();
+        let mut checked_targs = Vec::new();
+        for pair in tparams.iter().zip_longest(targs) {
+            match pair {
+                EitherOrBoth::Both(_, arg) => {
+                    checked_targs.push(arg);
+                }
+                EitherOrBoth::Left(param) if let Some(default) = &param.default => {
+                    checked_targs.push(default.clone());
+                }
+                _ => {
+                    self.error(
+                        range,
+                        format!(
+                            "Expected {} type argument{} for class `{}`, got {}.",
+                            tparams.len(),
+                            if tparams.len() == 1 { "" } else { "s" },
+                            cls.name(),
+                            nargs
+                        ),
+                    );
+                    // We have either too few or too many targs. If too few, pad out with Any.
+                    // If there are too many, the extra are ignored.
+                    checked_targs
+                        .extend(vec![Type::any_error(); tparams.len().saturating_sub(nargs)]);
+                    break;
+                }
+            }
         }
+        TArgs::new(checked_targs)
     }
 
     fn create_default_targs(
