@@ -153,3 +153,47 @@ with Foo() as foo:  # E: str <: bool | None
     pass
     "#,
 );
+
+simple_test!(
+    test_async_with_dunder_aenter_not_async,
+    r#"
+from types import TracebackType
+class Foo:
+    def __aenter__(self) -> int:
+        ...
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+        /
+    ) -> None:
+        ...
+
+async def test() -> None:
+    async with Foo() as foo: # E: Expected `__aenter__` to be async
+        ...
+"#,
+);
+
+simple_test!(
+    test_async_with_dunder_aexit_not_async,
+    r#"
+from types import TracebackType
+class Foo:
+    async def __aenter__(self) -> int:
+        ...
+    def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+        /
+    ) -> None:
+        ...
+
+async def test() -> None:
+    async with Foo() as foo: # E: Expected `__aexit__` to be async
+        ...
+"#,
+);

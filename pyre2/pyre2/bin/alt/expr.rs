@@ -724,7 +724,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Await(x) => {
                 let awaiting_ty = self.expr_infer(&x.value);
-                self.unwrap_awaitable(&awaiting_ty, Some(x.range()))
+                match self.unwrap_awaitable(&awaiting_ty) {
+                    Some(ty) => ty,
+                    None => self.error(x.range, "Expression is not awaitable".to_owned()),
+                }
             }
             Expr::Yield(x) => self.error_todo("Answers::expr_infer", x),
             Expr::YieldFrom(_) => self.error_todo("Answers::expr_infer", x),

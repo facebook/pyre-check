@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use ruff_text_size::TextRange;
-
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::types::class::ClassType;
@@ -42,15 +40,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.solver().is_subset_eq(got, want, self.type_order())
     }
 
-    // If `error_range` is None, do not report errors
-    pub fn unwrap_awaitable(&self, ty: &Type, error_range: Option<TextRange>) -> Type {
+    pub fn unwrap_awaitable(&self, ty: &Type) -> Option<Type> {
         let var = self.fresh_var();
         let awaitable_ty = self.stdlib.awaitable(var.to_type()).to_type();
-        let is_awaitable = self.is_subset_eq(ty, &awaitable_ty);
-        if !is_awaitable && let Some(range) = error_range {
-            self.error(range, "Expression is not awaitable".to_owned())
+        if self.is_subset_eq(ty, &awaitable_ty) {
+            Some(self.force_var(var))
         } else {
-            self.force_var(var)
+            None
         }
     }
 

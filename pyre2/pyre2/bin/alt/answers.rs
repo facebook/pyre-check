@@ -803,10 +803,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ContextManagerKind::Sync => {
                 self.call_method_with_types(context_manager_type, &dunder::ENTER, range, &[])
             }
-            ContextManagerKind::Async => self.unwrap_awaitable(
-                &self.call_method_with_types(context_manager_type, &dunder::AENTER, range, &[]),
-                None,
-            ),
+            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_with_types(
+                context_manager_type,
+                &dunder::AENTER,
+                range,
+                &[],
+            )) {
+                Some(ty) => ty,
+                None => self.error(range, format!("Expected `{}` to be async", dunder::AENTER)),
+            },
         }
     }
 
@@ -838,15 +843,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 range,
                 &exit_arg_types,
             ),
-            ContextManagerKind::Async => self.unwrap_awaitable(
-                &self.call_method_with_types(
-                    context_manager_type,
-                    &dunder::AEXIT,
-                    range,
-                    &exit_arg_types,
-                ),
-                None,
-            ),
+            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_with_types(
+                context_manager_type,
+                &dunder::AEXIT,
+                range,
+                &exit_arg_types,
+            )) {
+                Some(ty) => ty,
+                None => self.error(range, format!("Expected `{}` to be async", dunder::AEXIT)),
+            },
         }
     }
 
