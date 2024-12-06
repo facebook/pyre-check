@@ -68,12 +68,40 @@ pub struct State<'a> {
 
 #[derive(Default)]
 struct ModuleState {
-    // BIG WARNING: This must be a FairMutex or you run into deadlocks.
-    // Imagine module Foo is having demand Solutions in one thread, and demand Exports in another.
-    // If the first thread ends up computing each entry in turn, it might starve the Exports waiting.
-    // If the Solutions for Foo depends on the Answers of Bar, and the Answers of Bar was the one who
-    // asked for the Exports of Foo, then you get a deadlock.
-    // A fair mutex means that everyone asking for Exports will be released before you move to the next step.
+    // BIG WARNING: This must be a FairMutex or we are exposed to deadlocks.
+    //
+    // The FairMutex is locking an entire module, which goes through stages
+    // of compute (the stages are enumerated by `Step`).
+    //
+    // Each stage can `demand` some previous stage of other modules, for
+    // example `Answers` (which computes bindings) may require `Exports`
+    // of other modules to handle wildcard imports.
+    //
+    // When a thread `demand`s a Step of a module, we take the lock, and
+    // - we might see that what we need is already available
+    // - we might see that it is not, in which case we start computing
+    // - or we might pause if another thread owns the lock
+    //
+    // This works with a `FairMutex`: as long as we only `demand` earlier steps
+    // from later steps, the demand calls form a DAG. Since `FairMutex` respects
+    // the order of calls, the lock acquisition is also a DAG and we make
+    // progress.
+    //
+    // But without a `FairMutex`, we lose control of the order and we can
+    // deadlock. Suppose `foo` and `bar` each try to `from <other> import *`,
+    // and consider when
+    // - Thread 0 is computing bindings for `foo`
+    // - Thread 1 is computing exports for `bar`
+    //
+    // When Thread 0 hits the `from bar import *`, it will try to take the lock
+    // on `bar`, and wait. Thread 1 will produce the exports for `bar`.
+    //
+    // But if the mutex is not fair, Thread 1 (or some other thread) might
+    // get the lock on `bar` to start computing bindings before Thread 0
+    // does. If this happens, we will deadlock because Thread 0 still owns
+    // the lock on `foo`, so the thread trying to compute bindings on `bar`
+    // will get stuck trying to analyze `from foo import *`. Meanwhile Thread 0
+    // is still waiting for `bar` and we are unable to make progress.
     lock: FairMutex<()>,
     steps: RwLock<ModuleSteps>,
 }
