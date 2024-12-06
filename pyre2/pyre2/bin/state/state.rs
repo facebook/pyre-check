@@ -46,6 +46,7 @@ use crate::types::class::Class;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::uniques::UniqueFactory;
+use crate::util::display::number_thousands;
 use crate::util::enum_heap::EnumHeap;
 use crate::util::prelude::SliceExt;
 
@@ -342,7 +343,7 @@ impl<'a> State<'a> {
         items.reverse();
         items.truncate(limit);
         for (error, count) in items.iter().rev() {
-            eprintln!("{count} instances of {error}");
+            eprintln!("{} instances of {error}", number_thousands(*count));
         }
     }
 
