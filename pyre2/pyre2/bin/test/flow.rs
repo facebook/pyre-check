@@ -611,3 +611,67 @@ def fun(foo: Foo, bar: Bar, baz: Baz) -> None:
             pass
 "#,
 );
+
+simple_test!(
+    test_match_sequence_concrete,
+    r#"
+from typing import assert_type, Never
+
+def foo(x: tuple[int, str, bool, int]) -> None:
+    match x:
+        case [a, b, c, d]:
+            assert_type(a, int)
+            assert_type(b, str)
+            assert_type(c, bool)
+            assert_type(d, int)
+        case [a, *rest]:
+            assert_type(a, int)
+            assert_type(rest, list[str | bool | int])
+        case [a, *middle, b]:
+            assert_type(a, int)
+            assert_type(b, int)
+            assert_type(middle, list[str | bool])
+        case [a, b, c, d, e]:  # E: Cannot unpack tuple[int, str, bool, int] (of size 4) into 5 values
+            pass
+        case [a, b, *middle, c, d]:
+            assert_type(a, int)
+            assert_type(b, str)
+            assert_type(c, bool)
+            assert_type(d, int)
+            assert_type(middle, list[Never])
+        case [*first, c, d]:
+            assert_type(first, list[int | str])
+            assert_type(c, bool)
+            assert_type(d, int)
+"#,
+);
+
+simple_test!(
+    test_match_sequence_unbounded,
+    r#"
+from typing import assert_type, Never
+
+def foo(x: list[int]) -> None:
+    match x:
+        case []:
+            pass
+        case [a]:
+            assert_type(a, int)
+        case [a, b, c]:
+            assert_type(a, int)
+            assert_type(b, int)
+            assert_type(c, int)
+        case [a, *rest]:
+            assert_type(a, int)
+            assert_type(rest, list[int])
+        case [a, *middle, b]:
+            assert_type(a, int)
+            assert_type(b, int)
+            assert_type(middle, list[int])
+        case [*first, a]:
+            assert_type(first, list[int])
+            assert_type(a, int)
+        case [*all]:
+            assert_type(all, list[int])
+"#,
+);

@@ -20222,11 +20222,21 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "TODO: MatchSequence",
-      "description": "TODO: MatchSequence",
+      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
       "line": 93,
       "name": "PyreError",
       "stop_column": 18,
+      "stop_line": 93
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "line": 93,
+      "name": "PyreError",
+      "stop_column": 16,
       "stop_line": 93
     },
     {
@@ -20242,11 +20252,31 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "TODO: MatchSequence",
-      "description": "TODO: MatchSequence",
+      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
       "line": 97,
       "name": "PyreError",
       "stop_column": 20,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 19,
       "stop_line": 97
     },
     {
@@ -20262,11 +20292,41 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "TODO: MatchSequence",
-      "description": "TODO: MatchSequence",
+      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
       "line": 101,
       "name": "PyreError",
       "stop_column": 23,
+      "stop_line": 101
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "line": 101,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 101
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "line": 101,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 101
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "line": 101,
+      "name": "PyreError",
+      "stop_column": 22,
       "stop_line": 101
     },
     {
@@ -20278,16 +20338,6 @@
       "name": "PyreError",
       "stop_column": 51,
       "stop_line": 103
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "TODO: MatchSequence",
-      "description": "TODO: MatchSequence",
-      "line": 114,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 114
     },
     {
       "code": -2,

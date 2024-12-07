@@ -1174,12 +1174,6 @@ impl<'a> BindingsBuilder<'a> {
             Pattern::MatchValue(p) => {
                 self.ensure_expr(&p.value);
             }
-            Pattern::MatchStar(p) => {
-                if let Some(name) = &p.name {
-                    self.todo("MatchStar", p.range);
-                    self.bind_definition(name, Binding::AnyType(AnyStyle::Error), None);
-                }
-            }
             Pattern::MatchAs(p) => {
                 if let Some(name) = &p.name {
                     self.bind_definition(name, Binding::Forward(key), None);
@@ -1189,10 +1183,52 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Pattern::MatchSequence(x) => {
-                self.todo("MatchSequence", x.range);
-                x.patterns
-                    .into_iter()
-                    .for_each(|x| self.bind_pattern(x, key))
+                let num_patterns = x.patterns.len();
+                let mut unbounded = false;
+                for (idx, x) in x.patterns.into_iter().enumerate() {
+                    match x {
+                        Pattern::MatchStar(p) => {
+                            if let Some(name) = &p.name {
+                                let position = UnpackedPosition::Slice(idx, num_patterns - idx - 1);
+                                self.bind_definition(
+                                    name,
+                                    Binding::UnpackedValue(
+                                        Box::new(Binding::Forward(key)),
+                                        p.range,
+                                        position,
+                                    ),
+                                    None,
+                                );
+                            }
+                            unbounded = true;
+                        }
+                        _ => {
+                            let position = if unbounded {
+                                UnpackedPosition::ReverseIndex(num_patterns - idx)
+                            } else {
+                                UnpackedPosition::Index(idx)
+                            };
+                            let key = self.table.insert(
+                                Key::Anon(x.range()),
+                                Binding::UnpackedValue(
+                                    Box::new(Binding::Forward(key)),
+                                    x.range(),
+                                    position,
+                                ),
+                            );
+                            self.bind_pattern(x, key);
+                        }
+                    }
+                }
+                let expect = if unbounded {
+                    SizeExpectation::Ge(num_patterns - 1)
+                } else {
+                    SizeExpectation::Eq(num_patterns)
+                };
+                self.table.insert(
+                    Key::Anon(x.range),
+                    Binding::UnpackedLength(Box::new(Binding::Forward(key)), x.range, expect),
+                );
             }
             Pattern::MatchMapping(x) => {
                 x.keys

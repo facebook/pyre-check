@@ -479,13 +479,14 @@ impl DisplayWith<Bindings> for Binding {
                     ctx.display(*binding_key),
                 )
             }
-            Self::PatternMatchClassPositional(class, idx, key, _) => {
+            Self::PatternMatchClassPositional(class, idx, key, range) => {
                 write!(
                     f,
-                    "PatternMatchClassPositional {}[{}] = {}",
+                    "PatternMatchClassPositional {}[{}] = {} {:?}",
                     m.display(class),
                     idx,
                     ctx.display(*key),
+                    range
                 )
             }
             Self::PatternMatchClassKeyword(class, attr, key) => {
