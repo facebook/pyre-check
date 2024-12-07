@@ -27,6 +27,7 @@ use ruff_python_ast::ExprSubscript;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Parameters;
 use ruff_python_ast::Pattern;
+use ruff_python_ast::PatternKeyword;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
@@ -1209,12 +1210,35 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Pattern::MatchClass(x) => {
-                self.todo("MatchClass", x.range);
                 x.arguments
                     .patterns
                     .into_iter()
-                    .chain(x.arguments.keywords.into_iter().map(|x| x.pattern))
-                    .for_each(|x| self.bind_pattern(x, key))
+                    .enumerate()
+                    .for_each(|(idx, pattern)| {
+                        let attr_key = self.table.insert(
+                            Key::Anon(pattern.range()),
+                            Binding::PatternMatchClassPositional(
+                                x.cls.clone(),
+                                idx,
+                                key,
+                                pattern.range(),
+                            ),
+                        );
+                        self.bind_pattern(pattern.clone(), attr_key)
+                    });
+                x.arguments.keywords.into_iter().for_each(
+                    |PatternKeyword {
+                         range: _,
+                         attr,
+                         pattern,
+                     }| {
+                        let attr_key = self.table.insert(
+                            Key::Anon(attr.range()),
+                            Binding::PatternMatchClassKeyword(x.cls.clone(), attr, key),
+                        );
+                        self.bind_pattern(pattern, attr_key)
+                    },
+                )
             }
             Pattern::MatchOr(x) => {
                 self.todo("MatchOr", x.range);

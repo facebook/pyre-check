@@ -20291,16 +20291,6 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "TODO: MatchClass",
-      "description": "TODO: MatchClass",
-      "line": 114,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 114
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "assert_type(tuple[int | str, int | str], tuple[int | str, str]) failed",
       "description": "assert_type(tuple[int | str, int | str], tuple[int | str, str]) failed",

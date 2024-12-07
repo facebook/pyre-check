@@ -416,7 +416,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
+    pub fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
         self.distribute_over_union(obj, |obj| {
             match as_attribute_base(obj.clone(), self.stdlib) {
                 Some(AttributeBase::ClassInstance(class)) => {

@@ -12,6 +12,7 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprSubscript;
+use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtAugAssign;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
@@ -322,6 +323,10 @@ pub enum Binding {
     ScopedTypeAlias(Name, Option<Box<TypeParams>>, Box<Binding>, TextRange),
     /// An entry in a MatchMapping. The Key looks up the value being matched, the Expr is the key we're extracting.
     PatternMatchMapping(Expr, Idx<Key>),
+    /// An entry in a MatchClass. The Key looks up the value being matched, the Expr is the class name.
+    /// Positional patterns index into __match_args__, and keyword patterns match an attribute name.
+    PatternMatchClassPositional(Box<Expr>, usize, Idx<Key>, TextRange),
+    PatternMatchClassKeyword(Box<Expr>, Identifier, Idx<Key>),
 }
 
 impl Binding {
@@ -472,6 +477,24 @@ impl DisplayWith<Bindings> for Binding {
                     "PatternMatchMapping {} = {}",
                     m.display(mapping_key),
                     ctx.display(*binding_key),
+                )
+            }
+            Self::PatternMatchClassPositional(class, idx, key, _) => {
+                write!(
+                    f,
+                    "PatternMatchClassPositional {}[{}] = {}",
+                    m.display(class),
+                    idx,
+                    ctx.display(*key),
+                )
+            }
+            Self::PatternMatchClassKeyword(class, attr, key) => {
+                write!(
+                    f,
+                    "PatternMatchClassKeyword {}.{} = {}",
+                    m.display(class),
+                    attr,
+                    ctx.display(*key),
                 )
             }
         }

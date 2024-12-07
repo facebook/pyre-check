@@ -65,6 +65,7 @@ use crate::types::callable::Callable;
 use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class_metadata::ClassMetadata;
+use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
@@ -1266,6 +1267,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::PatternMatchMapping(mapping_key, binding_key) => {
                 // TODO: check that value is a mapping
+                // TODO: check against duplicate keys (optional)
                 let key_ty = self.expr(mapping_key, None);
                 let binding_ty = self.get_idx(*binding_key).arc_clone();
                 let arg = TypeCallArg::new(key_ty, mapping_key.range());
@@ -1275,6 +1277,49 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     mapping_key.range(),
                     &[arg],
                 )
+            }
+            Binding::PatternMatchClassPositional(_, idx, key, range) => {
+                // TODO: check that value matches class
+                // TODO: check against duplicate keys (optional)
+                let binding_ty = self.get_idx(*key).arc_clone();
+                let match_args =
+                    self.attr_infer(&binding_ty, &Name::new_static("__match_args__"), *range);
+                match match_args {
+                    Type::Tuple(Tuple::Concrete(ts)) => {
+                        if *idx < ts.len() {
+                            if let Some(Type::Literal(Lit::String(box attr_name))) = ts.get(*idx) {
+                                self.attr_infer(&binding_ty, &Name::new(attr_name), *range)
+                            } else {
+                                self.error(
+                                    *range,
+                                    format!(
+                                        "Expected literal string in `__match_args__`, got {}",
+                                        ts[*idx]
+                                    ),
+                                )
+                            }
+                        } else {
+                            self.error(
+                                *range,
+                                format!("Index {idx} out of range for `__match_args__`"),
+                            )
+                        }
+                    }
+                    Type::Any(AnyStyle::Error) => match_args,
+                    _ => self.error(
+                        *range,
+                        format!(
+                            "Expected concrete tuple for __match_args__, got {}",
+                            match_args
+                        ),
+                    ),
+                }
+            }
+            Binding::PatternMatchClassKeyword(_, attr, key) => {
+                // TODO: check that value matches class
+                // TODO: check against duplicate keys (optional)
+                let binding_ty = self.get_idx(*key).arc_clone();
+                self.attr_infer(&binding_ty, &attr.id, attr.range)
             }
         }
     }

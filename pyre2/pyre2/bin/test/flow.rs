@@ -567,3 +567,47 @@ while True:
 pass  # E: Expected an indented block
 "#,
 );
+
+simple_test!(
+    test_match_class,
+    r#"
+from typing import assert_type
+
+class Foo:
+    x: int
+    y: str
+    __match_args__ = ("x", "y")
+
+class Bar:
+    x: int
+    y: str
+
+class Baz:
+    x: int
+    y: str
+    __match_args__ = (1, 2)
+
+def fun(foo: Foo, bar: Bar, baz: Baz) -> None:
+    match foo:
+        case Foo(1, "a"):
+            pass
+        case Foo(a, b):
+            assert_type(a, int)
+            assert_type(b, str)
+        case Foo(x = b, y = a):
+            assert_type(a, str)
+            assert_type(b, int)
+        case Foo(a, b, c):  # E: Index 2 out of range for `__match_args__`
+            pass
+    match bar:
+        case Bar(1):  # E: Object of class `Bar` has no attribute `__match_args__`
+            pass
+        case Bar(a):  # E: Object of class `Bar` has no attribute `__match_args__`
+            pass
+        case Bar(x = a):
+            assert_type(a, int)
+    match baz:
+        case Baz(1):  # E: Expected literal string in `__match_args__`
+            pass
+"#,
+);
