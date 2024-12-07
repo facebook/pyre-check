@@ -1277,10 +1277,23 @@ impl<'a> BindingsBuilder<'a> {
                 )
             }
             Pattern::MatchOr(x) => {
-                self.todo("MatchOr", x.range);
-                x.patterns
-                    .into_iter()
-                    .for_each(|x| self.bind_pattern(x, key))
+                let range = x.range;
+                let mut branches = Vec::new();
+                let n_subpatterns = x.patterns.len();
+                for (idx, pattern) in x.patterns.into_iter().enumerate() {
+                    if pattern.is_irrefutable() && idx != n_subpatterns - 1 {
+                        self.errors.add(
+                            &self.module_info,
+                            pattern.range(),
+                            "Only the last subpattern in MatchOr may be irrefutable".to_string(),
+                        )
+                    }
+                    let mut base = self.scopes.last().flow.clone();
+                    self.bind_pattern(pattern, key);
+                    mem::swap(&mut self.scopes.last_mut().flow, &mut base);
+                    branches.push(base);
+                }
+                self.scopes.last_mut().flow = self.merge_flow(branches, range, false);
             }
             _ => {}
         }

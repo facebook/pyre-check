@@ -630,11 +630,9 @@
   ],
   "enums_expansion.py": [
     "Line 23: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 30: Unexpected errors ['TODO: MatchOr']",
     "Line 31: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 33: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 50: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 58: Unexpected errors ['TODO: MatchOr']",
     "Line 78: Unexpected errors ['EXPECTED list[object] <: list[Answer]']"
   ],
   "enums_member_names.py": [],
