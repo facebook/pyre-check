@@ -1225,8 +1225,9 @@ impl<'a> BindingsBuilder<'a> {
                 } else {
                     SizeExpectation::Eq(num_patterns)
                 };
+                // Need to use Anon2, since the inner item may have bound to this location already
                 self.table.insert(
-                    Key::Anon(x.range),
+                    Key::Anon2(x.range),
                     Binding::UnpackedLength(Box::new(Binding::Forward(key)), x.range, expect),
                 );
             }

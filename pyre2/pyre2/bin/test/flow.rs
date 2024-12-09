@@ -694,3 +694,14 @@ match x:
         pass
 "#,
 );
+
+simple_test!(
+    test_crashing_match,
+    r#"
+match []:
+    case [[1]]:
+        pass
+    case _:
+        pass
+"#,
+);
