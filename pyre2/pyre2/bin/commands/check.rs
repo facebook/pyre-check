@@ -9,7 +9,6 @@ use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
-use std::mem;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Duration;
@@ -32,6 +31,7 @@ use crate::report;
 use crate::state::loader::LoadResult;
 use crate::state::state::State;
 use crate::util::display::number_thousands;
+use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
 use crate::util::memory::MemoryUsageTrace;
 
@@ -108,7 +108,10 @@ impl Args {
 
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
-        let mut state = State::new(Box::new(load), config, args.common.parallel());
+        let state = State::new(Box::new(load), config, args.common.parallel());
+        let mut holder = Forgetter::new(state, allow_forget);
+        let state = holder.as_mut();
+
         if args.report_binding_memory.is_none() && args.debug_info.is_none() {
             state.run_one_shot(&modules)
         } else {
@@ -143,7 +146,7 @@ impl Args {
         if let Some(path) = args.report_binding_memory {
             fs_anyhow::write(
                 &path,
-                report::binding_memory::binding_memory(&state).as_bytes(),
+                report::binding_memory::binding_memory(state).as_bytes(),
             )?;
         }
         if let Some(path) = args.output {
@@ -154,11 +157,6 @@ impl Args {
             fs_anyhow::write(&path, output_bytes.as_bytes())?;
         } else {
             state.check_against_expectations()?;
-        }
-        if allow_forget {
-            // We have allocated a bunch of memory, that we will never need, and are exiting the program.
-            // Rather than deallocate it, just leak it, and let the OS clean up for us.
-            mem::forget(state);
         }
         Ok(())
     }
