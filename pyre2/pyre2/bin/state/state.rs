@@ -249,7 +249,7 @@ impl<'a> State<'a> {
         if let Some(err) = &lock.load.get().unwrap().import_error {
             Err(err.dupe())
         } else {
-            Ok(lock.exports.get().unwrap().1.dupe())
+            Ok(lock.exports.get().unwrap().dupe())
         }
     }
 

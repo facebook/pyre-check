@@ -73,6 +73,7 @@ impl Ast {
     }
 
     /// All the imports in this module, pointing to the first place that defines them.
+    #[expect(dead_code)] // Useful primitive to have
     pub fn imports(
         module: &ModModule,
         module_name: ModuleName,

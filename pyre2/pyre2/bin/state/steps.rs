@@ -12,7 +12,6 @@ use enum_iterator::Sequence;
 use parse_display::Display;
 use ruff_python_ast::ModModule;
 use ruff_text_size::TextRange;
-use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::Answers;
 use crate::alt::answers::LookupAnswer;
@@ -20,7 +19,6 @@ use crate::alt::answers::Solutions;
 use crate::alt::bindings::Bindings;
 use crate::alt::exports::Exports;
 use crate::alt::exports::LookupExport;
-use crate::ast::Ast;
 use crate::config::Config;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
@@ -51,7 +49,7 @@ pub struct Load {
 pub struct ModuleSteps {
     pub load: Info<Arc<Load>>,
     pub ast: Info<Arc<ModModule>>,
-    pub exports: Info<Arc<(Imports, Exports)>>,
+    pub exports: Info<Exports>,
     pub answers: Info<Arc<(Bindings, Answers)>>,
     pub solutions: Info<Arc<Solutions>>,
 }
@@ -102,20 +100,6 @@ macro_rules! compute_step {
             })
         }))
     };
-}
-
-#[derive(Debug)]
-pub struct Imports {
-    #[allow(dead_code)]
-    pub imports: SmallMap<ModuleName, TextRange>,
-}
-
-impl Imports {
-    pub fn new(module: &ModuleInfo, ast: &ModModule) -> Self {
-        Self {
-            imports: Ast::imports(ast, module.name(), module.is_init()),
-        }
-    }
 }
 
 impl Step {
@@ -193,14 +177,8 @@ impl Step {
         Arc::new(load.module_info.parse(&load.errors))
     }
 
-    fn exports<Lookup>(
-        ctx: &Context<Lookup>,
-        load: Arc<Load>,
-        ast: Arc<ModModule>,
-    ) -> Arc<(Imports, Exports)> {
-        let imports = Imports::new(&load.module_info, &ast);
-        let exports = Exports::new(&ast.body, &load.module_info, ctx.config);
-        Arc::new((imports, exports))
+    fn exports<Lookup>(ctx: &Context<Lookup>, load: Arc<Load>, ast: Arc<ModModule>) -> Exports {
+        Exports::new(&ast.body, &load.module_info, ctx.config)
     }
 
     fn answers<Lookup: LookupExport>(
