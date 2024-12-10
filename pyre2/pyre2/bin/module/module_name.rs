@@ -23,6 +23,8 @@ use static_interner::Intern;
 use static_interner::Interner;
 use thiserror::Error;
 
+use crate::dunder;
+
 static MODULE_NAME_INTERNER: Interner<String> = Interner::new();
 
 #[derive(Clone, Dupe, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Display)]
@@ -124,7 +126,7 @@ impl ModuleName {
                         file_name: file_name.to_owned(),
                     });
                 }
-                if splits[1] != "__init__" {
+                if splits[1] != dunder::INIT {
                     components.push(splits[1])
                 }
             }

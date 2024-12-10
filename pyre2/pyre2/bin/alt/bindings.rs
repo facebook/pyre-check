@@ -65,6 +65,7 @@ use crate::alt::util::is_ellipse;
 use crate::alt::util::is_never;
 use crate::ast::Ast;
 use crate::config::Config;
+use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::graph::index::Idx;
 use crate::graph::index::Index;
@@ -1120,7 +1121,7 @@ impl<'a> BindingsBuilder<'a> {
         }
         if let ScopeKind::ClassBody(body) = last_scope.kind {
             for (method_name, instance_attributes) in body.instance_attributes_by_method {
-                if method_name == "__init__" {
+                if method_name == dunder::INIT {
                     for (name, binding) in instance_attributes {
                         if !fields.contains(&name) {
                             fields.insert(name.clone());

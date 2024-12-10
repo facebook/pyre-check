@@ -15,6 +15,7 @@ use std::process::Command;
 use anyhow::Context as _;
 use tracing::debug;
 
+use crate::dunder;
 use crate::module::module_name::ModuleName;
 
 pub fn default_include() -> anyhow::Result<Vec<PathBuf>> {
@@ -39,10 +40,10 @@ fn default_include_inner() -> anyhow::Result<Vec<PathBuf>> {
 pub fn module_from_path(path: &Path, includes: &[PathBuf]) -> ModuleName {
     // Return a module name, and a boolean as to whether it is any good.
     fn path_to_module(mut path: &Path) -> (ModuleName, bool) {
-        if path.file_stem() == Some(OsStr::new("__init__")) {
+        if path.file_stem() == Some(OsStr::new(dunder::INIT.as_str())) {
             match path.parent() {
                 Some(parent) => path = parent,
-                None => return (ModuleName::from_str("__init__"), false),
+                None => return (ModuleName::from_name(&dunder::INIT), false),
             }
         }
         let mut out = Vec::new();

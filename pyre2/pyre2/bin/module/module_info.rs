@@ -21,6 +21,7 @@ use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
 use crate::ast::Ast;
+use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::module::ignore::Ignore;
 use crate::module::module_name::ModuleName;
@@ -144,7 +145,7 @@ impl ModuleInfo {
     }
 
     pub fn is_init(&self) -> bool {
-        self.0.path.file_stem() == Some(OsStr::new("__init__"))
+        self.0.path.file_stem() == Some(OsStr::new(dunder::INIT.as_str()))
     }
 
     pub fn name(&self) -> ModuleName {

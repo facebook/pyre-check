@@ -28,6 +28,7 @@ use crate::alt::binding::KeyClassMetadata;
 use crate::alt::binding::KeyExported;
 use crate::alt::binding::KeyLegacyTypeParam;
 use crate::ast::Ast;
+use crate::dunder;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::class::Class;
@@ -591,8 +592,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn get_init_method(&self, cls: &Class) -> Type {
-        let init = Name::new("__init__");
-        let init_ty = self.get_class_field(cls, &init);
+        let init_ty = self.get_class_field(cls, &dunder::INIT);
         let ret = cls.self_type();
         match init_ty.as_deref() {
             Some(ty) => replace_return_type(strip_first_argument(ty), ret),
