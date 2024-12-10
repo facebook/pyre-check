@@ -591,7 +591,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get_init_method(&self, cls: &Class) -> Type {
+    fn get_init_method(&self, cls: &Class) -> Type {
         let init_ty = self.get_class_field(cls, &dunder::INIT);
         let ret = cls.self_type();
         match init_ty.as_deref() {
@@ -600,11 +600,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    /// Gets the constructor for a class with provided type arguments. For example, this
+    /// function is used when constructing `x = list[int]()`.
     pub fn get_constructor_for_class_type(&self, cls: &ClassType) -> Type {
         let init_ty = self.get_init_method(cls.class_object());
         cls.instantiate_member(init_ty)
     }
 
+    /// Gets the constructor for a bare class. For example, this function is used when
+    /// constructing `x = list()` (no type arguments provided for `list`).
     pub fn get_constructor_for_class_object(&self, cls: &Class) -> Type {
         let init_ty = self.get_init_method(cls);
         let tparams = cls.tparams();
