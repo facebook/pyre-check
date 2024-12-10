@@ -35,6 +35,7 @@ ruff_source_file = { git = "https://github.com/astral-sh/ruff/", rev = "2d2baeca
 ruff_text_size = { git = "https://github.com/astral-sh/ruff/", rev = "2d2baeca23abe98a400bf4be03e6ab9315cf4bbe" }
 serde = { version = "1.0.185", features = ["derive", "rc"] }
 serde_json = { version = "1.0.132", features = ["float_roundtrip", "unbounded_depth"] }
+static_assertions = "1.1.0"
 thiserror = "2"
 tracing = { version = "0.1.40", features = ["attributes", "valuable"] }
 tracing-subscriber = { version = "0.3.18", features = ["chrono", "env-filter", "json", "local-time", "parking_lot", "registry"] }
