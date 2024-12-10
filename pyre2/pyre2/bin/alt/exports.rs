@@ -11,10 +11,8 @@ use std::fmt::Display;
 use std::sync::Arc;
 
 use dupe::Dupe;
-use dupe::OptionDupedExt;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Stmt;
-use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use super::definitions::DunderAllEntry;
@@ -32,12 +30,6 @@ pub trait LookupExport {
             Some(x) => x,
             None => panic!("Internal error: failed to find `Export` for `{module}`"),
         }
-    }
-}
-
-impl LookupExport for SmallMap<ModuleName, Exports> {
-    fn get_opt(&self, module: ModuleName) -> Option<Exports> {
-        self.get(&module).duped()
     }
 }
 
@@ -126,11 +118,19 @@ impl Exports {
 mod tests {
     use std::path::PathBuf;
 
+    use dupe::OptionDupedExt;
+    use starlark_map::small_map::SmallMap;
     use starlark_map::smallmap;
 
     use super::*;
     use crate::ast::Ast;
     use crate::module::module_info::ModuleStyle;
+
+    impl LookupExport for SmallMap<ModuleName, Exports> {
+        fn get_opt(&self, module: ModuleName) -> Option<Exports> {
+            self.get(&module).duped()
+        }
+    }
 
     fn mk_exports(contents: &str, style: ModuleStyle) -> Exports {
         let ast = Ast::parse(contents).0;

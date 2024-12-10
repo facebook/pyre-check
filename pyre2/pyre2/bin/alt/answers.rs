@@ -173,29 +173,6 @@ pub trait LookupAnswer: Sized {
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>;
 }
 
-impl<'a> LookupAnswer for SmallMap<ModuleName, (&'a Answers, &'a Bindings, &'a ErrorCollector)> {
-    fn get<K: Solve<Self> + Keyed<EXPORTED = true>>(
-        &self,
-        name: ModuleName,
-        k: &K,
-        exports: &dyn LookupExport,
-        uniques: &UniqueFactory,
-        stdlib: &Stdlib,
-    ) -> Arc<K::Answer>
-    where
-        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
-        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
-    {
-        let (current, bindings, errors) = SmallMap::get(self, &name).unwrap();
-        let mut ans = Arc::unwrap_or_clone(
-            current.solve_key(exports, self, bindings, errors, stdlib, uniques, k),
-        );
-        // Must force these variables using the solver associated with the module the type came from
-        K::visit_type_mut(&mut ans, &mut |t| current.solver.deep_force_mut(t));
-        Arc::new(ans)
-    }
-}
-
 pub trait SolveRecursive: Keyed {
     type Recursive: Dupe = ();
 
