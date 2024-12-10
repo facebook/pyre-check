@@ -245,7 +245,10 @@ impl<'a> State<'a> {
     }
 
     fn lookup_stdlib(&self, module: ModuleName, name: &Name) -> Option<Class> {
-        if !self.lookup_export(module).unwrap().contains(name, self) {
+        if !self
+            .lookup_export(module)
+            .is_some_and(|x| x.contains(name, self))
+        {
             self.add_error(
                 module,
                 TextRange::default(),
