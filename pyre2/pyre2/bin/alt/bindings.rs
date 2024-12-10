@@ -737,9 +737,6 @@ impl<'a> BindingsBuilder<'a> {
     /// In methods, we track assignments to `self` attribute targets so that we can
     /// be aware of class fields defined in methods. This is particularly important in
     /// constructors, we currently are applying this logic for all methods.
-    ///
-    /// TODO(stroxler): This logic is consistent with Pyright but unsound, we'll need
-    /// to decide how to handle attributes defined outside of constructors.
     fn bind_attr_if_self(&mut self, x: &ExprAttribute, binding: Binding) {
         for scope in self.scopes.iter_mut().rev() {
             if let ScopeKind::Method(method) = &mut scope.kind
