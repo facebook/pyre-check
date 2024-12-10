@@ -1636,9 +1636,9 @@ impl<'a> BindingsBuilder<'a> {
                     x.level,
                     x.module.as_ref().map(|x| &x.id),
                 ) {
+                    let module = self.modules.get(m);
                     for x in x.names {
                         if &x.name == "*" {
-                            let module = self.modules.get(m);
                             for name in module.wildcard(self.modules).iter() {
                                 let key = Key::Import(name.clone(), x.range);
                                 let val = if module.contains(name, self.modules) {
@@ -1656,7 +1656,7 @@ impl<'a> BindingsBuilder<'a> {
                             }
                         } else {
                             let asname = x.asname.unwrap_or_else(|| x.name.clone());
-                            let val = if self.modules.get(m).contains(&x.name.id, self.modules) {
+                            let val = if module.contains(&x.name.id, self.modules) {
                                 Binding::Import(m, x.name.id)
                             } else {
                                 self.errors.add(
