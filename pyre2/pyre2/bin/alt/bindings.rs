@@ -1643,40 +1643,43 @@ impl<'a> BindingsBuilder<'a> {
                     x.level,
                     x.module.as_ref().map(|x| &x.id),
                 ) {
-                    if let Ok(module_exports) = self.modules.get(m) {
-                        for x in x.names {
-                            if &x.name == "*" {
-                                for name in module_exports.wildcard(self.modules).iter() {
-                                    let key = Key::Import(name.clone(), x.range);
-                                    let val = if module_exports.contains(name, self.modules) {
-                                        Binding::Import(m, name.clone())
+                    match self.modules.get(m) {
+                        Ok(module_exports) => {
+                            for x in x.names {
+                                if &x.name == "*" {
+                                    for name in module_exports.wildcard(self.modules).iter() {
+                                        let key = Key::Import(name.clone(), x.range);
+                                        let val = if module_exports.contains(name, self.modules) {
+                                            Binding::Import(m, name.clone())
+                                        } else {
+                                            self.error(
+                                                x.range,
+                                                format!("Could not import `{name}` from `{m}`"),
+                                            );
+                                            Binding::AnyType(AnyStyle::Error)
+                                        };
+                                        let key = self.table.insert(key, val);
+                                        self.bind_key(name, key, None, false);
+                                    }
+                                } else {
+                                    let asname = x.asname.unwrap_or_else(|| x.name.clone());
+                                    let val = if module_exports.contains(&x.name.id, self.modules) {
+                                        Binding::Import(m, x.name.id)
                                     } else {
                                         self.error(
                                             x.range,
-                                            format!("Could not import `{name}` from `{m}`"),
+                                            format!("Could not import `{}` from `{m}`", x.name.id),
                                         );
                                         Binding::AnyType(AnyStyle::Error)
                                     };
-                                    let key = self.table.insert(key, val);
-                                    self.bind_key(name, key, None, false);
+                                    self.bind_definition(&asname, val, None);
                                 }
-                            } else {
-                                let asname = x.asname.unwrap_or_else(|| x.name.clone());
-                                let val = if module_exports.contains(&x.name.id, self.modules) {
-                                    Binding::Import(m, x.name.id)
-                                } else {
-                                    self.error(
-                                        x.range,
-                                        format!("Could not import `{}` from `{m}`", x.name.id),
-                                    );
-                                    Binding::AnyType(AnyStyle::Error)
-                                };
-                                self.bind_definition(&asname, val, None);
                             }
                         }
-                    } else {
-                        // We have already errored on `m` when loading the module. No need to emit error again.
-                        self.bind_unimportable_names(&x);
+                        Err(err) => {
+                            self.error(x.range, Arc::unwrap_or_clone(err));
+                            self.bind_unimportable_names(&x);
+                        }
                     }
                 } else {
                     self.error(

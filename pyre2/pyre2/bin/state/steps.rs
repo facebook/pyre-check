@@ -106,6 +106,7 @@ macro_rules! compute_step {
 
 #[derive(Debug)]
 pub struct Imports {
+    #[allow(dead_code)]
     pub imports: SmallMap<ModuleName, TextRange>,
 }
 

@@ -148,14 +148,6 @@ impl<'a> State<'a> {
                 Some(todo) if todo <= step => todo,
                 _ => break,
             };
-            let imports = if todo == Step::Solutions {
-                Some((
-                    lock.load.get().unwrap().dupe(),
-                    lock.exports.get().unwrap().dupe(),
-                ))
-            } else {
-                None
-            };
             computed = true;
             let compute = todo.compute().0(&lock);
             drop(lock);
@@ -163,25 +155,6 @@ impl<'a> State<'a> {
                 // We have captured the Ast, and must have already built Exports (we do it serially),
                 // so won't need the Ast again.
                 module_state.steps.write().unwrap().ast.clear();
-            }
-
-            if let Some((load, imports)) = imports {
-                // We need a single spot to inject "I could not find import", but we want to do that
-                // after we can be sure our dependencies have been loaded (we don't want to demand them for an error),
-                // so we do it right at the end.
-                for (importing, range) in imports.0.imports.iter() {
-                    if let Some(err) = self
-                        .get_module(*importing)
-                        .steps
-                        .read()
-                        .unwrap()
-                        .load
-                        .get()
-                        .and_then(|x| x.import_error.as_deref())
-                    {
-                        load.errors.add(&load.module_info, *range, err.clone());
-                    }
-                }
             }
 
             let stdlib = self.stdlib.read().unwrap().dupe();
