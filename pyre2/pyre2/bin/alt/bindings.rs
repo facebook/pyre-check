@@ -41,7 +41,6 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
-use tracing::warn;
 use vec1::Vec1;
 
 use crate::alt::binding::Binding;
@@ -485,16 +484,19 @@ impl<'a> BindingsBuilder<'a> {
 
     fn inject_implicit(&mut self) {
         let builtins_module = ModuleName::builtins();
-        if let Ok(builtins_export) = self.modules.get(builtins_module) {
-            for name in builtins_export.wildcard(self.modules).iter() {
-                let key = Key::Import(name.clone(), TextRange::default());
-                let idx = self
-                    .table
-                    .insert(key, Binding::Import(builtins_module, name.clone()));
-                self.bind_key(name, idx, None, false);
+        match self.modules.get(builtins_module) {
+            Ok(builtins_export) => {
+                for name in builtins_export.wildcard(self.modules).iter() {
+                    let key = Key::Import(name.clone(), TextRange::default());
+                    let idx = self
+                        .table
+                        .insert(key, Binding::Import(builtins_module, name.clone()));
+                    self.bind_key(name, idx, None, false);
+                }
             }
-        } else {
-            warn!("Cannot find export info from the `builtins` module")
+            Err(err) => {
+                self.error(TextRange::default(), Arc::unwrap_or_clone(err));
+            }
         }
     }
 
