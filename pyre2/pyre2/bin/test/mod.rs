@@ -8,6 +8,7 @@
 #![cfg(test)]
 
 mod assign;
+mod attributes;
 mod callable;
 mod class_keywords;
 mod class_subtyping;
