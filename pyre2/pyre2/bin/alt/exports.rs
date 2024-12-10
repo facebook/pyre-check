@@ -43,9 +43,9 @@ impl Display for Exports {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for x in self.0.definitions.dunder_all.iter() {
             match x {
-                DunderAllEntry::Name(x) => writeln!(f, "export {x}")?,
-                DunderAllEntry::Module(x) => writeln!(f, "from {x} import *")?,
-                DunderAllEntry::Remove(x) => writeln!(f, "unexport {x}")?,
+                DunderAllEntry::Name(_, x) => writeln!(f, "export {x}")?,
+                DunderAllEntry::Module(_, x) => writeln!(f, "from {x} import *")?,
+                DunderAllEntry::Remove(_, x) => writeln!(f, "unexport {x}")?,
             }
         }
         Ok(())
@@ -70,17 +70,16 @@ impl Exports {
             let mut result = SmallSet::new();
             for x in &self.0.definitions.dunder_all {
                 match x {
-                    DunderAllEntry::Name(x) => {
+                    DunderAllEntry::Name(_, x) => {
                         result.insert(x.clone());
                     }
-                    DunderAllEntry::Module(x) => {
+                    DunderAllEntry::Module(_, x) => {
                         // They did `__all__.extend(foo.__all__)``, but didn't import `foo`.
-                        // Let's just ignore, and there will be an error when we check `foo.__all__`.
                         if let Ok(import) = modules.get(*x) {
                             result.extend(import.wildcard(modules).iter().cloned());
                         }
                     }
-                    DunderAllEntry::Remove(x) => {
+                    DunderAllEntry::Remove(_, x) => {
                         result.shift_remove(x);
                     }
                 }

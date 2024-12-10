@@ -60,10 +60,10 @@ pub struct Definitions {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum DunderAllEntry {
-    Name(Name),
-    Module(ModuleName),
+    Name(TextRange, Name),
+    Module(TextRange, ModuleName),
     // We have to have this explicitly, as you might remove something in a Module
-    Remove(Name),
+    Remove(TextRange, Name),
 }
 
 impl DunderAllEntry {
@@ -80,7 +80,10 @@ impl DunderAllEntry {
                 attr,
                 ..
             }) if attr.id == "__all__" => {
-                vec![DunderAllEntry::Module(ModuleName::from_name(&name.id))]
+                vec![DunderAllEntry::Module(
+                    name.range,
+                    ModuleName::from_name(&name.id),
+                )]
             }
             _ => Vec::new(),
         }
@@ -88,7 +91,9 @@ impl DunderAllEntry {
 
     fn as_item(x: &Expr) -> Option<Self> {
         match x {
-            Expr::StringLiteral(x) => Some(DunderAllEntry::Name(Name::new(x.value.to_str()))),
+            Expr::StringLiteral(x) => {
+                Some(DunderAllEntry::Name(x.range, Name::new(x.value.to_str())))
+            }
             _ => None,
         }
     }
@@ -124,16 +129,17 @@ impl Definitions {
             return;
         }
         if style == ModuleStyle::Executable {
-            for x in self.import_all.keys() {
-                self.dunder_all.push(DunderAllEntry::Module(*x));
+            for (x, range) in self.import_all.iter() {
+                self.dunder_all.push(DunderAllEntry::Module(*range, *x));
             }
         }
-        for (name, (_, defn, _)) in self.definitions.iter() {
+        for (name, (range, defn, _)) in self.definitions.iter() {
             if !name.starts_with('_')
                 && (style == ModuleStyle::Executable
                     || matches!(defn, DefinitionStyle::Local | DefinitionStyle::ImportAsEq))
             {
-                self.dunder_all.push(DunderAllEntry::Name(name.clone()));
+                self.dunder_all
+                    .push(DunderAllEntry::Name(*range, name.clone()));
             }
         }
     }
@@ -220,7 +226,7 @@ impl<'a> DefinitionsBuilder<'a> {
                                 x.module.as_ref().map(|x| &x.id),
                             )
                         {
-                            self.inner.dunder_all = vec![DunderAllEntry::Module(module)]
+                            self.inner.dunder_all = vec![DunderAllEntry::Module(x.range, module)]
                         }
                     }
                 }
@@ -271,10 +277,12 @@ impl<'a> DefinitionsBuilder<'a> {
                         .dunder_all
                         .extend(DunderAllEntry::as_item(&arguments.args[0])),
                     "remove" => {
-                        if let Some(DunderAllEntry::Name(remove)) =
+                        if let Some(DunderAllEntry::Name(range, remove)) =
                             DunderAllEntry::as_item(&arguments.args[0])
                         {
-                            self.inner.dunder_all.push(DunderAllEntry::Remove(remove));
+                            self.inner
+                                .dunder_all
+                                .push(DunderAllEntry::Remove(range, remove));
                         }
                     }
                     _ => {}
@@ -333,9 +341,19 @@ mod tests {
     use super::*;
     use crate::util::prelude::SliceExt;
 
+    fn unrange(x: &mut DunderAllEntry) {
+        match x {
+            DunderAllEntry::Name(range, _)
+            | DunderAllEntry::Module(range, _)
+            | DunderAllEntry::Remove(range, _) => {
+                *range = TextRange::default();
+            }
+        }
+    }
+
     fn check(contents: &str, import_all: &[&str], defs: &[&str]) -> Definitions {
         let ast = Ast::parse(contents).0;
-        let res = Definitions::new(
+        let mut res = Definitions::new(
             &ast.body,
             ModuleName::from_str("main"),
             false,
@@ -355,6 +373,7 @@ mod tests {
                 .map(|x| x.as_str())
                 .collect::<Vec<_>>(),
         );
+        res.dunder_all.iter_mut().for_each(unrange);
         res
     }
 
@@ -405,10 +424,11 @@ __all__.remove('r')
             &["foo"],
             &["a", "b", "__all__"],
         );
-        let a = &DunderAllEntry::Name(Name::new("a"));
-        let b = &DunderAllEntry::Name(Name::new("b"));
-        let foo = &DunderAllEntry::Module(ModuleName::from_str("foo"));
-        let r = &DunderAllEntry::Remove(Name::new("r"));
+        let loc = TextRange::default();
+        let a = &DunderAllEntry::Name(loc, Name::new("a"));
+        let b = &DunderAllEntry::Name(loc, Name::new("b"));
+        let foo = &DunderAllEntry::Module(loc, ModuleName::from_str("foo"));
+        let r = &DunderAllEntry::Remove(loc, Name::new("r"));
         assert_eq!(
             defs.dunder_all.map(|x| x),
             vec![a, b, a, b, foo, a, b, foo, a, r]
@@ -428,9 +448,10 @@ from _collections_abc import __all__ as __all__
         );
         assert_eq!(
             defs.dunder_all,
-            vec![DunderAllEntry::Module(ModuleName::from_str(
-                "_collections_abc"
-            ))]
+            vec![DunderAllEntry::Module(
+                TextRange::default(),
+                ModuleName::from_str("_collections_abc")
+            )]
         );
     }
 }
