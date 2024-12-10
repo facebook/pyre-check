@@ -612,7 +612,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_constructor_for_class_object(&self, cls: &Class) -> Type {
         let init_ty = self.get_init_method(cls);
         let tparams = cls.tparams();
-        Type::Forall(tparams.clone(), Box::new(init_ty))
+        init_ty.forall(tparams.clone())
     }
 
     /// Given an identifier, see whether it is bound to an enum class. If so,

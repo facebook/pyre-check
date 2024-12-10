@@ -764,11 +764,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             _ => {}
         }
         let ta = Type::TypeAlias(TypeAlias::new(name.clone(), ty, style));
-        if tparams.is_empty() {
-            ta
-        } else {
-            Type::Forall(self.type_params(range, tparams), Box::new(ta))
-        }
+        ta.forall(self.type_params(range, tparams))
     }
 
     fn context_value_enter(
@@ -1110,11 +1106,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
                 tparams.extend(legacy_tparams);
                 let callable = Type::callable(args, ret);
-                if tparams.is_empty() {
-                    callable
-                } else {
-                    Type::Forall(self.type_params(x.range, tparams), Box::new(callable))
-                }
+                callable.forall(self.type_params(x.range, tparams))
             }
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExported::Export(name.clone()))
@@ -1235,10 +1227,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         *range,
                         format!("Type parameters used in `{name}` but not declared"),
                     ),
-                    Type::TypeAlias(_) if params.is_some() => Type::Forall(
-                        self.type_params(*range, self.scoped_type_params(params)),
-                        Box::new(ta),
-                    ),
+                    Type::TypeAlias(_) => {
+                        ta.forall(self.type_params(*range, self.scoped_type_params(params)))
+                    }
                     _ => ta,
                 }
             }
