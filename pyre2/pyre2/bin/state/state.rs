@@ -275,13 +275,13 @@ impl<'a> State<'a> {
 
     fn lookup_export(&self, module: ModuleName) -> Option<Exports> {
         self.demand(module, Step::Exports);
-        self.get_module(module)
-            .steps
-            .read()
-            .unwrap()
-            .exports
-            .get()
-            .map(|x| x.1.dupe())
+        let m = self.get_module(module);
+        let lock = m.steps.read().unwrap();
+        if lock.load.get().unwrap().import_error.is_some() {
+            None
+        } else {
+            Some(lock.exports.get().unwrap().1.dupe())
+        }
     }
 
     fn lookup_answer<'b, K: Solve<Self> + Keyed<EXPORTED = true>>(

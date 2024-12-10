@@ -7993,26 +7993,6 @@
     },
     {
       "code": -2,
-      "column": 44,
-      "concise_description": "Could not import `Ham` from `_directives_deprecated_library`",
-      "description": "Could not import `Ham` from `_directives_deprecated_library`",
-      "line": 18,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 18
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "No attribute `norwegian_blue` in module `_directives_deprecated_library`",
-      "description": "No attribute `norwegian_blue` in module `_directives_deprecated_library`",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "Expected 0 positional argument(s)",
       "description": "Expected 0 positional argument(s)",
@@ -8020,46 +8000,6 @@
       "name": "PyreError",
       "stop_column": 27,
       "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "No attribute `norwegian_blue` in module `_directives_deprecated_library`",
-      "description": "No attribute `norwegian_blue` in module `_directives_deprecated_library`",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "No attribute `foo` in module `_directives_deprecated_library`",
-      "description": "No attribute `foo` in module `_directives_deprecated_library`",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "No attribute `foo` in module `_directives_deprecated_library`",
-      "description": "No attribute `foo` in module `_directives_deprecated_library`",
-      "line": 31,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "No attribute `Spam` in module `_directives_deprecated_library`",
-      "description": "No attribute `Spam` in module `_directives_deprecated_library`",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 39
     },
     {
       "code": -2,
@@ -8906,16 +8846,6 @@
     },
     {
       "code": -2,
-      "column": 34,
-      "concise_description": "Could not import `ColumnType` from `_enums_member_values`",
-      "description": "Could not import `ColumnType` from `_enums_member_values`",
-      "line": 90,
-      "name": "PyreError",
-      "stop_column": 44,
-      "stop_line": 90
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
@@ -8951,16 +8881,6 @@
       "column": 1,
       "concise_description": "Could not find import of `_enums_members`, Could not find path for `_enums_members`",
       "description": "Could not find import of `_enums_members`, Could not find path for `_enums_members`",
-      "line": 33,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 28,
-      "concise_description": "Could not import `Pet2` from `_enums_members`",
-      "description": "Could not import `Pet2` from `_enums_members`",
       "line": 33,
       "name": "PyreError",
       "stop_column": 32,
@@ -19272,26 +19192,6 @@
       "column": 1,
       "concise_description": "Could not find import of `_qualifiers_final_decorator`, Could not find path for `_qualifiers_final_decorator`",
       "description": "Could not find import of `_qualifiers_final_decorator`, Could not find path for `_qualifiers_final_decorator`",
-      "line": 8,
-      "name": "PyreError",
-      "stop_column": 53,
-      "stop_line": 8
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "Could not import `Base3` from `_qualifiers_final_decorator`",
-      "description": "Could not import `Base3` from `_qualifiers_final_decorator`",
-      "line": 8,
-      "name": "PyreError",
-      "stop_column": 46,
-      "stop_line": 8
-    },
-    {
-      "code": -2,
-      "column": 48,
-      "concise_description": "Could not import `Base4` from `_qualifiers_final_decorator`",
-      "description": "Could not import `Base4` from `_qualifiers_final_decorator`",
       "line": 8,
       "name": "PyreError",
       "stop_column": 53,
