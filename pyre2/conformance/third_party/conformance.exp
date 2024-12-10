@@ -7993,6 +7993,16 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "Could not find import of `_directives_deprecated_library`, Could not find path for `_directives_deprecated_library`",
+      "description": "Could not find import of `_directives_deprecated_library`, Could not find path for `_directives_deprecated_library`",
+      "line": 19,
+      "name": "PyreError",
+      "stop_column": 49,
+      "stop_line": 19
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "Expected 0 positional argument(s)",
       "description": "Expected 0 positional argument(s)",
@@ -18493,6 +18503,26 @@
     }
   ],
   "protocols_modules.py": [
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Could not find import of `_protocols_modules1`, Could not find path for `_protocols_modules1`",
+      "description": "Could not find import of `_protocols_modules1`, Could not find path for `_protocols_modules1`",
+      "line": 10,
+      "name": "PyreError",
+      "stop_column": 27,
+      "stop_line": 10
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Could not find import of `_protocols_modules2`, Could not find path for `_protocols_modules2`",
+      "description": "Could not find import of `_protocols_modules2`, Could not find path for `_protocols_modules2`",
+      "line": 11,
+      "name": "PyreError",
+      "stop_column": 27,
+      "stop_line": 11
+    },
     {
       "code": -2,
       "column": 17,

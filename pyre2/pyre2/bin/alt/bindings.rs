@@ -1613,6 +1613,9 @@ impl<'a> BindingsBuilder<'a> {
             Stmt::Import(x) => {
                 for x in x.names {
                     let m = ModuleName::from_name(&x.name.id);
+                    if let Err(err) = self.modules.get(m) {
+                        self.error(x.range, Arc::unwrap_or_clone(err));
+                    }
                     match x.asname {
                         Some(asname) => {
                             self.bind_definition(

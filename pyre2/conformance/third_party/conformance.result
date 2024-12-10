@@ -598,6 +598,7 @@
     "Line 48: Expected 1 errors",
     "Line 69: Expected 1 errors",
     "Line 98: Expected 1 errors",
+    "Line 19: Unexpected errors ['Could not find import of `_directives_deprecated_library`, Could not find path for `_directives_deprecated_library`']",
     "Line 119: Unexpected errors ['EXPECTED FooConcrete2 <: SupportsFoo2']"
   ],
   "directives_no_type_check.py": [],
@@ -1330,6 +1331,8 @@
     "Line 60: Unexpected errors ['EXPECTED SizedAndClosable2 <: SizedAndClosable1']"
   ],
   "protocols_modules.py": [
+    "Line 10: Unexpected errors ['Could not find import of `_protocols_modules1`, Could not find path for `_protocols_modules1`']",
+    "Line 11: Unexpected errors ['Could not find import of `_protocols_modules2`, Could not find path for `_protocols_modules2`']",
     "Line 25: Unexpected errors ['EXPECTED Module[_protocols_modules1] <: Options1']",
     "Line 47: Unexpected errors ['EXPECTED Module[_protocols_modules2] <: Reporter1']"
   ],

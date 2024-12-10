@@ -437,6 +437,13 @@ from foo import *  # E: Could not find import of `foo`
 );
 
 simple_test!(
+    test_missing_import_module,
+    r#"
+import foo, bar.baz  # E: Could not find import of `foo`  # E: Could not find import of `bar.baz`
+"#,
+);
+
+simple_test!(
     test_direct_import_toplevel,
     r#"
 import typing
