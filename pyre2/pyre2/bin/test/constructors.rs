@@ -55,3 +55,29 @@ assert_type(b, Box[int])
 assert_type(b.wrap(True), Box[Box[int]])
     "#,
 );
+
+// TODO: support this
+simple_test!(
+    test_metaclass_call,
+    r#"
+class Meta(type):
+    def __call__[T](cls: type[T], x: int) -> T: ...
+class C(metaclass=Meta):
+    pass
+C(5)    # E: Expected 0 positional argument(s)
+C()     # Should be an error
+C("5")  # E: Expected 0 positional argument(s)
+    "#,
+);
+
+// TODO: support this
+simple_test!(
+    test_new,
+    r#"
+class C:
+    def __new__[T](cls: type[T], x: int) -> T: ...
+C(5)    # E: Expected 0 positional argument(s)
+C()     # Should be an error
+C("5")  # E: Expected 0 positional argument(s)
+    "#,
+);
