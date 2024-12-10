@@ -179,11 +179,7 @@ impl<'a> State<'a> {
                         .get()
                         .and_then(|x| x.import_error.as_deref())
                     {
-                        load.errors.add(
-                            &load.module_info,
-                            *range,
-                            format!("Could not find import of `{}`, {err:#}", importing),
-                        );
+                        load.errors.add(&load.module_info, *range, err.clone());
                     }
                 }
             }

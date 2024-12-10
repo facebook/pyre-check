@@ -44,7 +44,7 @@ pub struct Context<'a, Lookup> {
 pub struct Load {
     pub errors: ErrorCollector,
     pub module_info: ModuleInfo,
-    pub import_error: Option<anyhow::Error>,
+    pub import_error: Option<Arc<String>>,
 }
 
 #[derive(Debug, Default)]
@@ -177,10 +177,14 @@ impl Step {
                 ),
             );
         }
+        let import_error = components
+            .import_error
+            .map(|e| Arc::new(format!("Could not find import of `{}`, {e:#}", ctx.name)));
+
         Arc::new(Load {
             errors,
             module_info,
-            import_error: components.import_error,
+            import_error,
         })
     }
 
