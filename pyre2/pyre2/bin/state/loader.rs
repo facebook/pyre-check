@@ -31,11 +31,7 @@ pub struct LoadResultComponents {
     pub import_error: Option<anyhow::Error>,
 }
 
-static FAKE_MODULE: &str = r#"
-from typing import Any
-def __getattr__(name: str) -> Any: ...
-__all__ = []
-"#;
+static FAKE_MODULE: &str = "";
 
 fn fake_path(module_name: ModuleName) -> PathBuf {
     // The generated fake module shouldn't have an errors, but lets make it clear
