@@ -23,7 +23,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 
 pub trait LookupExport {
-    fn get(&self, module: ModuleName) -> Option<Exports>;
+    fn get(&self, module: ModuleName) -> Result<Exports, Arc<String>>;
 }
 
 #[derive(Debug, Default, Clone, Dupe)]
@@ -76,7 +76,7 @@ impl Exports {
                     DunderAllEntry::Module(x) => {
                         // They did `__all__.extend(foo.__all__)``, but didn't import `foo`.
                         // Let's just ignore, and there will be an error when we check `foo.__all__`.
-                        if let Some(import) = modules.get(*x) {
+                        if let Ok(import) = modules.get(*x) {
                             result.extend(import.wildcard(modules).iter().cloned());
                         }
                     }
@@ -95,7 +95,7 @@ impl Exports {
             let mut result = SmallSet::new();
             result.extend(self.0.definitions.definitions.keys().cloned());
             for x in self.0.definitions.import_all.keys() {
-                if let Some(exports) = modules.get(*x) {
+                if let Ok(exports) = modules.get(*x) {
                     result.extend(exports.wildcard(modules).iter().cloned());
                 }
             }
@@ -113,7 +113,6 @@ impl Exports {
 mod tests {
     use std::path::PathBuf;
 
-    use dupe::OptionDupedExt;
     use starlark_map::small_map::SmallMap;
     use starlark_map::smallmap;
 
@@ -122,8 +121,11 @@ mod tests {
     use crate::module::module_info::ModuleStyle;
 
     impl LookupExport for SmallMap<ModuleName, Exports> {
-        fn get(&self, module: ModuleName) -> Option<Exports> {
-            self.get(&module).duped()
+        fn get(&self, module: ModuleName) -> Result<Exports, Arc<String>> {
+            match self.get(&module) {
+                Some(x) => Ok(x.dupe()),
+                None => Err(Arc::new("Error".to_owned())),
+            }
         }
     }
 

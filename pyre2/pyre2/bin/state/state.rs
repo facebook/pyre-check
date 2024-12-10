@@ -243,7 +243,7 @@ impl<'a> State<'a> {
     fn lookup_stdlib(&self, module: ModuleName, name: &Name) -> Option<Class> {
         if !self
             .lookup_export(module)
-            .is_some_and(|x| x.contains(name, self))
+            .is_ok_and(|x| x.contains(name, self))
         {
             self.add_error(
                 module,
@@ -269,14 +269,14 @@ impl<'a> State<'a> {
         }
     }
 
-    fn lookup_export(&self, module: ModuleName) -> Option<Exports> {
+    fn lookup_export(&self, module: ModuleName) -> Result<Exports, Arc<String>> {
         self.demand(module, Step::Exports);
         let m = self.get_module(module);
         let lock = m.steps.read().unwrap();
-        if lock.load.get().unwrap().import_error.is_some() {
-            None
+        if let Some(err) = &lock.load.get().unwrap().import_error {
+            Err(err.dupe())
         } else {
-            Some(lock.exports.get().unwrap().1.dupe())
+            Ok(lock.exports.get().unwrap().1.dupe())
         }
     }
 
@@ -537,7 +537,7 @@ impl<'a> State<'a> {
 }
 
 impl LookupExport for State<'_> {
-    fn get(&self, module: ModuleName) -> Option<Exports> {
+    fn get(&self, module: ModuleName) -> Result<Exports, Arc<String>> {
         self.lookup_export(module)
     }
 }
