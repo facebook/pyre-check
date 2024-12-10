@@ -24,13 +24,6 @@ use crate::module::module_name::ModuleName;
 
 pub trait LookupExport {
     fn get_opt(&self, module: ModuleName) -> Option<Exports>;
-
-    fn get(&self, module: ModuleName) -> Exports {
-        match self.get_opt(module) {
-            Some(x) => x,
-            None => panic!("Internal error: failed to find `Export` for `{module}`"),
-        }
-    }
 }
 
 #[derive(Debug, Default, Clone, Dupe)]
@@ -102,7 +95,9 @@ impl Exports {
             let mut result = SmallSet::new();
             result.extend(self.0.definitions.definitions.keys().cloned());
             for x in self.0.definitions.import_all.keys() {
-                result.extend(modules.get(*x).wildcard(modules).iter().cloned());
+                if let Some(exports) = modules.get_opt(*x) {
+                    result.extend(exports.wildcard(modules).iter().cloned());
+                }
             }
             Arc::new(result)
         };

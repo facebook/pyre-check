@@ -31,6 +31,7 @@ use ruff_python_ast::PatternKeyword;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
+use ruff_python_ast::StmtImportFrom;
 use ruff_python_ast::StmtReturn;
 use ruff_python_ast::StringFlags;
 use ruff_python_ast::TypeParam;
@@ -40,6 +41,7 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
+use tracing::warn;
 use vec1::Vec1;
 
 use crate::alt::binding::Binding;
@@ -183,9 +185,10 @@ impl Static {
                 defn == DefinitionStyle::ImportModule;
         }
         for (m, range) in d.import_all {
-            let extra = modules.get(m).wildcard(modules);
-            for name in extra.iter() {
-                self.add_with_count(name.clone(), range, 1).uses_key_import = true;
+            if let Some(exports) = modules.get_opt(m) {
+                for name in exports.wildcard(modules).iter() {
+                    self.add_with_count(name.clone(), range, 1).uses_key_import = true;
+                }
             }
         }
     }
@@ -482,13 +485,16 @@ impl<'a> BindingsBuilder<'a> {
 
     fn inject_implicit(&mut self) {
         let builtins_module = ModuleName::builtins();
-        let builtins_export = self.modules.get(builtins_module);
-        for name in builtins_export.wildcard(self.modules).iter() {
-            let key = Key::Import(name.clone(), TextRange::default());
-            let idx = self
-                .table
-                .insert(key, Binding::Import(builtins_module, name.clone()));
-            self.bind_key(name, idx, None, false);
+        if let Some(builtins_export) = self.modules.get_opt(builtins_module) {
+            for name in builtins_export.wildcard(self.modules).iter() {
+                let key = Key::Import(name.clone(), TextRange::default());
+                let idx = self
+                    .table
+                    .insert(key, Binding::Import(builtins_module, name.clone()));
+                self.bind_key(name, idx, None, false);
+            }
+        } else {
+            warn!("Cannot find export info from the `builtins` module")
         }
     }
 
@@ -1298,6 +1304,15 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    fn bind_unimportable_names(&mut self, x: &StmtImportFrom) {
+        for x in &x.names {
+            if &x.name != "*" {
+                let asname = x.asname.as_ref().unwrap_or(&x.name);
+                self.bind_definition(asname, Binding::AnyType(AnyStyle::Error), None);
+            }
+        }
+    }
+
     /// Evaluate the statements and update the bindings.
     /// Every statement should end up in the bindings, perhaps with a location that is never used.
     fn stmt(&mut self, x: Stmt) {
@@ -1636,38 +1651,42 @@ impl<'a> BindingsBuilder<'a> {
                     x.level,
                     x.module.as_ref().map(|x| &x.id),
                 ) {
-                    let module = self.modules.get(m);
-                    for x in x.names {
-                        if &x.name == "*" {
-                            for name in module.wildcard(self.modules).iter() {
-                                let key = Key::Import(name.clone(), x.range);
-                                let val = if module.contains(name, self.modules) {
-                                    Binding::Import(m, name.clone())
+                    if let Some(module_exports) = self.modules.get_opt(m) {
+                        for x in x.names {
+                            if &x.name == "*" {
+                                for name in module_exports.wildcard(self.modules).iter() {
+                                    let key = Key::Import(name.clone(), x.range);
+                                    let val = if module_exports.contains(name, self.modules) {
+                                        Binding::Import(m, name.clone())
+                                    } else {
+                                        self.errors.add(
+                                            &self.module_info,
+                                            x.range,
+                                            format!("Could not import `{name}` from `{m}`"),
+                                        );
+                                        Binding::AnyType(AnyStyle::Error)
+                                    };
+                                    let key = self.table.insert(key, val);
+                                    self.bind_key(name, key, None, false);
+                                }
+                            } else {
+                                let asname = x.asname.unwrap_or_else(|| x.name.clone());
+                                let val = if module_exports.contains(&x.name.id, self.modules) {
+                                    Binding::Import(m, x.name.id)
                                 } else {
                                     self.errors.add(
                                         &self.module_info,
                                         x.range,
-                                        format!("Could not import `{name}` from `{m}`"),
+                                        format!("Could not import `{}` from `{m}`", x.name.id),
                                     );
                                     Binding::AnyType(AnyStyle::Error)
                                 };
-                                let key = self.table.insert(key, val);
-                                self.bind_key(name, key, None, false);
+                                self.bind_definition(&asname, val, None);
                             }
-                        } else {
-                            let asname = x.asname.unwrap_or_else(|| x.name.clone());
-                            let val = if module.contains(&x.name.id, self.modules) {
-                                Binding::Import(m, x.name.id)
-                            } else {
-                                self.errors.add(
-                                    &self.module_info,
-                                    x.range,
-                                    format!("Could not import `{}` from `{m}`", x.name.id),
-                                );
-                                Binding::AnyType(AnyStyle::Error)
-                            };
-                            self.bind_definition(&asname, val, None);
                         }
+                    } else {
+                        // We have already errored on `m` when loading the module. No need to emit error again.
+                        self.bind_unimportable_names(&x);
                     }
                 } else {
                     self.errors.add(
@@ -1678,10 +1697,7 @@ impl<'a> BindingsBuilder<'a> {
                             ".".repeat(x.level as usize)
                         ),
                     );
-                    for x in x.names {
-                        let asname = x.asname.unwrap_or_else(|| x.name.clone());
-                        self.bind_definition(&asname, Binding::AnyType(AnyStyle::Error), None);
-                    }
+                    self.bind_unimportable_names(&x);
                 }
             }
             Stmt::Global(x) => self.todo("Bindings::stmt", &x),
