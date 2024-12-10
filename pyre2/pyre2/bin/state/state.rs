@@ -252,7 +252,7 @@ impl<'a> State<'a> {
             self.add_error(
                 module,
                 TextRange::default(),
-                format!("Stdlib import failure, was expecting {module} to contain {name}"),
+                format!("Stdlib import failure, was expecting `{module}` to contain `{name}`"),
             );
             return None;
         }
