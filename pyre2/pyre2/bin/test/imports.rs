@@ -120,6 +120,15 @@ assert_type(x, int)
 "#,
 );
 
+simple_test!(
+    test_access_nonexistent_module,
+    env_imports_dot(),
+    r#"
+import foo.bar.baz
+foo.qux.wibble.wobble # TODO: error
+"#,
+);
+
 fn env_star_reexport() -> TestEnv {
     let mut t = TestEnv::new();
     t.add("base", "class Foo: ...");
@@ -268,6 +277,108 @@ from typing import assert_type
 import foo
 
 assert_type(foo.x, int)
+"#,
+);
+
+fn env_dunder_init_with_submodule() -> TestEnv {
+    let mut t = TestEnv::new();
+    t.add_with_path("foo", "x: str = ''", "foo/__init__.py");
+    t.add_with_path("foo.bar", "x: int = 0", "foo/bar.py");
+    t
+}
+
+// TODO: foo.bar.x should exist and should be an int
+simple_test!(
+    test_import_dunder_init_and_submodule,
+    env_dunder_init_with_submodule(),
+    r#"
+from typing import assert_type
+import foo
+import foo.bar
+assert_type(foo.x, str)
+foo.bar.x # TODO # E: No attribute `bar` in module `foo`
+"#,
+);
+
+simple_test!(
+    test_import_dunder_init_without_submodule,
+    env_dunder_init_with_submodule(),
+    r#"
+from typing import assert_type
+import foo
+assert_type(foo.x, str)
+foo.bar.x # E: No attribute `bar` in module `foo`
+"#,
+);
+
+// TODO: `foo.x` should be an error
+// The assert_type(foo.x) call should fail, but the error message is not great
+simple_test!(
+    test_import_dunder_init_submodule_only,
+    env_dunder_init_with_submodule(),
+    r#"
+from typing import assert_type
+import foo.bar
+foo.x
+assert_type(foo.x, str) # E: assert_type(Module[foo.x], str) failed
+assert_type(foo.bar.x, int)
+"#,
+);
+
+fn env_dunder_init_overlap_submodule() -> TestEnv {
+    let mut t = TestEnv::new();
+    t.add_with_path("foo", "bar: str = ''", "foo/__init__.py");
+    t.add_with_path("foo.bar", "x: int = 0", "foo/bar.py");
+    t
+}
+
+// TODO: foo.bar should not be a str (it should be the module object)
+// TODO: foo.bar.x should exist and should be an int
+simple_test!(
+    test_import_dunder_init_overlap_submodule_last,
+    env_dunder_init_overlap_submodule(),
+    r#"
+from typing import assert_type
+import foo
+import foo.bar
+assert_type(foo.bar, str) # TODO: error
+foo.bar.x # TODO # E: Object of class `str` has no attribute `x`
+"#,
+);
+
+// TODO: Surprisingly (to Sam), importing __init__ after the submodule does not
+// overwrite foo.bar with the global from __init__.py.
+simple_test!(
+    test_import_dunder_init_overlap_submodule_first,
+    env_dunder_init_overlap_submodule(),
+    r#"
+from typing import assert_type
+import foo.bar
+import foo
+assert_type(foo.bar, str) # TODO: error
+foo.bar.x # TODO # E: Object of class `str` has no attribute `x`
+"#,
+);
+
+simple_test!(
+    test_import_dunder_init_overlap_without_submodule,
+    env_dunder_init_overlap_submodule(),
+    r#"
+from typing import assert_type
+import foo
+assert_type(foo.bar, str)
+foo.bar.x # E: Object of class `str` has no attribute `x`
+"#,
+);
+
+simple_test!(
+    test_import_dunder_init_overlap_submodule_only,
+    env_dunder_init_overlap_submodule(),
+    r#"
+from typing import assert_type
+import foo.bar
+assert_type(foo.bar, str) # E: assert_type(Module[foo.bar], str) failed
+assert_type(foo.bar.x, int)
 "#,
 );
 
