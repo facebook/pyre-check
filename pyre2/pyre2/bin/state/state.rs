@@ -538,7 +538,7 @@ impl<'a> State<'a> {
 }
 
 impl LookupExport for State<'_> {
-    fn get_opt(&self, module: ModuleName) -> Option<Exports> {
+    fn get(&self, module: ModuleName) -> Option<Exports> {
         self.lookup_export(module)
     }
 }

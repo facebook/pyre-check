@@ -185,7 +185,7 @@ impl Static {
                 defn == DefinitionStyle::ImportModule;
         }
         for (m, range) in d.import_all {
-            if let Some(exports) = modules.get_opt(m) {
+            if let Some(exports) = modules.get(m) {
                 for name in exports.wildcard(modules).iter() {
                     self.add_with_count(name.clone(), range, 1).uses_key_import = true;
                 }
@@ -485,7 +485,7 @@ impl<'a> BindingsBuilder<'a> {
 
     fn inject_implicit(&mut self) {
         let builtins_module = ModuleName::builtins();
-        if let Some(builtins_export) = self.modules.get_opt(builtins_module) {
+        if let Some(builtins_export) = self.modules.get(builtins_module) {
             for name in builtins_export.wildcard(self.modules).iter() {
                 let key = Key::Import(name.clone(), TextRange::default());
                 let idx = self
@@ -1651,7 +1651,7 @@ impl<'a> BindingsBuilder<'a> {
                     x.level,
                     x.module.as_ref().map(|x| &x.id),
                 ) {
-                    if let Some(module_exports) = self.modules.get_opt(m) {
+                    if let Some(module_exports) = self.modules.get(m) {
                         for x in x.names {
                             if &x.name == "*" {
                                 for name in module_exports.wildcard(self.modules).iter() {

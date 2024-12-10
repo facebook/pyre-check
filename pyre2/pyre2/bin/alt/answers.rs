@@ -1385,7 +1385,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn get_import(&self, name: &Name, from: ModuleName, range: TextRange) -> Type {
-        if let Some(exports) = self.exports.get_opt(from) {
+        if let Some(exports) = self.exports.get(from) {
             if !exports.contains(name, self.exports) {
                 self.error(range, format!("No attribute `{name}` in module `{from}`"))
             } else {
