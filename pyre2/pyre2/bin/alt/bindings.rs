@@ -502,6 +502,10 @@ impl<'a> BindingsBuilder<'a> {
         self.errors.todo(&self.module_info, msg, x);
     }
 
+    fn error(&self, range: TextRange, msg: String) {
+        self.errors.add(&self.module_info, range, msg);
+    }
+
     fn lookup_name(&mut self, name: &Identifier) -> Option<Idx<Key>> {
         let mut barrier = false;
         for scope in self.scopes.iter().rev() {
@@ -552,11 +556,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             None => {
                 // Name wasn't found. Record a type error and fall back to `Any`.
-                self.errors.add(
-                    &self.module_info,
-                    name.range,
-                    format!("Could not find name `{name}`"),
-                );
+                self.error(name.range, format!("Could not find name `{name}`"));
                 self.table.insert(key, Binding::AnyType(AnyStyle::Error));
             }
         }
@@ -654,8 +654,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.ensure_expr(x);
                     }
                     Err(e) => {
-                        self.errors.add(
-                            &self.module_info,
+                        self.error(
                             literal.range,
                             format!("Could not parse type string: {s}, got {e}"),
                         );
@@ -1046,8 +1045,7 @@ impl<'a> BindingsBuilder<'a> {
             // but outermost class cannot be a forward ref.
             match &base {
                 Expr::StringLiteral(v) => {
-                    self.errors.add(
-                        &self.module_info,
+                    self.error(
                         base.range(),
                         format!(
                             "Cannot use string annotation `{}` as a base class",
@@ -1079,8 +1077,7 @@ impl<'a> BindingsBuilder<'a> {
                     // check the expression.
                 }
             } else {
-                self.errors.add(
-                    &self.module_info,
+                self.error(
                     keyword.range(),
                     format!(
                         "The use of unpacking in class header of `{}` is not supported",
@@ -1164,11 +1161,7 @@ impl<'a> BindingsBuilder<'a> {
             innermost.0.push((exit, flow));
             scope.flow.no_next = true;
         } else {
-            self.errors.add(
-                &self.module_info,
-                range,
-                format!("Cannot `{exit}` outside loop"),
-            );
+            self.error(range, format!("Cannot `{exit}` outside loop"));
         }
     }
 
@@ -1287,8 +1280,7 @@ impl<'a> BindingsBuilder<'a> {
                 let n_subpatterns = x.patterns.len();
                 for (idx, pattern) in x.patterns.into_iter().enumerate() {
                     if pattern.is_irrefutable() && idx != n_subpatterns - 1 {
-                        self.errors.add(
-                            &self.module_info,
+                        self.error(
                             pattern.range(),
                             "Only the last subpattern in MatchOr may be irrefutable".to_string(),
                         )
@@ -1659,8 +1651,7 @@ impl<'a> BindingsBuilder<'a> {
                                     let val = if module_exports.contains(name, self.modules) {
                                         Binding::Import(m, name.clone())
                                     } else {
-                                        self.errors.add(
-                                            &self.module_info,
+                                        self.error(
                                             x.range,
                                             format!("Could not import `{name}` from `{m}`"),
                                         );
@@ -1674,8 +1665,7 @@ impl<'a> BindingsBuilder<'a> {
                                 let val = if module_exports.contains(&x.name.id, self.modules) {
                                     Binding::Import(m, x.name.id)
                                 } else {
-                                    self.errors.add(
-                                        &self.module_info,
+                                    self.error(
                                         x.range,
                                         format!("Could not import `{}` from `{m}`", x.name.id),
                                     );
@@ -1689,8 +1679,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.bind_unimportable_names(&x);
                     }
                 } else {
-                    self.errors.add(
-                        &self.module_info,
+                    self.error(
                         x.range,
                         format!(
                             "Could not resolve relative import `{}`",
