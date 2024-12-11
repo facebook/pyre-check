@@ -97,8 +97,9 @@ RenameAvailability = _Availability
 SymbolSearchAvailability = _Availability
 InlayHintAvailability = _Availability
 FormattingAvailability = _Availability
-PerTargetTypeErrorsAvailability = CustomAvailability
-PythonAutoTargetsAvailability = CustomAvailability
+GlobalLazyTypeErrorsAvailability = _Availability
+PerTargetTypeErrorsAvailability = _Availability
+PythonAutoTargetsAvailability = _Availability
 SystemPyAutoTargetsAvailability = CustomAvailability
 # TODO: T204372341 remove this once we have rolled out addition and removal features
 PythonAutoTargetsRemovalAvailability = CustomAvailability
@@ -116,8 +117,11 @@ class LanguageServerFeatures:
     status_updates: StatusUpdatesAvailability = StatusUpdatesAvailability.ENABLED
     type_coverage: TypeCoverageAvailability = TypeCoverageAvailability.DISABLED
     type_errors: TypeErrorsAvailability = TypeErrorsAvailability.ENABLED
+    global_lazy_type_errors: GlobalLazyTypeErrorsAvailability = (
+        GlobalLazyTypeErrorsAvailability.ENABLED
+    )
     per_target_type_errors: PerTargetTypeErrorsAvailability = (
-        PerTargetTypeErrorsAvailability.from_enabled(False)
+        PerTargetTypeErrorsAvailability.ENABLED
     )
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
     telemetry: TelemetryAvailability = TelemetryAvailability.DISABLED
@@ -128,7 +132,7 @@ class LanguageServerFeatures:
     inlay_hint: InlayHintAvailability = InlayHintAvailability.DISABLED
     formatting: FormattingAvailability = FormattingAvailability.DISABLED
     python_auto_targets: PythonAutoTargetsAvailability = (
-        PythonAutoTargetsAvailability.from_enabled(False)
+        PythonAutoTargetsAvailability.ENABLED
     )
     use_system_pyautotargets: SystemPyAutoTargetsAvailability = (
         SystemPyAutoTargetsAvailability.from_enabled(False)

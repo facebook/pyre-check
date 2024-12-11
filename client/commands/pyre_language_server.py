@@ -109,11 +109,18 @@ class FilesForTypeChecker:
         }
 
 
+class PyreDaemonTypeCheckStatus(enum.Enum):
+    OK = "ok"
+    NO_FILES = "no_files"
+    NOT_ENABLED = "not_enabled"
+
+
 @dataclasses.dataclass(frozen=True)
 class PyreDaemonTypeErrors:
     type_errors: Dict[Path, List[error.Error]]
     error_message: Optional[str]
     duration: float
+    reason: PyreDaemonTypeCheckStatus
 
     def type_errors_to_json(self) -> Dict[str, object]:
         return {
@@ -126,6 +133,7 @@ class PyreDaemonTypeErrors:
             "type_errors": self.type_errors_to_json(),
             "error_message": self.error_message,
             "duration": self.duration,
+            "reason": self.reason.value,
         }
 
 
@@ -848,6 +856,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 type_errors={},
                 error_message=None,
                 duration=0,
+                reason=PyreDaemonTypeCheckStatus.NO_FILES,
             )
         type_errors_timer = timer.Timer()
         # TODO(connernilsen): we should get rid of this
@@ -867,6 +876,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             type_errors=type_errors,
             error_message=error_message,
             duration=type_errors_timer.stop_in_millisecond(),
+            reason=PyreDaemonTypeCheckStatus.OK,
         )
 
     async def _get_files_for_type_checker(
@@ -963,34 +973,42 @@ class PyreLanguageServer(PyreLanguageServerApi):
         type_errors_timer = timer.Timer()
         open_documents = set(self.server_state.opened_documents.keys())
 
+        async def async_identity(value: T) -> T:
+            return value
+
+        type_checked_files = await self._get_files_for_type_checker(open_documents)
+
         if self.get_language_server_features().per_target_type_errors.is_enabled():
-            type_checked_files = await self._get_files_for_type_checker(open_documents)
-            daemon_type_errors, pyre_buck_metadata = await asyncio.gather(
-                self._query_pyre_daemon_type_errors(
-                    document_path, type_checked_files.daemon_files
-                ),
-                self._get_buck_type_errors(
-                    type_checked_files.buck_files,
-                ),
+            unawaited_buck_type_errors = self._get_buck_type_errors(
+                type_checked_files.buck_files
             )
         else:
-            daemon_type_errors = await self._query_pyre_daemon_type_errors(
-                document_path, open_documents
+            unawaited_buck_type_errors = async_identity(
+                PyreBuckTypeErrorMetadata(
+                    status=BuckTypeCheckStatus.NOT_RUN,
+                    duration=0,
+                    type_errors={},
+                    error_message=None,
+                )
             )
-            pyre_buck_metadata = PyreBuckTypeErrorMetadata(
-                status=BuckTypeCheckStatus.NOT_RUN,
-                duration=0,
-                type_errors={},
-                error_message=None,
+
+        if self.get_language_server_features().global_lazy_type_errors.is_enabled():
+            unawaited_daemon_type_errors = self._query_pyre_daemon_type_errors(
+                document_path, type_checked_files.daemon_files
             )
-            type_checked_files = FilesForTypeChecker(
-                daemon_files=open_documents,
-                daemon_files_use_buck=None,
-                buck_files=set(),
-                error_message=None,
-                duration=0,
-                did_run=False,
+        else:
+            unawaited_daemon_type_errors = async_identity(
+                PyreDaemonTypeErrors(
+                    type_errors={},
+                    error_message=None,
+                    duration=0,
+                    reason=PyreDaemonTypeCheckStatus.NOT_ENABLED,
+                )
             )
+
+        daemon_type_errors, pyre_buck_metadata = await asyncio.gather(
+            unawaited_daemon_type_errors, unawaited_buck_type_errors
+        )
 
         error_message = (daemon_type_errors.error_message or "") + (
             pyre_buck_metadata.error_message or ""
