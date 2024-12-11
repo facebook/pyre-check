@@ -1,0 +1,27 @@
+name: pyre2
+on:
+  push:
+  pull_request:
+  schedule:
+  - cron: '0 12 * * 1' # 12pm Monday
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: nightly-2023-11-10
+        components: clippy, rustfmt
+    # We use rustfmt 2.0 for formatting, which differs from the released
+    # version installed by Cargo
+    # - run: cargo fmt -- --check
+    - run: cargo clippy
+    - run: cargo build
+    - run: cargo test
