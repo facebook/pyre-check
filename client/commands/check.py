@@ -218,7 +218,8 @@ def _run_check_command(command: Sequence[str]) -> CheckResult:
 
             else:
                 LOG.error(
-                    f"Check command exited with non-zero return code: {return_code}."
+                    f"The backend check command exited with non-zero return code: {return_code}. "
+                    f"This likely indicates a problem with the Pyre binary at `{command[0]}`."
                 )
                 return CheckResult(commands.ExitCode.FAILURE, [])
 
