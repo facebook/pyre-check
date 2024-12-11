@@ -43,6 +43,21 @@ class A:
 );
 
 simple_test!(
+    test_annotating_non_self_attributes,
+    r#"
+class A:
+    x: int
+
+class B:
+    def __init__(self, a: A):
+        a.x: int = 1
+
+a: A
+a.x: int = 5
+    "#,
+);
+
+simple_test!(
     test_self_attribute_annotated_in_class_body,
     r#"
 from typing import assert_type
