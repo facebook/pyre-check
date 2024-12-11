@@ -33,8 +33,10 @@ protocol_subtype_2: Collection[int] = (1, 2, 3)
 # Sam: Callable, ParamSpec, Unpack
 _P = ParamSpec("_P")
 
+
 def complex_callable(func: Callable[_P, bool], *args: Unpack[tuple[str, str]]):
     pass
+
 
 # Up for grabs: try
 def try_statement():
@@ -58,6 +60,6 @@ def yielding():
     yield 1
 
 
-# Up for grabs: __new__
+# Rebecca: __new__
 def dunder_new():
     return Path("test")
