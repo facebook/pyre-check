@@ -69,6 +69,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                                             return false;
                                         }
                                     }
+                                    (Some(Arg::Kwargs(_)), None) => return true,
                                     _ => return false,
                                 }
                             }
