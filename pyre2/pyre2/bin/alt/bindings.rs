@@ -744,7 +744,9 @@ impl<'a> BindingsBuilder<'a> {
     /// In methods, we track assignments to `self` attribute targets so that we can
     /// be aware of class fields defined in methods. This is particularly important in
     /// constructors, we currently are applying this logic for all methods.
-    fn bind_attr_if_self(&mut self, x: &ExprAttribute, binding: Binding) {
+    ///
+    /// Returns `true` if the attribute was a self attribute.
+    fn bind_attr_if_self(&mut self, x: &ExprAttribute, binding: Binding) -> bool {
         for scope in self.scopes.iter_mut().rev() {
             if let ScopeKind::Method(method) = &mut scope.kind
                 && let Some(self_name) = &method.self_name
@@ -755,9 +757,10 @@ impl<'a> BindingsBuilder<'a> {
                         .instance_attributes
                         .insert(x.attr.id.clone(), binding);
                 }
-                break;
+                return true;
             }
         }
+        false
     }
 
     // `should_ensure_expr` determines whether to call `ensure_expr` recursively
@@ -1443,14 +1446,25 @@ impl<'a> BindingsBuilder<'a> {
                         Some(v) => Binding::Expr(None, *v.clone()),
                         None => Binding::AnyType(AnyStyle::Implicit),
                     };
-                    self.bind_attr_if_self(
+                    if self.bind_attr_if_self(
                         &attr,
                         Binding::AnnotatedType(ann_key, Box::new(value_type)),
-                    );
-                    self.table.insert(
-                        Key::Anon(attr.range),
-                        Binding::Eq(ann_key, attr_key, attr.attr.id),
-                    );
+                    ) {
+                        self.table.insert(
+                            Key::Anon(attr.range),
+                            Binding::Eq(ann_key, attr_key, attr.attr.id),
+                        );
+                    } else {
+                        self.errors.add(
+                            &self.module_info,
+                            x.range,
+                            format!(
+                                "Type cannot be declared in assignment to non-self attribute `{}.{}`",
+                                attr.value.display_with(&self.module_info),
+                                attr.attr.id,
+                            ),
+                        );
+                    }
                     if let Some(v) = x.value {
                         self.ensure_expr(&v);
                         self.table

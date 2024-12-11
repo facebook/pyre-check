@@ -50,10 +50,10 @@ class A:
 
 class B:
     def __init__(self, a: A):
-        a.x: int = 1
+        a.x: int = 1  # E: Type cannot be declared in assignment to non-self attribute `a.x`
 
 a: A
-a.x: int = 5
+a.x: int = 5  # E: Type cannot be declared in assignment to non-self attribute `a.x`
     "#,
 );
 
