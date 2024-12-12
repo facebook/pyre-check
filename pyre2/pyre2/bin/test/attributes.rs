@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
 
-simple_test!(
+testcase!(
     test_set_attribute,
     r#"
 class A:
@@ -18,7 +18,7 @@ def f(a: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_self_attribute_unannotated,
     r#"
 from typing import assert_type
@@ -30,7 +30,7 @@ def f(a: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_self_attribute_assign_twice,
     r#"
 from typing import assert_type
@@ -42,7 +42,7 @@ class A:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_annotating_non_self_attributes,
     r#"
 class A:
@@ -57,7 +57,7 @@ a.x: int = 5  # E: Type cannot be declared in assignment to non-self attribute `
     "#,
 );
 
-simple_test!(
+testcase!(
     test_self_attribute_annotated_in_class_body,
     r#"
 from typing import assert_type
@@ -68,7 +68,7 @@ class A:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_self_attribute_annotated_assignment,
     r#"
 from typing import assert_type
@@ -81,7 +81,7 @@ def f(a: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_self_attribute_annotated_twice,
     r#"
 from typing import assert_type, Literal
@@ -94,7 +94,7 @@ def f(a: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_self_attribute_qualified,
     r#"
 from typing import assert_type, Final, Literal
@@ -106,7 +106,7 @@ def f(a: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_self_attribute_bare_annotation,
     r#"
 from typing import assert_type
@@ -119,7 +119,7 @@ def f(a: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_attribute_inference,
     r#"
 class C:
@@ -129,7 +129,7 @@ def f(c: C):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_set_attribute_in_init_nested,
     r#"
 from typing import assert_type, Literal
@@ -144,7 +144,7 @@ def f(c: C):
 );
 
 // TODO: Should `C.x` exist?
-simple_test!(
+testcase!(
     test_set_attribute_in_init_indirect,
     r#"
 class C:
