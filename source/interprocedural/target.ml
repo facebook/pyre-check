@@ -74,6 +74,14 @@ module Regular = struct
     | PropertySetter -> Format.fprintf formatter "@setter"
 
 
+  let kind = function
+    | Function { kind; _ }
+    | Method { kind; _ }
+    | Override { kind; _ } ->
+        Some kind
+    | Object _ -> None
+
+
   let pp_pretty formatter = function
     | Function { name; kind } -> Format.fprintf formatter "%s%a" name pp_kind kind
     | Method { class_name; method_name; kind } ->

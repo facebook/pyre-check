@@ -3252,6 +3252,137 @@ module CalleeVisitor = struct
       ~state:(ref { NodeVisitor.pyre_in_context; assignment_target; context; callees_at_location })
 end
 
+module ResolvedExpression = struct
+  type t = {
+    expression: Expression.t;
+    call_graph: DefineCallGraph.t;
+  }
+  [@@deriving show, eq]
+end
+
+module DecoratorResolution = struct
+  type t =
+    | Decorators of ResolvedExpression.t
+    | DefinitionNotFound
+    | PropertySetterUnsupported
+    | Undecorated
+      (* A callable is `Undecorated` if it does not have any decorator, or all of its decorators are
+         ignored. *)
+  [@@deriving show, eq]
+
+  let ignored_decorators_for_higher_order =
+    [
+      "property";
+      "dataclass";
+      "partial";
+      "functools.lru_cache";
+      "enum.verify";
+      "enum.unique";
+      "typing.final";
+      "atexit.register";
+      "contextlib.contextmanager";
+      "abc.abstractmethod";
+    ]
+    @ class_method_decorators
+    @ static_method_decorators
+    |> SerializableStringSet.of_list
+
+
+  (**
+   * For any target that might be decorated, return the `ResolvedExpression` for the expression that calls the decorators.
+   *
+   * For instance:
+   * ```
+   * @decorator
+   * @decorator_factory(1, 2)
+   * def foo(): pass
+   * ```
+   * would resolve into expression `decorator(decorator_factory(1, 2)(foo))`, along with its callees that are stored in `call_graph`.
+   *)
+  let resolve_exn ?(debug = false) ~pyre_in_context ~override_graph callable =
+    let log format =
+      if debug then
+        Log.dump format
+      else
+        Format.ifprintf Format.err_formatter format
+    in
+    let callee_and_parameters decorator =
+      match decorator.Node.value with
+      | Expression.Call { Call.callee; arguments } -> callee, Some arguments
+      | _ -> decorator, None
+    in
+    let filter_decorator decorator =
+      (* TODO: Handle @SkipDecoratorWhenInlining. *)
+      let decorator_name = decorator |> callee_and_parameters |> Core.fst |> Expression.show in
+      not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order)
+    in
+    let resolve_callees ~call_graph =
+      let context =
+        {
+          NodeVisitorContext.pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context;
+          define_name = None;
+          missing_flow_type_analysis = None;
+          debug;
+          override_graph;
+          call_indexer = CallTargetIndexer.create ();
+          attribute_targets = Target.HashSet.create ();
+        }
+      in
+      CalleeVisitor.visit_expression
+        ~pyre_in_context
+        ~assignment_target:None
+        ~context
+        ~callees_at_location:call_graph
+    in
+    let create_and_resolve_decorator_call previous_argument decorator =
+      Node.create
+        ~location:decorator.Node.location
+          (* Avoid later registering all callees to the same location. *)
+        (Expression.Call
+           {
+             Call.callee =
+               Ast.Expression.delocalize decorator
+               (* TODO: `decorator` might be a local variable whose definition should be included
+                  here, in order to resolve its callee. *);
+             arguments = [{ Call.Argument.name = None; value = previous_argument }];
+           })
+    in
+    match
+      ( callable |> Target.get_regular |> Target.Regular.kind,
+        Target.get_module_and_definition
+          ~pyre_api:(PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
+          callable )
+    with
+    | None, _ -> Format.asprintf "Do not support `Override` or `Object` targets." |> failwith
+    | Some Target.PropertySetter, _ -> PropertySetterUnsupported
+    | _, None -> DefinitionNotFound
+    | ( Some Target.Normal,
+        Some
+          ( _,
+            { Node.value = { Define.signature = { decorators; _ }; _ }; location = define_location }
+          ) ) ->
+        let decorators = decorators |> List.filter ~f:filter_decorator |> List.rev in
+        let callable_name =
+          callable
+          |> Target.define_name_exn
+          |> Ast.Expression.create_name_from_reference ~location:define_location
+        in
+        log "Decorators: [%s]" (decorators |> List.map ~f:Expression.show |> String.concat ~sep:";");
+        if List.is_empty decorators then
+          Undecorated
+        else
+          let expression =
+            List.fold
+              decorators
+              ~init:(Expression.Name callable_name |> Node.create ~location:define_location)
+              ~f:create_and_resolve_decorator_call
+          in
+          let call_graph = ref DefineCallGraph.empty in
+          resolve_callees ~call_graph expression;
+          Decorators
+            { expression; call_graph = DefineCallGraph.filter_empty_attribute_access !call_graph }
+end
+
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
    fixpoint (shared across the type check and additional static analysis modules). By having a
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without

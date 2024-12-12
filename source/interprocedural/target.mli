@@ -46,6 +46,8 @@ module Regular : sig
   val get_corresponding_method_exn : t -> t
 
   val get_corresponding_override_exn : t -> t
+
+  val kind : t -> kind option
 end
 
 module ParameterMap : Data_structures.SerializableMap.S with type key = TaintAccessPath.Root.t

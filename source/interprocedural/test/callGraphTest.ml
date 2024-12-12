@@ -71,7 +71,7 @@ let assert_call_graph_of_define
     ()
     context
   =
-  let expected = CallGraphTestHelper.parse_define_call_graph expected in
+  let expected = CallGraphTestHelper.parse_define_call_graph_for_test expected in
   let define, test_source, pyre_api, configuration =
     setup ~context ~test_qualifier:(Reference.create "test") ~define_name ~source
   in
@@ -6860,6 +6860,679 @@ let test_higher_order_call_graph_of_define =
     ]
 
 
+let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () context =
+  let handle = "test.py" in
+  let qualifier = String.chop_suffix_exn handle ~suffix:".py" in
+  let project = Test.ScratchProject.setup ~context [qualifier, source] in
+  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+  let configuration = Test.ScratchProject.configuration_of project in
+  let source = TestHelper.source_from_qualifier ~pyre_api (Reference.create qualifier) in
+  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
+  let override_graph_shared_memory =
+    OverrideGraph.Heap.from_source ~pyre_api ~source |> OverrideGraph.SharedMemory.from_heap
+  in
+  let module TestResult = struct
+    type t =
+      | Decorators of {
+          expression: string;
+          call_graph: CallGraph.DefineCallGraph.t;
+        }
+      | DefinitionNotFound
+      | PropertySetterUnsupported
+      | Undecorated
+    [@@deriving show, eq]
+
+    let from_actual = function
+      | CallGraph.DecoratorResolution.Decorators
+          { CallGraph.ResolvedExpression.expression; call_graph } ->
+          Decorators { expression = Expression.show expression; call_graph }
+      | CallGraph.DecoratorResolution.DefinitionNotFound -> DefinitionNotFound
+      | CallGraph.DecoratorResolution.PropertySetterUnsupported -> PropertySetterUnsupported
+      | CallGraph.DecoratorResolution.Undecorated -> Undecorated
+
+
+    let from_expected = function
+      | Result.Ok (decorator_call, call_graph) ->
+          Decorators
+            {
+              expression = decorator_call;
+              call_graph = CallGraphTestHelper.parse_define_call_graph call_graph;
+            }
+      | Result.Error CallGraph.DecoratorResolution.DefinitionNotFound -> DefinitionNotFound
+      | Result.Error CallGraph.DecoratorResolution.PropertySetterUnsupported ->
+          PropertySetterUnsupported
+      | Result.Error CallGraph.DecoratorResolution.Undecorated -> Undecorated
+      | Result.Error _ -> failwith "Unexpected"
+  end
+  in
+  let actual =
+    initial_callables
+    |> FetchCallables.get_definitions
+    |> List.map ~f:(fun callable ->
+           (* For simplicity, don't compare the cases when there exist no decorator callees. *)
+           callable
+           |> CallGraph.DecoratorResolution.resolve_exn
+                ~debug
+                ~pyre_in_context
+                ~override_graph:
+                  (Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
+           |> TestResult.from_actual
+           |> fun result -> callable, result)
+    |> Target.Map.of_alist_exn
+  in
+  let expected =
+    expected
+    |> List.map ~f:(fun (callable, expected) ->
+           Target.from_regular callable, TestResult.from_expected expected)
+    |> Target.Map.of_alist_exn
+  in
+  OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
+  assert_equal
+    ~cmp:(Target.Map.equal TestResult.equal)
+    ~printer:(Format.asprintf "%a" (Target.Map.pp TestResult.pp))
+    expected
+    actual
+
+
+let test_resolve_decorator_callees =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve_decorator_callees
+           ~source:
+             {|
+     def decorator(f1):
+       def inner():
+         ...
+       return inner
+     def decorator2(f2):
+       def inner():
+         ...
+       return inner
+     @decorator2
+     @decorator
+     def foo():
+       return 0
+  |}
+           ~expected:
+             [
+               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.decorator"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.decorator2"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.foo"; kind = Normal },
+                 Result.Ok
+                   ( "test.decorator2(test.decorator(test.foo))",
+                     [
+                       ( "12:0-13:10",
+                         "foo",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~callable_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "10:1-10:11",
+                         "decorator2",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.decorator2"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "11:1-11:10",
+                         "decorator",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.decorator"; kind = Normal });
+                                ]
+                              ~higher_order_parameters:
+                                (HigherOrderParameterMap.from_list
+                                   [
+                                     {
+                                       index = 0;
+                                       call_targets =
+                                         [
+                                           CallTarget.create_regular
+                                             (Target.Regular.Function
+                                                { name = "test.foo"; kind = Normal });
+                                         ];
+                                       unresolved = false;
+                                     };
+                                   ])
+                              ()) );
+                     ] ) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve_decorator_callees
+           ~source:
+             {|
+     from abc import abstractmethod
+     @property
+     @classmethod
+     @abstractmethod
+     def foo():
+       return 0
+  |}
+           ~expected:
+             [
+               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.foo"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve_decorator_callees
+           ~source:
+             {|
+     def decorator_factory(arg1, arg2):
+       def decorator():
+         ...
+       return decorator
+     @decorator_factory(1, 2)
+     def foo():
+       return 0
+  |}
+           ~expected:
+             [
+               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.decorator_factory"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.foo"; kind = Normal },
+                 Result.Ok
+                   ( "test.decorator_factory(1, 2)(test.foo)",
+                     [
+                       ( "7:0-8:10",
+                         "foo",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~callable_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "6:1-6:24",
+                         "decorator_factory",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.decorator_factory"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "6:1-6:24",
+                         "test.decorator_factory(1, 2)",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~unresolved:true
+                              ~higher_order_parameters:
+                                (HigherOrderParameterMap.from_list
+                                   [
+                                     {
+                                       index = 0;
+                                       call_targets =
+                                         [
+                                           CallTarget.create_regular
+                                             (Target.Regular.Function
+                                                { name = "test.foo"; kind = Normal });
+                                         ];
+                                       unresolved = false;
+                                     };
+                                   ])
+                              ()) );
+                     ] ) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve_decorator_callees
+           ~source:
+             {|
+     def decorator_factory(arg1, arg2):
+       def decorator():
+         ...
+       return decorator
+     def bar():
+       ...
+     @decorator_factory(1, bar)
+     def foo():
+       return 0
+  |}
+           ~expected:
+             [
+               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.decorator_factory"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.foo"; kind = Normal },
+                 Result.Ok
+                   ( "test.decorator_factory(1, test.bar)(test.foo)",
+                     [
+                       ( "9:0-10:10",
+                         "foo",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~callable_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "8:22-8:25",
+                         "bar",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~callable_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "8:1-8:26",
+                         "decorator_factory",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.decorator_factory"; kind = Normal });
+                                ]
+                              ~higher_order_parameters:
+                                (HigherOrderParameterMap.from_list
+                                   [
+                                     {
+                                       index = 1;
+                                       call_targets =
+                                         [
+                                           CallTarget.create_regular
+                                             (Target.Regular.Function
+                                                { name = "test.bar"; kind = Normal });
+                                         ];
+                                       unresolved = false;
+                                     };
+                                   ])
+                              ()) );
+                       ( "8:1-8:26",
+                         "test.decorator_factory(1, test.bar)",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~unresolved:true
+                              ~higher_order_parameters:
+                                (HigherOrderParameterMap.from_list
+                                   [
+                                     {
+                                       index = 0;
+                                       call_targets =
+                                         [
+                                           CallTarget.create_regular
+                                             (Target.Regular.Function
+                                                { name = "test.foo"; kind = Normal });
+                                         ];
+                                       unresolved = false;
+                                     };
+                                   ])
+                              ()) );
+                     ] ) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve_decorator_callees
+           ~source:
+             {|
+     class ClassDecorator:
+       def __init__(self, f):
+         self.f = f
+       def __call__(self, *args, **kwargs):
+         return self.f(*args, **kwargs)
+     @ClassDecorator
+     def foo():
+       return 0
+  |}
+           ~expected:
+             [
+               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   {
+                     class_name = "test.ClassDecorator";
+                     method_name = "$class_toplevel";
+                     kind = Normal;
+                   },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.ClassDecorator"; method_name = "__call__"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.ClassDecorator"; method_name = "__init__"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.foo"; kind = Normal },
+                 Result.Ok
+                   ( "test.ClassDecorator(test.foo)",
+                     [
+                       ( "8:0-9:10",
+                         "foo",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~callable_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "7:1-7:15",
+                         "ClassDecorator",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~init_targets:
+                                [
+                                  CallTarget.create_regular
+                                    ~implicit_receiver:true
+                                    ~return_type:(Some ReturnType.any)
+                                    (Target.Regular.Method
+                                       {
+                                         class_name = "test.ClassDecorator";
+                                         method_name = "__init__";
+                                         kind = Normal;
+                                       });
+                                ]
+                              ~new_targets:
+                                [
+                                  CallTarget.create_regular
+                                    ~return_type:(Some ReturnType.any)
+                                    ~is_static_method:true
+                                    (Target.Regular.Method
+                                       {
+                                         class_name = "object";
+                                         method_name = "__new__";
+                                         kind = Normal;
+                                       });
+                                ]
+                              ~higher_order_parameters:
+                                (HigherOrderParameterMap.from_list
+                                   [
+                                     {
+                                       index = 0;
+                                       call_targets =
+                                         [
+                                           CallTarget.create_regular
+                                             ~implicit_receiver:true
+                                             ~implicit_dunder_call:true
+                                             ~receiver_class:"test.ClassDecorator"
+                                             (Target.Regular.Method
+                                                {
+                                                  class_name = "test.ClassDecorator";
+                                                  method_name = "__call__";
+                                                  kind = Normal;
+                                                });
+                                         ];
+                                       unresolved = false;
+                                     };
+                                   ])
+                              ()) );
+                     ] ) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve_decorator_callees
+           ~source:
+             {|
+     class A:
+       @classmethod
+       def decorator(cls, f):
+         def inner():
+           ...
+         return inner
+     @A.decorator
+     def foo():
+       return 0
+  |}
+           ~expected:
+             [
+               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.A"; method_name = "$class_toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.A"; method_name = "decorator"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.foo"; kind = Normal },
+                 Result.Ok
+                   ( "test.A.decorator(test.foo)",
+                     [
+                       ( "9:0-10:10",
+                         "foo",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~callable_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "8:1-8:12",
+                         "decorator",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    ~receiver_class:"test.A"
+                                    ~implicit_receiver:true
+                                    ~is_class_method:true
+                                    (Target.Regular.Method
+                                       {
+                                         class_name = "test.A";
+                                         method_name = "decorator";
+                                         kind = Normal;
+                                       });
+                                ]
+                              ~higher_order_parameters:
+                                (HigherOrderParameterMap.from_list
+                                   [
+                                     {
+                                       index = 0;
+                                       call_targets =
+                                         [
+                                           CallTarget.create_regular
+                                             (Target.Regular.Function
+                                                { name = "test.foo"; kind = Normal });
+                                         ];
+                                       unresolved = false;
+                                     };
+                                   ])
+                              ()) );
+                     ] ) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve_decorator_callees
+           ~source:
+             {|
+     class A:
+       def decorator(self, f):
+         def inner():
+           ...
+         return inner
+
+       @decorator
+       def foo(self):
+         return 0
+  |}
+           ~expected:
+             [
+               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.A"; method_name = "$class_toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.A"; method_name = "decorator"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal },
+                 Result.Ok
+                   ( "test.A.decorator(test.A.foo)",
+                     [
+                       ( "8:3-8:12",
+                         "A",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create ~callable_targets:[] ()) );
+                       ( "8:3-8:12",
+                         "decorator",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Method
+                                       {
+                                         class_name = "test.A";
+                                         method_name = "decorator";
+                                         kind = Normal;
+                                       });
+                                ]
+                              ~higher_order_parameters:
+                                (HigherOrderParameterMap.from_list
+                                   [
+                                     {
+                                       index = 0;
+                                       call_targets =
+                                         [
+                                           CallTarget.create_regular
+                                             ~implicit_receiver:true
+                                             (Target.Regular.Method
+                                                {
+                                                  class_name = "test.A";
+                                                  method_name = "foo";
+                                                  kind = Normal;
+                                                });
+                                         ];
+                                       unresolved = false;
+                                     };
+                                   ])
+                              ()) );
+                     ] ) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve_decorator_callees
+           ~source:
+             {|
+     import typing
+     class A:
+       @staticmethod
+       def decorator(f): ...
+     class B:
+       @staticmethod
+       def decorator(f): ...
+     a_or_b: typing.Union[A, B] = A() if 1 > 2 else B()
+     @a_or_b.decorator
+     def foo():
+       return 0
+  |}
+           ~expected:
+             [
+               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.A"; method_name = "$class_toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.B"; method_name = "$class_toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.foo"; kind = Normal },
+                 Result.Ok
+                   ( "test.a_or_b.decorator(test.foo)",
+                     [
+                       ( "11:0-12:10",
+                         "foo",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~callable_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "10:1-10:17",
+                         "decorator",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.A.decorator"; kind = Normal });
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.B.decorator"; kind = Normal });
+                                ]
+                              ~higher_order_parameters:
+                                (HigherOrderParameterMap.from_list
+                                   [
+                                     {
+                                       index = 0;
+                                       call_targets =
+                                         [
+                                           CallTarget.create_regular
+                                             (Target.Regular.Function
+                                                { name = "test.foo"; kind = Normal });
+                                         ];
+                                       unresolved = false;
+                                     };
+                                   ])
+                              ()) );
+                     ] ) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve_decorator_callees
+           ~source:
+             {|
+     class MyClass(object):
+       @property
+       def my_attr(self):
+           return self._my_attr
+       @my_attr.setter
+       def my_attr(self, value):
+           self._my_attr = value
+  |}
+           ~expected:
+             [
+               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.MyClass"; method_name = "$class_toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.MyClass"; method_name = "my_attr"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Method
+                   { class_name = "test.MyClass"; method_name = "my_attr"; kind = PropertySetter },
+                 Result.Error DecoratorResolution.PropertySetterUnsupported );
+             ]
+           ();
+    ]
+
+
 let () =
   "interproceduralCallGraph"
   >::: [
@@ -6867,5 +7540,6 @@ let () =
          test_call_graph_of_define_foo_and_bar;
          test_return_type_from_annotation;
          test_higher_order_call_graph_of_define;
+         test_resolve_decorator_callees;
        ]
   |> Test.run

@@ -298,9 +298,16 @@ end
 
 (** The call graph of a function or method definition. *)
 module DefineCallGraph : sig
-  type t [@@deriving show]
+  type t [@@deriving show, eq]
 
   val empty : t
+
+  val add_callees
+    :  expression_identifier:string ->
+    location:Location.t ->
+    callees:ExpressionCallees.t ->
+    t ->
+    t
 
   (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
       true excludes the targets that are not required in building the dependency graph. *)
@@ -327,6 +334,43 @@ module DefineCallGraph : sig
     IdentifierCallees.t option
 
   val resolve_string_format : t -> location:Ast.Location.t -> StringFormatCallees.t option
+end
+
+module ResolvedExpression : sig
+  type t = {
+    expression: Expression.t;
+    call_graph: DefineCallGraph.t;
+  }
+  [@@deriving show, eq]
+end
+
+module DecoratorResolution : sig
+  type t =
+    | Decorators of ResolvedExpression.t
+    | DefinitionNotFound
+    | PropertySetterUnsupported
+    | Undecorated
+      (* A callable is `Undecorated` if it does not have any decorator, or all of its decorators are
+         ignored. *)
+  [@@deriving show, eq]
+
+  (**
+   * For any target that might be decorated, return the `ResolvedExpression` for the expression that calls the decorators.
+   *
+   * For instance:
+   * ```
+   * @decorator
+   * @decorator_factory(1, 2)
+   * def foo(): pass
+   * ```
+   * would resolve into expression `decorator(decorator_factory(1, 2)(foo))`, along with its callees that are stored in `call_graph`.
+   *)
+  val resolve_exn
+    :  ?debug:bool ->
+    pyre_in_context:PyrePysaEnvironment.InContext.t ->
+    override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
+    Target.t ->
+    t
 end
 
 val call_graph_of_define
