@@ -6,6 +6,7 @@
  */
 
 use std::path::PathBuf;
+use std::sync::Once;
 
 use anyhow::anyhow;
 use starlark_map::small_map::SmallMap;
@@ -124,6 +125,8 @@ pub fn simple_test_driver(env: TestEnv) -> State<'static> {
     state
 }
 
+static INIT_TRACING_ONCE: Once = Once::new();
+
 /// Should only be used from the `simple_test!` macro.
 pub fn simple_test_for_macro(
     mut env: TestEnv,
@@ -131,7 +134,7 @@ pub fn simple_test_for_macro(
     file: &str,
     line: u32,
 ) -> anyhow::Result<()> {
-    init_tracing(true, true);
+    INIT_TRACING_ONCE.call_once(|| init_tracing(true, true));
     let mut start_line = line as usize + 1;
     if !env.0.is_empty() {
         start_line += 1;
