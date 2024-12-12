@@ -26,6 +26,7 @@ use starlark_map::small_set::SmallSet;
 
 use super::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::attr::AttributeBase;
 use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
@@ -40,8 +41,6 @@ use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
-use crate::types::simplify::as_attribute_base;
-use crate::types::simplify::AttributeBase;
 use crate::types::special_form::SpecialForm;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::Restriction;
@@ -208,7 +207,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         check_arg: &dyn Fn(&T, Option<&Type>),
     ) -> Type {
         self.distribute_over_union(ty, |ty| {
-            let callable = match as_attribute_base(ty.clone(), self.stdlib) {
+            let callable = match self.as_attribute_base(ty.clone(), self.stdlib) {
                 Some(AttributeBase::ClassInstance(class)) => {
                     let method_type =
                         self.get_instance_attribute_or_error(&class, method_name, range);
@@ -473,7 +472,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
         self.distribute_over_union(obj, |obj| {
-            match as_attribute_base(obj.clone(), self.stdlib) {
+            match self.as_attribute_base(obj.clone(), self.stdlib) {
                 Some(AttributeBase::ClassInstance(class)) => {
                     self.get_instance_attribute_or_error(&class, attr_name, range)
                 }
