@@ -3,8 +3,8 @@
 A VSCode LSP extension that talks over stdin/stdout to a binary.
 
 If using another binary, the settings to be aware of are `pyre2.lspPath` (the
-binary path) and `pyre2.lspArguments` (the arguments to that binary). These
-are available in the VSCode extension settings UI.
+binary path) and `pyre2.lspArguments` (the arguments to that binary). These are
+available in the VSCode extension settings UI.
 
 Based on a combination of:
 
@@ -35,8 +35,8 @@ and in `client`.
 - In VS Code, go to Extensions, click on the "..." button in the Extensions bar,
   select "Install from VSIX" and then select the `pyre2-1.0.0.vsix` file that
   was produced.
-- Build the Pyre2 binary with `buck2 build pyre2 @fbcode//mode/opt --show-output`
-  and either:
+- Build the Pyre2 binary with
+  `buck2 build pyre2 @fbcode//mode/opt --show-output` and either:
   1. Put it on your `$PATH`.
   2. Add the `pyre2.lspPath` configuration key to point at it.
 
