@@ -25,13 +25,13 @@ macro_rules! testcase {
     ($name:ident, $imports:expr, $contents:expr,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
-            $crate::test::util::simple_test_for_macro($imports, $contents, file!(), line!())
+            $crate::test::util::testcase_for_macro($imports, $contents, file!(), line!())
         }
     };
     ($name:ident, $contents:expr,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
-            $crate::test::util::simple_test_for_macro(
+            $crate::test::util::testcase_for_macro(
                 $crate::test::util::TestEnv::new(),
                 $contents,
                 file!(),
@@ -120,8 +120,8 @@ pub fn simple_test_driver(env: TestEnv) -> State<'static> {
 
 static INIT_TRACING_ONCE: Once = Once::new();
 
-/// Should only be used from the `simple_test!` macro.
-pub fn simple_test_for_macro(
+/// Should only be used from the `testcase!` macro.
+pub fn testcase_for_macro(
     mut env: TestEnv,
     contents: &str,
     file: &str,
