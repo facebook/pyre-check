@@ -916,10 +916,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             .collect::<SmallMap<_, _>>();
                         ty.subst(&param_map)
                     }
-                    Type::ClassDef(cls)
-                        if cls.qname().module.name().as_str() == "builtins"
-                            && cls.qname().name.id == "type" =>
-                    {
+                    Type::ClassDef(cls) if cls == *self.stdlib.builtins_type().class_object() => {
                         let targ = match xs.len() {
                             // This causes us to treat `type[list]` as equivalent to `type[list[Any]]`,
                             // which may or may not be what we want.
