@@ -243,7 +243,7 @@ impl ClassType {
 
     pub fn substitution(&self) -> Substitution {
         let tparams = self.tparams();
-        let targs = &self.1.as_slice();
+        let targs = self.1.as_slice();
         Substitution(tparams.quantified().zip(targs.iter().cloned()).collect())
     }
 
