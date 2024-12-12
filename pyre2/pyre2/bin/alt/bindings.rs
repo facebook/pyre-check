@@ -331,7 +331,7 @@ impl Scope {
 
 impl Bindings {
     #[expect(dead_code)] // Useful API
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         let mut res = 0;
         table_for_each!(&self.0.table, |x: &BindingEntry<_>| res += x.1.len());
         res

@@ -325,7 +325,7 @@ impl Answers {
     }
 
     #[expect(dead_code)]
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         let mut res = 0;
         table_for_each!(&self.table, |x: &AnswerEntry<_>| res += x.len());
         res

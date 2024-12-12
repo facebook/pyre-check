@@ -81,7 +81,7 @@ impl<K, V> IndexMap<K, V> {
     }
 
     #[expect(dead_code)] // Logically part of the API
-    pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
+    fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
         self.items.iter_mut().filter_map(|v| v.as_mut())
     }
 
