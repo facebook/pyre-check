@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
+use crate::testcase_with_bug;
 
-simple_test!(
+testcase!(
     test_context_annassign,
     r#"
 class A: ...
@@ -17,7 +18,7 @@ xs: list[A] = [B()]
 "#,
 );
 
-simple_test!(
+testcase!(
     test_context_assign_annotated_binding,
     r#"
 class A: ...
@@ -28,7 +29,7 @@ xs = [B()]
 "#,
 );
 
-simple_test!(
+testcase!(
     test_context_assign_member,
     r#"
 class A: ...
@@ -42,7 +43,7 @@ o.xs = [B()]
 "#,
 );
 
-simple_test!(
+testcase!(
     test_context_class_field_init,
     r#"
 class A: ...
@@ -55,7 +56,7 @@ class C:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_context_return_annot,
     r#"
 class A: ...
@@ -66,7 +67,7 @@ def f() -> list[A]:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_context_parameter,
     r#"
 class A: ...
@@ -90,7 +91,7 @@ kwarg(xs=[B()], ys=[B()])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_context_assign_unpacked_list,
     r#"
 class A: ...
@@ -101,7 +102,7 @@ xs: list[A] = []
 "#,
 );
 
-simple_test!(
+testcase!(
     test_context_for,
     r#"
 class A: ...
@@ -113,7 +114,7 @@ for xs in [[B()]]:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_set_hint,
     r#"
 from typing import Iterable, MutableSet, Literal
@@ -128,7 +129,7 @@ x: list[int] = {1}  # E: EXPECTED set[int] <: list[int]
     "#,
 );
 
-simple_test!(
+testcase!(
     test_dict_hint,
     r#"
 from typing import Iterable, MutableMapping, Literal
@@ -144,7 +145,7 @@ x: list[str] = {"a": 1}  # E: EXPECTED dict[str, int] <: list[str]
 );
 
 // TODO: Unpacked assignment propagates wrong hint to RHS expression
-simple_test!(
+testcase_with_bug!(
     test_context_assign_unpacked_tuple,
     r#"
 class A: ...
@@ -156,7 +157,7 @@ xs: list[A] = []
 );
 
 // TODO: No context propagated to subscript assignment target
-simple_test!(
+testcase_with_bug!(
     test_context_assign_subscript,
     r#"
 class A: ...
