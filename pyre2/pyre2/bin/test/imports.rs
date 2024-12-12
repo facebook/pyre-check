@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
 use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;
+use crate::testcase;
+use crate::testcase_with_bug;
 
 fn env_class_x() -> TestEnv {
     TestEnv::one(
@@ -29,7 +30,7 @@ x: X = X()
     )
 }
 
-simple_test!(
+testcase!(
     test_imports_works,
     env_class_x(),
     r#"
@@ -39,7 +40,7 @@ assert_type(x, X)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_imports_broken,
     env_class_x(),
     r#"
@@ -49,7 +50,7 @@ b: Y = x  # E: X <: Y
 "#,
 );
 
-simple_test!(
+testcase!(
     test_imports_star,
     env_class_x(),
     r#"
@@ -60,7 +61,7 @@ assert_type(y, X)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_imports_module_single,
     env_class_x(),
     r#"
@@ -71,7 +72,7 @@ assert_type(y, foo.X)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_imports_module_as,
     env_class_x(),
     r#"
@@ -82,7 +83,7 @@ assert_type(y, bar.X)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_imports_module_nested,
     env_class_x_deeper(),
     r#"
@@ -93,7 +94,7 @@ assert_type(y, foo.bar.X)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_import_overwrite,
     env_class_x(),
     r#"
@@ -110,7 +111,7 @@ fn env_imports_dot() -> TestEnv {
     t
 }
 
-simple_test!(
+testcase!(
     test_imports_dot,
     env_imports_dot(),
     r#"
@@ -120,7 +121,7 @@ assert_type(x, int)
 "#,
 );
 
-simple_test!(
+testcase_with_bug!(
     test_access_nonexistent_module,
     env_imports_dot(),
     r#"
@@ -136,7 +137,7 @@ fn env_star_reexport() -> TestEnv {
     t
 }
 
-simple_test!(
+testcase!(
     test_imports_star_transitive,
     env_star_reexport(),
     r#"
@@ -150,7 +151,7 @@ fn env_redefine_class() -> TestEnv {
     TestEnv::one("foo", "class Foo: ...")
 }
 
-simple_test!(
+testcase!(
     test_redefine_class,
     env_redefine_class(),
     r#"
@@ -163,7 +164,7 @@ assert_type(f(Foo()), Foo)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_dont_export_underscore,
     TestEnv::one("foo", "x: int = 1\n_y: int = 2"),
     r#"
@@ -181,7 +182,7 @@ fn env_import_different_submodules() -> TestEnv {
     t
 }
 
-simple_test!(
+testcase!(
     test_import_different_submodules,
     env_import_different_submodules(),
     r#"
@@ -194,7 +195,7 @@ assert_type(foo.baz.x, str)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_import_flow,
     env_import_different_submodules(),
     r#"
@@ -209,7 +210,7 @@ import foo.baz
 "#,
 );
 
-simple_test!(
+testcase!(
     test_bad_import,
     r#"
 from typing import assert_type, Any
@@ -218,14 +219,14 @@ assert_type(not_a_real_value, Any)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_bad_relative_import,
     r#"
 from ... import does_not_exist  # E: Could not resolve relative import `...`
 "#,
 );
 
-simple_test!(
+testcase!(
     test_import_all,
     TestEnv::one(
         "foo",
@@ -254,7 +255,7 @@ __all__ = []
     t
 }
 
-simple_test!(
+testcase!(
     test_broken_export,
     env_broken_export(),
     r#"
@@ -269,7 +270,7 @@ fn env_relative_import_star() -> TestEnv {
     t
 }
 
-simple_test!(
+testcase!(
     test_relative_import_star,
     env_relative_import_star(),
     r#"
@@ -288,7 +289,7 @@ fn env_dunder_init_with_submodule() -> TestEnv {
 }
 
 // TODO: foo.bar.x should exist and should be an int
-simple_test!(
+testcase_with_bug!(
     test_import_dunder_init_and_submodule,
     env_dunder_init_with_submodule(),
     r#"
@@ -300,7 +301,7 @@ foo.bar.x # TODO # E: No attribute `bar` in module `foo`
 "#,
 );
 
-simple_test!(
+testcase!(
     test_import_dunder_init_without_submodule,
     env_dunder_init_with_submodule(),
     r#"
@@ -313,7 +314,7 @@ foo.bar.x # E: No attribute `bar` in module `foo`
 
 // TODO: `foo.x` should be an error
 // The assert_type(foo.x) call should fail, but the error message is not great
-simple_test!(
+testcase_with_bug!(
     test_import_dunder_init_submodule_only,
     env_dunder_init_with_submodule(),
     r#"
@@ -334,7 +335,7 @@ fn env_dunder_init_overlap_submodule() -> TestEnv {
 
 // TODO: foo.bar should not be a str (it should be the module object)
 // TODO: foo.bar.x should exist and should be an int
-simple_test!(
+testcase_with_bug!(
     test_import_dunder_init_overlap_submodule_last,
     env_dunder_init_overlap_submodule(),
     r#"
@@ -348,7 +349,7 @@ foo.bar.x # TODO # E: Object of class `str` has no attribute `x`
 
 // TODO: Surprisingly (to Sam), importing __init__ after the submodule does not
 // overwrite foo.bar with the global from __init__.py.
-simple_test!(
+testcase_with_bug!(
     test_import_dunder_init_overlap_submodule_first,
     env_dunder_init_overlap_submodule(),
     r#"
@@ -360,7 +361,7 @@ foo.bar.x # TODO # E: Object of class `str` has no attribute `x`
 "#,
 );
 
-simple_test!(
+testcase!(
     test_import_dunder_init_overlap_without_submodule,
     env_dunder_init_overlap_submodule(),
     r#"
@@ -371,7 +372,7 @@ foo.bar.x # E: Object of class `str` has no attribute `x`
 "#,
 );
 
-simple_test!(
+testcase!(
     test_import_dunder_init_overlap_submodule_only,
     env_dunder_init_overlap_submodule(),
     r#"
@@ -392,7 +393,7 @@ __all__.extend(bad_module.__all__)  # E: Could not find name `bad_module`
     )
 }
 
-simple_test!(
+testcase!(
     test_export_all_wrongly,
     env_export_all_wrongly(),
     r#"
@@ -400,7 +401,7 @@ from foo import bad_definition  # E: Could not import `bad_definition` from `foo
 "#,
 );
 
-simple_test!(
+testcase!(
     test_export_all_wrongly_star,
     env_export_all_wrongly(),
     r#"
@@ -412,7 +413,7 @@ fn env_blank() -> TestEnv {
     TestEnv::one("foo", "")
 }
 
-simple_test!(
+testcase!(
     test_import_blank,
     env_blank(),
     r#"
@@ -422,28 +423,28 @@ x = foo.bar  # E: No attribute `bar` in module `foo`
 "#,
 );
 
-simple_test!(
+testcase!(
     test_missing_import_named,
     r#"
 from foo import bar  # E: Could not find import of `foo`
 "#,
 );
 
-simple_test!(
+testcase!(
     test_missing_import_star,
     r#"
 from foo import *  # E: Could not find import of `foo`
 "#,
 );
 
-simple_test!(
+testcase!(
     test_missing_import_module,
     r#"
 import foo, bar.baz  # E: Could not find import of `foo`  # E: Could not find import of `bar.baz`
 "#,
 );
 
-simple_test!(
+testcase!(
     test_direct_import_toplevel,
     r#"
 import typing
@@ -452,7 +453,7 @@ typing.assert_type(None, None)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_direct_import_function,
     r#"
 import typing
