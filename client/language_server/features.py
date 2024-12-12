@@ -121,7 +121,7 @@ class LanguageServerFeatures:
         GlobalLazyTypeErrorsAvailability.ENABLED
     )
     per_target_type_errors: PerTargetTypeErrorsAvailability = (
-        PerTargetTypeErrorsAvailability.ENABLED
+        PerTargetTypeErrorsAvailability.DISABLED
     )
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
     telemetry: TelemetryAvailability = TelemetryAvailability.DISABLED
@@ -132,7 +132,7 @@ class LanguageServerFeatures:
     inlay_hint: InlayHintAvailability = InlayHintAvailability.DISABLED
     formatting: FormattingAvailability = FormattingAvailability.DISABLED
     python_auto_targets: PythonAutoTargetsAvailability = (
-        PythonAutoTargetsAvailability.ENABLED
+        PythonAutoTargetsAvailability.DISABLED
     )
     use_system_pyautotargets: SystemPyAutoTargetsAvailability = (
         SystemPyAutoTargetsAvailability.from_enabled(False)
