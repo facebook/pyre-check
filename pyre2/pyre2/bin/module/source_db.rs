@@ -71,18 +71,11 @@ fn read_manifest_file(path: &Path) -> anyhow::Result<Vec<ManifestItem>> {
         .with_context(|| format!("failed to parse manifest JSON `{}`", path.display()))
 }
 
-// If there are multiple manifest files, we read them and combine them into a single SmallMap (for
-// more efficient lookup later). Conflicting module names are rare occurrence in practice, and often
-// result in a failure. For now, conflicts are handled in the most naive way of "last occurrence wins".
-fn read_manifest_files(
-    manifest_paths: &[PathBuf],
-) -> anyhow::Result<SmallMap<ModuleName, PathBuf>> {
-    let mut result = SmallMap::new();
+fn read_manifest_files(manifest_paths: &[PathBuf]) -> anyhow::Result<Vec<ManifestItem>> {
+    let mut result = Vec::new();
     for manifest_path in manifest_paths {
         let manifest_items = read_manifest_file(manifest_path.as_path())?;
-        for manifest_item in manifest_items {
-            result.insert(manifest_item.module_name, manifest_item.relative_path);
-        }
+        result.extend(manifest_items);
     }
     Ok(result)
 }
@@ -96,11 +89,23 @@ impl BuckSourceDatabase {
         let sources = read_manifest_files(source_manifests)?;
         let dependencies = read_manifest_files(dependency_manifests)?;
         let typeshed = read_manifest_files(typeshed_manifests)?;
-        Ok(BuckSourceDatabase {
-            sources,
-            dependencies,
-            typeshed,
-        })
+        Ok(Self::from_manifest_items(sources, dependencies, typeshed))
+    }
+
+    fn from_manifest_items(
+        source_items: Vec<ManifestItem>,
+        dependency_items: Vec<ManifestItem>,
+        typeshed_items: Vec<ManifestItem>,
+    ) -> Self {
+        // If there are multiple manifest items, we read them and combine them into a single SmallMap (for
+        // more efficient lookup later). Conflicting module names are rare occurrence in practice, and often
+        // result in a failure. For now, conflicts are handled in the most naive way of "last occurrence wins".
+        let to_pair = |item: ManifestItem| (item.module_name, item.relative_path);
+        BuckSourceDatabase {
+            sources: SmallMap::from_iter(source_items.into_iter().map(to_pair)),
+            dependencies: SmallMap::from_iter(dependency_items.into_iter().map(to_pair)),
+            typeshed: SmallMap::from_iter(typeshed_items.into_iter().map(to_pair)),
+        }
     }
 
     pub fn modules_to_check(&self) -> Vec<ModuleName> {
@@ -149,8 +154,6 @@ impl BuckSourceDatabase {
 mod tests {
     use std::str::FromStr;
 
-    use starlark_map::smallmap;
-
     use super::*;
 
     #[test]
@@ -177,17 +180,20 @@ mod tests {
         let foo_path = PathBuf::from_str("/root/foo.py").unwrap();
         let bar_path = PathBuf::from_str("/root/bar.py").unwrap();
         let baz_path = PathBuf::from_str("/root/baz.py").unwrap();
-        let source_db = BuckSourceDatabase {
-            sources: smallmap! {
-                ModuleName::from_str("foo") => foo_path.clone()
-            },
-            dependencies: smallmap! {
-                ModuleName::from_str("bar") => bar_path.clone()
-            },
-            typeshed: smallmap! {
-                ModuleName::from_str("baz") => baz_path.clone()
-            },
-        };
+        let source_db = BuckSourceDatabase::from_manifest_items(
+            vec![ManifestItem {
+                module_name: ModuleName::from_str("foo"),
+                relative_path: foo_path.clone(),
+            }],
+            vec![ManifestItem {
+                module_name: ModuleName::from_str("bar"),
+                relative_path: bar_path.clone(),
+            }],
+            vec![ManifestItem {
+                module_name: ModuleName::from_str("baz"),
+                relative_path: baz_path.clone(),
+            }],
+        );
         assert_eq!(
             source_db.lookup(ModuleName::from_str("foo")),
             LookupResult::OwningSource(foo_path)
@@ -218,21 +224,45 @@ mod tests {
         let typeshed_c_path = PathBuf::from_str("/typeshed/c.pyi").unwrap();
         let typeshed_d_path = PathBuf::from_str("/typeshed/d.pyi").unwrap();
 
-        let source_db = BuckSourceDatabase {
-            sources: SmallMap::new(),
-            dependencies: smallmap! {
-                ModuleName::from_str("a") => dep_a_path.clone(),
-                ModuleName::from_str("b") => dep_b_path.clone(),
-                ModuleName::from_str("c") => dep_c_path.clone(),
-                ModuleName::from_str("d") => dep_d_path.clone(),
-            },
-            typeshed: smallmap! {
-                ModuleName::from_str("a") => typeshed_a_path.clone(),
-                ModuleName::from_str("b") => typeshed_b_path.clone(),
-                ModuleName::from_str("c") => typeshed_c_path.clone(),
-                ModuleName::from_str("d") => typeshed_d_path.clone(),
-            },
-        };
+        let source_db = BuckSourceDatabase::from_manifest_items(
+            vec![],
+            vec![
+                ManifestItem {
+                    module_name: ModuleName::from_str("a"),
+                    relative_path: dep_a_path.clone(),
+                },
+                ManifestItem {
+                    module_name: ModuleName::from_str("b"),
+                    relative_path: dep_b_path.clone(),
+                },
+                ManifestItem {
+                    module_name: ModuleName::from_str("c"),
+                    relative_path: dep_c_path.clone(),
+                },
+                ManifestItem {
+                    module_name: ModuleName::from_str("d"),
+                    relative_path: dep_d_path.clone(),
+                },
+            ],
+            vec![
+                ManifestItem {
+                    module_name: ModuleName::from_str("a"),
+                    relative_path: typeshed_a_path.clone(),
+                },
+                ManifestItem {
+                    module_name: ModuleName::from_str("b"),
+                    relative_path: typeshed_b_path.clone(),
+                },
+                ManifestItem {
+                    module_name: ModuleName::from_str("c"),
+                    relative_path: typeshed_c_path.clone(),
+                },
+                ManifestItem {
+                    module_name: ModuleName::from_str("d"),
+                    relative_path: typeshed_d_path.clone(),
+                },
+            ],
+        );
         assert_eq!(
             source_db.lookup(ModuleName::from_str("a")),
             LookupResult::ExternalSource(dep_a_path)
