@@ -26,7 +26,6 @@ use starlark_map::small_set::SmallSet;
 
 use super::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::attr::AttributeBase;
 use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
@@ -39,7 +38,6 @@ use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
-use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
 use crate::types::special_form::SpecialForm;
 use crate::types::tuple::Tuple;
@@ -207,41 +205,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         check_arg: &dyn Fn(&T, Option<&Type>),
     ) -> Type {
         self.distribute_over_union(ty, |ty| {
-            let callable = match self.as_attribute_base(ty.clone(), self.stdlib) {
-                Some(AttributeBase::ClassInstance(class)) => {
-                    let method_type =
-                        self.get_instance_attribute_or_error(&class, method_name, range);
-                    self.as_call_target_or_error(method_type, CallStyle::Method(method_name), range)
-                }
-                Some(AttributeBase::ClassObject(class)) => {
-                    let method_type = self.get_class_attribute_or_error(&class, method_name, range);
-                    self.as_call_target_or_error(method_type, CallStyle::Method(method_name), range)
-                }
-                Some(AttributeBase::Module(module)) => {
-                    let method_type = self.lookup_module_attr(&module, method_name, range);
-                    self.as_call_target_or_error(method_type, CallStyle::Method(method_name), range)
-                }
-                Some(AttributeBase::Quantified(q)) => {
-                    let method_type = q.as_value(self.stdlib).to_type();
-                    self.as_call_target_or_error(method_type, CallStyle::Method(method_name), range)
-                }
-                Some(AttributeBase::TypeAny(style)) => {
-                    match self.get_instance_attribute(&self.stdlib.builtins_type(), method_name) {
-                        None => CallTarget::any(style),
-                        Some(method_type) => self.as_call_target_or_error(
-                            method_type,
-                            CallStyle::Method(method_name),
-                            range,
-                        ),
-                    }
-                }
-                Some(AttributeBase::Any(style)) => CallTarget::any(style),
-                None => self.error_call_target(
+            let callable = match self.lookup_attr(ty.clone(), method_name) {
+                Ok(ty) => self.as_call_target_or_error(ty, CallStyle::Method(method_name), range),
+                Err(err) => self.error_call_target(
                     range,
-                    format!(
-                        "Expected class, got {}",
-                        ty.clone().deterministic_printing()
-                    ),
+                    err.to_error_msg(method_name, "Expr::call_method_generic"),
                 ),
             };
             self.call_infer(callable, args, keywords, check_arg, range)
@@ -463,51 +431,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn lookup_module_attr(&self, module: &Module, attr_name: &Name, range: TextRange) -> Type {
-        match module.as_single_module() {
-            Some(module_name) => self.get_import(attr_name, module_name, range),
-            None => module.push_path(attr_name.clone()).to_type(),
-        }
-    }
-
     pub fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
         self.distribute_over_union(obj, |obj| {
-            match self.as_attribute_base(obj.clone(), self.stdlib) {
-                Some(AttributeBase::ClassInstance(class)) => {
-                    self.get_instance_attribute_or_error(&class, attr_name, range)
-                }
-                Some(AttributeBase::ClassObject(class)) => {
-                    self.get_class_attribute_or_error(&class, attr_name, range)
-                }
-                Some(AttributeBase::Module(module)) => {
-                    self.lookup_module_attr(&module, attr_name, range)
-                }
-                Some(AttributeBase::Quantified(q)) => {
-                    if q.is_param_spec() && attr_name == "args" {
-                        Type::type_form(Type::Args(q.id()))
-                    } else if q.is_param_spec() && attr_name == "kwargs" {
-                        Type::type_form(Type::Kwargs(q.id()))
-                    } else {
-                        self.get_instance_attribute_or_error(
-                            &q.as_value(self.stdlib),
-                            attr_name,
-                            range,
-                        )
-                    }
-                }
-                Some(AttributeBase::TypeAny(style)) => self
-                    .get_instance_attribute(&self.stdlib.builtins_type(), attr_name)
-                    .unwrap_or_else(|| style.propagate()),
-                Some(AttributeBase::Any(style)) => style.propagate(),
-                None => self.error(
-                    range,
-                    format!(
-                        "TODO: Answers::expr_infer attribute: `{}`.{}",
-                        obj.clone().deterministic_printing(),
-                        attr_name,
-                    ),
-                ),
-            }
+            self.lookup_attr(obj.clone(), attr_name)
+                .unwrap_or_else(|err| {
+                    self.error(range, err.to_error_msg(attr_name, "Expr::attr_infer"))
+                })
         })
     }
 

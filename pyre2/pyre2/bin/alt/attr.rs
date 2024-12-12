@@ -6,9 +6,11 @@
  */
 
 use dupe::Dupe;
+use ruff_python_ast::name::Name;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::classes::NoClassAttribute;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::module::Module;
@@ -29,8 +31,87 @@ pub enum AttributeBase {
     TypeAny(AnyStyle),
 }
 
+pub enum LookupError {
+    AttributeNotFound(ClassType),
+    ClassAttributeNotFound(Class, NoClassAttribute),
+    ModuleExportNotFound(Module),
+    AttributeBaseUndefined(Type),
+}
+
+impl LookupError {
+    pub fn to_error_msg(self, attr_name: &Name, todo_ctx: &str) -> String {
+        match self {
+            LookupError::AttributeNotFound(class_type) => {
+                let class_name = class_type.name();
+                format!("Object of class `{class_name}` has no attribute `{attr_name}`",)
+            }
+            LookupError::ClassAttributeNotFound(class, no_class_attribute) => {
+                let class_name = class.name();
+                match no_class_attribute {
+                    NoClassAttribute::NoClassMember => {
+                        format!("Class `{class_name}` has no class attribute `{attr_name}`",)
+                    }
+                    NoClassAttribute::IsGenericMember => format!(
+                        "Generic attribute `{attr_name}` of class `{class_name}` is not visible on the class",
+                    ),
+                }
+            }
+            LookupError::ModuleExportNotFound(module) => {
+                format!("No attribute `{attr_name}` in module `{module}`")
+            }
+            LookupError::AttributeBaseUndefined(ty) => format!(
+                "TODO: {todo_ctx} attribute base undefined for type: {}",
+                ty.deterministic_printing()
+            ),
+        }
+    }
+}
+
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    pub fn as_attribute_base(&self, ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
+    pub fn lookup_attr(&self, ty: Type, attr_name: &Name) -> Result<Type, LookupError> {
+        match self.as_attribute_base(ty.clone(), self.stdlib) {
+            Some(AttributeBase::ClassInstance(class)) => self
+                .get_instance_attribute(&class, attr_name)
+                .ok_or_else(|| LookupError::AttributeNotFound(class)),
+            Some(AttributeBase::ClassObject(class)) => self
+                .get_class_attribute(&class, attr_name)
+                .map_err(|err| LookupError::ClassAttributeNotFound(class, err)),
+            Some(AttributeBase::Module(module)) => self
+                .get_module_attr(&module, attr_name)
+                .ok_or_else(|| LookupError::ModuleExportNotFound(module)),
+            Some(AttributeBase::Quantified(q)) => {
+                if q.is_param_spec() && attr_name == "args" {
+                    Ok(Type::type_form(Type::Args(q.id())))
+                } else if q.is_param_spec() && attr_name == "kwargs" {
+                    Ok(Type::type_form(Type::Kwargs(q.id())))
+                } else {
+                    let class = q.as_value(self.stdlib);
+                    self.get_instance_attribute(&class, attr_name)
+                        .ok_or_else(|| LookupError::AttributeNotFound(class))
+                }
+            }
+            Some(AttributeBase::TypeAny(style)) => {
+                let class = self.stdlib.builtins_type();
+                Ok(self
+                    .get_instance_attribute(&class, attr_name)
+                    .unwrap_or_else(|| style.propagate()))
+            }
+            Some(AttributeBase::Any(style)) => Ok(style.propagate()),
+            None => Err(LookupError::AttributeBaseUndefined(ty)),
+        }
+    }
+
+    fn get_module_attr(&self, module: &Module, attr_name: &Name) -> Option<Type> {
+        match module.as_single_module() {
+            Some(module_name) => self.get_import(attr_name, module_name),
+            None => {
+                // TODO: This is fallable, but we don't detect it yet.
+                Some(module.push_path(attr_name.clone()).to_type())
+            }
+        }
+    }
+
+    fn as_attribute_base(&self, ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         match ty {
             Type::ClassType(class_type) => Some(AttributeBase::ClassInstance(class_type)),
             Type::Tuple(Tuple::Unbounded(box element)) => {

@@ -1369,17 +1369,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.untype(self.expr(x, None), x.range())
     }
 
-    pub fn get_import(&self, name: &Name, from: ModuleName, range: TextRange) -> Type {
+    pub fn get_import(&self, name: &Name, from: ModuleName) -> Option<Type> {
         if let Ok(exports) = self.exports.get(from) {
-            if !exports.contains(name, self.exports) {
-                self.error(range, format!("No attribute `{name}` in module `{from}`"))
+            if exports.contains(name, self.exports) {
+                Some(
+                    self.get_from_module(from, &KeyExported::Export(name.clone()))
+                        .arc_clone(),
+                )
             } else {
-                self.get_from_module(from, &KeyExported::Export(name.clone()))
-                    .arc_clone()
+                None
             }
         } else {
             // We have already errored on `m` when loading the module. No need to emit error again.
-            Type::any_error()
+            Some(Type::any_error())
         }
     }
 

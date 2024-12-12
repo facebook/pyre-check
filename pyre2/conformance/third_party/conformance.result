@@ -258,7 +258,7 @@
     "Line 135: Unexpected errors ['EXPECTED Class7_1 <: Proto7[int, int]']",
     "Line 144: Unexpected errors ['EXPECTED Class7_2 <: Proto7[int, int]']",
     "Line 168: Unexpected errors ['EXPECTED Callable[[Any], Any] <: Proto8']",
-    "Line 196: Unexpected errors [\"Missing argument 'flush'\", 'TODO: Answers::expr_infer attribute: `Callable[[int], str]`.other_attribute']",
+    "Line 196: Unexpected errors [\"Missing argument 'flush'\", 'TODO: Expr::attr_infer attribute base undefined for type: Callable[[int], str]']",
     "Line 216: Unexpected errors ['EXPECTED Callable[[], None] <: Proto10']",
     "Line 236: Unexpected errors ['EXPECTED Callable[[int, str, None], Any] <: Proto11']",
     "Line 237: Unexpected errors ['EXPECTED Callable[[int, str, None], Any] <: Proto11']",
@@ -314,7 +314,7 @@
     "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']",
     "Line 78: Unexpected errors ['assert_type(Literal[3.1], float) failed']",
     "Line 98: Unexpected errors ['EXPECTED str | None <: str']",
-    "Line 101: Unexpected errors ['Expected 1 more positional argument(s)', 'Object of class `NoneType` has no attribute `__add__`', 'Object of class `_PyreReadOnly_` has no attribute `__add__`', 'TODO: Answers::expr_infer attribute: `@_`.__add__', \"EXPECTED Literal['hits'] <: _PyreReadOnly_[dict[str, int]]\", \"EXPECTED Literal['hits'] <: dict[str, int]\", 'EXPECTED Literal[0] <: _PyreReadOnly_[str]', 'EXPECTED Literal[0] <: str']"
+    "Line 101: Unexpected errors ['Expected 1 more positional argument(s)', 'Object of class `NoneType` has no attribute `__add__`', 'Object of class `_PyreReadOnly_` has no attribute `__add__`', 'TODO: Expr::attr_infer attribute base undefined for type: @_', \"EXPECTED Literal['hits'] <: _PyreReadOnly_[dict[str, int]]\", \"EXPECTED Literal['hits'] <: dict[str, int]\", 'EXPECTED Literal[0] <: _PyreReadOnly_[str]', 'EXPECTED Literal[0] <: str']"
   ],
   "classes_override.py": [
     "Line 53: Expected 1 errors",
@@ -681,7 +681,7 @@
     "Line 121: Expected 1 errors",
     "Line 191: Expected 1 errors",
     "Line 19: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[Sequence[?_]], int], _PyreReadOnly_[?_]] | Callable[[_PyreReadOnly_[Sequence[?_]], slice[Error, Error, Error]], _PyreReadOnly_[Sequence[?_]]] | Callable[[Sequence[?_], int], ?_] | Callable[[Sequence[?_], slice[Error, Error, Error]], Sequence[?_]]']",
-    "Line 34: Unexpected errors ['TODO: Answers::expr_infer attribute: `?_`.__add__']",
+    "Line 34: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_']",
     "Line 67: Unexpected errors ['assert_type(MyStr, str) failed']",
     "Line 68: Unexpected errors ['assert_type(MyStr, str) failed', 'EXPECTED str <: MyStr']",
     "Line 92: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]', 'EXPECTED ?_ <: object']",
@@ -862,7 +862,7 @@
     "Line 30: Unexpected errors ['EXPECTED ReturnsSelf <: type[ReturnsSelf]']",
     "Line 50: Unexpected errors ['EXPECTED Callable[[CallableAttribute], int] <: Callable[[Self], int]']",
     "Line 59: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 60: Unexpected errors [\"Missing argument 'flush'\", 'TODO: Answers::expr_infer attribute: `Self`.x']",
+    "Line 60: Unexpected errors [\"Missing argument 'flush'\", 'TODO: Expr::attr_infer attribute base undefined for type: Self']",
     "Line 63: Unexpected errors ['EXPECTED HasNestedFunction <: Self']",
     "Line 93: Unexpected errors ['Object of class `Foo3` has no attribute `child_value`']"
   ],
@@ -874,7 +874,7 @@
     "Line 14: Unexpected errors ['assert_type(type[?_], TypeVar) failed']",
     "Line 15: Unexpected errors ['assert_type(type[?_], TypeVarTuple) failed']",
     "Line 16: Unexpected errors ['assert_type(type[?_], ParamSpec) failed']",
-    "Line 33: Unexpected errors ['TODO: Answers::expr_infer attribute: `?_`.capitalize']"
+    "Line 33: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_']"
   ],
   "generics_syntax_infer_variance.py": [
     "Line 28: Unexpected errors ['EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]']",
@@ -1316,7 +1316,7 @@
     "Line 39: Unexpected errors ['EXPECTED Concrete1 <: Proto1[str, int]']",
     "Line 55: Unexpected errors ['EXPECTED Box[int] <: Box[float]']",
     "Line 65: Unexpected errors ['EXPECTED Sender[float] <: Sender[int]']",
-    "Line 87: Unexpected errors ['TODO: Answers::expr_infer attribute: `?_`.get_parent']",
+    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_']",
     "Line 144: Unexpected errors ['EXPECTED ConcreteHasProperty1 <: HasPropertyProto']",
     "Line 145: Unexpected errors ['EXPECTED ConcreteHasProperty2 <: HasPropertyProto']"
   ],
@@ -1472,9 +1472,9 @@
     "Line 99: Unexpected errors ['Object of class `type` has no attribute `unknown`']",
     "Line 100: Unexpected errors ['Object of class `type` has no attribute `unknown`']",
     "Line 102: Unexpected errors ['assert_type(Callable[[], tuple[type, ...]], tuple[type, ...]) failed']",
-    "Line 106: Unexpected errors ['assert_type(Any, tuple[type, ...]) failed', 'TODO: Answers::expr_infer attribute: `Type`.__mro__']",
-    "Line 107: Unexpected errors ['TODO: Answers::expr_infer attribute: `Type`.unknown']",
-    "Line 108: Unexpected errors ['TODO: Answers::expr_infer attribute: `Type`.unknown']",
+    "Line 106: Unexpected errors ['assert_type(Any, tuple[type, ...]) failed', 'TODO: Expr::attr_infer attribute base undefined for type: Type']",
+    "Line 107: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Type']",
+    "Line 108: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Type']",
     "Line 110: Unexpected errors ['assert_type(Callable[[], tuple[type, ...]], tuple[type, ...]) failed']",
     "Line 116: Unexpected errors ['assert_type(Any, str) failed', 'Class `object` has no class attribute `__name__`']",
     "Line 119: Unexpected errors ['assert_type(Any, str) failed', 'Class `object` has no class attribute `__name__`']",

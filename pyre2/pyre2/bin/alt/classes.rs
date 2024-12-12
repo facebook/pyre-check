@@ -527,24 +527,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             })
     }
 
-    pub fn get_instance_attribute_or_error(
-        &self,
-        cls: &ClassType,
-        name: &Name,
-        range: TextRange,
-    ) -> Type {
-        self.get_instance_attribute(cls, name).unwrap_or_else(|| {
-            self.error(
-                range,
-                format!(
-                    "Object of class `{}` has no attribute `{}`",
-                    cls.name(),
-                    name
-                ),
-            )
-        })
-    }
-
     fn depends_on_class_type_parameter(&self, cls: &Class, ty: &Type) -> bool {
         let tparams = cls.tparams();
         let mut qs = SmallSet::new();
@@ -570,24 +552,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Ok(ty.as_ref().clone())
                 }
             }
-        }
-    }
-
-    pub fn get_class_attribute_or_error(&self, cls: &Class, name: &Name, range: TextRange) -> Type {
-        match self.get_class_attribute(cls, name) {
-            Ok(ty) => ty,
-            Err(NoClassAttribute::NoClassMember) => self.error(
-                range,
-                format!("Class `{}` has no class attribute `{}`", cls.name(), name),
-            ),
-            Err(NoClassAttribute::IsGenericMember) => self.error(
-                range,
-                format!(
-                    "Generic attribute `{}` of class `{}` is not visible on the class",
-                    name,
-                    cls.name()
-                ),
-            ),
         }
     }
 
