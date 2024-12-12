@@ -54,6 +54,7 @@ impl Display for SourceRange {
     }
 }
 
+/// Information about a module, notably its name, path, and contents.
 #[derive(Debug, Clone, Dupe)]
 pub struct ModuleInfo(Arc<ModuleInfoInner>);
 

@@ -93,6 +93,7 @@ impl ModuleErrors {
     }
 }
 
+/// Collects the user errors (e.g. type errors) associated with a module.
 // Deliberately don't implement Clone,
 #[derive(Debug, Default)]
 pub struct ErrorCollector {
