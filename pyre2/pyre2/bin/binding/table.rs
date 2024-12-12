@@ -31,31 +31,31 @@ macro_rules! table {
             $($vis)* legacy_tparams: $t<KeyLegacyTypeParam>,
         }
 
-        impl $crate::alt::table::TableKeyed<Key> for $name {
+        impl $crate::binding::table::TableKeyed<Key> for $name {
             type Value = $t<Key>;
             fn get(&self) -> &Self::Value { &self.types }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.types }
         }
 
-        impl $crate::alt::table::TableKeyed<KeyExported> for $name {
+        impl $crate::binding::table::TableKeyed<KeyExported> for $name {
             type Value = $t<KeyExported>;
             fn get(&self) -> &Self::Value { &self.exported_types }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.exported_types }
         }
 
-        impl $crate::alt::table::TableKeyed<KeyAnnotation> for $name {
+        impl $crate::binding::table::TableKeyed<KeyAnnotation> for $name {
             type Value = $t<KeyAnnotation>;
             fn get(&self) -> &Self::Value { &self.annotations }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.annotations }
         }
 
-        impl $crate::alt::table::TableKeyed<KeyClassMetadata> for $name {
+        impl $crate::binding::table::TableKeyed<KeyClassMetadata> for $name {
             type Value = $t<KeyClassMetadata>;
             fn get(&self) -> &Self::Value { &self.mros }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.mros }
         }
 
-        impl $crate::alt::table::TableKeyed<KeyLegacyTypeParam> for $name {
+        impl $crate::binding::table::TableKeyed<KeyLegacyTypeParam> for $name {
             type Value = $t<KeyLegacyTypeParam>;
             fn get(&self) -> &Self::Value { &self.legacy_tparams }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.legacy_tparams }
@@ -63,19 +63,19 @@ macro_rules! table {
 
         impl $name {
             #[allow(dead_code)]
-            fn get<K>(&self) -> &<Self as $crate::alt::table::TableKeyed<K>>::Value
+            fn get<K>(&self) -> &<Self as $crate::binding::table::TableKeyed<K>>::Value
             where
-                Self: $crate::alt::table::TableKeyed<K>,
+                Self: $crate::binding::table::TableKeyed<K>,
             {
-                $crate::alt::table::TableKeyed::<K>::get(self)
+                $crate::binding::table::TableKeyed::<K>::get(self)
             }
 
             #[allow(dead_code)]
-            fn get_mut<K>(&mut self) -> &mut <Self as $crate::alt::table::TableKeyed<K>>::Value
+            fn get_mut<K>(&mut self) -> &mut <Self as $crate::binding::table::TableKeyed<K>>::Value
             where
-                Self: $crate::alt::table::TableKeyed<K>,
+                Self: $crate::binding::table::TableKeyed<K>,
             {
-                $crate::alt::table::TableKeyed::<K>::get_mut(self)
+                $crate::binding::table::TableKeyed::<K>::get_mut(self)
             }
         }
     };

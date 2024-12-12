@@ -26,9 +26,9 @@ use starlark_map::small_set::SmallSet;
 
 use super::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::binding::Key;
 use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
+use crate::binding::binding::Key;
 use crate::dunder;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Arg;

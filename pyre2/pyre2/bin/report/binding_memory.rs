@@ -13,16 +13,16 @@ use std::mem;
 
 use starlark_map::small_map::SmallMap;
 
-use crate::alt::binding::Key;
-use crate::alt::binding::KeyAnnotation;
-use crate::alt::binding::KeyClassMetadata;
-use crate::alt::binding::KeyExported;
-use crate::alt::binding::KeyLegacyTypeParam;
-use crate::alt::binding::Keyed;
-use crate::alt::bindings::BindingEntry;
-use crate::alt::bindings::BindingTable;
-use crate::alt::bindings::Bindings;
-use crate::alt::table::TableKeyed;
+use crate::binding::binding::Key;
+use crate::binding::binding::KeyAnnotation;
+use crate::binding::binding::KeyClassMetadata;
+use crate::binding::binding::KeyExported;
+use crate::binding::binding::KeyLegacyTypeParam;
+use crate::binding::binding::Keyed;
+use crate::binding::bindings::BindingEntry;
+use crate::binding::bindings::BindingTable;
+use crate::binding::bindings::Bindings;
+use crate::binding::table::TableKeyed;
 use crate::module::module_name::ModuleName;
 use crate::state::state::State;
 use crate::table;

@@ -7,8 +7,8 @@
 
 use ruff_python_ast::name::Name;
 
-use crate::alt::binding::KeyClassMetadata;
-use crate::alt::binding::KeyExported;
+use crate::binding::binding::KeyClassMetadata;
+use crate::binding::binding::KeyExported;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::state::state::State;

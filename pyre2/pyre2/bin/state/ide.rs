@@ -11,10 +11,10 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
-use crate::alt::binding::Binding;
-use crate::alt::binding::Key;
-use crate::alt::binding::KeyExported;
 use crate::ast::Ast;
+use crate::binding::binding::Binding;
+use crate::binding::binding::Key;
+use crate::binding::binding::KeyExported;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::state::state::State;

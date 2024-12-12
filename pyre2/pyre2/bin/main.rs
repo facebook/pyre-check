@@ -27,6 +27,7 @@ use crate::commands::run::run;
 
 mod alt;
 mod ast;
+mod binding;
 mod commands;
 mod config;
 mod dunder;

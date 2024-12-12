@@ -26,8 +26,8 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
-use crate::alt::bindings::Bindings;
 use crate::ast::Ast;
+use crate::binding::bindings::Bindings;
 use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
