@@ -16,6 +16,7 @@ import dataclasses
 import json
 import logging
 import subprocess
+import time
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Sequence
 
@@ -221,6 +222,10 @@ def _run_check_command(command: Sequence[str]) -> CheckResult:
                     f"The backend check command exited with non-zero return code: {return_code}. "
                     f"This likely indicates a problem with the Pyre binary at `{command[0]}`."
                 )
+                # The binary had an unexpected error. Allow a short time for
+                # logs to be forwarded by the background logging thread before
+                # exiting, otherwise we may drop important error messages.
+                time.sleep(0.5)
                 return CheckResult(commands.ExitCode.FAILURE, [])
 
 
