@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
+use crate::testcase_with_bug;
 
-simple_test!(
+testcase!(
     test_tyvar_function,
     r#"
 from typing import TypeVar, assert_type
@@ -22,7 +23,7 @@ assert_type(foo(1), int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_tyvar_alias,
     r#"
 from typing import assert_type
@@ -37,7 +38,7 @@ assert_type(foo(1), int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_tyvar_mix,
     r#"
 from typing import TypeVar, assert_type
@@ -51,7 +52,7 @@ assert_type(foo(1), int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_legacy_generic_syntax,
     r#"
 from typing import Generic, TypeVar, assert_type
@@ -66,7 +67,7 @@ assert_type(c.x, int)
     "#,
 );
 
-simple_test!(
+testcase!(
     test_legacy_generic_syntax_inheritance,
     r#"
 from typing import Generic, TypeVar, assert_type
@@ -85,7 +86,7 @@ assert_type(d.x, list[int])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_legacy_generic_syntax_inherit_twice,
     r#"
 from typing import Generic, TypeVar
@@ -99,7 +100,7 @@ class C(B[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_legacy_generic_syntax_multiple_implicit_tparams,
     r#"
 from typing import Generic, TypeVar, assert_type
@@ -120,7 +121,7 @@ assert_type(x.c, str)
     "#,
 );
 
-simple_test!(
+testcase!(
     test_legacy_generic_syntax_filtered_tparams,
     r#"
 from typing import Generic, TypeVar
@@ -138,7 +139,7 @@ class C(B[str]):
 // The TODO here is because we implemented but have temporarily disabled a check
 // for the use of a generic class without type arguments as a type annotation;
 // this check needs to be configurable and we don't have the plumbing yet.
-simple_test!(
+testcase_with_bug!(
     test_legacy_generic_syntax_implicit_targs,
     r#"
 from typing import Any, Generic, TypeVar, assert_type
@@ -150,7 +151,7 @@ def f(a: A):  # TODO: The generic class `A` is missing type arguments.
     "#,
 );
 
-simple_test!(
+testcase!(
     test_tvar_missing_name,
     r#"
 from typing import TypeVar
@@ -159,7 +160,7 @@ T = TypeVar()  # E: Missing `name` argument
 );
 
 // TODO: This should be an error
-simple_test!(
+testcase_with_bug!(
     test_tvar_wrong_name,
     r#"
 from typing import TypeVar
@@ -167,7 +168,7 @@ T = TypeVar("Z")
     "#,
 );
 
-simple_test!(
+testcase!(
     test_tvar_wrong_name_expr,
     r#"
 from typing import TypeVar
@@ -175,7 +176,7 @@ T = TypeVar(17)  # E: Expected first argument of TypeVar to be a string literal
     "#,
 );
 
-simple_test!(
+testcase!(
     test_tvar_wrong_name_bind,
     r#"
 from typing import TypeVar
@@ -184,7 +185,7 @@ T = TypeVar(x)  # E: Expected first argument of TypeVar to be a string literal
     "#,
 );
 
-simple_test!(
+testcase!(
     test_tvar_keyword_name,
     r#"
 from typing import TypeVar
@@ -192,7 +193,7 @@ T = TypeVar(name = "T")
     "#,
 );
 
-simple_test!(
+testcase!(
     test_tvar_unexpected_keyword,
     r#"
 from typing import TypeVar
@@ -200,7 +201,7 @@ T = TypeVar('T', foo=True)  # E: Unexpected keyword argument `foo`
     "#,
 );
 
-simple_test!(
+testcase!(
     test_tvar_constraints_and_bound,
     r#"
 from typing import TypeVar
@@ -208,7 +209,7 @@ T = TypeVar('T', int, bound=int)  # E: TypeVar cannot have both constraints and 
     "#,
 );
 
-simple_test!(
+testcase!(
     test_tvar_variance,
     r#"
 from typing import TypeVar
@@ -218,7 +219,7 @@ T3 = TypeVar('T3', covariant="lunch")  # E: Expected literal True or False
     "#,
 );
 
-simple_test!(
+testcase!(
     test_tvar_forward_ref,
     r#"
 from typing import TypeVar
@@ -234,7 +235,7 @@ class A:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_tvar_class_constraint,
     r#"
 from typing import TypeVar
@@ -245,7 +246,7 @@ T2 = TypeVar('T2', int, B)  # E: Could not find name `B`
     "#,
 );
 
-simple_test!(
+testcase!(
     test_ordering_of_tparams_on_generic_base,
     r#"
 from typing import Generic, TypeVar, assert_type
@@ -265,7 +266,7 @@ def f(c: Child[int, str]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_ordering_of_tparams_on_protocol_base,
     r#"
 from typing import Protocol, TypeVar, assert_type
@@ -285,7 +286,7 @@ def f(c: Child[int, str]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_both_generic_and_protocol,
     r#"
 from typing import Generic, Protocol, TypeVar, assert_type
@@ -309,7 +310,7 @@ def f(c: C[int, str, bool, bytes]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_both_generic_and_implicit,
     r#"
 from typing import Generic, Protocol, TypeVar, assert_type
@@ -326,7 +327,7 @@ def f(c: C[int, str]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_default,
     r#"
 from typing import Generic, TypeVar, assert_type
@@ -340,7 +341,7 @@ def f9(c1: C[int, str], c2: C[str]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_bad_default_order,
     r#"
 from typing import Generic, TypeVar
@@ -351,7 +352,7 @@ class C(Generic[T1, T2]):  # E: A type parameter without a default cannot follow
     "#,
 );
 
-simple_test!(
+testcase!(
     test_variance,
     r#"
 from typing import Generic, TypeVar
@@ -372,7 +373,7 @@ def f2(c: C[Child, Parent]):
 
 // This test exercises an edge case where naively using type analysis on base classes
 // can cause problems in the interaction of tparams validation and recursion.
-simple_test!(
+testcase!(
     test_generic_with_reference_to_self_in_base,
     r#"
 from typing import Generic, TypeVar, Any, assert_type
@@ -388,7 +389,7 @@ def f(c: C[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_redundant_generic_base,
     r#"
 from typing import Generic
