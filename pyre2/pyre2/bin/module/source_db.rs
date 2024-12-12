@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::cmp::Ordering;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::path::PathBuf;
@@ -13,6 +14,7 @@ use anyhow::anyhow;
 use anyhow::Context as _;
 use starlark_map::small_map::SmallMap;
 use tracing::warn;
+use vec1::Vec1;
 
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
@@ -27,9 +29,8 @@ struct ManifestItem {
 
 #[derive(Debug, PartialEq)]
 pub struct BuckSourceDatabase {
-    sources: SmallMap<ModuleName, PathBuf>,
-    dependencies: SmallMap<ModuleName, PathBuf>,
-    typeshed: SmallMap<ModuleName, PathBuf>,
+    sources: SmallMap<ModuleName, Vec1<PathBuf>>,
+    dependencies: SmallMap<ModuleName, Vec1<PathBuf>>,
 }
 
 /// Return type from `BuckSourceDatabase::lookup`
@@ -80,6 +81,38 @@ fn read_manifest_files(manifest_paths: &[PathBuf]) -> anyhow::Result<Vec<Manifes
     Ok(result)
 }
 
+fn same_module_path_compare(left: &Path, right: &Path) -> Ordering {
+    // .pyi file always comes before .py file
+    match (
+        left.extension().and_then(OsStr::to_str),
+        right.extension().and_then(OsStr::to_str),
+    ) {
+        (Some("pyi"), Some("py")) => Ordering::Less,
+        (Some("py"), Some("pyi")) => Ordering::Greater,
+        _ => Ordering::Equal, // Preserve original ordering by default
+    }
+}
+
+fn create_manifest_item_index(
+    items: impl Iterator<Item = ManifestItem>,
+) -> SmallMap<ModuleName, Vec1<PathBuf>> {
+    let mut accumulated: SmallMap<ModuleName, Vec<PathBuf>> =
+        SmallMap::with_capacity(items.size_hint().0);
+    for item in items {
+        accumulated
+            .entry(item.module_name)
+            .or_default()
+            .push(item.relative_path);
+    }
+    accumulated
+        .into_iter()
+        .map(|(name, mut paths)| {
+            paths.sort_by(|left, right| same_module_path_compare(left, right));
+            (name, Vec1::try_from_vec(paths).unwrap())
+        })
+        .collect()
+}
+
 impl BuckSourceDatabase {
     pub fn from_manifest_files(
         source_manifests: &[PathBuf],
@@ -97,14 +130,11 @@ impl BuckSourceDatabase {
         dependency_items: Vec<ManifestItem>,
         typeshed_items: Vec<ManifestItem>,
     ) -> Self {
-        // If there are multiple manifest items, we read them and combine them into a single SmallMap (for
-        // more efficient lookup later). Conflicting module names are rare occurrence in practice, and often
-        // result in a failure. For now, conflicts are handled in the most naive way of "last occurrence wins".
-        let to_pair = |item: ManifestItem| (item.module_name, item.relative_path);
         BuckSourceDatabase {
-            sources: SmallMap::from_iter(source_items.into_iter().map(to_pair)),
-            dependencies: SmallMap::from_iter(dependency_items.into_iter().map(to_pair)),
-            typeshed: SmallMap::from_iter(typeshed_items.into_iter().map(to_pair)),
+            sources: create_manifest_item_index(source_items.into_iter()),
+            dependencies: create_manifest_item_index(
+                dependency_items.into_iter().chain(typeshed_items),
+            ),
         }
     }
 
@@ -114,25 +144,11 @@ impl BuckSourceDatabase {
 
     fn lookup(&self, name: ModuleName) -> LookupResult {
         match self.sources.get(&name) {
-            Some(path) => LookupResult::OwningSource(path.clone()),
-            None => {
-                match (self.dependencies.get(&name), self.typeshed.get(&name)) {
-                    (None, None) => LookupResult::NoSource,
-                    (Some(dependency), None) => LookupResult::ExternalSource(dependency.clone()),
-                    (None, Some(typeshed)) => LookupResult::ExternalSource(typeshed.clone()),
-                    (Some(dependency), Some(typeshed)) => {
-                        // Always prefer dependency over typeshed, unless dependency is the source of
-                        // a 3p library that already has a typeshed stub.
-                        if Some(OsStr::new("py")) == dependency.extension()
-                            && Some(OsStr::new("pyi")) == typeshed.extension()
-                        {
-                            LookupResult::ExternalSource(typeshed.clone())
-                        } else {
-                            LookupResult::ExternalSource(dependency.clone())
-                        }
-                    }
-                }
-            }
+            Some(paths) => LookupResult::OwningSource(paths.first().clone()),
+            None => match self.dependencies.get(&name) {
+                Some(paths) => LookupResult::ExternalSource(paths.first().clone()),
+                None => LookupResult::NoSource,
+            },
         }
     }
 
@@ -209,6 +225,87 @@ mod tests {
         assert_eq!(
             source_db.lookup(ModuleName::from_str("qux")),
             LookupResult::NoSource
+        );
+    }
+
+    #[test]
+    fn test_load_source_over_dependencies() {
+        let src_foo_path = PathBuf::from_str("/src/foo.py").unwrap();
+        let dep_foo_path = PathBuf::from_str("/dep/foo.py").unwrap();
+
+        let src_bar_path = PathBuf::from_str("/src/bar.py").unwrap();
+        let dep_bar_path = PathBuf::from_str("/dep/bar.pyi").unwrap();
+
+        let source_db = BuckSourceDatabase::from_manifest_items(
+            vec![
+                ManifestItem {
+                    module_name: ModuleName::from_str("foo"),
+                    relative_path: src_foo_path.clone(),
+                },
+                ManifestItem {
+                    module_name: ModuleName::from_str("bar"),
+                    relative_path: src_bar_path.clone(),
+                },
+            ],
+            vec![
+                ManifestItem {
+                    module_name: ModuleName::from_str("foo"),
+                    relative_path: dep_foo_path.clone(),
+                },
+                ManifestItem {
+                    module_name: ModuleName::from_str("bar"),
+                    relative_path: dep_bar_path.clone(),
+                },
+            ],
+            vec![],
+        );
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("foo")),
+            LookupResult::OwningSource(src_foo_path)
+        );
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("bar")),
+            LookupResult::OwningSource(src_bar_path)
+        );
+    }
+
+    #[test]
+    fn test_load_pyi_over_py() {
+        let foo_py_path = PathBuf::from_str("/root/foo.py").unwrap();
+        let foo_pyi_path = PathBuf::from_str("/root/foo.pyi").unwrap();
+        let bar_py_path = PathBuf::from_str("/root/bar.py").unwrap();
+        let bar_pyi_path = PathBuf::from_str("/root/bar.pyi").unwrap();
+
+        let source_db = BuckSourceDatabase::from_manifest_items(
+            vec![
+                ManifestItem {
+                    module_name: ModuleName::from_str("foo"),
+                    relative_path: foo_py_path.clone(),
+                },
+                ManifestItem {
+                    module_name: ModuleName::from_str("foo"),
+                    relative_path: foo_pyi_path.clone(),
+                },
+            ],
+            vec![
+                ManifestItem {
+                    module_name: ModuleName::from_str("bar"),
+                    relative_path: bar_py_path.clone(),
+                },
+                ManifestItem {
+                    module_name: ModuleName::from_str("bar"),
+                    relative_path: bar_pyi_path.clone(),
+                },
+            ],
+            vec![],
+        );
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("foo")),
+            LookupResult::OwningSource(foo_pyi_path)
+        );
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("bar")),
+            LookupResult::ExternalSource(bar_pyi_path)
         );
     }
 
