@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
+use crate::testcase_with_bug;
 
-simple_test!(
+testcase!(
     test_callable_ellipsis_upper_bound,
     r#"
 from typing import Callable
@@ -16,7 +17,7 @@ def test(f: Callable[[int, str], None]) -> Callable[..., None]:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_callable_ellipsis_lower_bound,
     r#"
 from typing import Callable
@@ -25,7 +26,7 @@ def test(f: Callable[..., None]) -> Callable[[int, str], None]:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_callable_annot_too_few_args,
     r#"
 from typing import Callable
@@ -34,7 +35,7 @@ def test(f: Callable[[int], None]):
 "#,
 );
 
-simple_test!(
+testcase!(
     test_callable_annot_too_many_args,
     r#"
 from typing import Callable
@@ -46,7 +47,7 @@ def test(f: Callable[[], None]):
 "#,
 );
 
-simple_test!(
+testcase!(
     test_callable_annot_keyword_args,
     r#"
 from typing import Callable
@@ -58,7 +59,7 @@ def test(f: Callable[[], None]):
 "#,
 );
 
-simple_test!(
+testcase!(
     test_callable_ellipsis_keyword_args,
     r#"
 from typing import Callable
@@ -67,7 +68,7 @@ def test(f: Callable[..., None]):
 "#,
 );
 
-simple_test!(
+testcase!(
     test_callable_annot_upper_bound,
     r#"
 from typing import Callable
@@ -107,7 +108,7 @@ test(f7) # OK
 "#,
 );
 
-simple_test!(
+testcase!(
     test_positional_param_keyword_arg,
     r#"
 def test(x: int, y: str): ...
@@ -120,7 +121,7 @@ test(1, "hello", x=2) # E: Multiple values for argument 'x'
 "#,
 );
 
-simple_test!(
+testcase!(
     test_positional_only_params,
     r#"
 def test(x: int, y: str, /): ...
@@ -131,7 +132,7 @@ test(1, "hello", 2) # E: Expected 2 positional argument(s)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_keyword_only_params,
     r#"
 def test(*, x: int, y: str): ...
@@ -142,7 +143,7 @@ test(y="hello") # E: Missing argument 'x'
 "#,
 );
 
-simple_test!(
+testcase!(
     test_varargs,
     r#"
 def test(*args: int): ...
@@ -150,7 +151,7 @@ test(1, 2, "foo", 4) # E: EXPECTED Literal['foo'] <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_kwargs,
     r#"
 def test(**kwargs: int): ...
@@ -158,7 +159,7 @@ test(x=1, y="foo", z=2) # E: EXPECTED Literal['foo'] <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_defaults,
     r#"
 def test(x: int, y: int = 0, z: str = ""): ...
@@ -169,7 +170,7 @@ test(0, 1, "foo", 2) # E: Expected 3 positional argument(s)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_defaults_posonly,
     r#"
 def test(x: int, y: int = 0, z: str = "", /): ...
@@ -180,7 +181,7 @@ test(0, 1, "foo", 2) # E: Expected 3 positional argument(s)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_default_ellipsis,
     r#"
 def stub(x: int = ...): ... # OK
@@ -188,7 +189,7 @@ def err(x: int = ...): pass # E: EXPECTED Ellipsis <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_callable_async,
     r#"
 from typing import Any, Awaitable, Callable, Coroutine
@@ -204,7 +205,7 @@ def test_sync() -> Callable[[int], int]:
 );
 
 // TODO
-simple_test!(
+testcase_with_bug!(
     test_callable_param_spec,
     r#"
 from typing import Callable, ParamSpec
