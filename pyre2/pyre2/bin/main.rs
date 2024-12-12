@@ -42,7 +42,6 @@ mod subset;
 mod test;
 mod type_order;
 mod types;
-mod uniques;
 mod util;
 mod visitors;
 

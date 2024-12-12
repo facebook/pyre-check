@@ -17,3 +17,4 @@ pub mod panic;
 pub mod prelude;
 pub mod recurser;
 pub mod trace;
+pub mod uniques;

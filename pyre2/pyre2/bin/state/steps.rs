@@ -26,7 +26,7 @@ use crate::module::module_name::ModuleName;
 use crate::state::info::Info;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
-use crate::uniques::UniqueFactory;
+use crate::util::uniques::UniqueFactory;
 
 pub struct Context<'a, Lookup> {
     pub name: ModuleName,

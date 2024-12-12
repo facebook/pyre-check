@@ -275,8 +275,8 @@ mod tests {
     use crate::types::types::QuantifiedKind;
     use crate::types::types::TParamInfo;
     use crate::types::types::TParams;
-    use crate::uniques::UniqueFactory;
     use crate::util::prelude::SliceExt;
+    use crate::util::uniques::UniqueFactory;
 
     fn fake_class(name: &str, module: &str, range: u32, tparams: &[Quantified]) -> Class {
         let mi = ModuleInfo::new(

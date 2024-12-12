@@ -81,9 +81,9 @@ use crate::types::special_form::SpecialForm;
 use crate::types::types::AnyStyle;
 use crate::types::types::Quantified;
 use crate::types::types::Type;
-use crate::uniques::UniqueFactory;
 use crate::util::display::DisplayWith;
 use crate::util::prelude::SliceExt;
+use crate::util::uniques::UniqueFactory;
 use crate::visitors::Visitors;
 
 #[derive(Clone, Dupe, Debug)]

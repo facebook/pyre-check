@@ -81,10 +81,10 @@ use crate::types::types::Type;
 use crate::types::types::TypeAlias;
 use crate::types::types::TypeAliasStyle;
 use crate::types::types::Var;
-use crate::uniques::UniqueFactory;
 use crate::util::display::DisplayWith;
 use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
+use crate::util::uniques::UniqueFactory;
 
 /// Invariants:
 ///

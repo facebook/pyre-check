@@ -26,8 +26,8 @@ use crate::types::simplify::unions;
 use crate::types::types::Quantified;
 use crate::types::types::Type;
 use crate::types::types::Var;
-use crate::uniques::UniqueFactory;
 use crate::util::recurser::Recurser;
+use crate::util::uniques::UniqueFactory;
 
 #[derive(Debug, Clone, Default)]
 enum Variable {

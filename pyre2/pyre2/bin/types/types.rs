@@ -31,9 +31,9 @@ use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
 use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
-use crate::uniques::Unique;
-use crate::uniques::UniqueFactory;
 use crate::util::display::commas_iter;
+use crate::util::uniques::Unique;
+use crate::util::uniques::UniqueFactory;
 
 /// An introduced synthetic variable to range over as yet unknown types.
 #[derive(Debug, Copy, Clone, Dupe, PartialEq, Eq, PartialOrd, Ord, Hash)]

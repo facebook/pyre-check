@@ -45,10 +45,10 @@ use crate::state::steps::Step;
 use crate::types::class::Class;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
-use crate::uniques::UniqueFactory;
 use crate::util::display::number_thousands;
 use crate::util::enum_heap::EnumHeap;
 use crate::util::prelude::SliceExt;
+use crate::util::uniques::UniqueFactory;
 
 pub struct State<'a> {
     config: Config,
