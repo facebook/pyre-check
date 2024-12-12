@@ -21,7 +21,7 @@ use crate::test::stdlib::lookup_test_stdlib;
 use crate::util::trace::init_tracing;
 
 #[macro_export]
-macro_rules! simple_test {
+macro_rules! testcase {
     ($name:ident, $imports:expr, $contents:expr,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
@@ -42,16 +42,9 @@ macro_rules! simple_test {
 }
 
 #[macro_export]
-macro_rules! testcase {
-    ( $($t:tt)*) =>  {
-        $crate::simple_test!($($t)*);
-    }
-}
-
-#[macro_export]
 macro_rules! testcase_with_bug {
     ( $($t:tt)*) =>  {
-        $crate::simple_test!($($t)*);
+        $crate::testcase!($($t)*);
     }
 }
 
