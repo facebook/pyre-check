@@ -38,8 +38,8 @@ inspiration from Pyre1, Pyright and MyPy. Some notable choices:
 
 - We infer types in most locations, apart from parameters to functions. We do
   infer types of variables and return types. As an example,
-  `def foo(x): return True` would have `x` as `Any`, but the return type as
-  `bool`.
+  `def foo(x): return True` would result in something equivalent to had you
+  written `def foo(x: Any) -> bool: ...`.
 - We attempt to infer the type of `[]` to however it is used first, then fix it
   after. For example `xs = []; xs.append(1); xs.append("")` will infer that
   `xs: List[int]` and then error on the final statement.
