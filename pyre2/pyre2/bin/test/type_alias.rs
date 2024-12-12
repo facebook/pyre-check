@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
 
-simple_test!(
+testcase!(
     test_type_alias_simple,
     r#"
 from typing import assert_type
@@ -17,7 +17,7 @@ def f(x: X):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_type_alias_generic,
     r#"
 from typing import assert_type
@@ -27,7 +27,7 @@ def f(x: X[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_type_alias_missing_quantifieds,
     r#"
 from typing import TypeVar
@@ -36,7 +36,7 @@ type X = list[T]  # E: Type parameters used in `X`
     "#,
 );
 
-simple_test!(
+testcase!(
     test_type_alias_unused_quantifieds,
     r#"
 # Questionable code, but not an error
@@ -44,14 +44,14 @@ type X[T] = list
     "#,
 );
 
-simple_test!(
+testcase!(
     test_bad_type_alias,
     r#"
 type X = 1  # E: Expected `X` to be a type alias, got Literal[1]
     "#,
 );
 
-simple_test!(
+testcase!(
     test_generic_alias_implicit,
     r#"
 from typing import TypeVar, assert_type
@@ -62,7 +62,7 @@ def f(x: X[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_generic_alias_explicit,
     r#"
 from typing import TypeAlias, TypeVar, assert_type
@@ -73,7 +73,7 @@ def f(x: X[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_generic_alias_union,
     r#"
 from typing import TypeVar, assert_type
@@ -84,7 +84,7 @@ def f(x: X[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_generic_alias_callable,
     r#"
 from typing import Callable, TypeVar, assert_type
@@ -97,7 +97,7 @@ def f(x1: X1[int], x2: X2[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_generic_alias_annotated,
     r#"
 from typing import Annotated, TypeVar, assert_type
@@ -108,7 +108,7 @@ def f(x: X[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_bad_annotated_alias,
     r#"
 from typing import TypeAlias
@@ -116,7 +116,7 @@ X: TypeAlias = 1  # E: Expected `X` to be a type alias, got Literal[1]
     "#,
 );
 
-simple_test!(
+testcase!(
     test_attribute_access,
     r#"
 from typing import TypeAlias
@@ -130,7 +130,7 @@ X3.__add__  # E: Object of class `TypeAliasType` has no attribute `__add__`
     "#,
 );
 
-simple_test!(
+testcase!(
     test_forward_ref,
     r#"
 from typing import TypeAlias, assert_type
@@ -151,7 +151,7 @@ def g(x2: X2, x3: X3):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_recursive_alias,
     r#"
 from typing import TypeAlias, assert_type
@@ -164,7 +164,7 @@ z: Alias = [[1, 2]]
 "#,
 );
 
-simple_test!(
+testcase!(
     test_container_variance,
     r#"
 from typing import Iterable
