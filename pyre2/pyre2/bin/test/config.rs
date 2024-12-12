@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
 use crate::test::util::TestEnv;
+use crate::testcase;
 
 fn sys() -> TestEnv {
     TestEnv::one(
@@ -18,7 +18,7 @@ platform = "linux"
     )
 }
 
-simple_test!(
+testcase!(
     test_sys_version,
     sys(),
     r#"
@@ -44,7 +44,7 @@ assert_type(Z(), int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_class_under_version,
     sys(),
     r#"
