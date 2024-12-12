@@ -613,6 +613,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                         _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
                     },
+                    UnaryOp::UAdd => match t {
+                        Type::Literal(lit) => Type::Literal(lit),
+                        _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
+                    },
                     UnaryOp::Not => match t.as_bool() {
                         None => self.stdlib.bool().to_type(),
                         Some(b) => Type::Literal(Lit::Bool(!b)),

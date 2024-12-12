@@ -28,6 +28,23 @@ x: Literal[-1] = -1
 );
 
 testcase!(
+    test_positive_literals,
+    r#"
+from typing import Literal
+y: int = -1
+x: Literal[-1] = +y
+"#,
+);
+testcase!(
+    test_positive_literals_error,
+    r#"
+from typing import Literal
+y: int = 1
+x: Literal[-1] = +y # E: EXPECTED Literal[1] <: Literal[-1]
+"#,
+);
+
+testcase!(
     test_boolean_or_simple,
     r#"
 from typing import assert_type
