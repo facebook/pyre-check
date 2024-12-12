@@ -6,3 +6,4 @@
  */
 
 pub mod binding_memory;
+pub mod debug_info;

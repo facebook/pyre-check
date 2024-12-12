@@ -29,7 +29,6 @@ mod alt;
 mod ast;
 mod commands;
 mod config;
-mod debug_info;
 mod dunder;
 mod error;
 mod graph;
