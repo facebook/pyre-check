@@ -1372,7 +1372,7 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Stmt::AugAssign(x) => {
-                if matches!(&*x.target, Expr::Name(y) if y.id == "__all__") {
+                if matches!(&*x.target, Expr::Name(y) if y.id == dunder::ALL) {
                     // For now, don't raise a todo, since we use it everywhere.
                     // Fix it later.
                 } else {

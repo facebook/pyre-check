@@ -24,6 +24,7 @@ use starlark_map::small_map::SmallMap;
 
 use crate::ast::Ast;
 use crate::config::Config;
+use crate::dunder;
 use crate::module::module_info::ModuleStyle;
 use crate::module::module_name::ModuleName;
 use crate::visitors::Visitors;
@@ -68,7 +69,7 @@ pub enum DunderAllEntry {
 
 impl DunderAllEntry {
     fn is_all(x: &Expr) -> bool {
-        matches!(x, Expr::Name(ExprName { id, .. }) if id == "__all__")
+        matches!(x, Expr::Name(ExprName { id, .. }) if id == &dunder::ALL)
     }
 
     fn as_list(x: &Expr) -> Vec<Self> {
@@ -79,7 +80,7 @@ impl DunderAllEntry {
                 value: box Expr::Name(name),
                 attr,
                 ..
-            }) if attr.id == "__all__" => {
+            }) if attr.id == dunder::ALL => {
                 vec![DunderAllEntry::Module(
                     name.range,
                     ModuleName::from_name(&name.id),
@@ -124,7 +125,7 @@ impl Definitions {
     }
 
     pub fn ensure_dunder_all(&mut self, style: ModuleStyle) {
-        if self.definitions.contains_key(&Name::new("__all__")) {
+        if self.definitions.contains_key(&dunder::ALL) {
             // Explicitly defined, so don't redefine it
             return;
         }
@@ -219,7 +220,7 @@ impl<'a> DefinitionsBuilder<'a> {
                         };
                         self.add_identifier(a.asname.as_ref().unwrap_or(&a.name), style);
                         if style == DefinitionStyle::ImportAsEq
-                            && &a.name == "__all__"
+                            && a.name.id == dunder::ALL
                             && let Some(module) = self.module_name.new_maybe_relative(
                                 self.is_init,
                                 x.level,
