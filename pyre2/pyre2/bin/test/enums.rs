@@ -5,11 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#![warn(dead_code)]
+use crate::testcase;
 
-use crate::simple_test;
-
-simple_test!(
+testcase!(
     test_enum,
     r#"
 from typing import assert_type, Literal
