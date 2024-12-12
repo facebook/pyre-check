@@ -35,7 +35,7 @@ use crate::config::Config;
 use crate::debug_info::DebugInfo;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
-use crate::expectation::Expectation;
+use crate::error::expectation::Expectation;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::Loader;

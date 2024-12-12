@@ -7,5 +7,6 @@
 
 pub mod collector;
 pub mod error;
+pub mod expectation;
 pub mod legacy;
 pub mod style;
