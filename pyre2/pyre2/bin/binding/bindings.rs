@@ -1372,16 +1372,10 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Stmt::AugAssign(x) => {
-                if matches!(&*x.target, Expr::Name(y) if y.id == dunder::ALL) {
-                    // For now, don't raise a todo, since we use it everywhere.
-                    // Fix it later.
-                } else {
-                    self.ensure_expr(&x.target);
-                    self.ensure_expr(&x.value);
-                    let make_binding =
-                        |_: Option<Idx<KeyAnnotation>>| Binding::AugAssign(x.clone());
-                    self.bind_target(&x.target, &make_binding, false);
-                }
+                self.ensure_expr(&x.target);
+                self.ensure_expr(&x.value);
+                let make_binding = |_: Option<Idx<KeyAnnotation>>| Binding::AugAssign(x.clone());
+                self.bind_target(&x.target, &make_binding, false);
             }
             Stmt::AnnAssign(mut x) => match *x.target {
                 Expr::Name(name) => {
