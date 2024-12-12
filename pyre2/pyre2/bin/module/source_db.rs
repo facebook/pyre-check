@@ -32,6 +32,19 @@ pub struct BuckSourceDatabase {
     typeshed: SmallMap<ModuleName, PathBuf>,
 }
 
+/// Return type from `BuckSourceDatabase::lookup`
+#[derive(Debug, PartialEq)]
+enum LookupResult {
+    /// Source file of this module is owned by the current target.
+    /// Type errors in the file should be reported to user.
+    OwningSource(PathBuf),
+    /// Source file of this module is owned by the dependency of the current target.
+    /// The file should be analyzed but no type errors should be reported.
+    ExternalSource(PathBuf),
+    /// Did not find any source file associated with the given module name.
+    NoSource,
+}
+
 fn read_manifest_file_data(data: &[u8]) -> anyhow::Result<Vec<ManifestItem>> {
     let raw_items: Vec<Vec<String>> = serde_json::from_slice(data)?;
     let mut results = Vec::new();
@@ -94,40 +107,47 @@ impl BuckSourceDatabase {
         self.sources.keys().copied().collect()
     }
 
-    pub fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
-        let path = self.sources.get(&name).or_else(|| {
-            match (self.dependencies.get(&name), self.typeshed.get(&name)) {
-                (None, None) => None,
-                (dependency, None) => dependency,
-                (None, typeshed) => typeshed,
-                (Some(dependency), Some(typeshed)) => {
-                    // Always prefer dependency over typeshed, unless dependency is the source of
-                    // a 3p library that already has a typeshed stub.
-                    if let Some("py") = dependency.extension().and_then(OsStr::to_str) {
-                        Some(typeshed)
-                    } else {
-                        Some(dependency)
+    fn lookup(&self, name: ModuleName) -> LookupResult {
+        match self.sources.get(&name) {
+            Some(path) => LookupResult::OwningSource(path.clone()),
+            None => {
+                match (self.dependencies.get(&name), self.typeshed.get(&name)) {
+                    (None, None) => LookupResult::NoSource,
+                    (Some(dependency), None) => LookupResult::ExternalSource(dependency.clone()),
+                    (None, Some(typeshed)) => LookupResult::ExternalSource(typeshed.clone()),
+                    (Some(dependency), Some(typeshed)) => {
+                        // Always prefer dependency over typeshed, unless dependency is the source of
+                        // a 3p library that already has a typeshed stub.
+                        if let Some("py") = dependency.extension().and_then(OsStr::to_str) {
+                            LookupResult::ExternalSource(typeshed.clone())
+                        } else {
+                            LookupResult::ExternalSource(dependency.clone())
+                        }
                     }
                 }
             }
-        });
-        (
-            LoadResult::from_path_result(
-                path.cloned()
-                    .ok_or_else(|| anyhow!("Not a dependency or typeshed")),
+        }
+    }
+
+    pub fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
+        match self.lookup(name) {
+            LookupResult::OwningSource(path) => {
+                (LoadResult::from_path(path), ErrorStyle::Immediate)
+            }
+            LookupResult::ExternalSource(path) => (LoadResult::from_path(path), ErrorStyle::Never),
+            LookupResult::NoSource => (
+                LoadResult::FailedToFind(anyhow!("Not a dependency or typeshed")),
+                ErrorStyle::Never,
             ),
-            if self.sources.contains_key(&name) {
-                ErrorStyle::Immediate
-            } else {
-                ErrorStyle::Never
-            },
-        )
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
+
+    use starlark_map::smallmap;
 
     use super::*;
 
@@ -148,5 +168,84 @@ mod tests {
             .unwrap(),
             vec![]
         )
+    }
+
+    #[test]
+    fn test_load_simple() {
+        let foo_path = PathBuf::from_str("/root/foo.py").unwrap();
+        let bar_path = PathBuf::from_str("/root/bar.py").unwrap();
+        let baz_path = PathBuf::from_str("/root/baz.py").unwrap();
+        let source_db = BuckSourceDatabase {
+            sources: smallmap! {
+                ModuleName::from_str("foo") => foo_path.clone()
+            },
+            dependencies: smallmap! {
+                ModuleName::from_str("bar") => bar_path.clone()
+            },
+            typeshed: smallmap! {
+                ModuleName::from_str("baz") => baz_path.clone()
+            },
+        };
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("foo")),
+            LookupResult::OwningSource(foo_path)
+        );
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("bar")),
+            LookupResult::ExternalSource(bar_path)
+        );
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("baz")),
+            LookupResult::ExternalSource(baz_path)
+        );
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("qux")),
+            LookupResult::NoSource
+        );
+    }
+
+    #[test]
+    fn test_load_dependency_typeshed_conflict() {
+        let dep_a_path = PathBuf::from_str("/dep/a.py").unwrap();
+        let dep_b_path = PathBuf::from_str("/dep/b.pyi").unwrap();
+        let dep_c_path = PathBuf::from_str("/dep/c.py").unwrap();
+        let dep_d_path = PathBuf::from_str("/dep/d.pyi").unwrap();
+
+        let typeshed_a_path = PathBuf::from_str("/typeshed/a.py").unwrap();
+        let typeshed_b_path = PathBuf::from_str("/typeshed/b.py").unwrap();
+        let typeshed_c_path = PathBuf::from_str("/typeshed/c.pyi").unwrap();
+        let typeshed_d_path = PathBuf::from_str("/typeshed/d.pyi").unwrap();
+
+        let source_db = BuckSourceDatabase {
+            sources: SmallMap::new(),
+            dependencies: smallmap! {
+                ModuleName::from_str("a") => dep_a_path.clone(),
+                ModuleName::from_str("b") => dep_b_path.clone(),
+                ModuleName::from_str("c") => dep_c_path.clone(),
+                ModuleName::from_str("d") => dep_d_path.clone(),
+            },
+            typeshed: smallmap! {
+                ModuleName::from_str("a") => typeshed_a_path.clone(),
+                ModuleName::from_str("b") => typeshed_b_path.clone(),
+                ModuleName::from_str("c") => typeshed_c_path.clone(),
+                ModuleName::from_str("d") => typeshed_d_path.clone(),
+            },
+        };
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("a")),
+            LookupResult::ExternalSource(typeshed_a_path)
+        );
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("b")),
+            LookupResult::ExternalSource(dep_b_path)
+        );
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("c")),
+            LookupResult::ExternalSource(typeshed_c_path)
+        );
+        assert_eq!(
+            source_db.lookup(ModuleName::from_str("d")),
+            LookupResult::ExternalSource(dep_d_path)
+        );
     }
 }

@@ -40,12 +40,16 @@ fn fake_path(module_name: ModuleName) -> PathBuf {
 }
 
 impl LoadResult {
+    pub fn from_path(path: PathBuf) -> Self {
+        match fs_anyhow::read_to_string(&path) {
+            Ok(code) => LoadResult::Loaded(path, code),
+            Err(err) => LoadResult::FailedToLoad(path, err),
+        }
+    }
+
     pub fn from_path_result(path: anyhow::Result<PathBuf>) -> Self {
         match path {
-            Ok(path) => match fs_anyhow::read_to_string(&path) {
-                Ok(code) => LoadResult::Loaded(path, code),
-                Err(err) => LoadResult::FailedToLoad(path, err),
-            },
+            Ok(path) => Self::from_path(path),
             Err(err) => LoadResult::FailedToFind(err),
         }
     }
