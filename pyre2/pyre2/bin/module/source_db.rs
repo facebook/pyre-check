@@ -118,7 +118,9 @@ impl BuckSourceDatabase {
                     (Some(dependency), Some(typeshed)) => {
                         // Always prefer dependency over typeshed, unless dependency is the source of
                         // a 3p library that already has a typeshed stub.
-                        if let Some("py") = dependency.extension().and_then(OsStr::to_str) {
+                        if Some(OsStr::new("py")) == dependency.extension()
+                            && Some(OsStr::new("pyi")) == typeshed.extension()
+                        {
                             LookupResult::ExternalSource(typeshed.clone())
                         } else {
                             LookupResult::ExternalSource(dependency.clone())
@@ -233,7 +235,7 @@ mod tests {
         };
         assert_eq!(
             source_db.lookup(ModuleName::from_str("a")),
-            LookupResult::ExternalSource(typeshed_a_path)
+            LookupResult::ExternalSource(dep_a_path)
         );
         assert_eq!(
             source_db.lookup(ModuleName::from_str("b")),
