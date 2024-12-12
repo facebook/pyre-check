@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
+use crate::testcase_with_bug;
 
-simple_test!(
+testcase!(
     test_class_init,
     r#"
 from typing import assert_type
@@ -18,7 +19,7 @@ assert_type(v, Foo)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_generic_class,
     r#"
 from typing import assert_type
@@ -38,7 +39,7 @@ Box[int]("oops")  # E: Literal['oops'] <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_generic_init_in_generic_class,
     r#"
 from typing import assert_type
@@ -57,7 +58,7 @@ assert_type(b.wrap(True), Box[Box[int]])
 );
 
 // TODO: support this
-simple_test!(
+testcase_with_bug!(
     test_metaclass_call,
     r#"
 class Meta(type):
@@ -71,7 +72,7 @@ C("5")  # E: Expected 0 positional argument(s)
 );
 
 // TODO: support this
-simple_test!(
+testcase_with_bug!(
     test_new,
     r#"
 class C:
