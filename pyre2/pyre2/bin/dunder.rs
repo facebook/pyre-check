@@ -18,7 +18,9 @@ pub const ITER: Name = Name::new_static("__iter__");
 pub const NEXT: Name = Name::new_static("__next__");
 pub const SETITEM: Name = Name::new_static("__setitem__");
 
-pub fn operator_dunder(op: Operator) -> Name {
+/// Given the operator, what is the name of the dunder methods that implements
+/// inplace mutation. E.g. `a += b` translates to `a.__iadd__(b)`.
+pub fn inplace_dunder(op: Operator) -> Name {
     Name::new_static(match op {
         Operator::Add => "__iadd__",
         Operator::Sub => "__isub__",

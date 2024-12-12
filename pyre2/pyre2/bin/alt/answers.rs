@@ -43,7 +43,7 @@ use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
 use crate::dunder;
-use crate::dunder::operator_dunder;
+use crate::dunder::inplace_dunder;
 use crate::error::collector::ErrorCollector;
 use crate::export::exports::LookupExport;
 use crate::graph::calculation::Calculation;
@@ -922,7 +922,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let base = self.expr(&x.target, None);
                 self.call_method(
                     &base,
-                    &operator_dunder(x.op),
+                    &inplace_dunder(x.op),
                     x.range,
                     &[*x.value.clone()],
                     &[],
