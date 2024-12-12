@@ -20,6 +20,9 @@ use crate::types::types::AnyStyle;
 use crate::types::types::Quantified;
 use crate::types::types::Type;
 
+/// A normalized type representation which is convenient for attribute lookup,
+/// since many cases are collapsed. For example, Type::Literal is converted to
+/// it's corresponding class type.
 pub enum AttributeBase {
     ClassInstance(ClassType),
     ClassObject(Class),
@@ -31,34 +34,74 @@ pub enum AttributeBase {
     TypeAny(AnyStyle),
 }
 
+pub enum LookupResult {
+    /// The lookup succeeded, resulting in a type.
+    Found(Type),
+    /// The attribute was not found. Callers can use fallback behavior, for
+    /// example looking up a different attribute.
+    NotFound(NotFound),
+    /// The lookup failed for some other reason. Fallback behavior does not
+    /// make sense and callers should just bail.
+    Error(LookupError),
+}
+
+pub enum NotFound {
+    Attribute(ClassType),
+    // TODO: NoClassAttribute::IsGeneric should not be a NotFound error, as the
+    // attribute actually exists, but has an unusable type.
+    ClassAttribute(Class, NoClassAttribute),
+    ModuleExport(Module),
+}
+
 pub enum LookupError {
-    AttributeNotFound(ClassType),
-    ClassAttributeNotFound(Class, NoClassAttribute),
-    ModuleExportNotFound(Module),
+    /// An internal error caused by `as_attribute_base` being partial.
     AttributeBaseUndefined(Type),
 }
 
-impl LookupError {
-    pub fn to_error_msg(self, attr_name: &Name, todo_ctx: &str) -> String {
+impl LookupResult {
+    /// A convenience function for callers which do not need to distinguish
+    /// between NotFound and Error results.
+    pub fn ok_or_conflated_error_msg(
+        self,
+        attr_name: &Name,
+        todo_ctx: &str,
+    ) -> Result<Type, String> {
         match self {
-            LookupError::AttributeNotFound(class_type) => {
+            LookupResult::Found(ty) => Ok(ty),
+            LookupResult::NotFound(err) => Err(err.to_error_msg(attr_name)),
+            LookupResult::Error(err) => Err(err.to_error_msg(todo_ctx)),
+        }
+    }
+}
+
+impl NotFound {
+    pub fn to_error_msg(self, attr_name: &Name) -> String {
+        match self {
+            NotFound::Attribute(class_type) => {
                 let class_name = class_type.name();
                 format!("Object of class `{class_name}` has no attribute `{attr_name}`",)
             }
-            LookupError::ClassAttributeNotFound(class, no_class_attribute) => {
+            NotFound::ClassAttribute(class, err) => {
                 let class_name = class.name();
-                match no_class_attribute {
+                match err {
                     NoClassAttribute::NoClassMember => {
-                        format!("Class `{class_name}` has no class attribute `{attr_name}`",)
+                        format!("Class `{class_name}` has no class attribute `{attr_name}`")
                     }
                     NoClassAttribute::IsGenericMember => format!(
-                        "Generic attribute `{attr_name}` of class `{class_name}` is not visible on the class",
+                        "Generic attribute `{attr_name}` of class `{class_name}` is not visible on the class"
                     ),
                 }
             }
-            LookupError::ModuleExportNotFound(module) => {
+            NotFound::ModuleExport(module) => {
                 format!("No attribute `{attr_name}` in module `{module}`")
             }
+        }
+    }
+}
+
+impl LookupError {
+    pub fn to_error_msg(self, todo_ctx: &str) -> String {
+        match self {
             LookupError::AttributeBaseUndefined(ty) => format!(
                 "TODO: {todo_ctx} attribute base undefined for type: {}",
                 ty.deterministic_printing()
@@ -68,36 +111,46 @@ impl LookupError {
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    pub fn lookup_attr(&self, ty: Type, attr_name: &Name) -> Result<Type, LookupError> {
+    pub fn lookup_attr(&self, ty: Type, attr_name: &Name) -> LookupResult {
         match self.as_attribute_base(ty.clone(), self.stdlib) {
-            Some(AttributeBase::ClassInstance(class)) => self
-                .get_instance_attribute(&class, attr_name)
-                .ok_or_else(|| LookupError::AttributeNotFound(class)),
-            Some(AttributeBase::ClassObject(class)) => self
-                .get_class_attribute(&class, attr_name)
-                .map_err(|err| LookupError::ClassAttributeNotFound(class, err)),
-            Some(AttributeBase::Module(module)) => self
-                .get_module_attr(&module, attr_name)
-                .ok_or_else(|| LookupError::ModuleExportNotFound(module)),
+            Some(AttributeBase::ClassInstance(class)) => {
+                match self.get_instance_attribute(&class, attr_name) {
+                    Some(attr) => LookupResult::Found(attr),
+                    None => LookupResult::NotFound(NotFound::Attribute(class)),
+                }
+            }
+            Some(AttributeBase::ClassObject(class)) => {
+                match self.get_class_attribute(&class, attr_name) {
+                    Ok(attr) => LookupResult::Found(attr),
+                    Err(err) => LookupResult::NotFound(NotFound::ClassAttribute(class, err)),
+                }
+            }
+            Some(AttributeBase::Module(module)) => match self.get_module_attr(&module, attr_name) {
+                Some(attr) => LookupResult::Found(attr),
+                None => LookupResult::NotFound(NotFound::ModuleExport(module)),
+            },
             Some(AttributeBase::Quantified(q)) => {
                 if q.is_param_spec() && attr_name == "args" {
-                    Ok(Type::type_form(Type::Args(q.id())))
+                    LookupResult::Found(Type::type_form(Type::Args(q.id())))
                 } else if q.is_param_spec() && attr_name == "kwargs" {
-                    Ok(Type::type_form(Type::Kwargs(q.id())))
+                    LookupResult::Found(Type::type_form(Type::Kwargs(q.id())))
                 } else {
                     let class = q.as_value(self.stdlib);
-                    self.get_instance_attribute(&class, attr_name)
-                        .ok_or_else(|| LookupError::AttributeNotFound(class))
+                    match self.get_instance_attribute(&class, attr_name) {
+                        Some(attr) => LookupResult::Found(attr),
+                        None => LookupResult::NotFound(NotFound::Attribute(class)),
+                    }
                 }
             }
             Some(AttributeBase::TypeAny(style)) => {
                 let class = self.stdlib.builtins_type();
-                Ok(self
-                    .get_instance_attribute(&class, attr_name)
-                    .unwrap_or_else(|| style.propagate()))
+                LookupResult::Found(
+                    self.get_instance_attribute(&class, attr_name)
+                        .unwrap_or_else(|| style.propagate()),
+                )
             }
-            Some(AttributeBase::Any(style)) => Ok(style.propagate()),
-            None => Err(LookupError::AttributeBaseUndefined(ty)),
+            Some(AttributeBase::Any(style)) => LookupResult::Found(style.propagate()),
+            None => LookupResult::Error(LookupError::AttributeBaseUndefined(ty)),
         }
     }
 

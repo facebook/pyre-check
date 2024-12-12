@@ -205,12 +205,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         check_arg: &dyn Fn(&T, Option<&Type>),
     ) -> Type {
         self.distribute_over_union(ty, |ty| {
-            let callable = match self.lookup_attr(ty.clone(), method_name) {
+            let callable = match self
+                .lookup_attr(ty.clone(), method_name)
+                .ok_or_conflated_error_msg(method_name, "Expr::call_method_generic")
+            {
                 Ok(ty) => self.as_call_target_or_error(ty, CallStyle::Method(method_name), range),
-                Err(err) => self.error_call_target(
-                    range,
-                    err.to_error_msg(method_name, "Expr::call_method_generic"),
-                ),
+                Err(msg) => self.error_call_target(range, msg),
             };
             self.call_infer(callable, args, keywords, check_arg, range)
         })
@@ -434,9 +434,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
         self.distribute_over_union(obj, |obj| {
             self.lookup_attr(obj.clone(), attr_name)
-                .unwrap_or_else(|err| {
-                    self.error(range, err.to_error_msg(attr_name, "Expr::attr_infer"))
-                })
+                .ok_or_conflated_error_msg(attr_name, "Expr::attr_infer")
+                .unwrap_or_else(|msg| self.error(range, msg))
         })
     }
 
