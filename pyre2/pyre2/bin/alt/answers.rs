@@ -61,7 +61,6 @@ use crate::type_order::TypeOrder;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
 use crate::types::callable::Arg;
-use crate::types::callable::Callable;
 use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class_metadata::ClassMetadata;
@@ -1328,11 +1327,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn error(&self, range: TextRange, msg: String) -> Type {
         self.errors().add(self.module_info(), range, msg);
         Type::any_error()
-    }
-
-    pub fn error_callable(&self, range: TextRange, msg: String) -> Callable {
-        self.errors().add(self.module_info(), range, msg);
-        AnyStyle::Error.propagate_callable()
     }
 
     /// Unwraps a type, originally evaluated as a value, so that it can be used as a type annotation.
