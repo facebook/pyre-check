@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
+use crate::testcase_with_bug;
 
-simple_test!(
+testcase!(
     test_if_simple,
     r#"
 from typing import assert_type, Literal
@@ -22,7 +23,7 @@ assert_type(y, Literal['test', 100])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_if_else,
     r#"
 from typing import assert_type, Literal
@@ -39,7 +40,7 @@ assert_type(y, Literal['test', 100, True])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_if_only,
     r#"
 from typing import assert_type, Literal
@@ -53,7 +54,7 @@ assert_type(y, Literal[7, 100])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_while_simple,
     r#"
 from typing import assert_type, Literal
@@ -67,7 +68,7 @@ def f(condition) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_while_infinite,
     r#"
 from typing import assert_type, Any, Literal
@@ -81,7 +82,7 @@ def f(condition) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_while_noop,
     r#"
 from typing import assert_type, Literal
@@ -93,7 +94,7 @@ def f(condition) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_while_fancy_noop,
     r#"
 from typing import assert_type, Any, Literal
@@ -105,7 +106,7 @@ def f(condition) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_while_if,
     r#"
 from typing import assert_type, Any, Literal
@@ -118,7 +119,7 @@ def f(condition1, condition2) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_while_two_vars,
     r#"
 from typing import assert_type, Any, Literal
@@ -135,7 +136,7 @@ def f(cond1, cond2, cond3) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_while_else,
     r#"
 from typing import assert_type, Literal
@@ -149,7 +150,7 @@ def f(condition) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_while_break_else,
     r#"
 from typing import assert_type, Any, Literal
@@ -168,7 +169,7 @@ def f(cond1, cond2) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_while_else_while,
     r#"
 while False:
@@ -179,7 +180,7 @@ else:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_while_reassignment_with_annotation,
     r#"
 from typing import assert_type, Literal
@@ -191,7 +192,7 @@ def f(cond):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_for_simple,
     r#"
 from typing import assert_type
@@ -202,7 +203,7 @@ def f(x: list[int]) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_for_tuple,
     r#"
 from typing import assert_type
@@ -212,7 +213,7 @@ def f(x: tuple[int, str]) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_for_literal_string,
     r#"
 from typing import assert_type
@@ -221,7 +222,7 @@ for i in "abcd":
     "#,
 );
 
-simple_test!(
+testcase!(
     test_for_any,
     r#"
 from typing import Any, assert_type
@@ -231,7 +232,7 @@ def f(x: Any):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_for_reassign,
     r#"
 from typing import assert_type
@@ -243,7 +244,7 @@ def f(x: list[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_for_else_reassign,
     r#"
 from typing import assert_type, Literal
@@ -257,7 +258,7 @@ def f(x: list[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_for_multiple_targets,
     r#"
 from typing import assert_type
@@ -268,7 +269,7 @@ def f(x: list[tuple[int, str]]) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_for_scope,
     r#"
 from typing import assert_type
@@ -279,7 +280,7 @@ def f(x: list[int]) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_for_target_annot_compatible,
     r#"
 def f(x: list[int]) -> None:
@@ -289,7 +290,7 @@ def f(x: list[int]) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_for_target_annot_incompatible,
     r#"
 def f(x: list[int]) -> None:
@@ -299,7 +300,7 @@ def f(x: list[int]) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_listcomp_simple,
     r#"
 from typing import assert_type
@@ -308,7 +309,7 @@ assert_type(y, list[int])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_listcomp_no_leak,
     r#"
 def f():
@@ -317,7 +318,7 @@ def f():
     "#,
 );
 
-simple_test!(
+testcase!(
     test_listcomp_no_overwrite,
     r#"
 from typing import assert_type
@@ -327,7 +328,7 @@ assert_type(x, None)
     "#,
 );
 
-simple_test!(
+testcase!(
     test_listcomp_read_from_outer_scope,
     r#"
 from typing import assert_type
@@ -337,7 +338,7 @@ assert_type(y, list[None])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_listcomp_iter_error,
     r#"
 class C:
@@ -346,7 +347,7 @@ class C:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_listcomp_if_error,
     r#"
 class C:
@@ -356,7 +357,7 @@ def f(x):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_listcomp_target_error,
     r#"
 def f(x: list[tuple[int]]):
@@ -364,7 +365,7 @@ def f(x: list[tuple[int]]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_listcomp_splat,
     r#"
 from typing import assert_type
@@ -374,7 +375,7 @@ def f(x: list[tuple[int, str, bool]]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_setcomp,
     r#"
 from typing import assert_type
@@ -383,7 +384,7 @@ assert_type(y, set[int])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_dictcomp,
     r#"
 from typing import assert_type
@@ -393,7 +394,7 @@ def f(x: list[tuple[str, int]]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_generator,
     r#"
 from typing import assert_type, Generator
@@ -402,7 +403,7 @@ assert_type(y, Generator[int, None, None])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_bad_loop_command,
     r#"
 break  # E: Cannot `break` outside loop
@@ -410,7 +411,7 @@ continue  # E: Cannot `continue` outside loop
     "#,
 );
 
-simple_test!(
+testcase!(
     test_break,
     r#"
 from typing import assert_type, Literal
@@ -425,7 +426,7 @@ def f(cond):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_continue,
     r#"
 from typing import assert_type, Literal
@@ -442,7 +443,7 @@ def f(cond1, cond2):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_early_return,
     r#"
 from typing import assert_type, Literal
@@ -456,7 +457,7 @@ def f(x):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_return_in_for,
     r#"
 def f(x: str):
@@ -465,7 +466,7 @@ def f(x: str):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_flow_scope_type,
     r#"
 from typing import assert_type
@@ -484,7 +485,7 @@ assert_type(c, C)
     "#,
 );
 
-simple_test!(
+testcase!(
     test_flow_crash,
     r#"
 def test():
@@ -498,7 +499,7 @@ def test():
 "#,
 );
 
-simple_test!(
+testcase!(
     test_flow_crash2,
     r#"
 def magic_breakage(argument):
@@ -510,7 +511,7 @@ def magic_breakage(argument):
 "#,
 );
 
-simple_test!(
+testcase_with_bug!(
     test_try,
     r#"
 from typing import assert_type, Literal
@@ -524,7 +525,7 @@ assert_type(x, Literal[1, 2])  # E: assert_type(Literal[2], Literal[1, 2]) faile
 "#,
 );
 
-simple_test!(
+testcase!(
     test_match,
     r#"
 from typing import assert_type
@@ -541,7 +542,7 @@ assert_type(x, int)  # E: assert_type(Literal[8] | int, int) failed
 "#,
 );
 
-simple_test!(
+testcase!(
     test_match_mapping,
     r#"
 from typing import assert_type
@@ -555,7 +556,7 @@ match x:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_empty_loop,
     r#"
 # These generate syntax that is illegal, but reachable with parser error recovery
@@ -568,7 +569,7 @@ pass  # E: Expected an indented block
 "#,
 );
 
-simple_test!(
+testcase!(
     test_match_class,
     r#"
 from typing import assert_type
@@ -612,7 +613,7 @@ def fun(foo: Foo, bar: Bar, baz: Baz) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_match_sequence_concrete,
     r#"
 from typing import assert_type, Never
@@ -646,7 +647,7 @@ def foo(x: tuple[int, str, bool, int]) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_match_sequence_unbounded,
     r#"
 from typing import assert_type, Never
@@ -676,7 +677,7 @@ def foo(x: list[int]) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_match_or,
     r#"
 from typing import assert_type
@@ -695,7 +696,7 @@ match x:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_crashing_match,
     r#"
 match []:
