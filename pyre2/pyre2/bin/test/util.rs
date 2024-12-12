@@ -109,13 +109,13 @@ impl TestEnv {
             (loaded, ErrorStyle::Immediate)
         })
     }
-}
 
-pub fn simple_test_driver(env: TestEnv) -> State<'static> {
-    let modules = env.0.keys().copied().collect::<Vec<_>>();
-    let mut state = State::new(env.to_loader(), Config::default(), true);
-    state.run(&modules);
-    state
+    pub fn to_state(self) -> State<'static> {
+        let modules = self.0.keys().copied().collect::<Vec<_>>();
+        let mut state = State::new(self.to_loader(), Config::default(), true);
+        state.run(&modules);
+        state
+    }
 }
 
 static INIT_TRACING_ONCE: Once = Once::new();
@@ -137,6 +137,5 @@ pub fn testcase_for_macro(
         &format!("{}{}", "\n".repeat(start_line), contents),
         file,
     );
-    let state = simple_test_driver(env);
-    state.check_against_expectations()
+    env.to_state().check_against_expectations()
 }

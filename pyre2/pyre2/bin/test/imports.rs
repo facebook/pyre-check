@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::test::util::simple_test_driver;
 use crate::test::util::TestEnv;
 use crate::testcase;
 use crate::testcase_with_bug;
@@ -468,8 +467,7 @@ fn test_import_fail_to_load() {
     let mut env = TestEnv::new();
     env.add_error("foo", "Disk go urk");
     env.add("main", "import foo");
-    let state = simple_test_driver(env);
-    let errs = state.collect_errors();
+    let errs = env.to_state().collect_errors();
     assert_eq!(errs.len(), 1);
     assert!(
         errs[0]
