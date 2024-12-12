@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
 use crate::test::util::TestEnv;
+use crate::testcase;
+use crate::testcase_with_bug;
 
-simple_test!(
+testcase!(
     test_canonicalized_call,
     r#"
 from typing import Literal
@@ -17,7 +18,7 @@ def foo(x: Literal[1]) -> int:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_union_call,
     r#"
 from typing import assert_type
@@ -30,7 +31,7 @@ def foo(x: A | B) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_simple_call,
     r#"
 from typing import assert_type
@@ -41,7 +42,7 @@ assert_type(y, int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_mypy_demo,
     r#"
 from typing import Any
@@ -59,7 +60,7 @@ print("It is", plus(number, 1))  # E: str <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_error_in_function,
     r#"
 def f(x: str) -> int:
@@ -67,7 +68,7 @@ def f(x: str) -> int:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_create_class,
     r#"
 from typing import assert_type
@@ -78,7 +79,7 @@ assert_type(x, C)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_class_method,
     r#"
 from typing import assert_type
@@ -91,7 +92,7 @@ assert_type(y, int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_generics,
     r#"
 from typing import Literal
@@ -103,7 +104,7 @@ append(v, "test")  # E: Literal['test'] <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_list_class_basic,
     r#"
 from typing import assert_type
@@ -113,7 +114,7 @@ assert_type(x, list[int])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_list_class_inner_generic,
     r#"
 x = [3]
@@ -121,7 +122,7 @@ x.append("test")  # E: Literal['test'] <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_empty_list_class,
     r#"
 from typing import assert_type, Any
@@ -130,7 +131,7 @@ assert_type(x, list[Any])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_empty_list_is_generic,
     r#"
 from typing import assert_type
@@ -140,7 +141,7 @@ assert_type(r, int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_empty_list_append,
     r#"
 from typing import assert_type
@@ -150,7 +151,7 @@ assert_type(x, list[int])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_empty_list_check,
     r#"
 from typing import Literal, assert_type
@@ -161,7 +162,7 @@ assert_type(x, list[Literal[4]])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_shadow_var,
     r#"
 from typing import assert_type, Literal
@@ -173,7 +174,7 @@ assert_type(y, Literal[1])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_unordered_defs,
     r#"
 def f() -> int:
@@ -183,7 +184,7 @@ def g() -> str:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_function_uses_class,
     r#"
 from typing import assert_type
@@ -197,7 +198,7 @@ assert_type(foo(), C)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_union_alias,
     r#"
 from typing import TypeAlias
@@ -206,7 +207,7 @@ x: StringOrInt = 1
 "#,
 );
 
-simple_test!(
+testcase!(
     test_alias_import,
     TestEnv::one(
         "foo",
@@ -218,7 +219,7 @@ x: StringOrInt = 1
 "#,
 );
 
-simple_test!(
+testcase!(
     test_type_as_string,
     r#"
 class Foo: ...
@@ -228,7 +229,7 @@ def f(y: "None") -> list["Foo"]:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_line_file,
     r#"
 from typing import assert_type
@@ -237,7 +238,7 @@ assert_type(__name__, str)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_union_none,
     r#"
 from typing import TypeAlias
@@ -254,7 +255,7 @@ e: NoneOrInt = "test"  # E: Literal['test'] <: int | None
 "#,
 );
 
-simple_test!(
+testcase!(
     test_argument_shadows_type,
     r#"
 class C: ...
@@ -263,7 +264,7 @@ def f(C: C, D: C) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_union_or_in_argument,
     r#"
 def f(x: int | str) -> None:
@@ -274,7 +275,7 @@ f(None)  # E: None <: int | str
 "#,
 );
 
-simple_test!(
+testcase!(
     test_types_with_flow,
     r#"
 from typing import assert_type
@@ -286,7 +287,7 @@ assert_type(f(), str)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_method_cannot_see_class_scope,
     r#"
 class C:
@@ -297,7 +298,7 @@ class C:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_class_rebind_attribute,
     r#"
 from typing import assert_type
@@ -313,7 +314,7 @@ assert_type(C().attribute, int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_class_attribute_lookup,
     r#"
 from typing import assert_type, Literal
@@ -324,7 +325,7 @@ assert_type(C.x, Literal[1])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_nested_class_attribute_with_inheritance,
     r#"
 from typing import assert_type
@@ -342,7 +343,7 @@ assert_type(N1.x, int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_class_generic_attribute_lookup,
     r#"
 class C[T]:
@@ -352,7 +353,7 @@ C.x  # E: Generic attribute `x` of class `C` is not visible on the class
 "#,
 );
 
-simple_test!(
+testcase!(
     test_use_self,
     r#"
 from typing import assert_type
@@ -368,7 +369,7 @@ assert_type(C().m(C(), C()), list[C])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_str_type_triple_quote,
     r#"
 value: """
@@ -383,7 +384,7 @@ value = None  # E: None <: int | list[int] | str
 "#,
 );
 
-simple_test!(
+testcase!(
     test_nested_func,
     r#"
 from typing import assert_type
@@ -395,7 +396,7 @@ assert_type(f(1), int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_simple_inheritance,
     r#"
 from typing import assert_type
@@ -409,7 +410,7 @@ assert_type(HasBase().x, int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_generic_multiple_inheritance,
     r#"
 from typing import assert_type
@@ -429,7 +430,7 @@ assert_type(c.z, bool)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_generic_chained_inheritance,
     r#"
 from typing import assert_type
@@ -449,7 +450,7 @@ assert_type(c.z, bool)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_final_annotated,
     r#"
 from typing import Final, assert_type, Literal
@@ -464,7 +465,7 @@ assert_type(z, str)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_solver_variables,
     r#"
 from typing import assert_type, Any
@@ -480,7 +481,7 @@ assert_type(bar(), Any)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_solver_variables_2,
     r#"
 from typing import assert_type, Any
@@ -494,7 +495,7 @@ def bar(random: bool):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_reveal_type,
     r#"
 from typing import reveal_type
@@ -503,7 +504,7 @@ reveal_type(1)  # E: revealed type: Literal[1]
     "#,
 );
 
-simple_test!(
+testcase!(
     test_forward_refs_in_bases,
     r#"
 from typing import assert_type, Any
@@ -522,7 +523,7 @@ assert_type(B().x, str)
     "#,
 );
 
-simple_test!(
+testcase!(
     test_class_var,
     r#"
 from typing import assert_type
@@ -533,7 +534,7 @@ assert_type(B.x, int)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_fstring,
     r#"
 from typing import assert_type, Literal
@@ -557,7 +558,7 @@ assert_type(x5, str)
 "#,
 );
 
-simple_test!(
+testcase!(
     test_ternary_expression,
     r#"
 from typing import assert_type, Literal
@@ -571,7 +572,7 @@ assert_type(0 if derp() else 1, Literal[0] | Literal[1])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_type_alias_full_name,
     r#"
 import typing
@@ -582,7 +583,7 @@ def f(x: X | str):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_raise,
     r#"
 def test_raise() -> None:
@@ -599,7 +600,7 @@ def test_raise() -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_raise_filter_type,
     r#"
 from typing import assert_type, Literal
@@ -613,7 +614,7 @@ def f(x):
 "#,
 );
 
-simple_test!(
+testcase!(
     test_special_form_argument_counts,
     r#"
 from typing import Callable, Optional, Type, TypeGuard, TypeIs
@@ -626,7 +627,7 @@ def test4() -> Callable[[], int, int]: ...  # E: requires exactly two arguments
 "#,
 );
 
-simple_test!(
+testcase!(
     test_infinite_solver_1,
     r#"
 from typing import Any, assert_type
@@ -636,7 +637,7 @@ assert_type(x, list[list[list[Any]]])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_infinite_solver_2,
     r#"
 from typing import Any, assert_type
@@ -651,7 +652,7 @@ assert_type(x, list[Any])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_self_param_name,
     r#"
 from typing import assert_type
@@ -661,7 +662,7 @@ class C:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_getitem,
     r#"
 from typing import assert_type
@@ -681,7 +682,7 @@ def f(x: list[int], y: dict[str, bool]) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_iterable,
     r#"
 from typing import Iterable, assert_type
@@ -691,7 +692,7 @@ def f(x: Iterable[int]):
 "#,
 );
 
-simple_test!(
+testcase!(
     test_ignore,
     r#"
 x: int = "1"  # type: ignore
@@ -706,7 +707,7 @@ z: int = "3"  # E: Literal['3'] <: int
 // This test is a placeholder, we've commented out the check for missing
 // type arguments because until we have configurable errors it causes
 // too many problems.
-simple_test!(
+testcase_with_bug!(
     test_untype_with_missing_targs,
     r#"
 class C[T]: pass
@@ -716,7 +717,7 @@ y: C | int  # TODO: The generic class `C` is missing type arguments.
     "#,
 );
 
-simple_test!(
+testcase!(
     test_iterable_error,
     r#"
 class A:
@@ -727,7 +728,7 @@ def f(x: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_iterable_bad_callable,
     r#"
 from typing import Self
@@ -745,7 +746,7 @@ def f(x: A, y: B):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_iterable_bad_iterator,
     r#"
 class A:
@@ -757,7 +758,7 @@ def f(x: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_getitem_iteration,
     r#"
 from typing import assert_type
@@ -770,7 +771,7 @@ def f(x: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_getitem_iteration_bad,
     r#"
 class A:
@@ -782,7 +783,7 @@ def f(x: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_assert,
     r#"
 def foo() -> str: ...
@@ -791,7 +792,7 @@ assert False, foo(42)  # E: Expected 0 positional argument(s)
     "#,
 );
 
-simple_test!(
+testcase!(
     test_subscript_error,
     r#"
 class A:
@@ -802,7 +803,7 @@ def f(a: A):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_function_in_type,
     r#"
 x = 42
@@ -812,7 +813,7 @@ z: foo(y=x)  # E: untype, got Never
 );
 
 // FIXME: Should give a better error message
-simple_test!(
+testcase_with_bug!(
     test_invalid_literal,
     r#"
 from typing import Literal
@@ -821,7 +822,7 @@ y: Literal[x]  # E: TODO: Name(ExprName - Lit::from_expr
 "#,
 );
 
-simple_test!(
+testcase!(
     test_invalid_type_arguments,
     r#"
 from typing import assert_type
@@ -830,7 +831,7 @@ assert_type(x, list[int])
     "#,
 );
 
-simple_test!(
+testcase_with_bug!(
     test_type_of_type,
     r#"
 class C:
@@ -841,7 +842,7 @@ c: type[C, C] = C  # E: Expected 1 type argument for class `type`, got 2
     "#,
 );
 
-simple_test!(
+testcase!(
     test_annotated,
     r#"
 from typing import Annotated, assert_type
@@ -851,7 +852,7 @@ def f(x: Annotated[int, "test"], y: Annotated[int, "test", "test"]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_no_backtracking,
     r#"
 from typing import assert_type
@@ -864,7 +865,7 @@ def test(x: list[str]) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_reassign_parameter,
     r#"
 def foo(x: int):
@@ -872,7 +873,7 @@ def foo(x: int):
 "#,
 );
 
-simple_test!(
+testcase!(
     test_await_simple,
     r#"
 from typing import Any, Awaitable, assert_type
@@ -886,7 +887,7 @@ async def test() -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_await_literal,
     r#"
 from typing import Awaitable, Literal
@@ -897,7 +898,7 @@ async def test() -> Literal[42]:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_await_non_awaitable,
     r#"
 async def test() -> None:
@@ -905,7 +906,7 @@ async def test() -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_await_wrong_await_return_type,
     r#"
 class Foo:
@@ -917,7 +918,7 @@ async def test() -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_anywhere_binding,
     r#"
 from typing import assert_type, Literal

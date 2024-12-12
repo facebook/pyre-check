@@ -40,6 +40,20 @@ macro_rules! simple_test {
     };
 }
 
+#[macro_export]
+macro_rules! testcase {
+    ( $($t:tt)*) =>  {
+        $crate::simple_test!($($t)*);
+    }
+}
+
+#[macro_export]
+macro_rules! testcase_with_bug {
+    ( $($t:tt)*) =>  {
+        $crate::simple_test!($($t)*);
+    }
+}
+
 fn default_path(name: ModuleName) -> PathBuf {
     PathBuf::from(format!("{}.py", name.as_str().replace('.', "/")))
 }
