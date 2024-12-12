@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
 use crate::test::util::TestEnv;
+use crate::testcase;
 
-simple_test!(
+testcase!(
     test_subscript_unpack_assign,
     r#"
 from typing import assert_type
@@ -19,7 +19,7 @@ x[0], x[1] = 3, "foo"  # E: EXPECTED Literal['foo'] <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_subscript_assign,
     r#"
 from typing import assert_type
@@ -43,7 +43,7 @@ def f(x: int) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_error_assign,
     r#"
 x: str = 1  # E: Literal[1] <: str
@@ -51,7 +51,7 @@ y = x
 "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_twice_empty,
     r#"
 from typing import assert_type
@@ -67,7 +67,7 @@ assert_type(y, list[int])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_widen,
     r#"
 from typing import Literal, LiteralString, Any
@@ -78,7 +78,7 @@ d: Any = "test"
 "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_widen_list,
     r#"
 from typing import Literal, LiteralString, Any
@@ -89,7 +89,7 @@ d: list[Any] = ["test"]
 "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_at_types,
     r#"
 a: int = 3
@@ -97,7 +97,7 @@ a = "test"  # E: Literal['test'] <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_optional_assign,
     r#"
 from typing import Optional
@@ -106,7 +106,7 @@ y: Optional[str] = 43  # E: Literal[43] <: str | None
     "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_ellipse,
     TestEnv::one_with_path("foo", "x: int = ...", "foo.pyi"),
     r#"
@@ -119,7 +119,7 @@ z: EllipsisType = ...
 "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_unpack,
     r#"
 from typing import assert_type, Literal
@@ -129,7 +129,7 @@ assert_type(b, Literal["test"])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_unpack_unpack,
     r#"
 from typing import assert_type, Literal
@@ -141,7 +141,7 @@ assert_type(d, Literal[3])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_unpack_ambiguous,
     r#"
 from typing import assert_type
@@ -152,7 +152,7 @@ def f(x: list[str]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_multiple,
     r#"
 from typing import assert_type, Literal
@@ -162,7 +162,7 @@ assert_type(b, Literal[1])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_list,
     r#"
 from typing import assert_type, Literal
@@ -172,14 +172,14 @@ assert_type(b, Literal["test"])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_unpack_too_many,
     r#"
 (a, b, c, d) = (1, 2)  # E: Cannot unpack tuple[Literal[1], Literal[2]] (of size 2) into 4 values
     "#,
 );
 
-simple_test!(
+testcase!(
     test_unpack_not_enough,
     r#"
 (a,) = (1, 2)  # E: Cannot unpack tuple[Literal[1], Literal[2]] (of size 2) into 1 value
@@ -187,7 +187,7 @@ simple_test!(
     "#,
 );
 
-simple_test!(
+testcase!(
     test_splat_back,
     r#"
 from typing import assert_type, Literal
@@ -198,7 +198,7 @@ assert_type(c, list[Literal["test", 3]])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_splat_front,
     r#"
 from typing import assert_type, Literal
@@ -209,7 +209,7 @@ assert_type(c, Literal["test"])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_splat_middle,
     r#"
 from typing import assert_type, Literal
@@ -220,7 +220,7 @@ assert_type(c, Literal["test"])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_splat_unpack,
     r#"
 from typing import assert_type, Literal
@@ -230,7 +230,7 @@ assert_type(b, Literal[2])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_splat_nothing,
     r#"
 from typing import assert_type, Never
@@ -239,7 +239,7 @@ assert_type(a, list[Never])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_never,
     r#"
 from typing import Any, Never, NoReturn
@@ -252,7 +252,7 @@ def bar(x: Never) -> NoReturn:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_splat_ambiguous,
     r#"
 from typing import assert_type
@@ -263,7 +263,7 @@ def f(x: list[str]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_splat_error,
     r#"
 a, *b = (1,)  # OK
@@ -271,7 +271,7 @@ a, *b = ()  # E: Cannot unpack tuple[()] (of size 0) into 1+ values
     "#,
 );
 
-simple_test!(
+testcase!(
     test_multiple_annotations,
     r#"
 from typing import Literal
@@ -288,7 +288,7 @@ def f(cond: bool):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_type_alias_simple,
     r#"
 from typing import assert_type
@@ -298,7 +298,7 @@ def f(x: X):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_type_alias_generic,
     r#"
 from typing import assert_type
@@ -308,7 +308,7 @@ def f(x: X[int]):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_aug_assign_simple,
     r#"
 x: list[int] = []
@@ -317,7 +317,7 @@ x += ["foo"]  # E: EXPECTED Literal['foo'] <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_aug_assign_function,
     r#"
 def foo(y: list[int]) -> None:
@@ -329,7 +329,7 @@ def foo(y: list[int]) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_aug_assign_attr,
     r#"
 class C:
@@ -344,7 +344,7 @@ c.foo += ["foo"]  # E: EXPECTED Literal['foo'] <: int
 "#,
 );
 
-simple_test!(
+testcase!(
     test_aug_assign_attr_self,
     r#"
 class C:
@@ -357,7 +357,7 @@ class C:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_aug_assign_subscript,
     r#"
 x: list[list[int]] = []
@@ -367,7 +367,7 @@ x += [1]  # E: EXPECTED Literal[1] <: list[int]
 "#,
 );
 
-simple_test!(
+testcase!(
     test_assign_special_subtype,
     r#"
 from types import NoneType, EllipsisType
@@ -383,7 +383,7 @@ def foo(a: tuple[int, ...], b: NoneType, c: EllipsisType) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_subscript_assign_any_check_rhs,
     r#"
 from typing import Any
@@ -393,7 +393,7 @@ def test(x: Any):
 "#,
 );
 
-simple_test!(
+testcase!(
     test_aug_assign_any_check_rhs,
     r#"
 from typing import Any
@@ -403,7 +403,7 @@ def test(x: Any):
 "#,
 );
 
-simple_test!(
+testcase!(
     test_aug_assign_error_not_class_check_rhs,
     r#"
 def expect_str(x: str): ...
@@ -412,7 +412,7 @@ def test(x: None):
 "#,
 );
 
-simple_test!(
+testcase!(
     test_aug_assign_error_not_callable_check_rhs,
     r#"
 def expect_str(x: str): ...
