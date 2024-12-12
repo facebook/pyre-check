@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
 
-simple_test!(
+testcase!(
     test_simple_with,
     r#"
 from typing import assert_type
@@ -33,7 +33,7 @@ with Foo() as bar: # E: EXPECTED int <: str
     "#,
 );
 
-simple_test!(
+testcase!(
     test_simple_async_with,
     r#"
 from typing import assert_type
@@ -56,7 +56,7 @@ async def test() -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_simple_with_error,
     r#"
 def test_sync() -> None:
@@ -69,7 +69,7 @@ async def test_async() -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_simple_with_wrong_enter_type,
     r#"
 from types import TracebackType
@@ -89,7 +89,7 @@ with Foo() as foo:  # E: Expected `__enter__` to be a callable, got int
     "#,
 );
 
-simple_test!(
+testcase!(
     test_with_wrong_exit_attribute_type,
     r#"
 from types import TracebackType
@@ -102,7 +102,7 @@ with Foo() as foo:  # E: Expected `__exit__` to be a callable, got int
     "#,
 );
 
-simple_test!(
+testcase!(
     test_with_wrong_exit_argument_count,
     r#"
 from typing import assert_type
@@ -117,7 +117,7 @@ with Foo() as foo:  # E: Expected 0 positional argument(s)
     "#,
 );
 
-simple_test!(
+testcase!(
     test_with_wrong_exit_argument_type,
     r#"
 from typing import assert_type
@@ -132,7 +132,7 @@ with Foo() as foo: # E: type[BaseException] | None <: int # E: BaseException | N
     "#,
 );
 
-simple_test!(
+testcase!(
     test_with_wrong_return_type,
     r#"
 from typing import assert_type
@@ -154,7 +154,7 @@ with Foo() as foo:  # E: str <: bool | None
     "#,
 );
 
-simple_test!(
+testcase!(
     test_async_with_dunder_aenter_not_async,
     r#"
 from types import TracebackType
@@ -176,7 +176,7 @@ async def test() -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_async_with_dunder_aexit_not_async,
     r#"
 from types import TracebackType
