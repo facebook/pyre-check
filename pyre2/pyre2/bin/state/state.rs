@@ -50,9 +50,9 @@ use crate::util::enum_heap::EnumHeap;
 use crate::util::prelude::SliceExt;
 use crate::util::uniques::UniqueFactory;
 
-pub struct State<'a> {
+pub struct State {
     config: Config,
-    loader: Box<Loader<'a>>,
+    loader: Box<Loader>,
     uniques: UniqueFactory,
     parallel: bool,
     stdlib: RwLock<Arc<Stdlib>>,
@@ -112,8 +112,8 @@ impl ModuleState {
     }
 }
 
-impl<'a> State<'a> {
-    pub fn new(loader: Box<Loader<'a>>, config: Config, parallel: bool) -> Self {
+impl State {
+    pub fn new(loader: Box<Loader>, config: Config, parallel: bool) -> Self {
         Self {
             config,
             loader,
@@ -509,13 +509,13 @@ impl<'a> State<'a> {
     */
 }
 
-impl LookupExport for State<'_> {
+impl LookupExport for State {
     fn get(&self, module: ModuleName) -> Result<Exports, Arc<String>> {
         self.lookup_export(module)
     }
 }
 
-impl LookupAnswer for State<'_> {
+impl LookupAnswer for State {
     fn get<K: Solve<Self> + Keyed<EXPORTED = true>>(
         &self,
         name: ModuleName,

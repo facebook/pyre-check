@@ -31,7 +31,7 @@ use crate::util::uniques::UniqueFactory;
 pub struct Context<'a, Lookup> {
     pub name: ModuleName,
     pub config: &'a Config,
-    pub loader: &'a Loader<'a>,
+    pub loader: &'a Loader,
     pub uniques: &'a UniqueFactory,
     pub stdlib: &'a Stdlib,
     pub lookup: &'a Lookup,

@@ -16,6 +16,7 @@ use std::time::Instant;
 
 use anyhow::Context as _;
 use clap::Parser;
+use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use tracing::info;
 
@@ -78,14 +79,19 @@ impl Args {
         }
 
         let mut to_check = SmallMap::with_capacity(args.files.len());
-        for file in &args.files {
-            let module = module_from_path(file, &include);
-            if let Some(old_file) = to_check.insert(module, file) {
-                return Err(anyhow::anyhow!(
-                    "Two files map to the same module: `{}` and `{}` both map to `{module}`",
-                    file.display(),
-                    old_file.display()
-                ));
+        for file in args.files {
+            let module = module_from_path(&file, &include);
+            match to_check.entry(module) {
+                Entry::Vacant(new_entry) => {
+                    new_entry.insert(file);
+                }
+                Entry::Occupied(old_entry) => {
+                    return Err(anyhow::anyhow!(
+                        "Two files map to the same module: `{}` and `{}` both map to `{module}`",
+                        file.display(),
+                        old_entry.get().display()
+                    ));
+                }
             }
         }
         let error_style = if args.report_errors.is_some() {
@@ -93,14 +99,14 @@ impl Args {
         } else {
             ErrorStyle::Immediate
         };
-        let load = |name| {
+        let modules = to_check.keys().copied().collect::<Vec<_>>();
+        let load = move |name| {
             let path = match to_check.get(&name) {
                 Some(path) => Ok((*path).clone()),
                 None => find_module(name, &include),
             };
             (LoadResult::from_path_result(path), error_style)
         };
-        let modules = to_check.keys().copied().collect::<Vec<_>>();
         let config = match &args.python_version {
             None => Config::default(),
             Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),

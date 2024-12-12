@@ -21,7 +21,7 @@ use crate::state::state::State;
 use crate::types::types::Type;
 use crate::visitors::Visitors;
 
-impl<'a> State<'a> {
+impl State {
     pub fn get_type(&self, module: ModuleName, key: &Key) -> Option<Type> {
         self.get_solutions(module)?.types.get(key).cloned()
     }

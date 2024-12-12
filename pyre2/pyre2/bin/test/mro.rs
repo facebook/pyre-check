@@ -16,7 +16,7 @@ use crate::test::util::TestEnv;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::types::Type;
 
-pub fn mk_state(code: &str) -> (ModuleName, State<'static>) {
+pub fn mk_state(code: &str) -> (ModuleName, State) {
     let state = TestEnv::one("main", code).to_state();
     (ModuleName::from_str("main"), state)
 }

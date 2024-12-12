@@ -94,7 +94,7 @@ impl TestEnv {
         );
     }
 
-    pub fn to_loader(self) -> Box<Loader<'static>> {
+    pub fn to_loader(self) -> Box<Loader> {
         Box::new(move |name: ModuleName| {
             let loaded = if let Some((path, contents)) = self.0.get(&name) {
                 match contents {
@@ -110,7 +110,7 @@ impl TestEnv {
         })
     }
 
-    pub fn to_state(self) -> State<'static> {
+    pub fn to_state(self) -> State {
         let modules = self.0.keys().copied().collect::<Vec<_>>();
         let mut state = State::new(self.to_loader(), Config::default(), true);
         state.run(&modules);

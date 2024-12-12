@@ -81,7 +81,7 @@ struct Server<'a> {
     #[expect(dead_code)] // we'll use it later on
     initialize_params: InitializeParams,
     include: Vec<PathBuf>,
-    state: State<'static>,
+    state: State,
     open_files: SmallMap<PathBuf, (i32, String)>,
 }
 

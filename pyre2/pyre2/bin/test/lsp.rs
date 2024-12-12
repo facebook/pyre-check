@@ -26,7 +26,7 @@ static CODE: &str = r#"
 10: class B(A): pass
 "#;
 
-fn mk_state() -> (ModuleName, State<'static>) {
+fn mk_state() -> (ModuleName, State) {
     let code = CODE
         .lines()
         .enumerate()
