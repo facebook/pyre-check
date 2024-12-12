@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
 
-simple_test!(
+testcase!(
     test_primitive_subtyping,
     r#"
 class A: pass
@@ -21,7 +21,7 @@ oops: A = D()  # E: EXPECTED D <: A
 "#,
 );
 
-simple_test!(
+testcase!(
     test_object_is_top,
     r#"
 class A: pass
@@ -31,7 +31,7 @@ s: object = ""
 "#,
 );
 
-simple_test!(
+testcase!(
     test_simple_generic_subtyping,
     r#"
 class A[T]: pass
@@ -46,7 +46,7 @@ oops1: A[int] = A[str]()  # E: EXPECTED A[str] <: A[int]
 "#,
 );
 
-simple_test!(
+testcase!(
     test_simple_class_object_subtyping,
     r#"
 class A: pass
@@ -57,7 +57,7 @@ b: type[B] = A  # E: EXPECTED type[A] <: type[B]
 "#,
 );
 
-simple_test!(
+testcase!(
     test_generic_class_object_subtyping,
     r#"
 class A[T]: pass
@@ -74,7 +74,7 @@ b2: type[B] = A[int]  # E: EXPECTED type[A[int]] <: type[B[Error]]
 "#,
 );
 
-simple_test!(
+testcase!(
     test_literal_string_subtyping,
     r#"
 from typing import Literal, LiteralString
@@ -99,7 +99,7 @@ test11: object = l3()
 "#,
 );
 
-simple_test!(
+testcase!(
     test_type_guard_subtyping,
     r#"
 from typing import Callable, TypeGuard
@@ -123,7 +123,7 @@ test9: Callable[[], object] = t2
 "#,
 );
 
-simple_test!(
+testcase!(
     test_type_is_subtyping,
     r#"
 from typing import Callable, TypeIs
