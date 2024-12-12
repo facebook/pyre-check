@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
 
-simple_test!(
+testcase!(
     test_binop,
     r#"
 from typing import assert_type
@@ -19,7 +19,7 @@ def f(a: int, b: int) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_negative_literals,
     r#"
 from typing import Literal
@@ -27,7 +27,7 @@ x: Literal[-1] = -1
 "#,
 );
 
-simple_test!(
+testcase!(
     test_boolean_or_simple,
     r#"
 from typing import assert_type
@@ -37,7 +37,7 @@ def f(x: int, y: str) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_boolean_or_filter,
     r#"
 from typing import assert_type, Literal
@@ -58,7 +58,7 @@ def f(a: None, b: int, c: str, cond: bool) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_boolean_or_shortcircuit,
     r#"
 from typing import assert_type, Literal
@@ -67,7 +67,7 @@ assert_type(x, Literal[True])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_integer_or_shortcircuit,
     r#"
 from typing import assert_type, Literal
@@ -76,7 +76,7 @@ assert_type(x, Literal[1])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_string_or_shortcircuit,
     r#"
 from typing import assert_type, Literal
@@ -85,7 +85,7 @@ assert_type(x, Literal["a"])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_boolean_and_simple,
     r#"
 from typing import assert_type
@@ -95,7 +95,7 @@ def f(x: int, y: str) -> None:
     "#,
 );
 
-simple_test!(
+testcase!(
     test_boolean_and_filter,
     r#"
 from typing import assert_type, Literal
@@ -107,7 +107,7 @@ assert_type(y, Literal[True])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_boolean_and_shortcircuit,
     r#"
 from typing import assert_type, Literal
@@ -116,7 +116,7 @@ assert_type(x, Literal[False])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_integer_and_shortcircuit,
     r#"
 from typing import assert_type, Literal
@@ -125,7 +125,7 @@ assert_type(x, Literal[0])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_string_and_shortcircuit,
     r#"
 from typing import assert_type, Literal
@@ -134,7 +134,7 @@ assert_type(x, Literal[""])
     "#,
 );
 
-simple_test!(
+testcase!(
     test_unary_not_unknown,
     r#"
 from typing import assert_type
@@ -144,7 +144,7 @@ def f(x):
     "#,
 );
 
-simple_test!(
+testcase!(
     test_unary_not_literal,
     r#"
 from typing import assert_type, Literal
