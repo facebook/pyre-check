@@ -6,6 +6,9 @@
  */
 
 use std::fmt;
+use std::fmt::Debug;
+use std::fmt::Display;
+use std::hash::Hash;
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
@@ -29,7 +32,10 @@ use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::types::annotation::Annotation;
+use crate::types::class_metadata::ClassMetadata;
 use crate::types::types::AnyStyle;
+use crate::types::types::LegacyTypeParameterLookup;
 use crate::types::types::Quantified;
 use crate::types::types::Type;
 use crate::util::display::DisplayWith;
@@ -44,6 +50,35 @@ assert_eq_size!(Binding, [usize; 9]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
 assert_eq_size!(BindingClassMetadata, [usize; 8]);
 assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
+
+pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
+    const EXPORTED: bool = false;
+    type Value: Debug + DisplayWith<Bindings>;
+    type Answer: Clone + Debug + Display;
+}
+
+impl Keyed for Key {
+    type Value = Binding;
+    type Answer = Type;
+}
+impl Keyed for KeyExported {
+    const EXPORTED: bool = true;
+    type Value = Binding;
+    type Answer = Type;
+}
+impl Keyed for KeyAnnotation {
+    type Value = BindingAnnotation;
+    type Answer = Annotation;
+}
+impl Keyed for KeyClassMetadata {
+    const EXPORTED: bool = true;
+    type Value = BindingClassMetadata;
+    type Answer = ClassMetadata;
+}
+impl Keyed for KeyLegacyTypeParam {
+    type Value = BindingLegacyTypeParam;
+    type Answer = LegacyTypeParameterLookup;
+}
 
 /// Keys that refer to a `Type`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

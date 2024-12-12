@@ -7,58 +7,6 @@
 
 //! Things that abstract over the binding types.
 
-use std::fmt::Debug;
-use std::fmt::Display;
-use std::hash::Hash;
-
-use ruff_text_size::Ranged;
-
-use crate::alt::binding::Binding;
-use crate::alt::binding::BindingAnnotation;
-use crate::alt::binding::BindingClassMetadata;
-use crate::alt::binding::BindingLegacyTypeParam;
-use crate::alt::binding::Key;
-use crate::alt::binding::KeyAnnotation;
-use crate::alt::binding::KeyClassMetadata;
-use crate::alt::binding::KeyExported;
-use crate::alt::binding::KeyLegacyTypeParam;
-use crate::alt::bindings::Bindings;
-use crate::module::module_info::ModuleInfo;
-use crate::types::annotation::Annotation;
-use crate::types::class_metadata::ClassMetadata;
-use crate::types::types::LegacyTypeParameterLookup;
-use crate::types::types::Type;
-use crate::util::display::DisplayWith;
-
-pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
-    const EXPORTED: bool = false;
-    type Value: Debug + DisplayWith<Bindings>;
-    type Answer: Clone + Debug + Display;
-}
-
-impl Keyed for Key {
-    type Value = Binding;
-    type Answer = Type;
-}
-impl Keyed for KeyExported {
-    const EXPORTED: bool = true;
-    type Value = Binding;
-    type Answer = Type;
-}
-impl Keyed for KeyAnnotation {
-    type Value = BindingAnnotation;
-    type Answer = Annotation;
-}
-impl Keyed for KeyClassMetadata {
-    const EXPORTED: bool = true;
-    type Value = BindingClassMetadata;
-    type Answer = ClassMetadata;
-}
-impl Keyed for KeyLegacyTypeParam {
-    type Value = BindingLegacyTypeParam;
-    type Answer = LegacyTypeParameterLookup;
-}
-
 pub trait TableKeyed<K> {
     type Value;
     fn get(&self) -> &Self::Value;

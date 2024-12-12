@@ -13,10 +13,10 @@ use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
+use crate::alt::binding::Keyed;
 use crate::alt::bindings::BindingEntry;
 use crate::alt::bindings::BindingTable;
 use crate::alt::bindings::Bindings;
-use crate::alt::table::Keyed;
 use crate::alt::table::TableKeyed;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
