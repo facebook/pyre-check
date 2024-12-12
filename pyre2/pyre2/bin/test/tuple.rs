@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::simple_test;
+use crate::testcase;
 
-simple_test!(
+testcase!(
     test_tuple,
     r#"
 from typing import assert_type, Literal
@@ -19,7 +19,7 @@ y: tuple[int, Literal["3"]] = (1, "3")
 "#,
 );
 
-simple_test!(
+testcase!(
     test_index_literal,
     r#"
 from typing import assert_type, Literal
@@ -32,7 +32,7 @@ assert_type(x[-1], Literal["2"])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_index,
     r#"
 from typing import assert_type
@@ -43,7 +43,7 @@ def foo(x: tuple[int, str], y: tuple[int, ...], idx: int) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_empty_tuple,
     r#"
 from typing import assert_type
@@ -51,7 +51,7 @@ assert_type((), tuple[()])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_unpack_index_out_of_bounds,
     r#"
 def test(x: tuple[int]) -> None:
@@ -59,7 +59,7 @@ def test(x: tuple[int]) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_unbounded_solve,
     r#"
 from typing import Any
@@ -71,7 +71,7 @@ def test(x: tuple[int, str], y: tuple[int, ...], z: tuple[Any, ...]) -> None:
 "#,
 );
 
-simple_test!(
+testcase!(
     test_slice_literal,
     r#"
 from typing import assert_type, Literal
@@ -104,7 +104,7 @@ assert_type(x[3:], tuple[()])
 "#,
 );
 
-simple_test!(
+testcase!(
     test_unbounded_tuple_hint,
     r#"
 x: tuple[str, ...] = ("ok",)
@@ -112,7 +112,7 @@ x: tuple[int, ...] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: tuple[int,
     "#,
 );
 
-simple_test!(
+testcase!(
     test_superclass_tuple_hint,
     r#"
 from typing import Iterable, Literal
@@ -124,7 +124,7 @@ x: list[int] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: list[int]
     "#,
 );
 
-simple_test!(
+testcase!(
     test_empty_tuple_hint,
     r#"
 from typing import Iterable
