@@ -922,7 +922,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let base = self.expr(&x.target, None);
                 self.call_method(
                     &base,
-                    &Name::new(operator_dunder(x.op)),
+                    &operator_dunder(x.op),
                     x.range,
                     &[*x.value.clone()],
                     &[],

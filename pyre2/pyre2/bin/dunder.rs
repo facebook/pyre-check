@@ -18,8 +18,8 @@ pub const ITER: Name = Name::new_static("__iter__");
 pub const NEXT: Name = Name::new_static("__next__");
 pub const SETITEM: Name = Name::new_static("__setitem__");
 
-pub fn operator_dunder(op: Operator) -> &'static str {
-    match op {
+pub fn operator_dunder(op: Operator) -> Name {
+    Name::new_static(match op {
         Operator::Add => "__iadd__",
         Operator::Sub => "__isub__",
         Operator::Mult => "__imul__",
@@ -33,5 +33,5 @@ pub fn operator_dunder(op: Operator) -> &'static str {
         Operator::BitXor => "__ixor__",
         Operator::BitAnd => "__iand__",
         Operator::FloorDiv => "__ifloordiv__",
-    }
+    })
 }
