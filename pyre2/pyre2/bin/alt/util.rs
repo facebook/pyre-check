@@ -56,7 +56,7 @@ pub fn is_ellipse(x: &[Stmt]) -> bool {
     }
 }
 
-pub fn inplace_dunder(op: Operator) -> &'static str {
+pub fn operator_dunder(op: Operator) -> &'static str {
     match op {
         Operator::Add => "__iadd__",
         Operator::Sub => "__isub__",

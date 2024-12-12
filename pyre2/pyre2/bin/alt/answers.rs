@@ -42,7 +42,7 @@ use crate::alt::exports::LookupExport;
 use crate::alt::expr::TypeCallArg;
 use crate::alt::table::Keyed;
 use crate::alt::table::TableKeyed;
-use crate::alt::util::inplace_dunder;
+use crate::alt::util::operator_dunder;
 use crate::ast::Ast;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
@@ -922,7 +922,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let base = self.expr(&x.target, None);
                 self.call_method(
                     &base,
-                    &Name::new(inplace_dunder(x.op)),
+                    &Name::new(operator_dunder(x.op)),
                     x.range,
                     &[*x.value.clone()],
                     &[],
