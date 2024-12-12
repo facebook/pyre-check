@@ -35,6 +35,8 @@ use crate::types::callable::Arg;
 use crate::types::callable::Args;
 use crate::types::callable::Callable;
 use crate::types::callable::Required;
+use crate::types::class::Class;
+use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
@@ -76,9 +78,14 @@ impl TypeCallArg {
     }
 }
 
+/// A thing that can be called (see as_call_target and call_infer).
+/// Note that a single "call" may invoke multiple functions under the hood,
+/// e.g., `__new__` followed by `__init__` for ClassDef and ClassType.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum CallTarget {
     Callable(Callable),
+    ClassDef(Class),
+    ClassType(ClassType),
 }
 
 impl CallTarget {
@@ -134,14 +141,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn as_call_target(&self, ty: Type) -> Option<CallTarget> {
         match ty {
             Type::Callable(c) => Some(CallTarget::Callable(*c)),
-            Type::ClassDef(cls) => {
-                let constructor = self.get_constructor_for_class_object(&cls);
-                self.as_call_target(constructor)
-            }
-            Type::Type(box Type::ClassType(cls)) => {
-                let constructor = self.get_constructor_for_class_type(&cls);
-                self.as_call_target(constructor)
-            }
+            Type::ClassDef(cls) => Some(CallTarget::ClassDef(cls)),
+            Type::Type(box Type::ClassType(cls)) => Some(CallTarget::ClassType(cls)),
             Type::Forall(params, t) => {
                 let t: Type = self.solver().fresh_quantified(
                     params.quantified().collect::<Vec<_>>().as_slice(),
@@ -306,6 +307,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
     ) -> Type {
         match call_target {
+            CallTarget::ClassDef(cls) => self.call_infer(
+                self.as_call_target_or_error(
+                    self.get_constructor_for_class_object(&cls),
+                    CallStyle::Method(&dunder::INIT),
+                    range,
+                ),
+                args,
+                keywords,
+                check_arg,
+                range,
+            ),
+            CallTarget::ClassType(cls) => self.call_infer(
+                self.as_call_target_or_error(
+                    self.get_constructor_for_class_type(&cls),
+                    CallStyle::Method(&dunder::INIT),
+                    range,
+                ),
+                args,
+                keywords,
+                check_arg,
+                range,
+            ),
             CallTarget::Callable(callable) => {
                 match callable.args {
                     Args::List(params) => {
