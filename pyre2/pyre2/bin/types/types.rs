@@ -201,8 +201,8 @@ impl TParams {
         self.0.iter()
     }
 
-    pub fn quantified(&self) -> impl Iterator<Item = &Quantified> {
-        self.0.iter().map(|x| &x.quantified)
+    pub fn quantified(&self) -> impl Iterator<Item = Quantified> + '_ {
+        self.0.iter().map(|x| x.quantified)
     }
 }
 

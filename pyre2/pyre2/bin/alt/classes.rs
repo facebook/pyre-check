@@ -549,7 +549,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let tparams = cls.tparams();
         let mut qs = SmallSet::new();
         ty.collect_quantifieds(&mut qs);
-        tparams.quantified().any(|q| qs.contains(q))
+        tparams.quantified().any(|q| qs.contains(&q))
     }
 
     pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Result<Type, NoClassAttribute> {
