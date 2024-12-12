@@ -541,12 +541,12 @@ impl<'a> BindingsBuilder<'a> {
         self.lookup_name(name).map(Binding::Forward)
     }
 
-    // Given a name appearing in an expression, create a `Usage` key for that
-    // name at the current location. The binding will indicate how to compute
-    // the type if we found that name in scope; if we do not find the name we
-    // record an error and fall back to `Any`.
-    //
-    // This function is the the core scope lookup logic for binding creation.
+    /// Given a name appearing in an expression, create a `Usage` key for that
+    /// name at the current location. The binding will indicate how to compute
+    /// the type if we found that name in scope; if we do not find the name we
+    /// record an error and fall back to `Any`.
+    ///
+    /// This function is the the core scope lookup logic for binding creation.
     fn ensure_name(&mut self, name: &Identifier, value: Option<Binding>) {
         let key = Key::Usage(ShortIdentifier::new(name));
         match value {
