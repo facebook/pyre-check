@@ -6,6 +6,7 @@
  */
 
 use ruff_python_ast::name::Name;
+use ruff_python_ast::Operator;
 
 pub const AENTER: Name = Name::new_static("__aenter__");
 pub const AEXIT: Name = Name::new_static("__aexit__");
@@ -16,3 +17,21 @@ pub const INIT: Name = Name::new_static("__init__");
 pub const ITER: Name = Name::new_static("__iter__");
 pub const NEXT: Name = Name::new_static("__next__");
 pub const SETITEM: Name = Name::new_static("__setitem__");
+
+pub fn operator_dunder(op: Operator) -> &'static str {
+    match op {
+        Operator::Add => "__iadd__",
+        Operator::Sub => "__isub__",
+        Operator::Mult => "__imul__",
+        Operator::MatMult => "__imatmul__",
+        Operator::Div => "__itruediv__",
+        Operator::Mod => "__imod__",
+        Operator::Pow => "__ipow__",
+        Operator::LShift => "__ilshift__",
+        Operator::RShift => "__irshift__",
+        Operator::BitOr => "__ior__",
+        Operator::BitXor => "__ixor__",
+        Operator::BitAnd => "__iand__",
+        Operator::FloorDiv => "__ifloordiv__",
+    }
+}
