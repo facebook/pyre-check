@@ -8,10 +8,11 @@
 use ruff_python_ast::name::Name;
 
 use crate::module::module_name::ModuleName;
-use crate::simple_test;
 use crate::state::state::State;
 use crate::test::mro::get_class_metadata;
 use crate::test::mro::mk_state;
+use crate::testcase;
+use crate::testcase_with_bug;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::types::Type;
@@ -81,7 +82,7 @@ class C(B0, B1): pass
     );
 }
 
-simple_test!(
+testcase!(
     test_that_keywords_type_check,
     r#"
 def f(x: bool) -> bool: ...
@@ -91,7 +92,7 @@ class A(foo=f(15)):  # E: EXPECTED Literal[15] <: bool
 "#,
 );
 
-simple_test!(
+testcase!(
     test_metaclass_must_subclass_type,
     r#"
 class BadMeta: pass
@@ -100,7 +101,7 @@ class A(metaclass=BadMeta):  # E: Metaclass of `A` has type `BadMeta` which is n
 "#,
 );
 
-simple_test!(
+testcase!(
     test_direct_metaclass_collides_with_base,
     r#"
 class M0(type): pass
@@ -111,7 +112,7 @@ class A(B, metaclass=M1):  # E:  Class `A` has metaclass `M1` which is not a sub
 "#,
 );
 
-simple_test!(
+testcase!(
     test_inherited_metaclass_collides_with_base,
     r#"
 class M0(type): pass
@@ -126,7 +127,7 @@ class A(B0, B1):  # E:  Class `A` has metaclass `M0` which is not a subclass of 
 // TODO(stroxler): Ideally we would not only report a duplicate keyword here,
 // but also catch all type errors even in duplicate keywords. Here we miss a type
 // error in the first value for `foo` because it gets overwritten.
-simple_test!(
+testcase_with_bug!(
     test_duplicate_class_keyword,
     r#"
 class A(foo="x" + 5, foo=True):  # E: Parse error: Duplicate keyword argument "foo"
