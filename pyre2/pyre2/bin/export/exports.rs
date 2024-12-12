@@ -15,9 +15,9 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Stmt;
 use starlark_map::small_set::SmallSet;
 
-use super::definitions::DunderAllEntry;
-use crate::alt::definitions::Definitions;
 use crate::config::Config;
+use crate::export::definitions::Definitions;
+use crate::export::definitions::DunderAllEntry;
 use crate::graph::calculation::Calculation;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;

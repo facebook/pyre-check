@@ -21,7 +21,6 @@ use starlark_map::ordered_set::OrderedSet;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 
-use crate::alt::exports::LookupExport;
 use crate::alt::expr::TypeCallArg;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
@@ -46,6 +45,7 @@ use crate::binding::table::TableKeyed;
 use crate::dunder;
 use crate::dunder::operator_dunder;
 use crate::error::collector::ErrorCollector;
+use crate::export::exports::LookupExport;
 use crate::graph::calculation::Calculation;
 use crate::graph::index::Idx;
 use crate::graph::index_map::IndexMap;

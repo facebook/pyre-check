@@ -32,6 +32,7 @@ mod commands;
 mod config;
 mod dunder;
 mod error;
+mod export;
 mod graph;
 mod module;
 mod report;
