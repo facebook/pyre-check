@@ -46,7 +46,7 @@ class A(foo=True): pass
         get_class_keyword("A", "foo", module_name, &state),
         Some(Type::Literal(Lit::Bool(true))),
     );
-    assert_eq!(get_class_keyword("A", "bar", module_name, &state), None,);
+    assert_eq!(get_class_keyword("A", "bar", module_name, &state), None);
 }
 
 #[test]

@@ -170,7 +170,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         let want = want.as_slice();
         assert_eq!(got.len(), want.len());
         assert_eq!(want.len(), params.len());
-        for (got_arg, want_arg, param) in izip!(got, want, params.iter(),) {
+        for (got_arg, want_arg, param) in izip!(got, want, params.iter()) {
             let result = match param.variance {
                 Variance::Covariant => self.is_subset_eq(got_arg, want_arg),
                 Variance::Contravariant => self.is_subset_eq(want_arg, got_arg),
