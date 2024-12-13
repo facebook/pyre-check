@@ -82,3 +82,14 @@ C()     # Should be an error
 C("5")  # E: Expected 0 positional argument(s)
     "#,
 );
+
+testcase_with_bug!(
+    test_inherit_dunder_init,
+    r#"
+class A:
+    def __init__(self, x: int): pass
+class B(A): pass
+B(1)  # TODO: Should pass # E: Expected 0 positional argument(s)
+B("") # TODO: Should fail # E: Expected 0 positional argument(s)
+    "#,
+);
