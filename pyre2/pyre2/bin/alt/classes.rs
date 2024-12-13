@@ -451,6 +451,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ClassType::new(cls.dupe(), targs)
     }
 
+    /// Creates a type from the class with fresh variables for its type parameters.
+    pub fn instantiate_fresh(&self, cls: &Class) -> Type {
+        let qs = cls.tparams().quantified().collect::<Vec<_>>();
+        let promoted_cls = Type::Type(Box::new(Type::ClassType(ClassType::new(
+            cls.dupe(),
+            TArgs::new(qs.map(|q| Type::Quantified(*q))),
+        ))));
+        self.solver()
+            .fresh_quantified(qs.as_slice(), promoted_cls, self.uniques)
+    }
+
     /// Get an ancestor `ClassType`, in terms of the type parameters of `class`.
     fn get_ancestor(&self, class: &Class, want: &Class) -> Option<ClassType> {
         self.get_metadata_for_class(class)
@@ -561,14 +572,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_constructor_for_class_type(&self, cls: &ClassType) -> Type {
         let init_ty = self.get_init_method(cls.class_object());
         cls.instantiate_member(init_ty)
-    }
-
-    /// Gets the constructor for a bare class. For example, this function is used when
-    /// constructing `x = list()` (no type arguments provided for `list`).
-    pub fn get_constructor_for_class_object(&self, cls: &Class) -> Type {
-        let init_ty = self.get_init_method(cls);
-        let tparams = cls.tparams();
-        init_ty.forall(tparams.clone())
     }
 
     /// Given an identifier, see whether it is bound to an enum class. If so,

@@ -43,8 +43,7 @@
     "Line 92: Unexpected errors ['Expected 0 positional argument(s)']",
     "Line 94: Unexpected errors ['TODO: Lambda(ExprLambda - Answers::expr_infer']",
     "Line 95: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]']",
-    "Line 127: Unexpected errors ['Expected `__init__` to be a callable, got Forall[_T, Callable[[list[_T], Iterable[_T]], None] | Callable[[list[_T]], None]]']",
-    "Line 128: Unexpected errors ['assert_type(Any, list[str]) failed']",
+    "Line 127: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[@_], Iterable[@_]], None] | Callable[[list[@_]], None]']",
     "Line 130: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[int], Iterable[int]], None] | Callable[[list[int]], None]']"
   ],
   "aliases_newtype.py": [
@@ -327,10 +326,10 @@
     "Line 107: Expected 1 errors",
     "Line 20: Unexpected errors ['EXPECTED Literal[1] <: float']",
     "Line 41: Unexpected errors ['Expected 0 positional argument(s)', 'Expected 0 positional argument(s)']",
-    "Line 72: Unexpected errors ['assert_type(Any, Class5[list[int]]) failed', 'Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]']",
+    "Line 72: Unexpected errors ['assert_type(Class5[Any], Class5[list[int]]) failed', 'Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]']",
     "Line 73: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[int], int], None] | Callable[[Class5[int], Any], None]']",
-    "Line 74: Unexpected errors ['assert_type(Any, Class5[set[str]]) failed', 'Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]']",
-    "Line 75: Unexpected errors ['assert_type(Any, Class5[float]) failed', 'Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]']",
+    "Line 74: Unexpected errors ['assert_type(Class5[Any], Class5[set[str]]) failed', 'Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]']",
+    "Line 75: Unexpected errors ['assert_type(Class5[Any], Class5[float]) failed', 'Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]']",
     "Line 91: Unexpected errors ['assert_type(Class6[Any, Any], Class6[int, str]) failed']",
     "Line 99: Unexpected errors ['assert_type(Class7[Any, Any], Class7[str, int]) failed']"
   ],
@@ -338,41 +337,41 @@
     "Line 51: Expected 1 errors",
     "Line 65: Expected 1 errors",
     "Line 15: Unexpected errors ['EXPECTED None <: NoReturn', 'Expected 0 positional argument(s)']",
-    "Line 20: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']",
+    "Line 20: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 0 positional argument(s)']",
     "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed']",
-    "Line 33: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']",
+    "Line 33: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2', 'Expected 0 positional argument(s)']",
     "Line 36: Unexpected errors ['assert_type(Class2, Meta2 | int) failed']",
-    "Line 43: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 48: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']",
+    "Line 43: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Object of class `super` has no attribute `__call__`', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
+    "Line 48: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class3', 'Expected 0 positional argument(s)']",
     "Line 52: Unexpected errors ['Expected 0 positional argument(s)']",
-    "Line 57: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 62: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']",
+    "Line 57: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Object of class `super` has no attribute `__call__`', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
+    "Line 62: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class4', 'Expected 0 positional argument(s)']",
     "Line 66: Unexpected errors ['Expected 0 positional argument(s)']"
   ],
   "constructors_call_new.py": [
     "Line 145: Expected 1 errors",
-    "Line 16: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']",
+    "Line 16: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1[?_]', 'Expected 0 positional argument(s)']",
     "Line 19: Unexpected errors ['Expected 0 positional argument(s)']",
     "Line 20: Unexpected errors ['Expected 0 positional argument(s)']",
     "Line 23: Unexpected errors ['assert_type(Class1[Any], Class1[int]) failed', 'Expected 0 positional argument(s)']",
     "Line 24: Unexpected errors ['assert_type(Class1[Any], Class1[float]) failed', 'Expected 0 positional argument(s)']",
-    "Line 29: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']",
+    "Line 29: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2[?_]', 'Expected 0 positional argument(s)']",
     "Line 49: Unexpected errors ['assert_type(Class3, int) failed', \"Missing argument 'x'\"]",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', \"Missing argument 'x'\"]",
     "Line 69: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 75: Unexpected errors ['TODO: StmtTry - Bindings::stmt']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', \"Missing argument 'x'\"]",
     "Line 89: Unexpected errors ['assert_type(Class6, Class6 | int) failed', \"Missing argument 'x'\"]",
-    "Line 98: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
+    "Line 98: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional argument(s)', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
     "Line 116: Unexpected errors ['assert_type(Class8[int], Class8[list[int]]) failed']",
     "Line 117: Unexpected errors ['assert_type(Class8[str], Class8[list[str]]) failed']"
   ],
   "constructors_call_type.py": [
     "Line 30: Expected 1 errors",
     "Line 40: Expected 1 errors",
-    "Line 25: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
+    "Line 25: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 0 positional argument(s)', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
     "Line 29: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\"]",
-    "Line 35: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']",
+    "Line 35: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2', 'Expected 0 positional argument(s)']",
     "Line 39: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\"]",
     "Line 63: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 71: Unexpected errors ['Expected a callable, got type[?_]']",
@@ -393,7 +392,7 @@
     "Line 77: Unexpected errors ['revealed type: Callable[ParamSpec(@_), @_]']",
     "Line 78: Unexpected errors ['assert_type(Any, int) failed', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 85: Unexpected errors ['EXPECTED None <: NoReturn', 'Expected 0 positional argument(s)']",
-    "Line 93: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']",
+    "Line 93: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class5', 'Expected 0 positional argument(s)']",
     "Line 96: Unexpected errors ['EXPECTED type[Class5] <: Callable[ParamSpec(@_), @_]']",
     "Line 97: Unexpected errors ['revealed type: Callable[ParamSpec(@_), @_]']",
     "Line 99: Unexpected errors ['TODO: StmtTry - Bindings::stmt']",
@@ -403,7 +402,7 @@
     "Line 124: Unexpected errors ['EXPECTED type[Class6] <: Callable[ParamSpec(@_), @_]']",
     "Line 125: Unexpected errors ['revealed type: Callable[ParamSpec(@_), @_]']",
     "Line 126: Unexpected errors ['assert_type(Any, Class6Proxy) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 134: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']",
+    "Line 134: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional argument(s)']",
     "Line 141: Unexpected errors ['EXPECTED type[Class6Any] <: Callable[ParamSpec(@_), @_]']",
     "Line 142: Unexpected errors ['revealed type: Callable[ParamSpec(@_), @_]']",
     "Line 143: Unexpected errors ['Answers::expr_infer wrong number of arguments to call']",
@@ -411,7 +410,7 @@
     "Line 161: Unexpected errors ['revealed type: Callable[ParamSpec(@_), @_]']",
     "Line 164: Unexpected errors ['assert_type(Any, Class7[int]) failed', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 165: Unexpected errors ['assert_type(Any, Class7[str]) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 178: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']",
+    "Line 178: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class8[?_]', 'Expected 0 positional argument(s)']",
     "Line 181: Unexpected errors ['EXPECTED type[Class8] <: Callable[ParamSpec(@_), @_]']",
     "Line 182: Unexpected errors ['revealed type: Callable[ParamSpec(@_), @_]']",
     "Line 183: Unexpected errors ['assert_type(Any, Class8[str]) failed', 'Answers::expr_infer wrong number of arguments to call']",
@@ -420,7 +419,7 @@
     "Line 194: Unexpected errors ['assert_type(Any, Class9) failed', 'Answers::expr_infer wrong number of arguments to call']"
   ],
   "constructors_consistency.py": [
-    "Line 22: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]']"
+    "Line 22: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 0 positional argument(s)']"
   ],
   "dataclasses_descriptors.py": [
     "Line 35: Unexpected errors ['Expected 0 positional argument(s)']",
@@ -1145,10 +1144,6 @@
     "Line 96: Unexpected errors ['assert_type(Any, float) failed']"
   ],
   "namedtuples_define_functional.py": [
-    "Line 36: Expected 1 errors",
-    "Line 37: Expected 1 errors",
-    "Line 42: Expected 1 errors",
-    "Line 43: Expected 1 errors",
     "Line 14: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]']",
     "Line 15: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]']",
     "Line 19: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]']",
@@ -1158,7 +1153,11 @@
     "Line 29: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point4, type[tuple[Any, ...]]]']",
     "Line 30: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point4, type[tuple[Any, ...]]]']",
     "Line 33: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
+    "Line 34: Unexpected errors ['Expected a callable, got NamedTuple']",
+    "Line 35: Unexpected errors ['Expected a callable, got NamedTuple']",
     "Line 39: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
+    "Line 40: Unexpected errors ['Expected a callable, got NamedTuple']",
+    "Line 41: Unexpected errors ['Expected a callable, got NamedTuple']",
     "Line 57: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT4, type[tuple[Any, ...]]]']",
     "Line 64: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]']",
     "Line 65: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]']"
@@ -1405,11 +1404,10 @@
     "Line 107: Expected 1 errors",
     "Line 108: Expected 1 errors",
     "Line 121: Expected 1 errors",
-    "Line 134: Expected 1 errors",
-    "Line 135: Expected 1 errors",
     "Line 141: Expected 1 errors",
     "Line 155: Expected 1 errors",
     "Line 131: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
+    "Line 133: Unexpected errors ['Expected a callable, got NamedTuple']",
     "Line 139: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']"
   ],
   "qualifiers_final_decorator.py": [
@@ -1446,7 +1444,7 @@
     "Line 24: Unexpected errors ['EXPECTED None <: Hashable']",
     "Line 32: Unexpected errors ['EXPECTED Literal[0] <: _PyreReadOnly_[object]']",
     "Line 39: Unexpected errors ['EXPECTED Callable[[object, type[object]], None] | Callable[[object], type[object]] <: type[None]']",
-    "Line 40: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]']"
+    "Line 40: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]', 'EXPECTED type <: type[None]']"
   ],
   "specialtypes_promotions.py": [
     "Line 7: Unexpected errors ['EXPECTED Literal[1] <: float']",

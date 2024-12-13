@@ -636,22 +636,12 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected `__init__` to be a callable, got Forall[_T, Callable[[list[_T], Iterable[_T]], None] | Callable[[list[_T]], None]]",
-      "description": "Expected `__init__` to be a callable, got Forall[_T, Callable[[list[_T], Iterable[_T]], None] | Callable[[list[_T]], None]]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[list[@_], Iterable[@_]], None] | Callable[[list[@_]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[list[@_], Iterable[@_]], None] | Callable[[list[@_]], None]",
       "line": 127,
       "name": "PyreError",
       "stop_column": 26,
       "stop_line": 127
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, list[str]) failed",
-      "description": "assert_type(Any, list[str]) failed",
-      "line": 128,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 128
     },
     {
       "code": -2,
@@ -4698,8 +4688,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, Class5[list[int]]) failed",
-      "description": "assert_type(Any, Class5[list[int]]) failed",
+      "concise_description": "assert_type(Class5[Any], Class5[list[int]]) failed",
+      "description": "assert_type(Class5[Any], Class5[list[int]]) failed",
       "line": 72,
       "name": "PyreError",
       "stop_column": 42,
@@ -4708,8 +4698,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]",
-      "description": "Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]",
       "line": 72,
       "name": "PyreError",
       "stop_column": 19,
@@ -4728,8 +4718,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, Class5[set[str]]) failed",
-      "description": "assert_type(Any, Class5[set[str]]) failed",
+      "concise_description": "assert_type(Class5[Any], Class5[set[str]]) failed",
+      "description": "assert_type(Class5[Any], Class5[set[str]]) failed",
       "line": 74,
       "name": "PyreError",
       "stop_column": 42,
@@ -4738,8 +4728,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]",
-      "description": "Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]",
       "line": 74,
       "name": "PyreError",
       "stop_column": 19,
@@ -4748,8 +4738,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, Class5[float]) failed",
-      "description": "assert_type(Any, Class5[float]) failed",
+      "concise_description": "assert_type(Class5[Any], Class5[float]) failed",
+      "description": "assert_type(Class5[Any], Class5[float]) failed",
       "line": 75,
       "name": "PyreError",
       "stop_column": 40,
@@ -4758,8 +4748,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]",
-      "description": "Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]",
       "line": 75,
       "name": "PyreError",
       "stop_column": 19,
@@ -4829,6 +4819,26 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class1",
+      "description": "EXPECTED object <: Class1",
+      "line": 20,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 20
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 20,
+      "name": "PyreError",
+      "stop_column": 35,
+      "stop_line": 20
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Class1, NoReturn) failed",
       "description": "assert_type(Class1, NoReturn) failed",
@@ -4845,6 +4855,26 @@
       "line": 33,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 33
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class2",
+      "description": "EXPECTED object <: Class2",
+      "line": 33,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 33
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 33,
+      "name": "PyreError",
+      "stop_column": 35,
       "stop_line": 33
     },
     {
@@ -4869,6 +4899,16 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "Object of class `super` has no attribute `__call__`",
+      "description": "Object of class `super` has no attribute `__call__`",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
       "column": 38,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
@@ -4885,6 +4925,26 @@
       "line": 48,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 48
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class3",
+      "description": "EXPECTED object <: Class3",
+      "line": 48,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 48
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 48,
+      "name": "PyreError",
+      "stop_column": 35,
       "stop_line": 48
     },
     {
@@ -4909,6 +4969,16 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "Object of class `super` has no attribute `__call__`",
+      "description": "Object of class `super` has no attribute `__call__`",
+      "line": 57,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 57
+    },
+    {
+      "code": -2,
       "column": 38,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
@@ -4925,6 +4995,26 @@
       "line": 62,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 62
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class4",
+      "description": "EXPECTED object <: Class4",
+      "line": 62,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 62
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 62,
+      "name": "PyreError",
+      "stop_column": 35,
       "stop_line": 62
     },
     {
@@ -4947,6 +5037,26 @@
       "line": 16,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 16
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class1[?_]",
+      "description": "EXPECTED object <: Class1[?_]",
+      "line": 16,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 16
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 16,
+      "name": "PyreError",
+      "stop_column": 35,
       "stop_line": 16
     },
     {
@@ -5027,6 +5137,26 @@
       "line": 29,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 29
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class2[?_]",
+      "description": "EXPECTED object <: Class2[?_]",
+      "line": 29,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 29
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 29,
+      "name": "PyreError",
+      "stop_column": 35,
       "stop_line": 29
     },
     {
@@ -5141,12 +5271,32 @@
     },
     {
       "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 98,
+      "name": "PyreError",
+      "stop_column": 35,
+      "stop_line": 98
+    },
+    {
+      "code": -2,
       "column": 37,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "line": 98,
       "name": "PyreError",
       "stop_column": 42,
+      "stop_line": 98
+    },
+    {
+      "code": -2,
+      "column": 44,
+      "concise_description": "TODO: call_infer: unsupported **kwargs argument to call",
+      "description": "TODO: call_infer: unsupported **kwargs argument to call",
+      "line": 98,
+      "name": "PyreError",
+      "stop_column": 52,
       "stop_line": 98
     },
     {
@@ -5183,12 +5333,42 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class1",
+      "description": "EXPECTED object <: Class1",
+      "line": 25,
+      "name": "PyreError",
+      "stop_column": 48,
+      "stop_line": 25
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 25,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 25
+    },
+    {
+      "code": -2,
       "column": 32,
       "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
       "line": 25,
       "name": "PyreError",
       "stop_column": 37,
+      "stop_line": 25
+    },
+    {
+      "code": -2,
+      "column": 39,
+      "concise_description": "TODO: call_infer: unsupported **kwargs argument to call",
+      "description": "TODO: call_infer: unsupported **kwargs argument to call",
+      "line": 25,
+      "name": "PyreError",
+      "stop_column": 47,
       "stop_line": 25
     },
     {
@@ -5219,6 +5399,26 @@
       "line": 35,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class2",
+      "description": "EXPECTED object <: Class2",
+      "line": 35,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 35,
+      "name": "PyreError",
+      "stop_column": 35,
       "stop_line": 35
     },
     {
@@ -5625,6 +5825,26 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class5",
+      "description": "EXPECTED object <: Class5",
+      "line": 93,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 93
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 93,
+      "name": "PyreError",
+      "stop_column": 35,
+      "stop_line": 93
+    },
+    {
+      "code": -2,
       "column": 23,
       "concise_description": "EXPECTED type[Class5] <: Callable[ParamSpec(@_), @_]",
       "description": "EXPECTED type[Class5] <: Callable[ParamSpec(@_), @_]",
@@ -5765,6 +5985,16 @@
     },
     {
       "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 134,
+      "name": "PyreError",
+      "stop_column": 35,
+      "stop_line": 134
+    },
+    {
+      "code": -2,
       "column": 27,
       "concise_description": "EXPECTED type[Class6Any] <: Callable[ParamSpec(@_), @_]",
       "description": "EXPECTED type[Class6Any] <: Callable[ParamSpec(@_), @_]",
@@ -5871,6 +6101,26 @@
       "line": 178,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 178
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class8[?_]",
+      "description": "EXPECTED object <: Class8[?_]",
+      "line": 178,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 178
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 178,
+      "name": "PyreError",
+      "stop_column": 35,
       "stop_line": 178
     },
     {
@@ -5983,6 +6233,26 @@
       "line": 22,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 22
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class1",
+      "description": "EXPECTED object <: Class1",
+      "line": 22,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 22
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "Expected 0 positional argument(s)",
+      "description": "Expected 0 positional argument(s)",
+      "line": 22,
+      "name": "PyreError",
+      "stop_column": 35,
       "stop_line": 22
     }
   ],
@@ -11901,6 +12171,16 @@
     {
       "code": -2,
       "column": 1,
+      "concise_description": "Object of class `type` has no attribute `label`",
+      "description": "Object of class `type` has no attribute `label`",
+      "line": 46,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 46
+    },
+    {
+      "code": -2,
+      "column": 1,
       "concise_description": "assert_type(Any, bytes) failed",
       "description": "assert_type(Any, bytes) failed",
       "line": 56,
@@ -16183,6 +16463,46 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 34,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 34
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 35,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
       "column": 10,
       "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
@@ -16190,6 +16510,46 @@
       "name": "PyreError",
       "stop_column": 20,
       "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 41,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 41
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 43
     },
     {
       "code": -2,
@@ -18219,6 +18579,16 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "Object of class `super` has no attribute `draw`",
+      "description": "Object of class `super` has no attribute `draw`",
+      "line": 27,
+      "name": "PyreError",
+      "stop_column": 28,
+      "stop_line": 27
+    },
+    {
+      "code": -2,
       "column": 14,
       "concise_description": "EXPECTED ImplicitColor <: PColor",
       "description": "EXPECTED ImplicitColor <: PColor",
@@ -19147,6 +19517,36 @@
     },
     {
       "code": -2,
+      "column": 1,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 133,
+      "name": "PyreError",
+      "stop_column": 2,
+      "stop_line": 133
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 134,
+      "name": "PyreError",
+      "stop_column": 2,
+      "stop_line": 134
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected a callable, got NamedTuple",
+      "description": "Expected a callable, got NamedTuple",
+      "line": 135,
+      "name": "PyreError",
+      "stop_column": 2,
+      "stop_line": 135
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "TODO: StmtGlobal - Bindings::stmt",
       "description": "TODO: StmtGlobal - Bindings::stmt",
@@ -19375,6 +19775,16 @@
     },
     {
       "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED type <: None",
+      "description": "EXPECTED type <: None",
+      "line": 21,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 21
+    },
+    {
+      "code": -2,
       "column": 19,
       "concise_description": "EXPECTED None <: Hashable",
       "description": "EXPECTED None <: Hashable",
@@ -19421,6 +19831,16 @@
       "line": 40,
       "name": "PyreError",
       "stop_column": 11,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED type <: type[None]",
+      "description": "EXPECTED type <: type[None]",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 17,
       "stop_line": 40
     },
     {
