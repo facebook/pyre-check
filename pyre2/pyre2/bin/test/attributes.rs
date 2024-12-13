@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_set_attribute,
@@ -154,5 +155,16 @@ class C:
         self.x = 0  # E: Object of class `C` has no attribute `x`
 def f(c: C):
     return c.x  # E: Object of class `C` has no attribute `x`
+    "#,
+);
+
+// TODO: error on either the definition or the call to C.f.
+testcase_with_bug!(
+    test_missing_self_parameter,
+    r#"
+class C:
+    def f():
+        pass
+C().f()
     "#,
 );
