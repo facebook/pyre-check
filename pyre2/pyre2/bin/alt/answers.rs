@@ -162,9 +162,6 @@ pub trait LookupAnswer: Sized {
         &self,
         name: ModuleName,
         k: &K,
-        exports: &dyn LookupExport,
-        uniques: &UniqueFactory,
-        stdlib: &Stdlib,
     ) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
@@ -451,8 +448,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if name == self.module_info().name() {
             self.get(k)
         } else {
-            self.answers
-                .get(name, k, self.exports, self.uniques, self.stdlib)
+            self.answers.get(name, k)
         }
     }
 

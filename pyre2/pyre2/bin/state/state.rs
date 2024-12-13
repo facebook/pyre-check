@@ -520,9 +520,6 @@ impl LookupAnswer for State {
         &self,
         name: ModuleName,
         k: &K,
-        _exports: &dyn LookupExport,
-        _uniques: &UniqueFactory,
-        _stdlib: &Stdlib,
     ) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
