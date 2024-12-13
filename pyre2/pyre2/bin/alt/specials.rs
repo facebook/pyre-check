@@ -9,7 +9,7 @@ use ruff_python_ast::Expr;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
-use super::answers::AnswersSolver;
+use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::types::callable::Arg;
 use crate::types::callable::Required;

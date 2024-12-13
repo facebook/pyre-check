@@ -24,7 +24,7 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
-use super::answers::AnswersSolver;
+use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
