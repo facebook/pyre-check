@@ -408,6 +408,18 @@ from foo import *  # E: Could not import `bad_definition` from `foo`
 "#,
 );
 
+testcase_with_bug!(
+    test_export_all_not_module,
+    r#"
+class not_module:
+    __all__ = []
+
+__all__ = []
+__all__.extend(not_module.__all__)  # Should get an error about not_module not being imported
+    # But Pyright doesn't give an error, so maybe we shouldn't either??
+"#,
+);
+
 fn env_blank() -> TestEnv {
     TestEnv::one("foo", "")
 }
