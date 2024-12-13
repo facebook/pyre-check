@@ -727,7 +727,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Call(x) if is_special_name(&x.func, "reveal_type") => {
                 if x.arguments.args.len() == 1 {
-                    let t = self.expr_infer(&x.arguments.args[0]);
+                    let t = self
+                        .solver()
+                        .deep_force(self.expr_infer(&x.arguments.args[0]));
                     self.error(
                         x.range,
                         format!("revealed type: {}", t.deterministic_printing()),

@@ -505,6 +505,16 @@ reveal_type(1)  # E: revealed type: Literal[1]
 );
 
 testcase!(
+    test_reveal_type_expand_var,
+    r#"
+from typing import reveal_type
+def f[T](x: T) -> T:
+    return x
+reveal_type(f(0))  # E: revealed type: int
+    "#,
+);
+
+testcase!(
     test_forward_refs_in_bases,
     r#"
 from typing import assert_type, Any
