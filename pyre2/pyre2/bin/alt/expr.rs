@@ -552,15 +552,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::BinOp(x) => self.binop_infer(x),
             Expr::UnaryOp(x) => {
                 let t = self.expr_infer(&x.operand);
-                match x.op {
+                self.distribute_over_union(&t, |t| match x.op {
                     UnaryOp::USub => match t {
                         Type::Literal(lit) => {
                             Type::Literal(lit.negate(self.module_info(), x.range, self.errors()))
                         }
+
                         _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
                     },
                     UnaryOp::UAdd => match t {
-                        Type::Literal(lit) => Type::Literal(lit),
+                        Type::Literal(lit) => Type::Literal(lit.clone()),
                         _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
                     },
                     UnaryOp::Not => match t.as_bool() {
@@ -573,7 +574,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                         _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
                     },
-                }
+                })
             }
             Expr::Lambda(_) => self.error_todo("Answers::expr_infer", x),
             Expr::If(x) => {

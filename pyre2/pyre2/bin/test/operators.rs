@@ -63,6 +63,16 @@ x: Literal[0] = ~y # E: EXPECTED Literal[1] <: Literal[0]
 );
 
 testcase!(
+    test_union_unary_op,
+    r#"
+from typing import Literal, Union, assert_type
+x: Union[Literal[-1], Literal[2]] = 2
+y = -x
+assert_type(y, Literal[-2])
+"#,
+);
+
+testcase!(
     test_boolean_or_simple,
     r#"
 from typing import assert_type
