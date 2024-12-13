@@ -146,6 +146,24 @@ impl Lit {
         }
     }
 
+    pub fn invert(
+        &self,
+        module_info: &ModuleInfo,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Self {
+        match self {
+            Lit::Int(x) => {
+                let x = !x;
+                Lit::Int(x)
+            }
+            _ => {
+                errors.add(module_info, range, format!("Cannot invert type {self}"));
+                self.clone()
+            }
+        }
+    }
+
     pub fn from_string_literal(x: &ExprStringLiteral) -> Self {
         Lit::String(x.value.to_str().into())
     }

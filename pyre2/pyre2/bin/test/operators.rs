@@ -45,6 +45,24 @@ x: Literal[-1] = +y # E: EXPECTED Literal[1] <: Literal[-1]
 );
 
 testcase!(
+    test_inversion_literals,
+    r#"
+from typing import Literal
+y: int = -1
+x: Literal[0] = ~y
+"#,
+);
+
+testcase!(
+    test_inversion_literals_error,
+    r#"
+from typing import Literal
+y: int = -2
+x: Literal[0] = ~y # E: EXPECTED Literal[1] <: Literal[0]
+"#,
+);
+
+testcase!(
     test_boolean_or_simple,
     r#"
 from typing import assert_type

@@ -604,7 +604,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         None => self.stdlib.bool().to_type(),
                         Some(b) => Type::Literal(Lit::Bool(!b)),
                     },
-                    _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
+                    UnaryOp::Invert => match t {
+                        Type::Literal(lit) => {
+                            Type::Literal(lit.invert(self.module_info(), x.range, self.errors()))
+                        }
+                        _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
+                    },
                 }
             }
             Expr::Lambda(_) => self.error_todo("Answers::expr_infer", x),
