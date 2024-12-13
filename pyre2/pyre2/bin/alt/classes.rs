@@ -87,13 +87,6 @@ fn strip_first_argument(ty: &Type) -> Type {
     })
 }
 
-fn replace_return_type(ty: Type, ret: Type) -> Type {
-    ty.apply_under_forall(|t| match t {
-        Type::Callable(c) => Type::callable(c.args.as_list().unwrap().to_owned(), ret.clone()),
-        _ => t.clone(),
-    })
-}
-
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn class_definition(
         &self,
@@ -557,10 +550,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn get_init_method(&self, cls: &Class) -> Type {
         let init_ty = self.get_class_field(cls, &dunder::INIT);
-        let ret = cls.self_type();
         match init_ty.as_deref() {
-            Some(ty) => replace_return_type(strip_first_argument(ty), ret),
-            None => Type::callable(Vec::new(), ret),
+            Some(ty) => strip_first_argument(ty),
+            None => Type::callable(Vec::new(), Type::None),
         }
     }
 

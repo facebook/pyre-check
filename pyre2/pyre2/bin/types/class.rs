@@ -266,4 +266,8 @@ impl ClassType {
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         self.1.visit_mut(&mut f)
     }
+
+    pub fn self_type(&self) -> Type {
+        self.instantiate_member(self.class_object().self_type())
+    }
 }

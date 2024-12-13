@@ -274,28 +274,42 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
     ) -> Type {
         match call_target {
-            CallTarget::ClassDef(cls) => self.call_infer(
-                self.as_call_target_or_error(
-                    self.get_constructor_for_class_object(&cls),
-                    CallStyle::Method(&dunder::INIT),
+            CallTarget::ClassDef(cls) => {
+                let init = self.get_constructor_for_class_object(&cls);
+                // Arguments to `__init__` influence the type of `self`. The easiest way to model this
+                // is to pretend that `__init__` returns `self`.
+                let init_with_self_return = init.apply_under_forall(|t| match t {
+                    Type::Callable(c) => {
+                        Type::callable(c.args.as_list().unwrap().to_owned(), cls.self_type())
+                    }
+                    _ => t.clone(),
+                });
+                self.call_infer(
+                    self.as_call_target_or_error(
+                        init_with_self_return,
+                        CallStyle::Method(&dunder::INIT),
+                        range,
+                    ),
+                    args,
+                    keywords,
+                    check_arg,
                     range,
-                ),
-                args,
-                keywords,
-                check_arg,
-                range,
-            ),
-            CallTarget::ClassType(cls) => self.call_infer(
-                self.as_call_target_or_error(
-                    self.get_constructor_for_class_type(&cls),
-                    CallStyle::Method(&dunder::INIT),
+                )
+            }
+            CallTarget::ClassType(cls) => {
+                self.call_infer(
+                    self.as_call_target_or_error(
+                        self.get_constructor_for_class_type(&cls),
+                        CallStyle::Method(&dunder::INIT),
+                        range,
+                    ),
+                    args,
+                    keywords,
+                    check_arg,
                     range,
-                ),
-                args,
-                keywords,
-                check_arg,
-                range,
-            ),
+                );
+                cls.self_type()
+            }
             CallTarget::Callable(callable) => {
                 match callable.args {
                     Args::List(params) => {

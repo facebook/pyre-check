@@ -324,8 +324,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, list[str]) failed",
-      "description": "assert_type(Any, list[str]) failed",
+      "concise_description": "assert_type(list[Any], list[str]) failed",
+      "description": "assert_type(list[Any], list[str]) failed",
       "line": 98,
       "name": "PyreError",
       "stop_column": 27,
@@ -662,16 +662,6 @@
       "name": "PyreError",
       "stop_column": 20,
       "stop_line": 130
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, list[int]) failed",
-      "description": "assert_type(Any, list[int]) failed",
-      "line": 131,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 131
     },
     {
       "code": -2,
@@ -4724,16 +4714,6 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, Class5[int]) failed",
-      "description": "assert_type(Any, Class5[int]) failed",
-      "line": 73,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 73
     },
     {
       "code": -2,

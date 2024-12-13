@@ -19,7 +19,7 @@
     "Line 62: Unexpected errors ['assert_type(list[Any], list[int | str]) failed']",
     "Line 63: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr']",
     "Line 97: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[Error], Iterable[Error]], None] | Callable[[list[Error]], None]']",
-    "Line 98: Unexpected errors ['assert_type(Any, list[str]) failed']"
+    "Line 98: Unexpected errors ['assert_type(list[Any], list[str]) failed']"
   ],
   "aliases_implicit.py": [
     "Line 78: Expected 1 errors",
@@ -45,8 +45,7 @@
     "Line 95: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]']",
     "Line 127: Unexpected errors ['Expected `__init__` to be a callable, got Forall[_T, Callable[[list[_T], Iterable[_T]], None] | Callable[[list[_T]], None]]']",
     "Line 128: Unexpected errors ['assert_type(Any, list[str]) failed']",
-    "Line 130: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[int], Iterable[int]], None] | Callable[[list[int]], None]']",
-    "Line 131: Unexpected errors ['assert_type(Any, list[int]) failed']"
+    "Line 130: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[int], Iterable[int]], None] | Callable[[list[int]], None]']"
   ],
   "aliases_newtype.py": [
     "Line 32: Expected 1 errors",
@@ -329,7 +328,7 @@
     "Line 20: Unexpected errors ['EXPECTED Literal[1] <: float']",
     "Line 41: Unexpected errors ['Expected 0 positional argument(s)', 'Expected 0 positional argument(s)']",
     "Line 72: Unexpected errors ['assert_type(Any, Class5[list[int]]) failed', 'Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]']",
-    "Line 73: Unexpected errors ['assert_type(Any, Class5[int]) failed', 'Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[int], int], None] | Callable[[Class5[int], Any], None]']",
+    "Line 73: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[int], int], None] | Callable[[Class5[int], Any], None]']",
     "Line 74: Unexpected errors ['assert_type(Any, Class5[set[str]]) failed', 'Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]']",
     "Line 75: Unexpected errors ['assert_type(Any, Class5[float]) failed', 'Expected `__init__` to be a callable, got Forall[T, Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[T], T], None] | Callable[[Class5[T], Any], None]]']",
     "Line 91: Unexpected errors ['assert_type(Class6[Any, Any], Class6[int, str]) failed']",
