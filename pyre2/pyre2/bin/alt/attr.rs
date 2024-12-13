@@ -47,15 +47,16 @@ pub enum LookupResult {
 
 pub enum NotFound {
     Attribute(ClassType),
-    // TODO: NoClassAttribute::IsGeneric should not be a NotFound error, as the
-    // attribute actually exists, but has an unusable type.
-    ClassAttribute(Class, NoClassAttribute),
+    ClassAttribute(Class),
     ModuleExport(Module),
 }
 
 pub enum LookupError {
     /// An internal error caused by `as_attribute_base` being partial.
     AttributeBaseUndefined(Type),
+    /// A generic class attribute exists, but has an invalid definition.
+    /// Callers should treat the attribute as `Any`.
+    ClassAttributeIsGeneric(Class),
 }
 
 impl LookupResult {
@@ -69,7 +70,7 @@ impl LookupResult {
         match self {
             LookupResult::Found(ty) => Ok(ty),
             LookupResult::NotFound(err) => Err(err.to_error_msg(attr_name)),
-            LookupResult::Error(err) => Err(err.to_error_msg(todo_ctx)),
+            LookupResult::Error(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
         }
     }
 }
@@ -81,16 +82,9 @@ impl NotFound {
                 let class_name = class_type.name();
                 format!("Object of class `{class_name}` has no attribute `{attr_name}`",)
             }
-            NotFound::ClassAttribute(class, err) => {
+            NotFound::ClassAttribute(class) => {
                 let class_name = class.name();
-                match err {
-                    NoClassAttribute::NoClassMember => {
-                        format!("Class `{class_name}` has no class attribute `{attr_name}`")
-                    }
-                    NoClassAttribute::IsGenericMember => format!(
-                        "Generic attribute `{attr_name}` of class `{class_name}` is not visible on the class"
-                    ),
-                }
+                format!("Class `{class_name}` has no class attribute `{attr_name}`")
             }
             NotFound::ModuleExport(module) => {
                 format!("No attribute `{attr_name}` in module `{module}`")
@@ -100,12 +94,18 @@ impl NotFound {
 }
 
 impl LookupError {
-    pub fn to_error_msg(self, todo_ctx: &str) -> String {
+    pub fn to_error_msg(self, attr_name: &Name, todo_ctx: &str) -> String {
         match self {
             LookupError::AttributeBaseUndefined(ty) => format!(
                 "TODO: {todo_ctx} attribute base undefined for type: {}",
                 ty.deterministic_printing()
             ),
+            LookupError::ClassAttributeIsGeneric(class) => {
+                let class_name = class.name();
+                format!(
+                    "Generic attribute `{attr_name}` of class `{class_name}` is not visible on the class"
+                )
+            }
         }
     }
 }
@@ -122,7 +122,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(AttributeBase::ClassObject(class)) => {
                 match self.get_class_attribute(&class, attr_name) {
                     Ok(attr) => LookupResult::Found(attr),
-                    Err(err) => LookupResult::NotFound(NotFound::ClassAttribute(class, err)),
+                    Err(NoClassAttribute::NoClassMember) => {
+                        LookupResult::NotFound(NotFound::ClassAttribute(class))
+                    }
+                    Err(NoClassAttribute::IsGenericMember) => {
+                        LookupResult::Error(LookupError::ClassAttributeIsGeneric(class))
+                    }
                 }
             }
             Some(AttributeBase::Module(module)) => match self.get_module_attr(&module, attr_name) {
