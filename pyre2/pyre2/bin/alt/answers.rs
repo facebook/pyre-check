@@ -21,7 +21,7 @@ use starlark_map::ordered_set::OrderedSet;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 
-use crate::alt::expr::TypeCallArg;
+use crate::alt::expr::CallArg;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -634,12 +634,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match iterable {
             Type::ClassType(cls) => {
                 let ty = if self.has_attribute(cls.class_object(), &dunder::ITER) {
-                    let iterator_ty =
-                        self.call_method_with_types(iterable, &dunder::ITER, range, &[]);
-                    self.call_method_with_types(&iterator_ty, &dunder::NEXT, range, &[])
+                    let iterator_ty = self.call_method(iterable, &dunder::ITER, range, &[], &[]);
+                    self.call_method(&iterator_ty, &dunder::NEXT, range, &[], &[])
                 } else if self.has_attribute(cls.class_object(), &dunder::GETITEM) {
-                    let arg = TypeCallArg::new(self.stdlib.int().to_type(), range);
-                    self.call_method_with_types(iterable, &dunder::GETITEM, range, &[arg])
+                    let int_ty = self.stdlib.int().to_type();
+                    let arg = CallArg::Type(&int_ty, range);
+                    self.call_method(iterable, &dunder::GETITEM, range, &[arg], &[])
                 } else {
                     self.error(range, format!("Class `{}` is not iterable", cls.name()))
                 };
@@ -774,12 +774,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         match kind {
             ContextManagerKind::Sync => {
-                self.call_method_with_types(context_manager_type, &dunder::ENTER, range, &[])
+                self.call_method(context_manager_type, &dunder::ENTER, range, &[], &[])
             }
-            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_with_types(
+            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method(
                 context_manager_type,
                 &dunder::AENTER,
                 range,
+                &[],
                 &[],
             )) {
                 Some(ty) => ty,
@@ -795,32 +796,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
     ) -> Type {
         let base_exception_class_type = Type::type_form(self.stdlib.base_exception().to_type());
+        let arg1 = Type::Union(vec![base_exception_class_type, Type::None]);
+        let arg2 = Type::Union(vec![self.stdlib.base_exception().to_type(), Type::None]);
+        let arg3 = Type::Union(vec![self.stdlib.traceback_type().to_type(), Type::None]);
         let exit_arg_types = [
-            TypeCallArg::new(
-                Type::Union(vec![base_exception_class_type, Type::None]),
-                range,
-            ),
-            TypeCallArg::new(
-                Type::Union(vec![self.stdlib.base_exception().to_type(), Type::None]),
-                range,
-            ),
-            TypeCallArg::new(
-                Type::Union(vec![self.stdlib.traceback_type().to_type(), Type::None]),
-                range,
-            ),
+            CallArg::Type(&arg1, range),
+            CallArg::Type(&arg2, range),
+            CallArg::Type(&arg3, range),
         ];
         match kind {
-            ContextManagerKind::Sync => self.call_method_with_types(
+            ContextManagerKind::Sync => self.call_method(
                 context_manager_type,
                 &dunder::EXIT,
                 range,
                 &exit_arg_types,
+                &[],
             ),
-            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_with_types(
+            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method(
                 context_manager_type,
                 &dunder::AEXIT,
                 range,
                 &exit_arg_types,
+                &[],
             )) {
                 Some(ty) => ty,
                 None => self.error(range, format!("Expected `{}` to be async", dunder::AEXIT)),
@@ -923,7 +920,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     &base,
                     &inplace_dunder(x.op),
                     x.range,
-                    &[*x.value.clone()],
+                    &[CallArg::Expr(&x.value)],
                     &[],
                 )
             }
@@ -950,15 +947,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let base = self.expr(&x.value, None);
                 let slice_ty = self.expr(&x.slice, None);
                 let value_ty = self.solve_binding_inner(b);
-                self.call_method_with_types(
+                self.call_method(
                     &base,
                     &dunder::SETITEM,
                     x.range,
                     &[
-                        TypeCallArg::new(slice_ty, x.slice.range()),
+                        CallArg::Type(&slice_ty, x.slice.range()),
                         // use the subscript's location
-                        TypeCallArg::new(value_ty, x.range),
+                        CallArg::Type(&value_ty, x.range),
                     ],
+                    &[],
                 )
             }
             Binding::UnpackedValue(b, range, pos) => {
@@ -1237,12 +1235,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // TODO: check against duplicate keys (optional)
                 let key_ty = self.expr(mapping_key, None);
                 let binding_ty = self.get_idx(*binding_key).arc_clone();
-                let arg = TypeCallArg::new(key_ty, mapping_key.range());
-                self.call_method_with_types(
+                let arg = CallArg::Type(&key_ty, mapping_key.range());
+                self.call_method(
                     &binding_ty,
                     &dunder::GETITEM,
                     mapping_key.range(),
                     &[arg],
+                    &[],
                 )
             }
             Binding::PatternMatchClassPositional(_, idx, key, range) => {
