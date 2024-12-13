@@ -13,7 +13,7 @@ use std::path::PathBuf;
 use anyhow::anyhow;
 use anyhow::Context as _;
 use starlark_map::small_map::SmallMap;
-use tracing::warn;
+use tracing::debug;
 use vec1::Vec1;
 
 use crate::error::style::ErrorStyle;
@@ -59,7 +59,8 @@ fn read_manifest_file_data(data: &[u8]) -> anyhow::Result<Vec<ManifestItem>> {
                 });
             }
             Err(error) => {
-                warn!("Cannot convert path to module name: {error:#}");
+                // This often happens for buckified 3rd-party targets
+                debug!("Cannot convert path to module name: {error:#}");
             }
         }
     }
