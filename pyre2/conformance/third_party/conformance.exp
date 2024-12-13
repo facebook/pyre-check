@@ -4657,36 +4657,6 @@
     },
     {
       "code": -2,
-      "column": 8,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Class5[Any], Class5[list[int]]) failed",
       "description": "assert_type(Class5[Any], Class5[list[int]]) failed",
@@ -4795,16 +4765,6 @@
       "line": 15,
       "name": "PyreError",
       "stop_column": 52,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
-      "line": 15,
-      "name": "PyreError",
-      "stop_column": 51,
       "stop_line": 15
     },
     {
@@ -5801,16 +5761,6 @@
       "line": 85,
       "name": "PyreError",
       "stop_column": 61,
-      "stop_line": 85
-    },
-    {
-      "code": -2,
-      "column": 35,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
-      "line": 85,
-      "name": "PyreError",
-      "stop_column": 60,
       "stop_line": 85
     },
     {
@@ -6977,6 +6927,16 @@
   "dataclasses_transform_class.py": [
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "Missing argument 'not_a_field'",
+      "description": "Missing argument 'not_a_field'",
+      "line": 60,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
       "column": 18,
       "concise_description": "Unexpected keyword argument 'id'",
       "description": "Unexpected keyword argument 'id'",
@@ -7008,8 +6968,8 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "concise_description": "EXPECTED Literal[3] <: str",
+      "description": "EXPECTED Literal[3] <: str",
       "line": 66,
       "name": "PyreError",
       "stop_column": 19,
@@ -7017,6 +6977,26 @@
     },
     {
       "code": -2,
+      "column": 21,
+      "concise_description": "Expected 1 positional argument(s)",
+      "description": "Expected 1 positional argument(s)",
+      "line": 66,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 66
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Missing argument 'not_a_field'",
+      "description": "Missing argument 'not_a_field'",
+      "line": 68,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 68
+    },
+    {
+      "code": -2,
       "column": 18,
       "concise_description": "Unexpected keyword argument 'id'",
       "description": "Unexpected keyword argument 'id'",
@@ -7037,6 +7017,16 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "Missing argument 'not_a_field'",
+      "description": "Missing argument 'not_a_field'",
+      "line": 74,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 74
+    },
+    {
+      "code": -2,
       "column": 18,
       "concise_description": "Unexpected keyword argument 'id'",
       "description": "Unexpected keyword argument 'id'",
@@ -7054,6 +7044,16 @@
       "name": "PyreError",
       "stop_column": 35,
       "stop_line": 74
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Missing argument 'not_a_field'",
+      "description": "Missing argument 'not_a_field'",
+      "line": 76,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 76
     },
     {
       "code": -2,
@@ -7068,11 +7068,21 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "concise_description": "EXPECTED Literal[0] <: str",
+      "description": "EXPECTED Literal[0] <: str",
       "line": 82,
       "name": "PyreError",
       "stop_column": 19,
+      "stop_line": 82
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "Expected 1 positional argument(s)",
+      "description": "Expected 1 positional argument(s)",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 27,
       "stop_line": 82
     },
     {
@@ -11857,12 +11867,32 @@
     {
       "code": -2,
       "column": 43,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
+      "line": 118,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 118
+    },
+    {
+      "code": -2,
+      "column": 43,
       "concise_description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
       "description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
       "line": 118,
       "name": "PyreError",
       "stop_column": 73,
       "stop_line": 118
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
+      "line": 119,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 119
     },
     {
       "code": -2,
@@ -11877,12 +11907,32 @@
     {
       "code": -2,
       "column": 43,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
+      "line": 120,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 120
+    },
+    {
+      "code": -2,
+      "column": 43,
       "concise_description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
       "description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
       "line": 120,
       "name": "PyreError",
       "stop_column": 73,
       "stop_line": 120
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
+      "line": 121,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 121
     },
     {
       "code": -2,
@@ -14981,12 +15031,32 @@
     {
       "code": -2,
       "column": 43,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
+      "line": 119,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 43,
       "concise_description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
       "description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
       "line": 119,
       "name": "PyreError",
       "stop_column": 73,
       "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
+      "line": 120,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 120
     },
     {
       "code": -2,
@@ -15001,12 +15071,32 @@
     {
       "code": -2,
       "column": 43,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
+      "line": 121,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 121
+    },
+    {
+      "code": -2,
+      "column": 43,
       "concise_description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
       "description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
       "line": 121,
       "name": "PyreError",
       "stop_column": 73,
       "stop_line": 121
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
+      "line": 122,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 122
     },
     {
       "code": -2,
@@ -15901,12 +15991,12 @@
   "namedtuples_define_class.py": [
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 6,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 21,
       "name": "PyreError",
-      "stop_column": 13,
+      "stop_column": 11,
       "stop_line": 21
     },
     {
@@ -16111,152 +16201,102 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 6,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 35,
       "name": "PyreError",
-      "stop_column": 13,
+      "stop_column": 11,
       "stop_line": 35
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "Unexpected keyword argument 'x'",
-      "description": "Unexpected keyword argument 'x'",
+      "column": 6,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 38,
       "name": "PyreError",
-      "stop_column": 15,
+      "stop_column": 11,
       "stop_line": 38
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "Unexpected keyword argument 'y'",
-      "description": "Unexpected keyword argument 'y'",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Unexpected keyword argument 'x'",
-      "description": "Unexpected keyword argument 'x'",
+      "column": 6,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 41,
       "name": "PyreError",
-      "stop_column": 15,
+      "stop_column": 11,
       "stop_line": 41
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "Unexpected keyword argument 'y'",
-      "description": "Unexpected keyword argument 'y'",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "Unexpected keyword argument 'units'",
-      "description": "Unexpected keyword argument 'units'",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 6,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 44,
       "name": "PyreError",
-      "stop_column": 13,
+      "stop_column": 11,
       "stop_line": 44
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "Unexpected keyword argument 'x'",
-      "description": "Unexpected keyword argument 'x'",
+      "column": 6,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 45,
       "name": "PyreError",
-      "stop_column": 15,
+      "stop_column": 11,
       "stop_line": 45
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 6,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 46,
       "name": "PyreError",
-      "stop_column": 13,
+      "stop_column": 11,
       "stop_line": 46
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 6,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 47,
       "name": "PyreError",
-      "stop_column": 13,
+      "stop_column": 11,
       "stop_line": 47
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "Unexpected keyword argument 'units'",
-      "description": "Unexpected keyword argument 'units'",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 6,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 48,
       "name": "PyreError",
-      "stop_column": 13,
+      "stop_column": 11,
       "stop_line": 48
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 7,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 49,
       "name": "PyreError",
-      "stop_column": 14,
+      "stop_column": 12,
       "stop_line": 49
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "Unexpected keyword argument 'other'",
-      "description": "Unexpected keyword argument 'other'",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 7,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 72,
       "name": "PyreError",
-      "stop_column": 22,
+      "stop_column": 20,
       "stop_line": 72
     },
     {
@@ -16271,12 +16311,12 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 7,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 93,
       "name": "PyreError",
-      "stop_column": 18,
+      "stop_column": 15,
       "stop_line": 93
     },
     {
@@ -16321,12 +16361,12 @@
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 1,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 98,
       "name": "PyreError",
-      "stop_column": 17,
+      "stop_column": 14,
       "stop_line": 98
     }
   ],
@@ -16595,32 +16635,12 @@
   "namedtuples_type_compat.py": [
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "Unexpected keyword argument 'x'",
-      "description": "Unexpected keyword argument 'x'",
+      "column": 5,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 19,
       "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Unexpected keyword argument 'y'",
-      "description": "Unexpected keyword argument 'y'",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "Unexpected keyword argument 'units'",
-      "description": "Unexpected keyword argument 'units'",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 35,
+      "stop_column": 10,
       "stop_line": 19
     },
     {
@@ -16677,12 +16697,12 @@
   "namedtuples_usage.py": [
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 5,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 19,
       "name": "PyreError",
-      "stop_column": 12,
+      "stop_column": 10,
       "stop_line": 19
     },
     {
@@ -16927,12 +16947,12 @@
     },
     {
       "code": -2,
-      "column": 20,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
+      "column": 6,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 60,
       "name": "PyreError",
-      "stop_column": 21,
+      "stop_column": 19,
       "stop_line": 60
     },
     {
@@ -18258,6 +18278,16 @@
     {
       "code": -2,
       "column": 23,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "line": 216,
+      "name": "PyreError",
+      "stop_column": 38,
+      "stop_line": 216
+    },
+    {
+      "code": -2,
+      "column": 23,
       "concise_description": "EXPECTED Concrete4_Good6 <: Template4",
       "description": "EXPECTED Concrete4_Good6 <: Template4",
       "line": 216,
@@ -18544,6 +18574,16 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 339
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
+      "line": 340,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 340
     },
     {
       "code": -2,
@@ -19699,16 +19739,6 @@
       "line": 16,
       "name": "PyreError",
       "stop_column": 33,
-      "stop_line": 16
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "Expected 0 positional argument(s)",
-      "description": "Expected 0 positional argument(s)",
-      "line": 16,
-      "name": "PyreError",
-      "stop_column": 32,
       "stop_line": 16
     },
     {

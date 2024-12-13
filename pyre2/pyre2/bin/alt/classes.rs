@@ -28,7 +28,6 @@ use crate::binding::binding::Key;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyExported;
 use crate::binding::binding::KeyLegacyTypeParam;
-use crate::dunder;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::class::Class;
@@ -557,21 +556,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
-    }
-
-    fn get_init_method(&self, cls: &Class) -> Type {
-        let init_ty = self.get_class_field(cls, &dunder::INIT);
-        match init_ty.as_deref() {
-            Some(ty) => strip_first_argument(ty),
-            None => Type::callable(Vec::new(), Type::None),
-        }
-    }
-
-    /// Gets the constructor for a class with provided type arguments. For example, this
-    /// function is used when constructing `x = list[int]()`.
-    pub fn get_constructor_for_class_type(&self, cls: &ClassType) -> Type {
-        let init_ty = self.get_init_method(cls.class_object());
-        cls.instantiate_member(init_ty)
     }
 
     /// Given an identifier, see whether it is bound to an enum class. If so,

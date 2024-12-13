@@ -322,10 +322,10 @@
     "Lines 56, 65: Expected error (tag 'method4')"
   ],
   "constructors_call_init.py": [
+    "Line 42: Expected 1 errors",
     "Line 56: Expected 1 errors",
     "Line 107: Expected 1 errors",
     "Line 20: Unexpected errors ['EXPECTED Literal[1] <: float']",
-    "Line 41: Unexpected errors ['Expected 0 positional argument(s)', 'Expected 0 positional argument(s)']",
     "Line 72: Unexpected errors ['assert_type(Class5[Any], Class5[list[int]]) failed', 'Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]']",
     "Line 73: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[int], int], None] | Callable[[Class5[int], Any], None]']",
     "Line 74: Unexpected errors ['assert_type(Class5[Any], Class5[set[str]]) failed', 'Expected `__init__` to be a callable, got Callable[[Class5[list[int]], int], None] | Callable[[Class5[set[str]], str], None] | Callable[[Class5[@_], @_], None] | Callable[[Class5[@_], Any], None]']",
@@ -336,7 +336,7 @@
   "constructors_call_metaclass.py": [
     "Line 51: Expected 1 errors",
     "Line 65: Expected 1 errors",
-    "Line 15: Unexpected errors ['EXPECTED None <: NoReturn', 'Expected 0 positional argument(s)']",
+    "Line 15: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 20: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 0 positional argument(s)']",
     "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed']",
     "Line 33: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2', 'Expected 0 positional argument(s)']",
@@ -391,7 +391,7 @@
     "Line 76: Unexpected errors ['EXPECTED type[Class4] <: Callable[ParamSpec(@_), @_]']",
     "Line 77: Unexpected errors ['revealed type: Callable[ParamSpec(@_), @_]']",
     "Line 78: Unexpected errors ['assert_type(Any, int) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 85: Unexpected errors ['EXPECTED None <: NoReturn', 'Expected 0 positional argument(s)']",
+    "Line 85: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 93: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class5', 'Expected 0 positional argument(s)']",
     "Line 96: Unexpected errors ['EXPECTED type[Class5] <: Callable[ParamSpec(@_), @_]']",
     "Line 97: Unexpected errors ['revealed type: Callable[ParamSpec(@_), @_]']",
@@ -501,10 +501,10 @@
     "Line 63: Expected 1 errors",
     "Line 72: Expected 1 errors",
     "Line 122: Expected 1 errors",
-    "Line 60: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\", \"Unexpected keyword argument 'other_name'\"]",
-    "Line 68: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
-    "Line 74: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
-    "Line 76: Unexpected errors [\"Unexpected keyword argument 'id'\"]",
+    "Line 60: Unexpected errors [\"Missing argument 'not_a_field'\", \"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\", \"Unexpected keyword argument 'other_name'\"]",
+    "Line 68: Unexpected errors [\"Missing argument 'not_a_field'\", \"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
+    "Line 74: Unexpected errors [\"Missing argument 'not_a_field'\", \"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
+    "Line 76: Unexpected errors [\"Missing argument 'not_a_field'\", \"Unexpected keyword argument 'id'\"]",
     "Line 106: Unexpected errors [\"Unexpected keyword argument 'id'\"]",
     "Line 119: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]"
   ],
@@ -1124,7 +1124,7 @@
     "Line 59: Expected 1 errors",
     "Line 79: Expected 1 errors",
     "Line 105: Expected 1 errors",
-    "Line 21: Unexpected errors ['Expected 0 positional argument(s)']",
+    "Line 21: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
     "Line 23: Unexpected errors ['assert_type(Any, int) failed', 'Object of class `Point` has no attribute `__getitem__`']",
     "Line 24: Unexpected errors ['assert_type(Any, int) failed', 'Object of class `Point` has no attribute `__getitem__`']",
     "Line 25: Unexpected errors ['assert_type(Any, str) failed', 'Object of class `Point` has no attribute `__getitem__`']",
@@ -1133,12 +1133,12 @@
     "Line 28: Unexpected errors ['assert_type(Any, int) failed', 'Object of class `Point` has no attribute `__getitem__`']",
     "Line 29: Unexpected errors ['assert_type(Any, tuple[int, int]) failed', 'Object of class `Point` has no attribute `__getitem__`']",
     "Line 30: Unexpected errors ['assert_type(Any, tuple[int, int, str]) failed', 'Object of class `Point` has no attribute `__getitem__`']",
-    "Line 35: Unexpected errors ['Expected 0 positional argument(s)']",
-    "Line 38: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\"]",
-    "Line 41: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\", \"Unexpected keyword argument 'units'\"]",
-    "Line 72: Unexpected errors ['Expected 0 positional argument(s)']",
+    "Line 35: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
+    "Line 38: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
+    "Line 41: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
+    "Line 72: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
     "Line 73: Unexpected errors ['EXPECTED PointWithName <: tuple[int, int, str]']",
-    "Line 93: Unexpected errors ['Expected 0 positional argument(s)']",
+    "Line 93: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
     "Line 94: Unexpected errors ['assert_type(Property[Any], Property[float]) failed']",
     "Line 95: Unexpected errors ['assert_type(Any, float) failed', 'Object of class `Property` has no attribute `__getitem__`']",
     "Line 96: Unexpected errors ['assert_type(Any, float) failed']"
@@ -1163,14 +1163,14 @@
     "Line 65: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]']"
   ],
   "namedtuples_type_compat.py": [
-    "Line 19: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\", \"Unexpected keyword argument 'units'\"]",
+    "Line 19: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
     "Line 20: Unexpected errors ['EXPECTED Point <: tuple[int, int, str]']",
     "Line 21: Unexpected errors ['EXPECTED Point <: tuple[Any, ...]']",
     "Line 27: Unexpected errors ['EXPECTED Point <: tuple[float, float, str]']"
   ],
   "namedtuples_usage.py": [
     "Line 40: Expected 1 errors",
-    "Line 19: Unexpected errors ['Expected 0 positional argument(s)']",
+    "Line 19: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
     "Line 27: Unexpected errors ['assert_type(Any, int) failed', 'Object of class `Point` has no attribute `__getitem__`']",
     "Line 28: Unexpected errors ['assert_type(Any, int) failed', 'Object of class `Point` has no attribute `__getitem__`']",
     "Line 29: Unexpected errors ['assert_type(Any, str) failed', 'Object of class `Point` has no attribute `__getitem__`']",
@@ -1180,7 +1180,7 @@
     "Line 48: Unexpected errors ['Class `Point` is not iterable']",
     "Line 49: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 50: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 60: Unexpected errors ['Expected 0 positional argument(s)']",
+    "Line 60: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
     "Line 61: Unexpected errors ['Class `PointWithName` is not iterable']"
   ],
   "narrowing_typeguard.py": [
@@ -1278,7 +1278,7 @@
     "Line 213: Unexpected errors ['EXPECTED Concrete4_Good3 <: Template4']",
     "Line 214: Unexpected errors ['EXPECTED Concrete4_Good4 <: Template4']",
     "Line 215: Unexpected errors ['EXPECTED Concrete4_Good5 <: Template4']",
-    "Line 216: Unexpected errors ['EXPECTED Concrete4_Good6 <: Template4']",
+    "Line 216: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]', 'EXPECTED Concrete4_Good6 <: Template4']",
     "Line 217: Unexpected errors ['EXPECTED Concrete4_Good7 <: Template4']",
     "Line 245: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 251: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1435,7 +1435,7 @@
   ],
   "specialtypes_never.py": [
     "Line 19: Expected 1 errors",
-    "Line 16: Unexpected errors ['EXPECTED None <: NoReturn', 'Expected 0 positional argument(s)']",
+    "Line 16: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 21: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 32: Unexpected errors [\"EXPECTED Literal['whatever works'] <: int\"]",
     "Line 77: Unexpected errors ['EXPECTED None <: Never']"

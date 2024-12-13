@@ -275,7 +275,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             CallTarget::Class(cls) => {
                 self.call_infer(
                     self.as_call_target_or_error(
-                        self.get_constructor_for_class_type(&cls),
+                        self.get_instance_attribute(&cls, &dunder::INIT).unwrap(),
                         CallStyle::Method(&dunder::INIT),
                         range,
                     ),
