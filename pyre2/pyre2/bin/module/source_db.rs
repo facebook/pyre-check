@@ -155,9 +155,7 @@ impl BuckSourceDatabase {
 
     pub fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
         match self.lookup(name) {
-            LookupResult::OwningSource(path) => {
-                (LoadResult::from_path(path), ErrorStyle::Immediate)
-            }
+            LookupResult::OwningSource(path) => (LoadResult::from_path(path), ErrorStyle::Delayed),
             LookupResult::ExternalSource(path) => (LoadResult::from_path(path), ErrorStyle::Never),
             LookupResult::NoSource => (
                 LoadResult::FailedToFind(anyhow!("Not a dependency or typeshed")),
