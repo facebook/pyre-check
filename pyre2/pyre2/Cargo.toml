@@ -43,7 +43,7 @@ vec1 = { version = "1", features = ["serde"] }
 
 # Manually added after running `autocargo`
 dupe = "0.9.0"
-starlark_map = { git = "https://github.com/facebook/starlark-rust", rev = "b85d97275cff7e6265564f5106626e6c74b7ec75" }
+starlark_map = "0.13.0"
 static_interner = "0.1.1"
 
 [lints.rust]
