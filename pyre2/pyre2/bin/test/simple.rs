@@ -948,3 +948,16 @@ foo()
 x = "test"
 "#,
 );
+
+// TODO zeina: This should typecheck with no errors
+testcase_with_bug!(
+    test_generator,
+    r#"
+from typing import assert_type, Generator, Literal, Any
+
+def yielding():
+    yield 1  # E:  TODO: ExprYield - Answers::expr_infer
+
+
+"#,
+);
