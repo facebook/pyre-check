@@ -727,6 +727,15 @@ y: C | int  # TODO: The generic class `C` is missing type arguments.
     "#,
 );
 
+// TODO: implement reflective operators
+testcase_with_bug!(
+    test_complex,
+    r#"
+z: complex =  3 + 4j # E: EXPECTED Literal[0+4j] <: int # E: EXPECTED int <: complex
+
+    "#,
+);
+
 testcase!(
     test_iterable_error,
     r#"
