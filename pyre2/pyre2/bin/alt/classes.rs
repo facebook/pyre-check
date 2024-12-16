@@ -86,6 +86,23 @@ fn strip_first_argument(ty: &Type) -> Type {
     })
 }
 
+fn is_unbound_function(ty: &Type) -> bool {
+    match ty {
+        Type::Forall(_, t) => is_unbound_function(t),
+        Type::Callable(_) => true,
+        _ => false,
+    }
+}
+
+fn bind_attribute(obj: Type, attr: Type) -> Type {
+    if is_unbound_function(&attr) {
+        // TODO: stop stripping the first argument.
+        Type::BoundMethod(Box::new(obj), Box::new(strip_first_argument(&attr)))
+    } else {
+        attr
+    }
+}
+
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn class_definition(
         &self,
@@ -526,7 +543,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_class_member(cls.class_object(), name)
             .map(|member_ty| {
                 let instantiated_ty = cls.instantiate_member((*member_ty).clone());
-                strip_first_argument(&instantiated_ty)
+                bind_attribute(cls.self_type(), instantiated_ty)
             })
     }
 

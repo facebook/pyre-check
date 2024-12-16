@@ -204,6 +204,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Union(_)
             | Type::Never(_)
             | Type::Callable(_)
+            | Type::BoundMethod(_, _)
             | Type::Ellipsis
             | Type::SpecialForm(_)
             | Type::Type(_)

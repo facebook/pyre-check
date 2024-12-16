@@ -177,6 +177,14 @@ impl<'a> TypeDisplayContext<'a> {
             Type::Literal(lit) => write!(f, "Literal[{}]", lit),
             Type::LiteralString => write!(f, "LiteralString"),
             Type::Callable(c) => c.fmt_with_type(f, &|t| self.display(t)),
+            Type::BoundMethod(obj, func) => {
+                write!(
+                    f,
+                    "BoundMethod[{}, {}]",
+                    self.display(obj),
+                    self.display(func)
+                )
+            }
             Type::Never(NeverStyle::NoReturn) => write!(f, "NoReturn"),
             Type::Never(NeverStyle::Never) => write!(f, "Never"),
             Type::Union(types) if types.is_empty() => write!(f, "Never"),

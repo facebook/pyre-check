@@ -324,6 +324,9 @@ pub enum Type {
     Literal(Lit),
     LiteralString,
     Callable(Box<Callable>),
+    /// A method of a class. The first `Box<Type>` is the self/cls argument,
+    /// and the second is the function.
+    BoundMethod(Box<Type>, Box<Type>),
     Union(Vec<Type>),
     #[expect(dead_code)] // Not currently used, but may be in the future
     Intersect(Vec<Type>),
@@ -579,6 +582,10 @@ impl Type {
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match self {
             Type::Callable(c) => c.visit(f),
+            Type::BoundMethod(obj, func) => {
+                f(obj);
+                f(func);
+            }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter().for_each(f),
             Type::ClassType(x) => x.visit(f),
             Type::Tuple(t) => t.visit(f),
@@ -610,6 +617,10 @@ impl Type {
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
             Type::Callable(c) => c.visit_mut(f),
+            Type::BoundMethod(obj, func) => {
+                f(obj);
+                f(func);
+            }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter_mut().for_each(f),
             Type::ClassType(x) => x.visit_mut(f),
             Type::Tuple(t) => t.visit_mut(f),

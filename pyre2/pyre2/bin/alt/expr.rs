@@ -152,6 +152,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn as_call_target(&self, ty: Type) -> Option<CallTarget> {
         match ty {
             Type::Callable(c) => Some(CallTarget::Callable(*c)),
+            Type::BoundMethod(_, t) => self.as_call_target(*t),
             Type::ClassDef(cls) => self.as_call_target(self.instantiate_fresh(&cls)),
             Type::Type(box Type::ClassType(cls)) => Some(CallTarget::Class(cls)),
             Type::Forall(params, t) => {
