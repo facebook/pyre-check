@@ -1620,6 +1620,14 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
     "asyncio/coroutines.pyi", {|
         def coroutine(f: typing.Any) -> typing.Any: ...
         |};
+    ( "_asyncio.pyi",
+      {|
+        from typing import Generic, TypeVar, Iterable, Generator
+        _T = TypeVar('_T')
+        class Future(Awaitable[_T], Iterable[_T]):
+            def __await__(self) -> Generator[Any, None, _T]: ...
+        |}
+    );
     ( "asyncio/futures.pyi",
       {|
         from typing import Generic, TypeVar, Iterable, Generator
