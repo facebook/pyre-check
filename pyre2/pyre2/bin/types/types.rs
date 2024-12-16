@@ -441,13 +441,6 @@ impl Type {
         }
     }
 
-    pub fn apply_under_forall(&self, f: impl Fn(&Type) -> Type) -> Self {
-        match self {
-            Type::Forall(gs, ty) => Type::Forall(gs.clone(), Box::new(ty.apply_under_forall(f))),
-            _ => f(self),
-        }
-    }
-
     pub fn type_form(inner: Type) -> Self {
         Type::Type(Box::new(inner))
     }

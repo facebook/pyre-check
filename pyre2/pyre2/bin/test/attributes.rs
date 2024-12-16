@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_set_attribute,
@@ -158,13 +157,23 @@ def f(c: C):
     "#,
 );
 
-// TODO: error on either the definition or the call to C.f.
-testcase_with_bug!(
+testcase!(
     test_missing_self_parameter,
     r#"
 class C:
     def f():
         pass
-C().f()
+C().f()  # E: Expected 0 positional argument(s)
+    "#,
+);
+
+testcase!(
+    test_generic_instance_method,
+    r#"
+class C:
+    def f[T](self: T, x: T):
+        pass
+C().f(C())  # OK
+C().f(0)    # E: EXPECTED Literal[0] <: C
     "#,
 );

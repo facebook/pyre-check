@@ -57,6 +57,31 @@ assert_type(b.wrap(True), Box[Box[int]])
     "#,
 );
 
+testcase!(
+    test_init_self_annotation,
+    r#"
+class C:
+    def __init__[T](self: T, x: T):
+        pass
+
+c: C
+C(c)  # OK
+C(0)  # E: EXPECTED Literal[0] <: C
+    "#,
+);
+
+testcase!(
+    test_init_self_annotation_in_generic_class,
+    r#"
+class C[T1]:
+    def __init__[T2](self: T2, x: T2):
+        pass
+c: C[int]
+C[int](c)  # OK
+C[str](c)  # E: EXPECTED C[int] <: C[str]
+    "#,
+);
+
 // TODO: support this
 testcase_with_bug!(
     test_metaclass_call,
@@ -65,9 +90,9 @@ class Meta(type):
     def __call__[T](cls: type[T], x: int) -> T: ...
 class C(metaclass=Meta):
     pass
-C(5)    # E: Expected 0 positional argument(s)
+C(5)    # E: Expected 1 positional argument(s)
 C()     # Should be an error
-C("5")  # E: Expected 0 positional argument(s)
+C("5")  # E: Expected 1 positional argument(s)
     "#,
 );
 
@@ -77,9 +102,9 @@ testcase_with_bug!(
     r#"
 class C:
     def __new__[T](cls: type[T], x: int) -> T: ...
-C(5)    # E: Expected 0 positional argument(s)
+C(5)    # E: Expected 1 positional argument(s)
 C()     # Should be an error
-C("5")  # E: Expected 0 positional argument(s)
+C("5")  # E: Expected 1 positional argument(s)
     "#,
 );
 

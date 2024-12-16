@@ -77,15 +77,6 @@ impl BaseClass {
     }
 }
 
-fn strip_first_argument(ty: &Type) -> Type {
-    ty.apply_under_forall(|t| match t {
-        Type::Callable(c) if c.args_len() >= Some(1) => {
-            Type::callable(c.args.as_list().unwrap()[1..].to_owned(), c.ret.clone())
-        }
-        _ => t.clone(),
-    })
-}
-
 fn is_unbound_function(ty: &Type) -> bool {
     match ty {
         Type::Forall(_, t) => is_unbound_function(t),
@@ -96,8 +87,7 @@ fn is_unbound_function(ty: &Type) -> bool {
 
 fn bind_attribute(obj: Type, attr: Type) -> Type {
     if is_unbound_function(&attr) {
-        // TODO: stop stripping the first argument.
-        Type::BoundMethod(Box::new(obj), Box::new(strip_first_argument(&attr)))
+        Type::BoundMethod(Box::new(obj), Box::new(attr))
     } else {
         attr
     }

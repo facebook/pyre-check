@@ -96,6 +96,8 @@ impl CallArg<'_> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum CallTarget {
     Callable(Callable),
+    /// Method of a class. The `Type` is the self/cls argument.
+    BoundMethod(Type, Callable),
     Class(ClassType),
 }
 
@@ -152,7 +154,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn as_call_target(&self, ty: Type) -> Option<CallTarget> {
         match ty {
             Type::Callable(c) => Some(CallTarget::Callable(*c)),
-            Type::BoundMethod(_, t) => self.as_call_target(*t),
+            Type::BoundMethod(obj, func) => match self.as_call_target(*func.clone()) {
+                Some(CallTarget::Callable(c)) => Some(CallTarget::BoundMethod(*obj, c)),
+                _ => None,
+            },
             Type::ClassDef(cls) => self.as_call_target(self.instantiate_fresh(&cls)),
             Type::Type(box Type::ClassType(cls)) => Some(CallTarget::Class(cls)),
             Type::Forall(params, t) => {
@@ -269,6 +274,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     range,
                 );
                 cls.self_type()
+            }
+            CallTarget::BoundMethod(obj, c) => {
+                let first_arg = CallArg::Type(&obj, range);
+                let mut full_args = vec![first_arg];
+                full_args.extend(args.to_owned());
+                self.call_infer(CallTarget::Callable(c), &full_args, keywords, range)
             }
             CallTarget::Callable(callable) => {
                 match callable.args {

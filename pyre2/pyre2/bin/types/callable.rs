@@ -85,14 +85,6 @@ impl Callable {
         }
     }
 
-    pub fn args_len(&self) -> Option<usize> {
-        match &self.args {
-            Args::List(args) => Some(args.len()),
-            Args::Ellipsis => None,
-            Args::ParamSpec(_) => None,
-        }
-    }
-
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         self.args.visit(&mut f);
         f(&self.ret)
@@ -105,14 +97,6 @@ impl Callable {
 }
 
 impl Args {
-    pub fn as_list(&self) -> Option<&[Arg]> {
-        match self {
-            Args::List(args) => Some(args),
-            Args::Ellipsis => None,
-            Args::ParamSpec(_) => None,
-        }
-    }
-
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match &self {
             Args::List(args) => args.iter().for_each(|x| x.visit(&mut f)),
