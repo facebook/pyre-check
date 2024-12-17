@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_set_attribute,
@@ -175,5 +176,19 @@ class C:
         pass
 C().f(C())  # OK
 C().f(0)    # E: EXPECTED Literal[0] <: C
+    "#,
+);
+
+// Make sure we don't treat `foo` like an instance method.
+testcase_with_bug!(
+    test_non_method_callable_attribute,
+    r#"
+from typing import assert_type, Literal
+class C:
+  def __init__(self):
+    self.foo = lambda x: x  # E: TODO: Lambda
+c = C()
+x = c.foo(42)
+assert_type(x, Literal[42])  # E: assert_type
     "#,
 );
