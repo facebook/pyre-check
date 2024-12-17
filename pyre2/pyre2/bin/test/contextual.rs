@@ -173,6 +173,29 @@ xs: dict[A, X] = {B(): Y() for _ in [0]}
 "#,
 );
 
+testcase!(
+    test_context_if_expr,
+    r#"
+class A: ...
+class B(A): ...
+def cond() -> bool: ...
+xs: list[A] = [B()] if cond() else [B()]
+"#,
+);
+
+// Still infer types for unreachable branches (and find errors in them),
+// but don't propagate them to the result.
+testcase!(
+    test_context_if_expr_unreachable,
+    r#"
+class A: ...
+class B(A): ...
+def takes_int(x: int) -> None: ...
+xs: list[A] = [B()] if True else takes_int("") # E: EXPECTED Literal[''] <: int
+ys: list[A] = takes_int("") if False else [B()] # E: EXPECTED Literal[''] <: int
+"#,
+);
+
 // TODO: Unpacked assignment propagates wrong hint to RHS expression
 testcase_with_bug!(
     test_context_assign_unpacked_tuple,

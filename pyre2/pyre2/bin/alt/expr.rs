@@ -590,14 +590,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Lambda(_) => self.error_todo("Answers::expr_infer", x),
             Expr::If(x) => {
-                let condition_type = self.expr_infer(&x.test);
                 // TODO: Support type refinement
-                let body_type = self.expr_infer(&x.body);
-                let orelse_type = self.expr_infer(&x.orelse);
-                match condition_type.as_bool() {
-                    Some(true) => body_type,
-                    Some(false) => orelse_type,
-                    None => self.union(&body_type, &orelse_type),
+                let condition_type = self.expr_infer(&x.test);
+                if let Some(hint_ty) = hint {
+                    let mut body_hint = hint;
+                    let mut orelse_hint = hint;
+                    match condition_type.as_bool() {
+                        Some(true) => orelse_hint = None,
+                        Some(false) => body_hint = None,
+                        None => {}
+                    }
+                    self.expr(&x.body, body_hint);
+                    self.expr(&x.orelse, orelse_hint);
+                    hint_ty.clone()
+                } else {
+                    let body_type = self.expr_infer(&x.body);
+                    let orelse_type = self.expr_infer(&x.orelse);
+                    match condition_type.as_bool() {
+                        Some(true) => body_type,
+                        Some(false) => orelse_type,
+                        None => self.union(&body_type, &orelse_type),
+                    }
                 }
             }
             Expr::Dict(x) => {
