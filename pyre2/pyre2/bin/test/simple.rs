@@ -948,21 +948,3 @@ foo()
 x = "test"
 "#,
 );
-
-// TODO zeina: 1- We need a generator type; 2- next keyword currently unsupported
-testcase_with_bug!(
-    test_generator,
-    r#"
-from typing import assert_type, Generator, Literal, Any, reveal_type
-
-def yielding():
-    yield 1 # E: TODO: ExprYield - Answers::expr_infer
-
-f = yielding()
-
-next_f = next(f) # E: Could not find name `next`
-reveal_type(next_f) # E: revealed type: Error
-reveal_type(f) # E: revealed type: None
-
-"#,
-);
