@@ -49,7 +49,7 @@ assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 assert_eq_size!(Binding, [usize; 9]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
 assert_eq_size!(BindingClassMetadata, [usize; 8]);
-assert_eq_size!(BindingClassField, [usize; 9]);
+assert_eq_size!(BindingClassField, [usize; 10]);
 assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
 
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
@@ -596,7 +596,7 @@ impl DisplayWith<Bindings> for BindingAnnotation {
 /// either the class body or in method (like `__init__`) that we recognize as
 /// defining instance attributes.
 #[derive(Clone, Debug)]
-pub struct BindingClassField(pub Binding);
+pub struct BindingClassField(pub Binding, pub Option<Idx<KeyAnnotation>>);
 
 impl DisplayWith<Bindings> for BindingClassField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {

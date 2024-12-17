@@ -1118,11 +1118,9 @@ impl<'a> BindingsBuilder<'a> {
                 last_scope.stat.0.get(name).unwrap().loc,
             )));
             let binding = if let Some(ann) = &info.ann {
-                // TODO(stroxler): Represent the annotation directly in BindingClassField so
-                // that we have access to qualifiers downstream.
-                BindingClassField(Binding::AnnotatedType(*ann, Box::new(flow_type)))
+                BindingClassField(flow_type, Some(*ann))
             } else {
-                BindingClassField(flow_type)
+                BindingClassField(flow_type, None)
             };
             fields.insert(name.clone());
             self.table.insert(
@@ -1138,7 +1136,8 @@ impl<'a> BindingsBuilder<'a> {
                             fields.insert(name.clone());
                             self.table.insert(
                                 KeyClassField(ShortIdentifier::new(&x.name), name),
-                                BindingClassField(binding),
+                                // TODO(stroxler): Track annotated self attributes properly.
+                                BindingClassField(binding, None),
                             );
                         }
                     }

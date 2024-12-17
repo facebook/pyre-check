@@ -935,7 +935,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn solve_class_field(&self, binding: &BindingClassField) -> Arc<Type> {
-        self.solve_binding(&binding.0)
+        if let Some(ann) = &binding.1 {
+            let ann = self.get_idx(*ann);
+            match &ann.ty {
+                Some(ty) => Arc::new(ty.clone()),
+                None => self.solve_binding(&binding.0),
+            }
+        } else {
+            self.solve_binding(&binding.0)
+        }
     }
 
     fn solve_binding_inner(&self, binding: &Binding) -> Type {
