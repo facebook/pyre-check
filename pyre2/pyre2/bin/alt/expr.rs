@@ -643,7 +643,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::Tuple(x) => {
                 let ts = match hint {
                     Some(Type::Tuple(Tuple::Concrete(elts))) if elts.len() == x.elts.len() => elts,
-                    Some(ty) => match self.unwrap_tuple(ty) {
+                    Some(ty) => match self.decompose_tuple(ty) {
                         Some(elem_ty) => &vec![elem_ty; x.elts.len()],
                         None => &Vec::new(),
                     },
@@ -658,7 +658,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 )
             }
             Expr::List(x) => {
-                let hint = hint.and_then(|ty| self.unwrap_list(ty));
+                let hint = hint.and_then(|ty| self.decompose_list(ty));
                 if let Some(hint) = hint {
                     x.elts.iter().for_each(|x| {
                         self.expr(x, Some(&hint));
@@ -675,7 +675,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Dict(x) => {
-                let hint = hint.and_then(|ty| self.unwrap_dict(ty));
+                let hint = hint.and_then(|ty| self.decompose_dict(ty));
                 if let Some(hint) = hint {
                     x.items.iter().for_each(|x| match &x.key {
                         Some(key) => {
@@ -711,7 +711,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Set(x) => {
-                let hint = hint.and_then(|ty| self.unwrap_set(ty));
+                let hint = hint.and_then(|ty| self.decompose_set(ty));
                 if let Some(hint) = hint {
                     x.elts.iter().for_each(|x| {
                         self.expr(x, Some(&hint));
@@ -728,7 +728,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::ListComp(x) => {
-                let hint = hint.and_then(|ty| self.unwrap_list(ty));
+                let hint = hint.and_then(|ty| self.decompose_list(ty));
                 self.ifs_infer(&x.generators);
                 if let Some(hint) = hint {
                     self.expr(&x.elt, Some(&hint));
@@ -739,7 +739,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::SetComp(x) => {
-                let hint = hint.and_then(|ty| self.unwrap_set(ty));
+                let hint = hint.and_then(|ty| self.decompose_set(ty));
                 self.ifs_infer(&x.generators);
                 if let Some(hint) = hint {
                     self.expr(&x.elt, Some(&hint));
@@ -750,7 +750,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::DictComp(x) => {
-                let hint = hint.and_then(|ty| self.unwrap_dict(ty));
+                let hint = hint.and_then(|ty| self.decompose_dict(ty));
                 self.ifs_infer(&x.generators);
                 if let Some(hint) = hint {
                     self.expr(&x.key, Some(&hint.key));

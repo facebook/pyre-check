@@ -50,7 +50,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn unwrap_dict(&self, ty: &Type) -> Option<UnwrappedDict> {
+    pub fn decompose_dict(&self, ty: &Type) -> Option<UnwrappedDict> {
         let key = self.fresh_var();
         let value = self.fresh_var();
         let dict_type = self.stdlib.dict(key.to_type(), value.to_type()).to_type();
@@ -64,7 +64,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn unwrap_set(&self, ty: &Type) -> Option<Type> {
+    pub fn decompose_set(&self, ty: &Type) -> Option<Type> {
         let elem = self.fresh_var();
         let set_type = self.stdlib.set(elem.to_type()).to_type();
         if self.is_subset_eq(&set_type, ty) {
@@ -74,7 +74,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn unwrap_list(&self, ty: &Type) -> Option<Type> {
+    pub fn decompose_list(&self, ty: &Type) -> Option<Type> {
         let elem = self.fresh_var();
         let list_type = self.stdlib.list(elem.to_type()).to_type();
         if self.is_subset_eq(&list_type, ty) {
@@ -84,7 +84,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn unwrap_tuple(&self, ty: &Type) -> Option<Type> {
+    pub fn decompose_tuple(&self, ty: &Type) -> Option<Type> {
         let elem = self.fresh_var();
         let tuple_type = self.stdlib.tuple(elem.to_type()).to_type();
         if self.is_subset_eq(&tuple_type, ty) {
