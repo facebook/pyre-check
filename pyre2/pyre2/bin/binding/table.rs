@@ -25,7 +25,8 @@ macro_rules! table {
         #[$($derive)*]
         pub struct $name {
             $($vis)* types: $t<Key>,
-            $($vis)* exported_types: $t<KeyExported>,
+            $($vis)* exports: $t<KeyExport>,
+            $($vis)* class_fields: $t<KeyClassField>,
             $($vis)* annotations: $t<KeyAnnotation>,
             $($vis)* mros: $t<KeyClassMetadata>,
             $($vis)* legacy_tparams: $t<KeyLegacyTypeParam>,
@@ -37,11 +38,18 @@ macro_rules! table {
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.types }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyExported> for $name {
-            type Value = $t<KeyExported>;
-            fn get(&self) -> &Self::Value { &self.exported_types }
-            fn get_mut(&mut self) -> &mut Self::Value { &mut self.exported_types }
+        impl $crate::binding::table::TableKeyed<KeyExport> for $name {
+            type Value = $t<KeyExport>;
+            fn get(&self) -> &Self::Value { &self.exports }
+            fn get_mut(&mut self) -> &mut Self::Value { &mut self.exports }
         }
+
+        impl $crate::binding::table::TableKeyed<KeyClassField> for $name {
+            type Value = $t<KeyClassField>;
+            fn get(&self) -> &Self::Value { &self.class_fields }
+            fn get_mut(&mut self) -> &mut Self::Value { &mut self.class_fields }
+        }
+
 
         impl $crate::binding::table::TableKeyed<KeyAnnotation> for $name {
             type Value = $t<KeyAnnotation>;
@@ -85,7 +93,8 @@ macro_rules! table {
 macro_rules! table_for_each(
     ($e:expr, $f:expr) => {
         $f(&($e).types);
-        $f(&($e).exported_types);
+        $f(&($e).exports);
+        $f(&($e).class_fields);
         $f(&($e).annotations);
         $f(&($e).mros);
         $f(&($e).legacy_tparams);
@@ -96,7 +105,8 @@ macro_rules! table_for_each(
 macro_rules! table_mut_for_each(
     ($e:expr, $f:expr) => {
         $f(&mut ($e).types);
-        $f(&mut ($e).exported_types);
+        $f(&mut ($e).exports);
+        $f(&mut ($e).class_fields);
         $f(&mut ($e).annotations);
         $f(&mut ($e).mros);
         $f(&mut ($e).legacy_tparams);
@@ -107,7 +117,8 @@ macro_rules! table_mut_for_each(
 macro_rules! table_try_for_each(
     ($e:expr, $f:expr) => {
         $f(&($e).types)?;
-        $f(&($e).exported_types)?;
+        $f(&($e).exports)?;
+        $f(&($e).class_fields)?;
         $f(&($e).annotations)?;
         $f(&($e).mros)?;
         $f(&($e).legacy_tparams)?;

@@ -14,7 +14,7 @@ use ruff_text_size::TextSize;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::Key;
-use crate::binding::binding::KeyExported;
+use crate::binding::binding::KeyExport;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::state::state::State;
@@ -86,7 +86,7 @@ impl State {
             ),
             Binding::Import(m, name) => {
                 let bindings = self.get_bindings(*m)?;
-                let b = bindings.get(bindings.key_to_idx(&KeyExported::Export(name.clone())));
+                let b = bindings.get(bindings.key_to_idx(&KeyExport(name.clone())));
                 self.binding_to_definition(*m, b, gas - 1)
             }
             Binding::Module(name, _, _) => Some((*name, TextRange::default())),

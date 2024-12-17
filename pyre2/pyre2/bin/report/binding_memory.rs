@@ -15,8 +15,9 @@ use starlark_map::small_map::SmallMap;
 
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
+use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
-use crate::binding::binding::KeyExported;
+use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::Keyed;
 use crate::binding::bindings::BindingEntry;

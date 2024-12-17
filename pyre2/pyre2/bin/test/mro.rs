@@ -8,7 +8,7 @@
 use ruff_python_ast::name::Name;
 
 use crate::binding::binding::KeyClassMetadata;
-use crate::binding::binding::KeyExported;
+use crate::binding::binding::KeyExport;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::state::state::State;
@@ -24,10 +24,7 @@ pub fn mk_state(code: &str) -> (ModuleName, State) {
 pub fn get_class_metadata(name: &str, module_name: ModuleName, state: &State) -> ClassMetadata {
     let solutions = state.get_solutions(module_name).unwrap();
 
-    let res = match solutions
-        .exported_types
-        .get(&KeyExported::Export(Name::new(name)))
-    {
+    let res = match solutions.exports.get(&KeyExport(Name::new(name))) {
         Some(Type::ClassDef(cls)) => {
             println!("Class {cls:?}");
             let x = solutions

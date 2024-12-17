@@ -52,8 +52,9 @@ use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
+use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
-use crate::binding::binding::KeyExported;
+use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::Keyed;
 use crate::binding::binding::RaisedException;
@@ -438,7 +439,7 @@ impl Bindings {
                     Binding::AnyType(AnyStyle::Error)
                 }
             };
-            builder.table.insert(KeyExported::Export(k), val);
+            builder.table.insert(KeyExport(k), val);
         }
         Self(Arc::new(BindingsInner {
             module_info,
@@ -1120,7 +1121,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             fields.insert(name.clone());
             self.table.insert(
-                KeyExported::ClassField(ShortIdentifier::new(&x.name), name.clone()),
+                KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
                 val,
             );
         }
@@ -1131,7 +1132,7 @@ impl<'a> BindingsBuilder<'a> {
                         if !fields.contains(&name) {
                             fields.insert(name.clone());
                             self.table.insert(
-                                KeyExported::ClassField(ShortIdentifier::new(&x.name), name),
+                                KeyClassField(ShortIdentifier::new(&x.name), name),
                                 binding,
                             );
                         }

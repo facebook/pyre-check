@@ -23,7 +23,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
 use crate::alt::answers::Solve;
-use crate::binding::binding::KeyExported;
+use crate::binding::binding::KeyExport;
 use crate::binding::binding::Keyed;
 use crate::binding::bindings::BindingEntry;
 use crate::binding::bindings::BindingTable;
@@ -226,7 +226,7 @@ impl State {
             return None;
         }
 
-        let t = self.lookup_answer(module, &KeyExported::Export(name.clone()));
+        let t = self.lookup_answer(module, &KeyExport(name.clone()));
         match t.arc_clone() {
             Type::ClassDef(cls) => Some(cls),
             ty => {

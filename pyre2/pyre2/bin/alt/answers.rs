@@ -31,8 +31,9 @@ use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
+use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
-use crate::binding::binding::KeyExported;
+use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::Keyed;
 use crate::binding::binding::RaisedException;
@@ -186,7 +187,16 @@ impl SolveRecursive for Key {
         f(v);
     }
 }
-impl SolveRecursive for KeyExported {
+impl SolveRecursive for KeyExport {
+    type Recursive = Var;
+    fn promote_recursive(x: Self::Recursive) -> Self::Answer {
+        Type::Var(x)
+    }
+    fn visit_type_mut(v: &mut Type, f: &mut dyn FnMut(&mut Type)) {
+        f(v);
+    }
+}
+impl SolveRecursive for KeyClassField {
     type Recursive = Var;
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {
         Type::Var(x)
@@ -253,7 +263,7 @@ impl<Ans: LookupAnswer> Solve<Ans> for Key {
     }
 }
 
-impl<Ans: LookupAnswer> Solve<Ans> for KeyExported {
+impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
     fn solve(answers: &AnswersSolver<Ans>, binding: &Binding) -> Arc<Type> {
         answers.solve_binding(binding)
     }
@@ -264,7 +274,26 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExported {
 
     fn record_recursive(
         answers: &AnswersSolver<Ans>,
-        key: &KeyExported,
+        key: &KeyExport,
+        answer: Arc<Type>,
+        recursive: Var,
+    ) {
+        answers.record_recursive(key.range(), answer, recursive);
+    }
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyClassField {
+    fn solve(answers: &AnswersSolver<Ans>, binding: &Binding) -> Arc<Type> {
+        answers.solve_binding(binding)
+    }
+
+    fn recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive {
+        answers.solver().fresh_recursive(answers.uniques)
+    }
+
+    fn record_recursive(
+        answers: &AnswersSolver<Ans>,
+        key: &KeyClassField,
         answer: Arc<Type>,
         recursive: Var,
     ) {
@@ -1102,7 +1131,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 callable.forall(self.type_params(x.range, tparams))
             }
             Binding::Import(m, name) => self
-                .get_from_module(*m, &KeyExported::Export(name.clone()))
+                .get_from_module(*m, &KeyExport(name.clone()))
                 .arc_clone(),
             Binding::ClassDef(box (x, fields), bases, legacy_tparams) => {
                 Type::ClassDef(self.class_definition(x, fields.clone(), bases, legacy_tparams))
@@ -1368,7 +1397,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Ok(exports) = self.exports.get(from) {
             if exports.contains(name, self.exports) {
                 Some(
-                    self.get_from_module(from, &KeyExported::Export(name.clone()))
+                    self.get_from_module(from, &KeyExport(name.clone()))
                         .arc_clone(),
                 )
             } else {
