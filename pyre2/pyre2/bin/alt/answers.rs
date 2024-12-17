@@ -850,7 +850,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 let mut params = Vec::new();
                 for raw_param in x.type_params.iter() {
-                    let name = Ast::type_param_id(raw_param);
+                    let name = raw_param.name();
                     let restriction = match raw_param {
                         TypeParam::TypeVar(tv) => match &tv.bound {
                             Some(box Expr::Tuple(tup)) => {
@@ -861,7 +861,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         },
                         _ => Restriction::Unrestricted,
                     };
-                    let default = Ast::type_param_default(raw_param).map(|e| self.expr_untype(e));
+                    let default = raw_param.default().map(|e| self.expr_untype(e));
                     params.push(TParamInfo {
                         name: name.id.clone(),
                         quantified: get_quantified(

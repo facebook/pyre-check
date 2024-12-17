@@ -26,7 +26,6 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
-use crate::ast::Ast;
 use crate::binding::bindings::Bindings;
 use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
@@ -505,7 +504,7 @@ impl DisplayWith<Bindings> for Binding {
                     name,
                     params
                         .iter()
-                        .map(|p| format!("{}", Ast::type_param_id(p)))
+                        .map(|p| format!("{}", p.name()))
                         .collect::<Vec<_>>()
                         .join(", "),
                     binding.display_with(ctx)

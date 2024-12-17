@@ -866,7 +866,7 @@ impl<'a> BindingsBuilder<'a> {
                 TypeParam::TypeVarTuple(_) => Quantified::type_var_tuple(self.uniques),
             };
             qs.push(q);
-            let name = Ast::type_param_id(x);
+            let name = x.name();
             self.scopes.last_mut().stat.add(name.id.clone(), name.range);
             self.bind_definition(name, Binding::TypeParameter(q), None);
         }
