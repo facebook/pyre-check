@@ -262,22 +262,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
-        let args_head: &[CallArg] = match first_arg {
-            Some(arg) => &[arg],
-            None => &[],
+        let (is_bound, args_head): (bool, &[CallArg]) = match first_arg {
+            Some(arg) => (true, &[arg]),
+            None => (false, &[]),
+        };
+        let positional_count_error = |arg_range, n_expected| {
+            let (expected, actual) = if !is_bound {
+                (
+                    count(n_expected as usize, "positional argument"),
+                    remaining_args.len().to_string(),
+                )
+            } else if n_expected < 1 {
+                (
+                    "0 positional arguments".to_owned(),
+                    format!("{} (including implicit `self`)", remaining_args.len() + 1),
+                )
+            } else {
+                (
+                    count(n_expected as usize - 1, "positional argument"),
+                    remaining_args.len().to_string(),
+                )
+            };
+            self.error(arg_range, format!("Expected {expected}, got {actual}"))
         };
         let args_iter = args_head.iter().chain(remaining_args);
-        let n_args = args_head.len() + remaining_args.len();
-        let positional_count_error = |arg_range, expected| {
-            self.error(
-                arg_range,
-                format!(
-                    "Expected {}, got {}",
-                    count(expected as usize, "positional argument"),
-                    n_args,
-                ),
-            )
-        };
         match callable.args {
             Args::List(params) => {
                 let mut iparams = params.iter().enumerate().peekable();
