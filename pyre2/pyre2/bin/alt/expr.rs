@@ -669,20 +669,36 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::ListComp(x) => {
+                let hint = hint.and_then(|ty| self.unwrap_list(ty));
                 self.ifs_infer(&x.generators);
-                let elem_ty = self.expr_infer(&x.elt);
-                self.stdlib.list(elem_ty).to_type()
+                let elem_ty = self.expr(&x.elt, hint.as_ref());
+                self.stdlib
+                    .list(self.promote(elem_ty, hint.as_ref()))
+                    .to_type()
             }
             Expr::SetComp(x) => {
+                let hint = hint.and_then(|ty| self.unwrap_set(ty));
                 self.ifs_infer(&x.generators);
-                let elem_ty = self.expr_infer(&x.elt);
-                self.stdlib.set(elem_ty).to_type()
+                let elem_ty = self.expr(&x.elt, hint.as_ref());
+                self.stdlib
+                    .set(self.promote(elem_ty, hint.as_ref()))
+                    .to_type()
             }
             Expr::DictComp(x) => {
+                let hint = hint.and_then(|ty| self.unwrap_dict(ty));
+                let (key_hint, value_hint) = match hint {
+                    Some(UnwrappedDict { key, value }) => (Some(key), Some(value)),
+                    None => (None, None),
+                };
                 self.ifs_infer(&x.generators);
-                let k_ty = self.expr_infer(&x.key);
-                let v_ty = self.expr_infer(&x.value);
-                self.stdlib.dict(k_ty, v_ty).to_type()
+                let key_ty = self.expr(&x.key, key_hint.as_ref());
+                let value_ty = self.expr(&x.value, value_hint.as_ref());
+                self.stdlib
+                    .dict(
+                        self.promote(key_ty, key_hint.as_ref()),
+                        self.promote(value_ty, value_hint.as_ref()),
+                    )
+                    .to_type()
             }
             Expr::Generator(x) => {
                 self.ifs_infer(&x.generators);

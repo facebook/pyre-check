@@ -144,6 +144,35 @@ x: list[str] = {"a": 1}  # E: EXPECTED dict[str, int] <: list[str]
     "#,
 );
 
+testcase!(
+    test_context_list_comprehension,
+    r#"
+class A: ...
+class B(A): ...
+xs: list[A] = [B() for _ in [0]]
+"#,
+);
+
+testcase!(
+    test_context_set_comprehension,
+    r#"
+class A: ...
+class B(A): ...
+xs: set[A] = {B() for _ in [0]}
+"#,
+);
+
+testcase!(
+    test_context_dict_comprehension,
+    r#"
+class A: ...
+class B(A): ...
+class X: ...
+class Y(X): ...
+xs: dict[A, X] = {B(): Y() for _ in [0]}
+"#,
+);
+
 // TODO: Unpacked assignment propagates wrong hint to RHS expression
 testcase_with_bug!(
     test_context_assign_unpacked_tuple,
