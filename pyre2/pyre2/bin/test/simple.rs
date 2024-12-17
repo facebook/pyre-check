@@ -948,3 +948,15 @@ foo()
 x = "test"
 "#,
 );
+
+testcase_with_bug!(
+    test_incorrect_inference,
+    r#"
+from typing import assert_type, Any
+def id[T](x: T) -> T:
+    return x
+
+# Should be list[int]
+assert_type(id([0]), list[Any])
+"#,
+);
