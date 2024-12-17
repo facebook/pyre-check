@@ -139,6 +139,7 @@ x: dict[str, Literal[1]] = {"a": 2} # E: EXPECTED Literal[2] <: Literal[1]
 x: MutableMapping[str, int] = {"a": 1}
 x: Iterable[str] = {"a": 1}
 x: Iterable[int] = {"oops": 1}  # E: EXPECTED Literal['oops'] <: int
+x: Iterable[Literal[4]] = {4: "a"}
 x: object = {"a": 1}
 x: list[str] = {"a": 1}  # E: EXPECTED dict[str, int] <: list[str]
     "#,
