@@ -1422,11 +1422,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn promote(&self, ty: Type, hint: Option<&Type>) -> Type {
-        if let Some(t) = hint {
-            t.clone()
-        } else {
-            ty.promote_literals(self.stdlib)
-        }
+    pub fn promote(&self, ty: Type) -> Type {
+        ty.promote_literals(self.stdlib)
     }
 }

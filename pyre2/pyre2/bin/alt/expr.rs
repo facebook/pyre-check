@@ -624,8 +624,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Some(key) => {
                             let key_t = self.expr_infer(key);
                             let value_t = self.expr_infer(&x.value);
-                            key_tys.push(self.promote(key_t, None));
-                            value_tys.push(self.promote(value_t, None));
+                            key_tys.push(self.promote(key_t));
+                            value_tys.push(self.promote(value_t));
                         }
                         None => {
                             self.error_todo("Answers::expr_infer expansion in dict literal", x);
@@ -649,7 +649,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     let tys = x.elts.map(|x| {
                         let t = self.expr_infer(x);
-                        self.promote(t, None)
+                        self.promote(t)
                     });
                     self.stdlib.set(self.unions(&tys)).to_type()
                 }
@@ -662,7 +662,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.stdlib.list(hint).to_type()
                 } else {
                     let elem_ty = self.expr_infer(&x.elt);
-                    self.stdlib.list(self.promote(elem_ty, None)).to_type()
+                    self.stdlib.list(self.promote(elem_ty)).to_type()
                 }
             }
             Expr::SetComp(x) => {
@@ -673,7 +673,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.stdlib.set(hint).to_type()
                 } else {
                     let elem_ty = self.expr_infer(&x.elt);
-                    self.stdlib.set(self.promote(elem_ty, None)).to_type()
+                    self.stdlib.set(self.promote(elem_ty)).to_type()
                 }
             }
             Expr::DictComp(x) => {
@@ -687,7 +687,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let key_ty = self.expr_infer(&x.key);
                     let value_ty = self.expr_infer(&x.value);
                     self.stdlib
-                        .dict(self.promote(key_ty, None), self.promote(value_ty, None))
+                        .dict(self.promote(key_ty), self.promote(value_ty))
                         .to_type()
                 }
             }
@@ -977,7 +977,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     let tys = x.elts.map(|x| {
                         let t = self.expr_infer(x);
-                        self.promote(t, None)
+                        self.promote(t)
                     });
                     self.stdlib.list(self.unions(&tys)).to_type()
                 }
