@@ -82,21 +82,48 @@ C[str](c)  # E: EXPECTED C[int] <: C[str]
     "#,
 );
 
-// TODO: support this
 testcase_with_bug!(
     test_metaclass_call,
     r#"
 class Meta(type):
     def __call__[T](cls: type[T], x: int) -> T: ...
 class C(metaclass=Meta):
-    pass
-C(5)    # E: Expected 0 positional arguments
+    def __init__(self, *args, **kwargs):
+        pass
+C(5)
 C()     # Should be an error
-C("5")  # E: Expected 0 positional arguments
+C("5")  # Should be an error
     "#,
 );
 
-// TODO: support this
+testcase_with_bug!(
+    test_metaclass_call_bad_classdef,
+    r#"
+class Meta(type):
+    def __call__[T](cls: type[T], x: int) -> T: ...
+# C needs to define __new__ and/or __init__ taking `x: int` to be compatible with Meta.
+class C(metaclass=Meta):
+    pass
+# Both of these calls error at runtime.
+C()
+C(0)  # E: Expected 0 positional arguments
+    "#,
+);
+
+testcase_with_bug!(
+    test_metaclass_call_returns_something_else,
+    r#"
+from typing import assert_type
+class Meta(type):
+    def __call__(cls) -> int:
+        return 0
+class C(metaclass=Meta):
+    pass
+x = C()
+assert_type(x, int)  # E: assert_type
+    "#,
+);
+
 testcase_with_bug!(
     test_new,
     r#"
@@ -105,6 +132,53 @@ class C:
 C(5)    # E: Expected 0 positional arguments
 C()     # Should be an error
 C("5")  # E: Expected 0 positional arguments
+    "#,
+);
+
+testcase!(
+    test_new_and_init,
+    r#"
+class C:
+    def __new__[T](cls: type[T], x: int) -> T: ...
+    def __init__(self, x: int):
+        pass
+C(5)
+C()     # E: Missing argument 'x'
+C("5")  # E: EXPECTED Literal['5'] <: int
+    "#,
+);
+
+testcase_with_bug!(
+    test_new_and_inherited_init,
+    r#"
+class Parent1:
+    def __init__(self):
+        pass
+class Parent2:
+    def __init__(self, x: int):
+        pass
+class GoodChild(Parent2):
+    def __new__[T](cls: type[T], x: int) -> T: ...
+class BadChild(Parent1):
+    # Incompatible with inherited __init__
+    def __new__[T](cls: type[T], x: int) -> T: ...
+GoodChild(0)
+GoodChild()  # E: Missing argument 'x'
+# Both of these calls error at runtime.
+BadChild()
+BadChild(0)  # E: Expected 0 positional arguments
+    "#,
+);
+
+testcase_with_bug!(
+    test_new_returns_something_else,
+    r#"
+from typing import assert_type
+class C:
+    def __new__(cls) -> int:
+        return 0
+x = C()
+assert_type(x, int)  # E: assert_type
     "#,
 );
 
