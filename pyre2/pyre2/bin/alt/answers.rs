@@ -25,6 +25,7 @@ use crate::alt::expr::CallArg;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
+use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::ContextManagerKind;
@@ -283,8 +284,8 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
 }
 
 impl<Ans: LookupAnswer> Solve<Ans> for KeyClassField {
-    fn solve(answers: &AnswersSolver<Ans>, binding: &Binding) -> Arc<Type> {
-        answers.solve_binding(binding)
+    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingClassField) -> Arc<Type> {
+        answers.solve_class_field(binding)
     }
 
     fn recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive {
@@ -931,6 +932,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 t => t,
             },
         )
+    }
+
+    fn solve_class_field(&self, binding: &BindingClassField) -> Arc<Type> {
+        self.solve_binding(&binding.0)
     }
 
     fn solve_binding_inner(&self, binding: &Binding) -> Type {

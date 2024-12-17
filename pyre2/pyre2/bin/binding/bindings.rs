@@ -46,6 +46,7 @@ use vec1::Vec1;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
+use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::ContextManagerKind;
@@ -1112,17 +1113,21 @@ impl<'a> BindingsBuilder<'a> {
         let last_scope = self.scopes.pop().unwrap();
         let mut fields = SmallSet::new();
         for (name, info) in last_scope.flow.info.iter() {
-            let mut val = Binding::Forward(self.table.types.0.insert(Key::Anywhere(
+            let flow_type = Binding::Forward(self.table.types.0.insert(Key::Anywhere(
                 name.clone(),
                 last_scope.stat.0.get(name).unwrap().loc,
             )));
-            if let Some(ann) = &info.ann {
-                val = Binding::AnnotatedType(*ann, Box::new(val));
-            }
+            let binding = if let Some(ann) = &info.ann {
+                // TODO(stroxler): Represent the annotation directly in BindingClassField so
+                // that we have access to qualifiers downstream.
+                BindingClassField(Binding::AnnotatedType(*ann, Box::new(flow_type)))
+            } else {
+                BindingClassField(flow_type)
+            };
             fields.insert(name.clone());
             self.table.insert(
                 KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
-                val,
+                binding,
             );
         }
         if let ScopeKind::ClassBody(body) = last_scope.kind {
@@ -1133,7 +1138,7 @@ impl<'a> BindingsBuilder<'a> {
                             fields.insert(name.clone());
                             self.table.insert(
                                 KeyClassField(ShortIdentifier::new(&x.name), name),
-                                binding,
+                                BindingClassField(binding),
                             );
                         }
                     }

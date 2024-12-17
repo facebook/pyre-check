@@ -49,6 +49,7 @@ assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 assert_eq_size!(Binding, [usize; 9]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
 assert_eq_size!(BindingClassMetadata, [usize; 8]);
+assert_eq_size!(BindingClassField, [usize; 9]);
 assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
 
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
@@ -63,7 +64,7 @@ impl Keyed for Key {
 }
 impl Keyed for KeyClassField {
     const EXPORTED: bool = true;
-    type Value = Binding;
+    type Value = BindingClassField;
     type Answer = Type;
 }
 impl Keyed for KeyExport {
@@ -588,6 +589,18 @@ impl DisplayWith<Bindings> for BindingAnnotation {
             Self::Type(t) => write!(f, "type {t}"),
             Self::AttrType(attr) => write!(f, "type {attr:?}"),
         }
+    }
+}
+
+/// Binding for a class field, which is any attribute of a class defined in
+/// either the class body or in method (like `__init__`) that we recognize as
+/// defining instance attributes.
+#[derive(Clone, Debug)]
+pub struct BindingClassField(pub Binding);
+
+impl DisplayWith<Bindings> for BindingClassField {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        write!(f, "class field {}", self.0.display_with(ctx))
     }
 }
 
