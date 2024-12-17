@@ -261,6 +261,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
+        let positional_count_error = |arg_range, expected| {
+            self.error(
+                arg_range,
+                format!(
+                    "Expected {} positional argument(s), got {}",
+                    expected,
+                    args.len()
+                ),
+            )
+        };
         match call_target {
             CallTarget::Class(cls) => {
                 self.call_infer(
@@ -305,22 +315,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     Arg::VarArg(ty) => hint = Some(ty),
                                     Arg::KwOnly(..) | Arg::Kwargs(..) => {
                                         if num_positional >= 0 {
-                                            self.error(
-                                                arg.range(),
-                                                format!(
-                                                    "Expected {} positional argument(s)",
-                                                    num_positional
-                                                ),
-                                            );
+                                            positional_count_error(arg.range(), num_positional);
                                             num_positional = -1;
                                         }
                                     }
                                 };
                             } else if num_positional >= 0 {
-                                self.error(
-                                    arg.range(),
-                                    format!("Expected {} positional argument(s)", num_positional),
-                                );
+                                positional_count_error(arg.range(), num_positional);
                                 num_positional = -1;
                             }
                             arg.check_against_hint(self, hint);
