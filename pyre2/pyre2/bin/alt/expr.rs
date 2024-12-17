@@ -622,10 +622,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let mut value_tys = Vec::new();
                     x.items.iter().for_each(|x| match &x.key {
                         Some(key) => {
-                            let key_t = self.expr_infer(key);
-                            let value_t = self.expr_infer(&x.value);
-                            key_tys.push(self.promote(key_t));
-                            value_tys.push(self.promote(value_t));
+                            let key_t = self.expr_infer(key).promote_literals(self.stdlib);
+                            let value_t = self.expr_infer(&x.value).promote_literals(self.stdlib);
+                            key_tys.push(key_t);
+                            value_tys.push(value_t);
                         }
                         None => {
                             self.error_todo("Answers::expr_infer expansion in dict literal", x);
@@ -647,10 +647,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let elem_ty = self.solver().fresh_contained(self.uniques).to_type();
                     self.stdlib.set(elem_ty).to_type()
                 } else {
-                    let tys = x.elts.map(|x| {
-                        let t = self.expr_infer(x);
-                        self.promote(t)
-                    });
+                    let tys = x
+                        .elts
+                        .map(|x| self.expr_infer(x).promote_literals(self.stdlib));
                     self.stdlib.set(self.unions(&tys)).to_type()
                 }
             }
@@ -661,8 +660,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.expr(&x.elt, Some(&hint));
                     self.stdlib.list(hint).to_type()
                 } else {
-                    let elem_ty = self.expr_infer(&x.elt);
-                    self.stdlib.list(self.promote(elem_ty)).to_type()
+                    let elem_ty = self.expr_infer(&x.elt).promote_literals(self.stdlib);
+                    self.stdlib.list(elem_ty).to_type()
                 }
             }
             Expr::SetComp(x) => {
@@ -672,8 +671,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.expr(&x.elt, Some(&hint));
                     self.stdlib.set(hint).to_type()
                 } else {
-                    let elem_ty = self.expr_infer(&x.elt);
-                    self.stdlib.set(self.promote(elem_ty)).to_type()
+                    let elem_ty = self.expr_infer(&x.elt).promote_literals(self.stdlib);
+                    self.stdlib.set(elem_ty).to_type()
                 }
             }
             Expr::DictComp(x) => {
@@ -684,11 +683,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.expr(&x.value, Some(&hint.value));
                     hint.to_type(self.stdlib)
                 } else {
-                    let key_ty = self.expr_infer(&x.key);
-                    let value_ty = self.expr_infer(&x.value);
-                    self.stdlib
-                        .dict(self.promote(key_ty), self.promote(value_ty))
-                        .to_type()
+                    let key_ty = self.expr_infer(&x.key).promote_literals(self.stdlib);
+                    let value_ty = self.expr_infer(&x.value).promote_literals(self.stdlib);
+                    self.stdlib.dict(key_ty, value_ty).to_type()
                 }
             }
             Expr::Generator(x) => {
@@ -975,10 +972,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let elem_ty = self.solver().fresh_contained(self.uniques).to_type();
                     self.stdlib.list(elem_ty).to_type()
                 } else {
-                    let tys = x.elts.map(|x| {
-                        let t = self.expr_infer(x);
-                        self.promote(t)
-                    });
+                    let tys = x
+                        .elts
+                        .map(|x| self.expr_infer(x).promote_literals(self.stdlib));
                     self.stdlib.list(self.unions(&tys)).to_type()
                 }
             }

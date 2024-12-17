@@ -1421,8 +1421,4 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(Type::any_error())
         }
     }
-
-    pub fn promote(&self, ty: Type) -> Type {
-        ty.promote_literals(self.stdlib)
-    }
 }
