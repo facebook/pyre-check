@@ -112,7 +112,7 @@ class Foo:
     def __exit__(self) -> None:
         ...
 
-with Foo() as foo:  # E: Expected 1 positional argument(s), got 4
+with Foo() as foo:  # E: Expected 1 positional argument, got 4
     pass
     "#,
 );

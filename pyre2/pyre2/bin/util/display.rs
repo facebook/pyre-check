@@ -132,6 +132,12 @@ pub fn number_thousands(x: usize) -> impl Display {
         .join(",")
 }
 
+/// Format the number and descriptor word with the right pluralization.
+/// E.g., count(2, "cat") -> "2 cats". Pluralizes by tacking on an "s".
+pub fn count(n: usize, descriptor: &str) -> String {
+    format!("{n} {descriptor}{}", if n == 1 { "" } else { "s" })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

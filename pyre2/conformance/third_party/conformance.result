@@ -39,8 +39,8 @@
     "Line 65: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
     "Line 68: Unexpected errors ['assert_type(Any, Callable[[int, str, str], None]) failed']",
     "Line 72: Unexpected errors ['assert_type(Callable[ParamSpec(ParamSpec[P]), None], Callable[..., None]) failed']",
-    "Line 89: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED map[@_] <: LiteralString', 'EXPECTED map[@_] <: str', 'Expected 1 positional argument(s), got 3']",
-    "Line 92: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 89: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED map[@_] <: LiteralString', 'EXPECTED map[@_] <: str', 'Expected 1 positional argument, got 3']",
+    "Line 92: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 94: Unexpected errors ['TODO: Lambda(ExprLambda - Answers::expr_infer']",
     "Line 95: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]']",
     "Line 127: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[@_], Iterable[@_]], None] | Callable[[list[@_]], None]']",
@@ -189,7 +189,7 @@
     "Line 95: Expected 1 errors",
     "Line 100: Expected 1 errors",
     "Line 15: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]']",
-    "Line 26: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 26: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 77: Unexpected errors ['assert_type(tuple[Any], tuple[Any, ...]) failed']"
   ],
   "callables_annotation.py": [
@@ -310,7 +310,7 @@
     "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']",
     "Line 78: Unexpected errors ['assert_type(Literal[3.1], float) failed']",
     "Line 98: Unexpected errors ['EXPECTED str | None <: str']",
-    "Line 101: Unexpected errors ['Expected 1 more positional argument(s)', 'Object of class `NoneType` has no attribute `__add__`', 'Object of class `_PyreReadOnly_` has no attribute `__add__`', 'TODO: Expr::attr_infer attribute base undefined for type: @_', \"EXPECTED Literal['hits'] <: _PyreReadOnly_[dict[str, int]]\", \"EXPECTED Literal['hits'] <: dict[str, int]\", 'EXPECTED Literal[0] <: _PyreReadOnly_[str]', 'EXPECTED Literal[0] <: str']"
+    "Line 101: Unexpected errors ['Expected 1 more positional argument', 'Object of class `NoneType` has no attribute `__add__`', 'Object of class `_PyreReadOnly_` has no attribute `__add__`', 'TODO: Expr::attr_infer attribute base undefined for type: @_', \"EXPECTED Literal['hits'] <: _PyreReadOnly_[dict[str, int]]\", \"EXPECTED Literal['hits'] <: dict[str, int]\", 'EXPECTED Literal[0] <: _PyreReadOnly_[str]', 'EXPECTED Literal[0] <: str']"
   ],
   "classes_override.py": [
     "Line 53: Expected 1 errors",
@@ -336,41 +336,41 @@
     "Line 51: Expected 1 errors",
     "Line 65: Expected 1 errors",
     "Line 15: Unexpected errors ['EXPECTED None <: NoReturn']",
-    "Line 20: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 1 positional argument(s), got 2']",
+    "Line 20: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 1 positional argument, got 2']",
     "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed']",
-    "Line 33: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2', 'Expected 1 positional argument(s), got 2']",
+    "Line 33: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2', 'Expected 1 positional argument, got 2']",
     "Line 36: Unexpected errors ['assert_type(Class2, Meta2 | int) failed']",
     "Line 43: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Object of class `super` has no attribute `__call__`', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 48: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class3', 'Expected 1 positional argument(s), got 2']",
-    "Line 52: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 48: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class3', 'Expected 1 positional argument, got 2']",
+    "Line 52: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 57: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Object of class `super` has no attribute `__call__`', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 62: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class4', 'Expected 1 positional argument(s), got 2']",
-    "Line 66: Unexpected errors ['Expected 1 positional argument(s), got 2']"
+    "Line 62: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class4', 'Expected 1 positional argument, got 2']",
+    "Line 66: Unexpected errors ['Expected 1 positional argument, got 2']"
   ],
   "constructors_call_new.py": [
     "Line 145: Expected 1 errors",
-    "Line 16: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1[?_]', 'Expected 1 positional argument(s), got 2']",
-    "Line 19: Unexpected errors ['Expected 1 positional argument(s), got 2']",
-    "Line 20: Unexpected errors ['Expected 1 positional argument(s), got 2']",
-    "Line 23: Unexpected errors ['assert_type(Class1[Any], Class1[int]) failed', 'Expected 1 positional argument(s), got 2']",
-    "Line 24: Unexpected errors ['assert_type(Class1[Any], Class1[float]) failed', 'Expected 1 positional argument(s), got 2']",
-    "Line 29: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2[?_]', 'Expected 1 positional argument(s), got 2']",
+    "Line 16: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1[?_]', 'Expected 1 positional argument, got 2']",
+    "Line 19: Unexpected errors ['Expected 1 positional argument, got 2']",
+    "Line 20: Unexpected errors ['Expected 1 positional argument, got 2']",
+    "Line 23: Unexpected errors ['assert_type(Class1[Any], Class1[int]) failed', 'Expected 1 positional argument, got 2']",
+    "Line 24: Unexpected errors ['assert_type(Class1[Any], Class1[float]) failed', 'Expected 1 positional argument, got 2']",
+    "Line 29: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2[?_]', 'Expected 1 positional argument, got 2']",
     "Line 49: Unexpected errors ['assert_type(Class3, int) failed', \"Missing argument 'x'\"]",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', \"Missing argument 'x'\"]",
     "Line 69: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 75: Unexpected errors ['TODO: StmtTry - Bindings::stmt']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', \"Missing argument 'x'\"]",
     "Line 89: Unexpected errors ['assert_type(Class6, Class6 | int) failed', \"Missing argument 'x'\"]",
-    "Line 98: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 1 positional argument(s), got 3', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
+    "Line 98: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 1 positional argument, got 3', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
     "Line 116: Unexpected errors ['assert_type(Class8[int], Class8[list[int]]) failed']",
     "Line 117: Unexpected errors ['assert_type(Class8[str], Class8[list[str]]) failed']"
   ],
   "constructors_call_type.py": [
     "Line 30: Expected 1 errors",
     "Line 40: Expected 1 errors",
-    "Line 25: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 1 positional argument(s), got 2', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
+    "Line 25: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 1 positional argument, got 2', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
     "Line 29: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\"]",
-    "Line 35: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2', 'Expected 1 positional argument(s), got 2']",
+    "Line 35: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2', 'Expected 1 positional argument, got 2']",
     "Line 39: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\"]",
     "Line 63: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 71: Unexpected errors ['Expected a callable, got type[?_]']",
@@ -391,7 +391,7 @@
     "Line 77: Unexpected errors ['revealed type: Callable[ParamSpec(Unknown), Unknown]']",
     "Line 78: Unexpected errors ['assert_type(Any, int) failed', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 85: Unexpected errors ['EXPECTED None <: NoReturn']",
-    "Line 93: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class5', 'Expected 1 positional argument(s), got 2']",
+    "Line 93: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class5', 'Expected 1 positional argument, got 2']",
     "Line 96: Unexpected errors ['EXPECTED type[Class5] <: Callable[ParamSpec(@_), @_]']",
     "Line 97: Unexpected errors ['revealed type: Callable[ParamSpec(Unknown), Unknown]']",
     "Line 99: Unexpected errors ['TODO: StmtTry - Bindings::stmt']",
@@ -401,7 +401,7 @@
     "Line 124: Unexpected errors ['EXPECTED type[Class6] <: Callable[ParamSpec(@_), @_]']",
     "Line 125: Unexpected errors ['revealed type: Callable[ParamSpec(Unknown), Unknown]']",
     "Line 126: Unexpected errors ['assert_type(Any, Class6Proxy) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 134: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 1 positional argument(s), got 2']",
+    "Line 134: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 1 positional argument, got 2']",
     "Line 141: Unexpected errors ['EXPECTED type[Class6Any] <: Callable[ParamSpec(@_), @_]']",
     "Line 142: Unexpected errors ['revealed type: Callable[ParamSpec(Unknown), Unknown]']",
     "Line 143: Unexpected errors ['Answers::expr_infer wrong number of arguments to call']",
@@ -409,7 +409,7 @@
     "Line 161: Unexpected errors ['revealed type: Callable[ParamSpec(Unknown), Unknown]']",
     "Line 164: Unexpected errors ['assert_type(Any, Class7[int]) failed', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 165: Unexpected errors ['assert_type(Any, Class7[str]) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 178: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class8[?_]', 'Expected 1 positional argument(s), got 2']",
+    "Line 178: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class8[?_]', 'Expected 1 positional argument, got 2']",
     "Line 181: Unexpected errors ['EXPECTED type[Class8] <: Callable[ParamSpec(@_), @_]']",
     "Line 182: Unexpected errors ['revealed type: Callable[ParamSpec(Unknown), Unknown]']",
     "Line 183: Unexpected errors ['assert_type(Any, Class8[str]) failed', 'Answers::expr_infer wrong number of arguments to call']",
@@ -418,15 +418,15 @@
     "Line 194: Unexpected errors ['assert_type(Any, Class9) failed', 'Answers::expr_infer wrong number of arguments to call']"
   ],
   "constructors_consistency.py": [
-    "Line 22: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 1 positional argument(s), got 2']"
+    "Line 22: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 1 positional argument, got 2']"
   ],
   "dataclasses_descriptors.py": [
-    "Line 35: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 35: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 37: Unexpected errors ['assert_type(Desc1, int) failed']",
     "Line 61: Unexpected errors ['assert_type(Desc2[int], list[int]) failed']",
     "Line 62: Unexpected errors ['assert_type(Desc2[str], list[str]) failed']",
     "Line 63: Unexpected errors ['assert_type(Desc2[str], list[str]) failed']",
-    "Line 65: Unexpected errors ['Expected 1 positional argument(s), got 4']",
+    "Line 65: Unexpected errors ['Expected 1 positional argument, got 4']",
     "Line 66: Unexpected errors ['assert_type(Desc2[int], int) failed']",
     "Line 67: Unexpected errors ['assert_type(Desc2[str], str) failed']",
     "Line 68: Unexpected errors ['assert_type(Desc2[str], str) failed']"
@@ -443,57 +443,57 @@
     "Line 17: Expected 1 errors",
     "Lines 22, 23: Expected error (tag 'DC2')",
     "Lines 32, 33: Expected error (tag 'DC4')",
-    "Line 14: Unexpected errors ['Expected 1 positional argument(s), got 3']"
+    "Line 14: Unexpected errors ['Expected 1 positional argument, got 3']"
   ],
   "dataclasses_hash.py": [
-    "Line 23: Unexpected errors ['EXPECTED DC2 <: Hashable', 'Expected 1 positional argument(s), got 2']",
-    "Line 40: Unexpected errors ['EXPECTED DC4 <: Hashable', 'Expected 1 positional argument(s), got 2']",
-    "Line 48: Unexpected errors ['EXPECTED DC5 <: Hashable', 'Expected 1 positional argument(s), got 2']",
-    "Line 59: Unexpected errors ['EXPECTED DC6 <: Hashable', 'Expected 1 positional argument(s), got 2']",
-    "Line 70: Unexpected errors ['EXPECTED DC7 <: Hashable', 'Expected 1 positional argument(s), got 2']"
+    "Line 23: Unexpected errors ['EXPECTED DC2 <: Hashable', 'Expected 1 positional argument, got 2']",
+    "Line 40: Unexpected errors ['EXPECTED DC4 <: Hashable', 'Expected 1 positional argument, got 2']",
+    "Line 48: Unexpected errors ['EXPECTED DC5 <: Hashable', 'Expected 1 positional argument, got 2']",
+    "Line 59: Unexpected errors ['EXPECTED DC6 <: Hashable', 'Expected 1 positional argument, got 2']",
+    "Line 70: Unexpected errors ['EXPECTED DC7 <: Hashable', 'Expected 1 positional argument, got 2']"
   ],
   "dataclasses_inheritance.py": [
     "Line 60: Expected 1 errors",
     "Line 64: Expected 1 errors",
-    "Line 23: Unexpected errors ['Expected 1 positional argument(s), got 3']",
+    "Line 23: Unexpected errors ['Expected 1 positional argument, got 3']",
     "Line 37: Unexpected errors ['EXPECTED Literal[15] <: float']",
-    "Line 40: Unexpected errors ['Expected 1 positional argument(s), got 4']"
+    "Line 40: Unexpected errors ['Expected 1 positional argument, got 4']"
   ],
   "dataclasses_kwonly.py": [
-    "Line 17: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 17: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 18: Unexpected errors [\"Unexpected keyword argument 'a'\"]",
     "Line 19: Unexpected errors [\"Unexpected keyword argument 'a'\", \"Unexpected keyword argument 'b'\"]",
-    "Line 20: Unexpected errors ['Expected 1 positional argument(s), got 2', \"Unexpected keyword argument 'b'\"]",
+    "Line 20: Unexpected errors ['Expected 1 positional argument, got 2', \"Unexpected keyword argument 'b'\"]",
     "Line 28: Unexpected errors [\"Unexpected keyword argument 'default'\"]",
-    "Line 32: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 32: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 33: Unexpected errors [\"Unexpected keyword argument 'a'\"]",
     "Line 34: Unexpected errors [\"Unexpected keyword argument 'a'\", \"Unexpected keyword argument 'b'\"]",
-    "Line 35: Unexpected errors ['Expected 1 positional argument(s), got 2', \"Unexpected keyword argument 'b'\"]",
-    "Line 47: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 35: Unexpected errors ['Expected 1 positional argument, got 2', \"Unexpected keyword argument 'b'\"]",
+    "Line 47: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 48: Unexpected errors [\"Unexpected keyword argument 'a'\"]",
     "Line 49: Unexpected errors [\"Unexpected keyword argument 'a'\", \"Unexpected keyword argument 'b'\"]",
-    "Line 50: Unexpected errors ['Expected 1 positional argument(s), got 2', \"Unexpected keyword argument 'b'\"]",
-    "Line 61: Unexpected errors ['Expected 1 positional argument(s), got 3', \"Unexpected keyword argument 'b'\"]",
+    "Line 50: Unexpected errors ['Expected 1 positional argument, got 2', \"Unexpected keyword argument 'b'\"]",
+    "Line 61: Unexpected errors ['Expected 1 positional argument, got 3', \"Unexpected keyword argument 'b'\"]",
     "Line 62: Unexpected errors [\"Unexpected keyword argument 'a'\", \"Unexpected keyword argument 'b'\", \"Unexpected keyword argument 'c'\"]"
   ],
   "dataclasses_order.py": [
     "Line 50: Expected 1 errors",
-    "Line 19: Unexpected errors ['Expected 1 positional argument(s), got 3']",
-    "Line 20: Unexpected errors ['Expected 1 positional argument(s), got 3']",
-    "Line 46: Unexpected errors ['Expected 1 positional argument(s), got 3']"
+    "Line 19: Unexpected errors ['Expected 1 positional argument, got 3']",
+    "Line 20: Unexpected errors ['Expected 1 positional argument, got 3']",
+    "Line 46: Unexpected errors ['Expected 1 positional argument, got 3']"
   ],
   "dataclasses_postinit.py": [
     "Line 19: Expected 1 errors",
     "Line 36: Expected 1 errors",
-    "Line 23: Unexpected errors ['Expected 1 positional argument(s), got 6']"
+    "Line 23: Unexpected errors ['Expected 1 positional argument, got 6']"
   ],
   "dataclasses_slots.py": [
     "Line 25: Expected 1 errors",
     "Line 38: Expected 1 errors",
     "Lines 10, 11: Expected error (tag 'DC1')",
-    "Line 48: Unexpected errors ['Expected 1 positional argument(s), got 3']",
+    "Line 48: Unexpected errors ['Expected 1 positional argument, got 3']",
     "Line 56: Unexpected errors ['Class `DC5` has no class attribute `__slots__`']",
-    "Line 57: Unexpected errors ['Object of class `DC5` has no attribute `__slots__`', 'Expected 1 positional argument(s), got 2']"
+    "Line 57: Unexpected errors ['Object of class `DC5` has no attribute `__slots__`', 'Expected 1 positional argument, got 2']"
   ],
   "dataclasses_transform_class.py": [
     "Line 51: Expected 1 errors",
@@ -509,17 +509,17 @@
   ],
   "dataclasses_transform_converter.py": [
     "Line 118: Expected 1 errors",
-    "Line 60: Unexpected errors ['Expected 1 positional argument(s), got 2']",
-    "Line 64: Unexpected errors ['Expected 1 positional argument(s), got 2']",
-    "Line 68: Unexpected errors ['EXPECTED str <: _PyreReadOnly_[str]', 'Expected 1 positional argument(s), got 2', 'EXPECTED Literal[0] <: SupportsIndex | slice[Error, Error, Error]']",
+    "Line 60: Unexpected errors ['Expected 1 positional argument, got 2']",
+    "Line 64: Unexpected errors ['Expected 1 positional argument, got 2']",
+    "Line 68: Unexpected errors ['EXPECTED str <: _PyreReadOnly_[str]', 'Expected 1 positional argument, got 2', 'EXPECTED Literal[0] <: SupportsIndex | slice[Error, Error, Error]']",
     "Line 102: Unexpected errors ['EXPECTED type[ConverterClass] <: Callable[[@_], @_]']",
     "Line 103: Unexpected errors ['EXPECTED int | str <: int']",
     "Line 104: Unexpected errors ['EXPECTED type[dict] <: Callable[[@_], @_]']",
-    "Line 112: Unexpected errors ['Expected 1 positional argument(s), got 6']",
+    "Line 112: Unexpected errors ['Expected 1 positional argument, got 6']",
     "Line 114: Unexpected errors [\"EXPECTED Literal['f1'] <: int\"]",
     "Line 115: Unexpected errors [\"EXPECTED Literal['f6'] <: ConverterClass\"]",
     "Line 116: Unexpected errors [\"EXPECTED Literal[b'f6'] <: ConverterClass\"]",
-    "Line 121: Unexpected errors ['Expected 1 positional argument(s), got 7']",
+    "Line 121: Unexpected errors ['Expected 1 positional argument, got 7']",
     "Line 132: Unexpected errors ['EXPECTED type[str] <: Callable[[], str] | None']"
   ],
   "dataclasses_transform_field.py": [
@@ -532,7 +532,7 @@
     "Line 97: Expected 1 errors",
     "Lines 89, 90: Expected error (tag 'Customer3Subclass')",
     "Line 50: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
-    "Line 53: Unexpected errors ['Expected 1 positional argument(s), got 3']",
+    "Line 53: Unexpected errors ['Expected 1 positional argument, got 3']",
     "Line 67: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
     "Line 94: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]"
   ],
@@ -552,7 +552,7 @@
     "Lines 64, 67: Expected error (tag 'DC2')",
     "Lines 70, 73: Expected error (tag 'DC3')",
     "Line 22: Unexpected errors ['EXPECTED int <: float']",
-    "Line 25: Unexpected errors ['Expected 1 positional argument(s), got 3']",
+    "Line 25: Unexpected errors ['Expected 1 positional argument, got 3']",
     "Line 35: Unexpected errors ['EXPECTED BoundMethod[InventoryItem, Callable[[object], None]] <: InventoryItemInitProto']",
     "Line 38: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED BoundMethod[InventoryItem, Callable[[_PyreReadOnly_[object]], str]] <: object']",
     "Line 39: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED BoundMethod[InventoryItem, Callable[[_PyreReadOnly_[object], _PyreReadOnly_[object]], bool]] <: object']",
@@ -563,25 +563,25 @@
     "Line 44: Unexpected errors [\"Missing argument 'flush'\", 'Object of class `InventoryItem` has no attribute `__ge__`']",
     "Line 66: Unexpected errors [\"Unexpected keyword argument 'default'\"]",
     "Line 72: Unexpected errors ['EXPECTED Literal[0] <: InitVar[int]']",
-    "Line 82: Unexpected errors ['Expected 1 positional argument(s), got 2']",
-    "Line 92: Unexpected errors ['Expected 1 positional argument(s), got 2']",
-    "Line 102: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 82: Unexpected errors ['Expected 1 positional argument, got 2']",
+    "Line 92: Unexpected errors ['Expected 1 positional argument, got 2']",
+    "Line 102: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, Callable[[str], int]], Callable[[str], int]) failed']",
-    "Line 123: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 123: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 135: Unexpected errors [\"Unexpected keyword argument 'default'\"]",
     "Line 185: Unexpected errors [\"Unexpected keyword argument 'default'\"]",
     "Line 186: Unexpected errors [\"Unexpected keyword argument 'default_factory'\", 'TODO: Lambda(ExprLambda - Answers::expr_infer']",
     "Line 194: Unexpected errors [\"Unexpected keyword argument 'prop_2'\"]",
     "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']",
-    "Line 213: Unexpected errors ['assert_type(DC16[Any], DC16[int]) failed', 'Expected 1 positional argument(s), got 2']",
-    "Line 220: Unexpected errors ['Expected 1 positional argument(s), got 2']"
+    "Line 213: Unexpected errors ['assert_type(DC16[Any], DC16[int]) failed', 'Expected 1 positional argument, got 2']",
+    "Line 220: Unexpected errors ['Expected 1 positional argument, got 2']"
   ],
   "directives_assert_type.py": [
     "Line 24: Unexpected errors ['assert_type(ForwardReference, Any) failed', \"untype, got Literal['ForwardReference']\"]"
   ],
   "directives_cast.py": [
     "Line 16: Expected 1 errors",
-    "Line 10: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED Generator[int, None, None] <: SupportsNext[@_]', 'Expected 1 positional argument(s), got 2', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
+    "Line 10: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED Generator[int, None, None] <: SupportsNext[@_]', 'Expected 1 positional argument, got 2', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 11: Unexpected errors ['EXPECTED type[str] <: object', 'Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[object]], SupportsIndex], _PyreReadOnly_[object]] | Callable[[_PyreReadOnly_[list[object]], slice[Error, Error, Error]], list[_PyreReadOnly_[object]]] | Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]']",
     "Line 13: Unexpected errors ['EXPECTED type[int] <: object']"
   ],
@@ -621,7 +621,7 @@
     "Line 19: Unexpected errors ['TODO: Answers::solve_binding - Binding::IterableValue']",
     "Line 20: Unexpected errors ['assert_type(Any, Color) failed']",
     "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for class `Color`, got 1.', \"untype, got Literal['RED']\"]",
-    "Line 27: Unexpected errors ['Expected 1 positional argument(s), got 2']"
+    "Line 27: Unexpected errors ['Expected 1 positional argument, got 2']"
   ],
   "enums_definition.py": [
     "Line 75: Unexpected errors ['assert_type(Literal[1], Literal[False]) failed', 'TODO: Attribute(ExprAttribute - Lit::from_expr']"
@@ -668,7 +668,7 @@
   "generics_base_class.py": [
     "Line 30: Expected 1 errors",
     "Line 68: Expected 1 errors",
-    "Line 45: Unexpected errors ['assert_type(Iterator[Any], Iterator[int]) failed', 'Expected 1 more positional argument(s)', 'EXPECTED LinkedList[int] <: Callable[[], @_]']",
+    "Line 45: Unexpected errors ['assert_type(Iterator[Any], Iterator[int]) failed', 'Expected 1 more positional argument', 'EXPECTED LinkedList[int] <: Callable[[], @_]']",
     "Line 46: Unexpected errors ['EXPECTED LinkedList[int] <: _PyreReadOnly_[Container[int]]', 'EXPECTED Literal[1] <: _PyreReadOnly_[object]']",
     "Line 58: Unexpected errors ['assert_type(Any, int) failed', 'Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]']"
   ],
@@ -684,11 +684,11 @@
     "Line 92: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]', 'EXPECTED ?_ <: object']",
     "Line 96: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]', 'EXPECTED ?_ <: object']",
     "Line 100: Unexpected errors ['EXPECTED str <: LiteralString', 'EXPECTED str <: LiteralString']",
-    "Line 139: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument(s)', 'EXPECTED MyIter1[int] <: SupportsNext[@_]']",
-    "Line 140: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument(s)', 'EXPECTED MyIter2[int] <: SupportsNext[@_]']",
+    "Line 139: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument', 'EXPECTED MyIter1[int] <: SupportsNext[@_]']",
+    "Line 140: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument', 'EXPECTED MyIter2[int] <: SupportsNext[@_]']",
     "Line 154: Unexpected errors ['assert_type(Any, int) failed', 'Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]']",
     "Line 155: Unexpected errors ['assert_type(Any, int) failed', 'Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]']",
-    "Line 182: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED MyIterableAny <: Callable[[], @_]']"
+    "Line 182: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED MyIterableAny <: Callable[[], @_]']"
   ],
   "generics_defaults.py": [
     "Line 104: Expected 1 errors",
@@ -823,7 +823,7 @@
     "Line 45: Unexpected errors ['assert_type(ParentB, Self) failed']"
   ],
   "generics_self_attributes.py": [
-    "Line 22: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 22: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 29: Unexpected errors ['EXPECTED OrdinalLinkedList <: Self | None', \"Unexpected keyword argument 'value'\", \"Unexpected keyword argument 'next'\"]"
   ],
   "generics_self_basic.py": [
@@ -878,7 +878,7 @@
     "Line 28: Unexpected errors ['EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]']",
     "Line 36: Unexpected errors ['EXPECTED ShouldBeCovariant2[int] <: ShouldBeCovariant2[float]']",
     "Line 45: Unexpected errors ['EXPECTED ShouldBeCovariant3[int] <: ShouldBeCovariant3[float]']",
-    "Line 54: Unexpected errors ['EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]', 'Expected 1 positional argument(s), got 2']",
+    "Line 54: Unexpected errors ['EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]', 'Expected 1 positional argument, got 2']",
     "Line 67: Unexpected errors ['EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]']",
     "Line 78: Unexpected errors ['EXPECTED ShouldBeCovariant6[int] <: ShouldBeCovariant6[float]']",
     "Line 149: Unexpected errors ['EXPECTED ShouldBeContravariant1[float] <: ShouldBeContravariant1[int]']"
@@ -889,15 +889,15 @@
     "Line 92: Expected 1 errors",
     "Line 95: Expected 1 errors",
     "Line 98: Expected 1 errors",
-    "Line 52: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 52: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 61: Unexpected errors ['TODO: StmtNonlocal - Bindings::stmt']",
     "Line 66: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']",
     "Line 67: Unexpected errors ['assert_type(str, int) failed']",
-    "Line 85: Unexpected errors ['Expected 1 positional argument(s), got 2']",
-    "Line 90: Unexpected errors ['Expected 1 positional argument(s), got 2']",
-    "Line 102: Unexpected errors ['Expected 1 positional argument(s), got 2']",
-    "Line 106: Unexpected errors ['Expected 1 positional argument(s), got 2']",
-    "Line 111: Unexpected errors ['Expected 1 positional argument(s), got 2']",
+    "Line 85: Unexpected errors ['Expected 1 positional argument, got 2']",
+    "Line 90: Unexpected errors ['Expected 1 positional argument, got 2']",
+    "Line 102: Unexpected errors ['Expected 1 positional argument, got 2']",
+    "Line 106: Unexpected errors ['Expected 1 positional argument, got 2']",
+    "Line 111: Unexpected errors ['Expected 1 positional argument, got 2']",
     "Line 116: Unexpected errors ['assert_type(int, TypeVar) failed']",
     "Line 121: Unexpected errors ['assert_type(Literal[0+3j], complex) failed']",
     "Line 124: Unexpected errors ['assert_type(Literal[0+3j], complex) failed']"
@@ -1067,7 +1067,7 @@
     "Line 40: Unexpected errors ['EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]']",
     "Line 48: Unexpected errors ['EXPECTED ShouldBeCovariant2[int] <: ShouldBeCovariant2[float]']",
     "Line 57: Unexpected errors ['EXPECTED ShouldBeCovariant3[int] <: ShouldBeCovariant3[float]']",
-    "Line 66: Unexpected errors ['EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]', 'Expected 1 positional argument(s), got 2']",
+    "Line 66: Unexpected errors ['EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]', 'Expected 1 positional argument, got 2']",
     "Line 79: Unexpected errors ['EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]']",
     "Line 150: Unexpected errors ['EXPECTED ShouldBeContravariant1[float] <: ShouldBeContravariant1[int]']",
     "Line 182: Unexpected errors ['EXPECTED ShouldBeCovariant6[int] <: ShouldBeCovariant6[float]']",
@@ -1095,18 +1095,18 @@
   "literals_literalstring.py": [
     "Line 120: Expected 1 errors",
     "Line 48: Unexpected errors ['assert_type(Any, LiteralString) failed', 'Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]']",
-    "Line 52: Unexpected errors ['assert_type(LiteralString | str, LiteralString) failed', 'Expected 1 more positional argument(s)', 'EXPECTED tuple[LiteralString, LiteralString] <: LiteralString', 'EXPECTED tuple[LiteralString, LiteralString] <: str']",
-    "Line 53: Unexpected errors ['assert_type(LiteralString | str, str) failed', 'Expected 1 more positional argument(s)', 'EXPECTED tuple[LiteralString, str] <: LiteralString', 'EXPECTED tuple[LiteralString, str] <: str', 'Expected 1 positional argument(s), got 2']",
+    "Line 52: Unexpected errors ['assert_type(LiteralString | str, LiteralString) failed', 'Expected 1 more positional argument', 'EXPECTED tuple[LiteralString, LiteralString] <: LiteralString', 'EXPECTED tuple[LiteralString, LiteralString] <: str']",
+    "Line 53: Unexpected errors ['assert_type(LiteralString | str, str) failed', 'Expected 1 more positional argument', 'EXPECTED tuple[LiteralString, str] <: LiteralString', 'EXPECTED tuple[LiteralString, str] <: str', 'Expected 1 positional argument, got 2']",
     "Line 57: Unexpected errors ['Object of class `str` has no attribute `__iadd__`']",
     "Line 58: Unexpected errors ['Object of class `str` has no attribute `__iadd__`']",
     "Line 63: Unexpected errors ['assert_type(str, LiteralString) failed']",
-    "Line 68: Unexpected errors ['assert_type(Any, str) failed', 'Expected 1 positional argument(s), got 2']",
+    "Line 68: Unexpected errors ['assert_type(Any, str) failed', 'Expected 1 positional argument, got 2']",
     "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]",
     "Line 116: Unexpected errors ['assert_type(str, LiteralString) failed']",
     "Line 130: Unexpected errors ['EXPECTED Container[str] <: Container[LiteralString]']",
     "Line 165: Unexpected errors ['assert_type(Any, C) failed']",
     "Line 166: Unexpected errors ['assert_type(Any, B) failed']",
-    "Line 167: Unexpected errors ['assert_type(Any, A) failed', 'Expected 1 positional argument(s), got 2']"
+    "Line 167: Unexpected errors ['assert_type(Any, A) failed', 'Expected 1 positional argument, got 2']"
   ],
   "literals_parameterizations.py": [
     "Line 46: Expected 1 errors",
@@ -1493,7 +1493,7 @@
     "Line 27: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 28: Unexpected errors ['EXPECTED tuple[int] <: tuple[int, Error]']",
     "Line 47: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 59: Unexpected errors ['EXPECTED tuple[@_] <: tuple[int, int]', 'Expected 1 positional argument(s), got 2']",
+    "Line 59: Unexpected errors ['EXPECTED tuple[@_] <: tuple[int, int]', 'Expected 1 positional argument, got 2']",
     "Line 71: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 74: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed']",
     "Line 78: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, int] | tuple[str, str]) failed']",
@@ -1533,7 +1533,7 @@
     "Line 19: Unexpected errors ['assert_type(tuple[int, Any, str], tuple[int, bool, Any]) failed', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 25: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 26: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 31: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'Expected 1 positional argument(s), got 2', 'Expected 1 positional argument(s), got 2']",
+    "Line 31: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'Expected 1 positional argument, got 2', 'Expected 1 positional argument, got 2']",
     "Line 33: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 38: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 39: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
@@ -1692,12 +1692,12 @@
     "Line 83: Unexpected errors ['EXPECTED B3 <: Mapping[str, object]']",
     "Line 84: Unexpected errors ['EXPECTED B3 <: Mapping[str, Any]']",
     "Line 88: Unexpected errors ['Expected a callable, got object']",
-    "Line 91: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: str', \"EXPECTED Literal['name'] <: _PyreReadOnly_[dict[str, int | str]]\", \"EXPECTED Literal['name'] <: dict[str, int | str]\", \"EXPECTED Literal['n/a'] <: _PyreReadOnly_[str]\"]",
-    "Line 92: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int', \"EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]\", \"EXPECTED Literal['age'] <: dict[str, int | str]\", 'EXPECTED Literal[42] <: _PyreReadOnly_[str]', 'EXPECTED Literal[42] <: str']",
+    "Line 91: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: str', \"EXPECTED Literal['name'] <: _PyreReadOnly_[dict[str, int | str]]\", \"EXPECTED Literal['name'] <: dict[str, int | str]\", \"EXPECTED Literal['n/a'] <: _PyreReadOnly_[str]\"]",
+    "Line 92: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int', \"EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]\", \"EXPECTED Literal['age'] <: dict[str, int | str]\", 'EXPECTED Literal[42] <: _PyreReadOnly_[str]', 'EXPECTED Literal[42] <: str']",
     "Line 94: Unexpected errors ['Expected a callable, got object']",
-    "Line 97: Unexpected errors ['Expected 1 more positional argument(s)', 'Expected 2 more positional argument(s)', 'EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: str | None', \"EXPECTED Literal['name'] <: _PyreReadOnly_[dict[str, int | str]]\", \"EXPECTED Literal['name'] <: dict[str, int | str]\"]",
-    "Line 103: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int', \"EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]\", \"EXPECTED Literal['age'] <: dict[str, int | str]\", 'EXPECTED Literal[42] <: _PyreReadOnly_[str]', 'EXPECTED Literal[42] <: str']",
-    "Line 105: Unexpected errors ['Expected 1 more positional argument(s)', 'EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int | str', \"EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]\", \"EXPECTED Literal['age'] <: dict[str, int | str]\", \"EXPECTED Literal['42'] <: _PyreReadOnly_[str]\"]",
+    "Line 97: Unexpected errors ['Expected 1 more positional argument', 'Expected 2 more positional arguments', 'EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: str | None', \"EXPECTED Literal['name'] <: _PyreReadOnly_[dict[str, int | str]]\", \"EXPECTED Literal['name'] <: dict[str, int | str]\"]",
+    "Line 103: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int', \"EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]\", \"EXPECTED Literal['age'] <: dict[str, int | str]\", 'EXPECTED Literal[42] <: _PyreReadOnly_[str]', 'EXPECTED Literal[42] <: str']",
+    "Line 105: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int | str', \"EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]\", \"EXPECTED Literal['age'] <: dict[str, int | str]\", \"EXPECTED Literal['42'] <: _PyreReadOnly_[str]\"]",
     "Line 110: Unexpected errors ['untype, got object']",
     "Line 114: Unexpected errors ['untype, got object']",
     "Line 118: Unexpected errors ['untype, got object']",

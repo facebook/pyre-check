@@ -164,7 +164,7 @@ testcase!(
 class C:
     def f():
         pass
-C().f()  # E: Expected 0 positional argument(s)
+C().f()  # E: Expected 0 positional arguments
     "#,
 );
 

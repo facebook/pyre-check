@@ -806,8 +806,8 @@ testcase!(
     test_assert,
     r#"
 def foo() -> str: ...
-assert foo(42)  # E: Expected 0 positional argument(s)
-assert False, foo(42)  # E: Expected 0 positional argument(s)
+assert foo(42)  # E: Expected 0 positional arguments
+assert False, foo(42)  # E: Expected 0 positional arguments
     "#,
 );
 

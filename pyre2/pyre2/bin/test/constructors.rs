@@ -90,9 +90,9 @@ class Meta(type):
     def __call__[T](cls: type[T], x: int) -> T: ...
 class C(metaclass=Meta):
     pass
-C(5)    # E: Expected 1 positional argument(s)
+C(5)    # E: Expected 1 positional argument
 C()     # Should be an error
-C("5")  # E: Expected 1 positional argument(s)
+C("5")  # E: Expected 1 positional argument
     "#,
 );
 
@@ -102,9 +102,9 @@ testcase_with_bug!(
     r#"
 class C:
     def __new__[T](cls: type[T], x: int) -> T: ...
-C(5)    # E: Expected 1 positional argument(s)
+C(5)    # E: Expected 1 positional argument
 C()     # Should be an error
-C("5")  # E: Expected 1 positional argument(s)
+C("5")  # E: Expected 1 positional argument
     "#,
 );
 

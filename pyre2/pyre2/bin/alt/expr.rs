@@ -44,6 +44,7 @@ use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
+use crate::util::display::count;
 use crate::util::prelude::SliceExt;
 
 enum CallStyle<'a> {
@@ -264,8 +265,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 arg_range,
                 format!(
-                    "Expected {} positional argument(s), got {}",
-                    expected,
+                    "Expected {}, got {}",
+                    count(expected as usize, "positional argument"),
                     args.len()
                 ),
             )
@@ -350,8 +351,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.error(
                                     kw.range,
                                     format!(
-                                        "Expected {} more positional argument(s)",
-                                        need_positional
+                                        "Expected {}",
+                                        count(need_positional, "more positional argument")
                                     ),
                                 );
                                 need_positional = 0;
@@ -388,7 +389,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         if need_positional > 0 {
                             self.error(
                                 range,
-                                format!("Expected {} more positional argument(s)", need_positional),
+                                format!(
+                                    "Expected {}",
+                                    count(need_positional, "more positional argument")
+                                ),
                             );
                         } else if num_positional >= 0 {
                             for (name, &p_idx) in kwparams.iter() {
