@@ -24,7 +24,6 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::dunder;
@@ -603,67 +602,54 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Dict(x) => {
                 let hint = hint.and_then(|ty| self.unwrap_dict(ty));
-                if x.is_empty() {
-                    match hint {
-                        Some(x) => x.to_type(self.stdlib),
-                        None => self
-                            .stdlib
-                            .dict(
-                                self.solver().fresh_contained(self.uniques).to_type(),
-                                self.solver().fresh_contained(self.uniques).to_type(),
-                            )
-                            .to_type(),
-                    }
+                if let Some(hint) = hint {
+                    x.items.iter().for_each(|x| match &x.key {
+                        Some(key) => {
+                            self.expr(key, Some(&hint.key));
+                            self.expr(&x.value, Some(&hint.value));
+                        }
+                        None => {
+                            self.error_todo("Answers::expr_infer expansion in dict literal", x);
+                        }
+                    });
+                    hint.to_type(self.stdlib)
+                } else if x.is_empty() {
+                    let key_ty = self.solver().fresh_contained(self.uniques).to_type();
+                    let value_ty = self.solver().fresh_contained(self.uniques).to_type();
+                    self.stdlib.dict(key_ty, value_ty).to_type()
                 } else {
-                    let (key_hint, value_hint) = match hint {
-                        Some(UnwrappedDict { key, value }) => (Some(key), Some(value)),
-                        None => (None, None),
-                    };
-                    let key_tys: Vec<Type> = x
-                        .items
-                        .iter()
-                        .filter_map(|x| match &x.key {
-                            Some(key) => {
-                                let key_t = self.expr(key, key_hint.as_ref());
-                                Some(self.promote(key_t, key_hint.as_ref()))
-                            }
-                            _ => {
-                                self.error_todo("Answers::expr_infer expansion in dict literal", x);
-                                None
-                            }
-                        })
-                        .collect();
-                    let value_tys: Vec<Type> = x
-                        .items
-                        .iter()
-                        .filter_map(|x| match x.key {
-                            Some(_) => {
-                                let value_t = self.expr(&x.value, value_hint.as_ref());
-                                Some(self.promote(value_t, value_hint.as_ref()))
-                            }
-                            _ => {
-                                self.error_todo("Answers::expr_infer expansion in dict literal", x);
-                                None
-                            }
-                        })
-                        .collect();
-                    self.stdlib
-                        .dict(self.unions(&key_tys), self.unions(&value_tys))
-                        .to_type()
+                    let mut key_tys = Vec::new();
+                    let mut value_tys = Vec::new();
+                    x.items.iter().for_each(|x| match &x.key {
+                        Some(key) => {
+                            let key_t = self.expr_infer(key);
+                            let value_t = self.expr_infer(&x.value);
+                            key_tys.push(self.promote(key_t, None));
+                            value_tys.push(self.promote(value_t, None));
+                        }
+                        None => {
+                            self.error_todo("Answers::expr_infer expansion in dict literal", x);
+                        }
+                    });
+                    let key_ty = self.unions(&key_tys);
+                    let value_ty = self.unions(&value_tys);
+                    self.stdlib.dict(key_ty, value_ty).to_type()
                 }
             }
             Expr::Set(x) => {
                 let hint = hint.and_then(|ty| self.unwrap_set(ty));
-                if x.is_empty() {
-                    let elem_ty = match hint {
-                        None => self.solver().fresh_contained(self.uniques).to_type(),
-                        Some(elem_ty) => elem_ty,
-                    };
+                if let Some(hint) = hint {
+                    x.elts.iter().for_each(|x| {
+                        self.expr(x, Some(&hint));
+                    });
+                    self.stdlib.set(hint).to_type()
+                } else if x.is_empty() {
+                    let elem_ty = self.solver().fresh_contained(self.uniques).to_type();
                     self.stdlib.set(elem_ty).to_type()
                 } else {
                     let tys = x.elts.map(|x| {
-                        let t = self.expr(x, hint.as_ref());
-                        self.promote(t, hint.as_ref())
+                        let t = self.expr_infer(x);
+                        self.promote(t, None)
                     });
                     self.stdlib.set(self.unions(&tys)).to_type()
                 }
@@ -671,34 +657,39 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::ListComp(x) => {
                 let hint = hint.and_then(|ty| self.unwrap_list(ty));
                 self.ifs_infer(&x.generators);
-                let elem_ty = self.expr(&x.elt, hint.as_ref());
-                self.stdlib
-                    .list(self.promote(elem_ty, hint.as_ref()))
-                    .to_type()
+                if let Some(hint) = hint {
+                    self.expr(&x.elt, Some(&hint));
+                    self.stdlib.list(hint).to_type()
+                } else {
+                    let elem_ty = self.expr_infer(&x.elt);
+                    self.stdlib.list(self.promote(elem_ty, None)).to_type()
+                }
             }
             Expr::SetComp(x) => {
                 let hint = hint.and_then(|ty| self.unwrap_set(ty));
                 self.ifs_infer(&x.generators);
-                let elem_ty = self.expr(&x.elt, hint.as_ref());
-                self.stdlib
-                    .set(self.promote(elem_ty, hint.as_ref()))
-                    .to_type()
+                if let Some(hint) = hint {
+                    self.expr(&x.elt, Some(&hint));
+                    self.stdlib.set(hint).to_type()
+                } else {
+                    let elem_ty = self.expr_infer(&x.elt);
+                    self.stdlib.set(self.promote(elem_ty, None)).to_type()
+                }
             }
             Expr::DictComp(x) => {
                 let hint = hint.and_then(|ty| self.unwrap_dict(ty));
-                let (key_hint, value_hint) = match hint {
-                    Some(UnwrappedDict { key, value }) => (Some(key), Some(value)),
-                    None => (None, None),
-                };
                 self.ifs_infer(&x.generators);
-                let key_ty = self.expr(&x.key, key_hint.as_ref());
-                let value_ty = self.expr(&x.value, value_hint.as_ref());
-                self.stdlib
-                    .dict(
-                        self.promote(key_ty, key_hint.as_ref()),
-                        self.promote(value_ty, value_hint.as_ref()),
-                    )
-                    .to_type()
+                if let Some(hint) = hint {
+                    self.expr(&x.key, Some(&hint.key));
+                    self.expr(&x.value, Some(&hint.value));
+                    hint.to_type(self.stdlib)
+                } else {
+                    let key_ty = self.expr_infer(&x.key);
+                    let value_ty = self.expr_infer(&x.value);
+                    self.stdlib
+                        .dict(self.promote(key_ty, None), self.promote(value_ty, None))
+                        .to_type()
+                }
             }
             Expr::Generator(x) => {
                 self.ifs_infer(&x.generators);
@@ -975,16 +966,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             },
             Expr::List(x) => {
                 let hint = hint.and_then(|ty| self.unwrap_list(ty));
-                if x.is_empty() {
-                    let elem_ty = match hint {
-                        None => self.solver().fresh_contained(self.uniques).to_type(),
-                        Some(elem_ty) => elem_ty,
-                    };
+                if let Some(hint) = hint {
+                    x.elts.iter().for_each(|x| {
+                        self.expr(x, Some(&hint));
+                    });
+                    self.stdlib.list(hint).to_type()
+                } else if x.is_empty() {
+                    let elem_ty = self.solver().fresh_contained(self.uniques).to_type();
                     self.stdlib.list(elem_ty).to_type()
                 } else {
                     let tys = x.elts.map(|x| {
-                        let t = self.expr(x, hint.as_ref());
-                        self.promote(t, hint.as_ref())
+                        let t = self.expr_infer(x);
+                        self.promote(t, None)
                     });
                     self.stdlib.list(self.unions(&tys)).to_type()
                 }
