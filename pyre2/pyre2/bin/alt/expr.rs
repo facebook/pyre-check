@@ -254,6 +254,156 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn callable_infer(
+        &self,
+        callable: Callable,
+        first_arg: Option<CallArg>,
+        remaining_args: &[CallArg],
+        keywords: &[Keyword],
+        range: TextRange,
+    ) -> Type {
+        let args_head: &[CallArg] = match first_arg {
+            Some(arg) => &[arg],
+            None => &[],
+        };
+        let args_iter = args_head.iter().chain(remaining_args);
+        let n_args = args_head.len() + remaining_args.len();
+        let positional_count_error = |arg_range, expected| {
+            self.error(
+                arg_range,
+                format!(
+                    "Expected {}, got {}",
+                    count(expected as usize, "positional argument"),
+                    n_args,
+                ),
+            )
+        };
+        match callable.args {
+            Args::List(params) => {
+                let mut iparams = params.iter().enumerate().peekable();
+                let mut num_positional = 0;
+                let mut seen_names: SmallMap<Name, usize> = SmallMap::new();
+                for arg in args_iter {
+                    let mut hint = None;
+                    if let Some((p_idx, p)) = iparams.peek() {
+                        match p {
+                            Arg::PosOnly(ty, _required) => {
+                                num_positional += 1;
+                                iparams.next();
+                                hint = Some(ty)
+                            }
+                            Arg::Pos(name, ty, _required) => {
+                                num_positional += 1;
+                                seen_names.insert(name.clone(), *p_idx);
+                                iparams.next();
+                                hint = Some(ty)
+                            }
+                            Arg::VarArg(ty) => hint = Some(ty),
+                            Arg::KwOnly(..) | Arg::Kwargs(..) => {
+                                if num_positional >= 0 {
+                                    positional_count_error(arg.range(), num_positional);
+                                    num_positional = -1;
+                                }
+                            }
+                        };
+                    } else if num_positional >= 0 {
+                        positional_count_error(arg.range(), num_positional);
+                        num_positional = -1;
+                    }
+                    arg.check_against_hint(self, hint);
+                }
+                let mut need_positional = 0;
+                let mut kwparams = SmallMap::new();
+                let mut kwargs = None;
+                for (p_idx, p) in iparams {
+                    match p {
+                        Arg::PosOnly(_, required) => {
+                            if *required == Required::Required {
+                                need_positional += 1;
+                            }
+                        }
+                        Arg::VarArg(..) => {}
+                        Arg::Pos(name, _, _) | Arg::KwOnly(name, _, _) => {
+                            kwparams.insert(name.clone(), p_idx);
+                        }
+                        Arg::Kwargs(ty) => {
+                            kwargs = Some(ty);
+                        }
+                    }
+                }
+                for kw in keywords {
+                    let mut hint = None;
+                    if need_positional > 0 {
+                        self.error(
+                            kw.range,
+                            format!(
+                                "Expected {}",
+                                count(need_positional, "more positional argument")
+                            ),
+                        );
+                        need_positional = 0;
+                    } else {
+                        match &kw.arg {
+                            None => {
+                                self.error_todo(
+                                    "call_infer: unsupported **kwargs argument to call",
+                                    kw.range,
+                                );
+                            }
+                            Some(id) => {
+                                hint = kwargs;
+                                if let Some(&p_idx) = seen_names.get(&id.id) {
+                                    self.error(
+                                        kw.range,
+                                        format!("Multiple values for argument '{}'", id.id),
+                                    );
+                                    params[p_idx].visit(|ty| hint = Some(ty));
+                                } else if let Some(&p_idx) = kwparams.get(&id.id) {
+                                    seen_names.insert(id.id.clone(), p_idx);
+                                    params[p_idx].visit(|ty| hint = Some(ty));
+                                } else if kwargs.is_none() {
+                                    self.error(
+                                        kw.range,
+                                        format!("Unexpected keyword argument '{}'", id.id),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    self.expr(&kw.value, hint);
+                }
+                if need_positional > 0 {
+                    self.error(
+                        range,
+                        format!(
+                            "Expected {}",
+                            count(need_positional, "more positional argument")
+                        ),
+                    );
+                } else if num_positional >= 0 {
+                    for (name, &p_idx) in kwparams.iter() {
+                        let required = params[p_idx].is_required();
+                        if required && !seen_names.contains_key(name) {
+                            self.error(range, format!("Missing argument '{}'", name));
+                        }
+                    }
+                }
+                callable.ret
+            }
+            Args::Ellipsis => {
+                // Deal with Callable[..., R]
+                for t in args_iter {
+                    t.check_against_hint(self, None);
+                }
+                callable.ret
+            }
+            _ => self.error(
+                range,
+                "Answers::expr_infer wrong number of arguments to call".to_owned(),
+            ),
+        }
+    }
+
     fn call_infer(
         &self,
         call_target: CallTarget,
@@ -261,16 +411,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
-        let positional_count_error = |arg_range, expected| {
-            self.error(
-                arg_range,
-                format!(
-                    "Expected {}, got {}",
-                    count(expected as usize, "positional argument"),
-                    args.len()
-                ),
-            )
-        };
         match call_target {
             CallTarget::Class(cls) => {
                 self.call_infer(
@@ -287,135 +427,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             CallTarget::BoundMethod(obj, c) => {
                 let first_arg = CallArg::Type(&obj, range);
-                let mut full_args = vec![first_arg];
-                full_args.extend(args.to_owned());
-                self.call_infer(CallTarget::Callable(c), &full_args, keywords, range)
+                self.callable_infer(c, Some(first_arg), args, keywords, range)
             }
             CallTarget::Callable(callable) => {
-                match callable.args {
-                    Args::List(params) => {
-                        let mut iparams = params.iter().enumerate().peekable();
-                        let mut num_positional = 0;
-                        let mut seen_names: SmallMap<Name, usize> = SmallMap::new();
-                        for arg in args {
-                            let mut hint = None;
-                            if let Some((p_idx, p)) = iparams.peek() {
-                                match p {
-                                    Arg::PosOnly(ty, _required) => {
-                                        num_positional += 1;
-                                        iparams.next();
-                                        hint = Some(ty)
-                                    }
-                                    Arg::Pos(name, ty, _required) => {
-                                        num_positional += 1;
-                                        seen_names.insert(name.clone(), *p_idx);
-                                        iparams.next();
-                                        hint = Some(ty)
-                                    }
-                                    Arg::VarArg(ty) => hint = Some(ty),
-                                    Arg::KwOnly(..) | Arg::Kwargs(..) => {
-                                        if num_positional >= 0 {
-                                            positional_count_error(arg.range(), num_positional);
-                                            num_positional = -1;
-                                        }
-                                    }
-                                };
-                            } else if num_positional >= 0 {
-                                positional_count_error(arg.range(), num_positional);
-                                num_positional = -1;
-                            }
-                            arg.check_against_hint(self, hint);
-                        }
-                        let mut need_positional = 0;
-                        let mut kwparams = SmallMap::new();
-                        let mut kwargs = None;
-                        for (p_idx, p) in iparams {
-                            match p {
-                                Arg::PosOnly(_, required) => {
-                                    if *required == Required::Required {
-                                        need_positional += 1;
-                                    }
-                                }
-                                Arg::VarArg(..) => {}
-                                Arg::Pos(name, _, _) | Arg::KwOnly(name, _, _) => {
-                                    kwparams.insert(name.clone(), p_idx);
-                                }
-                                Arg::Kwargs(ty) => {
-                                    kwargs = Some(ty);
-                                }
-                            }
-                        }
-                        for kw in keywords {
-                            let mut hint = None;
-                            if need_positional > 0 {
-                                self.error(
-                                    kw.range,
-                                    format!(
-                                        "Expected {}",
-                                        count(need_positional, "more positional argument")
-                                    ),
-                                );
-                                need_positional = 0;
-                            } else {
-                                match &kw.arg {
-                                    None => {
-                                        self.error_todo(
-                                            "call_infer: unsupported **kwargs argument to call",
-                                            kw.range,
-                                        );
-                                    }
-                                    Some(id) => {
-                                        hint = kwargs;
-                                        if let Some(&p_idx) = seen_names.get(&id.id) {
-                                            self.error(
-                                                kw.range,
-                                                format!("Multiple values for argument '{}'", id.id),
-                                            );
-                                            params[p_idx].visit(|ty| hint = Some(ty));
-                                        } else if let Some(&p_idx) = kwparams.get(&id.id) {
-                                            seen_names.insert(id.id.clone(), p_idx);
-                                            params[p_idx].visit(|ty| hint = Some(ty));
-                                        } else if kwargs.is_none() {
-                                            self.error(
-                                                kw.range,
-                                                format!("Unexpected keyword argument '{}'", id.id),
-                                            );
-                                        }
-                                    }
-                                }
-                            }
-                            self.expr(&kw.value, hint);
-                        }
-                        if need_positional > 0 {
-                            self.error(
-                                range,
-                                format!(
-                                    "Expected {}",
-                                    count(need_positional, "more positional argument")
-                                ),
-                            );
-                        } else if num_positional >= 0 {
-                            for (name, &p_idx) in kwparams.iter() {
-                                let required = params[p_idx].is_required();
-                                if required && !seen_names.contains_key(name) {
-                                    self.error(range, format!("Missing argument '{}'", name));
-                                }
-                            }
-                        }
-                        callable.ret
-                    }
-                    Args::Ellipsis => {
-                        // Deal with Callable[..., R]
-                        for t in args {
-                            t.check_against_hint(self, None);
-                        }
-                        callable.ret
-                    }
-                    _ => self.error(
-                        range,
-                        "Answers::expr_infer wrong number of arguments to call".to_owned(),
-                    ),
-                }
+                self.callable_infer(callable, None, args, keywords, range)
             }
         }
     }
