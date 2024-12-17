@@ -53,11 +53,7 @@ fn read_input_file(path: &Path) -> anyhow::Result<InputFile> {
 
 fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonArgs) -> Vec<Error> {
     let modules_to_check = sourcedb.modules_to_check();
-    let mut state = State::new(
-        Box::new(move |name| sourcedb.load(name)),
-        config,
-        common.parallel(),
-    );
+    let mut state = State::new(Box::new(sourcedb), config, common.parallel());
     state.run_one_shot(&modules_to_check);
     state.collect_errors()
 }

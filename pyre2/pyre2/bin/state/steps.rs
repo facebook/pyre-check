@@ -31,7 +31,7 @@ use crate::util::uniques::UniqueFactory;
 pub struct Context<'a, Lookup> {
     pub name: ModuleName,
     pub config: &'a Config,
-    pub loader: &'a Loader,
+    pub loader: &'a dyn Loader,
     pub uniques: &'a UniqueFactory,
     pub stdlib: &'a Stdlib,
     pub lookup: &'a Lookup,
@@ -147,7 +147,7 @@ impl Step {
     }
 
     fn load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
-        let (load_result, error_style) = (ctx.loader)(ctx.name);
+        let (load_result, error_style) = ctx.loader.load(ctx.name);
         let components = load_result.components(ctx.name);
         let module_info = ModuleInfo::new(ctx.name, components.path, components.code);
         let errors = ErrorCollector::new(error_style);

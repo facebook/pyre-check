@@ -12,8 +12,10 @@ use crate::module::module_name::ModuleName;
 use crate::util::fs_anyhow;
 
 /// A function that loads a module, given the `ModuleName`.
-/// Returns a `LoadResult` and a boolean indicating whether to report errors from the module or not.
-pub type Loader = dyn Fn(ModuleName) -> (LoadResult, ErrorStyle) + Sync;
+/// Returns a `LoadResult` and an enum indicating whether to report errors from the module or not.
+pub trait Loader: Sync {
+    fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle);
+}
 
 /// The result of trying to load a file.
 pub enum LoadResult {

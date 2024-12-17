@@ -67,6 +67,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::LoadResult;
+use crate::state::loader::Loader;
 use crate::state::state::State;
 use crate::util::prelude::VecExt;
 
@@ -136,6 +137,43 @@ impl Args {
     }
 }
 
+struct DummyLoader {}
+impl Loader for DummyLoader {
+    fn load(&self, _: ModuleName) -> (LoadResult, ErrorStyle) {
+        (
+            LoadResult::FailedToFind(anyhow!("Failed during init")),
+            ErrorStyle::Never,
+        )
+    }
+}
+
+struct LspLoader {
+    open_modules: SmallMap<ModuleName, PathBuf>,
+    open_files: SmallMap<PathBuf, (i32, String)>,
+    search_roots: Vec<PathBuf>,
+}
+
+impl Loader for LspLoader {
+    fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
+        let loaded = if let Some(path) = self.open_modules.get(&name) {
+            LoadResult::Loaded(
+                (*path).clone(),
+                self.open_files.get(path).unwrap().1.clone(),
+            )
+        } else {
+            LoadResult::from_path_result(find_module(name, &self.search_roots))
+        };
+        (
+            loaded,
+            if self.open_modules.contains_key(&name) {
+                ErrorStyle::Delayed
+            } else {
+                ErrorStyle::Never
+            },
+        )
+    }
+}
+
 impl<'a> Server<'a> {
     fn process(&mut self, msg: Message) -> anyhow::Result<()> {
         match msg {
@@ -195,16 +233,7 @@ impl<'a> Server<'a> {
             send,
             initialize_params,
             include,
-            state: State::new(
-                Box::new(|_| {
-                    (
-                        LoadResult::FailedToFind(anyhow!("Failed during init")),
-                        ErrorStyle::Never,
-                    )
-                }),
-                Config::default(),
-                true,
-            ),
+            state: State::new(Box::new(DummyLoader {}), Config::default(), true),
             open_files: Default::default(),
         }
     }
@@ -231,24 +260,15 @@ impl<'a> Server<'a> {
             .collect::<SmallMap<_, _>>();
         let module_names = modules.keys().copied().collect::<Vec<_>>();
 
-        let open_files = self.open_files.clone(); // Not good, but all of this is a hack
-        let include = self.include.clone();
-        let loader = move |name: ModuleName| {
-            let loaded = if let Some(path) = modules.get(&name) {
-                LoadResult::Loaded((*path).clone(), open_files.get(path).unwrap().1.clone())
-            } else {
-                LoadResult::from_path_result(find_module(name, &include))
-            };
-            (
-                loaded,
-                if modules.contains_key(&name) {
-                    ErrorStyle::Delayed
-                } else {
-                    ErrorStyle::Never
-                },
-            )
-        };
-        self.state = State::new(Box::new(loader), Config::default(), true);
+        self.state = State::new(
+            Box::new(LspLoader {
+                open_modules: modules,
+                open_files: self.open_files.clone(), // Not good, but all of this is a hack
+                search_roots: self.include.clone(),
+            }),
+            Config::default(),
+            true,
+        );
         self.state.run(&module_names);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.keys() {

@@ -52,7 +52,7 @@ use crate::util::uniques::UniqueFactory;
 
 pub struct State {
     config: Config,
-    loader: Box<Loader>,
+    loader: Box<dyn Loader>,
     uniques: UniqueFactory,
     parallel: bool,
     stdlib: RwLock<Arc<Stdlib>>,
@@ -113,7 +113,7 @@ impl ModuleState {
 }
 
 impl State {
-    pub fn new(loader: Box<Loader>, config: Config, parallel: bool) -> Self {
+    pub fn new(loader: Box<dyn Loader>, config: Config, parallel: bool) -> Self {
         Self {
             config,
             loader,

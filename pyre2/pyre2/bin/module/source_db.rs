@@ -19,6 +19,7 @@ use vec1::Vec1;
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::LoadResult;
+use crate::state::loader::Loader;
 use crate::util::fs_anyhow;
 
 #[derive(Debug, PartialEq)]
@@ -152,8 +153,10 @@ impl BuckSourceDatabase {
             },
         }
     }
+}
 
-    pub fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
+impl Loader for BuckSourceDatabase {
+    fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
         match self.lookup(name) {
             LookupResult::OwningSource(path) => (LoadResult::from_path(path), ErrorStyle::Delayed),
             LookupResult::ExternalSource(path) => (LoadResult::from_path(path), ErrorStyle::Never),

@@ -94,27 +94,27 @@ impl TestEnv {
         );
     }
 
-    pub fn to_loader(self) -> Box<Loader> {
-        Box::new(move |name: ModuleName| {
-            let loaded = if let Some((path, contents)) = self.0.get(&name) {
-                match contents {
-                    Ok(contents) => LoadResult::Loaded(path.to_owned(), contents.to_owned()),
-                    Err(err) => LoadResult::FailedToLoad(path.to_owned(), anyhow!(err.to_owned())),
-                }
-            } else if let Some(contents) = lookup_test_stdlib(name) {
-                LoadResult::Loaded(default_path(name), contents.to_owned())
-            } else {
-                LoadResult::FailedToFind(anyhow!("Module not given in test suite"))
-            };
-            (loaded, ErrorStyle::Immediate)
-        })
-    }
-
     pub fn to_state(self) -> State {
         let modules = self.0.keys().copied().collect::<Vec<_>>();
-        let mut state = State::new(self.to_loader(), Config::default(), true);
+        let mut state = State::new(Box::new(self), Config::default(), true);
         state.run(&modules);
         state
+    }
+}
+
+impl Loader for TestEnv {
+    fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
+        let loaded = if let Some((path, contents)) = self.0.get(&name) {
+            match contents {
+                Ok(contents) => LoadResult::Loaded(path.to_owned(), contents.to_owned()),
+                Err(err) => LoadResult::FailedToLoad(path.to_owned(), anyhow!(err.to_owned())),
+            }
+        } else if let Some(contents) = lookup_test_stdlib(name) {
+            LoadResult::Loaded(default_path(name), contents.to_owned())
+        } else {
+            LoadResult::FailedToFind(anyhow!("Module not given in test suite"))
+        };
+        (loaded, ErrorStyle::Immediate)
     }
 }
 
