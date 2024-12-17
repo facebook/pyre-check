@@ -640,6 +640,40 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
             }
+            Expr::Tuple(x) => {
+                let ts = match hint {
+                    Some(Type::Tuple(Tuple::Concrete(elts))) if elts.len() == x.elts.len() => elts,
+                    Some(ty) => match self.unwrap_tuple(ty) {
+                        Some(elem_ty) => &vec![elem_ty; x.elts.len()],
+                        None => &Vec::new(),
+                    },
+                    None => &Vec::new(),
+                };
+                Type::tuple(
+                    x.elts
+                        .iter()
+                        .enumerate()
+                        .map(|(i, x)| self.expr(x, ts.get(i)))
+                        .collect(),
+                )
+            }
+            Expr::List(x) => {
+                let hint = hint.and_then(|ty| self.unwrap_list(ty));
+                if let Some(hint) = hint {
+                    x.elts.iter().for_each(|x| {
+                        self.expr(x, Some(&hint));
+                    });
+                    self.stdlib.list(hint).to_type()
+                } else if x.is_empty() {
+                    let elem_ty = self.solver().fresh_contained(self.uniques).to_type();
+                    self.stdlib.list(elem_ty).to_type()
+                } else {
+                    let tys = x
+                        .elts
+                        .map(|x| self.expr_infer(x).promote_literals(self.stdlib));
+                    self.stdlib.list(self.unions(&tys)).to_type()
+                }
+            }
             Expr::Dict(x) => {
                 let hint = hint.and_then(|ty| self.unwrap_dict(ty));
                 if let Some(hint) = hint {
@@ -1001,40 +1035,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .get(&Key::Usage(ShortIdentifier::expr_name(x)))
                     .arc_clone(),
             },
-            Expr::List(x) => {
-                let hint = hint.and_then(|ty| self.unwrap_list(ty));
-                if let Some(hint) = hint {
-                    x.elts.iter().for_each(|x| {
-                        self.expr(x, Some(&hint));
-                    });
-                    self.stdlib.list(hint).to_type()
-                } else if x.is_empty() {
-                    let elem_ty = self.solver().fresh_contained(self.uniques).to_type();
-                    self.stdlib.list(elem_ty).to_type()
-                } else {
-                    let tys = x
-                        .elts
-                        .map(|x| self.expr_infer(x).promote_literals(self.stdlib));
-                    self.stdlib.list(self.unions(&tys)).to_type()
-                }
-            }
-            Expr::Tuple(x) => {
-                let ts = match hint {
-                    Some(Type::Tuple(Tuple::Concrete(elts))) if elts.len() == x.elts.len() => elts,
-                    Some(ty) => match self.unwrap_tuple(ty) {
-                        Some(elem_ty) => &vec![elem_ty; x.elts.len()],
-                        None => &Vec::new(),
-                    },
-                    None => &Vec::new(),
-                };
-                Type::tuple(
-                    x.elts
-                        .iter()
-                        .enumerate()
-                        .map(|(i, x)| self.expr(x, ts.get(i)))
-                        .collect(),
-                )
-            }
             Expr::Slice(_) => {
                 // TODO(stroxler, yangdanny): slices are generic, we should not hard code to int.
                 let int = self.stdlib.int().to_type();
