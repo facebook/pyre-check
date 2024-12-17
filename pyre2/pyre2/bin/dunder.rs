@@ -16,6 +16,7 @@ pub const EXIT: Name = Name::new_static("__exit__");
 pub const GETITEM: Name = Name::new_static("__getitem__");
 pub const INIT: Name = Name::new_static("__init__");
 pub const ITER: Name = Name::new_static("__iter__");
+pub const NEW: Name = Name::new_static("__new__");
 pub const NEXT: Name = Name::new_static("__next__");
 pub const SETITEM: Name = Name::new_static("__setitem__");
 

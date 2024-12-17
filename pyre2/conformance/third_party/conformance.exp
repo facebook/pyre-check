@@ -4789,16 +4789,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class1",
-      "description": "EXPECTED object <: Class1",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -4825,16 +4815,6 @@
       "line": 33,
       "name": "PyreError",
       "stop_column": 21,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class2",
-      "description": "EXPECTED object <: Class2",
-      "line": 33,
-      "name": "PyreError",
-      "stop_column": 36,
       "stop_line": 33
     },
     {
@@ -4899,16 +4879,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class3",
-      "description": "EXPECTED object <: Class3",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -4969,16 +4939,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class4",
-      "description": "EXPECTED object <: Class4",
-      "line": 62,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 62
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -5007,16 +4967,6 @@
       "line": 16,
       "name": "PyreError",
       "stop_column": 21,
-      "stop_line": 16
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class1[?_]",
-      "description": "EXPECTED object <: Class1[?_]",
-      "line": 16,
-      "name": "PyreError",
-      "stop_column": 36,
       "stop_line": 16
     },
     {
@@ -5107,16 +5057,6 @@
       "line": 29,
       "name": "PyreError",
       "stop_column": 21,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class2[?_]",
-      "description": "EXPECTED object <: Class2[?_]",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 36,
       "stop_line": 29
     },
     {
@@ -5303,16 +5243,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class1",
-      "description": "EXPECTED object <: Class1",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 48,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -5369,16 +5299,6 @@
       "line": 35,
       "name": "PyreError",
       "stop_column": 21,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class2",
-      "description": "EXPECTED object <: Class2",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 36,
       "stop_line": 35
     },
     {
@@ -5785,16 +5705,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class5",
-      "description": "EXPECTED object <: Class5",
-      "line": 93,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -6065,16 +5975,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class8[?_]",
-      "description": "EXPECTED object <: Class8[?_]",
-      "line": 178,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 178
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -6193,16 +6093,6 @@
       "line": 22,
       "name": "PyreError",
       "stop_column": 21,
-      "stop_line": 22
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED object <: Class1",
-      "description": "EXPECTED object <: Class1",
-      "line": 22,
-      "name": "PyreError",
-      "stop_column": 36,
       "stop_line": 22
     },
     {
@@ -11467,16 +11357,6 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 15
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected a callable, got ReturnsSelf",
-      "description": "Expected a callable, got ReturnsSelf",
-      "line": 18,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 18
     },
     {
       "code": -2,

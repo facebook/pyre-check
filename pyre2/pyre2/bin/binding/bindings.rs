@@ -948,7 +948,10 @@ impl<'a> BindingsBuilder<'a> {
         }
         let func_name = x.name.clone();
         let self_type = match &self.scopes.last().kind {
-            ScopeKind::ClassBody(body) => Some(self.table.types.0.insert(body.as_self_type_key())),
+            // __new__ is a staticmethod that is special-cased at runtime to not need @staticmethod decoration.
+            ScopeKind::ClassBody(body) if func_name.id != dunder::NEW => {
+                Some(self.table.types.0.insert(body.as_self_type_key()))
+            }
             _ => None,
         };
 
