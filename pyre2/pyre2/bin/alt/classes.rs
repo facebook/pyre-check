@@ -49,6 +49,12 @@ pub enum NoClassAttribute {
     IsGenericMember,
 }
 
+pub struct Attribute {
+    pub value: Type,
+    #[expect(dead_code)]
+    defining_class: Class,
+}
+
 /// Private helper type used to share part of the logic needed for the
 /// binding-level work of finding legacy type parameters versus the type-level
 /// work of computing inherticance information and the MRO.
@@ -507,9 +513,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn get_class_member(&self, cls: &Class, name: &Name) -> Option<Arc<Type>> {
+    fn get_class_member(&self, cls: &Class, name: &Name) -> Option<(Arc<Type>, Class)> {
         if let Some(member) = self.get_class_field(cls, name) {
-            Some(member)
+            Some((member, cls.dupe()))
         } else {
             self.get_metadata_for_class(cls)
                 .ancestors(self.stdlib)
@@ -518,7 +524,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         .as_deref()
                         .map(|ty| {
                             let raw_member = ancestor.instantiate_member(ty.clone());
-                            Arc::new(raw_member)
+                            (Arc::new(raw_member), ancestor.class_object().dupe())
                         })
                 })
                 .next()
@@ -529,11 +535,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_class_member(cls, name).is_some()
     }
 
-    pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Type> {
+    pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
-            .map(|member_ty| {
+            .map(|(member_ty, defining_class)| {
                 let instantiated_ty = cls.instantiate_member((*member_ty).clone());
-                bind_attribute(cls.self_type(), instantiated_ty)
+                Attribute {
+                    value: bind_attribute(cls.self_type(), instantiated_ty),
+                    defining_class,
+                }
             })
     }
 
@@ -544,22 +553,32 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         tparams.quantified().any(|q| qs.contains(&q))
     }
 
-    pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Result<Type, NoClassAttribute> {
+    pub fn get_class_attribute(
+        &self,
+        cls: &Class,
+        name: &Name,
+    ) -> Result<Attribute, NoClassAttribute> {
         match self.get_class_member(cls, name) {
             None => Err(NoClassAttribute::NoClassMember),
-            Some(ty) => {
+            Some((ty, defining_class)) => {
                 if self.depends_on_class_type_parameter(cls, ty.as_ref()) {
                     Err(NoClassAttribute::IsGenericMember)
                 } else if cls.is_enum(&|c| self.get_metadata_for_class(c)) {
                     // TODO(stroxler, yangdanny) Enums can contain attributes that are not
                     // members, we eventually need to implement enough checks to know the
                     // difference.
-                    Ok(Type::Literal(Lit::Enum(Box::new((
-                        self.promote_to_class_type_silently(cls),
-                        name.to_owned(),
-                    )))))
+                    Ok(Attribute {
+                        value: Type::Literal(Lit::Enum(Box::new((
+                            self.promote_to_class_type_silently(cls),
+                            name.to_owned(),
+                        )))),
+                        defining_class,
+                    })
                 } else {
-                    Ok(ty.as_ref().clone())
+                    Ok(Attribute {
+                        value: ty.as_ref().clone(),
+                        defining_class,
+                    })
                 }
             }
         }

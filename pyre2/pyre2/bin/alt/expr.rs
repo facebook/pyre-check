@@ -421,7 +421,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         self.call_infer(
             self.as_call_target_or_error(
-                self.get_instance_attribute(&cls, &dunder::INIT).unwrap(),
+                self.get_instance_attribute(&cls, &dunder::INIT)
+                    .unwrap()
+                    .value,
                 CallStyle::Method(&dunder::INIT),
                 range,
             ),

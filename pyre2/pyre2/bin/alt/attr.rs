@@ -115,13 +115,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.as_attribute_base(ty.clone(), self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
                 match self.get_instance_attribute(&class, attr_name) {
-                    Some(attr) => LookupResult::Found(attr),
+                    Some(attr) => LookupResult::Found(attr.value),
                     None => LookupResult::NotFound(NotFound::Attribute(class)),
                 }
             }
             Some(AttributeBase::ClassObject(class)) => {
                 match self.get_class_attribute(&class, attr_name) {
-                    Ok(attr) => LookupResult::Found(attr),
+                    Ok(attr) => LookupResult::Found(attr.value),
                     Err(NoClassAttribute::NoClassMember) => {
                         LookupResult::NotFound(NotFound::ClassAttribute(class))
                     }
@@ -142,7 +142,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     let class = q.as_value(self.stdlib);
                     match self.get_instance_attribute(&class, attr_name) {
-                        Some(attr) => LookupResult::Found(attr),
+                        Some(attr) => LookupResult::Found(attr.value),
                         None => LookupResult::NotFound(NotFound::Attribute(class)),
                     }
                 }
@@ -151,7 +151,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let class = self.stdlib.builtins_type();
                 LookupResult::Found(
                     self.get_instance_attribute(&class, attr_name)
-                        .unwrap_or_else(|| style.propagate()),
+                        .map_or_else(|| style.propagate(), |attr| attr.value),
                 )
             }
             Some(AttributeBase::Any(style)) => LookupResult::Found(style.propagate()),
