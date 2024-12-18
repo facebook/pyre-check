@@ -14667,28 +14667,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(list[Any], list[int]) failed",
-      "description": "assert_type(list[Any], list[int]) failed",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 44,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(set[Any], set[int]) failed",
-      "description": "assert_type(set[Any], set[int]) failed",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(list[Any], list[int] | set[int]) failed",
-      "description": "assert_type(list[Any], list[int] | set[int]) failed",
+      "concise_description": "assert_type(list[int], list[int] | set[int]) failed",
+      "description": "assert_type(list[int], list[int] | set[int]) failed",
       "line": 43,
       "name": "PyreError",
       "stop_column": 55,
@@ -14697,8 +14677,8 @@
     {
       "code": -2,
       "column": 25,
-      "concise_description": "EXPECTED set[int] <: list[Unknown]",
-      "description": "EXPECTED set[int] <: list[Unknown]",
+      "concise_description": "EXPECTED set[int] <: list[int]",
+      "description": "EXPECTED set[int] <: list[int]",
       "line": 43,
       "name": "PyreError",
       "stop_column": 31,

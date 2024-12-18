@@ -1042,9 +1042,7 @@
   ],
   "generics_upper_bound.py": [
     "Line 24: Expected 1 errors",
-    "Line 51: Expected 1 errors",
-    "Line 37: Unexpected errors ['assert_type(list[Any], list[int]) failed']",
-    "Line 38: Unexpected errors ['assert_type(set[Any], set[int]) failed']"
+    "Line 51: Expected 1 errors"
   ],
   "generics_variance.py": [
     "Line 77: Expected 1 errors",
