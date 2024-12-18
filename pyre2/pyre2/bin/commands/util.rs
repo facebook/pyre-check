@@ -13,7 +13,6 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::Context as _;
-use tracing::debug;
 
 use crate::dunder;
 use crate::module::module_name::ModuleName;
@@ -71,27 +70,6 @@ pub fn module_from_path(path: &Path, includes: &[PathBuf]) -> ModuleName {
         }
     }
     path_to_module(path).0
-}
-
-pub fn find_module(name: ModuleName, include: &[PathBuf]) -> anyhow::Result<PathBuf> {
-    let parts = name.components();
-    let possibilities = vec![
-        parts.join("/") + ".pyi",
-        parts.join("/") + ".py",
-        parts.join("/") + "/__init__.pyi",
-        parts.join("/") + "/__init__.py",
-    ];
-
-    for include in include {
-        for suffix in &possibilities {
-            let path = include.join(suffix);
-            if path.exists() {
-                debug!("Found {name} at {}", path.display());
-                return Ok(path);
-            }
-        }
-    }
-    Err(anyhow::anyhow!("Could not find path for `{name}`"))
 }
 
 #[cfg(test)]

@@ -59,10 +59,10 @@ use serde::de::DeserializeOwned;
 use starlark_map::small_map::SmallMap;
 
 use crate::commands::util::default_include;
-use crate::commands::util::find_module;
 use crate::commands::util::module_from_path;
 use crate::config::Config;
 use crate::error::style::ErrorStyle;
+use crate::module::finder::find_module;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;

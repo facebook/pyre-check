@@ -22,12 +22,12 @@ use tracing::info;
 
 use crate::commands::common::CommonArgs;
 use crate::commands::util::default_include;
-use crate::commands::util::find_module;
 use crate::commands::util::module_from_path;
 use crate::config::Config;
 use crate::config::PythonVersion;
 use crate::error::legacy::LegacyErrors;
 use crate::error::style::ErrorStyle;
+use crate::module::finder::find_module;
 use crate::module::module_name::ModuleName;
 use crate::report;
 use crate::state::loader::LoadResult;
