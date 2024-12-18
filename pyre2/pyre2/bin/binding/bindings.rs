@@ -21,6 +21,7 @@ use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprCall;
+use ruff_python_ast::ExprLambda;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprSubscript;
@@ -571,38 +572,65 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    fn bind_comprehensions(&mut self, comprehensions: &[Comprehension]) {
+        self.scopes.push(Scope::comprehension());
+        for comp in comprehensions.iter() {
+            self.scopes.last_mut().stat.expr_lvalue(&comp.target);
+            let make_binding = |k| Binding::IterableValue(k, comp.iter.clone());
+            self.bind_target(&comp.target, &make_binding, true);
+        }
+    }
+
+    fn bind_lambda(&mut self, lambda: &ExprLambda) {
+        self.scopes.push(Scope::function());
+        if let Some(parameters) = &lambda.parameters {
+            for x in parameters.iter() {
+                let name = x.name();
+                let ann_key = self.table.insert(
+                    KeyAnnotation::Annotation(ShortIdentifier::new(name)),
+                    BindingAnnotation::Type(Type::any_implicit()),
+                );
+                let bind_key = self.table.insert(
+                    Key::Definition(ShortIdentifier::new(name)),
+                    Binding::AnnotatedType(ann_key, Box::new(Binding::AnyType(AnyStyle::Implicit))),
+                );
+                self.scopes.last_mut().stat.add(name.id.clone(), name.range);
+                self.bind_key(&name.id, bind_key, Some(ann_key), false);
+            }
+        }
+    }
+
     /// Execute through the expr, ensuring every name has a binding.
     fn ensure_expr(&mut self, x: &Expr) {
-        let mut new_scope = false;
-        let mut bind_comprehensions = |comps: &Vec<Comprehension>| {
-            new_scope = true;
-            self.scopes.push(Scope::comprehension());
-            for comp in comps.iter() {
-                self.scopes.last_mut().stat.expr_lvalue(&comp.target);
-                let make_binding = |k| Binding::IterableValue(k, comp.iter.clone());
-                self.bind_target(&comp.target, &make_binding, true);
-            }
-        };
-        match x {
+        let new_scope = match x {
             Expr::Name(x) => {
                 let name = Ast::expr_name_identifier(x.clone());
                 let binding = self.forward_lookup(&name);
                 self.ensure_name(&name, binding);
+                false
             }
             Expr::ListComp(x) => {
-                bind_comprehensions(&x.generators);
+                self.bind_comprehensions(&x.generators);
+                true
             }
             Expr::SetComp(x) => {
-                bind_comprehensions(&x.generators);
+                self.bind_comprehensions(&x.generators);
+                true
             }
             Expr::DictComp(x) => {
-                bind_comprehensions(&x.generators);
+                self.bind_comprehensions(&x.generators);
+                true
             }
             Expr::Generator(x) => {
-                bind_comprehensions(&x.generators);
+                self.bind_comprehensions(&x.generators);
+                true
             }
-            _ => {}
-        }
+            Expr::Lambda(x) => {
+                self.bind_lambda(x);
+                true
+            }
+            _ => false,
+        };
         Visitors::visit_expr(x, |x| self.ensure_expr(x));
         if new_scope {
             self.scopes.pop().unwrap();

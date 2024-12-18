@@ -183,12 +183,12 @@ C().f(0)    # E: EXPECTED Literal[0] <: C
 testcase_with_bug!(
     test_non_method_callable_attribute,
     r#"
-from typing import assert_type, Literal
+from typing import assert_type, Literal, reveal_type
 class C:
   def __init__(self):
-    self.foo = lambda x: x  # E: TODO: Lambda
+    self.foo = lambda x: x  # E: Callable[[Unknown], Unknown] <: BoundMethod[C, Callable[[Unknown], Unknown]]
 c = C()
-x = c.foo(42)
+x = c.foo(42)  # E: Expected 0 positional arguments, got 1
 assert_type(x, Literal[42])  # E: assert_type
     "#,
 );

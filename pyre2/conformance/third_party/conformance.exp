@@ -253,16 +253,6 @@
     },
     {
       "code": -2,
-      "column": 22,
-      "concise_description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "line": 84,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 84
-    },
-    {
-      "code": -2,
       "column": 21,
       "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
@@ -522,16 +512,6 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "line": 94,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 94
     },
     {
       "code": -2,
@@ -1131,16 +1111,6 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
@@ -1483,16 +1453,6 @@
     },
     {
       "code": -2,
-      "column": 43,
-      "concise_description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "line": 57,
-      "name": "PyreError",
-      "stop_column": 54,
-      "stop_line": 57
-    },
-    {
-      "code": -2,
       "column": 42,
       "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
@@ -1605,16 +1565,6 @@
       "name": "PyreError",
       "stop_column": 11,
       "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 10,
-      "concise_description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "line": 46,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 46
     },
     {
       "code": -2,
@@ -2601,16 +2551,6 @@
       "name": "PyreError",
       "stop_column": 11,
       "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 10,
-      "concise_description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "line": 93,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 93
     },
     {
       "code": -2,
@@ -7251,16 +7191,6 @@
   "dataclasses_transform_field.py": [
     {
       "code": -2,
-      "column": 31,
-      "concise_description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "line": 55,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 55
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "Unexpected keyword argument 'name'",
       "description": "Unexpected keyword argument 'name'",
@@ -7900,16 +7830,6 @@
       "column": 25,
       "concise_description": "Unexpected keyword argument 'default_factory'",
       "description": "Unexpected keyword argument 'default_factory'",
-      "line": 186,
-      "name": "PyreError",
-      "stop_column": 56,
-      "stop_line": 186
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
       "line": 186,
       "name": "PyreError",
       "stop_column": 56,
@@ -9138,19 +9058,9 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "line": 67,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 67
-    },
-    {
-      "code": -2,
       "column": 31,
-      "concise_description": "Could not find name `x`",
-      "description": "Could not find name `x`",
+      "concise_description": "Expected 0 positional arguments, got 1",
+      "description": "Expected 0 positional arguments, got 1",
       "line": 67,
       "name": "PyreError",
       "stop_column": 32,
@@ -19215,16 +19125,6 @@
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "description": "TODO: Lambda(ExprLambda - Answers::expr_infer",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
       "column": 17,
       "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
@@ -19272,16 +19172,6 @@
       "name": "PyreError",
       "stop_column": 33,
       "stop_line": 54
-    },
-    {
-      "code": -2,
-      "column": 47,
-      "concise_description": "Could not find name `x`",
-      "description": "Could not find name `x`",
-      "line": 60,
-      "name": "PyreError",
-      "stop_column": 48,
-      "stop_line": 60
     },
     {
       "code": -2,

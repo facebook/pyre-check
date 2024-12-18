@@ -3,6 +3,7 @@
   "aliases_explicit.py": [
     "Line 69: Expected 1 errors",
     "Line 70: Expected 1 errors",
+    "Line 84: Expected 1 errors",
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
     "Line 23: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
@@ -41,7 +42,6 @@
     "Line 72: Unexpected errors ['assert_type(Callable[ParamSpec(ParamSpec[P]), None], Callable[..., None]) failed']",
     "Line 89: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED map[@_] <: LiteralString', 'EXPECTED map[@_] <: str', 'Expected 0 positional arguments, got 2']",
     "Line 92: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 94: Unexpected errors ['TODO: Lambda(ExprLambda - Answers::expr_infer']",
     "Line 95: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]']",
     "Line 127: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[@_], Iterable[@_]], None] | Callable[[list[@_]], None]']",
     "Line 130: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[int], Iterable[int]], None] | Callable[[list[int]], None]']"
@@ -82,6 +82,7 @@
   "aliases_type_statement.py": [
     "Line 26: Expected 1 errors",
     "Line 31: Expected 1 errors",
+    "Line 42: Expected 1 errors",
     "Line 44: Expected 1 errors",
     "Line 48: Expected 1 errors",
     "Line 52: Expected 1 errors",
@@ -103,6 +104,7 @@
     "Line 53: Expected 1 errors",
     "Line 54: Expected 1 errors",
     "Line 56: Expected 1 errors",
+    "Line 57: Expected 1 errors",
     "Line 59: Expected 1 errors",
     "Line 60: Expected 1 errors",
     "Line 61: Expected 1 errors",
@@ -133,6 +135,7 @@
     "Line 23: Expected 1 errors",
     "Line 24: Expected 1 errors",
     "Line 25: Expected 1 errors",
+    "Line 46: Expected 1 errors",
     "Line 48: Expected 1 errors",
     "Line 53: Expected 1 errors",
     "Line 66: Expected 1 errors",
@@ -186,6 +189,7 @@
     "Line 51: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: type[@_]']"
   ],
   "annotations_typeexpr.py": [
+    "Line 93: Expected 1 errors",
     "Line 95: Expected 1 errors",
     "Line 100: Expected 1 errors",
     "Line 15: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]']",
@@ -524,7 +528,6 @@
     "Line 132: Unexpected errors ['EXPECTED type[str] <: Callable[[], str] | None']"
   ],
   "dataclasses_transform_field.py": [
-    "Line 55: Unexpected errors ['TODO: Lambda(ExprLambda - Answers::expr_infer']",
     "Line 60: Unexpected errors [\"Unexpected keyword argument 'name'\"]",
     "Line 77: Unexpected errors [\"Unexpected keyword argument 'name'\"]"
   ],
@@ -571,7 +574,7 @@
     "Line 123: Unexpected errors ['Expected 0 positional arguments, got 1']",
     "Line 135: Unexpected errors [\"Unexpected keyword argument 'default'\"]",
     "Line 185: Unexpected errors [\"Unexpected keyword argument 'default'\"]",
-    "Line 186: Unexpected errors [\"Unexpected keyword argument 'default_factory'\", 'TODO: Lambda(ExprLambda - Answers::expr_infer']",
+    "Line 186: Unexpected errors [\"Unexpected keyword argument 'default_factory'\"]",
     "Line 194: Unexpected errors [\"Unexpected keyword argument 'prop_2'\"]",
     "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']",
     "Line 213: Unexpected errors ['assert_type(DC16[Any], DC16[int]) failed', 'Expected 0 positional arguments, got 1']",
@@ -654,7 +657,7 @@
     "Line 36: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 37: Unexpected errors ['assert_type(Any, Literal[False]) failed', 'TODO: Attribute(ExprAttribute - Lit::from_expr']",
     "Line 38: Unexpected errors ['assert_type(Any, Literal[False]) failed', 'TODO: Attribute(ExprAttribute - Lit::from_expr']",
-    "Line 67: Unexpected errors ['TODO: Lambda(ExprLambda - Answers::expr_infer', 'Could not find name `x`']",
+    "Line 67: Unexpected errors ['Expected 0 positional arguments, got 1']",
     "Line 68: Unexpected errors ['EXPECTED Callable[[int], int] <: Callable[ParamSpec(@_), int]']",
     "Line 75: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 100: Unexpected errors ['assert_type(Literal[TrafficLight.AMBER], Literal[TrafficLight.YELLOW]) failed']",
@@ -1376,13 +1379,13 @@
     "Line 104: Expected 1 errors"
   ],
   "qualifiers_annotated.py": [
+    "Line 47: Expected 1 errors",
     "Line 49: Expected 1 errors",
     "Line 53: Expected 1 errors",
     "Line 64: Expected 1 errors",
     "Line 76: Expected 1 errors",
     "Line 92: Expected 1 errors",
     "Line 36: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr', 'Could not find name `x`']",
-    "Line 60: Unexpected errors ['Could not find name `x`']",
     "Line 81: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 98: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[int]`']",
     "Line 100: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Final[int]`']",

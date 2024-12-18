@@ -625,7 +625,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     },
                 })
             }
-            Expr::Lambda(_) => self.error_todo("Answers::expr_infer", x),
+            Expr::Lambda(lambda) => {
+                let parameters: Vec<Arg> = if let Some(parameters) = &lambda.parameters {
+                    (**parameters)
+                        .iter()
+                        .map(|p| {
+                            let ty = self
+                                .get(&Key::Definition(ShortIdentifier::new(p.name())))
+                                .arc_clone();
+                            Arg::Pos(p.name().clone().id, ty, Required::Required)
+                        })
+                        .collect()
+                } else {
+                    vec![]
+                };
+                let ret = self.expr_infer(&lambda.body);
+                Type::Callable(Box::new(Callable {
+                    args: Args::List(parameters),
+                    ret,
+                }))
+            }
             Expr::If(x) => {
                 // TODO: Support type refinement
                 let condition_type = self.expr_infer(&x.test);
