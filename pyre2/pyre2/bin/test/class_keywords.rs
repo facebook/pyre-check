@@ -134,3 +134,19 @@ class A(foo="x" + 5, foo=True):  # E: Parse error: Duplicate keyword argument "f
     pass
 "#,
 );
+
+testcase!(
+    test_metaclass_instance,
+    r#"
+class Meta(type):
+    pass
+class C1(metaclass=Meta):
+    pass
+class C2[T](metaclass=Meta):
+    pass
+def f(m: Meta):
+    pass
+f(C1)
+f(C2[int])
+    "#,
+);

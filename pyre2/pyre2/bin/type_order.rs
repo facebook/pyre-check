@@ -40,4 +40,9 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
     pub fn as_superclass(&self, class: &ClassType, want: &Class) -> Option<ClassType> {
         self.0.as_superclass(class, want)
     }
+
+    pub fn has_metaclass(&self, cls: &Class, metaclass: &ClassType) -> bool {
+        let metadata = self.0.get_metadata_for_class(cls);
+        metadata.metaclass().map_or(false, |m| *m == *metaclass)
+    }
 }

@@ -3620,6 +3620,16 @@
     },
     {
       "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[Proto9[?_, ?_]] <: object",
+      "description": "EXPECTED type[Proto9[?_, ?_]] <: object",
+      "line": 184,
+      "name": "PyreError",
+      "stop_column": 34,
+      "stop_line": 184
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",

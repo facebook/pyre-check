@@ -95,6 +95,12 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (Type::Type(box Type::ClassType(got)), Type::ClassDef(want)) => {
                 self.type_order.has_superclass(got.class_object(), want)
             }
+            (Type::ClassDef(got), Type::ClassType(want)) => {
+                self.type_order.has_metaclass(got, want)
+            }
+            (Type::Type(box Type::ClassType(got)), Type::ClassType(want)) => {
+                self.type_order.has_metaclass(got.class_object(), want)
+            }
             (Type::ClassDef(_), Type::Type(box Type::Any(_)))
             | (Type::Type(box Type::Any(_)), Type::ClassDef(_)) => true,
             (Type::Tuple(Tuple::Concrete(lelts)), Type::Tuple(Tuple::Concrete(uelts))) => {
