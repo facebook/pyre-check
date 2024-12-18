@@ -32,10 +32,12 @@ When run with the --check flag, it will check that the ".exp" files are up-to-da
 When run with the --compare flag, it will compare Pyre's output with the expected errors in the conformance test sources.
 """
 
-# these files contain the errors that Pyre emits for each test case
+# this contains the errors that Pyre emits for each test case
 EXPECTED_OUTPUT = "conformance.exp"
-# these files contain the differences between Pyre's errors and the errors that the test case expects
+# this contains the differences between Pyre's errors and the errors that the test case expects
 COMPARE_RESULT = "conformance.result"
+# this contains a summary of the passing and failing test cases, and the mismatch count for each test case
+SUMMARY_FILE = "results.json"
 
 
 def is_excluded(test_case: str) -> bool:
@@ -381,7 +383,7 @@ def main() -> None:
             AT_GENERATED + "\n" + json.dumps(diff_output, indent=2, sort_keys=True),
         )
         update_file(
-            args.directory + "/results.json",
+            os.path.join(args.directory, SUMMARY_FILE),
             json.dumps(
                 {
                     "total": n_pass + n_fail,
