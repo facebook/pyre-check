@@ -412,6 +412,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn construct(
+        &self,
+        cls: ClassType,
+        args: &[CallArg],
+        keywords: &[Keyword],
+        range: TextRange,
+    ) -> Type {
+        self.call_infer(
+            self.as_call_target_or_error(
+                self.get_instance_attribute(&cls, &dunder::INIT).unwrap(),
+                CallStyle::Method(&dunder::INIT),
+                range,
+            ),
+            args,
+            keywords,
+            range,
+        );
+        cls.self_type()
+    }
+
     fn call_infer(
         &self,
         call_target: CallTarget,
@@ -420,19 +440,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
     ) -> Type {
         match call_target {
-            CallTarget::Class(cls) => {
-                self.call_infer(
-                    self.as_call_target_or_error(
-                        self.get_instance_attribute(&cls, &dunder::INIT).unwrap(),
-                        CallStyle::Method(&dunder::INIT),
-                        range,
-                    ),
-                    args,
-                    keywords,
-                    range,
-                );
-                cls.self_type()
-            }
+            CallTarget::Class(cls) => self.construct(cls, args, keywords, range),
             CallTarget::BoundMethod(obj, c) => {
                 let first_arg = CallArg::Type(&obj, range);
                 self.callable_infer(c, Some(first_arg), args, keywords, range)
