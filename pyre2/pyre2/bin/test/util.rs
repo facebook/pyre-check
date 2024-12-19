@@ -7,6 +7,9 @@
 
 use std::path::PathBuf;
 use std::sync::Once;
+use std::thread::sleep;
+use std::time::Duration;
+use std::time::Instant;
 
 use anyhow::anyhow;
 use starlark_map::small_map::SmallMap;
@@ -52,7 +55,7 @@ fn default_path(name: ModuleName) -> PathBuf {
     PathBuf::from(format!("{}.py", name.as_str().replace('.', "/")))
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct TestEnv(SmallMap<ModuleName, (PathBuf, Result<String, String>)>);
 
 impl TestEnv {
@@ -137,5 +140,17 @@ pub fn testcase_for_macro(
         &format!("{}{}", "\n".repeat(start_line), contents),
         file,
     );
-    env.to_state().check_against_expectations()
+    // If any given test regularly takes > 10s, that's probably a bug.
+    // Currently all are less than 3s in debug, even when running in parallel.
+    let limit = 10;
+    for _ in 0..3 {
+        let start = Instant::now();
+        env.clone().to_state().check_against_expectations()?;
+        if start.elapsed().as_secs() <= limit {
+            return Ok(());
+        }
+        // Give a bit of a buffer if the machine is very busy
+        sleep(Duration::from_secs(limit / 2));
+    }
+    Err(anyhow!("Test took too long (> {limit}s)"))
 }
