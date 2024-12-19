@@ -344,7 +344,6 @@
     "Line 20: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
     "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed']",
     "Line 33: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
-    "Line 36: Unexpected errors ['assert_type(Class2, Meta2 | int) failed']",
     "Line 43: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Object of class `super` has no attribute `__call__`', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 48: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
     "Line 52: Unexpected errors ['Expected 0 positional arguments, got 1']",
@@ -371,7 +370,6 @@
     "Line 117: Unexpected errors ['assert_type(Class8[str], Class8[list[str]]) failed']"
   ],
   "constructors_call_type.py": [
-    "Line 30: Expected 1 errors",
     "Line 40: Expected 1 errors",
     "Line 25: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
     "Line 29: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\"]",

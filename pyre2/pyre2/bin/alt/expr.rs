@@ -443,6 +443,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    /// Get the class's `__new__` method.
+    fn get_new(&self, cls: &ClassType, range: TextRange) -> Option<Type> {
+        let new_attr = match self.get_class_attribute(cls.class_object(), &dunder::NEW) {
+            Ok(attr) => attr,
+            Err(_) => {
+                self.error_todo(
+                    "__new__ is missing or uses class-scoped type parameters",
+                    range,
+                );
+                return None;
+            }
+        };
+        if new_attr.defined_on(self.stdlib.object_class_type().class_object()) {
+            // The default behavior of `object.__new__` is already baked into our implementation of
+            // class construction; we only care about `__new__` if it is overridden.
+            return None;
+        }
+        Some(new_attr.value)
+    }
+
     fn construct(
         &self,
         cls: ClassType,
@@ -451,6 +471,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
     ) -> Type {
         // Based on https://typing.readthedocs.io/en/latest/spec/constructors.html.
+        let instance_ty = Type::ClassType(cls.clone());
         if let Some(call_method) = self.get_metaclass_call(&cls) {
             let ret = self.call_infer(
                 self.as_call_target_or_error(call_method, CallStyle::Method(&dunder::CALL), range),
@@ -460,17 +481,41 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
             if !self
                 .solver()
-                .is_subset_eq(&ret, &Type::ClassType(cls.clone()), self.type_order())
+                .is_subset_eq(&ret, &instance_ty, self.type_order())
             {
                 // Got something other than an instance of the class under construction.
                 return ret;
             }
         }
+        let overrides_new = if let Some(new_method) = self.get_new(&cls, range) {
+            let cls_ty = Type::Type(Box::new(instance_ty.clone()));
+            let mut full_args = vec![CallArg::Type(&cls_ty, range)];
+            full_args.extend_from_slice(args);
+            let ret = self.call_infer(
+                self.as_call_target_or_error(new_method, CallStyle::Method(&dunder::NEW), range),
+                &full_args,
+                keywords,
+                range,
+            );
+            if !self
+                .solver()
+                .is_subset_eq(&ret, &instance_ty, self.type_order())
+            {
+                // Got something other than an instance of the class under construction.
+                return ret;
+            }
+            true
+        } else {
+            false
+        };
+        let init_method = self.get_instance_attribute(&cls, &dunder::INIT).unwrap();
+        if overrides_new && init_method.defined_on(self.stdlib.object_class_type().class_object()) {
+            // Class overrides `object.__new__` but not `object.__init__`. There's no need to call `__init__`.
+            return cls.self_type();
+        }
         self.call_infer(
             self.as_call_target_or_error(
-                self.get_instance_attribute(&cls, &dunder::INIT)
-                    .unwrap()
-                    .value,
+                init_method.value,
                 CallStyle::Method(&dunder::INIT),
                 range,
             ),

@@ -4779,16 +4779,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class2, Meta2 | int) failed",
-      "description": "assert_type(Class2, Meta2 | int) failed",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]",
       "description": "Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]",
@@ -5240,6 +5230,26 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 29
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Missing argument 'x'",
+      "description": "Missing argument 'x'",
+      "line": 30,
+      "name": "PyreError",
+      "stop_column": 8,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Missing argument 'y'",
+      "description": "Missing argument 'y'",
+      "line": 30,
+      "name": "PyreError",
+      "stop_column": 8,
+      "stop_line": 30
     },
     {
       "code": -2,
