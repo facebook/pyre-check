@@ -220,3 +220,18 @@ xs: list[list[A]] = [[]]
 xs[0] = [B()] # E: EXPECTED list[B] <: list[A]
 "#,
 );
+
+testcase_with_bug!(
+    test_generic_get_literal,
+    r#"
+from typing import assert_type, TypeVar, Literal
+
+class Foo[T]:
+    def __init__(self, x: T) -> None: ...
+    def get(self) -> T: ...
+
+# Should propagate the context to the argument 42
+x: Foo[Literal[42]] = Foo(42)  # E: EXPECTED Foo[int] <: Foo[Literal[42]]
+assert_type(x.get(), Literal[42])
+"#,
+);

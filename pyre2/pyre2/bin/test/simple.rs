@@ -907,6 +907,32 @@ async def test() -> None:
 );
 
 testcase!(
+    test_generic_create_literal,
+    r#"
+from typing import assert_type, Literal
+
+class Foo[T]:
+    def __init__(self, x: T) -> None: ...
+
+x: Literal[42] = 42
+assert_type(Foo(x), Foo[int])
+"#,
+);
+
+testcase!(
+    test_generic_get_literal,
+    r#"
+from typing import assert_type, Literal
+
+class Foo[T]:
+    def get(self) -> T: ...
+
+def test(x: Foo[Literal[42]]) -> None:
+    assert_type(x.get(), Literal[42])
+"#,
+);
+
+testcase!(
     test_await_literal,
     r#"
 from typing import Awaitable, Literal
