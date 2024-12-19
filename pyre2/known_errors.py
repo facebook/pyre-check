@@ -60,6 +60,7 @@ def yielding():
     yield 1
 
 
-# Rebecca: __new__
-def dunder_new():
-    return Path("test")
+# Rebecca: walrus
+def walrus(x: int):
+    if y := x + 1:
+        return y
