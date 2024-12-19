@@ -22,6 +22,7 @@ mod legacy_generic;
 mod lsp;
 mod mro;
 mod operators;
+mod perf;
 mod simple;
 mod stdlib;
 mod tuple;
