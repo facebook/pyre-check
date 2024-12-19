@@ -721,7 +721,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Lambda(lambda) => {
                 let hint_callable = hint.and_then(|ty| {
-                    if let Some(CallTarget::Callable(c)) = self.as_call_target(ty.clone()) {
+                    if let Some((_, CallTarget::Callable(c))) = self.as_call_target(ty.clone()) {
                         Some(c)
                     } else {
                         None

@@ -244,8 +244,8 @@
     {
       "code": -2,
       "column": 35,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], Self] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], Self] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], range] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], range]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], range] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], range]",
       "line": 82,
       "name": "PyreError",
       "stop_column": 40,
@@ -526,8 +526,8 @@
     {
       "code": -2,
       "column": 31,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], Self] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], Self] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], range] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], range]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], range] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], range]",
       "line": 92,
       "name": "PyreError",
       "stop_column": 36,
@@ -1484,8 +1484,8 @@
     {
       "code": -2,
       "column": 56,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], Self] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], Self] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], range] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], range]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], range] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], range]",
       "line": 55,
       "name": "PyreError",
       "stop_column": 61,
@@ -1599,8 +1599,8 @@
     {
       "code": -2,
       "column": 23,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], Self] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], Self] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], range] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], range]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], range] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], range]",
       "line": 44,
       "name": "PyreError",
       "stop_column": 28,
@@ -2495,8 +2495,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
       "line": 26,
       "name": "PyreError",
       "stop_column": 28,
@@ -4789,22 +4789,22 @@
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "Expression `TypeError(\"Cannot instantiate class\")` has type `Self` which does not derive from BaseException",
-      "description": "Expression `TypeError(\"Cannot instantiate class\")` has type `Self` which does not derive from BaseException",
-      "line": 15,
-      "name": "PyreError",
-      "stop_column": 52,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]",
       "description": "Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]",
       "line": 20,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 20
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class1",
+      "description": "EXPECTED object <: Class1",
+      "line": 20,
+      "name": "PyreError",
+      "stop_column": 36,
       "stop_line": 20
     },
     {
@@ -4820,8 +4820,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self, NoReturn) failed",
-      "description": "assert_type(Self, NoReturn) failed",
+      "concise_description": "assert_type(Class1, NoReturn) failed",
+      "description": "assert_type(Class1, NoReturn) failed",
       "line": 23,
       "name": "PyreError",
       "stop_column": 32,
@@ -4849,6 +4849,16 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class2",
+      "description": "EXPECTED object <: Class2",
+      "line": 33,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 33
+    },
+    {
+      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -4899,6 +4909,16 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class3",
+      "description": "EXPECTED object <: Class3",
+      "line": 48,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 48
+    },
+    {
+      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -4916,16 +4936,6 @@
       "name": "PyreError",
       "stop_column": 7,
       "stop_line": 51
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Self, Class3) failed",
-      "description": "assert_type(Self, Class3) failed",
-      "line": 52,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 52
     },
     {
       "code": -2,
@@ -4969,6 +4979,16 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class4",
+      "description": "EXPECTED object <: Class4",
+      "line": 62,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 62
+    },
+    {
+      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -4986,16 +5006,6 @@
       "name": "PyreError",
       "stop_column": 7,
       "stop_line": 65
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Self, Class4) failed",
-      "description": "assert_type(Self, Class4) failed",
-      "line": 66,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 66
     }
   ],
   "constructors_call_new.py": [
@@ -5007,6 +5017,16 @@
       "line": 16,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 16
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class1[?_]",
+      "description": "EXPECTED object <: Class1[?_]",
+      "line": 16,
+      "name": "PyreError",
+      "stop_column": 36,
       "stop_line": 16
     },
     {
@@ -5151,6 +5171,16 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class2[?_]",
+      "description": "EXPECTED object <: Class2[?_]",
+      "line": 29,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 29
+    },
+    {
+      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -5161,22 +5191,22 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Self, Class2[int]) failed",
-      "description": "assert_type(Self, Class2[int]) failed",
+      "column": 13,
+      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
       "line": 35,
       "name": "PyreError",
-      "stop_column": 36,
+      "stop_column": 19,
       "stop_line": 35
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Self, Class2[str]) failed",
-      "description": "assert_type(Self, Class2[str]) failed",
+      "column": 13,
+      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
       "line": 36,
       "name": "PyreError",
-      "stop_column": 37,
+      "stop_column": 19,
       "stop_line": 36
     },
     {
@@ -5282,8 +5312,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self, Class7) failed",
-      "description": "assert_type(Self, Class7) failed",
+      "concise_description": "assert_type(object, Class7) failed",
+      "description": "assert_type(object, Class7) failed",
       "line": 104,
       "name": "PyreError",
       "stop_column": 31,
@@ -5331,16 +5361,6 @@
     },
     {
       "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED Self <: Class9[int]",
-      "description": "EXPECTED Self <: Class9[int]",
-      "line": 132,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 132
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "EXPECTED type[Class11[str]] <: type[Class11[int]]",
       "description": "EXPECTED type[Class11[str]] <: type[Class11[int]]",
@@ -5359,6 +5379,16 @@
       "line": 25,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 25
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class1",
+      "description": "EXPECTED object <: Class1",
+      "line": 25,
+      "name": "PyreError",
+      "stop_column": 48,
       "stop_line": 25
     },
     {
@@ -5419,6 +5449,16 @@
       "line": 35,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class2",
+      "description": "EXPECTED object <: Class2",
+      "line": 35,
+      "name": "PyreError",
+      "stop_column": 36,
       "stop_line": 35
     },
     {
@@ -5815,22 +5855,22 @@
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "Expression `NotImplementedError(\"Class not constructable\")` has type `Self` which does not derive from BaseException",
-      "description": "Expression `NotImplementedError(\"Class not constructable\")` has type `Self` which does not derive from BaseException",
-      "line": 85,
-      "name": "PyreError",
-      "stop_column": 61,
-      "stop_line": 85
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]",
       "description": "Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]",
       "line": 93,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 93
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class5",
+      "description": "EXPECTED object <: Class5",
+      "line": 93,
+      "name": "PyreError",
+      "stop_column": 36,
       "stop_line": 93
     },
     {
@@ -6105,6 +6145,16 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class8[?_]",
+      "description": "EXPECTED object <: Class8[?_]",
+      "line": 178,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 178
+    },
+    {
+      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -6223,6 +6273,16 @@
       "line": 22,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 22
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED object <: Class1",
+      "description": "EXPECTED object <: Class1",
+      "line": 22,
+      "name": "PyreError",
+      "stop_column": 36,
       "stop_line": 22
     },
     {
@@ -7170,8 +7230,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 60,
       "name": "PyreError",
       "stop_column": 15,
@@ -7180,8 +7240,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 64,
       "name": "PyreError",
       "stop_column": 15,
@@ -7190,8 +7250,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 68,
       "name": "PyreError",
       "stop_column": 15,
@@ -7918,8 +7978,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 92,
       "name": "PyreError",
       "stop_column": 15,
@@ -8701,8 +8761,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
+      "concise_description": "Object of class `Enum` has no attribute `RED`",
+      "description": "Object of class `Enum` has no attribute `RED`",
       "line": 33,
       "name": "PyreError",
       "stop_column": 23,
@@ -8731,8 +8791,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
+      "concise_description": "Object of class `Enum` has no attribute `RED`",
+      "description": "Object of class `Enum` has no attribute `RED`",
       "line": 34,
       "name": "PyreError",
       "stop_column": 23,
@@ -8761,8 +8821,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
+      "concise_description": "Object of class `Enum` has no attribute `RED`",
+      "description": "Object of class `Enum` has no attribute `RED`",
       "line": 35,
       "name": "PyreError",
       "stop_column": 23,
@@ -8791,8 +8851,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
+      "concise_description": "Object of class `Enum` has no attribute `RED`",
+      "description": "Object of class `Enum` has no attribute `RED`",
       "line": 36,
       "name": "PyreError",
       "stop_column": 23,
@@ -8821,8 +8881,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
+      "concise_description": "Object of class `Enum` has no attribute `RED`",
+      "description": "Object of class `Enum` has no attribute `RED`",
       "line": 37,
       "name": "PyreError",
       "stop_column": 23,
@@ -8851,8 +8911,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
+      "concise_description": "Object of class `Enum` has no attribute `RED`",
+      "description": "Object of class `Enum` has no attribute `RED`",
       "line": 38,
       "name": "PyreError",
       "stop_column": 23,
@@ -8881,8 +8941,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
+      "concise_description": "Object of class `Enum` has no attribute `RED`",
+      "description": "Object of class `Enum` has no attribute `RED`",
       "line": 39,
       "name": "PyreError",
       "stop_column": 23,
@@ -8911,8 +8971,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: Self",
+      "concise_description": "Object of class `Enum` has no attribute `RED`",
+      "description": "Object of class `Enum` has no attribute `RED`",
       "line": 40,
       "name": "PyreError",
       "stop_column": 23,
@@ -9259,8 +9319,8 @@
     {
       "code": -2,
       "column": 27,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
       "line": 67,
       "name": "PyreError",
       "stop_column": 30,
@@ -11195,8 +11255,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
       "line": 22,
       "name": "PyreError",
       "stop_column": 19,
@@ -11907,8 +11967,28 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "EXPECTED Self <: ShouldBeInvariant3[float, str]",
-      "description": "EXPECTED Self <: ShouldBeInvariant3[float, str]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
+      "line": 118,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 118
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "line": 118,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 118
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
+      "description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
       "line": 118,
       "name": "PyreError",
       "stop_column": 73,
@@ -11917,8 +11997,28 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED Self <: ShouldBeInvariant3[int, str]",
-      "description": "EXPECTED Self <: ShouldBeInvariant3[int, str]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
+      "line": 119,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "line": 119,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "EXPECTED ShouldBeInvariant3[float, str] <: ShouldBeInvariant3[int, str]",
+      "description": "EXPECTED ShouldBeInvariant3[float, str] <: ShouldBeInvariant3[int, str]",
       "line": 119,
       "name": "PyreError",
       "stop_column": 73,
@@ -11927,8 +12027,28 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "EXPECTED Self <: ShouldBeInvariant3[str, float]",
-      "description": "EXPECTED Self <: ShouldBeInvariant3[str, float]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
+      "line": 120,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 120
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "line": 120,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 120
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
+      "description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
       "line": 120,
       "name": "PyreError",
       "stop_column": 73,
@@ -11937,8 +12057,28 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED Self <: ShouldBeInvariant3[str, int]",
-      "description": "EXPECTED Self <: ShouldBeInvariant3[str, int]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
+      "line": 121,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 121
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "line": 121,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 121
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "EXPECTED ShouldBeInvariant3[str, float] <: ShouldBeInvariant3[str, int]",
+      "description": "EXPECTED ShouldBeInvariant3[str, float] <: ShouldBeInvariant3[str, int]",
       "line": 121,
       "name": "PyreError",
       "stop_column": 73,
@@ -12019,8 +12159,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 52,
       "name": "PyreError",
       "stop_column": 13,
@@ -12059,8 +12199,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 85,
       "name": "PyreError",
       "stop_column": 8,
@@ -12069,8 +12209,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 90,
       "name": "PyreError",
       "stop_column": 12,
@@ -12079,8 +12219,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 102,
       "name": "PyreError",
       "stop_column": 8,
@@ -12089,8 +12229,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 106,
       "name": "PyreError",
       "stop_column": 12,
@@ -12099,8 +12239,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
       "line": 111,
       "name": "PyreError",
       "stop_column": 16,
@@ -15021,8 +15161,28 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "EXPECTED Self <: ShouldBeInvariant3[float, str]",
-      "description": "EXPECTED Self <: ShouldBeInvariant3[float, str]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
+      "line": 119,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "line": 119,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
+      "description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
       "line": 119,
       "name": "PyreError",
       "stop_column": 73,
@@ -15031,8 +15191,28 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED Self <: ShouldBeInvariant3[int, str]",
-      "description": "EXPECTED Self <: ShouldBeInvariant3[int, str]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
+      "line": 120,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 120
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "line": 120,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 120
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "EXPECTED ShouldBeInvariant3[float, str] <: ShouldBeInvariant3[int, str]",
+      "description": "EXPECTED ShouldBeInvariant3[float, str] <: ShouldBeInvariant3[int, str]",
       "line": 120,
       "name": "PyreError",
       "stop_column": 73,
@@ -15041,8 +15221,28 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "EXPECTED Self <: ShouldBeInvariant3[str, float]",
-      "description": "EXPECTED Self <: ShouldBeInvariant3[str, float]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
+      "line": 121,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 121
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "line": 121,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 121
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
+      "description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
       "line": 121,
       "name": "PyreError",
       "stop_column": 73,
@@ -15051,8 +15251,28 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED Self <: ShouldBeInvariant3[str, int]",
-      "description": "EXPECTED Self <: ShouldBeInvariant3[str, int]",
+      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
+      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
+      "line": 122,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 122
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "line": 122,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 122
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "EXPECTED ShouldBeInvariant3[str, float] <: ShouldBeInvariant3[str, int]",
+      "description": "EXPECTED ShouldBeInvariant3[str, float] <: ShouldBeInvariant3[str, int]",
       "line": 122,
       "name": "PyreError",
       "stop_column": 73,
@@ -15456,8 +15676,8 @@
     {
       "code": -2,
       "column": 30,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
       "line": 53,
       "name": "PyreError",
       "stop_column": 33,
@@ -15516,8 +15736,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
       "line": 68,
       "name": "PyreError",
       "stop_column": 24,
@@ -15616,8 +15836,8 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], str] | Callable[[Unknown, object], str]",
       "line": 167,
       "name": "PyreError",
       "stop_column": 22,
@@ -19396,8 +19616,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 92,
       "name": "PyreError",
       "stop_column": 19,
@@ -19406,8 +19626,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 93,
       "name": "PyreError",
       "stop_column": 9,
@@ -19716,16 +19936,6 @@
       "column": 5,
       "concise_description": "EXPECTED None <: NoReturn",
       "description": "EXPECTED None <: NoReturn",
-      "line": 16,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 16
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "Expression `RuntimeError(\"no way\")` has type `Self` which does not derive from BaseException",
-      "description": "Expression `RuntimeError(\"no way\")` has type `Self` which does not derive from BaseException",
       "line": 16,
       "name": "PyreError",
       "stop_column": 33,
@@ -21286,8 +21496,8 @@
     {
       "code": -2,
       "column": 40,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 31,
       "name": "PyreError",
       "stop_column": 43,
@@ -21296,8 +21506,8 @@
     {
       "code": -2,
       "column": 48,
-      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
-      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], int] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], int]",
       "line": 31,
       "name": "PyreError",
       "stop_column": 51,
@@ -23130,8 +23340,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: str",
-      "description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: str",
+      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str",
+      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str",
       "line": 91,
       "name": "PyreError",
       "stop_column": 38,
@@ -23180,8 +23390,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int",
-      "description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int",
+      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
+      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
       "line": 92,
       "name": "PyreError",
       "stop_column": 33,
@@ -23260,8 +23470,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: str | None",
-      "description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: str | None",
+      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str | None",
+      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str | None",
       "line": 97,
       "name": "PyreError",
       "stop_column": 38,
@@ -23310,8 +23520,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: str",
-      "description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: str",
+      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str",
+      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str",
       "line": 101,
       "name": "PyreError",
       "stop_column": 31,
@@ -23350,8 +23560,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int",
-      "description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int",
+      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
+      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
       "line": 103,
       "name": "PyreError",
       "stop_column": 33,
@@ -23410,8 +23620,8 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int | str",
-      "description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int | str",
+      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int | str",
+      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int | str",
       "line": 105,
       "name": "PyreError",
       "stop_column": 41,
@@ -23460,8 +23670,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int",
-      "description": "EXPECTED _PyreReadOnly_[int | str | @_] | _PyreReadOnly_[int | str | None] | int | str | @_ | None <: int",
+      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
+      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
       "line": 107,
       "name": "PyreError",
       "stop_column": 35,
