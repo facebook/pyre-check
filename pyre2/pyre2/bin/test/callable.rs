@@ -8,7 +8,7 @@
 use crate::testcase;
 use crate::testcase_with_bug;
 
-testcase!(
+testcase_with_bug!(
     test_lambda,
     r#"
 from typing import Callable, reveal_type
@@ -16,11 +16,13 @@ f1 = lambda x: 1
 reveal_type(f1)  # E: revealed type: Callable[[Unknown], Literal[1]]
 f2 = lambda x: reveal_type(x)  # E: revealed type: Unknown
 f3: Callable[[int], int] = lambda x: 1
-reveal_type(f3)  # E: revealed type: Callable[[Unknown], Literal[1]]
+reveal_type(f3)  # E: revealed type: Callable[[int], int]
 f4: Callable[[int], None] = lambda x: reveal_type(x)  # E: revealed type: Unknown
 f5: Callable[[int], int] = lambda x: x
-f6: Callable[[int], int] = lambda x: x + "foo"
-f7: Callable[[int], int] = lambda x: "foo"  # E: EXPECTED Callable[[Unknown], Literal['foo']] <: Callable[[int], int]
+f6: Callable[[int], int] = lambda x: "foo"  # E: EXPECTED Literal['foo'] <: int
+f7: Callable[[int, int], int] = lambda x: 1  # E: EXPECTED Callable[[Unknown], Literal[1]] <: Callable[[int, int], int]
+# this is a bug, when we analyze the body of the lambda `x` doesn't use the type from the hint
+f8: Callable[[int], int] = lambda x: x + "foo"
 "#,
 );
 

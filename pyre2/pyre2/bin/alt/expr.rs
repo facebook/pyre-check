@@ -626,7 +626,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 })
             }
             Expr::Lambda(lambda) => {
+                let hint_callable = hint.and_then(|ty| {
+                    if let Some(CallTarget::Callable(c)) = self.as_call_target(ty.clone()) {
+                        Some(c)
+                    } else {
+                        None
+                    }
+                });
                 let parameters: Vec<Arg> = if let Some(parameters) = &lambda.parameters {
+                    // TODO: use callable hint parameters to check body
                     (**parameters)
                         .iter()
                         .map(|p| {
@@ -639,11 +647,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     vec![]
                 };
-                let ret = self.expr_infer(&lambda.body);
-                Type::Callable(Box::new(Callable {
-                    args: Args::List(parameters),
-                    ret,
-                }))
+                if let Some(callable) = hint_callable {
+                    let inferred_callable = Type::Callable(Box::new(Callable {
+                        args: Args::List(parameters),
+                        ret: self.expr(&lambda.body, Some(&callable.ret)),
+                    }));
+                    let wanted_callable = Type::Callable(Box::new(callable));
+                    self.check_type(&wanted_callable, &inferred_callable, x.range());
+                    wanted_callable
+                } else {
+                    Type::Callable(Box::new(Callable {
+                        args: Args::List(parameters),
+                        ret: self.expr_infer(&lambda.body),
+                    }))
+                }
             }
             Expr::If(x) => {
                 // TODO: Support type refinement
