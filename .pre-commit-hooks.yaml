@@ -3,6 +3,9 @@
   description: "pyre-check: Performant type-checking for python."
   entry: pyre check
   language: python
-  minimum_pre_commit_version: 2.9.2
-  require_serial: true
-  types_or: [python, pyi]
+  'types_or': [python, pyi]
+  args: []
+  require_serial: false
+  pass_filenames: false
+  additional_dependencies: []
+  minimum_pre_commit_version: '2.9.2'
