@@ -44,6 +44,7 @@ use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
+use crate::types::types::Var;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
 
@@ -151,22 +152,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         CallTarget::any(AnyStyle::Error)
     }
 
-    fn as_call_target(&self, ty: Type) -> Option<CallTarget> {
+    /// Return a pair of the quantified variables I had to instantiate, and the resulting call target.
+    fn as_call_target(&self, ty: Type) -> Option<(Vec<Var>, CallTarget)> {
         match ty {
-            Type::Callable(c) => Some(CallTarget::Callable(*c)),
+            Type::Callable(c) => Some((Vec::new(), CallTarget::Callable(*c))),
             Type::BoundMethod(obj, func) => match self.as_call_target(*func.clone()) {
-                Some(CallTarget::Callable(c)) => Some(CallTarget::BoundMethod(*obj, c)),
+                Some((gs, CallTarget::Callable(c))) => Some((gs, CallTarget::BoundMethod(*obj, c))),
                 _ => None,
             },
             Type::ClassDef(cls) => self.as_call_target(self.instantiate_fresh(&cls)),
-            Type::Type(box Type::ClassType(cls)) => Some(CallTarget::Class(cls)),
+            Type::Type(box Type::ClassType(cls)) => Some((Vec::new(), CallTarget::Class(cls))),
             Type::Forall(params, t) => {
-                let t: Type = self.solver().fresh_quantified(
+                let (mut qs, t) = self.solver().fresh_quantified(
                     params.quantified().collect::<Vec<_>>().as_slice(),
                     *t,
                     self.uniques,
                 );
-                self.as_call_target(t)
+                self.as_call_target(t).map(|(qs2, x)| {
+                    qs.extend(qs2);
+                    (qs, x)
+                })
             }
             Type::Var(v) if let Some(_guard) = self.recurser.recurse(v) => {
                 self.as_call_target(self.solver().force_var(v))
@@ -175,14 +180,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let res = xs
                     .into_iter()
                     .map(|x| self.as_call_target(x))
-                    .collect::<Option<SmallSet<CallTarget>>>()?;
+                    .collect::<Option<SmallSet<_>>>()?;
                 if res.len() == 1 {
                     Some(res.into_iter().next().unwrap())
                 } else {
                     None
                 }
             }
-            Type::Any(style) => Some(CallTarget::any(style)),
+            Type::Any(style) => Some((Vec::new(), CallTarget::any(style))),
             Type::TypeAlias(ta) => self.as_call_target(ta.as_value(self.stdlib)),
             _ => None,
         }
@@ -193,7 +198,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ty: Type,
         call_style: CallStyle,
         range: TextRange,
-    ) -> CallTarget {
+    ) -> (Vec<Var>, CallTarget) {
         match self.as_call_target(ty.clone()) {
             Some(target) => target,
             None => {
@@ -206,9 +211,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     CallStyle::FreeForm => "Expected a callable".to_owned(),
                 };
-                self.error_call_target(
-                    range,
-                    format!("{}, got {}", expect_message, ty.deterministic_printing()),
+                (
+                    Vec::new(),
+                    self.error_call_target(
+                        range,
+                        format!("{}, got {}", expect_message, ty.deterministic_printing()),
+                    ),
                 )
             }
         }
@@ -228,7 +236,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .ok_or_conflated_error_msg(method_name, "Expr::call_method_generic")
             {
                 Ok(ty) => self.as_call_target_or_error(ty, CallStyle::Method(method_name), range),
-                Err(msg) => self.error_call_target(range, msg),
+                Err(msg) => (Vec::new(), self.error_call_target(range, msg)),
             };
             self.call_infer(callable, args, keywords, range)
         })
@@ -436,12 +444,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn call_infer(
         &self,
-        call_target: CallTarget,
+        call_target: (Vec<Var>, CallTarget),
         args: &[CallArg],
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
-        match call_target {
+        let res = match call_target.1 {
             CallTarget::Class(cls) => self.construct(cls, args, keywords, range),
             CallTarget::BoundMethod(obj, c) => {
                 let first_arg = CallArg::Type(&obj, range);
@@ -450,7 +458,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             CallTarget::Callable(callable) => {
                 self.callable_infer(callable, None, args, keywords, range)
             }
-        }
+        };
+        self.solver().finish_quantified(&call_target.0);
+        res
     }
 
     pub fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {

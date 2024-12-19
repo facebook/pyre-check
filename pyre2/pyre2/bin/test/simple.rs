@@ -491,7 +491,7 @@ def bar(random: bool):
         x = foo([])
     else:
         x = foo([1])
-    assert_type(x, Any | int)
+    assert_type(x, int)
     "#,
 );
 

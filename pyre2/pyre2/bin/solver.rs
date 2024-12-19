@@ -29,7 +29,7 @@ use crate::types::types::Var;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 enum Variable {
     /// We don't expect to get here, but better than crashing
     #[default]
@@ -205,13 +205,31 @@ impl Solver {
     }
 
     /// Generate fresh variables and substitute them in replacing a `Forall`.
-    pub fn fresh_quantified(&self, qs: &[Quantified], t: Type, uniques: &UniqueFactory) -> Type {
+    pub fn fresh_quantified(
+        &self,
+        qs: &[Quantified],
+        t: Type,
+        uniques: &UniqueFactory,
+    ) -> (Vec<Var>, Type) {
         let (vs, t) = t.instantiate_fresh(qs, uniques);
         let mut lock = self.variables.write().unwrap();
-        for v in vs {
-            lock.insert(v, Variable::Quantified);
+        for v in &vs {
+            lock.insert(*v, Variable::Quantified);
         }
-        t
+        (vs, t)
+    }
+
+    /// Called after a quantified function has been called. Given `def f[T](x: int): list[T]`,
+    /// after the generic has completed, the variable `T` now behaves more like an empty container
+    /// than a generic. If it hasn't been solved, make that switch.
+    pub fn finish_quantified(&self, vs: &[Var]) {
+        let mut lock = self.variables.write().unwrap();
+        for v in vs {
+            let e = lock.entry(*v).or_default();
+            if *e == Variable::Quantified {
+                *e = Variable::Contained;
+            }
+        }
     }
 
     /// Generate a fresh variable used to tie recursive bindings.

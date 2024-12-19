@@ -472,6 +472,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ))));
         self.solver()
             .fresh_quantified(qs.as_slice(), promoted_cls, self.uniques)
+            .1
     }
 
     /// Get an ancestor `ClassType`, in terms of the type parameters of `class`.
