@@ -420,6 +420,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    /// Get the `__call__` method from this class's metaclass.
+    fn get_metaclass_call(&self, cls: &ClassType) -> Option<Type> {
+        let metadata = self.get_metadata_for_class(cls.class_object());
+        let metaclass = metadata.metaclass()?;
+        let call_attr = self.get_instance_attribute(metaclass, &dunder::CALL)?;
+        if call_attr.defined_on(self.stdlib.builtins_type().class_object()) {
+            // The default behavior of `type.__call__` is already baked into our implementation of
+            // class construction; we only care about `__call__` if it is overridden.
+            return None;
+        }
+        match call_attr.value {
+            Type::BoundMethod(_, func) => {
+                // This method was bound to a general instance of the metaclass, but we have more
+                // information about the particular instance (`cls`) that it should be bound to.
+                Some(Type::BoundMethod(
+                    Box::new(Type::Type(Box::new(Type::ClassType(cls.clone())))),
+                    func,
+                ))
+            }
+            _ => None,
+        }
+    }
+
     fn construct(
         &self,
         cls: ClassType,
@@ -427,6 +450,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
+        // Based on https://typing.readthedocs.io/en/latest/spec/constructors.html.
+        if let Some(call_method) = self.get_metaclass_call(&cls) {
+            let ret = self.call_infer(
+                self.as_call_target_or_error(call_method, CallStyle::Method(&dunder::CALL), range),
+                args,
+                keywords,
+                range,
+            );
+            if !self
+                .solver()
+                .is_subset_eq(&ret, &Type::ClassType(cls.clone()), self.type_order())
+            {
+                // Got something other than an instance of the class under construction.
+                return ret;
+            }
+        }
         self.call_infer(
             self.as_call_target_or_error(
                 self.get_instance_attribute(&cls, &dunder::INIT)

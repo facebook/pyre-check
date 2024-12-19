@@ -51,8 +51,13 @@ pub enum NoClassAttribute {
 
 pub struct Attribute {
     pub value: Type,
-    #[expect(dead_code)]
     defining_class: Class,
+}
+
+impl Attribute {
+    pub fn defined_on(&self, cls: &Class) -> bool {
+        self.defining_class == *cls
+    }
 }
 
 /// Private helper type used to share part of the logic needed for the

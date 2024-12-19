@@ -82,7 +82,7 @@ C[str](c)  # E: EXPECTED C[int] <: C[str]
     "#,
 );
 
-testcase_with_bug!(
+testcase!(
     test_metaclass_call,
     r#"
 class Meta(type):
@@ -91,12 +91,12 @@ class C(metaclass=Meta):
     def __init__(self, *args, **kwargs):
         pass
 C(5)
-C()     # Should be an error
-C("5")  # Should be an error
+C()     # E: Missing argument 'x'
+C("5")  # E: EXPECTED Literal['5'] <: int
     "#,
 );
 
-testcase_with_bug!(
+testcase!(
     test_metaclass_call_bad_classdef,
     r#"
 class Meta(type):
@@ -105,12 +105,12 @@ class Meta(type):
 class C(metaclass=Meta):
     pass
 # Both of these calls error at runtime.
-C()
+C()   # E: Missing argument 'x'
 C(0)  # E: Expected 0 positional arguments
     "#,
 );
 
-testcase_with_bug!(
+testcase!(
     test_metaclass_call_returns_something_else,
     r#"
 from typing import assert_type
@@ -120,7 +120,7 @@ class Meta(type):
 class C(metaclass=Meta):
     pass
 x = C()
-assert_type(x, int)  # E: assert_type
+assert_type(x, int)
     "#,
 );
 
