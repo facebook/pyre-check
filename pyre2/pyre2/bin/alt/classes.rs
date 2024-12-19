@@ -49,8 +49,13 @@ pub enum NoClassAttribute {
     IsGenericMember,
 }
 
+/// Result of attribute lookup
 pub struct Attribute {
+    /// The attribute
     pub value: Type,
+    /// The class that defines the attribute, which may be different from the one the attribute is
+    /// looked up on. For example, given `class A: x: int; class B(A): pass`, the defining class
+    /// for attribute `x` is `A` even when `x` is looked up on `B`.
     defining_class: Class,
 }
 
