@@ -40,7 +40,7 @@
     "Line 65: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
     "Line 68: Unexpected errors ['assert_type(Any, Callable[[int, str, str], None]) failed']",
     "Line 72: Unexpected errors ['assert_type(Callable[ParamSpec(ParamSpec[P]), None], Callable[..., None]) failed']",
-    "Line 89: Unexpected errors ['Expected 1 more positional argument', 'TODO: __new__ is missing or uses class-scoped type parameters', 'EXPECTED map[@_] <: LiteralString', 'EXPECTED map[@_] <: str', 'Expected 0 positional arguments, got 2']",
+    "Line 89: Unexpected errors ['Expected 1 more positional argument', 'Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]', 'EXPECTED map[@_] <: LiteralString', 'EXPECTED map[@_] <: str']",
     "Line 92: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], range] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], range]']",
     "Line 95: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]']",
     "Line 127: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[@_], Iterable[@_]], None] | Callable[[list[@_]], None]']",
@@ -349,21 +349,14 @@
   ],
   "constructors_call_new.py": [
     "Line 16: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1[?_]', 'Expected 0 positional arguments, got 1']",
-    "Line 19: Unexpected errors ['TODO: __new__ is missing or uses class-scoped type parameters', 'Expected 0 positional arguments, got 1']",
-    "Line 20: Unexpected errors ['TODO: __new__ is missing or uses class-scoped type parameters', 'Expected 0 positional arguments, got 1']",
-    "Line 23: Unexpected errors ['assert_type(Class1[Any], Class1[int]) failed', 'TODO: __new__ is missing or uses class-scoped type parameters', 'Expected 0 positional arguments, got 1']",
-    "Line 24: Unexpected errors ['assert_type(Class1[Any], Class1[float]) failed', 'TODO: __new__ is missing or uses class-scoped type parameters', 'Expected 0 positional arguments, got 1']",
+    "Line 20: Unexpected errors ['EXPECTED Literal[1] <: float']",
     "Line 29: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2[?_]', 'Expected 0 positional arguments, got 1']",
-    "Line 35: Unexpected errors ['TODO: __new__ is missing or uses class-scoped type parameters']",
-    "Line 36: Unexpected errors ['TODO: __new__ is missing or uses class-scoped type parameters']",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', \"Missing argument 'x'\"]",
     "Line 69: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 75: Unexpected errors ['TODO: StmtTry - Bindings::stmt']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', \"Missing argument 'x'\"]",
     "Line 98: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 2', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
-    "Line 104: Unexpected errors ['assert_type(object, Class7) failed']",
-    "Line 116: Unexpected errors ['assert_type(Class8[int], Class8[list[int]]) failed', 'TODO: __new__ is missing or uses class-scoped type parameters']",
-    "Line 117: Unexpected errors ['assert_type(Class8[str], Class8[list[str]]) failed', 'TODO: __new__ is missing or uses class-scoped type parameters']"
+    "Line 104: Unexpected errors ['assert_type(object, Class7) failed']"
   ],
   "constructors_call_type.py": [
     "Line 25: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected 0 positional arguments, got 1', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
@@ -576,7 +569,7 @@
   ],
   "directives_cast.py": [
     "Line 16: Expected 1 errors",
-    "Line 10: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED Generator[int, None, None] <: SupportsNext[@_]', 'TODO: __new__ is missing or uses class-scoped type parameters', 'Expected 0 positional arguments, got 1', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
+    "Line 10: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED Generator[int, None, None] <: SupportsNext[@_]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 11: Unexpected errors ['EXPECTED type[str] <: object', 'Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[object]], SupportsIndex], _PyreReadOnly_[object]] | Callable[[_PyreReadOnly_[list[object]], slice[Error, Error, Error]], list[_PyreReadOnly_[object]]] | Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]']",
     "Line 13: Unexpected errors ['EXPECTED type[int] <: object']"
   ],
@@ -616,7 +609,7 @@
     "Line 19: Unexpected errors ['TODO: Answers::solve_binding - Binding::IterableValue']",
     "Line 20: Unexpected errors ['assert_type(Any, Color) failed']",
     "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for class `Color`, got 1.', \"untype, got Literal['RED']\"]",
-    "Line 27: Unexpected errors ['Expected `__new__` to be a callable, got Literal[Color.__new__]']"
+    "Line 27: Unexpected errors ['assert_type(Enum, Color) failed']"
   ],
   "enums_definition.py": [
     "Line 75: Unexpected errors ['assert_type(Literal[1], Literal[False]) failed', 'TODO: Attribute(ExprAttribute - Lit::from_expr']"
@@ -1485,7 +1478,7 @@
     "Line 27: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 28: Unexpected errors ['EXPECTED tuple[int] <: tuple[int, Error]']",
     "Line 47: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 59: Unexpected errors ['TODO: __new__ is missing or uses class-scoped type parameters', 'EXPECTED tuple[@_] <: tuple[int, int]', 'Expected 0 positional arguments, got 1']",
+    "Line 59: Unexpected errors ['EXPECTED tuple[Any] <: tuple[int, int]']",
     "Line 71: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 74: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed']",
     "Line 78: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, int] | tuple[str, str]) failed']",

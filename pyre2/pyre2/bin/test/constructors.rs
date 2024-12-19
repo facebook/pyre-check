@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_class_init,
@@ -182,14 +181,14 @@ assert_type(x, int)
     "#,
 );
 
-testcase_with_bug!(
+testcase!(
     test_generic_new,
     r#"
 class C[T]:
     def __new__(cls, x: T): ...
-C(0)  # Should we allow this? # E: TODO # E: Expected 0 positional arguments
-C[bool](True)  # This should be ok # E: TODO # E: Expected 0 positional arguments
-C[bool](0)  # This should be an error # E: TODO # E: Expected 0 positional arguments
+C(0)  # T is implicitly Any
+C[bool](True)
+C[bool](0)  # E: EXPECTED Literal[0] <: bool
     "#,
 );
 

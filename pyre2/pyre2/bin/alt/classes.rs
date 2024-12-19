@@ -564,6 +564,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         tparams.quantified().any(|q| qs.contains(&q))
     }
 
+    /// Gets an attribute from a class definition. Returns an error if the attribute is not found
+    /// or if its type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
     pub fn get_class_attribute(
         &self,
         cls: &Class,
@@ -593,6 +595,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
+    }
+
+    /// Gets an attribute from a class with type arguments (i.e., a ClassType).
+    pub fn get_class_attribute_with_targs(
+        &self,
+        cls: &ClassType,
+        name: &Name,
+    ) -> Option<Attribute> {
+        self.get_class_member(cls.class_object(), name)
+            .map(|(member_ty, defining_class)| Attribute {
+                value: cls.instantiate_member((*member_ty).clone()),
+                defining_class,
+            })
     }
 
     /// Given an identifier, see whether it is bound to an enum class. If so,

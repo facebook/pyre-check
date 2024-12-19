@@ -444,17 +444,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     /// Get the class's `__new__` method.
-    fn get_new(&self, cls: &ClassType, range: TextRange) -> Option<Type> {
-        let new_attr = match self.get_class_attribute(cls.class_object(), &dunder::NEW) {
-            Ok(attr) => attr,
-            Err(_) => {
-                self.error_todo(
-                    "__new__ is missing or uses class-scoped type parameters",
-                    range,
-                );
-                return None;
-            }
-        };
+    fn get_new(&self, cls: &ClassType) -> Option<Type> {
+        let new_attr = self
+            .get_class_attribute_with_targs(cls, &dunder::NEW)
+            .unwrap();
         if new_attr.defined_on(self.stdlib.object_class_type().class_object()) {
             // The default behavior of `object.__new__` is already baked into our implementation of
             // class construction; we only care about `__new__` if it is overridden.
@@ -487,7 +480,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 return ret;
             }
         }
-        let overrides_new = if let Some(new_method) = self.get_new(&cls, range) {
+        let overrides_new = if let Some(new_method) = self.get_new(&cls) {
             let cls_ty = Type::Type(Box::new(instance_ty.clone()));
             let mut full_args = vec![CallArg::Type(&cls_ty, range)];
             full_args.extend_from_slice(args);

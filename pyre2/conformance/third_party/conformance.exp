@@ -174,8 +174,8 @@
     {
       "code": -2,
       "column": 34,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
       "line": 79,
       "name": "PyreError",
       "stop_column": 37,
@@ -199,16 +199,6 @@
       "line": 79,
       "name": "PyreError",
       "stop_column": 59,
-      "stop_line": 79
-    },
-    {
-      "code": -2,
-      "column": 38,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 41,
       "stop_line": 79
     },
     {
@@ -486,8 +476,8 @@
     {
       "code": -2,
       "column": 30,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
       "line": 89,
       "name": "PyreError",
       "stop_column": 33,
@@ -511,16 +501,6 @@
       "line": 89,
       "name": "PyreError",
       "stop_column": 55,
-      "stop_line": 89
-    },
-    {
-      "code": -2,
-      "column": 34,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 89,
-      "name": "PyreError",
-      "stop_column": 37,
       "stop_line": 89
     },
     {
@@ -1042,8 +1022,8 @@
     {
       "code": -2,
       "column": 35,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
       "line": 37,
       "name": "PyreError",
       "stop_column": 38,
@@ -1067,16 +1047,6 @@
       "line": 37,
       "name": "PyreError",
       "stop_column": 60,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 39,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 42,
       "stop_line": 37
     },
     {
@@ -1444,8 +1414,8 @@
     {
       "code": -2,
       "column": 53,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
       "line": 52,
       "name": "PyreError",
       "stop_column": 56,
@@ -1469,16 +1439,6 @@
       "line": 52,
       "name": "PyreError",
       "stop_column": 78,
-      "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 57,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 52,
-      "name": "PyreError",
-      "stop_column": 60,
       "stop_line": 52
     },
     {
@@ -1529,8 +1489,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
       "line": 41,
       "name": "PyreError",
       "stop_column": 25,
@@ -1554,16 +1514,6 @@
       "line": 41,
       "name": "PyreError",
       "stop_column": 47,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 26,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 29,
       "stop_line": 41
     },
     {
@@ -2535,8 +2485,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
       "line": 88,
       "name": "PyreError",
       "stop_column": 25,
@@ -2560,16 +2510,6 @@
       "line": 88,
       "name": "PyreError",
       "stop_column": 47,
-      "stop_line": 88
-    },
-    {
-      "code": -2,
-      "column": 26,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 88,
-      "name": "PyreError",
-      "stop_column": 29,
       "stop_line": 88
     },
     {
@@ -5041,39 +4981,9 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
       "column": 27,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "concise_description": "EXPECTED Literal[1] <: float",
+      "description": "EXPECTED Literal[1] <: float",
       "line": 20,
       "name": "PyreError",
       "stop_column": 28,
@@ -5081,83 +4991,13 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
       "column": 13,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "concise_description": "EXPECTED Literal[1.0] <: int",
+      "description": "EXPECTED Literal[1.0] <: int",
       "line": 21,
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 21
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class1[Any], Class1[int]) failed",
-      "description": "assert_type(Class1[Any], Class1[int]) failed",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class1[Any], Class1[float]) failed",
-      "description": "assert_type(Class1[Any], Class1[float]) failed",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 24
     },
     {
       "code": -2,
@@ -5188,26 +5028,6 @@
       "name": "PyreError",
       "stop_column": 35,
       "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 36
     },
     {
       "code": -2,
@@ -5318,46 +5138,6 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 104
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class8[int], Class8[list[int]]) failed",
-      "description": "assert_type(Class8[int], Class8[list[int]]) failed",
-      "line": 116,
-      "name": "PyreError",
-      "stop_column": 46,
-      "stop_line": 116
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 116,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 116
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class8[str], Class8[list[str]]) failed",
-      "description": "assert_type(Class8[str], Class8[list[str]]) failed",
-      "line": 117,
-      "name": "PyreError",
-      "stop_column": 46,
-      "stop_line": 117
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 117,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 117
     },
     {
       "code": -2,
@@ -8231,26 +8011,6 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 10,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 10
-    },
-    {
-      "code": -2,
-      "column": 42,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 10,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 10
-    },
-    {
-      "code": -2,
       "column": 62,
       "concise_description": "EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]",
       "description": "EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]",
@@ -8354,21 +8114,11 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
+      "concise_description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
+      "description": "Expected `__new__` to be a callable, got Callable[[Unknown, Callable[..., @_], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Var[Iterable[Any]]], map[@_]] | Forall[_T1, Callable[[Unknown, Callable[[_T1], @_], Iterable[_T1]], map[@_]]] | Forall[_T1, _T2, Callable[[Unknown, Callable[[_T1, _T2], @_], Iterable[_T1], Iterable[_T2]], map[@_]]] | Forall[_T1, _T2, _T3, Callable[[Unknown, Callable[[_T1, _T2, _T3], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]], map[@_]]] | Forall[_T1, _T2, _T3, _T4, _T5, Callable[[Unknown, Callable[[_T1, _T2, _T3, _T4, _T5], @_], Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]], map[@_]]]",
       "line": 25,
       "name": "PyreError",
       "stop_column": 4,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 27,
       "stop_line": 25
     },
     {
@@ -8658,12 +8408,12 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Expected `__new__` to be a callable, got Literal[Color.__new__]",
-      "description": "Expected `__new__` to be a callable, got Literal[Color.__new__]",
+      "column": 1,
+      "concise_description": "assert_type(Enum, Color) failed",
+      "description": "assert_type(Enum, Color) failed",
       "line": 27,
       "name": "PyreError",
-      "stop_column": 18,
+      "stop_column": 29,
       "stop_line": 27
     }
   ],
@@ -11967,28 +11717,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
-      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
-      "line": 118,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 118
-    },
-    {
-      "code": -2,
-      "column": 43,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 118,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 118
-    },
-    {
-      "code": -2,
-      "column": 43,
-      "concise_description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
-      "description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
+      "concise_description": "EXPECTED dict[int, str] <: ShouldBeInvariant3[float, str]",
+      "description": "EXPECTED dict[int, str] <: ShouldBeInvariant3[float, str]",
       "line": 118,
       "name": "PyreError",
       "stop_column": 73,
@@ -11997,28 +11727,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
-      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 119
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 119
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "EXPECTED ShouldBeInvariant3[float, str] <: ShouldBeInvariant3[int, str]",
-      "description": "EXPECTED ShouldBeInvariant3[float, str] <: ShouldBeInvariant3[int, str]",
+      "concise_description": "EXPECTED dict[float, str] <: ShouldBeInvariant3[int, str]",
+      "description": "EXPECTED dict[float, str] <: ShouldBeInvariant3[int, str]",
       "line": 119,
       "name": "PyreError",
       "stop_column": 73,
@@ -12027,28 +11737,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
-      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
-      "line": 120,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 120
-    },
-    {
-      "code": -2,
-      "column": 43,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 120,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 120
-    },
-    {
-      "code": -2,
-      "column": 43,
-      "concise_description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
-      "description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
+      "concise_description": "EXPECTED dict[str, int] <: ShouldBeInvariant3[str, float]",
+      "description": "EXPECTED dict[str, int] <: ShouldBeInvariant3[str, float]",
       "line": 120,
       "name": "PyreError",
       "stop_column": 73,
@@ -12057,28 +11747,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
-      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
-      "line": 121,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 121
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 121,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 121
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "EXPECTED ShouldBeInvariant3[str, float] <: ShouldBeInvariant3[str, int]",
-      "description": "EXPECTED ShouldBeInvariant3[str, float] <: ShouldBeInvariant3[str, int]",
+      "concise_description": "EXPECTED dict[str, float] <: ShouldBeInvariant3[str, int]",
+      "description": "EXPECTED dict[str, float] <: ShouldBeInvariant3[str, int]",
       "line": 121,
       "name": "PyreError",
       "stop_column": 73,
@@ -15161,28 +14831,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
-      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[int, str], Iterable[tuple[int, str]]], None] | Callable[[dict[int, str], SupportsKeysAndGetItem[int, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[int, str]], None]",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 119
-    },
-    {
-      "code": -2,
-      "column": 43,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 119
-    },
-    {
-      "code": -2,
-      "column": 43,
-      "concise_description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
-      "description": "EXPECTED ShouldBeInvariant3[int, str] <: ShouldBeInvariant3[float, str]",
+      "concise_description": "EXPECTED dict[int, str] <: ShouldBeInvariant3[float, str]",
+      "description": "EXPECTED dict[int, str] <: ShouldBeInvariant3[float, str]",
       "line": 119,
       "name": "PyreError",
       "stop_column": 73,
@@ -15191,28 +14841,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
-      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, str], Iterable[tuple[str, str]], KwArgs[str]], None] | Callable[[dict[str, str], SupportsKeysAndGetItem[str, str], KwArgs[str]], None] | Callable[[dict[float, str], Iterable[tuple[float, str]]], None] | Callable[[dict[float, str], SupportsKeysAndGetItem[float, str]], None] | Callable[[dict[str, str], KwArgs[str]], None] | Callable[[dict[float, str]], None]",
-      "line": 120,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 120
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 120,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 120
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "EXPECTED ShouldBeInvariant3[float, str] <: ShouldBeInvariant3[int, str]",
-      "description": "EXPECTED ShouldBeInvariant3[float, str] <: ShouldBeInvariant3[int, str]",
+      "concise_description": "EXPECTED dict[float, str] <: ShouldBeInvariant3[int, str]",
+      "description": "EXPECTED dict[float, str] <: ShouldBeInvariant3[int, str]",
       "line": 120,
       "name": "PyreError",
       "stop_column": 73,
@@ -15221,28 +14851,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
-      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]], KwArgs[int]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int], KwArgs[int]], None] | Callable[[dict[str, int], Iterable[tuple[str, int]]], None] | Callable[[dict[str, int], SupportsKeysAndGetItem[str, int]], None] | Callable[[dict[str, int], KwArgs[int]], None] | Callable[[dict[str, int]], None]",
-      "line": 121,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 121
-    },
-    {
-      "code": -2,
-      "column": 43,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 121,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 121
-    },
-    {
-      "code": -2,
-      "column": 43,
-      "concise_description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
-      "description": "EXPECTED ShouldBeInvariant3[str, int] <: ShouldBeInvariant3[str, float]",
+      "concise_description": "EXPECTED dict[str, int] <: ShouldBeInvariant3[str, float]",
+      "description": "EXPECTED dict[str, int] <: ShouldBeInvariant3[str, float]",
       "line": 121,
       "name": "PyreError",
       "stop_column": 73,
@@ -15251,28 +14861,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
-      "description": "Expected `__init__` to be a callable, got Callable[[dict[bytes, bytes], Iterable[list[bytes]]], None] | Callable[[dict[str, str], Iterable[list[str]]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]], KwArgs[float]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float], KwArgs[float]], None] | Callable[[dict[str, float], Iterable[tuple[str, float]]], None] | Callable[[dict[str, float], SupportsKeysAndGetItem[str, float]], None] | Callable[[dict[str, float], KwArgs[float]], None] | Callable[[dict[str, float]], None]",
-      "line": 122,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 122
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 122,
-      "name": "PyreError",
-      "stop_column": 71,
-      "stop_line": 122
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "EXPECTED ShouldBeInvariant3[str, float] <: ShouldBeInvariant3[str, int]",
-      "description": "EXPECTED ShouldBeInvariant3[str, float] <: ShouldBeInvariant3[str, int]",
+      "concise_description": "EXPECTED dict[str, float] <: ShouldBeInvariant3[str, int]",
+      "description": "EXPECTED dict[str, float] <: ShouldBeInvariant3[str, int]",
       "line": 122,
       "name": "PyreError",
       "stop_column": 73,
@@ -20692,31 +20282,11 @@
     {
       "code": -2,
       "column": 26,
-      "concise_description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "description": "TODO: __new__ is missing or uses class-scoped type parameters",
-      "line": 59,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 59
-    },
-    {
-      "code": -2,
-      "column": 26,
-      "concise_description": "EXPECTED tuple[@_] <: tuple[int, int]",
-      "description": "EXPECTED tuple[@_] <: tuple[int, int]",
+      "concise_description": "EXPECTED tuple[Any] <: tuple[int, int]",
+      "description": "EXPECTED tuple[Any] <: tuple[int, int]",
       "line": 59,
       "name": "PyreError",
       "stop_column": 45,
-      "stop_line": 59
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 59,
-      "name": "PyreError",
-      "stop_column": 44,
       "stop_line": 59
     },
     {
