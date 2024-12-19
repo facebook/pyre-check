@@ -691,7 +691,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>) -> Type {
         match x {
             Expr::BoolOp(x) => self.boolop(&x.values, x.op),
-            Expr::Named(_) => self.error_todo("Answers::expr_infer", x),
+            Expr::Named(x) => self.expr_infer_with_hint(&x.value, hint),
             Expr::BinOp(x) => self.binop_infer(x),
             Expr::UnaryOp(x) => {
                 let t = self.expr_infer(&x.operand);

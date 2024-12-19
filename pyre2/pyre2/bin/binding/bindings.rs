@@ -609,6 +609,12 @@ impl<'a> BindingsBuilder<'a> {
                 self.ensure_name(&name, binding);
                 false
             }
+            Expr::Named(x) => {
+                self.scopes.last_mut().stat.expr_lvalue(&x.target);
+                let make_binding = |k| Binding::Expr(k, (*x.value).clone());
+                self.bind_target(&x.target, &make_binding, true);
+                false
+            }
             Expr::ListComp(x) => {
                 self.bind_comprehensions(&x.generators);
                 true

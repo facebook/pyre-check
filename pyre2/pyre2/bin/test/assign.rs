@@ -422,3 +422,12 @@ def test(x: C):
     x += expect_str(0) # E: Expected `__iadd__` to be a callable, got None # E: EXPECTED Literal[0] <: str
 "#,
 );
+
+testcase!(
+    test_walrus_simple,
+    r#"
+from typing import assert_type, Literal
+(x := True)
+assert_type(x, Literal[True])
+    "#,
+);

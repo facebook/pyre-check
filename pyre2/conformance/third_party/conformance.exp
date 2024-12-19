@@ -19445,16 +19445,6 @@
     },
     {
       "code": -2,
-      "column": 42,
-      "concise_description": "Could not find name `x`",
-      "description": "Could not find name `x`",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
       "column": 7,
       "concise_description": "untype, got list[type[int] | type[str]]",
       "description": "untype, got list[type[int] | type[str]]",
@@ -19804,16 +19794,6 @@
       "name": "PyreError",
       "stop_column": 11,
       "stop_line": 145
-    },
-    {
-      "code": -2,
-      "column": 10,
-      "concise_description": "TODO: Named(ExprNamed - Answers::expr_infer",
-      "description": "TODO: Named(ExprNamed - Answers::expr_infer",
-      "line": 147,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 147
     },
     {
       "code": -2,

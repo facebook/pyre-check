@@ -3,7 +3,7 @@
   "pass": 8,
   "fail": 125,
   "pass_rate": 0.06,
-  "differences": 1449,
+  "differences": 1450,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -118,7 +118,7 @@
     "protocols_subtyping.py": 10,
     "protocols_variance.py": 7,
     "qualifiers_annotated.py": 12,
-    "qualifiers_final_annotation.py": 16,
+    "qualifiers_final_annotation.py": 17,
     "qualifiers_final_decorator.py": 11,
     "specialtypes_any.py": 8,
     "specialtypes_never.py": 5,
