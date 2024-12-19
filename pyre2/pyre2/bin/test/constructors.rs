@@ -194,6 +194,19 @@ C[bool](0)  # This should be an error # E: TODO # E: Expected 0 positional argum
 );
 
 testcase!(
+    test_new_return_self,
+    r#"
+from typing import Self, assert_type
+class C:
+    x: int
+    def __new__(cls) -> Self: ...
+    def __init__(self):
+        self.x = 42
+assert_type(C().x, int)
+    "#,
+);
+
+testcase!(
     test_inherit_dunder_init,
     r#"
 class A:

@@ -976,10 +976,7 @@ impl<'a> BindingsBuilder<'a> {
         }
         let func_name = x.name.clone();
         let self_type = match &self.scopes.last().kind {
-            // __new__ is a staticmethod that is special-cased at runtime to not need @staticmethod decoration.
-            ScopeKind::ClassBody(body) if func_name.id != dunder::NEW => {
-                Some(self.table.types.0.insert(body.as_self_type_key()))
-            }
+            ScopeKind::ClassBody(body) => Some(self.table.types.0.insert(body.as_self_type_key())),
             _ => None,
         };
 
@@ -1017,7 +1014,15 @@ impl<'a> BindingsBuilder<'a> {
 
         let legacy_tparams = legacy_tparam_builder.lookup_keys(self);
 
-        self.parameters(&mut x.parameters, &self_type);
+        self.parameters(
+            &mut x.parameters,
+            if func_name.id == dunder::NEW {
+                // __new__ is a staticmethod that is special-cased at runtime to not need @staticmethod decoration.
+                &None
+            } else {
+                &self_type
+            },
+        );
 
         self.scopes.last_mut().stat.stmts(
             &body,

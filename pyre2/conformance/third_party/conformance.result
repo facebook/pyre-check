@@ -40,8 +40,8 @@
     "Line 65: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
     "Line 68: Unexpected errors ['assert_type(Any, Callable[[int, str, str], None]) failed']",
     "Line 72: Unexpected errors ['assert_type(Callable[ParamSpec(ParamSpec[P]), None], Callable[..., None]) failed']",
-    "Line 89: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED map[@_] <: LiteralString', 'EXPECTED map[@_] <: str', 'Expected 0 positional arguments, got 2']",
-    "Line 92: Unexpected errors ['Expected 0 positional arguments, got 1']",
+    "Line 89: Unexpected errors ['Expected 1 more positional argument', 'TODO: __new__ is missing or uses class-scoped type parameters', 'EXPECTED map[@_] <: LiteralString', 'EXPECTED map[@_] <: str', 'Expected 0 positional arguments, got 2']",
+    "Line 92: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, SupportsIndex], Self] | Callable[[Unknown, SupportsIndex, SupportsIndex, SupportsIndex], Self]']",
     "Line 95: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]']",
     "Line 127: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[@_], Iterable[@_]], None] | Callable[[list[@_]], None]']",
     "Line 130: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[list[int], Iterable[int]], None] | Callable[[list[int]], None]']"
@@ -193,7 +193,7 @@
     "Line 95: Expected 1 errors",
     "Line 100: Expected 1 errors",
     "Line 15: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]']",
-    "Line 26: Unexpected errors ['Expected 0 positional arguments, got 1']",
+    "Line 26: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]']",
     "Line 77: Unexpected errors ['assert_type(tuple[Any], tuple[Any, ...]) failed']"
   ],
   "callables_annotation.py": [
@@ -338,43 +338,39 @@
     "Line 100: Unexpected errors ['EXPECTED Class7[str, int] <: Class7[TypeVar[V2], TypeVar[V1]]']"
   ],
   "constructors_call_metaclass.py": [
-    "Line 51: Expected 1 errors",
-    "Line 65: Expected 1 errors",
-    "Line 15: Unexpected errors ['EXPECTED None <: NoReturn']",
+    "Line 15: Unexpected errors ['EXPECTED None <: NoReturn', 'Expression `TypeError(\"Cannot instantiate class\")` has type `Self` which does not derive from BaseException']",
     "Line 20: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
-    "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed']",
+    "Line 23: Unexpected errors ['assert_type(Self, NoReturn) failed', \"Missing argument 'x'\"]",
     "Line 33: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
     "Line 43: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Object of class `super` has no attribute `__call__`', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 48: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
-    "Line 52: Unexpected errors ['Expected 0 positional arguments, got 1']",
+    "Line 52: Unexpected errors ['assert_type(Self, Class3) failed']",
     "Line 57: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Object of class `super` has no attribute `__call__`', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 62: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
-    "Line 66: Unexpected errors ['Expected 0 positional arguments, got 1']"
+    "Line 66: Unexpected errors ['assert_type(Self, Class4) failed']"
   ],
   "constructors_call_new.py": [
-    "Line 145: Expected 1 errors",
     "Line 16: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
-    "Line 19: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 20: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 23: Unexpected errors ['assert_type(Class1[Any], Class1[int]) failed', 'Expected 0 positional arguments, got 1']",
-    "Line 24: Unexpected errors ['assert_type(Class1[Any], Class1[float]) failed', 'Expected 0 positional arguments, got 1']",
+    "Line 19: Unexpected errors ['TODO: __new__ is missing or uses class-scoped type parameters', 'Expected 0 positional arguments, got 1']",
+    "Line 20: Unexpected errors ['TODO: __new__ is missing or uses class-scoped type parameters', 'Expected 0 positional arguments, got 1']",
+    "Line 23: Unexpected errors ['assert_type(Class1[Any], Class1[int]) failed', 'TODO: __new__ is missing or uses class-scoped type parameters', 'Expected 0 positional arguments, got 1']",
+    "Line 24: Unexpected errors ['assert_type(Class1[Any], Class1[float]) failed', 'TODO: __new__ is missing or uses class-scoped type parameters', 'Expected 0 positional arguments, got 1']",
     "Line 29: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
-    "Line 49: Unexpected errors ['assert_type(Class3, int) failed', \"Missing argument 'x'\"]",
+    "Line 35: Unexpected errors ['assert_type(Self, Class2[int]) failed']",
+    "Line 36: Unexpected errors ['assert_type(Self, Class2[str]) failed']",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', \"Missing argument 'x'\"]",
     "Line 69: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 75: Unexpected errors ['TODO: StmtTry - Bindings::stmt']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', \"Missing argument 'x'\"]",
-    "Line 89: Unexpected errors ['assert_type(Class6, Class6 | int) failed', \"Missing argument 'x'\"]",
     "Line 98: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 2', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
-    "Line 116: Unexpected errors ['assert_type(Class8[int], Class8[list[int]]) failed']",
-    "Line 117: Unexpected errors ['assert_type(Class8[str], Class8[list[str]]) failed']"
+    "Line 104: Unexpected errors ['assert_type(Self, Class7) failed']",
+    "Line 116: Unexpected errors ['assert_type(Class8[int], Class8[list[int]]) failed', 'TODO: __new__ is missing or uses class-scoped type parameters']",
+    "Line 117: Unexpected errors ['assert_type(Class8[str], Class8[list[str]]) failed', 'TODO: __new__ is missing or uses class-scoped type parameters']",
+    "Line 132: Unexpected errors ['EXPECTED Self <: Class9[int]']"
   ],
   "constructors_call_type.py": [
-    "Line 40: Expected 1 errors",
     "Line 25: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
-    "Line 29: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\"]",
     "Line 35: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
-    "Line 39: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\"]",
     "Line 63: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 71: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 79: Unexpected errors ['Expected a callable, got type[?_]']",
@@ -393,7 +389,7 @@
     "Line 76: Unexpected errors ['EXPECTED type[Class4] <: Callable[ParamSpec(@_), @_]']",
     "Line 77: Unexpected errors ['revealed type: Callable[ParamSpec(Unknown), Unknown]']",
     "Line 78: Unexpected errors ['assert_type(Any, int) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 85: Unexpected errors ['EXPECTED None <: NoReturn']",
+    "Line 85: Unexpected errors ['EXPECTED None <: NoReturn', 'Expression `NotImplementedError(\"Class not constructable\")` has type `Self` which does not derive from BaseException']",
     "Line 93: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1']",
     "Line 96: Unexpected errors ['EXPECTED type[Class5] <: Callable[ParamSpec(@_), @_]']",
     "Line 97: Unexpected errors ['revealed type: Callable[ParamSpec(Unknown), Unknown]']",
@@ -512,9 +508,9 @@
   ],
   "dataclasses_transform_converter.py": [
     "Line 118: Expected 1 errors",
-    "Line 60: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 64: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 68: Unexpected errors ['EXPECTED str <: _PyreReadOnly_[str]', 'Expected 0 positional arguments, got 1', 'EXPECTED Literal[0] <: SupportsIndex | slice[Error, Error, Error]']",
+    "Line 60: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]']",
+    "Line 64: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]']",
+    "Line 68: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]', 'EXPECTED str <: _PyreReadOnly_[str]', 'EXPECTED Literal[0] <: SupportsIndex | slice[Error, Error, Error]']",
     "Line 102: Unexpected errors ['EXPECTED type[ConverterClass] <: Callable[[@_], @_]']",
     "Line 103: Unexpected errors ['EXPECTED int | str <: int']",
     "Line 104: Unexpected errors ['EXPECTED type[dict] <: Callable[[@_], @_]']",
@@ -566,7 +562,7 @@
     "Line 66: Unexpected errors [\"Unexpected keyword argument 'default'\"]",
     "Line 72: Unexpected errors ['EXPECTED Literal[0] <: InitVar[int]']",
     "Line 82: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 92: Unexpected errors ['Expected 0 positional arguments, got 1']",
+    "Line 92: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]']",
     "Line 102: Unexpected errors ['Expected 0 positional arguments, got 1']",
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, Callable[[str], int]], Callable[[str], int]) failed']",
     "Line 123: Unexpected errors ['Expected 0 positional arguments, got 1']",
@@ -583,7 +579,7 @@
   ],
   "directives_cast.py": [
     "Line 16: Expected 1 errors",
-    "Line 10: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED Generator[int, None, None] <: SupportsNext[@_]', 'Expected 0 positional arguments, got 1', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
+    "Line 10: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED Generator[int, None, None] <: SupportsNext[@_]', 'TODO: __new__ is missing or uses class-scoped type parameters', 'Expected 0 positional arguments, got 1', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 11: Unexpected errors ['EXPECTED type[str] <: object', 'Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[object]], SupportsIndex], _PyreReadOnly_[object]] | Callable[[_PyreReadOnly_[list[object]], slice[Error, Error, Error]], list[_PyreReadOnly_[object]]] | Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]']",
     "Line 13: Unexpected errors ['EXPECTED type[int] <: object']"
   ],
@@ -623,7 +619,7 @@
     "Line 19: Unexpected errors ['TODO: Answers::solve_binding - Binding::IterableValue']",
     "Line 20: Unexpected errors ['assert_type(Any, Color) failed']",
     "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for class `Color`, got 1.', \"untype, got Literal['RED']\"]",
-    "Line 27: Unexpected errors ['Expected 0 positional arguments, got 1']"
+    "Line 27: Unexpected errors ['Expected `__new__` to be a callable, got Literal[Color.__new__]']"
   ],
   "enums_definition.py": [
     "Line 75: Unexpected errors ['assert_type(Literal[1], Literal[False]) failed', 'TODO: Attribute(ExprAttribute - Lit::from_expr']"
@@ -655,7 +651,7 @@
     "Line 36: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 37: Unexpected errors ['assert_type(Any, Literal[False]) failed', 'TODO: Attribute(ExprAttribute - Lit::from_expr']",
     "Line 38: Unexpected errors ['assert_type(Any, Literal[False]) failed', 'TODO: Attribute(ExprAttribute - Lit::from_expr']",
-    "Line 67: Unexpected errors ['Expected 0 positional arguments, got 1']",
+    "Line 67: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]']",
     "Line 68: Unexpected errors ['EXPECTED Callable[[int], int] <: Callable[ParamSpec(@_), int]']",
     "Line 75: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 100: Unexpected errors ['assert_type(Literal[TrafficLight.AMBER], Literal[TrafficLight.YELLOW]) failed']",
@@ -825,7 +821,7 @@
     "Line 45: Unexpected errors ['assert_type(ParentB, Self) failed']"
   ],
   "generics_self_attributes.py": [
-    "Line 22: Unexpected errors ['Expected 0 positional arguments, got 1']",
+    "Line 22: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]']",
     "Line 29: Unexpected errors ['EXPECTED OrdinalLinkedList <: Self | None', \"Unexpected keyword argument 'value'\", \"Unexpected keyword argument 'next'\"]"
   ],
   "generics_self_basic.py": [
@@ -890,15 +886,15 @@
     "Line 92: Expected 1 errors",
     "Line 95: Expected 1 errors",
     "Line 98: Expected 1 errors",
-    "Line 52: Unexpected errors ['Expected 0 positional arguments, got 1']",
+    "Line 52: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]']",
     "Line 61: Unexpected errors ['TODO: StmtNonlocal - Bindings::stmt']",
     "Line 66: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']",
     "Line 67: Unexpected errors ['assert_type(str, int) failed']",
-    "Line 85: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 90: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 102: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 106: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 111: Unexpected errors ['Expected 0 positional arguments, got 1']",
+    "Line 85: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]']",
+    "Line 90: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]']",
+    "Line 102: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]']",
+    "Line 106: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]']",
+    "Line 111: Unexpected errors ['Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]']",
     "Line 116: Unexpected errors ['assert_type(int, TypeVar) failed']",
     "Line 121: Unexpected errors ['assert_type(Literal[0+3j], complex) failed']",
     "Line 124: Unexpected errors ['assert_type(Literal[0+3j], complex) failed']"
@@ -1095,17 +1091,17 @@
     "Line 120: Expected 1 errors",
     "Line 48: Unexpected errors ['assert_type(Any, LiteralString) failed', 'Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]']",
     "Line 52: Unexpected errors ['assert_type(LiteralString | str, LiteralString) failed', 'Expected 1 more positional argument', 'EXPECTED tuple[LiteralString, LiteralString] <: LiteralString', 'EXPECTED tuple[LiteralString, LiteralString] <: str']",
-    "Line 53: Unexpected errors ['assert_type(LiteralString | str, str) failed', 'Expected 1 more positional argument', 'EXPECTED tuple[LiteralString, str] <: LiteralString', 'EXPECTED tuple[LiteralString, str] <: str', 'Expected 0 positional arguments, got 1']",
+    "Line 53: Unexpected errors ['assert_type(LiteralString | str, str) failed', 'Expected 1 more positional argument', 'EXPECTED tuple[LiteralString, str] <: LiteralString', 'EXPECTED tuple[LiteralString, str] <: str', 'Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]']",
     "Line 57: Unexpected errors ['Object of class `str` has no attribute `__iadd__`']",
     "Line 58: Unexpected errors ['Object of class `str` has no attribute `__iadd__`']",
     "Line 63: Unexpected errors ['assert_type(str, LiteralString) failed']",
-    "Line 68: Unexpected errors ['assert_type(Any, str) failed', 'Expected 0 positional arguments, got 1']",
+    "Line 68: Unexpected errors ['assert_type(Any, str) failed', 'Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]']",
     "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]",
     "Line 116: Unexpected errors ['assert_type(str, LiteralString) failed']",
     "Line 130: Unexpected errors ['EXPECTED Container[str] <: Container[LiteralString]']",
     "Line 165: Unexpected errors ['assert_type(Any, C) failed']",
     "Line 166: Unexpected errors ['assert_type(Any, B) failed']",
-    "Line 167: Unexpected errors ['assert_type(Any, A) failed', 'Expected 0 positional arguments, got 1']"
+    "Line 167: Unexpected errors ['assert_type(Any, A) failed', 'Expected `__new__` to be a callable, got Callable[[Unknown, Buffer, str, str], Self] | Callable[[Unknown, object], Self]']"
   ],
   "literals_parameterizations.py": [
     "Line 46: Expected 1 errors",
@@ -1194,8 +1190,8 @@
     "Line 41: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 45: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 49: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
-    "Line 52: Unexpected errors ['EXPECTED bool <: TypeGuard[A]', 'Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]']",
-    "Line 55: Unexpected errors ['EXPECTED bool <: TypeGuard[?_]', 'Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]']",
+    "Line 52: Unexpected errors ['EXPECTED bool <: TypeGuard[A]', 'Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]', 'Expected `__new__` to be a callable, got Callable[[type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], KwArgs[Any]], TypeVar[Self]] | Callable[[Unknown, object], type]']",
+    "Line 55: Unexpected errors ['EXPECTED bool <: TypeGuard[?_]', 'Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]', 'Expected `__new__` to be a callable, got Callable[[type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], KwArgs[Any]], TypeVar[Self]] | Callable[[Unknown, object], type]']",
     "Line 69: Unexpected errors ['assert_type(object, int) failed']",
     "Line 73: Unexpected errors ['assert_type(object, int) failed']",
     "Line 77: Unexpected errors ['assert_type(object, int) failed']",
@@ -1223,8 +1219,8 @@
     "Line 45: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 49: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 53: Unexpected errors ['EXPECTED bool <: TypeIs[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
-    "Line 56: Unexpected errors ['EXPECTED bool <: TypeIs[A]', 'Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]']",
-    "Line 59: Unexpected errors ['EXPECTED bool <: TypeIs[?_]', 'Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]']",
+    "Line 56: Unexpected errors ['EXPECTED bool <: TypeIs[A]', 'Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]', 'Expected `__new__` to be a callable, got Callable[[type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], KwArgs[Any]], TypeVar[Self]] | Callable[[Unknown, object], type]']",
+    "Line 59: Unexpected errors ['EXPECTED bool <: TypeIs[?_]', 'Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]', 'Expected `__new__` to be a callable, got Callable[[type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], KwArgs[Any]], TypeVar[Self]] | Callable[[Unknown, object], type]']",
     "Line 72: Unexpected errors ['assert_type(object, int) failed']",
     "Line 76: Unexpected errors ['assert_type(object, int) failed']",
     "Line 80: Unexpected errors ['assert_type(object, int) failed']",
@@ -1382,7 +1378,6 @@
     "Line 53: Expected 1 errors",
     "Line 64: Expected 1 errors",
     "Line 76: Expected 1 errors",
-    "Line 92: Expected 1 errors",
     "Line 36: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr', 'Could not find name `x`']",
     "Line 81: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 98: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[int]`']",
@@ -1434,7 +1429,7 @@
   ],
   "specialtypes_never.py": [
     "Line 19: Expected 1 errors",
-    "Line 16: Unexpected errors ['EXPECTED None <: NoReturn']",
+    "Line 16: Unexpected errors ['EXPECTED None <: NoReturn', 'Expression `RuntimeError(\"no way\")` has type `Self` which does not derive from BaseException']",
     "Line 21: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 32: Unexpected errors [\"EXPECTED Literal['whatever works'] <: int\"]",
     "Line 77: Unexpected errors ['EXPECTED None <: Never']"
@@ -1443,7 +1438,7 @@
     "Line 24: Unexpected errors ['EXPECTED None <: Hashable']",
     "Line 32: Unexpected errors ['EXPECTED NoneType <: _PyreReadOnly_[object]', 'EXPECTED Literal[0] <: _PyreReadOnly_[object]']",
     "Line 39: Unexpected errors ['EXPECTED Callable[[object, type[object]], None] | Callable[[object], type[object]] <: type[None]']",
-    "Line 40: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]', 'EXPECTED type <: type[None]']"
+    "Line 40: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]', 'Expected `__new__` to be a callable, got Callable[[type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], KwArgs[Any]], TypeVar[Self]] | Callable[[Unknown, object], type]', 'EXPECTED type <: type[None]']"
   ],
   "specialtypes_promotions.py": [
     "Line 7: Unexpected errors ['EXPECTED Literal[1] <: float']",
@@ -1492,7 +1487,7 @@
     "Line 27: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 28: Unexpected errors ['EXPECTED tuple[int] <: tuple[int, Error]']",
     "Line 47: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 59: Unexpected errors ['EXPECTED tuple[@_] <: tuple[int, int]', 'Expected 0 positional arguments, got 1']",
+    "Line 59: Unexpected errors ['TODO: __new__ is missing or uses class-scoped type parameters', 'EXPECTED tuple[@_] <: tuple[int, int]', 'Expected 0 positional arguments, got 1']",
     "Line 71: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 74: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed']",
     "Line 78: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, int] | tuple[str, str]) failed']",
@@ -1532,7 +1527,7 @@
     "Line 19: Unexpected errors ['assert_type(tuple[int, Any, str], tuple[int, bool, Any]) failed', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 25: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 26: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 31: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'Expected 0 positional arguments, got 1', 'Expected 0 positional arguments, got 1']",
+    "Line 31: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]', 'Expected `__new__` to be a callable, got Callable[[Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str], Self] | Callable[[Unknown, bytearray | bytes | str, SupportsIndex], Self]']",
     "Line 33: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 38: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 39: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
