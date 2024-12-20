@@ -16,8 +16,8 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
-use crate::types::callable::Arg;
 use crate::types::callable::Callable;
+use crate::types::callable::Param;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
@@ -421,8 +421,8 @@ impl Type {
         }
     }
 
-    pub fn callable(args: Vec<Arg>, ret: Type) -> Self {
-        Type::Callable(Box::new(Callable::list(args, ret)))
+    pub fn callable(params: Vec<Param>, ret: Type) -> Self {
+        Type::Callable(Box::new(Callable::list(params, ret)))
     }
 
     pub fn callable_ellipsis(ret: Type) -> Self {

@@ -28,9 +28,9 @@ use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::dunder;
 use crate::module::short_identifier::ShortIdentifier;
-use crate::types::callable::Arg;
-use crate::types::callable::Args;
 use crate::types::callable::Callable;
+use crate::types::callable::Param;
+use crate::types::callable::Params;
 use crate::types::callable::Required;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
@@ -105,7 +105,7 @@ enum CallTarget {
 impl CallTarget {
     pub fn any(style: AnyStyle) -> Self {
         Self::Callable(Callable {
-            args: Args::Ellipsis,
+            params: Params::Ellipsis,
             ret: style.propagate(),
         })
     }
@@ -290,8 +290,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(arg_range, format!("Expected {expected}, got {actual}"))
         };
         let iargs = self_arg.iter().chain(args.iter());
-        match callable.args {
-            Args::List(params) => {
+        match callable.params {
+            Params::List(params) => {
                 let mut iparams = params.iter().enumerate().peekable();
                 let mut num_positional = 0;
                 let mut seen_names: SmallMap<Name, usize> = SmallMap::new();
@@ -299,19 +299,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let mut hint = None;
                     if let Some((p_idx, p)) = iparams.peek() {
                         match p {
-                            Arg::PosOnly(ty, _required) => {
+                            Param::PosOnly(ty, _required) => {
                                 num_positional += 1;
                                 iparams.next();
                                 hint = Some(ty)
                             }
-                            Arg::Pos(name, ty, _required) => {
+                            Param::Pos(name, ty, _required) => {
                                 num_positional += 1;
                                 seen_names.insert(name.clone(), *p_idx);
                                 iparams.next();
                                 hint = Some(ty)
                             }
-                            Arg::VarArg(ty) => hint = Some(ty),
-                            Arg::KwOnly(..) | Arg::Kwargs(..) => {
+                            Param::VarArg(ty) => hint = Some(ty),
+                            Param::KwOnly(..) | Param::Kwargs(..) => {
                                 if num_positional >= 0 {
                                     positional_count_error(arg.range(), num_positional);
                                     num_positional = -1;
@@ -329,16 +329,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let mut kwargs = None;
                 for (p_idx, p) in iparams {
                     match p {
-                        Arg::PosOnly(_, required) => {
+                        Param::PosOnly(_, required) => {
                             if *required == Required::Required {
                                 need_positional += 1;
                             }
                         }
-                        Arg::VarArg(..) => {}
-                        Arg::Pos(name, _, _) | Arg::KwOnly(name, _, _) => {
+                        Param::VarArg(..) => {}
+                        Param::Pos(name, _, _) | Param::KwOnly(name, _, _) => {
                             kwparams.insert(name.clone(), p_idx);
                         }
-                        Arg::Kwargs(ty) => {
+                        Param::Kwargs(ty) => {
                             kwargs = Some(ty);
                         }
                     }
@@ -402,7 +402,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 callable.ret
             }
-            Args::Ellipsis => {
+            Params::Ellipsis => {
                 // Deal with Callable[..., R]
                 for t in iargs {
                     t.check_against_hint(self, None);
@@ -719,7 +719,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         None
                     }
                 });
-                let parameters: Vec<Arg> = if let Some(parameters) = &lambda.parameters {
+                let parameters: Vec<Param> = if let Some(parameters) = &lambda.parameters {
                     // TODO: use callable hint parameters to check body
                     (**parameters)
                         .iter()
@@ -727,7 +727,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             let ty = self
                                 .get(&Key::Definition(ShortIdentifier::new(p.name())))
                                 .arc_clone();
-                            Arg::Pos(p.name().clone().id, ty, Required::Required)
+                            Param::Pos(p.name().clone().id, ty, Required::Required)
                         })
                         .collect()
                 } else {
@@ -735,7 +735,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 if let Some(callable) = hint_callable {
                     let inferred_callable = Type::Callable(Box::new(Callable {
-                        args: Args::List(parameters),
+                        params: Params::List(parameters),
                         ret: self.expr(&lambda.body, Some(&callable.ret)),
                     }));
                     let wanted_callable = Type::Callable(Box::new(callable));
@@ -743,7 +743,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     wanted_callable
                 } else {
                     Type::Callable(Box::new(Callable {
-                        args: Args::List(parameters),
+                        params: Params::List(parameters),
                         ret: self.expr_infer(&lambda.body),
                     }))
                 }

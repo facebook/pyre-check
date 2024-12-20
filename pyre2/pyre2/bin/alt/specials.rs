@@ -11,7 +11,7 @@ use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::types::callable::Arg;
+use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
@@ -78,9 +78,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             SpecialForm::Callable if arguments.len() == 2 => {
                 let ret = self.expr_untype(&arguments[1]);
                 match &arguments[0] {
-                    Expr::List(args) => Type::type_form(Type::callable(
-                        args.elts
-                            .map(|x| Arg::PosOnly(self.expr_untype(x), Required::Required)),
+                    Expr::List(params) => Type::type_form(Type::callable(
+                        params
+                            .elts
+                            .map(|x| Param::PosOnly(self.expr_untype(x), Required::Required)),
                         ret,
                     )),
                     Expr::EllipsisLiteral(_) => Type::type_form(Type::callable_ellipsis(ret)),

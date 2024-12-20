@@ -62,7 +62,7 @@ use crate::table_try_for_each;
 use crate::type_order::TypeOrder;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
-use crate::types::callable::Arg;
+use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class_metadata::ClassMetadata;
@@ -1090,40 +1090,40 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     required
                 };
-                let mut args = Vec::with_capacity(x.parameters.len());
-                args.extend(x.parameters.posonlyargs.iter().map(|x| {
+                let mut params = Vec::with_capacity(x.parameters.len());
+                params.extend(x.parameters.posonlyargs.iter().map(|x| {
                     let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
                         &x.parameter.name,
                     )));
                     let ty = annot.get_type();
                     let required = check_default(&x.default, ty);
-                    Arg::PosOnly(ty.clone(), required)
+                    Param::PosOnly(ty.clone(), required)
                 }));
-                args.extend(x.parameters.args.iter().map(|x| {
+                params.extend(x.parameters.args.iter().map(|x| {
                     let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
                         &x.parameter.name,
                     )));
                     let ty = annot.get_type();
                     let required = check_default(&x.default, ty);
-                    Arg::Pos(x.parameter.name.id.clone(), ty.clone(), required)
+                    Param::Pos(x.parameter.name.id.clone(), ty.clone(), required)
                 }));
-                args.extend(x.parameters.vararg.iter().map(|x| {
+                params.extend(x.parameters.vararg.iter().map(|x| {
                     let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(&x.name)));
                     let ty = annot.get_type();
-                    Arg::VarArg(ty.clone())
+                    Param::VarArg(ty.clone())
                 }));
-                args.extend(x.parameters.kwonlyargs.iter().map(|x| {
+                params.extend(x.parameters.kwonlyargs.iter().map(|x| {
                     let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
                         &x.parameter.name,
                     )));
                     let ty = annot.get_type();
                     let required = check_default(&x.default, ty);
-                    Arg::KwOnly(x.parameter.name.id.clone(), ty.clone(), required)
+                    Param::KwOnly(x.parameter.name.id.clone(), ty.clone(), required)
                 }));
-                args.extend(x.parameters.kwarg.iter().map(|x| {
+                params.extend(x.parameters.kwarg.iter().map(|x| {
                     let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(&x.name)));
                     let ty = annot.get_type();
-                    Arg::Kwargs(ty.clone())
+                    Param::Kwargs(ty.clone())
                 }));
                 let ret = self
                     .get(&Key::ReturnType(ShortIdentifier::new(&x.name)))
@@ -1140,7 +1140,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .iter()
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
                 tparams.extend(legacy_tparams);
-                let callable = Type::callable(args, ret);
+                let callable = Type::callable(params, ret);
                 callable.forall(self.type_params(x.range, tparams))
             }
             Binding::Import(m, name) => self

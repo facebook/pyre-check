@@ -9,8 +9,8 @@ use itertools::izip;
 
 use crate::alt::answers::LookupAnswer;
 use crate::solver::Subset;
-use crate::types::callable::Arg;
-use crate::types::callable::Args;
+use crate::types::callable::Param;
+use crate::types::callable::Params;
 use crate::types::callable::Required;
 use crate::types::class::TArgs;
 use crate::types::simplify::unions;
@@ -29,9 +29,9 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (Type::Intersect(ls), u) => ls.iter().any(|l| self.is_subset_eq(l, u)),
             (Type::Callable(l), Type::Callable(u)) => {
                 self.is_subset_eq(&l.ret, &u.ret)
-                    && match (&l.args, &u.args) {
-                        (Args::Ellipsis, _) | (_, Args::Ellipsis) => true,
-                        (Args::List(l_args), Args::List(u_args)) => {
+                    && match (&l.params, &u.params) {
+                        (Params::Ellipsis, _) | (_, Params::Ellipsis) => true,
+                        (Params::List(l_args), Params::List(u_args)) => {
                             let mut l_args_iter = l_args.iter();
                             let mut u_args_iter = u_args.iter();
                             let mut l_arg = l_args_iter.next();
@@ -40,8 +40,8 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                                 match (l_arg, u_arg) {
                                     (None, None) => return true,
                                     (
-                                        Some(Arg::PosOnly(l, _) | Arg::Pos(_, l, _)),
-                                        Some(Arg::PosOnly(u, Required::Required)),
+                                        Some(Param::PosOnly(l, _) | Param::Pos(_, l, _)),
+                                        Some(Param::PosOnly(u, Required::Required)),
                                     ) => {
                                         if self.is_subset_eq(u, l) {
                                             l_arg = l_args_iter.next();
@@ -52,16 +52,16 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                                     }
                                     (
                                         Some(
-                                            Arg::PosOnly(_, Required::Optional)
-                                            | Arg::Pos(_, _, Required::Optional)
-                                            | Arg::KwOnly(_, _, Required::Optional),
+                                            Param::PosOnly(_, Required::Optional)
+                                            | Param::Pos(_, _, Required::Optional)
+                                            | Param::KwOnly(_, _, Required::Optional),
                                         ),
                                         None,
                                     ) => return true,
-                                    (Some(Arg::VarArg(_)), None) => return true,
+                                    (Some(Param::VarArg(_)), None) => return true,
                                     (
-                                        Some(Arg::VarArg(l)),
-                                        Some(Arg::PosOnly(u, Required::Required)),
+                                        Some(Param::VarArg(l)),
+                                        Some(Param::PosOnly(u, Required::Required)),
                                     ) => {
                                         if self.is_subset_eq(u, l) {
                                             u_arg = u_args_iter.next();
@@ -69,12 +69,12 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                                             return false;
                                         }
                                     }
-                                    (Some(Arg::Kwargs(_)), None) => return true,
+                                    (Some(Param::Kwargs(_)), None) => return true,
                                     _ => return false,
                                 }
                             }
                         }
-                        (Args::ParamSpec(_), _) | (_, Args::ParamSpec(_)) => {
+                        (Params::ParamSpec(_), _) | (_, Params::ParamSpec(_)) => {
                             // TODO: need instantiation for param spec
                             false
                         }

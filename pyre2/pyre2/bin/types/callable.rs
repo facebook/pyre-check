@@ -16,19 +16,19 @@ use crate::util::display::Fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Callable {
-    pub args: Args,
+    pub params: Params,
     pub ret: Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Args {
-    List(Vec<Arg>),
+pub enum Params {
+    List(Vec<Param>),
     Ellipsis,
     ParamSpec(Type),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Arg {
+pub enum Param {
     PosOnly(Type, Required),
     Pos(Name, Type, Required),
     VarArg(Type),
@@ -48,84 +48,84 @@ impl Callable {
         f: &mut fmt::Formatter<'_>,
         wrap: &'a impl Fn(&'a Type) -> D,
     ) -> fmt::Result {
-        match &self.args {
-            Args::List(args) => {
+        match &self.params {
+            Params::List(params) => {
                 write!(
                     f,
                     "Callable[[{}], {}]",
-                    commas_iter(|| args.iter().map(|x| x.display_with_type(wrap))),
+                    commas_iter(|| params.iter().map(|x| x.display_with_type(wrap))),
                     wrap(&self.ret),
                 )
             }
-            Args::Ellipsis => write!(f, "Callable[..., {}]", wrap(&self.ret)),
-            Args::ParamSpec(ty) => {
+            Params::Ellipsis => write!(f, "Callable[..., {}]", wrap(&self.ret)),
+            Params::ParamSpec(ty) => {
                 write!(f, "Callable[ParamSpec({}), {}]", wrap(ty), wrap(&self.ret))
             }
         }
     }
 
-    pub fn list(args: Vec<Arg>, ret: Type) -> Self {
+    pub fn list(params: Vec<Param>, ret: Type) -> Self {
         Self {
-            args: Args::List(args),
+            params: Params::List(params),
             ret,
         }
     }
 
     pub fn ellipsis(ret: Type) -> Self {
         Self {
-            args: Args::Ellipsis,
+            params: Params::Ellipsis,
             ret,
         }
     }
 
     pub fn param_spec(p: Type, ret: Type) -> Self {
         Self {
-            args: Args::ParamSpec(p),
+            params: Params::ParamSpec(p),
             ret,
         }
     }
 
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
-        self.args.visit(&mut f);
+        self.params.visit(&mut f);
         f(&self.ret)
     }
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
-        self.args.visit_mut(&mut f);
+        self.params.visit_mut(&mut f);
         f(&mut self.ret);
     }
 }
 
-impl Args {
+impl Params {
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match &self {
-            Args::List(args) => args.iter().for_each(|x| x.visit(&mut f)),
-            Args::Ellipsis => {}
-            Args::ParamSpec(ty) => f(ty),
+            Params::List(params) => params.iter().for_each(|x| x.visit(&mut f)),
+            Params::Ellipsis => {}
+            Params::ParamSpec(ty) => f(ty),
         }
     }
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
-            Args::List(args) => args.iter_mut().for_each(|x| x.visit_mut(&mut f)),
-            Args::Ellipsis => {}
-            Args::ParamSpec(ty) => f(ty),
+            Params::List(params) => params.iter_mut().for_each(|x| x.visit_mut(&mut f)),
+            Params::Ellipsis => {}
+            Params::ParamSpec(ty) => f(ty),
         }
     }
 }
 
-impl Arg {
+impl Param {
     pub fn fmt_with_type<'a, D: Display + 'a>(
         &'a self,
         f: &mut fmt::Formatter<'_>,
         wrap: impl Fn(&'a Type) -> D,
     ) -> fmt::Result {
         match self {
-            Arg::PosOnly(ty, _required) => write!(f, "{}", wrap(ty)),
-            Arg::Pos(_name, ty, _required) => write!(f, "{}", wrap(ty)),
-            Arg::VarArg(ty) => write!(f, "Var[{}]", wrap(ty)),
-            Arg::KwOnly(name, ty, _required) => write!(f, "KwOnly[{}: {}]", name, wrap(ty)),
-            Arg::Kwargs(ty) => write!(f, "KwArgs[{}]", wrap(ty)),
+            Param::PosOnly(ty, _required) => write!(f, "{}", wrap(ty)),
+            Param::Pos(_name, ty, _required) => write!(f, "{}", wrap(ty)),
+            Param::VarArg(ty) => write!(f, "Var[{}]", wrap(ty)),
+            Param::KwOnly(name, ty, _required) => write!(f, "KwOnly[{}: {}]", name, wrap(ty)),
+            Param::Kwargs(ty) => write!(f, "KwArgs[{}]", wrap(ty)),
         }
     }
 
@@ -138,29 +138,29 @@ impl Arg {
 
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match &self {
-            Arg::PosOnly(ty, _required) => f(ty),
-            Arg::Pos(_, ty, _required) => f(ty),
-            Arg::VarArg(ty) => f(ty),
-            Arg::KwOnly(_, ty, _required) => f(ty),
-            Arg::Kwargs(ty) => f(ty),
+            Param::PosOnly(ty, _required) => f(ty),
+            Param::Pos(_, ty, _required) => f(ty),
+            Param::VarArg(ty) => f(ty),
+            Param::KwOnly(_, ty, _required) => f(ty),
+            Param::Kwargs(ty) => f(ty),
         }
     }
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
-            Arg::PosOnly(ty, _required) => f(ty),
-            Arg::Pos(_, ty, _required) => f(ty),
-            Arg::VarArg(ty) => f(ty),
-            Arg::KwOnly(_, ty, _required) => f(ty),
-            Arg::Kwargs(ty) => f(ty),
+            Param::PosOnly(ty, _required) => f(ty),
+            Param::Pos(_, ty, _required) => f(ty),
+            Param::VarArg(ty) => f(ty),
+            Param::KwOnly(_, ty, _required) => f(ty),
+            Param::Kwargs(ty) => f(ty),
         }
     }
 
     pub fn is_required(&self) -> bool {
         match self {
-            Arg::PosOnly(_, Required::Required)
-            | Arg::Pos(_, _, Required::Required)
-            | Arg::KwOnly(_, _, Required::Required) => true,
+            Param::PosOnly(_, Required::Required)
+            | Param::Pos(_, _, Required::Required)
+            | Param::KwOnly(_, _, Required::Required) => true,
             _ => false,
         }
     }
