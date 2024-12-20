@@ -445,9 +445,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Get the class's `__new__` method.
     fn get_new(&self, cls: &ClassType) -> Option<Type> {
-        let new_attr = self
-            .get_class_attribute_with_targs(cls, &dunder::NEW)
-            .unwrap();
+        let new_attr = self.get_class_attribute_with_targs(cls, &dunder::NEW)?;
         if new_attr.defined_on(self.stdlib.object_class_type().class_object()) {
             // The default behavior of `object.__new__` is already baked into our implementation of
             // class construction; we only care about `__new__` if it is overridden.
@@ -501,21 +499,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             false
         };
-        let init_method = self.get_instance_attribute(&cls, &dunder::INIT).unwrap();
-        if overrides_new && init_method.defined_on(self.stdlib.object_class_type().class_object()) {
-            // Class overrides `object.__new__` but not `object.__init__`. There's no need to call `__init__`.
-            return cls.self_type();
-        }
-        self.call_infer(
-            self.as_call_target_or_error(
-                init_method.value,
-                CallStyle::Method(&dunder::INIT),
+        let init_method = self.get_instance_attribute(&cls, &dunder::INIT);
+        // We skip calling `__init__` if:
+        // (1) it isn't defined (possible if we've been passed a custom typeshed), or
+        // (2) the class overrides `object.__new__` but not `object.__init__`, in wich case the
+        //     `__init__` call always succeeds at runtime.
+        if let Some(init_method) = init_method
+            && !(overrides_new
+                && init_method.defined_on(self.stdlib.object_class_type().class_object()))
+        {
+            self.call_infer(
+                self.as_call_target_or_error(
+                    init_method.value,
+                    CallStyle::Method(&dunder::INIT),
+                    range,
+                ),
+                args,
+                keywords,
                 range,
-            ),
-            args,
-            keywords,
-            range,
-        );
+            );
+        }
         cls.self_type()
     }
 
