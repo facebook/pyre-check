@@ -7,6 +7,7 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_subscript_unpack_assign,
@@ -429,5 +430,52 @@ testcase!(
 from typing import assert_type, Literal
 (x := True)
 assert_type(x, Literal[True])
+    "#,
+);
+
+testcase!(
+    test_walrus_use_value,
+    r#"
+from typing import assert_type
+class A: pass
+class B(A): pass
+
+y1 = (x1 := B())
+assert_type(y1, B)
+
+y2: A = (x2 := B())
+
+y3: list[A] = (x3 := [B()])
+
+y4: B = (x4 := A())  # E: EXPECTED A <: B
+    "#,
+);
+
+testcase!(
+    test_walrus_annotated_target,
+    r#"
+from typing import assert_type
+class A: pass
+class B(A): pass
+
+x1: A
+(x1 := B())
+
+x2: list[A]
+(x2 := [B()])
+
+x3: B
+(x3 := A())  # E: EXPECTED A <: B
+    "#,
+);
+
+testcase_with_bug!(
+    test_walrus_narrow,
+    r#"
+from typing import assert_type
+def f() -> str | None:
+    pass
+if (x := f()) and x is not None:
+    assert_type(x, str | None)  # type should be 'str'
     "#,
 );
