@@ -103,11 +103,11 @@ pub enum Key {
     ReturnType(ShortIdentifier),
     /// I am a use in this module at this location.
     Usage(ShortIdentifier),
-    /// I am not defining a name or using one, but record me for checking.
+    /// I am an expression that does not have a simple name but needs its type inferred.
+    /// For example, an attribute access.
     Anon(TextRange),
-    /// I am not defining a name or using one, but record me for checking.
-    /// More than one thing at the same spot.
-    Anon2(TextRange),
+    /// An expectation to be checked. For example, that a sequence is of an expected length.
+    Expect(TextRange),
     /// I am the result of joining several branches.
     Phi(Name, TextRange),
     /// The binding definition site, anywhere it occurs
@@ -124,7 +124,7 @@ impl Ranged for Key {
             Self::ReturnType(x) => x.range(),
             Self::Usage(x) => x.range(),
             Self::Anon(r) => *r,
-            Self::Anon2(r) => *r,
+            Self::Expect(r) => *r,
             Self::Phi(_, r) => *r,
             Self::Anywhere(_, r) => *r,
         }
@@ -139,7 +139,7 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::SelfType(x) => write!(f, "self {} {:?}", ctx.display(x), x.range()),
             Self::Usage(x) => write!(f, "use {} {:?}", ctx.display(x), x.range()),
             Self::Anon(r) => write!(f, "anon {r:?}"),
-            Self::Anon2(r) => write!(f, "anon2 {r:?}"),
+            Self::Expect(r) => write!(f, "expect {r:?}"),
             Self::Phi(n, r) => write!(f, "phi {n} {r:?}"),
             Self::Anywhere(n, r) => write!(f, "anywhere {n} {r:?}"),
             Self::ReturnType(x) => write!(f, "return {} {:?}", ctx.display(x), x.range()),

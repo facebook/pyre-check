@@ -784,7 +784,7 @@ impl<'a> BindingsBuilder<'a> {
             SizeExpectation::Eq(elts.len())
         };
         self.table.insert(
-            Key::Anon(range),
+            Key::Expect(range),
             Binding::UnpackedLength(Box::new(make_binding(None)), range, expect),
         );
     }
@@ -1298,9 +1298,8 @@ impl<'a> BindingsBuilder<'a> {
                 } else {
                     SizeExpectation::Eq(num_patterns)
                 };
-                // Need to use Anon2, since the inner item may have bound to this location already
                 self.table.insert(
-                    Key::Anon2(x.range),
+                    Key::Expect(x.range),
                     Binding::UnpackedLength(Box::new(Binding::Forward(key)), x.range, expect),
                 );
             }
@@ -1513,7 +1512,7 @@ impl<'a> BindingsBuilder<'a> {
                     };
                     if self.bind_attr_if_self(&attr, value_type, Some(ann_key)) {
                         self.table.insert(
-                            Key::Anon(attr.range),
+                            Key::Expect(attr.range),
                             Binding::Eq(ann_key, attr_key, attr.attr.id),
                         );
                     } else {
@@ -1656,7 +1655,7 @@ impl<'a> BindingsBuilder<'a> {
                         RaisedException::WithoutCause(*exc)
                     };
                     self.table
-                        .insert(Key::Anon(x.range), Binding::CheckRaisedException(raised));
+                        .insert(Key::Expect(x.range), Binding::CheckRaisedException(raised));
                 } else {
                     // If there's no exception raised, don't bother checking the cause.
                 }
@@ -1891,7 +1890,7 @@ impl<'a> BindingsBuilder<'a> {
                         // But we only want to consider it when we join up `if` statements.
                         if !is_loop {
                             self.table.insert(
-                                Key::Anon(other_ann.1),
+                                Key::Expect(other_ann.1),
                                 Binding::Eq(other_ann.0, ann.0, name.deref().clone()),
                             );
                         }
