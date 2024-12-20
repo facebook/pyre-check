@@ -479,3 +479,11 @@ if (x := f()) and x is not None:
     assert_type(x, str | None)  # type should be 'str'
     "#,
 );
+
+testcase_with_bug!(
+    test_read_before_write,
+    r#"
+x = y  # this should be an error
+y = 42
+    "#,
+);
