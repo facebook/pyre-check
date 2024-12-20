@@ -265,41 +265,37 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn callable_infer(
         &self,
         callable: Callable,
-        first_arg: Option<CallArg>,
-        remaining_args: &[CallArg],
+        self_arg: Option<CallArg>,
+        args: &[CallArg],
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
-        let (is_bound, args_head): (bool, &[CallArg]) = match first_arg {
-            Some(arg) => (true, &[arg]),
-            None => (false, &[]),
-        };
         let positional_count_error = |arg_range, n_expected| {
-            let (expected, actual) = if !is_bound {
+            let (expected, actual) = if self_arg.is_none() {
                 (
                     count(n_expected as usize, "positional argument"),
-                    remaining_args.len().to_string(),
+                    args.len().to_string(),
                 )
             } else if n_expected < 1 {
                 (
                     "0 positional arguments".to_owned(),
-                    format!("{} (including implicit `self`)", remaining_args.len() + 1),
+                    format!("{} (including implicit `self`)", args.len() + 1),
                 )
             } else {
                 (
                     count(n_expected as usize - 1, "positional argument"),
-                    remaining_args.len().to_string(),
+                    args.len().to_string(),
                 )
             };
             self.error(arg_range, format!("Expected {expected}, got {actual}"))
         };
-        let args_iter = args_head.iter().chain(remaining_args);
+        let iargs = self_arg.iter().chain(args.iter());
         match callable.args {
             Args::List(params) => {
                 let mut iparams = params.iter().enumerate().peekable();
                 let mut num_positional = 0;
                 let mut seen_names: SmallMap<Name, usize> = SmallMap::new();
-                for arg in args_iter {
+                for arg in iargs {
                     let mut hint = None;
                     if let Some((p_idx, p)) = iparams.peek() {
                         match p {
@@ -408,7 +404,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Args::Ellipsis => {
                 // Deal with Callable[..., R]
-                for t in args_iter {
+                for t in iargs {
                     t.check_against_hint(self, None);
                 }
                 callable.ret
