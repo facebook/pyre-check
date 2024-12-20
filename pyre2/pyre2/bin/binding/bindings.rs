@@ -136,6 +136,8 @@ struct BindingsBuilder<'a> {
     scopes: Vec1<Scope>,
     /// Accumulate all the return statements
     returns: Vec<StmtReturn>,
+    /// Accumulate all the yield statements
+    yields: Vec<Expr>,
     table: BindingTable,
 }
 
@@ -413,6 +415,7 @@ impl Bindings {
             uniques,
             scopes: Vec1::new(Scope::module()),
             returns: Vec::new(),
+            yields: Vec::new(),
             table: Default::default(),
         };
         builder
@@ -634,6 +637,10 @@ impl<'a> BindingsBuilder<'a> {
             Expr::Lambda(x) => {
                 self.bind_lambda(x);
                 true
+            }
+            Expr::Yield(_) => {
+                self.yields.push(x.clone());
+                false
             }
             _ => false,
         };
@@ -967,6 +974,8 @@ impl<'a> BindingsBuilder<'a> {
         };
         let mut return_annotation = mem::take(&mut x.returns);
         let return_count = self.returns.len();
+        let yield_count = self.yields.len();
+
         let never = is_never(&body, self.config);
         if never != Some(Vec::new()) && kind == FunctionKind::Impl {
             // If we can reach the end, and the code is real (not just ellipse),
@@ -1058,6 +1067,12 @@ impl<'a> BindingsBuilder<'a> {
         while self.returns.len() > return_count {
             return_exprs.push(self.returns.pop().unwrap());
         }
+
+        let mut yield_exprs = Vec::new();
+        while self.yields.len() > yield_count {
+            yield_exprs.push(self.yields.pop().unwrap());
+        }
+
         let return_ann = return_annotation.map(|x| {
             self.table.insert(
                 KeyAnnotation::ReturnAnnotation(ShortIdentifier::new(&func_name)),
