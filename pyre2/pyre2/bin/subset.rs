@@ -9,6 +9,7 @@ use itertools::izip;
 
 use crate::alt::answers::LookupAnswer;
 use crate::solver::Subset;
+use crate::types::callable::Callable;
 use crate::types::callable::Param;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
@@ -27,6 +28,20 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (l, Type::Intersect(us)) => us.iter().all(|u| self.is_subset_eq(l, u)),
             (l, Type::Union(us)) => us.iter().any(|u| self.is_subset_eq(l, u)),
             (Type::Intersect(ls), u) => ls.iter().any(|l| self.is_subset_eq(l, u)),
+            (
+                Type::BoundMethod(
+                    _,
+                    box Type::Callable(box Callable {
+                        params: Params::List(params),
+                        ret,
+                    }),
+                ),
+                Type::Callable(_),
+            ) if !params.is_empty() => {
+                let l_no_self =
+                    Type::Callable(Box::new(Callable::list(params[1..].to_vec(), ret.clone())));
+                self.is_subset_eq_impl(&l_no_self, want)
+            }
             (Type::Callable(l), Type::Callable(u)) => {
                 self.is_subset_eq(&l.ret, &u.ret)
                     && match (&l.params, &u.params) {

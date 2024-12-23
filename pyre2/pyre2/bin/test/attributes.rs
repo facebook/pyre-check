@@ -192,3 +192,21 @@ x = c.foo(42)  # E: Expected 0 positional arguments, got 1
 assert_type(x, Literal[42])  # E: assert_type
     "#,
 );
+
+testcase!(
+    test_match_method_against_callable,
+    r#"
+from typing import Callable
+class C:
+    def f(self, x: int) -> None:
+        pass
+def f1(c: Callable[[int], None]):
+    pass
+def f2(c: Callable[[C, int], None]):
+    pass
+f1(C.f)  # E: EXPECTED Callable[[C, int], None] <: Callable[[int], None]
+f1(C().f)
+f2(C.f)
+f2(C().f)  # E: EXPECTED BoundMethod[C, Callable[[C, int], None]] <: Callable[[C, int], None]
+    "#,
+);
