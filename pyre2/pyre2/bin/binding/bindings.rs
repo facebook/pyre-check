@@ -519,27 +519,27 @@ impl<'a> BindingsBuilder<'a> {
         self.errors.add(&self.module_info, range, msg);
     }
 
-    fn lookup_name(&mut self, name: &Identifier) -> Option<Idx<Key>> {
+    fn lookup_name(&mut self, name: &Name) -> Option<Idx<Key>> {
         let mut barrier = false;
         for scope in self.scopes.iter().rev() {
-            if !barrier && let Some(flow) = scope.flow.info.get(&name.id) {
+            if !barrier && let Some(flow) = scope.flow.info.get(name) {
                 return Some(flow.key);
             } else if !matches!(scope.kind, ScopeKind::ClassBody(_))
-                && let Some(info) = scope.stat.0.get(&name.id)
+                && let Some(info) = scope.stat.0.get(name)
             {
                 let key = if info.count == 1 {
                     if info.uses_key_import {
-                        Key::Import(name.id.clone(), info.loc)
+                        Key::Import(name.clone(), info.loc)
                     } else {
                         // We are constructing an identifier, but it must have been one that we saw earlier
                         assert_ne!(info.loc, TextRange::default());
                         Key::Definition(ShortIdentifier::new(&Identifier {
-                            id: name.id.clone(),
+                            id: name.clone(),
                             range: info.loc,
                         }))
                     }
                 } else {
-                    Key::Anywhere(name.id.clone(), info.loc)
+                    Key::Anywhere(name.clone(), info.loc)
                 };
                 return Some(self.table.types.0.insert(key));
             }
@@ -549,7 +549,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn forward_lookup(&mut self, name: &Identifier) -> Option<Binding> {
-        self.lookup_name(name).map(Binding::Forward)
+        self.lookup_name(name.id()).map(Binding::Forward)
     }
 
     /// Given a name appearing in an expression, create a `Usage` key for that
@@ -1946,7 +1946,7 @@ impl LegacyTParamBuilder {
     ) -> Option<Binding> {
         self.legacy_tparams
             .entry(name.id.clone())
-            .or_insert_with(|| builder.lookup_name(name).map(|x| (name.clone(), x)))
+            .or_insert_with(|| builder.lookup_name(name.id()).map(|x| (name.clone(), x)))
             .as_ref()
             .map(|(id, _)| {
                 let range_if_scoped_params_exist = if self.has_scoped_tparams {
