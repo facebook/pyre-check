@@ -985,3 +985,14 @@ def id[T](x: T) -> T:
 assert_type(id([0]), list[int])
 "#,
 );
+
+testcase!(
+    test_union_never,
+    r#"
+from typing import Never, assert_type
+def fail() -> Never: ...
+def f(x: int):
+    y = x or fail()
+    assert_type(y, int)
+    "#,
+);

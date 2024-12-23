@@ -15,6 +15,7 @@ pub fn unions(xs: Vec<Type>) -> Type {
         for x in xs {
             match x {
                 Type::Union(xs) => flatten(xs, res),
+                Type::Never(_) => {}
                 _ => res.push(x),
             }
         }
@@ -24,9 +25,29 @@ pub fn unions(xs: Vec<Type>) -> Type {
 
     res.sort();
     res.dedup();
-    if res.len() == 1 {
+    if res.is_empty() {
+        // can happen if `flatten` drops all elements
+        Type::never()
+    } else if res.len() == 1 {
         res.pop().unwrap()
     } else {
         Type::Union(res)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::types::simplify::unions;
+    use crate::types::types::NeverStyle;
+    use crate::types::types::Type;
+
+    #[test]
+    fn test_flatten_nevers() {
+        let xs = vec![
+            Type::Never(NeverStyle::Never),
+            Type::Never(NeverStyle::NoReturn),
+        ];
+        let res = unions(xs);
+        assert_eq!(res, Type::never());
     }
 }
