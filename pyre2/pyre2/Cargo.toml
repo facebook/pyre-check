@@ -40,7 +40,7 @@ starlark_map = "0.13.0"
 static_assertions = "1.1.0"
 static_interner = "0.1.1"
 thiserror = "2"
-tracing = { version = "0.1.40", features = ["attributes", "valuable"] }
+tracing = { version = "0.1.41", features = ["attributes", "valuable"] }
 tracing-subscriber = { version = "0.3.18", features = ["chrono", "env-filter", "json", "local-time", "parking_lot", "registry"] }
 vec1 = { version = "1", features = ["serde"] }
 
