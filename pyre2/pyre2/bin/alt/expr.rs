@@ -290,7 +290,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(arg_range, format!("Expected {expected}, got {actual}"))
         };
         let iargs = self_arg.iter().chain(args.iter());
-        match callable.params {
+        let ret = match callable.params {
             Params::List(params) => {
                 let mut iparams = params.iter().enumerate().peekable();
                 let mut num_positional = 0;
@@ -413,7 +413,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 range,
                 "Answers::expr_infer wrong number of arguments to call".to_owned(),
             ),
-        }
+        };
+        self.solver().expand(ret)
     }
 
     /// Get the `__call__` method from this class's metaclass.

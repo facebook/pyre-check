@@ -210,3 +210,16 @@ f2(C.f)
 f2(C().f)  # E: EXPECTED BoundMethod[C, Callable[[C, int], None]] <: Callable[[C, int], None]
     "#,
 );
+
+testcase!(
+    test_var_attribute,
+    r#"
+from typing import Literal, assert_type
+def f[T](x: T) -> T:
+    return x
+class C:
+    def __init__(self):
+        self.x = 42
+assert_type(f(C()).x, Literal[42])
+    "#,
+);
