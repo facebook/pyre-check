@@ -630,7 +630,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 kw.range,
                 match &kw.arg {
                     Some(id) => format!("Unexpected keyword argument `{}` to TypeVar", id.id),
-                    None => "Unexpected anonymous keyword to TypeVar".to_owned(),
+                    None => "Cannot pass unpacked keyword arguments to TypeVar".to_owned(),
                 },
             );
         }

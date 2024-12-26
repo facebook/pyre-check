@@ -247,6 +247,14 @@ T2 = TypeVar('T2', int, B)  # E: Could not find name `B`
 );
 
 testcase!(
+    test_tvar_kwargs,
+    r#"
+from typing import TypeVar
+T = TypeVar('T', **{'a': 'b'})  # E: Cannot pass unpacked keyword arguments to TypeVar
+    "#,
+);
+
+testcase!(
     test_ordering_of_tparams_on_generic_base,
     r#"
 from typing import Generic, TypeVar, assert_type
