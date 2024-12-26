@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_if_simple,
@@ -511,17 +510,49 @@ def magic_breakage(argument):
 "#,
 );
 
-testcase_with_bug!(
+testcase!(
     test_try,
     r#"
 from typing import assert_type, Literal
 
-try:  # E: TODO: StmtTry - Bindings::stmt
+try:
     x = 1
 except:
     x = 2
 
-assert_type(x, Literal[1, 2])  # E: assert_type(Literal[2], Literal[1, 2]) failed
+assert_type(x, Literal[1, 2])
+"#,
+);
+
+testcase!(
+    test_try_else,
+    r#"
+from typing import assert_type, Literal
+
+try:
+    x = 1
+except:
+    x = 2
+else:
+    x = 3
+
+assert_type(x, Literal[2, 3])
+"#,
+);
+
+testcase!(
+    test_try_finally,
+    r#"
+from typing import assert_type, Literal
+
+try:
+    x = 1
+except:
+    x = 2
+finally:
+    x = 3
+
+assert_type(x, Literal[3])
 "#,
 );
 

@@ -5061,16 +5061,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "TODO: StmtTry - Bindings::stmt",
-      "description": "TODO: StmtTry - Bindings::stmt",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 9,
-      "stop_line": 78
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "assert_type(Class5, NoReturn) failed",
       "description": "assert_type(Class5, NoReturn) failed",
@@ -5685,16 +5675,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "TODO: StmtTry - Bindings::stmt",
-      "description": "TODO: StmtTry - Bindings::stmt",
-      "line": 99,
-      "name": "PyreError",
-      "stop_column": 9,
-      "stop_line": 102
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "assert_type(Any, NoReturn) failed",
       "description": "assert_type(Any, NoReturn) failed",
@@ -5712,16 +5692,6 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 100
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "TODO: StmtTry - Bindings::stmt",
-      "description": "TODO: StmtTry - Bindings::stmt",
-      "line": 104,
-      "name": "PyreError",
-      "stop_column": 9,
-      "stop_line": 107
     },
     {
       "code": -2,

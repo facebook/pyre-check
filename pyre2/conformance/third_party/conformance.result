@@ -353,7 +353,6 @@
     "Line 29: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2[?_]', 'Expected 0 positional arguments, got 1']",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', \"Missing argument 'x'\"]",
     "Line 69: Unexpected errors ['EXPECTED None <: NoReturn']",
-    "Line 75: Unexpected errors ['TODO: StmtTry - Bindings::stmt']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', \"Missing argument 'x'\"]",
     "Line 98: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 2', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: call_infer: unsupported **kwargs argument to call']",
     "Line 104: Unexpected errors ['assert_type(object, Class7) failed']"
@@ -383,9 +382,7 @@
     "Line 93: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class5', 'Expected 0 positional arguments, got 1']",
     "Line 96: Unexpected errors ['EXPECTED type[Class5] <: Callable[ParamSpec(@_), @_]']",
     "Line 97: Unexpected errors ['revealed type: Callable[ParamSpec(Unknown), Unknown]']",
-    "Line 99: Unexpected errors ['TODO: StmtTry - Bindings::stmt']",
     "Line 100: Unexpected errors ['assert_type(Any, NoReturn) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 104: Unexpected errors ['TODO: StmtTry - Bindings::stmt']",
     "Line 105: Unexpected errors ['assert_type(Any, NoReturn) failed', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 124: Unexpected errors ['EXPECTED type[Class6] <: Callable[ParamSpec(@_), @_]']",
     "Line 125: Unexpected errors ['revealed type: Callable[ParamSpec(Unknown), Unknown]']",

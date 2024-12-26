@@ -1662,19 +1662,33 @@ impl<'a> BindingsBuilder<'a> {
                 self.scopes.last_mut().flow.no_next = true;
             }
             Stmt::Try(x) => {
-                self.todo("Bindings::stmt", &x);
+                let range = x.range;
+                let mut branches = Vec::new();
+                let mut base = self.scopes.last().flow.clone();
 
-                // FIXME: Not correct, just go through binding everything we need
+                // We branch before the body, conservatively assuming that any statement can fail
+                // entry -> try -> else -> finally
+                //   |                     ^
+                //   ----> handler --------|
+
                 self.stmts(x.body);
+                self.stmts(x.orelse);
+                mem::swap(&mut self.scopes.last_mut().flow, &mut base);
+                branches.push(base);
+
                 for h in x.handlers {
+                    base = self.scopes.last().flow.clone();
                     let h = h.except_handler().unwrap(); // Only one variant for now
-                    // FIXME: Should be looking at h.type_ to get the type information
                     if let Some(name) = h.name {
+                        // TODO(yangdanny): Should be looking at h.type_ to get the type information
                         self.bind_definition(&name, Binding::AnyType(AnyStyle::Error), None);
                     }
                     self.stmts(h.body);
+                    mem::swap(&mut self.scopes.last_mut().flow, &mut base);
+                    branches.push(base);
                 }
-                self.stmts(x.orelse);
+
+                self.scopes.last_mut().flow = self.merge_flow(branches, range, false);
                 self.stmts(x.finalbody);
             }
             Stmt::Assert(x) => {
