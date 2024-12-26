@@ -16,9 +16,12 @@ pub const ENTER: Name = Name::new_static("__enter__");
 pub const EXIT: Name = Name::new_static("__exit__");
 pub const GETITEM: Name = Name::new_static("__getitem__");
 pub const INIT: Name = Name::new_static("__init__");
+pub const INVERT: Name = Name::new_static("__invert__");
 pub const ITER: Name = Name::new_static("__iter__");
+pub const NEG: Name = Name::new_static("__neg__");
 pub const NEW: Name = Name::new_static("__new__");
 pub const NEXT: Name = Name::new_static("__next__");
+pub const POS: Name = Name::new_static("__pos__");
 pub const SETITEM: Name = Name::new_static("__setitem__");
 
 /// Given the operator, what is the name of the dunder methods that implements

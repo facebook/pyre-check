@@ -688,28 +688,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::BinOp(x) => self.binop_infer(x),
             Expr::UnaryOp(x) => {
                 let t = self.expr_infer(&x.operand);
+                let unop = |t: &Type, f: &dyn Fn(&Lit) -> Lit, method: &Name| match t {
+                    Type::Literal(lit) => Type::Literal(f(lit)),
+                    Type::ClassType(_) => self.call_method(t, method, x.range, &[], &[]),
+                    _ => self.error(
+                        x.range,
+                        format!("Unary {} is not supported on {}", x.op.as_str(), t),
+                    ),
+                };
                 self.distribute_over_union(&t, |t| match x.op {
-                    UnaryOp::USub => match t {
-                        Type::Literal(lit) => {
-                            Type::Literal(lit.negate(self.module_info(), x.range, self.errors()))
-                        }
-
-                        _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
-                    },
-                    UnaryOp::UAdd => match t {
-                        Type::Literal(lit) => Type::Literal(lit.clone()),
-                        _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
-                    },
+                    UnaryOp::USub => {
+                        let f = |lit: &Lit| lit.negate(self.module_info(), x.range, self.errors());
+                        unop(t, &f, &dunder::NEG)
+                    }
+                    UnaryOp::UAdd => {
+                        let f = |lit: &Lit| lit.clone();
+                        unop(t, &f, &dunder::POS)
+                    }
                     UnaryOp::Not => match t.as_bool() {
                         None => self.stdlib.bool().to_type(),
                         Some(b) => Type::Literal(Lit::Bool(!b)),
                     },
-                    UnaryOp::Invert => match t {
-                        Type::Literal(lit) => {
-                            Type::Literal(lit.invert(self.module_info(), x.range, self.errors()))
-                        }
-                        _ => self.error_todo(&format!("Answers::expr_infer on {}", x.op), x),
-                    },
+                    UnaryOp::Invert => {
+                        let f = |lit: &Lit| lit.invert(self.module_info(), x.range, self.errors());
+                        unop(t, &f, &dunder::INVERT)
+                    }
                 })
             }
             Expr::Lambda(lambda) => {

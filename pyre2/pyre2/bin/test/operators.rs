@@ -219,3 +219,28 @@ y6 = not x6
 assert_type(y6, Literal[True])
     "#,
 );
+
+testcase!(
+    test_unary_dunders,
+    r#"
+from typing import Literal, assert_type
+class C:
+    def __pos__(self) -> Literal[5]:
+        return 5
+    def __neg__(self) -> Literal[-5]:
+        return -5
+    def __invert__(self) -> Literal[100]:
+        return 100
+c = C()
+assert_type(+c, Literal[5])
+assert_type(-c, Literal[-5])
+assert_type(~c, Literal[100])
+    "#,
+);
+
+testcase!(
+    test_unary_error,
+    r#"
++None  # E: Unary + is not supported on None
+    "#,
+);
