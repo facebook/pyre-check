@@ -242,6 +242,42 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
+    /// Calls a method on the metaclass of `cls`. Returns None without attempting a call if we
+    /// don't find a method defined on a metaclass that isn't the default `builtins.type`.
+    fn call_metaclass_method(
+        &self,
+        cls: &ClassType,
+        method_name: &Name,
+        range: TextRange,
+        args: &[CallArg],
+        keywords: &[Keyword],
+    ) -> Option<Type> {
+        let metadata = self.get_metadata_for_class(cls.class_object());
+        let metaclass = metadata.metaclass()?;
+        let attr = self.get_instance_attribute(metaclass, method_name)?;
+        if attr.defined_on(self.stdlib.builtins_type().class_object()) {
+            // In general, we ignore the default `type` metaclass, so ignore methods inherited from it as well.
+            return None;
+        }
+        let method = match attr.value {
+            Type::BoundMethod(_, func) => {
+                // This method was bound to a general instance of the metaclass, but we have more
+                // information about the particular instance that it should be bound to.
+                Type::BoundMethod(
+                    Box::new(Type::type_form(Type::ClassType(cls.clone()))),
+                    func,
+                )
+            }
+            _ => attr.value,
+        };
+        Some(self.call_infer(
+            self.as_call_target_or_error(method, CallStyle::Method(method_name), range),
+            args,
+            keywords,
+            range,
+        ))
+    }
+
     pub fn expr(&self, x: &Expr, check: Option<&Type>) -> Type {
         match check {
             Some(want) if !want.is_any() => {
@@ -417,29 +453,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.solver().expand(ret)
     }
 
-    /// Get the `__call__` method from this class's metaclass.
-    fn get_metaclass_call(&self, cls: &ClassType) -> Option<Type> {
-        let metadata = self.get_metadata_for_class(cls.class_object());
-        let metaclass = metadata.metaclass()?;
-        let call_attr = self.get_instance_attribute(metaclass, &dunder::CALL)?;
-        if call_attr.defined_on(self.stdlib.builtins_type().class_object()) {
-            // The default behavior of `type.__call__` is already baked into our implementation of
-            // class construction; we only care about `__call__` if it is overridden.
-            return None;
-        }
-        match call_attr.value {
-            Type::BoundMethod(_, func) => {
-                // This method was bound to a general instance of the metaclass, but we have more
-                // information about the particular instance (`cls`) that it should be bound to.
-                Some(Type::BoundMethod(
-                    Box::new(Type::Type(Box::new(Type::ClassType(cls.clone())))),
-                    func,
-                ))
-            }
-            _ => None,
-        }
-    }
-
     /// Get the class's `__new__` method.
     fn get_new(&self, cls: &ClassType) -> Option<Type> {
         let new_attr = self.get_class_attribute_with_targs(cls, &dunder::NEW)?;
@@ -460,20 +473,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         // Based on https://typing.readthedocs.io/en/latest/spec/constructors.html.
         let instance_ty = Type::ClassType(cls.clone());
-        if let Some(call_method) = self.get_metaclass_call(&cls) {
-            let ret = self.call_infer(
-                self.as_call_target_or_error(call_method, CallStyle::Method(&dunder::CALL), range),
-                args,
-                keywords,
-                range,
-            );
-            if !self
+        if let Some(ret) = self.call_metaclass_method(&cls, &dunder::CALL, range, args, keywords)
+            && !self
                 .solver()
                 .is_subset_eq(&ret, &instance_ty, self.type_order())
-            {
-                // Got something other than an instance of the class under construction.
-                return ret;
-            }
+        {
+            // Got something other than an instance of the class under construction.
+            return ret;
         }
         let overrides_new = if let Some(new_method) = self.get_new(&cls) {
             let cls_ty = Type::Type(Box::new(instance_ty.clone()));
