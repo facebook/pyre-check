@@ -952,6 +952,56 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()))
             }
+            Binding::ExceptionHandler(box ann, is_star) => {
+                let base_exception_type = self.stdlib.base_exception().to_type();
+                let base_exception_group_type = self
+                    .stdlib
+                    .base_exception_group(Type::Any(AnyStyle::Implicit))
+                    .to_type();
+                let check_exception_type = |exception_type: Type, range| {
+                    let exception = self.untype(exception_type, range);
+                    self.check_type(&base_exception_type, &exception, range);
+                    if *is_star
+                        && !exception.is_any()
+                        && self.solver().is_subset_eq(
+                            &exception,
+                            &base_exception_group_type,
+                            self.type_order(),
+                        )
+                    {
+                        self.error(range, "Exception handler annotation in `except*` clause may not extend `BaseExceptionGroup`".to_string());
+                    }
+                    exception
+                };
+                let exceptions = match ann {
+                    // if the exception classes are written as a tuple literal, use each annotation's position for error reporting
+                    Expr::Tuple(tup) => tup
+                        .elts
+                        .iter()
+                        .map(|e| check_exception_type(self.expr(e, None), e.range()))
+                        .collect(),
+                    _ => {
+                        let exception_types = self.expr(ann, None);
+                        match exception_types {
+                            Type::Tuple(Tuple::Concrete(ts)) => ts
+                                .into_iter()
+                                .map(|t| check_exception_type(t, ann.range()))
+                                .collect(),
+                            Type::Tuple(Tuple::Unbounded(box t)) => {
+                                vec![check_exception_type(t, ann.range())]
+                            }
+                            _ => vec![check_exception_type(exception_types, ann.range())],
+                        }
+                    }
+                };
+                if *is_star {
+                    self.stdlib
+                        .exception_group(self.unions(&exceptions))
+                        .to_type()
+                } else {
+                    self.unions(&exceptions)
+                }
+            }
             Binding::AugAssign(x) => {
                 let base = self.expr(&x.target, None);
                 self.call_method(

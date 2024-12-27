@@ -384,6 +384,8 @@ pub enum Binding {
     /// Positional patterns index into __match_args__, and keyword patterns match an attribute name.
     PatternMatchClassPositional(Box<Expr>, usize, Idx<Key>, TextRange),
     PatternMatchClassKeyword(Box<Expr>, Identifier, Idx<Key>),
+    /// Binding for an `except` (if the boolean flag is false) or `except*` (if the boolean flag is true) clause
+    ExceptionHandler(Box<Expr>, bool),
 }
 
 impl Binding {
@@ -407,6 +409,8 @@ impl DisplayWith<Bindings> for Binding {
             Self::IterableValue(Some(k), x) => {
                 write!(f, "iter {}: {}", ctx.display(*k), m.display(x))
             }
+            Self::ExceptionHandler(box x, true) => write!(f, "except* {}", m.display(x)),
+            Self::ExceptionHandler(box x, false) => write!(f, "except {}", m.display(x)),
             Self::ContextValue(_ann, x, kind) => {
                 let name = match kind {
                     ContextManagerKind::Sync => "context",

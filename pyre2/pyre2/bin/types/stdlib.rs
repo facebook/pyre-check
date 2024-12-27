@@ -23,6 +23,8 @@ pub struct Stdlib {
     complex: Option<Class>,
     slice: Option<Class>,
     base_exception: Option<Class>,
+    base_exception_group: Option<Class>,
+    exception_group: Option<Class>,
     list: Option<Class>,
     dict: Option<Class>,
     set: Option<Class>,
@@ -60,6 +62,8 @@ impl Stdlib {
             complex: lookup_class(builtins, &Name::new("complex")),
             slice: lookup_class(builtins, &Name::new("slice")),
             base_exception: lookup_class(builtins, &Name::new("BaseException")),
+            base_exception_group: lookup_class(builtins, &Name::new("BaseExceptionGroup")),
+            exception_group: lookup_class(builtins, &Name::new("ExceptionGroup")),
             list: lookup_class(builtins, &Name::new("list")),
             dict: lookup_class(builtins, &Name::new("dict")),
             set: lookup_class(builtins, &Name::new("set")),
@@ -167,6 +171,14 @@ impl Stdlib {
     fn apply(cls: &Option<Class>, targs: Vec<Type>) -> ClassType {
         // Note: this construction will panic if we use `apply` with the wrong arity.
         ClassType::new_for_stdlib(Self::unwrap_class(cls).clone(), TArgs::new(targs))
+    }
+
+    pub fn base_exception_group(&self, x: Type) -> ClassType {
+        Self::apply(&self.base_exception_group, vec![x])
+    }
+
+    pub fn exception_group(&self, x: Type) -> ClassType {
+        Self::apply(&self.exception_group, vec![x])
     }
 
     pub fn tuple(&self, x: Type) -> ClassType {

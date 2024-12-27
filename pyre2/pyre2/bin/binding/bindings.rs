@@ -1678,10 +1678,23 @@ impl<'a> BindingsBuilder<'a> {
 
                 for h in x.handlers {
                     base = self.scopes.last().flow.clone();
+                    let range = h.range();
                     let h = h.except_handler().unwrap(); // Only one variant for now
-                    if let Some(name) = h.name {
-                        // TODO(yangdanny): Should be looking at h.type_ to get the type information
-                        self.bind_definition(&name, Binding::AnyType(AnyStyle::Error), None);
+                    if let Some(name) = h.name
+                        && let Some(type_) = h.type_
+                    {
+                        self.ensure_expr(&type_);
+                        self.bind_definition(
+                            &name,
+                            Binding::ExceptionHandler(type_, x.is_star),
+                            None,
+                        );
+                    } else if let Some(type_) = h.type_ {
+                        self.ensure_expr(&type_);
+                        self.table.insert(
+                            Key::Anon(range),
+                            Binding::ExceptionHandler(type_, x.is_star),
+                        );
                     }
                     self.stmts(h.body);
                     mem::swap(&mut self.scopes.last_mut().flow, &mut base);

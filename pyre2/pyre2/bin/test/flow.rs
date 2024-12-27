@@ -525,6 +525,61 @@ assert_type(x, Literal[1, 2])
 );
 
 testcase!(
+    test_exception_handler,
+    r#"
+from typing import reveal_type
+
+class Exception1(Exception): pass
+class Exception2(Exception): pass
+
+x1: tuple[type[Exception], ...] = (Exception1, Exception2)
+x2 = (Exception1, Exception2)
+
+try:
+    pass
+except int as e1:  # E: EXPECTED int <: BaseException
+    reveal_type(e1)  # E: revealed type: int
+except int:  # E: EXPECTED int <: BaseException
+    pass
+except Exception as e2:
+    reveal_type(e2)  # E: revealed type: Exception
+except ExceptionGroup as e3:
+    reveal_type(e3)  # E: revealed type: ExceptionGroup[Error]
+except (Exception1, Exception2) as e4:
+    reveal_type(e4)  # E: revealed type: Exception1 | Exception2
+except Exception1 as e5:
+    reveal_type(e5)  # E: revealed type: Exception1
+except x1 as e6:
+    reveal_type(e6)  # E: revealed type: Exception
+except x2 as e7:
+    reveal_type(e6)  # E: revealed type: Exception1 | Exception2
+"#,
+);
+
+testcase!(
+    test_exception_group_handler,
+    r#"
+from typing import reveal_type
+
+class Exception1(Exception): pass
+class Exception2(Exception): pass
+
+try:
+    pass
+except* int as e1:  # E: EXPECTED int <: BaseException
+    reveal_type(e1)  # E: revealed type: ExceptionGroup[int]
+except* Exception as e2:
+    reveal_type(e2)  # E: revealed type: ExceptionGroup[Exception]
+except* ExceptionGroup as e3:  # E: Exception handler annotation in `except*` clause may not extend `BaseExceptionGroup`
+    reveal_type(e3)  # E: ExceptionGroup[ExceptionGroup[Error]]
+except* (Exception1, Exception2) as e4:
+    reveal_type(e4)  # E: ExceptionGroup[Exception1 | Exception2]
+except* Exception1 as e5:
+    reveal_type(e5)  # E: ExceptionGroup[Exception1]
+"#,
+);
+
+testcase!(
     test_try_else,
     r#"
 from typing import assert_type, Literal
