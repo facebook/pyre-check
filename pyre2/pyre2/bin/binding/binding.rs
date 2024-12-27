@@ -99,6 +99,10 @@ pub enum Key {
     SelfType(ShortIdentifier),
     /// The type at a specific return point.
     ReturnExpression(ShortIdentifier, TextRange),
+    /// The type of a yield value at a specific point in the program.
+    YieldExpression(ShortIdentifier, TextRange),
+    /// The type of the yield value.
+    YieldType(ShortIdentifier),
     /// The actual type of the return for a function.
     ReturnType(ShortIdentifier),
     /// I am a use in this module at this location.
@@ -121,6 +125,8 @@ impl Ranged for Key {
             Self::Definition(x) => x.range(),
             Self::SelfType(x) => x.range(),
             Self::ReturnExpression(_, r) => *r,
+            Self::YieldExpression(_, r) => *r,
+            Self::YieldType(x) => x.range(),
             Self::ReturnType(x) => x.range(),
             Self::Usage(x) => x.range(),
             Self::Anon(r) => *r,
@@ -146,6 +152,10 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::ReturnExpression(x, i) => {
                 write!(f, "return {} {:?} @ {i:?}", ctx.display(x), x.range())
             }
+            Self::YieldExpression(x, i) => {
+                write!(f, "yield {} {:?} @ {i:?}", ctx.display(x), x.range())
+            }
+            Self::YieldType(x) => write!(f, "yield {} {:?}", ctx.display(x), x.range()),
         }
     }
 }

@@ -20,7 +20,7 @@ f = yielding()
 
 next_f = next(f) # E: Could not find name `next`
 reveal_type(next_f) # E: revealed type: Error
-reveal_type(f) # E: revealed type: None
+reveal_type(f) # E:  Generator[Literal[1], Unknown, None]
 
 "#,
 );
@@ -36,14 +36,14 @@ from typing import reveal_type
 def gen_with_return():
     yield 1 # E: TODO: ExprYield - Answers::expr_infer
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
-    return "done" # 
+    return "done"
 
-reveal_type(gen_with_return()) # E: revealed type: Literal['done']
+reveal_type(gen_with_return()) # E: Generator[Literal[1, 2], Unknown, Literal['done']]
 
 "#,
 );
 
-// TODO zeina: we should correctly determine the send() type based on the signature of the generator
+// TODO zeina: we should correctly determine the send() type based on the signature of the generator. Additionally, we should correctly handle the return type of the generator.
 testcase_with_bug!(
     test_generator_send,
     r#"
@@ -53,11 +53,9 @@ from typing import Generator, reveal_type
 def accumulate(x: int) -> Generator[int, int, None]:
     yield x # E: TODO: ExprYield - Answers::expr_infer # E:  EXPECTED None <: Generator[int, int, None]
 
-
 gen = accumulate(10)
-reveal_type(gen) # E: revealed type: Generator[int, int, None]
+reveal_type(gen) # E: revealed type: Generator[int, Unknown, Generator[int, int, None]]
 gen.send(5) # E:  Object of class `Generator` has no attribute `send`
-
 
 "#,
 );
@@ -73,7 +71,7 @@ def gen_numbers() -> Iterator[int]:
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
     yield 3 # E: TODO: ExprYield - Answers::expr_infer # E: EXPECTED None <: Iterator[int]
 
-reveal_type(gen_numbers()) # E: revealed type: Iterator[int]
+reveal_type(gen_numbers()) # E: revealed type: Generator[Literal[1, 2, 3], Unknown, Iterator[int]]
 
 "#,
 );
@@ -94,29 +92,28 @@ def nested_generator():
 def another_generator():
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(nested_generator()) # E: revealed type: None
-reveal_type(another_generator()) # E: revealed type: None
+reveal_type(nested_generator()) # E: revealed type: Generator[Literal[1, 3], Unknown, None]
+reveal_type(another_generator()) # E: revealed type: Generator[Literal[2], Unknown, None]
 
 "#,
 );
 
-// TODO zeina: This should typecheck
+// TODO zeina: This should typecheck. Handle nested generator resulting type.
 testcase_with_bug!(
     test_basic_generator_type,
     r#"
 from typing import Generator, reveal_type
 
-
 def f(value) -> Generator[int, None, None]:
     while True: # E: EXPECTED None <: Generator[int, None, None]
         yield value # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(f(3)) # E: revealed type: Generator[int, None, None]
+reveal_type(f(3)) # E: revealed type: Generator[Unknown, Unknown, Generator[int, None, None]]
 
 "#,
 );
 
-// TODO zeina: This should typecheck
+// TODO zeina: This should typecheck. Handle nested generator resulting type.
 testcase_with_bug!(
     test_parametric_generator_type,
     r#"
@@ -128,7 +125,7 @@ def f(value: T) -> Generator[T, None, None]:
     while True: # E: EXPECTED None <: Generator[?_, None, None]
         yield value # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(f(3)) # E: revealed type: Generator[int, None, None]
+reveal_type(f(3)) # E: revealed type: Generator[int, Unknown, Generator[int, None, None]]
 
 "#,
 );
@@ -142,7 +139,7 @@ from typing import AsyncGenerator, reveal_type # E: Could not import `AsyncGener
 async def async_count_up_to() -> AsyncGenerator[int, None]:
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(async_count_up_to()) # E: revealed type: Coroutine[Unknown, Unknown, Error]
+reveal_type(async_count_up_to()) # E: Coroutine[Unknown, Unknown, Generator[Literal[2], Unknown, Error]]
 
 "#,
 );
@@ -156,7 +153,7 @@ from typing import reveal_type
 async def async_count_up_to():
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(async_count_up_to()) # E:  revealed type: Coroutine[Unknown, Unknown, None]
+reveal_type(async_count_up_to()) # E: Coroutine[Unknown, Unknown, Generator[Literal[2], Unknown, None]]
 
 "#,
 );

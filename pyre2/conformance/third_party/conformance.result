@@ -170,13 +170,13 @@
     "Line 159: Unexpected errors ['EXPECTED None <: AsyncGenerator[str, None]', 'Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]']",
     "Line 160: Unexpected errors [\"Missing argument 'result'\", 'EXPECTED Literal[1] <: float']",
     "Line 161: Unexpected errors ['TODO: ExprYield - Answers::expr_infer']",
-    "Line 167: Unexpected errors ['assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed']",
-    "Line 168: Unexpected errors ['EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncGenerator[str, None]']",
-    "Line 174: Unexpected errors ['assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed']",
-    "Line 175: Unexpected errors ['EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncIterator[str]']",
+    "Line 167: Unexpected errors ['assert_type(Coroutine[Any, Any, Generator[str, Any, AsyncGenerator[str, None]]], AsyncGenerator[str, None]) failed']",
+    "Line 168: Unexpected errors ['EXPECTED Coroutine[Unknown, Unknown, Generator[str, Unknown, AsyncGenerator[str, None]]] <: AsyncGenerator[str, None]']",
+    "Line 174: Unexpected errors ['assert_type(Coroutine[Any, Any, Generator[str, Any, AsyncGenerator[str, None]]], AsyncGenerator[str, None]) failed']",
+    "Line 175: Unexpected errors ['EXPECTED Coroutine[Unknown, Unknown, Generator[str, Unknown, AsyncGenerator[str, None]]] <: AsyncIterator[str]']",
     "Line 179: Unexpected errors ['EXPECTED None <: AsyncIterator[int]']",
     "Line 187: Unexpected errors ['EXPECTED None <: AsyncIterator[int]', 'TODO: ExprYield - Answers::expr_infer']",
-    "Line 190: Unexpected errors ['assert_type(Callable[[], Coroutine[Any, Any, AsyncIterator[int]]], Callable[[], AsyncIterator[int]]) failed']"
+    "Line 190: Unexpected errors ['assert_type(Callable[[], Coroutine[Any, Any, Generator[None, Any, AsyncIterator[int]]]], Callable[[], AsyncIterator[int]]) failed']"
   ],
   "annotations_methods.py": [
     "Line 19: Unexpected errors ['Expected a callable, got type[?_]']",

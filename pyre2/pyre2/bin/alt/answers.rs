@@ -1178,6 +1178,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ret = self
                     .get(&Key::ReturnType(ShortIdentifier::new(&x.name)))
                     .arc_clone();
+                let yield_expr_type = self
+                    .get(&Key::YieldType(ShortIdentifier::new(&x.name)))
+                    .arc_clone();
+                let ret = if yield_expr_type.is_never() {
+                    ret
+                } else {
+                    self.stdlib
+                        .generator(yield_expr_type, Type::any_implicit(), ret)
+                        .to_type()
+                };
                 let ret = if x.is_async {
                     self.stdlib
                         .coroutine(Type::any_implicit(), Type::any_implicit(), ret)
