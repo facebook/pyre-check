@@ -13,6 +13,7 @@ use std::sync::Arc;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
+use ruff_python_ast::Keyword;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
@@ -656,21 +657,34 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn iterate_by_method(
+        &self,
+        call_method: &dyn Fn(&Name, TextRange, &[CallArg], &[Keyword]) -> Option<Type>,
+        range: TextRange,
+    ) -> Option<Type> {
+        if let Some(iterator_ty) = call_method(&dunder::ITER, range, &[], &[]) {
+            Some(self.call_method_or_error(&iterator_ty, &dunder::NEXT, range, &[], &[]))
+        } else {
+            let int_ty = self.stdlib.int().to_type();
+            let arg = CallArg::Type(&int_ty, range);
+            call_method(&dunder::GETITEM, range, &[arg], &[])
+        }
+    }
+
     fn iterate(&self, iterable: &Type, range: TextRange) -> Iterable {
         match iterable {
             Type::ClassType(cls) => {
-                let ty = if let Some(iterator_ty) =
-                    self.call_method(iterable, &dunder::ITER, range, &[], &[])
-                {
-                    self.call_method_or_error(&iterator_ty, &dunder::NEXT, range, &[], &[])
-                } else {
-                    let int_ty = self.stdlib.int().to_type();
-                    let arg = CallArg::Type(&int_ty, range);
-                    self.call_method(iterable, &dunder::GETITEM, range, &[arg], &[])
-                        .unwrap_or_else(|| {
-                            self.error(range, format!("Class `{}` is not iterable", cls.name()))
-                        })
+                let call_method = |method_name: &Name,
+                                   range: TextRange,
+                                   args: &[CallArg],
+                                   keywords: &[Keyword]| {
+                    self.call_method(iterable, method_name, range, args, keywords)
                 };
+                let ty = self
+                    .iterate_by_method(&call_method, range)
+                    .unwrap_or_else(|| {
+                        self.error(range, format!("Class `{}` is not iterable", cls.name()))
+                    });
                 Iterable::OfType(ty)
             }
             Type::Tuple(Tuple::Concrete(elts)) => Iterable::FixedLen(elts.clone()),
