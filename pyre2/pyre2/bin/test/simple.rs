@@ -830,6 +830,14 @@ def f(x: A):
 );
 
 testcase!(
+    test_not_iterable,
+    r#"
+for _ in None:  # E: `None` is not iterable
+    pass
+    "#,
+);
+
+testcase!(
     test_assert,
     r#"
 def foo() -> str: ...

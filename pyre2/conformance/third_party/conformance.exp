@@ -20302,8 +20302,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "concise_description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 2) into 1 value",
+      "description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 2) into 1 value",
       "line": 93,
       "name": "PyreError",
       "stop_column": 18,
@@ -20311,12 +20311,12 @@
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "column": 14,
+      "concise_description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 3) into 1 value",
+      "description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 3) into 1 value",
       "line": 93,
       "name": "PyreError",
-      "stop_column": 16,
+      "stop_column": 18,
       "stop_line": 93
     },
     {
@@ -20332,8 +20332,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "concise_description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 1) into 2 values",
+      "description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 1) into 2 values",
       "line": 97,
       "name": "PyreError",
       "stop_column": 20,
@@ -20341,22 +20341,12 @@
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "column": 14,
+      "concise_description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 3) into 2 values",
+      "description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 3) into 2 values",
       "line": 97,
       "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 97
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "line": 97,
-      "name": "PyreError",
-      "stop_column": 19,
+      "stop_column": 20,
       "stop_line": 97
     },
     {
@@ -20372,8 +20362,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "concise_description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 1) into 3 values",
+      "description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 1) into 3 values",
       "line": 101,
       "name": "PyreError",
       "stop_column": 23,
@@ -20381,32 +20371,12 @@
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
+      "column": 14,
+      "concise_description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 2) into 3 values",
+      "description": "Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 2) into 3 values",
       "line": 101,
       "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 22,
+      "stop_column": 23,
       "stop_line": 101
     },
     {

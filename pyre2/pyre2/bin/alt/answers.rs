@@ -685,7 +685,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Iterable::OfType(ty)
     }
 
-    fn iterate(&self, iterable: &Type, range: TextRange) -> Iterable {
+    fn iterate(&self, iterable: &Type, range: TextRange) -> Vec<Iterable> {
         match iterable {
             Type::ClassType(cls) => {
                 let call_method = |method_name: &Name,
@@ -699,23 +699,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .unwrap_or_else(|| {
                         self.error(range, format!("Class `{}` is not iterable", cls.name()))
                     });
-                Iterable::OfType(ty)
+                vec![Iterable::OfType(ty)]
             }
-            Type::Tuple(Tuple::Concrete(elts)) => Iterable::FixedLen(elts.clone()),
-            Type::Tuple(Tuple::Unbounded(box elt)) => Iterable::OfType(elt.clone()),
-            Type::LiteralString => Iterable::OfType(self.stdlib.str().to_type()),
-            Type::Literal(lit) if lit.is_string() => Iterable::OfType(self.stdlib.str().to_type()),
-            Type::Any(_) => Iterable::OfType(Type::any_implicit()),
+            Type::Tuple(Tuple::Concrete(elts)) => vec![Iterable::FixedLen(elts.clone())],
+            Type::Tuple(Tuple::Unbounded(box elt)) => vec![Iterable::OfType(elt.clone())],
+            Type::LiteralString => vec![Iterable::OfType(self.stdlib.str().to_type())],
+            Type::Literal(lit) if lit.is_string() => {
+                vec![Iterable::OfType(self.stdlib.str().to_type())]
+            }
+            Type::Any(_) => vec![Iterable::OfType(Type::any_implicit())],
             Type::Var(v) if let Some(_guard) = self.recurser.recurse(*v) => {
                 self.iterate(&self.solver().force_var(*v), range)
             }
             Type::ClassDef(cls) => {
-                self.iterate_by_metaclass(&self.promote_to_class_type(cls, range), range)
+                vec![self.iterate_by_metaclass(&self.promote_to_class_type(cls, range), range)]
             }
-            Type::Type(box Type::ClassType(cls)) => self.iterate_by_metaclass(cls, range),
-            _ => Iterable::OfType(
-                self.error_todo("Answers::solve_binding - Binding::IterableValue", range),
-            ),
+            Type::Type(box Type::ClassType(cls)) => vec![self.iterate_by_metaclass(cls, range)],
+            Type::Union(ts) => ts.iter().flat_map(|t| self.iterate(t, range)).collect(),
+            _ => vec![Iterable::OfType(
+                self.error(range, format!("`{iterable}` is not iterable")),
+            )],
         }
     }
 
@@ -1050,11 +1053,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 let hint =
                     ty.and_then(|x| x.ty.clone().map(|ty| self.stdlib.iterable(ty).to_type()));
-                let iterable = self.iterate(&self.expr(e, hint.as_ref()), e.range());
-                match iterable {
-                    Iterable::OfType(ty) => ty,
-                    Iterable::FixedLen(ts) => self.unions(&ts),
+                let iterables = self.iterate(&self.expr(e, hint.as_ref()), e.range());
+                let mut values = Vec::new();
+                for iterable in iterables {
+                    match iterable {
+                        Iterable::OfType(ty) => values.push(ty),
+                        Iterable::FixedLen(ts) => values.extend(ts),
+                    }
                 }
+                self.unions(&values)
             }
             Binding::ContextValue(ann, e, kind) => {
                 let context_manager = self.expr(e, None);
@@ -1082,80 +1089,86 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 )
             }
             Binding::UnpackedValue(b, range, pos) => {
-                let iterable = self.iterate(&self.solve_binding_inner(b), *range);
-                match iterable {
-                    Iterable::OfType(ty) => match pos {
-                        UnpackedPosition::Index(_) | UnpackedPosition::ReverseIndex(_) => ty,
-                        UnpackedPosition::Slice(_, _) => self.stdlib.list(ty).to_type(),
-                    },
-                    Iterable::FixedLen(ts) => {
-                        match pos {
-                            UnpackedPosition::Index(i) | UnpackedPosition::ReverseIndex(i) => {
-                                let idx = if matches!(pos, UnpackedPosition::Index(_)) {
-                                    *i
-                                } else {
-                                    ts.len() - *i
-                                };
-                                if let Some(element) = ts.get(idx) {
-                                    element.clone()
-                                } else {
-                                    // We'll report this error when solving for Binding::UnpackedLength.
-                                    Type::any_error()
+                let iterables = self.iterate(&self.solve_binding_inner(b), *range);
+                let mut values = Vec::new();
+                for iterable in iterables {
+                    values.push(match iterable {
+                        Iterable::OfType(ty) => match pos {
+                            UnpackedPosition::Index(_) | UnpackedPosition::ReverseIndex(_) => ty,
+                            UnpackedPosition::Slice(_, _) => self.stdlib.list(ty).to_type(),
+                        },
+                        Iterable::FixedLen(ts) => {
+                            match pos {
+                                UnpackedPosition::Index(i) | UnpackedPosition::ReverseIndex(i) => {
+                                    let idx = if matches!(pos, UnpackedPosition::Index(_)) {
+                                        *i
+                                    } else {
+                                        ts.len() - *i
+                                    };
+                                    if let Some(element) = ts.get(idx) {
+                                        element.clone()
+                                    } else {
+                                        // We'll report this error when solving for Binding::UnpackedLength.
+                                        Type::any_error()
+                                    }
                                 }
-                            }
-                            UnpackedPosition::Slice(i, j) => {
-                                let start = *i;
-                                let end = ts.len() - *j;
-                                if start <= ts.len() && end >= start {
-                                    let elem_ty = self.unions(&ts[start..end]);
-                                    self.stdlib.list(elem_ty).to_type()
-                                } else {
-                                    // We'll report this error when solving for Binding::UnpackedLength.
-                                    Type::any_error()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Binding::UnpackedLength(b, range, expect) => {
-                let iterable_ty = self.solve_binding_inner(b);
-                let iterable = self.iterate(&iterable_ty, *range);
-                match iterable {
-                    Iterable::OfType(_) => {}
-                    Iterable::FixedLen(ts) => {
-                        let error = match expect {
-                            SizeExpectation::Eq(n) => {
-                                if ts.len() == *n {
-                                    None
-                                } else {
-                                    match n {
-                                        1 => Some(format!("{n} value")),
-                                        _ => Some(format!("{n} values")),
+                                UnpackedPosition::Slice(i, j) => {
+                                    let start = *i;
+                                    let end = ts.len() - *j;
+                                    if start <= ts.len() && end >= start {
+                                        let elem_ty = self.unions(&ts[start..end]);
+                                        self.stdlib.list(elem_ty).to_type()
+                                    } else {
+                                        // We'll report this error when solving for Binding::UnpackedLength.
+                                        Type::any_error()
                                     }
                                 }
                             }
-                            SizeExpectation::Ge(n) => {
-                                if ts.len() >= *n {
-                                    None
-                                } else {
-                                    Some(format!("{n}+ values"))
+                        }
+                    })
+                }
+                self.unions(&values)
+            }
+            Binding::UnpackedLength(b, range, expect) => {
+                let iterable_ty = self.solve_binding_inner(b);
+                let iterables = self.iterate(&iterable_ty, *range);
+                for iterable in iterables {
+                    match iterable {
+                        Iterable::OfType(_) => {}
+                        Iterable::FixedLen(ts) => {
+                            let error = match expect {
+                                SizeExpectation::Eq(n) => {
+                                    if ts.len() == *n {
+                                        None
+                                    } else {
+                                        match n {
+                                            1 => Some(format!("{n} value")),
+                                            _ => Some(format!("{n} values")),
+                                        }
+                                    }
                                 }
+                                SizeExpectation::Ge(n) => {
+                                    if ts.len() >= *n {
+                                        None
+                                    } else {
+                                        Some(format!("{n}+ values"))
+                                    }
+                                }
+                            };
+                            match error {
+                                Some(expectation) => {
+                                    self.error(
+                                        *range,
+                                        format!(
+                                            "Cannot unpack {} (of size {}) into {}",
+                                            iterable_ty,
+                                            ts.len(),
+                                            expectation,
+                                        ),
+                                    );
+                                }
+                                None => {}
                             }
-                        };
-                        match error {
-                            Some(expectation) => {
-                                self.error(
-                                    *range,
-                                    format!(
-                                        "Cannot unpack {} (of size {}) into {}",
-                                        iterable_ty,
-                                        ts.len(),
-                                        expectation,
-                                    ),
-                                );
-                            }
-                            None => {}
                         }
                     }
                 }

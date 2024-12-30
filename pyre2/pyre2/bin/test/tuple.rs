@@ -131,3 +131,26 @@ from typing import Iterable
 x: Iterable[str] = ()
     "#,
 );
+
+testcase!(
+    test_unpack_union,
+    r#"
+from typing import assert_type
+def f() -> tuple[int, str] | tuple[bool, ...]: ...
+(x, y) = f()
+assert_type(x, int | bool)
+assert_type(y, str | bool)
+
+(x, y, z) = f()  # E: Cannot unpack
+    "#,
+);
+
+testcase!(
+    test_iterate_union,
+    r#"
+from typing import assert_type
+def f() -> tuple[int, str] | tuple[bool, ...]: ...
+for x in f():
+    assert_type(x, int | bool | str)
+    "#,
+);
