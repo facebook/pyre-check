@@ -66,6 +66,7 @@ use crate::types::annotation::Qualifier;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
+use crate::types::class::ClassType;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
@@ -671,6 +672,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn iterate_by_metaclass(&self, cls: &ClassType, range: TextRange) -> Iterable {
+        let call_method =
+            |method_name: &Name, range: TextRange, args: &[CallArg], keywords: &[Keyword]| {
+                self.call_metaclass_method(cls, method_name, range, args, keywords)
+            };
+        let ty = self
+            .iterate_by_method(&call_method, range)
+            .unwrap_or_else(|| {
+                self.error(range, format!("Class object `{}` is not iterable", cls))
+            });
+        Iterable::OfType(ty)
+    }
+
     fn iterate(&self, iterable: &Type, range: TextRange) -> Iterable {
         match iterable {
             Type::ClassType(cls) => {
@@ -695,6 +709,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Var(v) if let Some(_guard) = self.recurser.recurse(*v) => {
                 self.iterate(&self.solver().force_var(*v), range)
             }
+            Type::ClassDef(cls) => {
+                self.iterate_by_metaclass(&self.promote_to_class_type(cls, range), range)
+            }
+            Type::Type(box Type::ClassType(cls)) => self.iterate_by_metaclass(cls, range),
             _ => Iterable::OfType(
                 self.error_todo("Answers::solve_binding - Binding::IterableValue", range),
             ),

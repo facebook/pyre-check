@@ -8328,26 +8328,6 @@
   "enums_behaviors.py": [
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "description": "TODO: Answers::solve_binding - Binding::IterableValue",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, Color) failed",
-      "description": "assert_type(Any, Color) failed",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(type[Color], Color) failed",
       "description": "assert_type(type[Color], Color) failed",

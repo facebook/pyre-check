@@ -3,7 +3,7 @@
   "pass": 8,
   "fail": 125,
   "pass_rate": 0.06,
-  "differences": 1440,
+  "differences": 1438,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -59,7 +59,7 @@
     "directives_reveal_type.py": 4,
     "directives_type_checking.py": 3,
     "directives_type_ignore_file1.py": 1,
-    "enums_behaviors.py": 5,
+    "enums_behaviors.py": 3,
     "enums_definition.py": 1,
     "enums_expansion.py": 5,
     "enums_member_values.py": 2,

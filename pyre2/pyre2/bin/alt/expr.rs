@@ -267,7 +267,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Calls a method on the metaclass of `cls`. Returns None without attempting a call if we
     /// don't find a method defined on a metaclass that isn't the default `builtins.type`.
-    fn call_metaclass_method(
+    pub fn call_metaclass_method(
         &self,
         cls: &ClassType,
         method_name: &Name,

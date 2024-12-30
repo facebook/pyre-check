@@ -20,3 +20,16 @@ class MyEnum(Enum):
 assert_type(MyEnum.X, Literal[MyEnum.X])
 "#,
 );
+
+testcase!(
+    test_iterate,
+    r#"
+from typing import assert_type
+from enum import Enum
+class E(Enum):
+    X = 1
+    Y = 2
+for e in E:
+    assert_type(e, E)
+    "#,
+);
