@@ -659,16 +659,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn iterate(&self, iterable: &Type, range: TextRange) -> Iterable {
         match iterable {
             Type::ClassType(cls) => {
-                let ty = if self.has_attribute(cls.class_object(), &dunder::ITER) {
-                    let iterator_ty =
-                        self.call_method_or_error(iterable, &dunder::ITER, range, &[], &[]);
+                let ty = if let Some(iterator_ty) =
+                    self.call_method(iterable, &dunder::ITER, range, &[], &[])
+                {
                     self.call_method_or_error(&iterator_ty, &dunder::NEXT, range, &[], &[])
-                } else if self.has_attribute(cls.class_object(), &dunder::GETITEM) {
+                } else {
                     let int_ty = self.stdlib.int().to_type();
                     let arg = CallArg::Type(&int_ty, range);
-                    self.call_method_or_error(iterable, &dunder::GETITEM, range, &[arg], &[])
-                } else {
-                    self.error(range, format!("Class `{}` is not iterable", cls.name()))
+                    self.call_method(iterable, &dunder::GETITEM, range, &[arg], &[])
+                        .unwrap_or_else(|| {
+                            self.error(range, format!("Class `{}` is not iterable", cls.name()))
+                        })
                 };
                 Iterable::OfType(ty)
             }

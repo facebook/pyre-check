@@ -542,10 +542,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn has_attribute(&self, cls: &Class, name: &Name) -> bool {
-        self.get_class_member(cls, name).is_some()
-    }
-
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
             .map(|(member_ty, defining_class)| {
