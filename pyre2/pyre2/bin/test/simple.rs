@@ -686,7 +686,7 @@ def f(x: list[int], y: dict[str, bool]) -> None:
     assert_type(y["test"], bool)
     x["foo"]  # E: Literal['foo'] <: int
     c = C()
-    c[0]  # E: Object of class `C` has no attribute `__getitem__`
+    c[0]  # E: `C` has no attribute `__getitem__`
     d = D()
     d[0]  # E: Expected `__getitem__` to be a callable, got int
 "#,
@@ -772,7 +772,7 @@ class A:
     def __iter__(self) -> None:
         return None
 def f(x: A):
-    for _ in x:  # E: Object of class `NoneType` has no attribute `__next__`
+    for _ in x:  # E: `None` has no attribute `__next__`
         pass
     "#,
 );

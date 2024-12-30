@@ -24,6 +24,7 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::attr::LookupResult;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::dunder;
@@ -147,9 +148,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.unions(&types)
     }
 
-    fn error_call_target(&self, range: TextRange, msg: String) -> CallTarget {
+    fn error_call_target(&self, range: TextRange, msg: String) -> (Vec<Var>, CallTarget) {
         self.errors().add(self.module_info(), range, msg);
-        CallTarget::any(AnyStyle::Error)
+        (Vec::new(), CallTarget::any(AnyStyle::Error))
     }
 
     /// Return a pair of the quantified variables I had to instantiate, and the resulting call target.
@@ -211,17 +212,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     CallStyle::FreeForm => "Expected a callable".to_owned(),
                 };
-                (
-                    Vec::new(),
-                    self.error_call_target(
-                        range,
-                        format!("{}, got {}", expect_message, ty.deterministic_printing()),
-                    ),
+                self.error_call_target(
+                    range,
+                    format!("{}, got {}", expect_message, ty.deterministic_printing()),
                 )
             }
         }
     }
 
+    /// Calls a method. If no attribute exists with the given method name, returns None without attempting the call.
     pub fn call_method(
         &self,
         ty: &Type,
@@ -229,17 +228,41 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         args: &[CallArg],
         keywords: &[Keyword],
+    ) -> Option<Type> {
+        let call_target = match self.lookup_attr(ty.clone(), method_name) {
+            LookupResult::NotFound(_) => {
+                return None;
+            }
+            LookupResult::Error(e) => {
+                self.error_call_target(range, e.to_error_msg(method_name, "Expr::call_method"))
+            }
+            LookupResult::Found(attr) => {
+                self.as_call_target_or_error(attr, CallStyle::Method(method_name), range)
+            }
+        };
+        Some(self.call_infer(call_target, args, keywords, range))
+    }
+
+    /// Calls a method. If no attribute exists with the given method name, logs an error and calls the method with
+    /// an assumed type of Callable[..., Any].
+    pub fn call_method_or_error(
+        &self,
+        ty: &Type,
+        method_name: &Name,
+        range: TextRange,
+        args: &[CallArg],
+        keywords: &[Keyword],
     ) -> Type {
-        self.distribute_over_union(ty, |ty| {
-            let callable = match self
-                .lookup_attr(ty.clone(), method_name)
-                .ok_or_conflated_error_msg(method_name, "Expr::call_method_generic")
-            {
-                Ok(ty) => self.as_call_target_or_error(ty, CallStyle::Method(method_name), range),
-                Err(msg) => (Vec::new(), self.error_call_target(range, msg)),
-            };
-            self.call_infer(callable, args, keywords, range)
-        })
+        if let Some(ret) = self.call_method(ty, method_name, range, args, keywords) {
+            ret
+        } else {
+            self.call_infer(
+                self.error_call_target(range, format!("`{ty}` has no attribute `{method_name}`")),
+                args,
+                keywords,
+                range,
+            )
+        }
     }
 
     /// Calls a method on the metaclass of `cls`. Returns None without attempting a call if we
@@ -696,7 +719,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let t = self.expr_infer(&x.operand);
                 let unop = |t: &Type, f: &dyn Fn(&Lit) -> Lit, method: &Name| match t {
                     Type::Literal(lit) => Type::Literal(f(lit)),
-                    Type::ClassType(_) => self.call_method(t, method, x.range, &[], &[]),
+                    Type::ClassType(_) => self.call_method_or_error(t, method, x.range, &[], &[]),
                     _ => self.error(
                         x.range,
                         format!("Unary {} is not supported on {}", x.op.as_str(), t),
@@ -1136,7 +1159,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     )
                                     }
                                 }
-                                _ => self.call_method(
+                                _ => self.call_method_or_error(
                                     &Type::Tuple(Tuple::Concrete(elts)),
                                     &dunder::GETITEM,
                                     x.range,
@@ -1146,15 +1169,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         }
                     },
-                    Type::Tuple(Tuple::Unbounded(elt)) if xs.len() == 1 => self.call_method(
-                        &Type::Tuple(Tuple::Unbounded(elt)),
-                        &dunder::GETITEM,
-                        x.range,
-                        &[CallArg::Expr(&x.slice)],
-                        &[],
-                    ),
+                    Type::Tuple(Tuple::Unbounded(elt)) if xs.len() == 1 => self
+                        .call_method_or_error(
+                            &Type::Tuple(Tuple::Unbounded(elt)),
+                            &dunder::GETITEM,
+                            x.range,
+                            &[CallArg::Expr(&x.slice)],
+                            &[],
+                        ),
                     Type::Any(style) => style.propagate(),
-                    Type::ClassType(_) => self.call_method(
+                    Type::ClassType(_) => self.call_method_or_error(
                         &fun,
                         &dunder::GETITEM,
                         x.range,

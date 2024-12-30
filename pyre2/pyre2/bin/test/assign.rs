@@ -37,10 +37,10 @@ z = [1, 2, 3]
 z[0] = "oops"  # E: Literal['oops'] <: int
 
 a: int = 1
-a[0] = 1  # E: Object of class `int` has no attribute `__setitem__`
+a[0] = 1  # E: `Literal[1]` has no attribute `__setitem__`
 
 def f(x: int) -> None:
-    x[0] = 1  # E: Object of class `int` has no attribute `__setitem__`
+    x[0] = 1  # E: `int` has no attribute `__setitem__`
 "#,
 );
 
@@ -409,7 +409,7 @@ testcase!(
     r#"
 def expect_str(x: str): ...
 def test(x: None):
-    x += expect_str(0) # E: Object of class `NoneType` has no attribute `__iadd__` # E: EXPECTED Literal[0] <: str
+    x += expect_str(0) # E: `None` has no attribute `__iadd__` # E: EXPECTED Literal[0] <: str
 "#,
 );
 

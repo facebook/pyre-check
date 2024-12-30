@@ -660,12 +660,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match iterable {
             Type::ClassType(cls) => {
                 let ty = if self.has_attribute(cls.class_object(), &dunder::ITER) {
-                    let iterator_ty = self.call_method(iterable, &dunder::ITER, range, &[], &[]);
-                    self.call_method(&iterator_ty, &dunder::NEXT, range, &[], &[])
+                    let iterator_ty =
+                        self.call_method_or_error(iterable, &dunder::ITER, range, &[], &[]);
+                    self.call_method_or_error(&iterator_ty, &dunder::NEXT, range, &[], &[])
                 } else if self.has_attribute(cls.class_object(), &dunder::GETITEM) {
                     let int_ty = self.stdlib.int().to_type();
                     let arg = CallArg::Type(&int_ty, range);
-                    self.call_method(iterable, &dunder::GETITEM, range, &[arg], &[])
+                    self.call_method_or_error(iterable, &dunder::GETITEM, range, &[arg], &[])
                 } else {
                     self.error(range, format!("Class `{}` is not iterable", cls.name()))
                 };
@@ -800,9 +801,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         match kind {
             ContextManagerKind::Sync => {
-                self.call_method(context_manager_type, &dunder::ENTER, range, &[], &[])
+                self.call_method_or_error(context_manager_type, &dunder::ENTER, range, &[], &[])
             }
-            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method(
+            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_or_error(
                 context_manager_type,
                 &dunder::AENTER,
                 range,
@@ -831,14 +832,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             CallArg::Type(&arg3, range),
         ];
         match kind {
-            ContextManagerKind::Sync => self.call_method(
+            ContextManagerKind::Sync => self.call_method_or_error(
                 context_manager_type,
                 &dunder::EXIT,
                 range,
                 &exit_arg_types,
                 &[],
             ),
-            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method(
+            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_or_error(
                 context_manager_type,
                 &dunder::AEXIT,
                 range,
@@ -1004,7 +1005,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::AugAssign(x) => {
                 let base = self.expr(&x.target, None);
-                self.call_method(
+                self.call_method_or_error(
                     &base,
                     &inplace_dunder(x.op),
                     x.range,
@@ -1035,7 +1036,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let base = self.expr(&x.value, None);
                 let slice_ty = self.expr(&x.slice, None);
                 let value_ty = self.solve_binding_inner(b);
-                self.call_method(
+                self.call_method_or_error(
                     &base,
                     &dunder::SETITEM,
                     x.range,
@@ -1334,7 +1335,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let key_ty = self.expr(mapping_key, None);
                 let binding_ty = self.get_idx(*binding_key).arc_clone();
                 let arg = CallArg::Type(&key_ty, mapping_key.range());
-                self.call_method(
+                self.call_method_or_error(
                     &binding_ty,
                     &dunder::GETITEM,
                     mapping_key.range(),
