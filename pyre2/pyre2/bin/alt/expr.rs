@@ -505,7 +505,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             return ret;
         }
         let overrides_new = if let Some(new_method) = self.get_new(&cls) {
-            let cls_ty = Type::Type(Box::new(instance_ty.clone()));
+            let cls_ty = Type::type_form(instance_ty.clone());
             let mut full_args = vec![CallArg::Type(&cls_ty, range)];
             full_args.extend_from_slice(args);
             let ret = self.call_infer(
