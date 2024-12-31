@@ -25,6 +25,7 @@ use ruff_python_ast::ExprLambda;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprSubscript;
+use ruff_python_ast::ExprYield;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Parameters;
 use ruff_python_ast::Pattern;
@@ -137,7 +138,7 @@ struct BindingsBuilder<'a> {
     /// Accumulate all the return statements
     returns: Vec<StmtReturn>,
     /// Accumulate all the yield statements
-    yields: Vec<Expr>,
+    yields: Vec<ExprYield>,
     table: BindingTable,
 }
 
@@ -638,8 +639,8 @@ impl<'a> BindingsBuilder<'a> {
                 self.bind_lambda(x);
                 true
             }
-            Expr::Yield(_) => {
-                self.yields.push(x.clone());
+            Expr::Yield(y) => {
+                self.yields.push(y.clone());
                 false
             }
             _ => false,
@@ -2070,12 +2071,9 @@ fn return_expr(x: StmtReturn) -> Expr {
     }
 }
 
-fn yield_expr(x: Expr) -> Expr {
-    match x {
-        Expr::Yield(x) => match x.value {
-            Some(x) => *x,
-            None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range() }),
-        },
-        _ => Expr::NoneLiteral(ExprNoneLiteral { range: x.range() }),
+fn yield_expr(x: ExprYield) -> Expr {
+    match x.value {
+        Some(x) => *x,
+        None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range }),
     }
 }
