@@ -7,6 +7,8 @@
 
 use crate::testcase_with_bug;
 
+// TODO zeina: use assert_type instead of reveal_type after I support most of these cases.
+
 // TODO zeina: 1- We need a generator type; 2- next keyword currently unsupported
 testcase_with_bug!(
     test_generator,
@@ -54,7 +56,7 @@ def accumulate(x: int) -> Generator[int, int, None]:
     yield x # E: TODO: ExprYield - Answers::expr_infer # E:  EXPECTED None <: Generator[int, int, None]
 
 gen = accumulate(10)
-reveal_type(gen) # E: revealed type: Generator[int, Unknown, Generator[int, int, None]]
+reveal_type(gen) # E: revealed type: Generator[int, int, None]
 gen.send(5) # E:  Object of class `Generator` has no attribute `send`
 
 "#,
@@ -108,7 +110,7 @@ def f(value) -> Generator[int, None, None]:
     while True: # E: EXPECTED None <: Generator[int, None, None]
         yield value # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(f(3)) # E: revealed type: Generator[Unknown, Unknown, Generator[int, None, None]]
+reveal_type(f(3)) # E: revealed type: Generator[int, None, None]
 
 "#,
 );
@@ -125,12 +127,12 @@ def f(value: T) -> Generator[T, None, None]:
     while True: # E: EXPECTED None <: Generator[?_, None, None]
         yield value # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(f(3)) # E: revealed type: Generator[int, Unknown, Generator[int, None, None]]
+reveal_type(f(3)) # E: revealed type: Generator[int, None, None]
 
 "#,
 );
 
-// TODO zeina: This should typecheck
+// TODO zeina: This should typecheck; we should first support async generators.
 testcase_with_bug!(
     test_async_generator_basic_type,
     r#"
@@ -139,12 +141,12 @@ from typing import AsyncGenerator, reveal_type # E: Could not import `AsyncGener
 async def async_count_up_to() -> AsyncGenerator[int, None]:
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(async_count_up_to()) # E: Coroutine[Unknown, Unknown, Generator[Literal[2], Unknown, Error]]
+reveal_type(async_count_up_to()) # E: Generator[Literal[2], Unknown, Error]
 
 "#,
 );
 
-// TODO zeina: This should typecheck
+// TODO zeina: This should typecheck; we should first support async generators.
 testcase_with_bug!(
     test_async_generator_basic_inference,
     r#"
@@ -153,7 +155,7 @@ from typing import reveal_type
 async def async_count_up_to():
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(async_count_up_to()) # E: Coroutine[Unknown, Unknown, Generator[Literal[2], Unknown, None]]
+reveal_type(async_count_up_to()) # E: Generator[Literal[2], Unknown, None]
 
 "#,
 );

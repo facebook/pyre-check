@@ -399,6 +399,20 @@ impl Type {
         }
     }
 
+    pub fn is_generator(&self) -> bool {
+        match self {
+            Type::ClassType(cls) => {
+                let typ = cls.class_object();
+                let name = typ.name().id().as_str();
+                if name == "Generator" {
+                    return true;
+                }
+                false
+            }
+            _ => false,
+        }
+    }
+
     pub fn is_var(&self) -> bool {
         matches!(self, Type::Var(_))
     }
