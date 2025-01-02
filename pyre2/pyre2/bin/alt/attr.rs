@@ -29,6 +29,7 @@ pub enum AttributeBase {
     Module(Module),
     Quantified(Quantified),
     Any(AnyStyle),
+    Never,
     /// type[Any] is a special case where attribute lookups first check the
     /// builtin `type` class before falling back to `Any`.
     TypeAny(AnyStyle),
@@ -155,6 +156,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 )
             }
             Some(AttributeBase::Any(style)) => LookupResult::Found(style.propagate()),
+            Some(AttributeBase::Never) => LookupResult::Found(Type::never()),
             None => LookupResult::Error(LookupError::AttributeBaseUndefined(ty)),
         }
     }
@@ -200,10 +202,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Args(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_args())),
             Type::Kwargs(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_kwargs())),
             Type::None => Some(AttributeBase::ClassInstance(stdlib.none_type())),
+            Type::Never(_) => Some(AttributeBase::Never),
             Type::Var(v) => self.as_attribute_base(self.solver().force_var(v), stdlib),
             // TODO: check to see which ones should have class representations
             Type::Union(_)
-            | Type::Never(_)
             | Type::Callable(_)
             | Type::BoundMethod(_, _)
             | Type::Ellipsis

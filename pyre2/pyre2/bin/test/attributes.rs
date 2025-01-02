@@ -223,3 +223,14 @@ class C:
 assert_type(f(C()).x, Literal[42])
     "#,
 );
+
+testcase!(
+    test_never_attr,
+    r#"
+from typing import Never, NoReturn, assert_type
+def f() -> NoReturn: ...
+def g():
+    x = f().x
+    assert_type(x, Never)
+    "#,
+);
