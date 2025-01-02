@@ -57,7 +57,7 @@ def accumulate(x: int) -> Generator[int, int, None]:
 
 gen = accumulate(10)
 reveal_type(gen) # E: revealed type: Generator[int, int, None]
-gen.send(5) # E:  Object of class `Generator` has no attribute `send`
+gen.send(5)
 
 "#,
 );
