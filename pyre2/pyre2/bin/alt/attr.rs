@@ -200,6 +200,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Args(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_args())),
             Type::Kwargs(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_kwargs())),
             Type::None => Some(AttributeBase::ClassInstance(stdlib.none_type())),
+            Type::Var(v) => self.as_attribute_base(self.solver().force_var(v), stdlib),
             // TODO: check to see which ones should have class representations
             Type::Union(_)
             | Type::Never(_)
@@ -211,8 +212,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             | Type::Intersect(_)
             | Type::Forall(_, _)
             | Type::Unpack(_)
-            | Type::Quantified(_)
-            | Type::Var(_) => None,
+            | Type::Quantified(_) => None,
         }
     }
 }

@@ -4504,16 +4504,6 @@
     },
     {
       "code": -2,
-      "column": 34,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: @_",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: @_",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 67,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
       "column": 53,
       "concise_description": "EXPECTED Literal['hits'] <: _PyreReadOnly_[dict[str, int]]",
       "description": "EXPECTED Literal['hits'] <: _PyreReadOnly_[dict[str, int]]",
