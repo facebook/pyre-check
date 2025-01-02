@@ -475,7 +475,7 @@ testcase_with_bug!(
 from typing import assert_type
 def f() -> str | None:
     pass
-if (x := f()) and x is not None:
+if x := f():
     assert_type(x, str | None)  # type should be 'str'
     "#,
 );

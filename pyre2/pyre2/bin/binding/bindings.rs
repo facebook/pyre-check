@@ -17,10 +17,12 @@ use itertools::Either;
 use itertools::Itertools;
 use parse_display::Display;
 use ruff_python_ast::name::Name;
+use ruff_python_ast::BoolOp;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
+use ruff_python_ast::ExprBoolOp;
 use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprCompare;
 use ruff_python_ast::ExprLambda;
@@ -1401,7 +1403,19 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn narrow_ops(&self, test: Option<Expr>) -> Vec<(Name, NarrowOp, TextRange)> {
+    fn negate_narrow_ops(
+        ops: Vec<(Name, NarrowOp, TextRange)>,
+    ) -> Vec<(Name, NarrowOp, TextRange)> {
+        if ops.len() == 1 {
+            let (name, op, range) = &ops[0];
+            vec![(name.clone(), op.clone().negate(), *range)]
+        } else {
+            // Negating multiple operations requires 'or' support, which we don't have.
+            Vec::new()
+        }
+    }
+
+    fn narrow_ops(test: Option<Expr>) -> Vec<(Name, NarrowOp, TextRange)> {
         match test {
             Some(Expr::Compare(ExprCompare {
                 range,
@@ -1418,6 +1432,14 @@ impl<'a> BindingsBuilder<'a> {
                     }
                     _ => None,
                 })
+                .collect(),
+            Some(Expr::BoolOp(ExprBoolOp {
+                range: _,
+                op: BoolOp::And,
+                values,
+            })) => values
+                .into_iter()
+                .flat_map(|e| Self::narrow_ops(Some(e)))
                 .collect(),
             _ => Vec::new(),
         }
@@ -1650,10 +1672,11 @@ impl<'a> BindingsBuilder<'a> {
                     for (name, op, op_range) in narrow_ops.iter() {
                         self.bind_narrow_op(name.clone(), op.clone(), *op_range, use_range);
                     }
-                    for (name, op, op_range) in self.narrow_ops(test) {
-                        self.bind_narrow_op(name.clone(), op.clone(), op_range, use_range);
-                        narrow_ops.push((name, op.negate(), op_range));
+                    let new_narrow_ops = Self::narrow_ops(test);
+                    for (name, op, op_range) in new_narrow_ops.iter() {
+                        self.bind_narrow_op(name.clone(), op.clone(), *op_range, use_range);
                     }
+                    narrow_ops.extend(Self::negate_narrow_ops(new_narrow_ops));
                     self.stmts(body);
                     mem::swap(&mut self.scopes.last_mut().flow, &mut base);
                     branches.push(base);

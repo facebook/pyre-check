@@ -108,3 +108,32 @@ def f1(x: type[A] | type[B]):
         assert_type(x, type[A] | type[B])
     "#,
 );
+
+testcase!(
+    test_and,
+    r#"
+from typing import assert_type, Never
+def f(x: bool | None):
+    if x is True and x is None:
+        assert_type(x, Never)
+    else:
+        assert_type(x, bool | None)
+    "#,
+);
+
+testcase!(
+    test_elif,
+    r#"
+from typing import assert_type
+def f(x: str | None, y: int | None):
+    if x is None:
+        assert_type(x, None)
+        assert_type(y, int | None)
+    elif y is None:
+        assert_type(x, str)
+        assert_type(y, None)
+    else:
+        assert_type(x, str)
+        assert_type(y, int)
+    "#,
+);
