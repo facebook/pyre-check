@@ -506,48 +506,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     }
                 }
-                for kw in keywords {
-                    let mut hint = None;
-                    if need_positional > 0 {
-                        self.error(
-                            kw.range,
-                            format!(
-                                "Expected {}",
-                                count(need_positional, "more positional argument")
-                            ),
-                        );
-                        need_positional = 0;
-                    } else {
-                        match &kw.arg {
-                            None => {
-                                self.error_todo(
-                                    "call_infer: unsupported **kwargs argument to call",
-                                    kw.range,
-                                );
-                            }
-                            Some(id) => {
-                                hint = kwargs;
-                                if let Some(&p_idx) = seen_names.get(&id.id) {
-                                    self.error(
-                                        kw.range,
-                                        format!("Multiple values for argument '{}'", id.id),
-                                    );
-                                    params[p_idx].visit(|ty| hint = Some(ty));
-                                } else if let Some(&p_idx) = kwparams.get(&id.id) {
-                                    seen_names.insert(id.id.clone(), p_idx);
-                                    params[p_idx].visit(|ty| hint = Some(ty));
-                                } else if kwargs.is_none() {
-                                    self.error(
-                                        kw.range,
-                                        format!("Unexpected keyword argument '{}'", id.id),
-                                    );
-                                }
-                            }
-                        }
-                    }
-                    self.expr(&kw.value, hint);
-                }
                 if need_positional > 0 {
+                    let range = keywords.first().map_or(range, |kw| kw.range);
                     self.error(
                         range,
                         format!(
@@ -555,12 +515,41 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             count(need_positional, "more positional argument")
                         ),
                     );
-                } else if extra_arg_pos.is_none() {
-                    for (name, &p_idx) in kwparams.iter() {
-                        let required = params[p_idx].is_required();
-                        if required && !seen_names.contains_key(name) {
-                            self.error(range, format!("Missing argument '{}'", name));
+                }
+                for kw in keywords {
+                    let mut hint = None;
+                    match &kw.arg {
+                        None => {
+                            self.error_todo(
+                                "call_infer: unsupported **kwargs argument to call",
+                                kw.range,
+                            );
                         }
+                        Some(id) => {
+                            hint = kwargs;
+                            if let Some(&p_idx) = seen_names.get(&id.id) {
+                                self.error(
+                                    kw.range,
+                                    format!("Multiple values for argument '{}'", id.id),
+                                );
+                                params[p_idx].visit(|ty| hint = Some(ty));
+                            } else if let Some(&p_idx) = kwparams.get(&id.id) {
+                                seen_names.insert(id.id.clone(), p_idx);
+                                params[p_idx].visit(|ty| hint = Some(ty));
+                            } else if kwargs.is_none() {
+                                self.error(
+                                    kw.range,
+                                    format!("Unexpected keyword argument '{}'", id.id),
+                                );
+                            }
+                        }
+                    }
+                    self.expr(&kw.value, hint);
+                }
+                for (name, &p_idx) in kwparams.iter() {
+                    let required = params[p_idx].is_required();
+                    if required && !seen_names.contains_key(name) {
+                        self.error(range, format!("Missing argument '{}'", name));
                     }
                 }
                 callable.ret

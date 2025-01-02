@@ -2666,6 +2666,16 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "Unexpected keyword argument 'a'",
+      "description": "Unexpected keyword argument 'a'",
+      "line": 29,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 29
+    },
+    {
+      "code": -2,
       "column": 13,
       "concise_description": "Unexpected keyword argument 'b'",
       "description": "Unexpected keyword argument 'b'",

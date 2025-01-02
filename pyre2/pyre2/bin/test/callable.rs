@@ -145,8 +145,8 @@ testcase!(
 def test(x: int, y: str, /): ...
 test(1, "hello") # OK
 test(1) # E: Expected 1 more positional argument
-test(1, y="hello") # E: Expected 1 more positional argument
-test(1, "hello", 2) # E: Expected 2 positional arguments
+test(1, y="hello") # E: Expected 1 more positional argument # E: Unexpected keyword argument 'y'
+test(1, "hello", 2) # E: Expected 2 positional arguments, got 3
 "#,
 );
 
@@ -155,7 +155,7 @@ testcase!(
     r#"
 def test(*, x: int, y: str): ...
 test(x=1, y="hello") # OK
-test(1, "hello") # E: Expected 0 positional arguments, got 2
+test(1, "hello") # E: Expected 0 positional arguments, got 2 # E: Missing argument 'x' # E: Missing argument 'y'
 test(x=1) # E: Missing argument 'y'
 test(y="hello") # E: Missing argument 'x'
 "#,
