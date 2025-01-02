@@ -234,3 +234,11 @@ def g():
     assert_type(x, Never)
     "#,
 );
+
+testcase!(
+    test_ellipsis_attr,
+    r#"
+x = ...
+x.x  # E: Object of class `EllipsisType` has no attribute `x`
+    "#,
+);
