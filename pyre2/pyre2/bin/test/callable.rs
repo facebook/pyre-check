@@ -267,6 +267,66 @@ test(x="", *(0, 1)) # E: EXPECTED Literal[0] <: str # E: Multiple values for arg
 );
 
 testcase!(
+    test_splat_kwargs,
+    r#"
+def f(x: int, y: int, z: int): ...
+def test(kwargs: dict[str, int]):
+    f(**kwargs) # OK
+    f(1, **kwargs) # OK
+"#,
+);
+
+testcase!(
+    test_splat_kwargs_mixed_with_keywords,
+    r#"
+def f(x: str, y: int, z: int): ...
+def test(kwargs: dict[str, int]):
+    f("foo", **kwargs) # OK
+    f(x="foo", **kwargs) # OK
+    f(**kwargs) # E: EXPECTED int <: str
+"#,
+);
+
+testcase!(
+    test_splat_kwargs_multi,
+    r#"
+def f(x: int, y: int, z: int): ...
+def test(kwargs1: dict[str, int], kwargs2: dict[str, str]):
+    f(**kwargs1, **kwargs2) # E: EXPECTED str <: int
+"#,
+);
+
+testcase!(
+    test_splat_kwargs_mapping,
+    r#"
+from typing import Mapping
+def f(x: int, y: int, z: int): ...
+def test(kwargs: Mapping[str, int]):
+    f(**kwargs) # OK
+"#,
+);
+
+testcase!(
+    test_splat_kwargs_wrong_key,
+    r#"
+def f(x: int): ...
+def test(kwargs: dict[int, str]):
+    f(**kwargs) # E: Expected argument after ** to have `str` keys, got: int # E: Missing argument 'x'
+"#,
+);
+
+testcase!(
+    test_splat_kwargs_to_kwargs_param,
+    r#"
+def f(**kwargs: int): ...
+def g(**kwargs: str): ...
+def test(kwargs: dict[str, int]):
+    f(**kwargs) # OK
+    g(**kwargs) # E: EXPECTED int <: str
+"#,
+);
+
+testcase!(
     test_callable_async,
     r#"
 from typing import Any, Awaitable, Callable, Coroutine

@@ -26,6 +26,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::Iterable;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::LookupResult;
+use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::dunder;
@@ -516,17 +517,43 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ),
                     );
                 }
+                let mut splat_kwargs = Vec::new();
                 for kw in keywords {
-                    let mut hint = None;
                     match &kw.arg {
                         None => {
-                            self.error_todo(
-                                "call_infer: unsupported **kwargs argument to call",
-                                kw.range,
-                            );
+                            let ty = self.expr_infer(&kw.value);
+                            // TODO: TypedDict, ParamSpec kwargs
+                            match self.decompose_dict(&ty) {
+                                Some(UnwrappedDict { key, value }) => {
+                                    if self.solver().is_subset_eq(
+                                        &key,
+                                        &self.stdlib.str().to_type(),
+                                        self.type_order(),
+                                    ) {
+                                        kwargs.iter().for_each(|want| {
+                                            self.check_type(want, &value, kw.range);
+                                        });
+                                        splat_kwargs.push((value, kw.range));
+                                    } else {
+                                        self.error(
+                                            kw.value.range(),
+                                            format!("Expected argument after ** to have `str` keys, got: {}", key.deterministic_printing())
+                                        );
+                                    }
+                                }
+                                None => {
+                                    self.error(
+                                        kw.value.range(),
+                                        format!(
+                                            "Expected argument after ** to be a mapping, got: {}",
+                                            ty.deterministic_printing()
+                                        ),
+                                    );
+                                }
+                            }
                         }
                         Some(id) => {
-                            hint = kwargs;
+                            let mut hint = kwargs;
                             if let Some(&p_idx) = seen_names.get(&id.id) {
                                 self.error(
                                     kw.range,
@@ -542,14 +569,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     format!("Unexpected keyword argument '{}'", id.id),
                                 );
                             }
+                            self.expr(&kw.value, hint);
                         }
                     }
-                    self.expr(&kw.value, hint);
                 }
                 for (name, &p_idx) in kwparams.iter() {
-                    let required = params[p_idx].is_required();
-                    if required && !seen_names.contains_key(name) {
-                        self.error(range, format!("Missing argument '{}'", name));
+                    if !seen_names.contains_key(name) {
+                        let param = &params[p_idx];
+                        if splat_kwargs.is_empty() && param.is_required() {
+                            self.error(range, format!("Missing argument '{}'", name));
+                        }
+                        for (ty, range) in &splat_kwargs {
+                            param.visit(|want| {
+                                self.check_type(want, ty, *range);
+                            });
+                        }
                     }
                 }
                 callable.ret

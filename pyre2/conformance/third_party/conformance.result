@@ -238,8 +238,8 @@
     "Line 41: Unexpected errors ['assert_type(Unpack[TD1], TD1) failed']",
     "Line 47: Unexpected errors ['EXPECTED Literal[1] <: Unpack[TD2]', \"EXPECTED Literal[''] <: Unpack[TD2]\", \"EXPECTED Literal['5'] <: Unpack[TD2]\"]",
     "Line 49: Unexpected errors [\"Unexpected keyword argument 'v1'\", \"Unexpected keyword argument 'v3'\"]",
-    "Line 50: Unexpected errors ['TODO: call_infer: unsupported **kwargs argument to call']",
-    "Line 62: Unexpected errors [\"Missing argument 'v3'\", 'TODO: call_infer: unsupported **kwargs argument to call']",
+    "Line 50: Unexpected errors ['Expected argument after ** to be a mapping, got: TD2']",
+    "Line 62: Unexpected errors [\"Missing argument 'v3'\", 'Expected argument after ** to be a mapping, got: TD2']",
     "Line 99: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TD2]]], None] <: TDProtocol1']",
     "Line 100: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TD2]]], None] <: TDProtocol2']",
     "Line 104: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TD2]]], None] <: TDProtocol6']"
@@ -354,11 +354,11 @@
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', \"Missing argument 'x'\"]",
     "Line 69: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', \"Missing argument 'x'\"]",
-    "Line 98: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1', 'TODO: call_infer: unsupported **kwargs argument to call']",
+    "Line 98: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'Expected 0 positional arguments, got 1', 'Expected argument after ** to be a mapping, got: Unknown']",
     "Line 104: Unexpected errors ['assert_type(object, Class7) failed']"
   ],
   "constructors_call_type.py": [
-    "Line 25: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'TODO: call_infer: unsupported **kwargs argument to call']",
+    "Line 25: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class1', 'Expected argument after ** to be a mapping, got: Unknown']",
     "Line 35: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]', 'EXPECTED object <: Class2', 'Expected 0 positional arguments, got 1']",
     "Line 63: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 71: Unexpected errors ['Expected a callable, got type[?_]']",
@@ -740,7 +740,7 @@
     "Line 68: Unexpected errors ['`Args[_]` is not iterable']",
     "Line 74: Unexpected errors ['EXPECTED Callable[[Var[Args[_]], KwArgs[Kwargs[_]]], None] <: Callable[ParamSpec(?_), None]']",
     "Line 79: Unexpected errors ['Answers::expr_infer wrong number of arguments to call']",
-    "Line 82: Unexpected errors ['`Args[_]` is not iterable', 'TODO: call_infer: unsupported **kwargs argument to call']",
+    "Line 82: Unexpected errors ['`Args[_]` is not iterable', 'Expected argument after ** to be a mapping, got: Kwargs[_]']",
     "Line 85: Unexpected errors ['EXPECTED Callable[[Var[Args[_]], KwArgs[Kwargs[_]]], None] <: Callable[ParamSpec(?_), None]']",
     "Line 89: Unexpected errors ['Answers::expr_infer wrong number of arguments to call', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 96: Unexpected errors ['EXPECTED Callable[[int, str], int] <: Callable[ParamSpec(@_), int]', 'EXPECTED Literal[1] <: Args[_]', \"EXPECTED Literal['A'] <: Args[_]\"]",
