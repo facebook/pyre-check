@@ -794,8 +794,10 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     /// In methods, we track assignments to `self` attribute targets so that we can
-    /// be aware of class fields defined in methods. This is particularly important in
-    /// constructors, we currently are applying this logic for all methods.
+    /// be aware of class fields defined in methods.
+    ///
+    /// We currently apply this logic in all methods, although downstream code only uses
+    /// attributes defined in constructors; this may change in the future.
     ///
     /// Returns `true` if the attribute was a self attribute.
     fn bind_attr_if_self(
