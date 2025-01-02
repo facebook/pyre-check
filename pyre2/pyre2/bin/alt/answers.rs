@@ -717,9 +717,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::Type(box Type::ClassType(cls)) => vec![self.iterate_by_metaclass(cls, range)],
             Type::Union(ts) => ts.iter().flat_map(|t| self.iterate(t, range)).collect(),
-            _ => vec![Iterable::OfType(
-                self.error(range, format!("`{iterable}` is not iterable")),
-            )],
+            _ => vec![Iterable::OfType(self.error(
+                range,
+                format!(
+                    "`{}` is not iterable",
+                    iterable.clone().deterministic_printing()
+                ),
+            ))],
         }
     }
 
