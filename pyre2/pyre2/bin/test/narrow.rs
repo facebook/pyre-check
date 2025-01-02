@@ -137,3 +137,25 @@ def f(x: str | None, y: int | None):
         assert_type(y, int)
     "#,
 );
+
+testcase!(
+    test_not,
+    r#"
+from typing import assert_type
+def f(x: str | None):
+    if not x is None:
+        assert_type(x, str)
+    else:
+        assert_type(x, None)
+    "#,
+);
+
+testcase!(
+    test_not_and,
+    r#"
+from typing import assert_type
+def f(x: bool | None):
+    if not (x is True and x is None):
+        assert_type(x, bool | None)
+    "#,
+);

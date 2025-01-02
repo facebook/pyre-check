@@ -29,6 +29,7 @@ use ruff_python_ast::ExprLambda;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprSubscript;
+use ruff_python_ast::ExprUnaryOp;
 use ruff_python_ast::ExprYield;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Parameters;
@@ -42,6 +43,7 @@ use ruff_python_ast::StmtReturn;
 use ruff_python_ast::StringFlags;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
+use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::Entry;
@@ -1441,6 +1443,11 @@ impl<'a> BindingsBuilder<'a> {
                 .into_iter()
                 .flat_map(|e| Self::narrow_ops(Some(e)))
                 .collect(),
+            Some(Expr::UnaryOp(ExprUnaryOp {
+                range: _,
+                op: UnaryOp::Not,
+                operand: box e,
+            })) => Self::negate_narrow_ops(Self::narrow_ops(Some(e))),
             _ => Vec::new(),
         }
     }
