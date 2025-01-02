@@ -120,7 +120,7 @@ impl Definitions {
     }
 
     /// Add an implicit `from builtins import *` to the definitions.
-    pub fn inject_implicit(&mut self) {
+    pub fn inject_builtins(&mut self) {
         self.import_all.entry(ModuleName::builtins()).or_default();
     }
 

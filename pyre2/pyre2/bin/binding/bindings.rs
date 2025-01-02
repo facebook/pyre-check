@@ -186,7 +186,7 @@ impl Static {
     ) {
         let mut d = Definitions::new(x, module_info.name(), module_info.is_init(), config);
         if top_level && module_info.name() != ModuleName::builtins() {
-            d.inject_implicit();
+            d.inject_builtins();
         }
         for (name, (range, defn, count)) in d.definitions {
             self.add_with_count(name, range, count).uses_key_import =
@@ -428,7 +428,7 @@ impl Bindings {
             .stat
             .stmts(&x, &module_info, true, modules, config);
         if module_info.name() != ModuleName::builtins() {
-            builder.inject_implicit();
+            builder.inject_builtins();
         }
         builder.stmts(x);
         assert_eq!(builder.scopes.len(), 1);
@@ -497,7 +497,7 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn inject_implicit(&mut self) {
+    fn inject_builtins(&mut self) {
         let builtins_module = ModuleName::builtins();
         match self.modules.get(builtins_module) {
             Ok(builtins_export) => {
