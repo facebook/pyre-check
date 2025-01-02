@@ -1020,18 +1020,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::ExceptionHandler(box ann, is_star) => {
                 let base_exception_type = self.stdlib.base_exception().to_type();
-                let base_exception_group_type = self
-                    .stdlib
-                    .base_exception_group(Type::Any(AnyStyle::Implicit))
-                    .to_type();
+                let base_exception_group_any_type = if *is_star {
+                    // Only query for `BaseExceptionGroup` if we see an `except*` handler (which
+                    // was introduced in Python3.11).
+                    // We can't unconditionally query for `BaseExceptionGroup` until Python3.10
+                    // is out of its EOL period.
+                    Some(
+                        self.stdlib
+                            .base_exception_group(Type::Any(AnyStyle::Implicit))
+                            .to_type(),
+                    )
+                } else {
+                    None
+                };
                 let check_exception_type = |exception_type: Type, range| {
                     let exception = self.untype(exception_type, range);
                     self.check_type(&base_exception_type, &exception, range);
-                    if *is_star
+                    if let Some(base_exception_group_any_type) =
+                        base_exception_group_any_type.as_ref()
                         && !exception.is_any()
                         && self.solver().is_subset_eq(
                             &exception,
-                            &base_exception_group_type,
+                            base_exception_group_any_type,
                             self.type_order(),
                         )
                     {
