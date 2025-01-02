@@ -43,6 +43,8 @@ pub struct Stdlib {
     builtins_type: Option<Class>,
     ellipsis_type: Option<Class>,
     none_type: Option<Class>,
+    function_type: Option<Class>,
+    method_type: Option<Class>,
     // We want an owned ClassType for object because it allows the MRO code to clone less frequently.
     object_class_type: Option<ClassType>,
 }
@@ -82,6 +84,8 @@ impl Stdlib {
             type_var_tuple: lookup_class(typing, &Name::new("TypeVarTuple")),
             type_alias_type: lookup_class(typing, &Name::new("TypeAliasType")),
             traceback_type: lookup_class(types, &Name::new("TracebackType")),
+            function_type: lookup_class(types, &Name::new("FunctionType")),
+            method_type: lookup_class(types, &Name::new("MethodType")),
 
             object_class_type: lookup_class(builtins, &Name::new("object"))
                 .map(|obj| ClassType::new_for_stdlib(obj, TArgs::default())),
@@ -239,5 +243,13 @@ impl Stdlib {
 
     pub fn traceback_type(&self) -> ClassType {
         Self::primitive(&self.traceback_type)
+    }
+
+    pub fn function_type(&self) -> ClassType {
+        Self::primitive(&self.function_type)
+    }
+
+    pub fn method_type(&self) -> ClassType {
+        Self::primitive(&self.method_type)
     }
 }

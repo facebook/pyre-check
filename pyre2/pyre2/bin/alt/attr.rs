@@ -203,12 +203,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Kwargs(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_kwargs())),
             Type::None => Some(AttributeBase::ClassInstance(stdlib.none_type())),
             Type::Never(_) => Some(AttributeBase::Never),
+            Type::Callable(_) => Some(AttributeBase::ClassInstance(stdlib.function_type())),
+            Type::BoundMethod(_, _) => Some(AttributeBase::ClassInstance(stdlib.method_type())),
             Type::Ellipsis => Some(AttributeBase::ClassInstance(stdlib.ellipsis_type())),
             Type::Var(v) => self.as_attribute_base(self.solver().force_var(v), stdlib),
             // TODO: check to see which ones should have class representations
             Type::Union(_)
-            | Type::Callable(_)
-            | Type::BoundMethod(_, _)
             | Type::SpecialForm(_)
             | Type::Type(_)
             | Type::Intersect(_)

@@ -259,7 +259,7 @@
     "Line 144: Unexpected errors ['EXPECTED Class7_2 <: Proto7[int, int]']",
     "Line 168: Unexpected errors ['EXPECTED Callable[[Any], Any] <: Proto8']",
     "Line 184: Unexpected errors ['EXPECTED type[Proto9[?_, ?_]] <: object']",
-    "Line 196: Unexpected errors [\"Missing argument 'flush'\", 'TODO: Expr::attr_infer attribute base undefined for type: Callable[[int], str]']",
+    "Line 196: Unexpected errors [\"Missing argument 'flush'\", 'Object of class `FunctionType` has no attribute `other_attribute`']",
     "Line 216: Unexpected errors ['EXPECTED Callable[[], None] <: Proto10']",
     "Line 236: Unexpected errors ['EXPECTED Callable[[int, str, None], Any] <: Proto11']",
     "Line 237: Unexpected errors ['EXPECTED Callable[[int, str, None], Any] <: Proto11']",

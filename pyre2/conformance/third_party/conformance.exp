@@ -3581,8 +3581,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Callable[[int], str]",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: Callable[[int], str]",
+      "concise_description": "Object of class `FunctionType` has no attribute `other_attribute`",
+      "description": "Object of class `FunctionType` has no attribute `other_attribute`",
       "line": 196,
       "name": "PyreError",
       "stop_column": 31,
@@ -3601,8 +3601,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Callable[[int], str]",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: Callable[[int], str]",
+      "concise_description": "Object of class `FunctionType` has no attribute `other_attribute2`",
+      "description": "Object of class `FunctionType` has no attribute `other_attribute2`",
       "line": 197,
       "name": "PyreError",
       "stop_column": 32,

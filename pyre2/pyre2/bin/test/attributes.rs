@@ -236,6 +236,30 @@ def g():
 );
 
 testcase!(
+    test_callable_attr,
+    r#"
+from typing import assert_type
+from types import CodeType
+def f():
+    pass
+def g():
+    assert_type(f.__code__, CodeType)
+    "#,
+);
+
+testcase!(
+    test_boundmethod_attr,
+    r#"
+from typing import assert_type
+class A:
+    def f(self):
+        pass
+def g(a: A):
+    assert_type(a.f.__self__, object)
+    "#,
+);
+
+testcase!(
     test_ellipsis_attr,
     r#"
 x = ...
