@@ -1011,9 +1011,9 @@ x = "test"
 );
 
 testcase!(
-    test_incorrect_inference,
+    test_identity_applied_to_list,
     r#"
-from typing import assert_type, Any
+from typing import assert_type
 def id[T](x: T) -> T:
     return x
 
