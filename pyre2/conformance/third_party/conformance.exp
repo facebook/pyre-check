@@ -4819,16 +4819,6 @@
     },
     {
       "code": -2,
-      "column": 38,
-      "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]",
       "description": "Expected `__init__` to be a callable, got Callable[[super, Any], None] | Callable[[super, Any, Any], None] | Callable[[super], None]",
@@ -4885,16 +4875,6 @@
       "line": 57,
       "name": "PyreError",
       "stop_column": 32,
-      "stop_line": 57
-    },
-    {
-      "code": -2,
-      "column": 38,
-      "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "line": 57,
-      "name": "PyreError",
-      "stop_column": 43,
       "stop_line": 57
     },
     {
@@ -5082,21 +5062,11 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
+      "concise_description": "Expected 0 positional arguments, got 1",
+      "description": "Expected 0 positional arguments, got 1",
       "line": 98,
       "name": "PyreError",
       "stop_column": 35,
-      "stop_line": 98
-    },
-    {
-      "code": -2,
-      "column": 37,
-      "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "line": 98,
-      "name": "PyreError",
-      "stop_column": 42,
       "stop_line": 98
     },
     {
@@ -5149,26 +5119,6 @@
       "line": 25,
       "name": "PyreError",
       "stop_column": 48,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 37,
       "stop_line": 25
     },
     {
@@ -10095,8 +10045,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
+      "concise_description": "`Args[_]` is not iterable",
+      "description": "`Args[_]` is not iterable",
       "line": 68,
       "name": "PyreError",
       "stop_column": 19,
@@ -10105,8 +10055,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
+      "concise_description": "`Args[_]` is not iterable",
+      "description": "`Args[_]` is not iterable",
       "line": 70,
       "name": "PyreError",
       "stop_column": 16,
@@ -10115,8 +10065,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
+      "concise_description": "`Args[_]` is not iterable",
+      "description": "`Args[_]` is not iterable",
       "line": 72,
       "name": "PyreError",
       "stop_column": 16,
@@ -10145,8 +10095,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
+      "concise_description": "`Args[_]` is not iterable",
+      "description": "`Args[_]` is not iterable",
       "line": 82,
       "name": "PyreError",
       "stop_column": 21,
@@ -10175,8 +10125,8 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "TODO: Starred(ExprStarred - Answers::expr_infer",
-      "description": "TODO: Starred(ExprStarred - Answers::expr_infer",
+      "concise_description": "`Args[_]` is not iterable",
+      "description": "`Args[_]` is not iterable",
       "line": 83,
       "name": "PyreError",
       "stop_column": 23,

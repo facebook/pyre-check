@@ -446,7 +446,7 @@ impl Answers {
     }
 }
 
-enum Iterable {
+pub enum Iterable {
     OfType(Type),
     FixedLen(Vec<Type>),
 }
@@ -686,7 +686,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Iterable::OfType(ty)
     }
 
-    fn iterate(&self, iterable: &Type, range: TextRange) -> Vec<Iterable> {
+    pub fn iterate(&self, iterable: &Type, range: TextRange) -> Vec<Iterable> {
         match iterable {
             Type::ClassType(cls) => {
                 let call_method = |method_name: &Name,

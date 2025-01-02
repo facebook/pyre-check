@@ -23,6 +23,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
+use crate::alt::answers::Iterable;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::LookupResult;
 use crate::ast::Ast;
@@ -61,6 +62,7 @@ pub enum CallArg<'a> {
     /// when we only know the types of the arguments but not the original expressions.
     Type(&'a Type, TextRange),
     Expr(&'a Expr),
+    Star(&'a Expr, TextRange),
 }
 
 impl Ranged for CallArg<'_> {
@@ -68,26 +70,115 @@ impl Ranged for CallArg<'_> {
         match self {
             Self::Type(_, r) => *r,
             Self::Expr(e) => e.range(),
+            Self::Star(_, r) => *r,
         }
     }
 }
 
 impl CallArg<'_> {
-    /// Check an argument against the type hint (if any) on the corresponding parameter
-    fn check_against_hint<Ans: LookupAnswer>(
-        &self,
-        answers: &AnswersSolver<Ans>,
-        hint: Option<&Type>,
-    ) {
+    // Splat arguments might be fixed-length tuples, which are handled precisely, or have unknown
+    // length. This function evaluates splat args to determine how many params should be consumed,
+    // but does not evaulate other expressions, which might be contextually typed.
+    fn pre_eval<Ans: LookupAnswer>(&self, solver: &AnswersSolver<Ans>) -> CallArgPreEval {
         match self {
-            Self::Type(ty, r) => {
-                if let Some(hint) = hint {
-                    answers.check_type(hint, ty, *r);
+            Self::Type(ty, _) => CallArgPreEval::Type(ty, false),
+            Self::Expr(e) => CallArgPreEval::Expr(e, false),
+            Self::Star(e, range) => {
+                let ty = solver.expr_infer(e);
+                let iterables = solver.iterate(&ty, *range);
+                // If we have a union of iterables, use a fixed length only if every iterable is
+                // fixed and has the same length. Otherwise, use star.
+                let mut fixed_lens = Vec::new();
+                for x in iterables.iter() {
+                    match x {
+                        Iterable::FixedLen(xs) => fixed_lens.push(xs.len()),
+                        Iterable::OfType(_) => {}
+                    }
+                }
+                if !fixed_lens.is_empty()
+                    && fixed_lens.len() == iterables.len()
+                    && fixed_lens.iter().all(|len| *len == fixed_lens[0])
+                {
+                    let mut fixed_tys = vec![Vec::new(); fixed_lens[0]];
+                    for x in iterables {
+                        if let Iterable::FixedLen(xs) = x {
+                            for (i, ty) in xs.into_iter().enumerate() {
+                                fixed_tys[i].push(ty);
+                            }
+                        }
+                    }
+                    let tys = fixed_tys.map(|tys| solver.unions(tys));
+                    CallArgPreEval::Fixed(tys, 0)
+                } else {
+                    let mut star_tys = Vec::new();
+                    for x in iterables {
+                        match x {
+                            Iterable::OfType(ty) => star_tys.push(ty.clone()),
+                            Iterable::FixedLen(tys) => star_tys.extend(tys),
+                        }
+                    }
+                    let ty = solver.unions(&star_tys);
+                    CallArgPreEval::Star(ty, false)
                 }
             }
-            Self::Expr(e) => {
-                answers.expr(e, hint);
+        }
+    }
+}
+
+// Pre-evaluated args are iterable. Type/Expr/Star variants iterate once (tracked via bool field),
+// Fixed variant iterates over the the vec (tracked via usize field).
+enum CallArgPreEval<'a> {
+    Type(&'a Type, bool),
+    Expr(&'a Expr, bool),
+    Star(Type, bool),
+    Fixed(Vec<Type>, usize),
+}
+
+impl CallArgPreEval<'_> {
+    fn step(&self) -> bool {
+        match self {
+            Self::Type(_, done) | Self::Expr(_, done) | Self::Star(_, done) => !*done,
+            Self::Fixed(tys, i) => *i < tys.len(),
+        }
+    }
+
+    fn is_star(&self) -> bool {
+        matches!(self, Self::Star(..))
+    }
+
+    fn post_check<Ans: LookupAnswer>(
+        &mut self,
+        solver: &AnswersSolver<Ans>,
+        hint: &Type,
+        vararg: bool,
+        range: TextRange,
+    ) {
+        match self {
+            Self::Type(ty, done) => {
+                *done = true;
+                solver.check_type(hint, ty, range);
             }
+            Self::Expr(x, done) => {
+                *done = true;
+                solver.expr(x, Some(hint));
+            }
+            Self::Star(ty, done) => {
+                *done = vararg;
+                solver.check_type(hint, ty, range);
+            }
+            Self::Fixed(tys, i) => {
+                solver.check_type(hint, &tys[*i], range);
+                *i += 1;
+            }
+        }
+    }
+
+    fn post_infer<Ans: LookupAnswer>(&mut self, solver: &AnswersSolver<Ans>) {
+        match self {
+            Self::Expr(x, _) => {
+                solver.expr_infer(x);
+            }
+            _ => {}
         }
     }
 }
@@ -329,59 +420,72 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
-        let positional_count_error = |arg_range, n_expected| {
-            let (expected, actual) = if self_arg.is_none() {
-                (
-                    count(n_expected as usize, "positional argument"),
-                    args.len().to_string(),
-                )
-            } else if n_expected < 1 {
-                (
-                    "0 positional arguments".to_owned(),
-                    format!("{} (including implicit `self`)", args.len() + 1),
-                )
-            } else {
-                (
-                    count(n_expected as usize - 1, "positional argument"),
-                    args.len().to_string(),
-                )
-            };
-            self.error(arg_range, format!("Expected {expected}, got {actual}"))
-        };
         let iargs = self_arg.iter().chain(args.iter());
         let ret = match callable.params {
             Params::List(params) => {
                 let mut iparams = params.iter().enumerate().peekable();
-                let mut num_positional = 0;
+                let mut num_positional_params = 0;
+                let mut num_positional_args = 0;
                 let mut seen_names: SmallMap<Name, usize> = SmallMap::new();
+                let mut extra_arg_pos = None;
                 for arg in iargs {
-                    let mut hint = None;
-                    if let Some((p_idx, p)) = iparams.peek() {
-                        match p {
-                            Param::PosOnly(ty, _required) => {
-                                num_positional += 1;
-                                iparams.next();
-                                hint = Some(ty)
-                            }
-                            Param::Pos(name, ty, _required) => {
-                                num_positional += 1;
-                                seen_names.insert(name.clone(), *p_idx);
-                                iparams.next();
-                                hint = Some(ty)
-                            }
-                            Param::VarArg(ty) => hint = Some(ty),
-                            Param::KwOnly(..) | Param::Kwargs(..) => {
-                                if num_positional >= 0 {
-                                    positional_count_error(arg.range(), num_positional);
-                                    num_positional = -1;
+                    let mut arg_pre = arg.pre_eval(self);
+                    while arg_pre.step() {
+                        num_positional_args += 1;
+                        let param = if let Some((p_idx, p)) = iparams.peek() {
+                            match p {
+                                Param::PosOnly(ty, _required) => {
+                                    num_positional_params += 1;
+                                    iparams.next();
+                                    Some((ty, false))
                                 }
+                                Param::Pos(name, ty, _required) => {
+                                    num_positional_params += 1;
+                                    seen_names.insert(name.clone(), *p_idx);
+                                    iparams.next();
+                                    Some((ty, false))
+                                }
+                                Param::VarArg(ty) => Some((ty, true)),
+                                Param::KwOnly(..) | Param::Kwargs(..) => None,
                             }
+                        } else {
+                            None
                         };
-                    } else if num_positional >= 0 {
-                        positional_count_error(arg.range(), num_positional);
-                        num_positional = -1;
+                        match param {
+                            Some((hint, vararg)) => {
+                                arg_pre.post_check(self, hint, vararg, arg.range())
+                            }
+                            None => {
+                                arg_pre.post_infer(self);
+                                if arg_pre.is_star() {
+                                    num_positional_args -= 1;
+                                }
+                                if extra_arg_pos.is_none() && !arg_pre.is_star() {
+                                    extra_arg_pos = Some(arg.range());
+                                }
+                                break;
+                            }
+                        }
                     }
-                    arg.check_against_hint(self, hint);
+                }
+                if let Some(arg_range) = extra_arg_pos {
+                    let (expected, actual) = if self_arg.is_none() {
+                        (
+                            count(num_positional_params as usize, "positional argument"),
+                            num_positional_args.to_string(),
+                        )
+                    } else if num_positional_params < 1 {
+                        (
+                            "0 positional arguments".to_owned(),
+                            format!("{} (including implicit `self`)", num_positional_args),
+                        )
+                    } else {
+                        (
+                            count(num_positional_params as usize - 1, "positional argument"),
+                            (num_positional_args - 1).to_string(),
+                        )
+                    };
+                    self.error(arg_range, format!("Expected {expected}, got {actual}"));
                 }
                 let mut need_positional = 0;
                 let mut kwparams = SmallMap::new();
@@ -451,7 +555,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             count(need_positional, "more positional argument")
                         ),
                     );
-                } else if num_positional >= 0 {
+                } else if extra_arg_pos.is_none() {
                     for (name, &p_idx) in kwparams.iter() {
                         let required = params[p_idx].is_required();
                         if required && !seen_names.contains_key(name) {
@@ -463,8 +567,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Params::Ellipsis => {
                 // Deal with Callable[..., R]
-                for t in iargs {
-                    t.check_against_hint(self, None);
+                for arg in iargs {
+                    arg.pre_eval(self).post_infer(self)
                 }
                 callable.ret
             }
@@ -1018,18 +1122,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::type_form(ParamSpec::new(name, self.module_info().dupe()).to_type())
                 } else {
                     let func_range = x.func.range();
+                    let args = x.arguments.args.map(|arg| match arg {
+                        Expr::Starred(x) => CallArg::Star(&x.value, x.range),
+                        _ => CallArg::Expr(arg),
+                    });
                     self.distribute_over_union(&ty_fun, |ty| {
                         let callable = self.as_call_target_or_error(
                             ty.clone(),
                             CallStyle::FreeForm,
                             func_range,
                         );
-                        self.call_infer(
-                            callable,
-                            &x.arguments.args.map(CallArg::Expr),
-                            &x.arguments.keywords,
-                            func_range,
-                        )
+                        self.call_infer(callable, &args, &x.arguments.keywords, func_range)
                     })
                 }
             }
