@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_is,
@@ -59,5 +60,51 @@ from typing import assert_type, Never
 def f(x: str):
     if x is None:
         assert_type(x, Never)
+    "#,
+);
+
+testcase!(
+    test_is_not_bool_literal,
+    r#"
+from typing import assert_type, Literal, Never
+def f1(x: bool):
+    if x is not True:
+        assert_type(x, Literal[False])
+def f2(x: Literal[True] | str):
+    if x is not True:
+        assert_type(x, str)
+    "#,
+);
+
+testcase_with_bug!(
+    test_is_not_enum_literal,
+    r#"
+from typing import assert_type, Literal
+import enum
+class E(enum.Enum):
+    X = 1
+    Y = 2
+def f1(x: Literal[E.X, E.Y]):
+    if x is not E.X:
+        assert_type(x, Literal[E.Y])
+def f2(x: E | int):
+    if x is not E.X:
+        assert_type(x, Literal[E.Y] | int)  # E: assert_type
+    "#,
+);
+
+testcase!(
+    test_is_classdef,
+    r#"
+from typing import assert_type
+class A: pass
+class B: pass
+def f1(x: type[A] | type[B]):
+    if x is A:
+        assert_type(x, type[A])
+    else:
+        # Note that we cannot narrow to `type[B]` here, as `type` is covariant and `x` may be a
+        # subtype of `A`.
+        assert_type(x, type[A] | type[B])
     "#,
 );

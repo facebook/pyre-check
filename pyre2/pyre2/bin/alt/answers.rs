@@ -1006,9 +1006,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // Get our best approximation of ty - right.
                 self.distribute_over_union(ty, |t| {
                     // Only certain literal types can be compared by identity.
-                    // TODO: support more types.
-                    match right {
-                        Type::None if *t == right => Type::never(),
+                    match (t, &right) {
+                        (
+                            _,
+                            Type::None | Type::Literal(Lit::Bool(_)) | Type::Literal(Lit::Enum(_)),
+                        ) if *t == right => Type::never(),
+                        (Type::ClassType(cls), Type::Literal(Lit::Bool(b)))
+                            if *cls == self.stdlib.bool() =>
+                        {
+                            Type::Literal(Lit::Bool(!b))
+                        }
+                        (
+                            Type::ClassType(left_cls),
+                            Type::Literal(Lit::Enum(box (right_cls, _name))),
+                        ) if *left_cls == *right_cls => {
+                            // TODO: narrow to a union of all other enum members.
+                            t.clone()
+                        }
                         _ => t.clone(),
                     }
                 })
