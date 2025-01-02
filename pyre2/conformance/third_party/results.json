@@ -3,7 +3,7 @@
   "pass": 8,
   "fail": 125,
   "pass_rate": 0.06,
-  "differences": 1438,
+  "differences": 1436,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -124,7 +124,7 @@
     "specialtypes_never.py": 5,
     "specialtypes_none.py": 4,
     "specialtypes_promotions.py": 4,
-    "specialtypes_type.py": 33,
+    "specialtypes_type.py": 31,
     "tuples_type_compat.py": 34,
     "tuples_unpacked.py": 14,
     "typeddicts_alt_syntax.py": 3,

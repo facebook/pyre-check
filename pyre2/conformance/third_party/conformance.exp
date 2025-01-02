@@ -19910,52 +19910,12 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 116,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 116
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Class `object` has no class attribute `__name__`",
-      "description": "Class `object` has no class attribute `__name__`",
-      "line": 116,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 116
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "Class `object` has no class attribute `unknown`",
       "description": "Class `object` has no class attribute `unknown`",
       "line": 117,
       "name": "PyreError",
       "stop_column": 14,
       "stop_line": 117
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 119
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Class `object` has no class attribute `__name__`",
-      "description": "Class `object` has no class attribute `__name__`",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 119
     },
     {
       "code": -2,

@@ -1453,8 +1453,6 @@
     "Line 107: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Type']",
     "Line 108: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Type']",
     "Line 110: Unexpected errors ['assert_type(BoundMethod[type, Callable[[type], tuple[type, ...]]], tuple[type, ...]) failed']",
-    "Line 116: Unexpected errors ['assert_type(Any, str) failed', 'Class `object` has no class attribute `__name__`']",
-    "Line 119: Unexpected errors ['assert_type(Any, str) failed', 'Class `object` has no class attribute `__name__`']",
     "Line 137: Unexpected errors ['assert_type(Type, type[Any]) failed']",
     "Line 139: Unexpected errors ['assert_type(type, type[Any]) failed']",
     "Line 152: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TA7, type[type[TypeVar[T]]]]\"]",

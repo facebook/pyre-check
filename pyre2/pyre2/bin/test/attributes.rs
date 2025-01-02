@@ -277,3 +277,21 @@ def f[T](x: T) -> T:
 assert_type(f.__code__, CodeType)
     "#,
 );
+
+testcase!(
+    test_metaclass_attr,
+    r#"
+from typing import assert_type
+
+class A: ...
+class B[T]: ...
+assert_type(A.mro(), list[type])
+assert_type(B[int].mro(), list[type])
+
+class Meta(type):
+    x: int
+class C(metaclass=Meta):
+    pass
+assert_type(C.x, int)
+    "#,
+);

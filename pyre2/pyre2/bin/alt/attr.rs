@@ -124,7 +124,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 match self.get_class_attribute(&class, attr_name) {
                     Ok(attr) => LookupResult::Found(attr.value),
                     Err(NoClassAttribute::NoClassMember) => {
-                        LookupResult::NotFound(NotFound::ClassAttribute(class))
+                        // Classes are instances of their metaclass, which defaults to `builtins.type`.
+                        let metadata = self.get_metadata_for_class(&class);
+                        let instance_attr = match metadata.metaclass() {
+                            Some(meta) => self.get_instance_attribute(meta, attr_name),
+                            None => {
+                                self.get_instance_attribute(&self.stdlib.builtins_type(), attr_name)
+                            }
+                        };
+                        match instance_attr {
+                            Some(attr) => LookupResult::Found(attr.value),
+                            None => LookupResult::NotFound(NotFound::ClassAttribute(class)),
+                        }
                     }
                     Err(NoClassAttribute::IsGenericMember) => {
                         LookupResult::Error(LookupError::ClassAttributeIsGeneric(class))
