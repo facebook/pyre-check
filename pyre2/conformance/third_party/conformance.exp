@@ -11870,16 +11870,6 @@
   "generics_type_erasure.py": [
     {
       "code": -2,
-      "column": 26,
-      "concise_description": "EXPECTED ?_ | None <: ?_",
-      "description": "EXPECTED ?_ | None <: ?_",
-      "line": 15,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "EXPECTED Literal[''] <: int | None",
       "description": "EXPECTED Literal[''] <: int | None",

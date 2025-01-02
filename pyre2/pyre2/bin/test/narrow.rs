@@ -19,6 +19,16 @@ def f(x: str | None):
 );
 
 testcase!(
+    test_is_not,
+    r#"
+from typing import assert_type
+def f(x: str | None):
+    if x is not None:
+        assert_type(x, str)
+    "#,
+);
+
+testcase!(
     test_if_else,
     r#"
 from typing import assert_type

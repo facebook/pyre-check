@@ -1413,6 +1413,9 @@ impl<'a> BindingsBuilder<'a> {
                 .zip(comparators)
                 .filter_map(|(op, right)| match op {
                     CmpOp::Is => Some((name.id.clone(), NarrowOp::Is(Box::new(right)), range)),
+                    CmpOp::IsNot => {
+                        Some((name.id.clone(), NarrowOp::IsNot(Box::new(right)), range))
+                    }
                     _ => None,
                 })
                 .collect(),

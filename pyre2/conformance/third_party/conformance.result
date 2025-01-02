@@ -885,7 +885,6 @@
     "Line 124: Unexpected errors ['assert_type(Literal[0+3j], complex) failed']"
   ],
   "generics_type_erasure.py": [
-    "Line 15: Unexpected errors ['EXPECTED ?_ | None <: ?_']",
     "Line 56: Unexpected errors ['assert_type(Any, bytes) failed']"
   ],
   "generics_typevartuple_args.py": [
