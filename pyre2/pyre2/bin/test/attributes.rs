@@ -266,3 +266,14 @@ x = ...
 x.x  # E: Object of class `EllipsisType` has no attribute `x`
     "#,
 );
+
+testcase!(
+    test_forall_attr,
+    r#"
+from typing import assert_type
+from types import CodeType
+def f[T](x: T) -> T:
+    return x
+assert_type(f.__code__, CodeType)
+    "#,
+);

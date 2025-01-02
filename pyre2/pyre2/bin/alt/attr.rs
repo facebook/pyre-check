@@ -206,13 +206,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Callable(_) => Some(AttributeBase::ClassInstance(stdlib.function_type())),
             Type::BoundMethod(_, _) => Some(AttributeBase::ClassInstance(stdlib.method_type())),
             Type::Ellipsis => Some(AttributeBase::ClassInstance(stdlib.ellipsis_type())),
+            Type::Forall(_, box base) => self.as_attribute_base(base, stdlib),
             Type::Var(v) => self.as_attribute_base(self.solver().force_var(v), stdlib),
             // TODO: check to see which ones should have class representations
             Type::Union(_)
             | Type::SpecialForm(_)
             | Type::Type(_)
             | Type::Intersect(_)
-            | Type::Forall(_, _)
             | Type::Unpack(_)
             | Type::Quantified(_) => None,
         }
