@@ -114,6 +114,15 @@ pub enum Key {
     Expect(TextRange),
     /// I am the result of joining several branches.
     Phi(Name, TextRange),
+    /// I am the result of narrowing a type. The two ranges are the range at which the operation is
+    /// defined and the one at which it is used. For example, in:
+    ///   if x is None:
+    ///       pass
+    ///   else:
+    ///       pass
+    /// The `x is None` operation is defined once in the `if` test but generates two key/binding
+    /// pairs, when it is used to narrow `x` in the `if` and the `else`, respectively.
+    Narrow(Name, TextRange, TextRange),
     /// The binding definition site, anywhere it occurs
     Anywhere(Name, TextRange),
 }
@@ -132,6 +141,7 @@ impl Ranged for Key {
             Self::Anon(r) => *r,
             Self::Expect(r) => *r,
             Self::Phi(_, r) => *r,
+            Self::Narrow(_, r, _) => *r,
             Self::Anywhere(_, r) => *r,
         }
     }
@@ -147,6 +157,7 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::Anon(r) => write!(f, "anon {r:?}"),
             Self::Expect(r) => write!(f, "expect {r:?}"),
             Self::Phi(n, r) => write!(f, "phi {n} {r:?}"),
+            Self::Narrow(n, r1, r2) => write!(f, "narrow {n} {r1:?} {r2:?}"),
             Self::Anywhere(n, r) => write!(f, "anywhere {n} {r:?}"),
             Self::ReturnType(x) => write!(f, "return {} {:?}", ctx.display(x), x.range()),
             Self::ReturnExpression(x, i) => {
@@ -311,6 +322,21 @@ pub enum FunctionKind {
 }
 
 #[derive(Clone, Debug)]
+pub enum NarrowOp {
+    Is(Box<Expr>),
+    IsNot(Box<Expr>),
+}
+
+impl NarrowOp {
+    pub fn negate(self) -> Self {
+        match self {
+            Self::Is(e) => Self::IsNot(e),
+            Self::IsNot(e) => Self::Is(e),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub enum Binding {
     /// An expression, optionally with a Key saying what the type must be.
     /// The Key must be a type of types, e.g. `Type::Type`.
@@ -365,6 +391,8 @@ pub enum Binding {
     Forward(Idx<Key>),
     /// A phi node, representing the union of several alternative keys.
     Phi(SmallSet<Idx<Key>>),
+    /// A narrowed type.
+    Narrow(Idx<Key>, NarrowOp),
     /// An import of a module.
     /// Also contains the path along the module to bind, and optionally a key
     /// with the previous import to this binding (in which case merge the modules).
@@ -506,6 +534,9 @@ impl DisplayWith<Bindings> for Binding {
                     write!(f, "{}", ctx.display(*x))?;
                 }
                 write!(f, ")")
+            }
+            Self::Narrow(k, op) => {
+                write!(f, "narrow({}, {op:?})", ctx.display(*k))
             }
             Self::Eq(k1, k2, name) => write!(
                 f,

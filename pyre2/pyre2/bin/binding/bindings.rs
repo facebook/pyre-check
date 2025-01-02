@@ -17,10 +17,12 @@ use itertools::Either;
 use itertools::Itertools;
 use parse_display::Display;
 use ruff_python_ast::name::Name;
+use ruff_python_ast::CmpOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprCall;
+use ruff_python_ast::ExprCompare;
 use ruff_python_ast::ExprLambda;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprNoneLiteral;
@@ -60,6 +62,7 @@ use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::Keyed;
+use crate::binding::binding::NarrowOp;
 use crate::binding::binding::RaisedException;
 use crate::binding::binding::SizeExpectation;
 use crate::binding::binding::UnpackedPosition;
@@ -1396,6 +1399,43 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    fn narrow_ops(&self, test: Option<Expr>) -> Vec<(Name, NarrowOp, TextRange)> {
+        match test {
+            Some(Expr::Compare(ExprCompare {
+                range,
+                left: box Expr::Name(name),
+                ops,
+                comparators,
+            })) => ops
+                .iter()
+                .zip(comparators)
+                .filter_map(|(op, right)| match op {
+                    CmpOp::Is => Some((name.id.clone(), NarrowOp::Is(Box::new(right)), range)),
+                    _ => None,
+                })
+                .collect(),
+            _ => Vec::new(),
+        }
+    }
+
+    fn bind_narrow_op(
+        &mut self,
+        name: Name,
+        op: NarrowOp,
+        op_range: TextRange,
+        use_range: Option<TextRange>,
+    ) {
+        if let Some(use_range) = use_range
+            && let Some(name_key) = self.lookup_name(&name)
+        {
+            let binding_key = self.table.insert(
+                Key::Narrow(name.clone(), op_range, use_range),
+                Binding::Narrow(name_key, op),
+            );
+            self.bind_key(&name, binding_key, None, false);
+        }
+    }
+
     /// Evaluate the statements and update the bindings.
     /// Every statement should end up in the bindings, perhaps with a location that is never used.
     fn stmt(&mut self, x: Stmt) {
@@ -1583,10 +1623,17 @@ impl<'a> BindingsBuilder<'a> {
                 self.teardown_loop(x.range, x.orelse);
             }
             Stmt::If(x) => {
-                // Need to deal with type guards in future.
                 let range = x.range;
                 let mut exhaustive = false;
                 let mut branches = Vec::new();
+                // Type narrowing operations that are carried over from one branch to the next. For example, in:
+                //   if x is None:
+                //     pass
+                //   else:
+                //     pass
+                // x is bound to Narrow(x, Is(None)) in the if branch, and the negation, Narrow(x, IsNot(None)),
+                // is carried over to the else branch.
+                let mut narrow_ops: Vec<(Name, NarrowOp, TextRange)> = Vec::new();
                 for (test, body) in Ast::if_branches_owned(x) {
                     let b = self.config.evaluate_bool_opt(test.as_ref());
                     if b == Some(false) {
@@ -1594,6 +1641,14 @@ impl<'a> BindingsBuilder<'a> {
                     }
                     let mut base = self.scopes.last().flow.clone();
                     self.ensure_expr_opt(test.as_ref());
+                    let use_range = body.first().map(|stmt| stmt.range());
+                    for (name, op, op_range) in narrow_ops.iter() {
+                        self.bind_narrow_op(name.clone(), op.clone(), *op_range, use_range);
+                    }
+                    for (name, op, op_range) in self.narrow_ops(test) {
+                        self.bind_narrow_op(name.clone(), op.clone(), op_range, use_range);
+                        narrow_ops.push((name, op.negate(), op_range));
+                    }
                     self.stmts(body);
                     mem::swap(&mut self.scopes.last_mut().flow, &mut base);
                     branches.push(base);

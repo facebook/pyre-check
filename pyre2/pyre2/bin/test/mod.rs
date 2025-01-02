@@ -21,6 +21,7 @@ mod imports;
 mod legacy_generic;
 mod lsp;
 mod mro;
+mod narrow;
 mod operators;
 mod perf;
 mod simple;

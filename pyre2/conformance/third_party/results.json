@@ -3,7 +3,7 @@
   "pass": 8,
   "fail": 125,
   "pass_rate": 0.06,
-  "differences": 1436,
+  "differences": 1433,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -95,7 +95,7 @@
     "generics_variance.py": 12,
     "generics_variance_inference.py": 10,
     "historical_positional.py": 4,
-    "literals_interactions.py": 11,
+    "literals_interactions.py": 8,
     "literals_literalstring.py": 14,
     "literals_parameterizations.py": 6,
     "literals_semantics.py": 2,

@@ -38,6 +38,7 @@ use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::Keyed;
+use crate::binding::binding::NarrowOp;
 use crate::binding::binding::RaisedException;
 use crate::binding::binding::SizeExpectation;
 use crate::binding::binding::UnpackedPosition;
@@ -983,6 +984,34 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn narrow(&self, ty: &Type, op: &NarrowOp) -> Type {
+        match op {
+            NarrowOp::Is(e) => {
+                let right = self.expr(e, None);
+                // Get our best approximation of ty & right.
+                self.distribute_over_union(ty, |t| {
+                    if self.solver().is_subset_eq(&right, t, self.type_order()) {
+                        right.clone()
+                    } else {
+                        Type::never()
+                    }
+                })
+            }
+            NarrowOp::IsNot(e) => {
+                let right = self.expr(e, None);
+                // Get our best approximation of ty - right.
+                self.distribute_over_union(ty, |t| {
+                    // Only certain literal types can be compared by identity.
+                    // TODO: support more types.
+                    match right {
+                        Type::None if *t == right => Type::never(),
+                        _ => t.clone(),
+                    }
+                })
+            }
+        }
+    }
+
     fn solve_binding_inner(&self, binding: &Binding) -> Type {
         match binding {
             Binding::Expr(ann, e) => {
@@ -1272,6 +1301,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     )
                 }
             }
+            Binding::Narrow(k, op) => self.narrow(&self.get_idx(*k), op),
             Binding::CheckRaisedException(RaisedException::WithoutCause(exc)) => {
                 self.check_is_exception(exc, exc.range(), false);
                 Type::None // Unused
