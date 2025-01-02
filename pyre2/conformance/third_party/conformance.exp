@@ -9537,8 +9537,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(type[NoNonDefaults], type[NoNonDefaults[str, int]]) failed",
-      "description": "assert_type(type[NoNonDefaults], type[NoNonDefaults[str, int]]) failed",
+      "concise_description": "assert_type(type[NoNonDefaults[Error, Error]], type[NoNonDefaults[str, int]]) failed",
+      "description": "assert_type(type[NoNonDefaults[Error, Error]], type[NoNonDefaults[str, int]]) failed",
       "line": 30,
       "name": "PyreError",
       "stop_column": 58,
@@ -9547,8 +9547,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(type[AllTheDefaults], type[AllTheDefaults[Any, Any, str, int, bool]]) failed",
-      "description": "assert_type(type[AllTheDefaults], type[AllTheDefaults[Any, Any, str, int, bool]]) failed",
+      "concise_description": "assert_type(type[AllTheDefaults[Error, Error, Error, Error, Error]], type[AllTheDefaults[Any, Any, str, int, bool]]) failed",
+      "description": "assert_type(type[AllTheDefaults[Error, Error, Error, Error, Error]], type[AllTheDefaults[Any, Any, str, int, bool]]) failed",
       "line": 45,
       "name": "PyreError",
       "stop_column": 76,
@@ -9573,16 +9573,6 @@
       "name": "PyreError",
       "stop_column": 39,
       "stop_line": 76
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(type[Class_ParamSpec], type[Class_ParamSpec]) failed",
-      "description": "assert_type(type[Class_ParamSpec], type[Class_ParamSpec]) failed",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 62,
-      "stop_line": 79
     },
     {
       "code": -2,
@@ -9643,16 +9633,6 @@
       "name": "PyreError",
       "stop_column": 44,
       "stop_line": 91
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(type[Class_TypeVarTuple], type[Class_TypeVarTuple]) failed",
-      "description": "assert_type(type[Class_TypeVarTuple], type[Class_TypeVarTuple]) failed",
-      "line": 94,
-      "name": "PyreError",
-      "stop_column": 76,
-      "stop_line": 94
     },
     {
       "code": -2,
@@ -9879,8 +9859,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(type[slice], type[slice[int, int, int | None]]) failed",
-      "description": "assert_type(type[slice], type[slice[int, int, int | None]]) failed",
+      "concise_description": "assert_type(type[slice[Error, Error, Error]], type[slice[int, int, int | None]]) failed",
+      "description": "assert_type(type[slice[Error, Error, Error]], type[slice[int, int, int | None]]) failed",
       "line": 23,
       "name": "PyreError",
       "stop_column": 54,
@@ -9939,8 +9919,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(type[Bar], type[Bar[Any, list[Any]]]) failed",
-      "description": "assert_type(type[Bar], type[Bar[Any, list[Any]]]) failed",
+      "concise_description": "assert_type(type[Bar[Error, Error]], type[Bar[Any, list[Any]]]) failed",
+      "description": "assert_type(type[Bar[Error, Error]], type[Bar[Any, list[Any]]]) failed",
       "line": 94,
       "name": "PyreError",
       "stop_column": 44,
@@ -9991,8 +9971,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(type[Bar], type[Bar[str]]) failed",
-      "description": "assert_type(type[Bar], type[Bar[str]]) failed",
+      "concise_description": "assert_type(type[Bar[Error]], type[Bar[str]]) failed",
+      "description": "assert_type(type[Bar[Error]], type[Bar[str]]) failed",
       "line": 45,
       "name": "PyreError",
       "stop_column": 33,

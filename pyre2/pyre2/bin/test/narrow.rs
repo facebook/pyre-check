@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_is,
@@ -31,8 +30,7 @@ def f(x: str | None):
     "#,
 );
 
-// TODO: fix the assert_type bug that is causing this assertion to fail.
-testcase_with_bug!(
+testcase!(
     test_is_subtype,
     r#"
 from typing import assert_type
@@ -40,7 +38,7 @@ class A: pass
 class B(A): pass
 def f(x: type[A]):
     if x is B:
-        assert_type(x, type[B])  # E: assert_type(type[B], type[B]) failed
+        assert_type(x, type[B])
     "#,
 );
 

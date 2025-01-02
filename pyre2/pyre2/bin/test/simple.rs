@@ -1031,3 +1031,12 @@ def f(x: int):
     assert_type(y, int)
     "#,
 );
+
+testcase!(
+    test_type_of_class,
+    r#"
+from typing import assert_type
+class A: pass
+assert_type(A, type[A])
+    "#,
+);
