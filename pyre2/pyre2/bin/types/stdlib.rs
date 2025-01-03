@@ -14,39 +14,46 @@ use crate::types::class::TArgs;
 use crate::types::types::Type;
 
 #[derive(Debug, Clone)]
+struct StdlibError {
+    name: &'static str,
+}
+
+type StdlibResult<T> = Result<T, StdlibError>;
+
+#[derive(Debug, Clone)]
 pub struct Stdlib {
-    str: Option<Class>,
-    bool: Option<Class>,
-    int: Option<Class>,
-    bytes: Option<Class>,
-    float: Option<Class>,
-    complex: Option<Class>,
-    slice: Option<Class>,
-    base_exception: Option<Class>,
-    base_exception_group: Option<Class>,
-    exception_group: Option<Class>,
-    list: Option<Class>,
-    dict: Option<Class>,
-    set: Option<Class>,
-    tuple: Option<Class>,
-    iterable: Option<Class>,
-    generator: Option<Class>,
-    awaitable: Option<Class>,
-    coroutine: Option<Class>,
-    type_var: Option<Class>,
-    param_spec: Option<Class>,
-    param_spec_args: Option<Class>,
-    param_spec_kwargs: Option<Class>,
-    type_var_tuple: Option<Class>,
-    type_alias_type: Option<Class>,
-    traceback_type: Option<Class>,
-    builtins_type: Option<Class>,
-    ellipsis_type: Option<Class>,
-    none_type: Option<Class>,
-    function_type: Option<Class>,
-    method_type: Option<Class>,
+    str: StdlibResult<Class>,
+    bool: StdlibResult<Class>,
+    int: StdlibResult<Class>,
+    bytes: StdlibResult<Class>,
+    float: StdlibResult<Class>,
+    complex: StdlibResult<Class>,
+    slice: StdlibResult<Class>,
+    base_exception: StdlibResult<Class>,
+    base_exception_group: StdlibResult<Class>,
+    exception_group: StdlibResult<Class>,
+    list: StdlibResult<Class>,
+    dict: StdlibResult<Class>,
+    set: StdlibResult<Class>,
+    tuple: StdlibResult<Class>,
+    iterable: StdlibResult<Class>,
+    generator: StdlibResult<Class>,
+    awaitable: StdlibResult<Class>,
+    coroutine: StdlibResult<Class>,
+    type_var: StdlibResult<Class>,
+    param_spec: StdlibResult<Class>,
+    param_spec_args: StdlibResult<Class>,
+    param_spec_kwargs: StdlibResult<Class>,
+    type_var_tuple: StdlibResult<Class>,
+    type_alias_type: StdlibResult<Class>,
+    traceback_type: StdlibResult<Class>,
+    builtins_type: StdlibResult<Class>,
+    ellipsis_type: StdlibResult<Class>,
+    none_type: StdlibResult<Class>,
+    function_type: StdlibResult<Class>,
+    method_type: StdlibResult<Class>,
     // We want an owned ClassType for object because it allows the MRO code to clone less frequently.
-    object_class_type: Option<ClassType>,
+    object_class_type: StdlibResult<ClassType>,
 }
 
 impl Stdlib {
@@ -55,8 +62,9 @@ impl Stdlib {
         let types = ModuleName::types();
         let typing = ModuleName::typing();
 
-        let mut lookup_str =
-            |module: ModuleName, name: &'static str| lookup_class(module, &Name::new_static(name));
+        let mut lookup_str = |module: ModuleName, name: &'static str| {
+            lookup_class(module, &Name::new_static(name)).ok_or(StdlibError { name })
+        };
 
         Self {
             str: lookup_str(builtins, "str"),
@@ -106,17 +114,17 @@ impl Stdlib {
         Self::new(|_, _| None)
     }
 
-    fn unwrap<T>(x: &Option<T>) -> &T {
-        if let Some(x) = x {
-            x
-        } else {
-            unreachable!(
-                "Stdlib::primitive called using an stdlib with missing classes (probably a bootstrapping stdlib)"
-            )
+    fn unwrap<T>(x: &StdlibResult<T>) -> &T {
+        match x {
+            Ok(x) => x,
+            Err(err) => unreachable!(
+                "Stdlib::primitive called using an stdlib missing `{}` class (probably a bootstrapping stdlib)",
+                err.name
+            ),
         }
     }
 
-    fn primitive(cls: &Option<Class>) -> ClassType {
+    fn primitive(cls: &StdlibResult<Class>) -> ClassType {
         // Note: this construction will panic if we incorrectly mark a generic type as primitive.
         ClassType::new_for_stdlib(Self::unwrap(cls).clone(), TArgs::default())
     }
@@ -169,7 +177,7 @@ impl Stdlib {
         Self::primitive(&self.base_exception)
     }
 
-    fn apply(cls: &Option<Class>, targs: Vec<Type>) -> ClassType {
+    fn apply(cls: &StdlibResult<Class>, targs: Vec<Type>) -> ClassType {
         // Note: this construction will panic if we use `apply` with the wrong arity.
         ClassType::new_for_stdlib(Self::unwrap(cls).clone(), TArgs::new(targs))
     }
