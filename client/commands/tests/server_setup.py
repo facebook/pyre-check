@@ -22,7 +22,6 @@ from ... import (
 from ...language_server import connections, daemon_connection, features, protocol as lsp
 from .. import (
     daemon_querier as querier,
-    document_formatter as formatter,
     pyre_language_server as ls,
     pyre_server_options as options,
     server_state as state,
@@ -138,32 +137,10 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self,
         mock_type_errors: Optional[Dict[Path, List[error.Error]]] = None,
         mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
-        mock_hover_response: Optional[querier.GetHoverResponse] = None,
-        mock_definition_response: Optional[
-            querier.GetDefinitionLocationsResponse
-        ] = None,
-        mock_document_symbol_response: Optional[querier.DocumentSymbolsResponse] = None,
-        mock_completion_response: Optional[List[lsp.CompletionItem]] = None,
-        mock_call_hierarchy_response: Optional[List[lsp.CallHierarchyItem]] = None,
-        mock_references_response: Optional[List[lsp.LspLocation]] = None,
-        mock_rename_response: Optional[lsp.WorkspaceEdit] = None,
-        mock_symbol_search_response: Optional[querier.GetSymbolSearchResponse] = None,
-        mock_document_formatting_response: Optional[
-            querier.GetDocumentFormattingResponse
-        ] = None,
     ) -> None:
         self.requests: List[object] = []
         self.mock_type_errors = mock_type_errors
         self.mock_type_coverage = mock_type_coverage
-        self.mock_hover_response = mock_hover_response
-        self.mock_definition_response = mock_definition_response
-        self.mock_document_symbol_response = mock_document_symbol_response
-        self.mock_completion_response = mock_completion_response
-        self.mock_call_hierarchy_response = mock_call_hierarchy_response
-        self.mock_references_response = mock_references_response
-        self.mock_rename_response = mock_rename_response
-        self.mock_symbol_search_response = mock_symbol_search_response
-        self.mock_document_formatting_response = mock_document_formatting_response
 
     async def get_type_errors(
         self,
@@ -177,135 +154,6 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
     ) -> Union[querier.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
         self.requests.append({"path": path})
         return self.mock_type_coverage
-
-    async def get_hover(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> Union[querier.DaemonQueryFailure, querier.GetHoverResponse]:
-        self.requests.append({"path": path, "position": position})
-        if self.mock_hover_response is None:
-            raise ValueError("You need to set the hover response in the mock querier")
-        else:
-            return self.mock_hover_response
-
-    async def get_definition_locations(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> Union[querier.DaemonQueryFailure, querier.GetDefinitionLocationsResponse]:
-        self.requests.append({"path": path, "position": position})
-        if self.mock_definition_response is None:
-            raise ValueError(
-                "You need to set the get definition locations response in the mock querier"
-            )
-        else:
-            return self.mock_definition_response
-
-    async def get_document_symbols(
-        self,
-        path: Path,
-    ) -> Union[querier.DaemonQueryFailure, querier.DocumentSymbolsResponse]:
-        if self.mock_document_symbol_response is None:
-            raise ValueError("You need to set symbol search in the mock querier")
-        else:
-            return self.mock_document_symbol_response
-
-    async def get_completions(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> Union[querier.DaemonQueryFailure, List[lsp.CompletionItem]]:
-        self.requests.append({"path": path, "position": position})
-        if self.mock_completion_response is None:
-            raise ValueError(
-                "You need to set the get completions response in the mock querier"
-            )
-        else:
-            return self.mock_completion_response
-
-    async def get_reference_locations(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-    ) -> Union[querier.DaemonQueryFailure, List[lsp.LspLocation]]:
-        self.requests.append({"path": path, "position": position})
-        if self.mock_references_response is None:
-            raise ValueError(
-                "You need to set the get reference locations response in the mock querier"
-            )
-        else:
-            return self.mock_references_response
-
-    async def get_init_call_hierarchy(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-        relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[querier.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
-        self.requests.append(
-            {
-                "path": path,
-                "position": position,
-                "relation_direction": relation_direction,
-            }
-        )
-        if self.mock_call_hierarchy_response is None:
-            raise ValueError(
-                "You need to set the get call hierarchy response in the mock querier"
-            )
-        else:
-            return self.mock_call_hierarchy_response
-
-    async def get_call_hierarchy_from_item(
-        self,
-        path: Path,
-        call_hierarchy_item: lsp.CallHierarchyItem,
-        relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[querier.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
-        self.requests.append(
-            {
-                "path": path,
-                "call_hierarchy_item": call_hierarchy_item,
-                "relation_direction": relation_direction,
-            }
-        )
-        if self.mock_call_hierarchy_response is None:
-            raise ValueError(
-                "You need to set the get call hierarchy response in the mock querier"
-            )
-        else:
-            return self.mock_call_hierarchy_response
-
-    async def get_symbol_search(
-        self,
-        query: str,
-    ) -> Union[querier.DaemonQueryFailure, querier.GetSymbolSearchResponse]:
-        if self.mock_symbol_search_response is None:
-            raise ValueError("You need to set symbol search in the mock querier")
-        else:
-            return self.mock_symbol_search_response
-
-    async def get_document_formatting(
-        self, text_document: lsp.TextDocumentIdentifier
-    ) -> Union[querier.DaemonQueryFailure, querier.GetDocumentFormattingResponse]:
-        if self.mock_document_formatting_response is None:
-            raise ValueError("You need to set document formatting in the mock querier")
-        else:
-            return self.mock_document_formatting_response
-
-    async def get_rename(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-        new_text: str,
-    ) -> Union[querier.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
-        if self.mock_rename_response is None:
-            raise ValueError(
-                "You need to set the get rename response in the mock querier"
-            )
-        else:
-            return self.mock_rename_response
 
     async def update_overlay(
         self,
@@ -348,19 +196,14 @@ mock_server_state: state.ServerState = state.ServerState(
 
 
 def create_pyre_language_server_api(
-    document_formatter: Optional[formatter.AbstractDocumentFormatter],
     output_channel: connections.AsyncTextWriter,
     server_state: state.ServerState,
     daemon_querier: querier.AbstractDaemonQuerier,
-    index_querier: Optional[querier.AbstractDaemonQuerier] = None,
 ) -> ls.PyreLanguageServerApi:
-    index_querier = index_querier or querier.EmptyQuerier()
     return ls.PyreLanguageServer(
         output_channel=output_channel,
         server_state=server_state,
         querier=daemon_querier,
-        index_querier=index_querier,
-        document_formatter=document_formatter,
         client_type_error_handler=type_error_handler.ClientTypeErrorHandler(
             client_output_channel=output_channel,
             server_state=server_state,
@@ -378,8 +221,6 @@ class PyreLanguageServerApiSetup:
 def create_pyre_language_server_api_setup(
     opened_documents: Dict[Path, state.OpenedDocumentState],
     querier: MockDaemonQuerier,
-    index_querier: Optional[MockDaemonQuerier] = None,
-    document_formatter: Optional[formatter.AbstractDocumentFormatter] = None,
     server_options: options.PyreServerOptions = mock_initial_server_options,
     connection_status: state.ConnectionStatus = DEFAULT_CONNECTION_STATUS,
 ) -> PyreLanguageServerApiSetup:
@@ -394,8 +235,6 @@ def create_pyre_language_server_api_setup(
         output_channel=output_channel,
         server_state=server_state,
         daemon_querier=querier,
-        index_querier=index_querier,
-        document_formatter=document_formatter,
     )
     return PyreLanguageServerApiSetup(
         api=api,
@@ -409,12 +248,10 @@ def create_pyre_language_server_dispatcher(
     server_state: state.ServerState,
     daemon_manager: background_tasks.TaskManager,
     querier: MockDaemonQuerier,
-    document_formatter: Optional[formatter.AbstractDocumentFormatter] = None,
 ) -> Tuple[ls.PyreLanguageServerDispatcher, connections.MemoryBytesWriter]:
     output_writer = connections.MemoryBytesWriter()
     output_channel = connections.AsyncTextWriter(output_writer)
     api = create_pyre_language_server_api(
-        document_formatter=document_formatter,
         output_channel=output_channel,
         server_state=server_state,
         daemon_querier=querier,

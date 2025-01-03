@@ -64,16 +64,6 @@ def _parse_error_subscription(response: object) -> Error:
     return Error(message=response)
 
 
-def _parse_code_navigation_error_subscription(response: object) -> Error:
-    if not isinstance(response, list) or len(response) != 2:
-        raise incremental.InvalidServerResponse(
-            'Response kind of an error must be of the form ["$KIND", error_data]'
-        )
-    error_kind, error_data = response
-    error_message = f"{error_kind}: {json.dumps(error_data)}"
-    return Error(message=error_message)
-
-
 class IncrementalTelemetry:
     pass
 
@@ -116,32 +106,6 @@ class Response:
             raise incremental.InvalidServerResponse(
                 f"Unexpected JSON subscription from server: {response_json}"
             )
-        except json.JSONDecodeError as decode_error:
-            message = f"Cannot parse subscription as JSON: {decode_error}"
-            raise incremental.InvalidServerResponse(message) from decode_error
-
-    @staticmethod
-    def parse_code_navigation_response(response: str) -> "Response":
-        # The response JSON has the form ["ResponseKind", response_body_json]
-        try:
-            response_json = json.loads(response)
-            if not isinstance(response_json, list) or len(response_json) != 2:
-                raise incremental.InvalidServerResponse(
-                    f"Unexpected JSON subscription from code navigation server: {response_json}"
-                )
-            tag, body = response_json
-            if tag == "ServerStatus":
-                return Response(body=_parse_status_update_subscription(body))
-            elif tag == "TypeErrors":
-                return Response(body=_parse_type_error_subscription(body))
-            elif tag == "Error":
-                return Response(body=_parse_code_navigation_error_subscription(body))
-            elif tag == "IncrementalTelemetry":
-                return Response(body=IncrementalTelemetry())
-            raise incremental.InvalidServerResponse(
-                f"Invalid tag from code navigation server response: {tag}"
-            )
-
         except json.JSONDecodeError as decode_error:
             message = f"Cannot parse subscription as JSON: {decode_error}"
             raise incremental.InvalidServerResponse(message) from decode_error

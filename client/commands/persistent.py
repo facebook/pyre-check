@@ -68,7 +68,6 @@ def process_initialize_request(
             change=lsp.TextDocumentSyncKind.FULL,
             save=lsp.SaveOptions(include_text=False),
         ),
-        **language_server_features.capabilities(),
     )
     return lsp.InitializeResult(
         capabilities=server_capabilities, server_info=server_info
@@ -126,7 +125,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
         status_update_subscription: subscription.StatusUpdate,
     ) -> None:
         flavor_simple_name = self.server_state.server_options.flavor.simple_name()
-        if not self.get_type_errors_availability().is_disabled():
+        if self.get_type_errors_availability().is_enabled():
             await self.client_type_error_handler.clear_type_errors_for_client()
         if status_update_subscription.kind == "Rebuilding":
             self.server_state.status_tracker.set_status(
@@ -284,8 +283,6 @@ async def run_persistent(
             output_channel=stdout,
             server_state=server_state,
             querier=querier,
-            index_querier=daemon_querier.EmptyQuerier(),
-            document_formatter=None,
             client_type_error_handler=client_type_error_handler,
         ),
     )
