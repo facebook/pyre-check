@@ -15,6 +15,7 @@ use crate::types::types::Type;
 
 #[derive(Debug, Clone)]
 struct StdlibError {
+    bootstrapping: bool,
     name: &'static str,
 }
 
@@ -57,13 +58,23 @@ pub struct Stdlib {
 }
 
 impl Stdlib {
-    pub fn new(mut lookup_class: impl FnMut(ModuleName, &Name) -> Option<Class>) -> Self {
+    pub fn new(lookup_class: impl FnMut(ModuleName, &Name) -> Option<Class>) -> Self {
+        Self::new_with_bootstrapping(false, lookup_class)
+    }
+
+    pub fn new_with_bootstrapping(
+        bootstrapping: bool,
+        mut lookup_class: impl FnMut(ModuleName, &Name) -> Option<Class>,
+    ) -> Self {
         let builtins = ModuleName::builtins();
         let types = ModuleName::types();
         let typing = ModuleName::typing();
 
         let mut lookup_str = |module: ModuleName, name: &'static str| {
-            lookup_class(module, &Name::new_static(name)).ok_or(StdlibError { name })
+            lookup_class(module, &Name::new_static(name)).ok_or(StdlibError {
+                bootstrapping,
+                name,
+            })
         };
 
         Self {
@@ -111,16 +122,23 @@ impl Stdlib {
     /// It works because the lookups only need a tiny subset of all `AnswersSolver` functionality,
     /// none of which actually depends on `Stdlib`.
     pub fn for_bootstrapping() -> Stdlib {
-        Self::new(|_, _| None)
+        Self::new_with_bootstrapping(true, |_, _| None)
     }
 
     fn unwrap<T>(x: &StdlibResult<T>) -> &T {
         match x {
             Ok(x) => x,
-            Err(err) => unreachable!(
-                "Stdlib::primitive called using an stdlib missing `{}` class (probably a bootstrapping stdlib)",
-                err.name
-            ),
+            Err(err) => {
+                unreachable!(
+                    "Stdlib missing class `{}`{}",
+                    err.name,
+                    if err.bootstrapping {
+                        " (while bootstrapping)"
+                    } else {
+                        ""
+                    },
+                )
+            }
         }
     }
 
