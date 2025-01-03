@@ -1405,9 +1405,7 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn negate_narrow_ops(
-        ops: Vec<(Name, NarrowOp, TextRange)>,
-    ) -> Vec<(Name, NarrowOp, TextRange)> {
+    fn negate_narrow_ops(ops: &[(Name, NarrowOp, TextRange)]) -> Vec<(Name, NarrowOp, TextRange)> {
         if ops.len() == 1 {
             let (name, op, range) = &ops[0];
             vec![(name.clone(), op.clone().negate(), *range)]
@@ -1447,26 +1445,24 @@ impl<'a> BindingsBuilder<'a> {
                 range: _,
                 op: UnaryOp::Not,
                 operand: box e,
-            })) => Self::negate_narrow_ops(Self::narrow_ops(Some(e))),
+            })) => Self::negate_narrow_ops(&Self::narrow_ops(Some(e))),
             _ => Vec::new(),
         }
     }
 
-    fn bind_narrow_op(
+    fn bind_narrow_ops(
         &mut self,
-        name: Name,
-        op: NarrowOp,
-        op_range: TextRange,
-        use_range: Option<TextRange>,
+        narrow_ops: &[(Name, NarrowOp, TextRange)],
+        use_range: TextRange,
     ) {
-        if let Some(use_range) = use_range
-            && let Some(name_key) = self.lookup_name(&name)
-        {
-            let binding_key = self.table.insert(
-                Key::Narrow(name.clone(), op_range, use_range),
-                Binding::Narrow(name_key, op),
-            );
-            self.bind_key(&name, binding_key, None, false);
+        for (name, op, op_range) in narrow_ops {
+            if let Some(name_key) = self.lookup_name(name) {
+                let binding_key = self.table.insert(
+                    Key::Narrow(name.clone(), *op_range, use_range),
+                    Binding::Narrow(name_key, op.clone()),
+                );
+                self.bind_key(name, binding_key, None, false);
+            }
         }
     }
 
@@ -1675,15 +1671,13 @@ impl<'a> BindingsBuilder<'a> {
                     }
                     let mut base = self.scopes.last().flow.clone();
                     self.ensure_expr_opt(test.as_ref());
-                    let use_range = body.first().map(|stmt| stmt.range());
-                    for (name, op, op_range) in narrow_ops.iter() {
-                        self.bind_narrow_op(name.clone(), op.clone(), *op_range, use_range);
-                    }
                     let new_narrow_ops = Self::narrow_ops(test);
-                    for (name, op, op_range) in new_narrow_ops.iter() {
-                        self.bind_narrow_op(name.clone(), op.clone(), *op_range, use_range);
+                    if let Some(stmt) = body.first() {
+                        let use_range = stmt.range();
+                        self.bind_narrow_ops(&narrow_ops, use_range);
+                        self.bind_narrow_ops(&new_narrow_ops, use_range);
                     }
-                    narrow_ops.extend(Self::negate_narrow_ops(new_narrow_ops));
+                    narrow_ops.extend(Self::negate_narrow_ops(&new_narrow_ops));
                     self.stmts(body);
                     mem::swap(&mut self.scopes.last_mut().flow, &mut base);
                     branches.push(base);
