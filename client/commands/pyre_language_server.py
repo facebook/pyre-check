@@ -523,9 +523,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
     server_state: state.ServerState
 
     querier: daemon_querier.AbstractDaemonQuerier
-    index_querier: daemon_querier.AbstractDaemonQuerier
-    document_formatter: Optional[AbstractDocumentFormatter]
     client_type_error_handler: type_error_handler.ClientTypeErrorHandler
+    index_querier: daemon_querier.AbstractDaemonQuerier = dataclasses.field(
+        default_factory=lambda: daemon_querier.EmptyQuerier()
+    )
+    document_formatter: Optional[AbstractDocumentFormatter] = None
 
     async def write_telemetry(
         self,
