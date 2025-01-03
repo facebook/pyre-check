@@ -219,10 +219,21 @@ testcase_with_bug!(
 from typing import assert_type, Literal
 def f() -> str | None: ...
 x = f()
-while x is None:
+while x is None:  # E: EXPECTED None <: Literal[42] | str
     if f():
         x = 42
         break
-assert_type(x, Literal[42] | str | None)  # 'None' should not be here
+assert_type(x, Literal[42] | str)
+    "#,
+);
+
+testcase!(
+    test_nested_function,
+    r#"
+from typing import assert_type
+def foo(x: int | None) -> None:
+    def include():
+        if x is not None:
+            assert_type(x, int)
     "#,
 );

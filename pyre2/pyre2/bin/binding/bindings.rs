@@ -874,15 +874,14 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    /// Return the annotation that should be used at the moment, if one was provided.
-    fn bind_key(
+    fn update_flow_info(
         &mut self,
         name: &Name,
         key: Idx<Key>,
         annotation: Option<Idx<KeyAnnotation>>,
         is_import: bool,
     ) -> Option<Idx<KeyAnnotation>> {
-        let annotation = match self.scopes.last_mut().flow.info.entry(name.clone()) {
+        match self.scopes.last_mut().flow.info.entry(name.clone()) {
             Entry::Occupied(mut e) => {
                 // if there was a previous annotation, reuse that
                 let annotation = annotation.or_else(|| e.get().ann);
@@ -901,7 +900,18 @@ impl<'a> BindingsBuilder<'a> {
                 });
                 annotation
             }
-        };
+        }
+    }
+
+    /// Return the annotation that should be used at the moment, if one was provided.
+    fn bind_key(
+        &mut self,
+        name: &Name,
+        key: Idx<Key>,
+        annotation: Option<Idx<KeyAnnotation>>,
+        is_import: bool,
+    ) -> Option<Idx<KeyAnnotation>> {
+        let annotation = self.update_flow_info(name, key, annotation, is_import);
         let info = self.scopes.last().stat.0.get(name).unwrap_or_else(|| {
             let module = self.module_info.name();
             panic!("Name `{name}` not found in static scope of module `{module}`")
@@ -1461,7 +1471,7 @@ impl<'a> BindingsBuilder<'a> {
                     Key::Narrow(name.clone(), *op_range, use_range),
                     Binding::Narrow(name_key, op.clone()),
                 );
-                self.bind_key(name, binding_key, None, false);
+                self.update_flow_info(name, binding_key, None, false);
             }
         }
     }
