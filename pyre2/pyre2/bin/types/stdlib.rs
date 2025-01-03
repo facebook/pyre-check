@@ -106,9 +106,9 @@ impl Stdlib {
         Self::new(|_, _| None)
     }
 
-    fn unwrap_class(cls: &Option<Class>) -> &Class {
-        if let Some(cls) = cls {
-            cls
+    fn unwrap<T>(x: &Option<T>) -> &T {
+        if let Some(x) = x {
+            x
         } else {
             unreachable!(
                 "Stdlib::primitive called using an stdlib with missing classes (probably a bootstrapping stdlib)"
@@ -118,17 +118,11 @@ impl Stdlib {
 
     fn primitive(cls: &Option<Class>) -> ClassType {
         // Note: this construction will panic if we incorrectly mark a generic type as primitive.
-        ClassType::new_for_stdlib(Self::unwrap_class(cls).clone(), TArgs::default())
+        ClassType::new_for_stdlib(Self::unwrap(cls).clone(), TArgs::default())
     }
 
     pub fn object_class_type(&self) -> &ClassType {
-        if let Some(o) = &self.object_class_type {
-            o
-        } else {
-            unreachable!(
-                "Stdlib::object_class_type called using an stdlib with missing classes (probably a bootstrapping stdlib)"
-            )
-        }
+        Self::unwrap(&self.object_class_type)
     }
 
     pub fn bool(&self) -> ClassType {
@@ -177,7 +171,7 @@ impl Stdlib {
 
     fn apply(cls: &Option<Class>, targs: Vec<Type>) -> ClassType {
         // Note: this construction will panic if we use `apply` with the wrong arity.
-        ClassType::new_for_stdlib(Self::unwrap_class(cls).clone(), TArgs::new(targs))
+        ClassType::new_for_stdlib(Self::unwrap(cls).clone(), TArgs::new(targs))
     }
 
     pub fn base_exception_group(&self, x: Type) -> ClassType {
