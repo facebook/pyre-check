@@ -13,7 +13,7 @@ name = "pyre2"
 path = "bin/main.rs"
 
 [dependencies]
-anyhow = "1.0.86"
+anyhow = "1.0.95"
 argfile = "0.1.6"
 clap = { version = "4.5.20", features = ["derive", "env", "string", "unicode", "wrap_help"] }
 dupe = "0.9.0"
