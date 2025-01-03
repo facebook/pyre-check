@@ -190,19 +190,18 @@ def _print_watchman_sections(output: TextIO) -> None:
 def _print_log_file_sections(
     log_directory: Path, server_log_count: Optional[int], output: TextIO
 ) -> None:
-    flavors = [identifiers.PyreFlavor.CLASSIC, identifiers.PyreFlavor.CODE_NAVIGATION]
-    for flavor in flavors:
-        LOG.info(
-            f"Collecting information from Pyre's log files for the {flavor.value} flavor..."
-        )
-        for section in itertools.chain(
-            _server_log_sections(log_directory, flavor, limit=server_log_count),
-            [
-                _client_log_section(log_directory),
-            ],
-        ):
-            if section is not None:
-                _print_section(section, output)
+    flavor = identifiers.PyreFlavor.CLASSIC
+    LOG.info(
+        f"Collecting information from Pyre's log files for the {flavor.value} flavor..."
+    )
+    for section in itertools.chain(
+        _server_log_sections(log_directory, flavor, limit=server_log_count),
+        [
+            _client_log_section(log_directory),
+        ],
+    ):
+        if section is not None:
+            _print_section(section, output)
 
 
 def run_rage(

@@ -20,7 +20,6 @@ from ... import (
     frontend_configuration,
 )
 from ...configuration import search_path
-from ...find_directories import CODENAV_CONFIGURATION_FILE
 from ...identifiers import PyreFlavor
 from ...tests import setup
 from .. import start
@@ -226,47 +225,6 @@ class StartTest(testslide.TestCase):
                     start.CriticalFile(
                         start.MatchPolicy.FULL_PATH,
                         str(root_path / "local/.pyre_configuration.local"),
-                    ),
-                    start.CriticalFile(
-                        start.MatchPolicy.FULL_PATH, str(root_path / "foo")
-                    ),
-                    start.CriticalFile(
-                        start.MatchPolicy.FULL_PATH, str(root_path / "bar/baz")
-                    ),
-                ],
-            )
-
-    def test_get_critical_files_code_navigation(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()
-            setup.ensure_directories_exists(root_path, [".pyre", "project/local"])
-            setup.write_configuration_file(
-                root_path, {"critical_files": ["foo", "bar/baz"]}, codenav=True
-            )
-            setup.write_configuration_file(
-                root_path, {"source_directories": ["."]}, relative="local", codenav=True
-            )
-            setup.ensure_files_exist(root_path, ["foo", "bar/baz"])
-
-            self.assertCountEqual(
-                start.get_critical_files(
-                    frontend_configuration.OpenSource(
-                        configuration_module.create_overridden_configuration(
-                            command_arguments.CommandArguments(
-                                strict=True,  # override configuration file
-                                source_directories=["."],
-                                dot_pyre_directory=Path(".pyre"),
-                            ),
-                            base_directory=Path(root),
-                            configuration=CODENAV_CONFIGURATION_FILE,
-                        )
-                    ),
-                    PyreFlavor.CODE_NAVIGATION,
-                ),
-                [
-                    start.CriticalFile(
-                        start.MatchPolicy.FULL_PATH,
-                        str(root_path / ".pyre_configuration.codenav"),
                     ),
                     start.CriticalFile(
                         start.MatchPolicy.FULL_PATH, str(root_path / "foo")

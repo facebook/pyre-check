@@ -22,17 +22,14 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def stop_message(flavor: identifiers.PyreFlavor) -> str:
-    if flavor == identifiers.PyreFlavor.CODE_NAVIGATION:
-        return '["Command", ["Stop"]]'
-    else:
-        if flavor not in (
-            identifiers.PyreFlavor.CLASSIC,
-            identifiers.PyreFlavor.SHADOW,
-        ):
-            raise AssertionError(
-                f"Attempted to stop a server for unsupported flavor {flavor}"
-            )
-        return '["Stop"]'
+    if flavor not in (
+        identifiers.PyreFlavor.CLASSIC,
+        identifiers.PyreFlavor.SHADOW,
+    ):
+        raise AssertionError(
+            f"Attempted to stop a server for unsupported flavor {flavor}"
+        )
+    return '["Stop"]'
 
 
 def stop_server(socket_path: Path, flavor: identifiers.PyreFlavor) -> None:

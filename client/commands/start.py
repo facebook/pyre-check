@@ -221,11 +221,7 @@ def get_critical_files(
         return str(full_path)
 
     # TODO(T137504540) update critical files for overridden configs as well
-    configuration_name = (
-        find_directories.CODENAV_CONFIGURATION_FILE
-        if flavor == identifiers.PyreFlavor.CODE_NAVIGATION
-        else find_directories.CONFIGURATION_FILE
-    )
+    configuration_name = find_directories.CONFIGURATION_FILE
     local_root = configuration.get_local_root()
     return [
         CriticalFile(

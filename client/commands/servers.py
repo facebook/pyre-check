@@ -138,13 +138,7 @@ def _get_server_status(
             input_channel,
             output_channel,
         ):
-            if flavor != identifiers.PyreFlavor.CODE_NAVIGATION:
-                output_channel.write('["GetInfo"]\n')
-                return RunningServerStatus.from_server_response(
-                    input_channel.readline(), flavor
-                )
-            # For now, we assume that a code-navigation server we can connect to is fine.
-            output_channel.write('["Query", ["GetInfo"]]\n')
+            output_channel.write('["GetInfo"]\n')
             return RunningServerStatus.from_server_response(
                 input_channel.readline(), flavor
             )

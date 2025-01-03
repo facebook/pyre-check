@@ -212,7 +212,6 @@ async def async_start_pyre_server(
     flavor: identifiers.PyreFlavor,
 ) -> Union[StartSuccess, BuckStartFailure, OtherStartFailure]:
     try:
-        is_code_navigation_server = flavor == identifiers.PyreFlavor.CODE_NAVIGATION
         with backend_arguments.temporary_argument_file(
             pyre_arguments
         ) as argument_file_path:
@@ -243,9 +242,7 @@ async def async_start_pyre_server(
                     "server stdout"
                 )
 
-            await server_event.Waiter(
-                wait_on_initialization=not is_code_navigation_server
-            ).async_wait_on(
+            await server_event.Waiter(wait_on_initialization=True).async_wait_on(
                 connections.AsyncTextReader(
                     connections.StreamBytesReader(server_stdout)
                 )

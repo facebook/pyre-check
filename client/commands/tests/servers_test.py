@@ -170,27 +170,6 @@ class ServersTest(testslide.TestCase):
                 flavor="classic",
             ),
         )
-        assert_parsed(
-            json.dumps(
-                [
-                    "Info",
-                    {
-                        "pid": 42,
-                        "version": "abc",
-                        "global_root": "/global",
-                        "relative_local_root": "local",
-                    },
-                ]
-            ),
-            flavor=identifiers.PyreFlavor.CODE_NAVIGATION,
-            expected=servers.RunningServerStatus(
-                pid=42,
-                version="abc",
-                global_root="/global",
-                relative_local_root="local",
-                flavor="code_navigation",
-            ),
-        )
 
     def test_find_all_servers(self) -> None:
         with tempfile.TemporaryDirectory(dir="/tmp") as socket_root:
@@ -230,13 +209,6 @@ class ServersTest(testslide.TestCase):
                         global_root="/g0",
                         flavor=identifiers.PyreFlavor.CLASSIC.value,
                     ),
-                    servers.RunningServerStatus(
-                        pid=456,
-                        version="xyz",
-                        global_root="/g1",
-                        relative_local_root="local",
-                        flavor=identifiers.PyreFlavor.CODE_NAVIGATION.value,
-                    ),
                 ],
                 defunct=[
                     servers.DefunctServerStatus(socket_path="/p0.sock"),
@@ -251,14 +223,6 @@ class ServersTest(testslide.TestCase):
                     "global_root": "/g0",
                     "relative_local_root": None,
                     "flavor": "classic",
-                },
-                {
-                    "status": "running",
-                    "pid": 456,
-                    "version": "xyz",
-                    "global_root": "/g1",
-                    "relative_local_root": "local",
-                    "flavor": "code_navigation",
                 },
                 {"status": "defunct", "socket": "/p0.sock"},
                 {"status": "defunct", "socket": "/p1.sock"},
