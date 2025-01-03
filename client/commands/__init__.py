@@ -15,7 +15,6 @@ library code used by several commands.
 from . import (  # noqa F401
     analyze,
     check,
-    code_navigation,
     incremental,
     infer,
     info,

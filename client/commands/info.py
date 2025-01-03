@@ -36,11 +36,8 @@ class Info(dataclasses_json.DataClassJsonMixin):
     binary_version: Optional[str]
     log_directory: str
     client_logs: str
-    codenav_client_logs: str
     server_log_directory: str
-    codenav_server_log_directory: str
     current_server_logs: str
-    current_codenav_server_logs: str
 
     def display(self) -> str:
         max_key_length = max(len(key) for key, _ in self.to_dict().items()) + 1
@@ -64,17 +61,9 @@ class Info(dataclasses_json.DataClassJsonMixin):
             LOG.warning("Could not locate a Pyre binary to run.")
         log_directory = configuration.get_log_directory()
         client_logs = log_directory / "pyre.stderr"
-        codenav_client_logs = log_directory / "pyre__code_navigation.stderr"
         server_log_directory = log_directory / flavor.server_log_subdirectory()
-        codenav_server_log_directory = (
-            log_directory
-            / identifiers.PyreFlavor.CODE_NAVIGATION.server_log_subdirectory()
-        )
         current_server_logs = start.deamon_current_log_path(
             server_log_directory, flavor
-        )
-        codenav_current_server_log = start.deamon_current_log_path(
-            codenav_server_log_directory, identifiers.PyreFlavor.CODE_NAVIGATION
         )
         client_version = version.__version__
         try:
@@ -88,12 +77,9 @@ class Info(dataclasses_json.DataClassJsonMixin):
         return cls(
             socket_path=str(socket_path),
             current_server_logs=str(current_server_logs),
-            current_codenav_server_logs=str(codenav_current_server_log),
             log_directory=str(log_directory),
             server_log_directory=str(server_log_directory),
-            codenav_server_log_directory=str(codenav_server_log_directory),
             client_logs=str(client_logs),
-            codenav_client_logs=str(codenav_client_logs),
             binary_location=(
                 None
                 if start_command is None

@@ -178,19 +178,6 @@ def _create_and_check_configuration(
     return frontend_configuration.OpenSource(configuration)
 
 
-def _create_and_check_codenav_configuration(
-    arguments: command_arguments.CommandArguments,
-    base_directory: Path,
-) -> frontend_configuration.OpenSource:
-    configuration = configuration_module.create_overridden_configuration(
-        arguments,
-        base_directory,
-        find_directories.CODENAV_CONFIGURATION_FILE,
-    )
-    _check_open_source_version(configuration)
-    return frontend_configuration.OpenSource(configuration)
-
-
 @click.group(
     invoke_without_command=True,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -955,42 +942,6 @@ def kill(context: click.Context, with_fire: bool) -> int:
     help="Use lazy module tracking. This is experimental and cannot power full checks.",
 )
 @click.option(
-    "--hover",
-    type=click.Choice(
-        [kind.value for kind in language_server_features.HoverAvailability]
-    ),
-    default=language_server_features.LanguageServerFeatures.hover.value,
-    help="Availability of the hover langauge server feature",
-    hidden=True,
-)
-@click.option(
-    "--definition",
-    type=click.Choice(
-        [kind.value for kind in language_server_features.DefinitionAvailability]
-    ),
-    default=language_server_features.LanguageServerFeatures.definition.value,
-    help="Availability of the definition langauge server feature",
-    hidden=True,
-)
-@click.option(
-    "--document-symbols",
-    type=click.Choice(
-        [kind.value for kind in language_server_features.DocumentSymbolsAvailability]
-    ),
-    default=language_server_features.LanguageServerFeatures.document_symbols.value,
-    help="Availability of the document symbols langauge server feature",
-    hidden=True,
-)
-@click.option(
-    "--references",
-    type=click.Choice(
-        [kind.value for kind in language_server_features.DocumentSymbolsAvailability]
-    ),
-    default=language_server_features.LanguageServerFeatures.references.value,
-    help="Availability of the references langauge server feature",
-    hidden=True,
-)
-@click.option(
     "--status-updates",
     type=click.Choice(
         [kind.value for kind in language_server_features.StatusUpdatesAvailability]
@@ -1032,10 +983,6 @@ def persistent(
     flavor: Optional[str],
     skip_initial_type_check: bool,
     use_lazy_module_tracking: bool,
-    hover: str,
-    definition: str,
-    document_symbols: str,
-    references: str,
     status_updates: str,
     type_coverage: str,
     type_errors: str,
@@ -1068,12 +1015,6 @@ def persistent(
                 )
             ),
             language_server_features=language_server_features.LanguageServerFeatures(
-                hover=language_server_features.HoverAvailability(hover),
-                definition=language_server_features.DefinitionAvailability(definition),
-                document_symbols=language_server_features.DocumentSymbolsAvailability(
-                    document_symbols,
-                ),
-                references=language_server_features.ReferencesAvailability(references),
                 status_updates=language_server_features.StatusUpdatesAvailability(
                     status_updates
                 ),
@@ -1391,12 +1332,7 @@ def start(
         identifiers.PyreFlavor(flavor) if flavor is not None else CLASSIC_FLAVOR
     )
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    if flavor_choice == identifiers.PyreFlavor.CODE_NAVIGATION:
-        configuration = _create_and_check_codenav_configuration(
-            command_argument, Path(".").resolve()
-        )
-    else:
-        configuration = _create_and_check_configuration(command_argument, Path("."))
+    configuration = _create_and_check_configuration(command_argument, Path("."))
     start_logging_to_directory(configuration.get_log_directory(), flavor_choice)
     return commands.start.run(
         configuration,
@@ -1528,12 +1464,7 @@ def stop(context: click.Context, flavor: Optional[str]) -> int:
     flavor_choice = (
         identifiers.PyreFlavor(flavor) if flavor is not None else CLASSIC_FLAVOR
     )
-    if flavor_choice == identifiers.PyreFlavor.CODE_NAVIGATION:
-        configuration = _create_and_check_codenav_configuration(
-            command_argument, Path(".").resolve()
-        )
-    else:
-        configuration = _create_and_check_configuration(command_argument, Path("."))
+    configuration = _create_and_check_configuration(command_argument, Path("."))
     start_logging_to_directory(configuration.get_log_directory(), flavor_choice)
     return commands.stop.run(configuration, flavor_choice)
 
