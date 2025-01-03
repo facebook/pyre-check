@@ -32,10 +32,8 @@ from ..protocol import (
     Info,
     InitializationOptions,
     InitializeParameters,
-    LspHoverResponse,
     PublishDiagnosticsClientCapabilities,
     PublishDiagnosticsClientTagSupport,
-    PyreHoverResponse,
     read_json_rpc,
     ReadChannelClosedError,
     ShowStatusRequestClientCapabilities,
@@ -182,35 +180,6 @@ class LSPInputOutputTest(testslide.TestCase):
                 message="dummy message",
             ),
         )
-
-
-class LSPHoverResponseTest(testslide.TestCase):
-    def test_to_lsp_response(self) -> None:
-        result = PyreHoverResponse("type", "docstring").to_lsp_hover_response()
-        expected = "```\ntype\n```\ndocstring"
-        self.assertIsNotNone(result)
-        self.assertEqual(result.contents, expected)
-
-    def test_to_lsp_response_empty(self) -> None:
-        result = PyreHoverResponse().to_lsp_hover_response()
-        self.assertIsNone(result)
-
-    def test_from_pyre_hover_responses_all_empty(self) -> None:
-        self.assertIsNone(
-            LspHoverResponse.from_pyre_hover_responses(
-                [PyreHoverResponse(), PyreHoverResponse()]
-            )
-        )
-
-    def test_from_pyre_hover_responses_non_empty(self) -> None:
-        actual = LspHoverResponse.from_pyre_hover_responses(
-            [
-                PyreHoverResponse(),
-                PyreHoverResponse("type", "docstring"),
-            ]
-        )
-        expected = LspHoverResponse("```\ntype\n```\ndocstring")
-        self.assertEqual(actual, expected)
 
 
 class LSPParsingTest(testslide.TestCase):
