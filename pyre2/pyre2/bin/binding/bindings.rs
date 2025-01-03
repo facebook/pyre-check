@@ -1806,6 +1806,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             Stmt::Assert(x) => {
                 self.ensure_expr(&x.test);
+                self.bind_narrow_ops(&Self::narrow_ops(Some(*x.test.clone())), x.range);
                 self.table
                     .insert(Key::Anon(x.test.range()), Binding::Expr(None, *x.test));
                 if let Some(msg_expr) = x.msg {
