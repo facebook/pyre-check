@@ -1639,18 +1639,19 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Stmt::For(x) => {
-                self.setup_loop(x.range);
+                self.setup_loop(x.range, &[]);
                 self.ensure_expr(&x.iter);
                 let make_binding = |k| Binding::IterableValue(k, *x.iter.clone());
                 self.bind_target(&x.target, &make_binding, true);
                 self.stmts(x.body);
-                self.teardown_loop(x.range, x.orelse);
+                self.teardown_loop(x.range, &[], x.orelse);
             }
             Stmt::While(x) => {
-                self.setup_loop(x.range);
+                let narrow_ops = Self::narrow_ops(Some(*x.test.clone()));
+                self.setup_loop(x.range, &narrow_ops);
                 self.ensure_expr(&x.test);
                 self.stmts(x.body);
-                self.teardown_loop(x.range, x.orelse);
+                self.teardown_loop(x.range, &narrow_ops, x.orelse);
             }
             Stmt::If(x) => {
                 let range = x.range;
@@ -1940,35 +1941,43 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn setup_loop(&mut self, range: TextRange) {
+    fn setup_loop(&mut self, range: TextRange, narrow_ops: &[(Name, NarrowOp, TextRange)]) {
         let base = self.scopes.last().flow.clone();
         // To account for possible assignments to existing names in a loop, we
         // speculatively insert phi keys upfront.
         self.scopes.last_mut().flow = self.insert_phi_keys(base.clone(), range);
+        self.bind_narrow_ops(narrow_ops, range);
         self.scopes
             .last_mut()
             .loops
             .push(Loop(vec![(LoopExit::NeverRan, base)]));
     }
 
-    fn teardown_loop(&mut self, range: TextRange, orelse: Vec<Stmt>) {
+    fn teardown_loop(
+        &mut self,
+        range: TextRange,
+        narrow_ops: &[(Name, NarrowOp, TextRange)],
+        orelse: Vec<Stmt>,
+    ) {
         let done = self.scopes.last_mut().loops.pop().unwrap();
-        let (mut breaks, mut other_exits): (Vec<Flow>, Vec<Flow>) =
+        let (breaks, other_exits): (Vec<Flow>, Vec<Flow>) =
             done.0.into_iter().partition_map(|(exit, flow)| match exit {
                 LoopExit::Break => Either::Left(flow),
                 LoopExit::NeverRan | LoopExit::Continue => Either::Right(flow),
             });
-        if breaks.is_empty() || orelse.is_empty() {
-            // At least one of `breaks` and `orelse` is empty. If `breaks` is empty, then `orelse`
-            // always runs. If `orelse` is empty, then running it is a no-op.
-            other_exits.append(&mut breaks);
+        // We associate a range to the non-`break` exits from the loop; it doesn't matter much what
+        // it is as long as it's different from the loop's range.
+        let other_range = TextRange::new(range.start(), range.start());
+        if breaks.is_empty() {
+            // When there are no `break`s, the loop condition is always false once the body has exited,
+            // and any `orelse` always runs.
             self.merge_loop_into_current(other_exits, range);
+            self.bind_narrow_ops(&Self::negate_narrow_ops(narrow_ops), other_range);
             self.stmts(orelse);
         } else {
-            // When there are both `break`s and an `else`, the `else` runs only when we don't `break`.
-            let other_range =
-                TextRange::new(range.start(), orelse.first().unwrap().range().start());
+            // Otherwise, we negate the loop condition and run the `orelse` only when we don't `break`.
             self.merge_loop_into_current(other_exits, other_range);
+            self.bind_narrow_ops(&Self::negate_narrow_ops(narrow_ops), other_range);
             self.stmts(orelse);
             self.merge_loop_into_current(breaks, range);
         }

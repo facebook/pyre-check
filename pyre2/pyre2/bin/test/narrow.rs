@@ -169,3 +169,60 @@ def f(x: str | None):
     assert_type(x, str)
     "#,
 );
+
+testcase!(
+    test_while_else,
+    r#"
+from typing import assert_type
+def f() -> str | None: ...
+x = f()
+while x is None:
+    assert_type(x, None)
+    x = f()
+    assert_type(x, str | None)
+else:
+    assert_type(x, str)
+assert_type(x, str)
+    "#,
+);
+
+testcase!(
+    test_while_break,
+    r#"
+from typing import assert_type
+def f() -> str | None: ...
+x = f()
+while x is None:
+    break
+assert_type(x, str | None)
+    "#,
+);
+
+testcase!(
+    test_while_break_else,
+    r#"
+from typing import assert_type
+def f() -> str | None: ...
+x = f()
+while x is None:
+    if f():
+        break
+else:
+    assert_type(x, str)
+assert_type(x, str | None)
+    "#,
+);
+
+testcase_with_bug!(
+    test_while_overwrite,
+    r#"
+from typing import assert_type, Literal
+def f() -> str | None: ...
+x = f()
+while x is None:
+    if f():
+        x = 42
+        break
+assert_type(x, Literal[42] | str | None)  # 'None' should not be here
+    "#,
+);
