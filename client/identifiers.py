@@ -49,7 +49,6 @@ class PyreFlavor(enum.Enum):
 
     CLASSIC = "classic"
     SHADOW = "shadow"
-    CODE_NAVIGATION = "code_navigation"
 
     def path_suffix(self) -> str:
         return "" if self == PyreFlavor.CLASSIC else f"__{self.value}"
@@ -68,7 +67,6 @@ class PyreFlavor(enum.Enum):
     def server_flavor_choices() -> List[str]:
         return [
             PyreFlavor.CLASSIC.value,
-            PyreFlavor.CODE_NAVIGATION.value,
         ]
 
     def server_log_subdirectory(self) -> str:
@@ -77,7 +75,5 @@ class PyreFlavor(enum.Enum):
     def simple_name(self) -> str:
         if self == PyreFlavor.CLASSIC:
             return "Type Checking"
-        elif self == PyreFlavor.CODE_NAVIGATION:
-            return "Language Services"
         else:
             raise IllegalFlavorException(f"No simple name defined for flavor {self}")

@@ -60,7 +60,6 @@ class ProjectIdentifierTest(testslide.TestCase):
             )
 
         assert_simple_name(identifiers.PyreFlavor.CLASSIC, "Type Checking")
-        assert_simple_name(identifiers.PyreFlavor.CODE_NAVIGATION, "Language Services")
         self.assertRaises(
             identifiers.IllegalFlavorException,
             identifiers.PyreFlavor.SHADOW.simple_name,

@@ -549,49 +549,6 @@ class ArgumentsTest(testslide.TestCase):
                 ),
             )
 
-    def test_get_code_navigation_server_artifact_root(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()
-            setup.ensure_directories_exists(root_path, [".pyre", "repo_root"])
-            setup.ensure_files_exist(
-                root_path, ["repo_root/.buckconfig", "repo_root/buck_root/.buckconfig"]
-            )
-            setup.write_configuration_file(
-                root_path / "repo_root" / "buck_root",
-                {
-                    "targets": ["//ct:lavos"],
-                    "bxl_builder": "//ct:robo",
-                    "source_directories": ["./"],
-                },
-            )
-            self.assertEqual(
-                get_source_path_for_server(
-                    frontend_configuration.OpenSource(
-                        configuration.create_configuration(
-                            command_arguments.CommandArguments(
-                                dot_pyre_directory=root_path / ".pyre",
-                                use_buck2=True,
-                            ),
-                            root_path / "repo_root" / "buck_root",
-                        )
-                    ),
-                    flavor=identifiers.PyreFlavor.CODE_NAVIGATION,
-                ),
-                BuckSourcePath(
-                    source_root=root_path / "repo_root",
-                    artifact_root=root_path / ".pyre" / "link_trees__code_navigation",
-                    checked_directory=root_path / "repo_root" / "buck_root",
-                    targets=["//ct:lavos"],
-                    targets_fallback_sources=[
-                        search_path.SimpleElement(
-                            str(root_path / "repo_root" / "buck_root")
-                        )
-                    ],
-                    bxl_builder="//ct:robo",
-                    use_buck2=True,
-                ),
-            )
-
     def test_get_buck_source_path__no_buck_root(self) -> None:
         # Specify an explicit base directory to make sure the content of parent
         # directories will not intervene.

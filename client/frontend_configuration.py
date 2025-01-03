@@ -60,12 +60,7 @@ class DefaultServerStartCommand(ServerStartCommand):
     def get_start_command(
         self, argument_file_path: Path, flavor: identifiers.PyreFlavor
     ) -> List[str]:
-        server_subcommand = (
-            "server"
-            if flavor != identifiers.PyreFlavor.CODE_NAVIGATION
-            else "code-navigation"
-        )
-        return [self._binary_location, server_subcommand, str(argument_file_path)]
+        return [self._binary_location, "server", str(argument_file_path)]
 
 
 # TODO(T120824066): Break this class down into smaller pieces. Ideally, one
