@@ -57,12 +57,7 @@ from .. import (
     log,
     timer,
 )
-from ..language_server import (
-    connections,
-    daemon_connection,
-    features,
-    protocol as lsp,
-)
+from ..language_server import connections, daemon_connection, features, protocol as lsp
 from . import (
     commands,
     daemon_querier,
@@ -201,7 +196,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         parameters: Dict[str, object],
         activity_key: Optional[Dict[str, object]],
     ) -> None:
-        should_write_telemetry = self.server_state.server_options.language_server_features.telemetry.is_enabled()
+        should_write_telemetry = (
+            self.server_state.server_options.language_server_features.telemetry.is_enabled()
+        )
         if should_write_telemetry:
             parameters = dict(parameters)
             parameters["project_identifier"] = (
@@ -379,7 +376,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         daemon_status_before = self.server_state.status_tracker.get_status()
         did_change_timer = timer.Timer()
 
-        process_unsaved_changes = self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
+        process_unsaved_changes = (
+            self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
+        )
         error_message = None
         code_changes = str(
             "".join(
@@ -589,7 +588,9 @@ class PyreLanguageServerDispatcher:
 
         dispatch_request_timer = timer.Timer()
         await self._restart_if_needed()
-        dispatch_request_duration = dispatch_request_timer.stop_in_millisecond()
+        dispatch_request_duration = (  # noqa: F841
+            dispatch_request_timer.stop_in_millisecond()
+        )
         if self.server_state.client_register_event is not None:
             await self.server_state.client_register_event.wait()
         elif request.method == "textDocument/didOpen":

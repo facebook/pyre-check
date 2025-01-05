@@ -20,20 +20,24 @@ class RunnerLibTest(testslide.TestCase):
     def test_parse_annotations(self) -> None:
         self.assertEqual(
             test_runner_lib.parse_test_annotations_from_source(
-                textwrap.dedent("""
+                textwrap.dedent(
+                    """
                     def foo() -> None:
                         pass
-                """)
+                """
+                )
             ),
             {},
         )
         self.assertEqual(
             test_runner_lib.parse_test_annotations_from_source(
-                textwrap.dedent("""
+                textwrap.dedent(
+                    """
                     @ExpectIssue(code=1000)
                     def foo() -> None:
                         pass
-                """)
+                """
+                )
             ),
             {
                 "foo": FunctionTestAnnotations(
@@ -49,11 +53,13 @@ class RunnerLibTest(testslide.TestCase):
         )
         self.assertEqual(
             test_runner_lib.parse_test_annotations_from_source(
-                textwrap.dedent("""
+                textwrap.dedent(
+                    """
                     @ExpectIssue(code=1000, line=1, task='T123', currently_found=False)
                     def foo() -> None:
                         pass
-                """)
+                """
+                )
             ),
             {
                 "foo": FunctionTestAnnotations(
@@ -72,13 +78,15 @@ class RunnerLibTest(testslide.TestCase):
         )
         self.assertEqual(
             test_runner_lib.parse_test_annotations_from_source(
-                textwrap.dedent("""
+                textwrap.dedent(
+                    """
                     @ExpectIssue(code=1000, line=1)
                     @ExpectIssue(code=1000, line=2)
                     @ExpectNoIssue(code=1001)
                     def foo() -> None:
                         pass
-                """)
+                """
+                )
             ),
             {
                 "foo": FunctionTestAnnotations(
@@ -105,12 +113,14 @@ class RunnerLibTest(testslide.TestCase):
         # Ignore unknown decorators
         self.assertEqual(
             test_runner_lib.parse_test_annotations_from_source(
-                textwrap.dedent("""
+                textwrap.dedent(
+                    """
                     @ExpectIssue(code=1000)
                     @other_decorator()
                     def foo() -> None:
                         pass
-                """)
+                """
+                )
             ),
             {
                 "foo": FunctionTestAnnotations(
@@ -126,27 +136,33 @@ class RunnerLibTest(testslide.TestCase):
         )
         with self.assertRaises(test_runner_lib.TestConfigurationException):
             test_runner_lib.parse_test_annotations_from_source(
-                textwrap.dedent("""
+                textwrap.dedent(
+                    """
                     @ExpectIssue()
                     def foo() -> None:
                         pass
-                """)
+                """
+                )
             )
         with self.assertRaises(test_runner_lib.TestConfigurationException):
             test_runner_lib.parse_test_annotations_from_source(
-                textwrap.dedent("""
+                textwrap.dedent(
+                    """
                     @ExpectIssue(code='a')
                     def foo() -> None:
                         pass
-                """)
+                """
+                )
             )
         with self.assertRaises(test_runner_lib.TestConfigurationException):
             test_runner_lib.parse_test_annotations_from_source(
-                textwrap.dedent("""
+                textwrap.dedent(
+                    """
                     @ExpectIssue(code=1000, unknown=0)
                     def foo() -> None:
                         pass
-                """)
+                """
+                )
             )
 
     @staticmethod

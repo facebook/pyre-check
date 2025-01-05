@@ -89,6 +89,8 @@ ignore =
   # Statement ends with a semicolon.
   E704,
   # Multiple statements on one line (def).
+  F401,
+  # 'module' imported but unused.
   W291,
   # Trailing whitespace.
   W292,

@@ -1,10 +1,10 @@
 repos:
 - repo: https://github.com/pycqa/flake8
-  rev: 7.0.0
+  rev: 7.1.1
   hooks:
   - id: flake8
 - repo: https://github.com/omnilib/ufmt
-  rev: v1.3.0
+  rev: v2.8.0
   hooks:
     - id: ufmt
       additional_dependencies:

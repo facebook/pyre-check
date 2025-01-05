@@ -20,16 +20,10 @@ from ...language_server.connections import (
     create_memory_text_reader,
     MemoryBytesWriter,
 )
-from ...language_server.features import (
-    LanguageServerFeatures,
-    TypeCoverageAvailability,
-)
+from ...language_server.features import LanguageServerFeatures, TypeCoverageAvailability
 from ...tests import setup
 from .. import server_state as state
-from ..daemon_querier import (
-    DaemonQueryFailure,
-    PersistentDaemonQuerier,
-)
+from ..daemon_querier import DaemonQueryFailure, PersistentDaemonQuerier
 from ..server_state import ConnectionStatus
 from ..tests import server_setup
 

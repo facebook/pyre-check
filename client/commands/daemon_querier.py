@@ -155,7 +155,9 @@ class ServerStateBackedDaemonQuerier(AbstractDaemonQuerier):
         return self.server_state.server_options.get_socket_path()
 
     def is_unsaved_changes_enabled(self) -> bool:
-        return self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
+        return (
+            self.server_state.server_options.language_server_features.unsaved_changes.is_enabled()
+        )
 
 
 # TODO(T184611575) Clean up dead code in PersistentDaemonQuerier

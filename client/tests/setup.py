@@ -35,10 +35,7 @@ from typing import (
 
 from pyre_extensions import ParameterSpecification
 
-from ..find_directories import (
-    CONFIGURATION_FILE,
-    LOCAL_CONFIGURATION_FILE,
-)
+from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
 TParams = ParameterSpecification("TParams")
 T = TypeVar("T")
