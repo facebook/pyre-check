@@ -137,8 +137,6 @@ static sqlite3_stmt* get_select_stmt = NULL;
 
 /* Convention: .*_b = Size in bytes. */
 
-static size_t heap_size;
-
 /* Used for the dependency hashtable */
 static uint64_t dep_size;
 static size_t dep_size_b;
@@ -224,10 +222,10 @@ typedef struct {
 /*****************************************************************************/
 
 /* Total size of allocated shared memory */
-static size_t shared_mem_size = 0;
+//static size_t shared_mem_size = 0;
 
 /* Beginning of shared memory */
-static char* shared_mem = NULL;
+//static char* shared_mem = NULL;
 
 /* A pair of a 31-bit unsigned number and a tag bit. */
 typedef struct {
@@ -341,8 +339,8 @@ static uint64_t* dcounter = NULL;
 static uint64_t* deptbl_bindings = NULL;
 
 /* The hashtable containing the shared values. */
-static helt_t* hashtbl = NULL;
-static uint64_t* hcounter = NULL; // the number of slots taken in the table
+//static helt_t* hashtbl = NULL;
+//static uint64_t* hcounter = NULL; // the number of slots taken in the table
 
 /* A counter increasing globally across all forks. */
 static uintptr_t* counter = NULL;
@@ -361,7 +359,7 @@ static size_t* allow_dependency_table_reads = NULL;
 static uintptr_t early_counter = 1;
 
 /* The top of the heap */
-static char** heap = NULL;
+//static char** heap = NULL;
 
 /* Useful to add assertions */
 static pid_t* master_pid = NULL;
@@ -370,72 +368,72 @@ static pid_t my_pid = 0;
 static size_t allow_hashtable_writes_by_current_process = 1;
 
 static char* db_filename = NULL;
-static char* hashtable_db_filename = NULL;
+//static char* hashtable_db_filename = NULL;
 
 #define FILE_INFO_ON_DISK_PATH "FILE_INFO_ON_DISK_PATH"
 
 /* Where the heap started (bottom) */
-static char* heap_init = NULL;
+//static char* heap_init = NULL;
 /* Where the heap will end (top) */
-static char* heap_max = NULL;
+//static char* heap_max = NULL;
 
-static size_t* wasted_heap_size = NULL;
+//static size_t* wasted_heap_size = NULL;
 
-static size_t used_heap_size(void) {
-  return *heap - heap_init;
-}
+//static size_t used_heap_size(void) {
+//  return *heap - heap_init;
+//}
 
 static long removed_count = 0;
 
-static ZSTD_CCtx* zstd_compression_context = NULL;
-static ZSTD_DCtx* zstd_decompression_context = NULL;
+//static ZSTD_CCtx* zstd_compression_context = NULL;
+//static ZSTD_DCtx* zstd_decompression_context = NULL;
+//
+///* The lower the level, the faster the speed (at the cost of compression) */
+//static const size_t zstd_compression_level = 5;
 
-/* The lower the level, the faster the speed (at the cost of compression) */
-static const size_t zstd_compression_level = 5;
+///* Expose so we can display diagnostics */
+//CAMLprim value hh_used_heap_size(void) {
+//  return Val_long(used_heap_size());
+//}
 
-/* Expose so we can display diagnostics */
-CAMLprim value hh_used_heap_size(void) {
-  return Val_long(used_heap_size());
-}
-
-/* Part of the heap not reachable from hashtable entries. Can be reclaimed with
- * hh_collect. */
-CAMLprim value hh_wasted_heap_size(void) {
-  assert(wasted_heap_size != NULL);
-  return Val_long(*wasted_heap_size);
-}
+///* Part of the heap not reachable from hashtable entries. Can be reclaimed with
+// * hh_collect. */
+//CAMLprim value hh_wasted_heap_size(void) {
+//  assert(wasted_heap_size != NULL);
+//  return Val_long(*wasted_heap_size);
+//}
 
 CAMLprim value hh_log_level(void) {
   CAMLparam0();
   CAMLreturn(Val_long(*log_level));
 }
 
-CAMLprim value hh_hash_used_slots(void) {
-  CAMLparam0();
-  uint64_t filled_slots = 0;
-  uint64_t nonempty_slots = 0;
-  uintptr_t i = 0;
-  for (i = 0; i < hashtbl_size; ++i) {
-    if (hashtbl[i].hash != 0) {
-      nonempty_slots++;
-    }
-    if (hashtbl[i].addr == NULL) {
-      continue;
-    }
-    filled_slots++;
-  }
-  assert(nonempty_slots == *hcounter);
-  value connector = caml_alloc_tuple(2);
-  Field(connector, 0) = Val_long(filled_slots);
-  Field(connector, 1) = Val_long(nonempty_slots);
+//CAMLprim value hh_hash_used_slots(void) {
+//  CAMLparam0();
+//  uint64_t filled_slots = 0;
+//  uint64_t nonempty_slots = 0;
+//  uintptr_t i = 0;
+//  for (i = 0; i < hashtbl_size; ++i) {
+//    if (hashtbl[i].hash != 0) {
+//      nonempty_slots++;
+//    }
+//    if (hashtbl[i].addr == NULL) {
+//      continue;
+//    }
+//    filled_slots++;
+//  }
+//  assert(nonempty_slots == *hcounter);
+//  value connector = caml_alloc_tuple(2);
+//  Field(connector, 0) = Val_long(filled_slots);
+//  Field(connector, 1) = Val_long(nonempty_slots);
+//
+//  CAMLreturn(connector);
+//}
 
-  CAMLreturn(connector);
-}
-
-CAMLprim value hh_hash_slots(void) {
-  CAMLparam0();
-  CAMLreturn(Val_long(hashtbl_size));
-}
+//CAMLprim value hh_hash_slots(void) {
+//  CAMLparam0();
+//  CAMLreturn(Val_long(hashtbl_size));
+//}
 
 struct timeval log_duration(const char* prefix, struct timeval start_t) {
   struct timeval end_t = {0};
@@ -452,137 +450,137 @@ struct timeval log_duration(const char* prefix, struct timeval start_t) {
 // might not be ready for writing yet! If you want to initialize a bit of
 // shared memory, check out init_shared_globals
 static void define_globals(size_t page_size) {
-  char* mem = mmap(
-      SHARED_MEM_INIT,
-      shared_mem_size,
-      PROT_READ | PROT_WRITE,
-      MAP_SHARED | MAP_ANON | MAP_NORESERVE | MAP_FIXED,
-      -1,
-      0);
-  if (mem == MAP_FAILED) {
-    printf("Error initializing: %s\n", strerror(errno));
-    exit(2);
-  }
-
-  // Beginning of the shared memory
-  shared_mem = mem;
-
-#ifdef MADV_DONTDUMP
-  // We are unlikely to get much useful information out of the shared heap in
-  // a core file. Moreover, it can be HUGE, and the extensive work done dumping
-  // it once for each CPU can mean that the user will reboot their machine
-  // before the much more useful stack gets dumped!
-  madvise(shared_mem, shared_mem_size, MADV_DONTDUMP);
-#endif
-
-  /* BEGINNING OF THE SMALL OBJECTS PAGE
-   * We keep all the small objects in this page.
-   * They are on different cache lines because we modify them atomically.
-   */
-
-  /* The pointer to the top of the heap.
-   * We will atomically increment *heap every time we want to allocate.
-   */
-  heap = (char**)mem;
-
-  // The number of elements in the hashtable
-  assert(CACHE_LINE_SIZE >= sizeof(uint64_t));
-  hcounter = (uint64_t*)(mem + CACHE_LINE_SIZE);
-
-  // The number of elements in the deptable
-  assert(CACHE_LINE_SIZE >= sizeof(uint64_t));
-  dcounter = (uint64_t*)(mem + 2 * CACHE_LINE_SIZE);
-
-  assert(CACHE_LINE_SIZE >= sizeof(uintptr_t));
-  counter = (uintptr_t*)(mem + 3 * CACHE_LINE_SIZE);
-
-  assert(CACHE_LINE_SIZE >= sizeof(pid_t));
-  master_pid = (pid_t*)(mem + 4 * CACHE_LINE_SIZE);
-
-  assert(CACHE_LINE_SIZE >= sizeof(size_t));
-  log_level = (size_t*)(mem + 5 * CACHE_LINE_SIZE);
-
-  assert(CACHE_LINE_SIZE >= sizeof(size_t));
-  wasted_heap_size = (size_t*)(mem + 6 * CACHE_LINE_SIZE);
-
-  assert(CACHE_LINE_SIZE >= sizeof(size_t));
-  allow_removes = (size_t*)(mem + 7 * CACHE_LINE_SIZE);
-
-  assert(CACHE_LINE_SIZE >= sizeof(size_t));
-  allow_dependency_table_reads = (size_t*)(mem + 8 * CACHE_LINE_SIZE);
-
-  mem += page_size;
-  // Just checking that the page is large enough.
-  assert(page_size > 9 * CACHE_LINE_SIZE + (int)sizeof(int));
-
+//  char* mem = mmap(
+//      SHARED_MEM_INIT,
+//      shared_mem_size,
+//      PROT_READ | PROT_WRITE,
+//      MAP_SHARED | MAP_ANON | MAP_NORESERVE | MAP_FIXED,
+//      -1,
+//      0);
+//  if (mem == MAP_FAILED) {
+//    printf("Error initializing: %s\n", strerror(errno));
+//    exit(2);
+//  }
+//
+//  // Beginning of the shared memory
+//  shared_mem = mem;
+//
+//#ifdef MADV_DONTDUMP
+//  // We are unlikely to get much useful information out of the shared heap in
+//  // a core file. Moreover, it can be HUGE, and the extensive work done dumping
+//  // it once for each CPU can mean that the user will reboot their machine
+//  // before the much more useful stack gets dumped!
+//  madvise(shared_mem, shared_mem_size, MADV_DONTDUMP);
+//#endif
+//
+//  /* BEGINNING OF THE SMALL OBJECTS PAGE
+//   * We keep all the small objects in this page.
+//   * They are on different cache lines because we modify them atomically.
+//   */
+//
+//  /* The pointer to the top of the heap.
+//   * We will atomically increment *heap every time we want to allocate.
+//   */
+//  heap = (char**)mem;
+//
+//  // The number of elements in the hashtable
+//  assert(CACHE_LINE_SIZE >= sizeof(uint64_t));
+//  hcounter = (uint64_t*)(mem + CACHE_LINE_SIZE);
+//
+//  // The number of elements in the deptable
+//  assert(CACHE_LINE_SIZE >= sizeof(uint64_t));
+  dcounter = (uint64_t*)malloc(sizeof(uint64_t));
+//
+//  assert(CACHE_LINE_SIZE >= sizeof(uintptr_t));
+  counter = (uintptr_t*)malloc(sizeof(uintptr_t));
+//
+//  assert(CACHE_LINE_SIZE >= sizeof(pid_t));
+  master_pid = (pid_t*)malloc(sizeof(pid_t));
+//
+//  assert(CACHE_LINE_SIZE >= sizeof(size_t));
+  log_level = (size_t*)malloc(sizeof(size_t));
+//
+//  assert(CACHE_LINE_SIZE >= sizeof(size_t));
+//  wasted_heap_size = (size_t*)(mem + 6 * CACHE_LINE_SIZE);
+//
+//  assert(CACHE_LINE_SIZE >= sizeof(size_t));
+  allow_removes = (size_t*)malloc(sizeof(size_t));
+//
+//  assert(CACHE_LINE_SIZE >= sizeof(size_t));
+  allow_dependency_table_reads = (size_t*)malloc(sizeof(size_t));
+//
+//  mem += page_size;
+//  // Just checking that the page is large enough.
+//  assert(page_size > 9 * CACHE_LINE_SIZE + (int)sizeof(int));
+//
   /* File name we get in hh_load_dep_table_sqlite needs to be smaller than
    * page_size - it should be since page_size is quite big for a string
    */
-  db_filename = (char*)mem;
-  mem += page_size;
+  db_filename = malloc(page_size);
+//  mem += page_size;
+//
+//  hashtable_db_filename = (char*)mem;
+//  mem += page_size;
+//  /* END OF THE SMALL OBJECTS PAGE */
+//
+//  /* Dependencies */
+  deptbl = (deptbl_entry_t*)malloc(dep_size_b);
+//  mem += dep_size_b;
+//
+  deptbl_bindings = (uint64_t*)malloc(bindings_size_b);
+//  mem += bindings_size_b;
+//
+//  /* Hashtable */
+//  hashtbl = (helt_t*)mem;
+//  mem += hashtbl_size_b;
+//
+//  /* Heap */
+//  heap_init = mem;
+//  heap_max = heap_init + heap_size;
+//}
 
-  hashtable_db_filename = (char*)mem;
-  mem += page_size;
-  /* END OF THE SMALL OBJECTS PAGE */
-
-  /* Dependencies */
-  deptbl = (deptbl_entry_t*)mem;
-  mem += dep_size_b;
-
-  deptbl_bindings = (uint64_t*)mem;
-  mem += bindings_size_b;
-
-  /* Hashtable */
-  hashtbl = (helt_t*)mem;
-  mem += hashtbl_size_b;
-
-  /* Heap */
-  heap_init = mem;
-  heap_max = heap_init + heap_size;
-}
-
-// Must be called AFTER init_shared_globals / define_globals
-// once per process, during hh_shared_init / hh_connect
-static void init_zstd_compression() {
-  /* The resources below (dictionaries, contexts) technically leak.
-   * We do not free them as there is no proper API from workers.
-   * However, they are in use until the end of the process life. */
-  zstd_compression_context = ZSTD_createCCtx();
-  zstd_decompression_context = ZSTD_createDCtx();
-  {
-    ZSTD_CDict* zstd_compressed_dictionary = ZSTD_createCDict(
-        dictionary_compression_data,
-        dictionary_compression_data_length,
-        zstd_compression_level);
-    const size_t result = ZSTD_CCtx_refCDict(
-        zstd_compression_context, zstd_compressed_dictionary);
-    assert(!ZSTD_isError(result));
-  }
-  {
-    ZSTD_DDict* zstd_digested_dictionary = ZSTD_createDDict(
-        dictionary_compression_data, dictionary_compression_data_length);
-    const size_t result = ZSTD_DCtx_refDDict(
-        zstd_decompression_context, zstd_digested_dictionary);
-    assert(!ZSTD_isError(result));
-  }
+//// Must be called AFTER init_shared_globals / define_globals
+//// once per process, during hh_shared_init / hh_connect
+//static void init_zstd_compression() {
+//  /* The resources below (dictionaries, contexts) technically leak.
+//   * We do not free them as there is no proper API from workers.
+//   * However, they are in use until the end of the process life. */
+//  zstd_compression_context = ZSTD_createCCtx();
+//  zstd_decompression_context = ZSTD_createDCtx();
+//  {
+//    ZSTD_CDict* zstd_compressed_dictionary = ZSTD_createCDict(
+//        dictionary_compression_data,
+//        dictionary_compression_data_length,
+//        zstd_compression_level);
+//    const size_t result = ZSTD_CCtx_refCDict(
+//        zstd_compression_context, zstd_compressed_dictionary);
+//    assert(!ZSTD_isError(result));
+//  }
+//  {
+//    ZSTD_DDict* zstd_digested_dictionary = ZSTD_createDDict(
+//        dictionary_compression_data, dictionary_compression_data_length);
+//    const size_t result = ZSTD_DCtx_refDDict(
+//        zstd_decompression_context, zstd_digested_dictionary);
+//    assert(!ZSTD_isError(result));
+//  }
 }
 
 static void init_shared_globals(size_t page_size, size_t config_log_level) {
   // Initialize the number of element in the table
-  *hcounter = 0;
+  //*hcounter = 0;
   *dcounter = 0;
   *counter = early_counter + 1;
   *log_level = config_log_level;
-  *wasted_heap_size = 0;
+  //*wasted_heap_size = 0;
   *allow_removes = 1;
   *allow_dependency_table_reads = 1;
 
   // Initialize top heap pointers
-  *heap = heap_init;
+  //*heap = heap_init;
 
-  // Zero out this shared memory for a string
+  //// Zero out this shared memory for a string
   memset(db_filename, 0, page_size);
-  memset(hashtable_db_filename, 0, page_size);
+  //memset(hashtable_db_filename, 0, page_size);
 }
 
 /*****************************************************************************/
@@ -593,15 +591,14 @@ CAMLprim value hh_shared_init(value config_val) {
   CAMLparam1(config_val);
   size_t page_size = getpagesize();
 
-  heap_size = Long_val(Field(config_val, 0));
-  dep_size = 1ul << Long_val(Field(config_val, 1));
+  dep_size = 1ul << Long_val(Field(config_val, 0));
   dep_size_b = dep_size * sizeof(deptbl[0]);
   bindings_size_b = dep_size * sizeof(deptbl_bindings[0]);
-  hashtbl_size = 1ul << Long_val(Field(config_val, 2));
-  hashtbl_size_b = hashtbl_size * sizeof(hashtbl[0]);
+  //hashtbl_size = 1ul << Long_val(Field(config_val, 2));
+  //hashtbl_size_b = hashtbl_size * sizeof(hashtbl[0]);
 
-  shared_mem_size =
-      dep_size_b + bindings_size_b + hashtbl_size_b + heap_size + 3 * page_size;
+  //shared_mem_size =
+  //    dep_size_b + bindings_size_b + hashtbl_size_b + heap_size + 3 * page_size;
 
   define_globals(page_size);
 
@@ -609,21 +606,21 @@ CAMLprim value hh_shared_init(value config_val) {
   *master_pid = getpid();
   my_pid = *master_pid;
 
-  init_shared_globals(page_size, Long_val(Field(config_val, 3)));
-  // Checking that we did the maths correctly.
-  assert(*heap + heap_size == shared_mem + shared_mem_size);
+  init_shared_globals(page_size, Long_val(Field(config_val, 1)));
+  //// Checking that we did the maths correctly.
+  //assert(*heap + heap_size == shared_mem + shared_mem_size);
 
-  // Uninstall ocaml's segfault handler. It's supposed to throw an exception on
-  // stack overflow, but we don't actually handle that exception, so what
-  // happens in practice is we terminate at toplevel with an unhandled exception
-  // and a useless ocaml backtrace. A core dump is actually more useful. Sigh.
-  struct sigaction sigact = {0};
-  sigact.sa_handler = SIG_DFL;
-  sigemptyset(&sigact.sa_mask);
-  sigact.sa_flags = 0;
-  sigaction(SIGSEGV, &sigact, NULL);
+  //// Uninstall ocaml's segfault handler. It's supposed to throw an exception on
+  //// stack overflow, but we don't actually handle that exception, so what
+  //// happens in practice is we terminate at toplevel with an unhandled exception
+  //// and a useless ocaml backtrace. A core dump is actually more useful. Sigh.
+  //struct sigaction sigact = {0};
+  //sigact.sa_handler = SIG_DFL;
+  //sigemptyset(&sigact.sa_mask);
+  //sigact.sa_flags = 0;
+  //sigaction(SIGSEGV, &sigact, NULL);
 
-  init_zstd_compression();
+  //init_zstd_compression();
 
   CAMLreturn(Val_unit);
 }
@@ -635,24 +632,26 @@ value hh_connect(value unit) {
   CAMLreturn(Val_unit);
 }
 
-void pyre_reset() {
+CAMLprim value hh_pyre_reset(value unit) {
+  CAMLparam1(unit);
   // Reset the number of element in the table
-  *hcounter = 0;
+//  *hcounter = 0;
   *dcounter = 0;
-  *wasted_heap_size = 0;
-
-  // Reset top heap pointers
-  *heap = heap_init;
-
+//  *wasted_heap_size = 0;
+//
+//  // Reset top heap pointers
+//  *heap = heap_init;
+//
   // Zero out this shared memory for a string
   size_t page_size = getpagesize();
   memset(db_filename, 0, page_size);
-  memset(hashtable_db_filename, 0, page_size);
+//  memset(hashtable_db_filename, 0, page_size);
 
   // Zero out the tables
   memset(deptbl, 0, dep_size_b);
   memset(deptbl_bindings, 0, bindings_size_b);
-  memset(hashtbl, 0, hashtbl_size_b);
+//  memset(hashtbl, 0, hashtbl_size_b);
+  CAMLreturn(Val_unit);
 }
 
 /*****************************************************************************/
@@ -1000,12 +999,12 @@ CAMLprim value hh_get_dep(value ocaml_key) {
   CAMLreturn(result);
 }
 
-value hh_check_heap_overflow(void) {
-  if (*heap >= shared_mem + shared_mem_size) {
-    return Val_bool(1);
-  }
-  return Val_bool(0);
-}
+//value hh_check_heap_overflow(void) {
+//  if (*heap >= shared_mem + shared_mem_size) {
+//    return Val_bool(1);
+//  }
+//  return Val_bool(0);
+//}
 
 /*****************************************************************************/
 /* We compact the heap when it gets twice as large as its initial size.
@@ -1017,125 +1016,125 @@ value hh_check_heap_overflow(void) {
  */
 /*****************************************************************************/
 
-CAMLprim value hh_collect(void) {
-  // NOTE: explicitly do NOT call CAMLparam or any of the other functions/macros
-  // defined in caml/memory.h .
-  // This function takes a boolean and returns unit.
-  // Those are both immediates in the OCaml runtime.
-  assert_master();
-  assert_allow_removes();
+//CAMLprim value hh_collect(void) {
+//  // NOTE: explicitly do NOT call CAMLparam or any of the other functions/macros
+//  // defined in caml/memory.h .
+//  // This function takes a boolean and returns unit.
+//  // Those are both immediates in the OCaml runtime.
+//  assert_master();
+//  assert_allow_removes();
+//
+//  // Step 1: Walk the hashtbl entries, which are the roots of our marking pass.
+//
+//  for (size_t i = 0; i < hashtbl_size; i++) {
+//    // Skip empty slots
+//    if (hashtbl[i].addr == NULL) {
+//      continue;
+//    }
+//
+//    // No workers should be writing at the moment. If a worker died in the
+//    // middle of a write, that is also very bad
+//    assert(hashtbl[i].addr != HASHTBL_WRITE_IN_PROGRESS);
+//
+//    // The hashtbl addr will be wrong after we relocate the heap entry, but we
+//    // don't know where the heap entry will relocate to yet. We need to first
+//    // move the heap entry, then fix up the hashtbl addr.
+//    //
+//    // We accomplish this by storing the heap header in the now useless addr
+//    // field and storing a pointer to the addr field where the header used to
+//    // be. Then, after moving the heap entry, we can follow the pointer to
+//    // restore our original header and update the addr field to our relocated
+//    // address.
+//    //
+//    // This is all super unsafe and only works because we constrain the size of
+//    // an hh_header_t struct to the size of a pointer.
+//
+//    // Location of the addr field (8 bytes) in the hashtable
+//    char** hashtbl_addr = (char**)&hashtbl[i].addr;
+//
+//    // Location of the header (8 bytes) in the heap
+//    char* heap_addr = (char*)hashtbl[i].addr;
+//
+//    // Swap
+//    hh_header_t header = *(hh_header_t*)heap_addr;
+//    *(hh_header_t*)hashtbl_addr = header;
+//    *(uintptr_t*)heap_addr = (uintptr_t)hashtbl_addr;
+//  }
+//
+//  // Step 2: Walk the heap and relocate entries, updating the hashtbl to point
+//  // to relocated addresses.
+//
+//  // Pointer to free space in the heap where moved values will move to.
+//  char* dest = heap_init;
+//
+//  // Pointer that walks the heap from bottom to top.
+//  char* src = heap_init;
+//
+//  size_t aligned_size;
+//  hh_header_t header;
+//  while (src < *heap) {
+//    if (*(uint64_t*)src & 1) {
+//      // If the lsb is set, this is a header. If it's a header, that means the
+//      // entry was not marked in the first pass and should be collected. Don't
+//      // move dest pointer, but advance src pointer to next heap entry.
+//      header = *(hh_header_t*)src;
+//      aligned_size = ALIGNED(Heap_entry_total_size(header));
+//    } else {
+//      // If the lsb is 0, this is a pointer to the addr field of the hashtable
+//      // element, which holds the header bytes. This entry is live.
+//      char* hashtbl_addr = *(char**)src;
+//      header = *(hh_header_t*)hashtbl_addr;
+//      aligned_size = ALIGNED(Heap_entry_total_size(header));
+//
+//      // Fix the hashtbl addr field to point to our new location and restore the
+//      // heap header data temporarily stored in the addr field bits.
+//      *(uintptr_t*)hashtbl_addr = (uintptr_t)dest;
+//      *(hh_header_t*)src = header;
+//
+//      // Move the entry as far to the left as possible.
+//      memmove(dest, src, aligned_size);
+//      dest += aligned_size;
+//    }
+//
+//    src += aligned_size;
+//  }
+//
+//  // TODO: Space between dest and *heap is unused, but will almost certainly
+//  // become used again soon. Currently we will never decommit, which may cause
+//  // issues when there is memory pressure.
+//  //
+//  // If the kernel supports it, we might consider using madvise(MADV_FREE),
+//  // which allows the kernel to reclaim the memory lazily under pressure, but
+//  // would not force page faults under healthy operation.
+//
+//  *heap = dest;
+//  *wasted_heap_size = 0;
+//
+//  return Val_unit;
+//}
 
-  // Step 1: Walk the hashtbl entries, which are the roots of our marking pass.
-
-  for (size_t i = 0; i < hashtbl_size; i++) {
-    // Skip empty slots
-    if (hashtbl[i].addr == NULL) {
-      continue;
-    }
-
-    // No workers should be writing at the moment. If a worker died in the
-    // middle of a write, that is also very bad
-    assert(hashtbl[i].addr != HASHTBL_WRITE_IN_PROGRESS);
-
-    // The hashtbl addr will be wrong after we relocate the heap entry, but we
-    // don't know where the heap entry will relocate to yet. We need to first
-    // move the heap entry, then fix up the hashtbl addr.
-    //
-    // We accomplish this by storing the heap header in the now useless addr
-    // field and storing a pointer to the addr field where the header used to
-    // be. Then, after moving the heap entry, we can follow the pointer to
-    // restore our original header and update the addr field to our relocated
-    // address.
-    //
-    // This is all super unsafe and only works because we constrain the size of
-    // an hh_header_t struct to the size of a pointer.
-
-    // Location of the addr field (8 bytes) in the hashtable
-    char** hashtbl_addr = (char**)&hashtbl[i].addr;
-
-    // Location of the header (8 bytes) in the heap
-    char* heap_addr = (char*)hashtbl[i].addr;
-
-    // Swap
-    hh_header_t header = *(hh_header_t*)heap_addr;
-    *(hh_header_t*)hashtbl_addr = header;
-    *(uintptr_t*)heap_addr = (uintptr_t)hashtbl_addr;
-  }
-
-  // Step 2: Walk the heap and relocate entries, updating the hashtbl to point
-  // to relocated addresses.
-
-  // Pointer to free space in the heap where moved values will move to.
-  char* dest = heap_init;
-
-  // Pointer that walks the heap from bottom to top.
-  char* src = heap_init;
-
-  size_t aligned_size;
-  hh_header_t header;
-  while (src < *heap) {
-    if (*(uint64_t*)src & 1) {
-      // If the lsb is set, this is a header. If it's a header, that means the
-      // entry was not marked in the first pass and should be collected. Don't
-      // move dest pointer, but advance src pointer to next heap entry.
-      header = *(hh_header_t*)src;
-      aligned_size = ALIGNED(Heap_entry_total_size(header));
-    } else {
-      // If the lsb is 0, this is a pointer to the addr field of the hashtable
-      // element, which holds the header bytes. This entry is live.
-      char* hashtbl_addr = *(char**)src;
-      header = *(hh_header_t*)hashtbl_addr;
-      aligned_size = ALIGNED(Heap_entry_total_size(header));
-
-      // Fix the hashtbl addr field to point to our new location and restore the
-      // heap header data temporarily stored in the addr field bits.
-      *(uintptr_t*)hashtbl_addr = (uintptr_t)dest;
-      *(hh_header_t*)src = header;
-
-      // Move the entry as far to the left as possible.
-      memmove(dest, src, aligned_size);
-      dest += aligned_size;
-    }
-
-    src += aligned_size;
-  }
-
-  // TODO: Space between dest and *heap is unused, but will almost certainly
-  // become used again soon. Currently we will never decommit, which may cause
-  // issues when there is memory pressure.
-  //
-  // If the kernel supports it, we might consider using madvise(MADV_FREE),
-  // which allows the kernel to reclaim the memory lazily under pressure, but
-  // would not force page faults under healthy operation.
-
-  *heap = dest;
-  *wasted_heap_size = 0;
-
-  return Val_unit;
-}
-
-static void raise_heap_full(void) {
-  static const value* exn = NULL;
-  if (!exn)
-    exn = caml_named_value("heap_full");
-  caml_raise_constant(*exn);
-}
+//static void raise_heap_full(void) {
+//  static const value* exn = NULL;
+//  if (!exn)
+//    exn = caml_named_value("heap_full");
+//  caml_raise_constant(*exn);
+//}
 
 /*****************************************************************************/
 /* Allocates in the shared heap. The chunks are cache aligned. */
 /*****************************************************************************/
 
-static heap_entry_t* hh_alloc(hh_header_t header) {
-  // the size of this allocation needs to be kept in sync with wasted_heap_size
-  // modification in hh_remove
-  size_t slot_size = ALIGNED(Heap_entry_total_size(header));
-  char* chunk = __sync_fetch_and_add(heap, (char*)slot_size);
-  if (chunk + slot_size > heap_max) {
-    raise_heap_full();
-  }
-  ((heap_entry_t*)chunk)->header = header;
-  return (heap_entry_t*)chunk;
-}
+//static heap_entry_t* hh_alloc(hh_header_t header) {
+//  // the size of this allocation needs to be kept in sync with wasted_heap_size
+//  // modification in hh_remove
+//  size_t slot_size = ALIGNED(Heap_entry_total_size(header));
+//  char* chunk = __sync_fetch_and_add(heap, (char*)slot_size);
+//  if (chunk + slot_size > heap_max) {
+//    raise_heap_full();
+//  }
+//  ((heap_entry_t*)chunk)->header = header;
+//  return (heap_entry_t*)chunk;
+//}
 
 /*****************************************************************************/
 /* Allocates an ocaml value in the shared heap.
@@ -1143,72 +1142,72 @@ static heap_entry_t* hh_alloc(hh_header_t header) {
  * the allocated chunk.
  */
 /*****************************************************************************/
-static heap_entry_t* hh_store_ocaml(
-    value data,
-    /*out*/ size_t* alloc_size,
-    /*out*/ size_t* orig_size) {
-  char* value = NULL;
-  size_t size = 0;
-  size_t uncompressed_size = 0;
-  storage_kind kind = 0;
-
-  // If the data is an Ocaml string it is more efficient to copy its contents
-  // directly in our heap instead of serializing it.
-  if (Is_block(data) && Tag_hd(Hd_val(data)) == String_tag) {
-    value = (char*)String_val(data);
-    size = caml_string_length(data);
-    kind = KIND_STRING;
-  } else {
-    intnat serialized_size;
-    // We are responsible for freeing the memory allocated by this function
-    // After copying value into our object heap we need to make sure to free
-    // value
-    caml_output_value_to_malloc(
-        data, Val_int(0) /*flags*/, &value, &serialized_size);
-
-    assert(serialized_size >= 0);
-    size = (size_t)serialized_size;
-    kind = KIND_SERIALIZED;
-  }
-
-  // We limit the size of elements we will allocate to our heap to ~2GB
-  assert(size < 0x80000000);
-  *orig_size = size;
-
-  size_t max_compression_size = ZSTD_compressBound(size);
-  char* compressed_data = malloc(max_compression_size);
-  size_t compressed_size = ZSTD_compress2(
-      zstd_compression_context,
-      compressed_data,
-      max_compression_size,
-      value,
-      size);
-
-  if (compressed_size != 0 && compressed_size < size) {
-    uncompressed_size = size;
-    size = compressed_size;
-  }
-
-  *alloc_size = size;
-
-  // Both size and uncompressed_size will certainly fit in 31 bits, as the
-  // original size fits per the assert above and we check that the compressed
-  // size is less than the original size.
-  hh_header_t header =
-      size << 33 | (uint64_t)kind << 32 | uncompressed_size << 1 | 1;
-
-  heap_entry_t* addr = hh_alloc(header);
-  memcpy(&addr->data, uncompressed_size ? compressed_data : value, size);
-
-  free(compressed_data);
-  // We temporarily allocate memory using malloc to serialize the Ocaml object.
-  // When we have finished copying the serialized data into our heap we need
-  // to free the memory we allocated to avoid a leak.
-  if (kind == KIND_SERIALIZED)
-    free(value);
-
-  return addr;
-}
+//static heap_entry_t* hh_store_ocaml(
+//    value data,
+//    /*out*/ size_t* alloc_size,
+//    /*out*/ size_t* orig_size) {
+//  char* value = NULL;
+//  size_t size = 0;
+//  size_t uncompressed_size = 0;
+//  storage_kind kind = 0;
+//
+//  // If the data is an Ocaml string it is more efficient to copy its contents
+//  // directly in our heap instead of serializing it.
+//  if (Is_block(data) && Tag_hd(Hd_val(data)) == String_tag) {
+//    value = (char*)String_val(data);
+//    size = caml_string_length(data);
+//    kind = KIND_STRING;
+//  } else {
+//    intnat serialized_size;
+//    // We are responsible for freeing the memory allocated by this function
+//    // After copying value into our object heap we need to make sure to free
+//    // value
+//    caml_output_value_to_malloc(
+//        data, Val_int(0) /*flags*/, &value, &serialized_size);
+//
+//    assert(serialized_size >= 0);
+//    size = (size_t)serialized_size;
+//    kind = KIND_SERIALIZED;
+//  }
+//
+//  // We limit the size of elements we will allocate to our heap to ~2GB
+//  assert(size < 0x80000000);
+//  *orig_size = size;
+//
+//  size_t max_compression_size = ZSTD_compressBound(size);
+//  char* compressed_data = malloc(max_compression_size);
+//  size_t compressed_size = ZSTD_compress2(
+//      zstd_compression_context,
+//      compressed_data,
+//      max_compression_size,
+//      value,
+//      size);
+//
+//  if (compressed_size != 0 && compressed_size < size) {
+//    uncompressed_size = size;
+//    size = compressed_size;
+//  }
+//
+//  *alloc_size = size;
+//
+//  // Both size and uncompressed_size will certainly fit in 31 bits, as the
+//  // original size fits per the assert above and we check that the compressed
+//  // size is less than the original size.
+//  hh_header_t header =
+//      size << 33 | (uint64_t)kind << 32 | uncompressed_size << 1 | 1;
+//
+//  heap_entry_t* addr = hh_alloc(header);
+//  memcpy(&addr->data, uncompressed_size ? compressed_data : value, size);
+//
+//  free(compressed_data);
+//  // We temporarily allocate memory using malloc to serialize the Ocaml object.
+//  // When we have finished copying the serialized data into our heap we need
+//  // to free the memory we allocated to avoid a leak.
+//  if (kind == KIND_SERIALIZED)
+//    free(value);
+//
+//  return addr;
+//}
 
 /*****************************************************************************/
 /* Given an OCaml string, returns the 8 first bytes in an unsigned long.
@@ -1229,32 +1228,32 @@ static uint64_t get_hash(value key) {
  * memory was allocated.
  */
 /*****************************************************************************/
-static value write_at(unsigned int slot, value data) {
-  CAMLparam1(data);
-  CAMLlocal1(result);
-  result = caml_alloc_tuple(2);
-  // Try to write in a value to indicate that the data is being written.
-  if (__sync_bool_compare_and_swap(
-          &(hashtbl[slot].addr), NULL, HASHTBL_WRITE_IN_PROGRESS)) {
-    assert_allow_hashtable_writes_by_current_process();
-    size_t alloc_size = 0;
-    size_t orig_size = 0;
-    hashtbl[slot].addr = hh_store_ocaml(data, &alloc_size, &orig_size);
-    Field(result, 0) = Val_long(alloc_size);
-    Field(result, 1) = Val_long(orig_size);
-  } else {
-    Field(result, 0) = Min_long;
-    Field(result, 1) = Min_long;
-  }
-  CAMLreturn(result);
-}
-
-static void raise_hash_table_full(void) {
-  static const value* exn = NULL;
-  if (!exn)
-    exn = caml_named_value("hash_table_full");
-  caml_raise_constant(*exn);
-}
+//static value write_at(unsigned int slot, value data) {
+//  CAMLparam1(data);
+//  CAMLlocal1(result);
+//  result = caml_alloc_tuple(2);
+//  // Try to write in a value to indicate that the data is being written.
+//  if (__sync_bool_compare_and_swap(
+//          &(hashtbl[slot].addr), NULL, HASHTBL_WRITE_IN_PROGRESS)) {
+//    assert_allow_hashtable_writes_by_current_process();
+//    size_t alloc_size = 0;
+//    size_t orig_size = 0;
+//    hashtbl[slot].addr = hh_store_ocaml(data, &alloc_size, &orig_size);
+//    Field(result, 0) = Val_long(alloc_size);
+//    Field(result, 1) = Val_long(orig_size);
+//  } else {
+//    Field(result, 0) = Min_long;
+//    Field(result, 1) = Min_long;
+//  }
+//  CAMLreturn(result);
+//}
+//
+//static void raise_hash_table_full(void) {
+//  static const value* exn = NULL;
+//  if (!exn)
+//    exn = caml_named_value("hash_table_full");
+//  caml_raise_constant(*exn);
+//}
 
 /*****************************************************************************/
 /* Adds a key value to the hashtable. This code is perf sensitive, please
@@ -1264,81 +1263,81 @@ static void raise_hash_table_full(void) {
  * number if nothing no new memory was allocated.
  */
 /*****************************************************************************/
-value hh_add(value key, value data) {
-  CAMLparam2(key, data);
-  uint64_t hash = get_hash(key);
-  unsigned int slot = hash & (hashtbl_size - 1);
-  unsigned int init_slot = slot;
-  while (1) {
-    uint64_t slot_hash = hashtbl[slot].hash;
-
-    if (slot_hash == hash) {
-      CAMLreturn(write_at(slot, data));
-    }
-
-    if (*hcounter >= hashtbl_size) {
-      // We're never going to find a spot
-      raise_hash_table_full();
-    }
-
-    if (slot_hash == 0) {
-      // We think we might have a free slot, try to atomically grab it.
-      if (__sync_bool_compare_and_swap(&(hashtbl[slot].hash), 0, hash)) {
-        uint64_t size = __sync_fetch_and_add(hcounter, 1);
-        // Sanity check
-        assert(size < hashtbl_size);
-        CAMLreturn(write_at(slot, data));
-      }
-
-      // Grabbing it failed -- why? If someone else is trying to insert
-      // the data we were about to, try to insert it ourselves too.
-      // Otherwise, keep going.
-      // Note that this read relies on the __sync call above preventing the
-      // compiler from caching the value read out of memory. (And of course
-      // isn't safe on any arch that requires memory barriers.)
-      if (hashtbl[slot].hash == hash) {
-        // Some other thread already grabbed this slot to write this
-        // key, but they might not have written the address (or even
-        // the sigil value) yet. We can't return from hh_add until we
-        // know that hh_mem would succeed, which is to say that addr is
-        // no longer null. To make sure hh_mem will work, we try
-        // writing the value ourselves; either we insert it ourselves or
-        // we know the address is now non-NULL.
-        CAMLreturn(write_at(slot, data));
-      }
-    }
-
-    slot = (slot + 1) & (hashtbl_size - 1);
-    if (slot == init_slot) {
-      // We're never going to find a spot
-      raise_hash_table_full();
-    }
-  }
-}
-
-/*****************************************************************************/
-/* Finds the slot corresponding to the key in a hash table. The returned slot
- * is either free or points to the key.
- */
-/*****************************************************************************/
-static unsigned int find_slot(value key) {
-  uint64_t hash = get_hash(key);
-  unsigned int slot = hash & (hashtbl_size - 1);
-  unsigned int init_slot = slot;
-  while (1) {
-    if (hashtbl[slot].hash == hash) {
-      return slot;
-    }
-    if (hashtbl[slot].hash == 0) {
-      return slot;
-    }
-    slot = (slot + 1) & (hashtbl_size - 1);
-
-    if (slot == init_slot) {
-      raise_hash_table_full();
-    }
-  }
-}
+//value hh_add(value key, value data) {
+//  CAMLparam2(key, data);
+//  uint64_t hash = get_hash(key);
+//  unsigned int slot = hash & (hashtbl_size - 1);
+//  unsigned int init_slot = slot;
+//  while (1) {
+//    uint64_t slot_hash = hashtbl[slot].hash;
+//
+//    if (slot_hash == hash) {
+//      CAMLreturn(write_at(slot, data));
+//    }
+//
+//    if (*hcounter >= hashtbl_size) {
+//      // We're never going to find a spot
+//      raise_hash_table_full();
+//    }
+//
+//    if (slot_hash == 0) {
+//      // We think we might have a free slot, try to atomically grab it.
+//      if (__sync_bool_compare_and_swap(&(hashtbl[slot].hash), 0, hash)) {
+//        uint64_t size = __sync_fetch_and_add(hcounter, 1);
+//        // Sanity check
+//        assert(size < hashtbl_size);
+//        CAMLreturn(write_at(slot, data));
+//      }
+//
+//      // Grabbing it failed -- why? If someone else is trying to insert
+//      // the data we were about to, try to insert it ourselves too.
+//      // Otherwise, keep going.
+//      // Note that this read relies on the __sync call above preventing the
+//      // compiler from caching the value read out of memory. (And of course
+//      // isn't safe on any arch that requires memory barriers.)
+//      if (hashtbl[slot].hash == hash) {
+//        // Some other thread already grabbed this slot to write this
+//        // key, but they might not have written the address (or even
+//        // the sigil value) yet. We can't return from hh_add until we
+//        // know that hh_mem would succeed, which is to say that addr is
+//        // no longer null. To make sure hh_mem will work, we try
+//        // writing the value ourselves; either we insert it ourselves or
+//        // we know the address is now non-NULL.
+//        CAMLreturn(write_at(slot, data));
+//      }
+//    }
+//
+//    slot = (slot + 1) & (hashtbl_size - 1);
+//    if (slot == init_slot) {
+//      // We're never going to find a spot
+//      raise_hash_table_full();
+//    }
+//  }
+//}
+//
+///*****************************************************************************/
+///* Finds the slot corresponding to the key in a hash table. The returned slot
+// * is either free or points to the key.
+// */
+///*****************************************************************************/
+//static unsigned int find_slot(value key) {
+//  uint64_t hash = get_hash(key);
+//  unsigned int slot = hash & (hashtbl_size - 1);
+//  unsigned int init_slot = slot;
+//  while (1) {
+//    if (hashtbl[slot].hash == hash) {
+//      return slot;
+//    }
+//    if (hashtbl[slot].hash == 0) {
+//      return slot;
+//    }
+//    slot = (slot + 1) & (hashtbl_size - 1);
+//
+//    if (slot == init_slot) {
+//      raise_hash_table_full();
+//    }
+//  }
+//}
 
 /*
 hh_mem_inner
@@ -1350,39 +1349,39 @@ hh_mem_inner
 Note that the only valid return values are {1,-1,-2}. In order to use the result
 of this function in an "if" statement an explicit test must be performed.
 */
-int hh_mem_inner(value key) {
-  unsigned int slot = find_slot(key);
-  _Bool good_hash = hashtbl[slot].hash == get_hash(key);
-  _Bool non_null_addr = hashtbl[slot].addr != NULL;
-  if (good_hash && non_null_addr) {
-    // The data is currently in the process of being written, wait until it
-    // actually is ready to be used before returning.
-    time_t start = 0;
-    while (hashtbl[slot].addr == HASHTBL_WRITE_IN_PROGRESS) {
-#if defined(__aarch64__) || defined(__powerpc64__)
-      asm volatile("yield" : : : "memory");
-#else
-      asm volatile("pause" : : : "memory");
-#endif
-      // if the worker writing the data dies, we can get stuck. Timeout check
-      // to prevent it.
-      time_t now = time(0);
-      if (start == 0 || start > now) {
-        start = now;
-      } else if (now - start > 60) {
-        caml_failwith("hh_mem busy-wait loop stuck for 60s");
-      }
-    }
-    return 1;
-  } else if (good_hash) {
-    // if the hash matches and the key is zero
-    // then we've removed the key.
-    return -2;
-  } else {
-    // otherwise the key is simply absent
-    return -1;
-  }
-}
+//int hh_mem_inner(value key) {
+//  unsigned int slot = find_slot(key);
+//  _Bool good_hash = hashtbl[slot].hash == get_hash(key);
+//  _Bool non_null_addr = hashtbl[slot].addr != NULL;
+//  if (good_hash && non_null_addr) {
+//    // The data is currently in the process of being written, wait until it
+//    // actually is ready to be used before returning.
+//    time_t start = 0;
+//    while (hashtbl[slot].addr == HASHTBL_WRITE_IN_PROGRESS) {
+//#if defined(__aarch64__) || defined(__powerpc64__)
+//      asm volatile("yield" : : : "memory");
+//#else
+//      asm volatile("pause" : : : "memory");
+//#endif
+//      // if the worker writing the data dies, we can get stuck. Timeout check
+//      // to prevent it.
+//      time_t now = time(0);
+//      if (start == 0 || start > now) {
+//        start = now;
+//      } else if (now - start > 60) {
+//        caml_failwith("hh_mem busy-wait loop stuck for 60s");
+//      }
+//    }
+//    return 1;
+//  } else if (good_hash) {
+//    // if the hash matches and the key is zero
+//    // then we've removed the key.
+//    return -2;
+//  } else {
+//    // otherwise the key is simply absent
+//    return -1;
+//  }
+//}
 
 /*****************************************************************************/
 /* Returns true if the key is present. We need to check both the hash and
@@ -1391,81 +1390,81 @@ int hh_mem_inner(value key) {
  * of garbage collection).
  */
 /*****************************************************************************/
-value hh_mem(value key) {
-  CAMLparam1(key);
-  CAMLreturn(Val_bool(hh_mem_inner(key) == 1));
-}
-
-CAMLprim value hh_mem_status(value key) {
-  CAMLparam1(key);
-  int res = hh_mem_inner(key);
-  switch (res) {
-    case 1:
-    case -1:
-    case -2:
-      CAMLreturn(Val_int(res));
-    default:
-      caml_failwith("Unreachable case: result must be 1 or -1 or -2");
-  }
-}
+//value hh_mem(value key) {
+//  CAMLparam1(key);
+//  CAMLreturn(Val_bool(hh_mem_inner(key) == 1));
+//}
+//
+//CAMLprim value hh_mem_status(value key) {
+//  CAMLparam1(key);
+//  int res = hh_mem_inner(key);
+//  switch (res) {
+//    case 1:
+//    case -1:
+//    case -2:
+//      CAMLreturn(Val_int(res));
+//    default:
+//      caml_failwith("Unreachable case: result must be 1 or -1 or -2");
+//  }
+//}
 
 /*****************************************************************************/
 /* Deserializes the value pointed to by elt. */
 /*****************************************************************************/
-CAMLprim value hh_deserialize(heap_entry_t* elt) {
-  CAMLparam0();
-  CAMLlocal1(result);
-  size_t size = Entry_size(elt->header);
-  size_t uncompressed_size_exp = Entry_uncompressed_size(elt->header);
-  char* src = elt->data;
-  char* data = elt->data;
-  if (uncompressed_size_exp) {
-    data = malloc(uncompressed_size_exp);
-    size_t uncompressed_size = ZSTD_decompressDCtx(
-        zstd_decompression_context, data, uncompressed_size_exp, src, size);
-
-    assert(uncompressed_size == uncompressed_size_exp);
-    size = uncompressed_size;
-  }
-
-  if (Entry_kind(elt->header) == KIND_STRING) {
-    result = caml_alloc_string(size);
-    memcpy((char*)String_val(result), data, size);
-  } else {
-    result = caml_input_value_from_block(data, size);
-  }
-
-  if (data != src) {
-    free(data);
-  }
-  CAMLreturn(result);
-}
-
-/*****************************************************************************/
-/* Returns the value associated to a given key, and deserialize it. */
-/* The key MUST be present. */
-/*****************************************************************************/
-CAMLprim value hh_get_and_deserialize(value key) {
-  CAMLparam1(key);
-  CAMLlocal1(result);
-
-  unsigned int slot = find_slot(key);
-  assert(hashtbl[slot].hash == get_hash(key));
-  result = hh_deserialize(hashtbl[slot].addr);
-  CAMLreturn(result);
-}
+//CAMLprim value hh_deserialize(heap_entry_t* elt) {
+//  CAMLparam0();
+//  CAMLlocal1(result);
+//  size_t size = Entry_size(elt->header);
+//  size_t uncompressed_size_exp = Entry_uncompressed_size(elt->header);
+//  char* src = elt->data;
+//  char* data = elt->data;
+//  if (uncompressed_size_exp) {
+//    data = malloc(uncompressed_size_exp);
+//    size_t uncompressed_size = ZSTD_decompressDCtx(
+//        zstd_decompression_context, data, uncompressed_size_exp, src, size);
+//
+//    assert(uncompressed_size == uncompressed_size_exp);
+//    size = uncompressed_size;
+//  }
+//
+//  if (Entry_kind(elt->header) == KIND_STRING) {
+//    result = caml_alloc_string(size);
+//    memcpy((char*)String_val(result), data, size);
+//  } else {
+//    result = caml_input_value_from_block(data, size);
+//  }
+//
+//  if (data != src) {
+//    free(data);
+//  }
+//  CAMLreturn(result);
+//}
+//
+///*****************************************************************************/
+///* Returns the value associated to a given key, and deserialize it. */
+///* The key MUST be present. */
+///*****************************************************************************/
+//CAMLprim value hh_get_and_deserialize(value key) {
+//  CAMLparam1(key);
+//  CAMLlocal1(result);
+//
+//  unsigned int slot = find_slot(key);
+//  assert(hashtbl[slot].hash == get_hash(key));
+//  result = hh_deserialize(hashtbl[slot].addr);
+//  CAMLreturn(result);
+//}
 
 /*****************************************************************************/
 /* Returns the size of the value associated to a given key. */
 /* The key MUST be present. */
 /*****************************************************************************/
-CAMLprim value hh_get_size(value key) {
-  CAMLparam1(key);
-
-  unsigned int slot = find_slot(key);
-  assert(hashtbl[slot].hash == get_hash(key));
-  CAMLreturn(Long_val(Entry_size(hashtbl[slot].addr->header)));
-}
+//CAMLprim value hh_get_size(value key) {
+//  CAMLparam1(key);
+//
+//  unsigned int slot = find_slot(key);
+//  assert(hashtbl[slot].hash == get_hash(key));
+//  CAMLreturn(Long_val(Entry_size(hashtbl[slot].addr->header)));
+//}
 
 /*****************************************************************************/
 /* Moves the data associated to key1 to key2.
@@ -1474,187 +1473,187 @@ CAMLprim value hh_get_size(value key) {
  * Only the master can perform this operation.
  */
 /*****************************************************************************/
-void hh_move(value key1, value key2) {
-  unsigned int slot1 = find_slot(key1);
-  unsigned int slot2 = find_slot(key2);
-
-  assert_master();
-  assert_allow_removes();
-  assert(hashtbl[slot1].hash == get_hash(key1));
-  assert(hashtbl[slot2].addr == NULL);
-  // We are taking up a previously empty slot. Let's increment the counter.
-  if (hashtbl[slot2].hash == 0) {
-    __sync_fetch_and_add(hcounter, 1);
-  }
-  hashtbl[slot2].hash = get_hash(key2);
-  hashtbl[slot2].addr = hashtbl[slot1].addr;
-  hashtbl[slot1].addr = NULL;
-}
+//void hh_move(value key1, value key2) {
+//  unsigned int slot1 = find_slot(key1);
+//  unsigned int slot2 = find_slot(key2);
+//
+//  assert_master();
+//  assert_allow_removes();
+//  assert(hashtbl[slot1].hash == get_hash(key1));
+//  assert(hashtbl[slot2].addr == NULL);
+//  // We are taking up a previously empty slot. Let's increment the counter.
+//  if (hashtbl[slot2].hash == 0) {
+//    __sync_fetch_and_add(hcounter, 1);
+//  }
+//  hashtbl[slot2].hash = get_hash(key2);
+//  hashtbl[slot2].addr = hashtbl[slot1].addr;
+//  hashtbl[slot1].addr = NULL;
+//}
 
 /*****************************************************************************/
 /* Removes a key from the hash table.
  * Only the master can perform this operation.
  */
 /*****************************************************************************/
-void hh_remove(value key) {
-  unsigned int slot = find_slot(key);
-
-  assert_master();
-  assert_allow_removes();
-  assert(hashtbl[slot].hash == get_hash(key));
-  // see hh_alloc for the source of this size
-  size_t slot_size = ALIGNED(Heap_entry_total_size(hashtbl[slot].addr->header));
-  __sync_fetch_and_add(wasted_heap_size, slot_size);
-  hashtbl[slot].addr = NULL;
-  removed_count += 1;
-}
+//void hh_remove(value key) {
+//  unsigned int slot = find_slot(key);
+//
+//  assert_master();
+//  assert_allow_removes();
+//  assert(hashtbl[slot].hash == get_hash(key));
+//  // see hh_alloc for the source of this size
+//  size_t slot_size = ALIGNED(Heap_entry_total_size(hashtbl[slot].addr->header));
+//  __sync_fetch_and_add(wasted_heap_size, slot_size);
+//  hashtbl[slot].addr = NULL;
+//  removed_count += 1;
+//}
 
 /*****************************************************************************/
 /* Saved State without SQLite */
 /*****************************************************************************/
 
-static void
-fwrite_no_fail(const void* ptr, size_t size, size_t nmemb, FILE* fp) {
-  size_t nmemb_written = fwrite(ptr, size, nmemb, fp);
-  assert(nmemb_written == nmemb);
-}
-
-/* We want to use read() instead of fread() for the large shared memory block
- * because buffering slows things down. This means we cannot use fread() for
- * the other (smaller) values in our file either, because the buffering can
- * move the file position indicator ahead of the values read. */
-static void read_all(int fd, void* start, size_t size) {
-  size_t total_read = 0;
-  do {
-    void* ptr = (void*)((uintptr_t)start + total_read);
-    ssize_t bytes_read = read(fd, (void*)ptr, size);
-    assert(bytes_read != -1 && bytes_read != 0);
-    total_read += bytes_read;
-  } while (total_read < size);
-}
-
-static void fwrite_header(FILE* fp) {
-  fwrite_no_fail(&MAGIC_CONSTANT, sizeof MAGIC_CONSTANT, 1, fp);
-
-  size_t revlen = strlen(BuildInfo_kRevision);
-  fwrite_no_fail(&revlen, sizeof revlen, 1, fp);
-  fwrite_no_fail(BuildInfo_kRevision, sizeof(char), revlen, fp);
-}
-
-static void fread_header(FILE* fp) {
-  uint64_t magic = 0;
-  read_all(fileno(fp), (void*)&magic, sizeof magic);
-  assert(magic == MAGIC_CONSTANT);
-
-  size_t revlen = 0;
-  read_all(fileno(fp), (void*)&revlen, sizeof revlen);
-  char revision[revlen + 1];
-  if (revlen > 0) {
-    read_all(fileno(fp), (void*)revision, revlen * sizeof(char));
-    if (strncmp(revision, BuildInfo_kRevision, revlen) != 0) {
-      revision[revlen] = '\0';
-      char* message_template =
-          "Binary version `%s` that saved the shared memory must be the same as the current binary version `%s` that is loading it";
-      int message_length = strlen(message_template) - 4 + revlen * 2 + 1;
-      char message[message_length];
-      snprintf(
-          message,
-          message_length,
-          message_template,
-          revision,
-          BuildInfo_kRevision);
-      assert_with_message(0, message);
-    }
-  }
-}
-
-static char* save_start() {
-  return (char*)hashtbl;
-}
-
-static size_t save_size() {
-  return hashtbl_size_b;
-}
-
-void hh_save_table(value out_filename) {
-  CAMLparam1(out_filename);
-  FILE* fp = fopen(String_val(out_filename), "wb");
-
-  fwrite_header(fp);
-
-  /*
-   * Format of the compressed shared memory:
-   * LZ4 can only work in chunks of 2GB, so we compress each chunk individually,
-   * and write out each one as
-   * [compressed size of chunk][uncompressed size of chunk][chunk]
-   * A compressed size of zero indicates the end of the compressed section.
-   */
-  char* chunk_start = save_start();
-  int compressed_size = 0;
-  while (chunk_start < *heap) {
-    uintptr_t remaining = *heap - chunk_start;
-    uintptr_t chunk_size =
-        LZ4_MAX_INPUT_SIZE < remaining ? LZ4_MAX_INPUT_SIZE : remaining;
-    uintptr_t max_compression_size = LZ4_compressBound(chunk_size);
-
-    char* compressed = malloc(max_compression_size * sizeof(char));
-    assert(compressed != NULL);
-
-    compressed_size = LZ4_compress_default(
-        chunk_start, /* source */
-        compressed, /* destination */
-        chunk_size, /* bytes to write from source */
-        max_compression_size); /* maximum amount to write */
-    assert(compressed_size > 0);
-
-    fwrite_no_fail(&compressed_size, sizeof compressed_size, 1, fp);
-    fwrite_no_fail(&chunk_size, sizeof chunk_size, 1, fp);
-    fwrite_no_fail((void*)compressed, 1, compressed_size, fp);
-
-    chunk_start += chunk_size;
-    free(compressed);
-  }
-  compressed_size = 0;
-  fwrite_no_fail(&compressed_size, sizeof compressed_size, 1, fp);
-
-  fclose(fp);
-  CAMLreturn0;
-}
-
-void hh_load_table(value in_filename) {
-  CAMLparam1(in_filename);
-  FILE* fp = fopen(String_val(in_filename), "rb");
-
-  if (fp == NULL) {
-    caml_failwith("Failed to open file");
-  }
-
-  fread_header(fp);
-
-  int compressed_size = 0;
-  read_all(fileno(fp), (void*)&compressed_size, sizeof compressed_size);
-  char* chunk_start = save_start();
-
-  // see hh_save_table for a description of what we are parsing here.
-  while (compressed_size > 0) {
-    char* compressed = malloc(compressed_size * sizeof(char));
-    assert(compressed != NULL);
-    uintptr_t chunk_size = 0;
-    read_all(fileno(fp), (void*)&chunk_size, sizeof chunk_size);
-    read_all(fileno(fp), compressed, compressed_size * sizeof(char));
-
-    LZ4_decompress_fast(compressed, chunk_start, chunk_size);
-
-    free(compressed);
-    chunk_start += chunk_size;
-    read_all(fileno(fp), (void*)&compressed_size, sizeof compressed_size);
-  }
-
-  *heap = chunk_start;
-
-  fclose(fp);
-  CAMLreturn0;
-}
+//static void
+//fwrite_no_fail(const void* ptr, size_t size, size_t nmemb, FILE* fp) {
+//  size_t nmemb_written = fwrite(ptr, size, nmemb, fp);
+//  assert(nmemb_written == nmemb);
+//}
+//
+///* We want to use read() instead of fread() for the large shared memory block
+// * because buffering slows things down. This means we cannot use fread() for
+// * the other (smaller) values in our file either, because the buffering can
+// * move the file position indicator ahead of the values read. */
+//static void read_all(int fd, void* start, size_t size) {
+//  size_t total_read = 0;
+//  do {
+//    void* ptr = (void*)((uintptr_t)start + total_read);
+//    ssize_t bytes_read = read(fd, (void*)ptr, size);
+//    assert(bytes_read != -1 && bytes_read != 0);
+//    total_read += bytes_read;
+//  } while (total_read < size);
+//}
+//
+//static void fwrite_header(FILE* fp) {
+//  fwrite_no_fail(&MAGIC_CONSTANT, sizeof MAGIC_CONSTANT, 1, fp);
+//
+//  size_t revlen = strlen(BuildInfo_kRevision);
+//  fwrite_no_fail(&revlen, sizeof revlen, 1, fp);
+//  fwrite_no_fail(BuildInfo_kRevision, sizeof(char), revlen, fp);
+//}
+//
+//static void fread_header(FILE* fp) {
+//  uint64_t magic = 0;
+//  read_all(fileno(fp), (void*)&magic, sizeof magic);
+//  assert(magic == MAGIC_CONSTANT);
+//
+//  size_t revlen = 0;
+//  read_all(fileno(fp), (void*)&revlen, sizeof revlen);
+//  char revision[revlen + 1];
+//  if (revlen > 0) {
+//    read_all(fileno(fp), (void*)revision, revlen * sizeof(char));
+//    if (strncmp(revision, BuildInfo_kRevision, revlen) != 0) {
+//      revision[revlen] = '\0';
+//      char* message_template =
+//          "Binary version `%s` that saved the shared memory must be the same as the current binary version `%s` that is loading it";
+//      int message_length = strlen(message_template) - 4 + revlen * 2 + 1;
+//      char message[message_length];
+//      snprintf(
+//          message,
+//          message_length,
+//          message_template,
+//          revision,
+//          BuildInfo_kRevision);
+//      assert_with_message(0, message);
+//    }
+//  }
+//}
+//
+//static char* save_start() {
+//  return (char*)hashtbl;
+//}
+//
+//static size_t save_size() {
+//  return hashtbl_size_b;
+//}
+//
+//void hh_save_table(value out_filename) {
+//  CAMLparam1(out_filename);
+//  FILE* fp = fopen(String_val(out_filename), "wb");
+//
+//  fwrite_header(fp);
+//
+//  /*
+//   * Format of the compressed shared memory:
+//   * LZ4 can only work in chunks of 2GB, so we compress each chunk individually,
+//   * and write out each one as
+//   * [compressed size of chunk][uncompressed size of chunk][chunk]
+//   * A compressed size of zero indicates the end of the compressed section.
+//   */
+//  char* chunk_start = save_start();
+//  int compressed_size = 0;
+//  while (chunk_start < *heap) {
+//    uintptr_t remaining = *heap - chunk_start;
+//    uintptr_t chunk_size =
+//        LZ4_MAX_INPUT_SIZE < remaining ? LZ4_MAX_INPUT_SIZE : remaining;
+//    uintptr_t max_compression_size = LZ4_compressBound(chunk_size);
+//
+//    char* compressed = malloc(max_compression_size * sizeof(char));
+//    assert(compressed != NULL);
+//
+//    compressed_size = LZ4_compress_default(
+//        chunk_start, /* source */
+//        compressed, /* destination */
+//        chunk_size, /* bytes to write from source */
+//        max_compression_size); /* maximum amount to write */
+//    assert(compressed_size > 0);
+//
+//    fwrite_no_fail(&compressed_size, sizeof compressed_size, 1, fp);
+//    fwrite_no_fail(&chunk_size, sizeof chunk_size, 1, fp);
+//    fwrite_no_fail((void*)compressed, 1, compressed_size, fp);
+//
+//    chunk_start += chunk_size;
+//    free(compressed);
+//  }
+//  compressed_size = 0;
+//  fwrite_no_fail(&compressed_size, sizeof compressed_size, 1, fp);
+//
+//  fclose(fp);
+//  CAMLreturn0;
+//}
+//
+//void hh_load_table(value in_filename) {
+//  CAMLparam1(in_filename);
+//  FILE* fp = fopen(String_val(in_filename), "rb");
+//
+//  if (fp == NULL) {
+//    caml_failwith("Failed to open file");
+//  }
+//
+//  fread_header(fp);
+//
+//  int compressed_size = 0;
+//  read_all(fileno(fp), (void*)&compressed_size, sizeof compressed_size);
+//  char* chunk_start = save_start();
+//
+//  // see hh_save_table for a description of what we are parsing here.
+//  while (compressed_size > 0) {
+//    char* compressed = malloc(compressed_size * sizeof(char));
+//    assert(compressed != NULL);
+//    uintptr_t chunk_size = 0;
+//    read_all(fileno(fp), (void*)&chunk_size, sizeof chunk_size);
+//    read_all(fileno(fp), compressed, compressed_size * sizeof(char));
+//
+//    LZ4_decompress_fast(compressed, chunk_start, chunk_size);
+//
+//    free(compressed);
+//    chunk_start += chunk_size;
+//    read_all(fileno(fp), (void*)&compressed_size, sizeof compressed_size);
+//  }
+//
+//  *heap = chunk_start;
+//
+//  fclose(fp);
+//  CAMLreturn0;
+//}
 
 /*****************************************************************************/
 /* Saved State with SQLite */
@@ -1669,12 +1668,12 @@ void hh_cleanup_sqlite(void) {
 }
 
 // Safe to call outside of sql
-void hh_hashtable_cleanup_sqlite(void) {
-  CAMLparam0();
-  size_t page_size = getpagesize();
-  memset(hashtable_db_filename, 0, page_size);
-  CAMLreturn0;
-}
+//void hh_hashtable_cleanup_sqlite(void) {
+//  CAMLparam0();
+//  size_t page_size = getpagesize();
+//  memset(hashtable_db_filename, 0, page_size);
+//  CAMLreturn0;
+//}
 
 #define Val_none Val_int(0)
 
@@ -2212,238 +2211,238 @@ CAMLprim value hh_get_dep_sqlite(value ocaml_key) {
 /*
  * Stores all of the hashmap's keys and values in the database
  */
-CAMLprim value hh_save_table_sqlite(value out_filename) {
-  CAMLparam1(out_filename);
+//CAMLprim value hh_save_table_sqlite(value out_filename) {
+//  CAMLparam1(out_filename);
+//
+//  // This can only happen in the master
+//  assert_master();
+//
+//  struct timeval tv = {0};
+//  struct timeval tv2 = {0};
+//  gettimeofday(&tv, NULL);
+//
+//  sqlite3* db_out = NULL;
+//  // sqlite3_open creates the db
+//  assert_sql(sqlite3_open(String_val(out_filename), &db_out), SQLITE_OK);
+//
+//  make_all_tables(db_out);
+//  // Create header for verification while we read from the db
+//  write_sqlite_header(db_out, BuildInfo_kRevision);
+//
+//  // Create Dep able
+//  const char* sql =
+//      "CREATE TABLE IF NOT EXISTS HASHTABLE("
+//      "KEY_VERTEX INT PRIMARY KEY NOT NULL,"
+//      "VALUE_VERTEX BLOB NOT NULL);";
+//
+//  assert_sql(sqlite3_exec(db_out, sql, NULL, 0, NULL), SQLITE_OK);
+//  // Hand-off the data to the OS for writing and continue,
+//  // don't wait for it to complete
+//  assert_sql(
+//      sqlite3_exec(db_out, "PRAGMA synchronous = OFF", NULL, 0, NULL),
+//      SQLITE_OK);
+//  // Store the rollback journal in memory
+//  assert_sql(
+//      sqlite3_exec(db_out, "PRAGMA journal_mode = MEMORY", NULL, 0, NULL),
+//      SQLITE_OK);
+//  // Use one transaction for all the insertions
+//  assert_sql(
+//      sqlite3_exec(db_out, "BEGIN TRANSACTION", NULL, 0, NULL), SQLITE_OK);
+//
+//  // Create entries on the table
+//  sqlite3_stmt* insert_stmt = NULL;
+//  sql = "INSERT INTO HASHTABLE (KEY_VERTEX, VALUE_VERTEX) VALUES (?,?)";
+//  assert_sql(
+//      sqlite3_prepare_v2(db_out, sql, -1, &insert_stmt, NULL), SQLITE_OK);
+//  for (size_t slot = 0; slot < hashtbl_size; ++slot) {
+//    uint64_t slot_hash = hashtbl[slot].hash;
+//    if (slot_hash == 0 || hashtbl[slot].addr == NULL) {
+//      continue;
+//    }
+//
+//    char* value = (char*)hashtbl[slot].addr;
+//    size_t value_size = Heap_entry_total_size(hashtbl[slot].addr->header);
+//
+//    assert_sql(sqlite3_bind_int64(insert_stmt, 1, slot_hash), SQLITE_OK);
+//    assert_sql(
+//        sqlite3_bind_blob(insert_stmt, 2, value, value_size, SQLITE_TRANSIENT),
+//        SQLITE_OK);
+//    assert_sql(sqlite3_step(insert_stmt), SQLITE_DONE);
+//    assert_sql(sqlite3_clear_bindings(insert_stmt), SQLITE_OK);
+//    assert_sql(sqlite3_reset(insert_stmt), SQLITE_OK);
+//  }
+//
+//  assert_sql(sqlite3_finalize(insert_stmt), SQLITE_OK);
+//  assert_sql(sqlite3_exec(db_out, "END TRANSACTION", NULL, 0, NULL), SQLITE_OK);
+//
+//  assert_sql(sqlite3_close(db_out), SQLITE_OK);
+//  gettimeofday(&tv2, NULL);
+//  int secs = tv2.tv_sec - tv.tv_sec;
+//  // Reporting only seconds, ignore milli seconds
+//  CAMLreturn(Val_long(secs));
+//}
 
-  // This can only happen in the master
-  assert_master();
+///*
+// * Stores only the provided keys and corresponding values in the database
+// */
+//CAMLprim value hh_save_table_keys_sqlite(value out_filename, value keys) {
+//  CAMLparam2(out_filename, keys);
+//
+//  assert_master();
+//
+//  struct timeval tv = {0};
+//  struct timeval tv2 = {0};
+//  gettimeofday(&tv, NULL);
+//
+//  sqlite3* db_out = NULL;
+//  assert_sql(sqlite3_open(String_val(out_filename), &db_out), SQLITE_OK);
+//  make_all_tables(db_out);
+//  write_sqlite_header(db_out, BuildInfo_kRevision);
+//
+//  const char* sql =
+//      "CREATE TABLE IF NOT EXISTS HASHTABLE("
+//      "  KEY_VERTEX INT PRIMARY KEY NOT NULL,"
+//      "  VALUE_VERTEX BLOB NOT NULL"
+//      ");";
+//  assert_sql(sqlite3_exec(db_out, sql, NULL, 0, NULL), SQLITE_OK);
+//
+//  assert_sql(
+//      sqlite3_exec(db_out, "PRAGMA synchronous = OFF", NULL, 0, NULL),
+//      SQLITE_OK);
+//  assert_sql(
+//      sqlite3_exec(db_out, "PRAGMA journal_mode = MEMORY", NULL, 0, NULL),
+//      SQLITE_OK);
+//  assert_sql(
+//      sqlite3_exec(db_out, "BEGIN TRANSACTION", NULL, 0, NULL), SQLITE_OK);
+//
+//  sqlite3_stmt* insert_stmt = NULL;
+//  sql = "INSERT INTO HASHTABLE (KEY_VERTEX, VALUE_VERTEX) VALUES (?,?)";
+//  assert_sql(
+//      sqlite3_prepare_v2(db_out, sql, -1, &insert_stmt, NULL), SQLITE_OK);
+//  int n_keys = Wosize_val(keys);
+//  for (int i = 0; i < n_keys; ++i) {
+//    unsigned int slot = find_slot(Field(keys, i));
+//    uint64_t slot_hash = hashtbl[slot].hash;
+//    if (slot_hash == 0 || hashtbl[slot].addr == NULL) {
+//      continue;
+//    }
+//    char* value = hashtbl[slot].addr->data;
+//    size_t value_size = Heap_entry_total_size(hashtbl[slot].addr->header);
+//
+//    assert_sql(sqlite3_bind_int64(insert_stmt, 1, slot_hash), SQLITE_OK);
+//    assert_sql(
+//        sqlite3_bind_blob(insert_stmt, 2, value, value_size, SQLITE_TRANSIENT),
+//        SQLITE_OK);
+//    assert_sql(sqlite3_step(insert_stmt), SQLITE_DONE);
+//    assert_sql(sqlite3_clear_bindings(insert_stmt), SQLITE_OK);
+//    assert_sql(sqlite3_reset(insert_stmt), SQLITE_OK);
+//  }
+//
+//  assert_sql(sqlite3_finalize(insert_stmt), SQLITE_OK);
+//  assert_sql(sqlite3_exec(db_out, "END TRANSACTION", NULL, 0, NULL), SQLITE_OK);
+//
+//  assert_sql(sqlite3_close(db_out), SQLITE_OK);
+//  gettimeofday(&tv2, NULL);
+//  int secs = tv2.tv_sec - tv.tv_sec;
+//  CAMLreturn(Val_long(secs));
+//}
 
-  struct timeval tv = {0};
-  struct timeval tv2 = {0};
-  gettimeofday(&tv, NULL);
-
-  sqlite3* db_out = NULL;
-  // sqlite3_open creates the db
-  assert_sql(sqlite3_open(String_val(out_filename), &db_out), SQLITE_OK);
-
-  make_all_tables(db_out);
-  // Create header for verification while we read from the db
-  write_sqlite_header(db_out, BuildInfo_kRevision);
-
-  // Create Dep able
-  const char* sql =
-      "CREATE TABLE IF NOT EXISTS HASHTABLE("
-      "KEY_VERTEX INT PRIMARY KEY NOT NULL,"
-      "VALUE_VERTEX BLOB NOT NULL);";
-
-  assert_sql(sqlite3_exec(db_out, sql, NULL, 0, NULL), SQLITE_OK);
-  // Hand-off the data to the OS for writing and continue,
-  // don't wait for it to complete
-  assert_sql(
-      sqlite3_exec(db_out, "PRAGMA synchronous = OFF", NULL, 0, NULL),
-      SQLITE_OK);
-  // Store the rollback journal in memory
-  assert_sql(
-      sqlite3_exec(db_out, "PRAGMA journal_mode = MEMORY", NULL, 0, NULL),
-      SQLITE_OK);
-  // Use one transaction for all the insertions
-  assert_sql(
-      sqlite3_exec(db_out, "BEGIN TRANSACTION", NULL, 0, NULL), SQLITE_OK);
-
-  // Create entries on the table
-  sqlite3_stmt* insert_stmt = NULL;
-  sql = "INSERT INTO HASHTABLE (KEY_VERTEX, VALUE_VERTEX) VALUES (?,?)";
-  assert_sql(
-      sqlite3_prepare_v2(db_out, sql, -1, &insert_stmt, NULL), SQLITE_OK);
-  for (size_t slot = 0; slot < hashtbl_size; ++slot) {
-    uint64_t slot_hash = hashtbl[slot].hash;
-    if (slot_hash == 0 || hashtbl[slot].addr == NULL) {
-      continue;
-    }
-
-    char* value = (char*)hashtbl[slot].addr;
-    size_t value_size = Heap_entry_total_size(hashtbl[slot].addr->header);
-
-    assert_sql(sqlite3_bind_int64(insert_stmt, 1, slot_hash), SQLITE_OK);
-    assert_sql(
-        sqlite3_bind_blob(insert_stmt, 2, value, value_size, SQLITE_TRANSIENT),
-        SQLITE_OK);
-    assert_sql(sqlite3_step(insert_stmt), SQLITE_DONE);
-    assert_sql(sqlite3_clear_bindings(insert_stmt), SQLITE_OK);
-    assert_sql(sqlite3_reset(insert_stmt), SQLITE_OK);
-  }
-
-  assert_sql(sqlite3_finalize(insert_stmt), SQLITE_OK);
-  assert_sql(sqlite3_exec(db_out, "END TRANSACTION", NULL, 0, NULL), SQLITE_OK);
-
-  assert_sql(sqlite3_close(db_out), SQLITE_OK);
-  gettimeofday(&tv2, NULL);
-  int secs = tv2.tv_sec - tv.tv_sec;
-  // Reporting only seconds, ignore milli seconds
-  CAMLreturn(Val_long(secs));
-}
-
-/*
- * Stores only the provided keys and corresponding values in the database
- */
-CAMLprim value hh_save_table_keys_sqlite(value out_filename, value keys) {
-  CAMLparam2(out_filename, keys);
-
-  assert_master();
-
-  struct timeval tv = {0};
-  struct timeval tv2 = {0};
-  gettimeofday(&tv, NULL);
-
-  sqlite3* db_out = NULL;
-  assert_sql(sqlite3_open(String_val(out_filename), &db_out), SQLITE_OK);
-  make_all_tables(db_out);
-  write_sqlite_header(db_out, BuildInfo_kRevision);
-
-  const char* sql =
-      "CREATE TABLE IF NOT EXISTS HASHTABLE("
-      "  KEY_VERTEX INT PRIMARY KEY NOT NULL,"
-      "  VALUE_VERTEX BLOB NOT NULL"
-      ");";
-  assert_sql(sqlite3_exec(db_out, sql, NULL, 0, NULL), SQLITE_OK);
-
-  assert_sql(
-      sqlite3_exec(db_out, "PRAGMA synchronous = OFF", NULL, 0, NULL),
-      SQLITE_OK);
-  assert_sql(
-      sqlite3_exec(db_out, "PRAGMA journal_mode = MEMORY", NULL, 0, NULL),
-      SQLITE_OK);
-  assert_sql(
-      sqlite3_exec(db_out, "BEGIN TRANSACTION", NULL, 0, NULL), SQLITE_OK);
-
-  sqlite3_stmt* insert_stmt = NULL;
-  sql = "INSERT INTO HASHTABLE (KEY_VERTEX, VALUE_VERTEX) VALUES (?,?)";
-  assert_sql(
-      sqlite3_prepare_v2(db_out, sql, -1, &insert_stmt, NULL), SQLITE_OK);
-  int n_keys = Wosize_val(keys);
-  for (int i = 0; i < n_keys; ++i) {
-    unsigned int slot = find_slot(Field(keys, i));
-    uint64_t slot_hash = hashtbl[slot].hash;
-    if (slot_hash == 0 || hashtbl[slot].addr == NULL) {
-      continue;
-    }
-    char* value = hashtbl[slot].addr->data;
-    size_t value_size = Heap_entry_total_size(hashtbl[slot].addr->header);
-
-    assert_sql(sqlite3_bind_int64(insert_stmt, 1, slot_hash), SQLITE_OK);
-    assert_sql(
-        sqlite3_bind_blob(insert_stmt, 2, value, value_size, SQLITE_TRANSIENT),
-        SQLITE_OK);
-    assert_sql(sqlite3_step(insert_stmt), SQLITE_DONE);
-    assert_sql(sqlite3_clear_bindings(insert_stmt), SQLITE_OK);
-    assert_sql(sqlite3_reset(insert_stmt), SQLITE_OK);
-  }
-
-  assert_sql(sqlite3_finalize(insert_stmt), SQLITE_OK);
-  assert_sql(sqlite3_exec(db_out, "END TRANSACTION", NULL, 0, NULL), SQLITE_OK);
-
-  assert_sql(sqlite3_close(db_out), SQLITE_OK);
-  gettimeofday(&tv2, NULL);
-  int secs = tv2.tv_sec - tv.tv_sec;
-  CAMLreturn(Val_long(secs));
-}
-
-CAMLprim value hh_load_table_sqlite(value in_filename, value verify) {
-  CAMLparam2(in_filename, verify);
-  struct timeval tv = {0};
-  struct timeval tv2 = {0};
-  gettimeofday(&tv, NULL);
-
-  // This can only happen in the master
-  assert_master();
-
-  const char* filename = String_val(in_filename);
-  size_t filename_len = strlen(filename);
-
-  /* Since we save the filename on the heap, and have allocated only
-   * getpagesize() space
-   */
-  assert(filename_len < getpagesize());
-
-  memcpy(hashtable_db_filename, filename, filename_len);
-  hashtable_db_filename[filename_len] = '\0';
-
-  // SQLITE_OPEN_READONLY makes sure that we throw if the db doesn't exist
-  assert_sql(
-      sqlite3_open_v2(
-          hashtable_db_filename, &hashtable_db, SQLITE_OPEN_READONLY, NULL),
-      SQLITE_OK);
-
-  // Verify the header
-  if (Bool_val(verify)) {
-    verify_sqlite_header(hashtable_db, 0);
-  }
-
-  gettimeofday(&tv2, NULL);
-  int secs = tv2.tv_sec - tv.tv_sec;
-  // Reporting only seconds, ignore milli seconds
-  CAMLreturn(Val_long(secs));
-}
-
-CAMLprim value hh_get_sqlite(value ocaml_key) {
-  CAMLparam1(ocaml_key);
-  CAMLlocal1(result);
-
-  result = Val_none;
-
-  assert(hashtable_db_filename != NULL);
-
-  // Check whether we are in SQL mode
-  if (*hashtable_db_filename == '\0') {
-    // We are not in SQL mode, return empty list
-    CAMLreturn(result);
-  }
-
-  // Now that we know we are in SQL mode, make sure db connection is made
-  if (hashtable_db == NULL) {
-    assert(*hashtable_db_filename != '\0');
-    // We are in sql, hence we shouldn't be in the master process,
-    // since we are not connected yet, soo.. try to connect
-    assert_not_master();
-    // SQLITE_OPEN_READONLY makes sure that we throw if the db doesn't exist
-    assert_sql(
-        sqlite3_open_v2(
-            hashtable_db_filename, &hashtable_db, SQLITE_OPEN_READONLY, NULL),
-        SQLITE_OK);
-    assert(hashtable_db != NULL);
-  }
-
-  // The caller is required to pass a 32-bit node ID.
-  const uint64_t hash = get_hash(ocaml_key);
-
-  if (get_select_stmt == NULL) {
-    const char* sql = "SELECT VALUE_VERTEX FROM HASHTABLE WHERE KEY_VERTEX=?;";
-    assert_sql(
-        sqlite3_prepare_v2(hashtable_db, sql, -1, &get_select_stmt, NULL),
-        SQLITE_OK);
-    assert(get_select_stmt != NULL);
-  }
-
-  assert_sql(sqlite3_bind_int64(get_select_stmt, 1, hash), SQLITE_OK);
-
-  int err_num = sqlite3_step(get_select_stmt);
-  // err_num is SQLITE_ROW if there is a row to look at,
-  // SQLITE_DONE if no results
-  if (err_num == SQLITE_ROW) {
-    // Means we found it in the table
-    // Columns are 0 indexed
-    heap_entry_t* value =
-        (heap_entry_t*)sqlite3_column_blob(get_select_stmt, 0);
-    result = Val_some(hh_deserialize(value));
-  } else if (err_num != SQLITE_DONE) {
-    // Something went wrong in sqlite3_step, lets crash
-    assert_sql(err_num, SQLITE_ROW);
-  }
-
-  assert_sql(sqlite3_clear_bindings(get_select_stmt), SQLITE_OK);
-  assert_sql(sqlite3_reset(get_select_stmt), SQLITE_OK);
-  CAMLreturn(result);
-}
+//CAMLprim value hh_load_table_sqlite(value in_filename, value verify) {
+//  CAMLparam2(in_filename, verify);
+//  struct timeval tv = {0};
+//  struct timeval tv2 = {0};
+//  gettimeofday(&tv, NULL);
+//
+//  // This can only happen in the master
+//  assert_master();
+//
+//  const char* filename = String_val(in_filename);
+//  size_t filename_len = strlen(filename);
+//
+//  /* Since we save the filename on the heap, and have allocated only
+//   * getpagesize() space
+//   */
+//  assert(filename_len < getpagesize());
+//
+//  memcpy(hashtable_db_filename, filename, filename_len);
+//  hashtable_db_filename[filename_len] = '\0';
+//
+//  // SQLITE_OPEN_READONLY makes sure that we throw if the db doesn't exist
+//  assert_sql(
+//      sqlite3_open_v2(
+//          hashtable_db_filename, &hashtable_db, SQLITE_OPEN_READONLY, NULL),
+//      SQLITE_OK);
+//
+//  // Verify the header
+//  if (Bool_val(verify)) {
+//    verify_sqlite_header(hashtable_db, 0);
+//  }
+//
+//  gettimeofday(&tv2, NULL);
+//  int secs = tv2.tv_sec - tv.tv_sec;
+//  // Reporting only seconds, ignore milli seconds
+//  CAMLreturn(Val_long(secs));
+//}
+//
+//CAMLprim value hh_get_sqlite(value ocaml_key) {
+//  CAMLparam1(ocaml_key);
+//  CAMLlocal1(result);
+//
+//  result = Val_none;
+//
+//  assert(hashtable_db_filename != NULL);
+//
+//  // Check whether we are in SQL mode
+//  if (*hashtable_db_filename == '\0') {
+//    // We are not in SQL mode, return empty list
+//    CAMLreturn(result);
+//  }
+//
+//  // Now that we know we are in SQL mode, make sure db connection is made
+//  if (hashtable_db == NULL) {
+//    assert(*hashtable_db_filename != '\0');
+//    // We are in sql, hence we shouldn't be in the master process,
+//    // since we are not connected yet, soo.. try to connect
+//    assert_not_master();
+//    // SQLITE_OPEN_READONLY makes sure that we throw if the db doesn't exist
+//    assert_sql(
+//        sqlite3_open_v2(
+//            hashtable_db_filename, &hashtable_db, SQLITE_OPEN_READONLY, NULL),
+//        SQLITE_OK);
+//    assert(hashtable_db != NULL);
+//  }
+//
+//  // The caller is required to pass a 32-bit node ID.
+//  const uint64_t hash = get_hash(ocaml_key);
+//
+//  if (get_select_stmt == NULL) {
+//    const char* sql = "SELECT VALUE_VERTEX FROM HASHTABLE WHERE KEY_VERTEX=?;";
+//    assert_sql(
+//        sqlite3_prepare_v2(hashtable_db, sql, -1, &get_select_stmt, NULL),
+//        SQLITE_OK);
+//    assert(get_select_stmt != NULL);
+//  }
+//
+//  assert_sql(sqlite3_bind_int64(get_select_stmt, 1, hash), SQLITE_OK);
+//
+//  int err_num = sqlite3_step(get_select_stmt);
+//  // err_num is SQLITE_ROW if there is a row to look at,
+//  // SQLITE_DONE if no results
+//  if (err_num == SQLITE_ROW) {
+//    // Means we found it in the table
+//    // Columns are 0 indexed
+//    heap_entry_t* value =
+//        (heap_entry_t*)sqlite3_column_blob(get_select_stmt, 0);
+//    result = Val_some(hh_deserialize(value));
+//  } else if (err_num != SQLITE_DONE) {
+//    // Something went wrong in sqlite3_step, lets crash
+//    assert_sql(err_num, SQLITE_ROW);
+//  }
+//
+//  assert_sql(sqlite3_clear_bindings(get_select_stmt), SQLITE_OK);
+//  assert_sql(sqlite3_reset(get_select_stmt), SQLITE_OK);
+//  CAMLreturn(result);
+//}
 
 // --------------------------END OF SQLITE3 SECTION ---------------------------
 #else

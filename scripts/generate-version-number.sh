@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
@@ -39,7 +39,7 @@ done
 
 # Gather version information.
 VERSION=""
-if HG_VERSION="$(hg log -r . -T '{node}')"; then
+if HG_VERSION="$(( type hg >& /dev/null ) && hg log -r . -T '{node}')"; then
   VERSION="${HG_VERSION}"
   echo "HG revision: ${VERSION}"
 elif GIT_VERSION="$(git rev-parse HEAD)"; then

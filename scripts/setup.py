@@ -28,25 +28,28 @@ from typing import Dict, List, Mapping, Optional, Tuple
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-COMPILER_VERSION = "4.14.0"
+COMPILER_VERSION = "5.2.0"
 DEPENDENCIES = [
+    # If you change this, also update the package_list file!
     "base64.3.5.1",
     "cmdliner.1.1.1",
     "core.v0.16.2",
+    "domainslib.0.5.1",
     "re2.v0.16.0",
-    "dune.3.7.1",
+    "dune.3.16.0",
     "yojson.2.0.2",
     "jsonm.1.0.2",
     "ppx_deriving_yojson.3.7.0",
     "ppx_yojson_conv.v0.16.0",
     "ounit2.2.2.7",
-    "menhir.20220210",
-    "lwt.5.6.1",
+    "menhir.20231231",
+    "lwt.5.7.0",
     "lwt_ppx.2.1.0",
     "ounit2-lwt.2.2.7",
     "pyre-ast.0.1.11",
-    "mtime.1.4.0",
+    "mtime.2.0.0",
     "errpy.0.0.9",
+    "kcas_data.0.7.0",
 ]
 
 
@@ -146,12 +149,20 @@ def _compiler_specification() -> str:
     The format for how to specify this changed in 4.12.0, see
     https://discuss.ocaml.org/t/experimental-new-layout-for-the-ocaml-variants-packages-in-opam-repository/6779
     """
-    return ",".join(
-        [
-            f"--packages=ocaml-variants.{COMPILER_VERSION}+options",
-            "ocaml-option-flambda",
-        ]
-    )
+    if not release:
+        return ",".join(
+            [
+                f"--packages=ocaml-variants.{COMPILER_VERSION}+options",
+                "ocaml-option-tsan",
+            ]
+        )
+    else:
+        return ",".join(
+            [
+                f"--packages=ocaml-variants.{COMPILER_VERSION}+options",
+                "ocaml-options-only-flambda",
+            ]
+        )
 
 
 def _opam_command(opam_version: Tuple[int, ...]) -> List[str]:
@@ -338,38 +349,39 @@ def full_setup(
     add_environment_variables: Optional[Mapping[str, str]] = None,
     rust_path: Optional[Path] = None,
 ) -> None:
-    opam_environment_variables: Mapping[
-        str, str
-    ] = _install_dependencies(
-        opam_root,
-        opam_version,
-        add_environment_variables=add_environment_variables,
-        rust_path=rust_path,
-    )
+    #opam_environment_variables: Mapping[
+    #    str, str
+    #] = set_opam_switch_and_install_dependencies(
+    #    opam_root,
+    #    opam_version,
+    #    release=release,
+    #    add_environment_variables=add_environment_variables,
+    #    rust_path=rust_path,
+    #)
 
-    def run_in_opam_environment(command: List[str]) -> None:
-        _run_command(
-            command,
-            current_working_directory=pyre_directory / "source",
-            add_environment_variables=opam_environment_variables,
-        )
+    #def run_in_opam_environment(command: List[str]) -> None:
+    #    _run_command(
+    #        command,
+    #        current_working_directory=pyre_directory / "source",
+    #        add_environment_variables=opam_environment_variables,
+    #    )
 
     produce_dune_file(pyre_directory, build_type)
-    if run_clean:
-        # Note: we do not run `make clean` because we want the result of the
-        # explicit `produce_dune_file` to remain.
-        # Dune 3.7 runs into `rmdir` failure when cleaning the `_build` directory
-        # for some reason. Manually clean the dir to work around the issue.
-        run_in_opam_environment(["rm", "-rf", "_build"])
-    if release:
-        LOG.info("Running a release build. This may take a while.")
-        run_in_opam_environment(["make", "release"])
-        if run_tests:
-            run_in_opam_environment(["make", "release_test"])
-    else:
-        run_in_opam_environment(["make", "dev"])
-        if run_tests:
-            run_in_opam_environment(["make", "test"])
+    #if run_clean:
+    #    # Note: we do not run `make clean` because we want the result of the
+    #    # explicit `produce_dune_file` to remain.
+    #    # Dune 3.7 runs into `rmdir` failure when cleaning the `_build` directory
+    #    # for some reason. Manually clean the dir to work around the issue.
+    #    run_in_opam_environment(["rm", "-rf", "_build"])
+    #if release:
+    #    LOG.info("Running a release build. This may take a while.")
+    #    run_in_opam_environment(["make", "release"])
+    #    if run_tests:
+    #        run_in_opam_environment(["make", "release_test"])
+    #else:
+    #    run_in_opam_environment(["make", "dev"])
+    #    if run_tests:
+    #        run_in_opam_environment(["make", "test"])
 
 
 def _make_opam_root(local: bool) -> Path:
@@ -422,7 +434,15 @@ def setup(
     if parsed.configure:
         produce_dune_file(pyre_directory, build_type)
     else:
-        initialize_opam_switch(opam_root, opam_version, release, add_environment_variables, parsed.rust_path)
+        if not _opam_already_initialized(opam_root):
+            LOG.info("opam not detected as initialized. Initializing.")
+            exit(1)
+            initialize_opam_switch(
+                opam_root, opam_version, release, add_environment_variables
+            )
+        else:
+            LOG.info("opam already initialized.")
+            opam_update(opam_root, opam_version, add_environment_variables)
         full_setup(
             opam_root,
             opam_version,
