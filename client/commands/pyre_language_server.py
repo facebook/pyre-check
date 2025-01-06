@@ -57,12 +57,7 @@ from .. import (
     log,
     timer,
 )
-from ..language_server import (
-    connections,
-    daemon_connection,
-    features,
-    protocol as lsp,
-)
+from ..language_server import connections, daemon_connection, features, protocol as lsp
 from . import (
     commands,
     daemon_querier,
@@ -589,7 +584,9 @@ class PyreLanguageServerDispatcher:
 
         dispatch_request_timer = timer.Timer()
         await self._restart_if_needed()
-        dispatch_request_duration = dispatch_request_timer.stop_in_millisecond()
+        dispatch_request_duration = (  # noqa: F841
+            dispatch_request_timer.stop_in_millisecond()
+        )
         if self.server_state.client_register_event is not None:
             await self.server_state.client_register_event.wait()
         elif request.method == "textDocument/didOpen":
