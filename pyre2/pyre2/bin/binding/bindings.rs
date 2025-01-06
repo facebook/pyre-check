@@ -1428,19 +1428,22 @@ impl<'a> BindingsBuilder<'a> {
     fn narrow_ops(test: Option<Expr>) -> Vec<(Name, NarrowOp, TextRange)> {
         match test {
             Some(Expr::Compare(ExprCompare {
-                range,
+                range: _,
                 left: box Expr::Name(name),
                 ops,
                 comparators,
             })) => ops
                 .iter()
                 .zip(comparators)
-                .filter_map(|(op, right)| match op {
-                    CmpOp::Is => Some((name.id.clone(), NarrowOp::Is(Box::new(right)), range)),
-                    CmpOp::IsNot => {
-                        Some((name.id.clone(), NarrowOp::IsNot(Box::new(right)), range))
+                .filter_map(|(op, right)| {
+                    let range = right.range();
+                    match op {
+                        CmpOp::Is => Some((name.id.clone(), NarrowOp::Is(Box::new(right)), range)),
+                        CmpOp::IsNot => {
+                            Some((name.id.clone(), NarrowOp::IsNot(Box::new(right)), range))
+                        }
+                        _ => None,
                     }
-                    _ => None,
                 })
                 .collect(),
             Some(Expr::BoolOp(ExprBoolOp {
