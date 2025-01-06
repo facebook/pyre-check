@@ -1,15 +1,16 @@
 {
   "total": 133,
-  "pass": 8,
-  "fail": 125,
-  "pass_rate": 0.06,
-  "differences": 1432,
+  "pass": 9,
+  "fail": 124,
+  "pass_rate": 0.07,
+  "differences": 1431,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
     "directives_type_ignore.py",
     "directives_type_ignore_file2.py",
     "directives_version_platform.py",
+    "enums_definition.py",
     "enums_member_names.py",
     "generics_syntax_compatibility.py",
     "tuples_type_form.py"
@@ -60,7 +61,6 @@
     "directives_type_checking.py": 3,
     "directives_type_ignore_file1.py": 1,
     "enums_behaviors.py": 3,
-    "enums_definition.py": 1,
     "enums_expansion.py": 5,
     "enums_member_values.py": 2,
     "enums_members.py": 19,

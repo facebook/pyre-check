@@ -22,6 +22,27 @@ assert_type(MyEnum.X, Literal[MyEnum.X])
 );
 
 testcase!(
+    test_enum_meta,
+    r#"
+from typing import assert_type, Literal
+from enum import EnumMeta
+
+class CustomEnumType(EnumMeta):
+    pass
+
+class CustomEnum(metaclass=CustomEnumType):
+    pass
+
+class Color(CustomEnum):
+    RED = 1
+    GREEN = 2
+    BLUE = 3
+
+assert_type(Color.RED, Literal[Color.RED])
+"#,
+);
+
+testcase!(
     test_iterate,
     r#"
 from typing import assert_type

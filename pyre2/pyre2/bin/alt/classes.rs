@@ -386,6 +386,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_from_class(cls, &KeyClassMetadata(ShortIdentifier::new(cls.name())))
     }
 
+    pub fn is_enum(&self, cls: &Class) -> bool {
+        let metadata = self.get_metadata_for_class(cls);
+        metadata.metaclass().map_or(false, |m| {
+            self.solver().is_subset_eq(
+                &Type::ClassType(m.clone()),
+                &Type::ClassType(self.stdlib.enum_meta()),
+                self.type_order(),
+            )
+        })
+    }
+
     fn check_and_create_targs(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> TArgs {
         let tparams = cls.tparams();
         let nargs = targs.len();
@@ -572,7 +583,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some((ty, defining_class)) => {
                 if self.depends_on_class_type_parameter(cls, ty.as_ref()) {
                     Err(NoClassAttribute::IsGenericMember)
-                } else if cls.is_enum(&|c| self.get_metadata_for_class(c)) {
+                } else if self.is_enum(cls) {
                     // TODO(stroxler, yangdanny) Enums can contain attributes that are not
                     // members, we eventually need to implement enough checks to know the
                     // difference.
@@ -610,7 +621,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// return a `ClassType` for the enum class, otherwise return `None`.
     pub fn get_enum_class_type(&self, name: Identifier) -> Option<ClassType> {
         match self.get(&Key::Usage(ShortIdentifier::new(&name))).deref() {
-            Type::ClassDef(class) if class.is_enum(&|c| self.get_metadata_for_class(c)) => {
+            Type::ClassDef(class) if self.is_enum(class) => {
                 // TODO(stroxler): Eventually, we should raise type errors on generic Enum because
                 // this doesn't make semantic sense. But in the meantime we need to be robust against
                 // this possibility.

@@ -606,9 +606,7 @@
     "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for class `Color`, got 1.', \"untype, got Literal['RED']\"]",
     "Line 27: Unexpected errors ['assert_type(Enum, Color) failed']"
   ],
-  "enums_definition.py": [
-    "Line 75: Unexpected errors ['assert_type(Literal[1], Literal[False]) failed', 'TODO: Attribute(ExprAttribute - Lit::from_expr']"
-  ],
+  "enums_definition.py": [],
   "enums_expansion.py": [
     "Line 23: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 31: Unexpected errors [\"Missing argument 'flush'\"]",

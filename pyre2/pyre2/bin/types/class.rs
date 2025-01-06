@@ -10,7 +10,6 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::hash::Hash;
-use std::sync::Arc;
 
 use dupe::Dupe;
 use parse_display::Display;
@@ -20,7 +19,6 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::module::module_info::ModuleInfo;
-use crate::types::class_metadata::ClassMetadata;
 use crate::types::qname::QName;
 use crate::types::types::Quantified;
 use crate::types::types::TParams;
@@ -80,14 +78,6 @@ impl Class {
             tparams,
             fields,
         }))
-    }
-
-    pub fn is_enum(&self, get_mro: &dyn Fn(&Class) -> Arc<ClassMetadata>) -> bool {
-        // TODO(yangdanny): we need to check the metaclass in the future
-        get_mro(self)
-            .ancestors_no_object()
-            .iter()
-            .any(|ancestor| ancestor.name().as_str() == "Enum")
     }
 
     pub fn contains(&self, name: &Name) -> bool {

@@ -53,6 +53,7 @@ pub struct Stdlib {
     none_type: StdlibResult<Class>,
     function_type: StdlibResult<Class>,
     method_type: StdlibResult<Class>,
+    enum_meta: StdlibResult<Class>,
     // We want an owned ClassType for object because it allows the MRO code to clone less frequently.
     object_class_type: StdlibResult<ClassType>,
 }
@@ -69,6 +70,7 @@ impl Stdlib {
         let builtins = ModuleName::builtins();
         let types = ModuleName::types();
         let typing = ModuleName::typing();
+        let enum_ = ModuleName::enum_();
 
         let mut lookup_str = |module: ModuleName, name: &'static str| {
             lookup_class(module, &Name::new_static(name)).ok_or(StdlibError {
@@ -108,7 +110,7 @@ impl Stdlib {
             traceback_type: lookup_str(types, "TracebackType"),
             function_type: lookup_str(types, "FunctionType"),
             method_type: lookup_str(types, "MethodType"),
-
+            enum_meta: lookup_str(enum_, "EnumMeta"),
             object_class_type: lookup_str(builtins, "object")
                 .map(|obj| ClassType::new_for_stdlib(obj, TArgs::default())),
         }
@@ -157,6 +159,10 @@ impl Stdlib {
 
     pub fn builtins_type(&self) -> ClassType {
         Self::primitive(&self.builtins_type)
+    }
+
+    pub fn enum_meta(&self) -> ClassType {
+        Self::primitive(&self.enum_meta)
     }
 
     pub fn ellipsis_type(&self) -> ClassType {

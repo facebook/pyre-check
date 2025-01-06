@@ -8637,26 +8637,6 @@
       "name": "PyreError",
       "stop_column": 43,
       "stop_line": 40
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Literal[1], Literal[False]) failed",
-      "description": "assert_type(Literal[1], Literal[False]) failed",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 75
-    },
-    {
-      "code": -2,
-      "column": 34,
-      "concise_description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
-      "description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 45,
-      "stop_line": 75
     }
   ],
   "enums_expansion.py": [

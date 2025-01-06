@@ -93,6 +93,10 @@ impl ModuleName {
         Self::from_str("types")
     }
 
+    pub fn enum_() -> Self {
+        Self::from_str("enum")
+    }
+
     pub fn from_str(x: &str) -> Self {
         ModuleName(MODULE_NAME_INTERNER.intern(StrRef(x)))
     }
