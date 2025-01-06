@@ -1223,20 +1223,25 @@ impl<'a> BindingsBuilder<'a> {
         let last_scope = self.scopes.pop().unwrap();
         let mut fields = SmallSet::new();
         for (name, info) in last_scope.flow.info.iter() {
-            let flow_type = Binding::Forward(self.table.types.0.insert(Key::Anywhere(
-                name.clone(),
-                last_scope.stat.0.get(name).unwrap().loc,
-            )));
-            let binding = if let Some(ann) = &info.ann {
-                BindingClassField(flow_type, Some(*ann))
-            } else {
-                BindingClassField(flow_type, None)
-            };
-            fields.insert(name.clone());
-            self.table.insert(
-                KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
-                binding,
-            );
+            // A name with flow info but not static info is a reference to something that's not a class field.
+            if let Some(stat_info) = last_scope.stat.0.get(name) {
+                let flow_type = Binding::Forward(
+                    self.table
+                        .types
+                        .0
+                        .insert(Key::Anywhere(name.clone(), stat_info.loc)),
+                );
+                let binding = if let Some(ann) = &info.ann {
+                    BindingClassField(flow_type, Some(*ann))
+                } else {
+                    BindingClassField(flow_type, None)
+                };
+                fields.insert(name.clone());
+                self.table.insert(
+                    KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
+                    binding,
+                );
+            }
         }
         if let ScopeKind::ClassBody(body) = last_scope.kind {
             for (method_name, instance_attributes) in body.instance_attributes_by_method {

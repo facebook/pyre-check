@@ -249,3 +249,15 @@ def f(x: bool | None, y: bool | None):
         assert_type(y, Never)
     "#,
 );
+
+testcase!(
+    test_class_body,
+    r#"
+from typing import assert_type
+def f() -> str | None: ...
+x = f()
+class C:
+    if x is None:
+        assert_type(x, None)
+    "#,
+);
