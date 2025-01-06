@@ -473,7 +473,15 @@ impl BindingTable {
     {
         let entry = self.get_mut::<K>();
         let idx = entry.0.insert(key);
-        entry.1.insert_once(idx, value);
+        let existing = entry.1.insert(idx, value);
+        if let Some(existing) = existing {
+            panic!(
+                "Key {:?} already exists with value {:?}, cannot insert new value {:?}",
+                entry.0.idx_to_key(idx),
+                existing,
+                entry.1.get_exists(idx)
+            );
+        }
         idx
     }
 
