@@ -1018,10 +1018,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                         (
                             Type::ClassType(left_cls),
-                            Type::Literal(Lit::Enum(box (right_cls, _name))),
+                            Type::Literal(Lit::Enum(box (right_cls, name))),
                         ) if *left_cls == *right_cls => {
-                            // TODO: narrow to a union of all other enum members.
-                            t.clone()
+                            let e = self.get_enum(left_cls).unwrap();
+                            self.unions(
+                                &left_cls
+                                    .class_object()
+                                    .fields()
+                                    .iter()
+                                    .filter_map(|f| {
+                                        if *f == *name {
+                                            None
+                                        } else {
+                                            e.get_member(f).map(Type::Literal)
+                                        }
+                                    })
+                                    .collect::<Vec<_>>(),
+                            )
                         }
                         _ => t.clone(),
                     }

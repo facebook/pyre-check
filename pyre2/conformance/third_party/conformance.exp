@@ -14923,16 +14923,6 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(Status | str, str) failed",
-      "description": "assert_type(Status | str, str) failed",
-      "line": 93,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
       "column": 35,
       "concise_description": "EXPECTED str <: Literal['ABORTED', 'MALFORMED']",
       "description": "EXPECTED str <: Literal['ABORTED', 'MALFORMED']",

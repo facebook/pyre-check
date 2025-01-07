@@ -106,7 +106,6 @@ impl Class {
         &self.0.qname.module
     }
 
-    #[allow(dead_code)]
     pub fn fields(&self) -> &SmallSet<Name> {
         &self.0.fields
     }
