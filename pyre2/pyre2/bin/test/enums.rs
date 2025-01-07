@@ -5,7 +5,31 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use itertools::Itertools;
+
+use crate::test::util::get_class;
+use crate::test::util::mk_state;
 use crate::testcase;
+
+#[test]
+fn test_fields() {
+    let (module, state) = mk_state(
+        r#"
+import enum
+class E(enum.Enum):
+    X = 1
+    Y = 2
+        "#,
+    );
+    let cls = get_class("E", module, &state).unwrap();
+    let fields = cls
+        .fields()
+        .iter()
+        .map(|f| f.as_str())
+        .sorted()
+        .collect::<Vec<_>>();
+    assert_eq!(fields, vec!["X", "Y"]);
+}
 
 testcase!(
     test_enum,

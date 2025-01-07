@@ -105,6 +105,11 @@ impl Class {
     pub fn module_info(&self) -> &ModuleInfo {
         &self.0.qname.module
     }
+
+    #[allow(dead_code)]
+    pub fn fields(&self) -> &SmallSet<Name> {
+        &self.0.fields
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]

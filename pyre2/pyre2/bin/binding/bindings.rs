@@ -1211,6 +1211,9 @@ impl<'a> BindingsBuilder<'a> {
 
         legacy_tparam_builder.add_name_definitions(self);
 
+        let cur_scope = self.scopes.last().clone();
+        let non_field_names = cur_scope.flow.info.keys().collect::<SmallSet<_>>();
+
         self.scopes.last_mut().stat.stmts(
             &body,
             &self.module_info,
@@ -1223,6 +1226,10 @@ impl<'a> BindingsBuilder<'a> {
         let last_scope = self.scopes.pop().unwrap();
         let mut fields = SmallSet::new();
         for (name, info) in last_scope.flow.info.iter() {
+            if non_field_names.contains(name) {
+                // TODO: this incorrectly filters out fields that reuse already-in-scope names.
+                continue;
+            }
             // A name with flow info but not static info is a reference to something that's not a class field.
             if let Some(stat_info) = last_scope.stat.0.get(name) {
                 let flow_type = Binding::Forward(
