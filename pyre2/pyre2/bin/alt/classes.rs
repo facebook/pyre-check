@@ -542,19 +542,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Arc<Type>> {
+    fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Type> {
         if cls.contains(name) {
             let ty = self.get_from_class(
                 cls,
                 &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
             );
-            Some(ty)
+            Some(ty.deref().clone())
         } else {
             None
         }
     }
 
-    fn get_class_member(&self, cls: &Class, name: &Name) -> Option<(Arc<Type>, Class)> {
+    fn get_class_member(&self, cls: &Class, name: &Name) -> Option<(Type, Class)> {
         if let Some(member) = self.get_class_field(cls, name) {
             Some((member, cls.dupe()))
         } else {
@@ -562,10 +562,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .ancestors(self.stdlib)
                 .filter_map(|ancestor| {
                     self.get_class_field(ancestor.class_object(), name)
-                        .as_deref()
                         .map(|ty| {
-                            let raw_member = ancestor.instantiate_member(ty.clone());
-                            (Arc::new(raw_member), ancestor.class_object().dupe())
+                            let raw_member = ancestor.instantiate_member(ty);
+                            (raw_member, ancestor.class_object().dupe())
                         })
                 })
                 .next()
@@ -575,7 +574,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
             .map(|(member_ty, defining_class)| {
-                let instantiated_ty = cls.instantiate_member((*member_ty).clone());
+                let instantiated_ty = cls.instantiate_member(member_ty);
                 Attribute {
                     value: bind_attribute(cls.self_type(), instantiated_ty),
                     defining_class,
@@ -600,7 +599,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.get_class_member(cls, name) {
             None => Err(NoClassAttribute::NoClassMember),
             Some((ty, defining_class)) => {
-                if self.depends_on_class_type_parameter(cls, ty.as_ref()) {
+                if self.depends_on_class_type_parameter(cls, &ty) {
                     Err(NoClassAttribute::IsGenericMember)
                 } else if let Some(e) = self.get_enum(&self.promote_to_class_type_silently(cls))
                     && let Some(member) = e.get_member(name)
@@ -611,7 +610,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     })
                 } else {
                     Ok(Attribute {
-                        value: ty.as_ref().clone(),
+                        value: ty,
                         defining_class,
                     })
                 }
@@ -627,7 +626,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
             .map(|(member_ty, defining_class)| Attribute {
-                value: cls.instantiate_member((*member_ty).clone()),
+                value: cls.instantiate_member(member_ty),
                 defining_class,
             })
     }
