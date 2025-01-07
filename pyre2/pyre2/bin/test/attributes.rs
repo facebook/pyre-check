@@ -212,6 +212,104 @@ f2(C().f)  # E: EXPECTED BoundMethod[C, Callable[[C, int], None]] <: Callable[[C
 );
 
 testcase!(
+    test_simple_inheritance,
+    r#"
+from typing import assert_type
+class B:
+    x: int
+
+class HasBase(B):
+    y: str
+
+assert_type(HasBase().x, int)
+"#,
+);
+
+testcase!(
+    test_generic_multiple_inheritance,
+    r#"
+from typing import assert_type
+class A[T]:
+    x: T
+
+class B[T]:
+    y: T
+
+class C[T](A[int], B[T]):
+    z: bool
+
+c: C[str]
+assert_type(c.x, int)
+assert_type(c.y, str)
+assert_type(c.z, bool)
+"#,
+);
+
+testcase!(
+    test_generic_chained_inheritance,
+    r#"
+from typing import assert_type
+class A[T]:
+    x: T
+
+class B[T](A[list[T]]):
+    y: T
+
+class C[T](B[T]):
+    z: bool
+
+c: C[str]
+assert_type(c.x, list[str])
+assert_type(c.y, str)
+assert_type(c.z, bool)
+"#,
+);
+
+testcase!(
+    test_nested_class_attribute_with_inheritance,
+    r#"
+from typing import assert_type
+
+class B:
+    class Nested:
+        x: int
+
+class C(B):
+    pass
+
+N0: B.Nested = C.Nested()
+N1: C.Nested = B.Nested()
+assert_type(N1.x, int)
+"#,
+);
+
+testcase!(
+    test_class_generic_attribute_lookup,
+    r#"
+class C[T]:
+    x = T
+
+C.x  # E: Generic attribute `x` of class `C` is not visible on the class
+"#,
+);
+
+testcase!(
+    test_use_self,
+    r#"
+from typing import assert_type
+from typing import Self
+import typing
+from typing import Self as Myself
+
+class C:
+    def m(self, x: Self, y: Myself) -> list[typing.Self]:
+        return [self, x, y]
+
+assert_type(C().m(C(), C()), list[C])
+"#,
+);
+
+testcase!(
     test_var_attribute,
     r#"
 from typing import Literal, assert_type
