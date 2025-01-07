@@ -159,12 +159,11 @@ T = TypeVar()  # E: Missing `name` argument
     "#,
 );
 
-// TODO: This should be an error
 testcase_with_bug!(
     test_tvar_wrong_name,
     r#"
 from typing import TypeVar
-T = TypeVar("Z")
+T = TypeVar("Z")  # E: TypeVar must be assigned to a variable named Z
     "#,
 );
 

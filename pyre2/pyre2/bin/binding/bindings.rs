@@ -17,6 +17,7 @@ use itertools::Either;
 use itertools::Itertools;
 use parse_display::Display;
 use ruff_python_ast::name::Name;
+use ruff_python_ast::Arguments;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::Comprehension;
@@ -1524,10 +1525,10 @@ impl<'a> BindingsBuilder<'a> {
                 match &mut value {
                     Expr::Call(ExprCall {
                         range: _,
-                        func: box Expr::Name(name),
+                        func: box Expr::Name(type_var),
                         arguments,
-                    }) if name.id == "TypeVar" && !arguments.is_empty() => {
-                        self.ensure_expr(&Expr::Name(name.clone()));
+                    }) if type_var.id == "TypeVar" && !arguments.is_empty() => {
+                        self.ensure_expr(&Expr::Name(type_var.clone()));
                         // The constraints (i.e., any positional arguments after the first)
                         // and some keyword arguments are types.
                         for arg in arguments.args.iter_mut().skip(1) {
@@ -1543,6 +1544,17 @@ impl<'a> BindingsBuilder<'a> {
                                 );
                             } else {
                                 self.ensure_expr(&kw.value);
+                            }
+                        }
+                        if let Some(type_var_name) = type_var_name(arguments) {
+                            if !matches!(name, Some(ref x) if *x == type_var_name) {
+                                self.error(
+                                    arguments.args[0].range(),
+                                    format!(
+                                        "TypeVar must be assigned to a variable named {}",
+                                        type_var_name
+                                    ),
+                                );
                             }
                         }
                     }
@@ -2202,5 +2214,21 @@ fn yield_expr(x: ExprYield) -> Expr {
     match x.value {
         Some(x) => *x,
         None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range }),
+    }
+}
+
+fn type_var_name(x: &Arguments) -> Option<Name> {
+    if !x.args.is_empty() {
+        match &x.args[0] {
+            Expr::StringLiteral(x) => Some(Name::new(x.value.to_str())),
+            _ => None,
+        }
+    } else if let Some(keyword) = x.find_keyword("name") {
+        match &keyword.value {
+            Expr::StringLiteral(x) => Some(Name::new(x.value.to_str())),
+            _ => None,
+        }
+    } else {
+        None
     }
 }
