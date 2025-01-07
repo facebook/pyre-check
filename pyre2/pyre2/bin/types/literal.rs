@@ -26,6 +26,7 @@ use ruff_python_ast::UnaryOp;
 use ruff_text_size::TextRange;
 use static_assertions::assert_eq_size;
 
+use crate::alt::classes::Enum;
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
@@ -89,25 +90,26 @@ impl Lit {
     pub fn from_expr(
         x: &Expr,
         module_info: &ModuleInfo,
-        get_enum_class_type: &dyn Fn(Identifier) -> Option<ClassType>,
+        get_enum_from_name: &dyn Fn(Identifier) -> Option<Enum>,
         errors: &ErrorCollector,
     ) -> Self {
         match x {
-            Expr::UnaryOp(x) => {
-                match x.op {
-                    UnaryOp::UAdd => {
-                        Self::from_expr(&x.operand, module_info, get_enum_class_type, errors)
-                    }
-                    UnaryOp::USub => {
-                        Self::from_expr(&x.operand, module_info, get_enum_class_type, errors)
-                            .negate(module_info, x.range, errors)
-                    }
-                    _ => {
-                        errors.todo(module_info, "Lit::from_expr", x);
-                        Lit::Bool(false)
-                    }
+            Expr::UnaryOp(x) => match x.op {
+                UnaryOp::UAdd => {
+                    Self::from_expr(&x.operand, module_info, get_enum_from_name, errors)
                 }
-            }
+                UnaryOp::USub => {
+                    Self::from_expr(&x.operand, module_info, get_enum_from_name, errors).negate(
+                        module_info,
+                        x.range,
+                        errors,
+                    )
+                }
+                _ => {
+                    errors.todo(module_info, "Lit::from_expr", x);
+                    Lit::Bool(false)
+                }
+            },
             Expr::StringLiteral(x) => Self::from_string_literal(x),
             Expr::BytesLiteral(x) => Self::from_bytes_literal(x),
             Expr::NumberLiteral(x) => Self::from_number_literal(x, module_info, errors),
@@ -117,8 +119,8 @@ impl Lit {
                 value: box Expr::Name(maybe_enum_name),
                 attr: member_name,
                 ctx: _,
-            }) => match get_enum_class_type(Ast::expr_name_identifier(maybe_enum_name.clone())) {
-                Some(class_type) => Lit::Enum(Box::new((class_type, member_name.id.to_owned()))),
+            }) => match get_enum_from_name(Ast::expr_name_identifier(maybe_enum_name.clone())) {
+                Some(e) if let Some(lit) = e.get_member(&member_name.id) => lit,
                 _ => {
                     errors.todo(module_info, "Lit::from_expr", x);
                     Lit::Bool(false)

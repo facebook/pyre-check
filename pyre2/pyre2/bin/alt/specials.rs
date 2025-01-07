@@ -68,7 +68,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let lit = Lit::from_expr(
                         x,
                         self.module_info(),
-                        &|name| self.get_enum_class_type(name),
+                        &|name| self.get_enum_from_name(name),
                         self.errors(),
                     );
                     literals.push(Type::Literal(lit));
