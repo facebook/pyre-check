@@ -9,6 +9,7 @@ use crate::testcase;
 use crate::testcase_with_bug;
 
 testcase_with_bug!(
+    "Need to use type from hint when analyzing body of lambda",
     test_lambda,
     r#"
 from typing import Callable, reveal_type
@@ -341,8 +342,8 @@ def test_sync() -> Callable[[int], int]:
 "#,
 );
 
-// TODO
 testcase_with_bug!(
+    "TODO",
     test_callable_param_spec,
     r#"
 from typing import Callable, ParamSpec

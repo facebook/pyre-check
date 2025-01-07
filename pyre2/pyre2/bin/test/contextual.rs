@@ -197,8 +197,8 @@ ys: list[A] = takes_int("") if False else [B()] # E: EXPECTED Literal[''] <: int
 "#,
 );
 
-// TODO: Unpacked assignment propagates wrong hint to RHS expression
 testcase_with_bug!(
+    "TODO: Unpacked assignment propagates wrong hint to RHS expression",
     test_context_assign_unpacked_tuple,
     r#"
 class A: ...
@@ -209,8 +209,8 @@ xs: list[A] = []
 "#,
 );
 
-// TODO: No context propagated to subscript assignment target
 testcase_with_bug!(
+    "TODO: No context propagated to subscript assignment target",
     test_context_assign_subscript,
     r#"
 class A: ...
@@ -222,6 +222,7 @@ xs[0] = [B()] # E: EXPECTED list[B] <: list[A]
 );
 
 testcase_with_bug!(
+    "Context should be propagated to argument",
     test_generic_get_literal,
     r#"
 from typing import assert_type, TypeVar, Literal

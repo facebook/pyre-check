@@ -7,10 +7,12 @@
 
 use crate::testcase_with_bug;
 
-// TODO zeina: use assert_type instead of reveal_type after I support most of these cases.
-
-// TODO zeina: 1- We need a generator type; 2- next keyword currently unsupported
 testcase_with_bug!(
+    r#"
+TODO zeina: use assert_type instead of reveal_type after I support most of these cases.
+
+TODO zeina: 1- We need a generator type; 2- next keyword currently unsupported
+    "#,
     test_generator,
     r#"
 from typing import assert_type, Generator, Literal, Any, reveal_type
@@ -27,9 +29,11 @@ reveal_type(f) # E:  Generator[Literal[1], Unknown, None]
 "#,
 );
 
-// TODO zeina: Example of a generator with a return type. The return type here is wrong.
-// It should be Generator[Literal[1, 2], Any, Literal['done']] or Generator[int, Any, str]
 testcase_with_bug!(
+    r#"
+TODO zeina: Example of a generator with a return type. The return type here is wrong.
+It should be Generator[Literal[1, 2], Any, Literal['done']] or Generator[int, Any, str]
+    "#,
     test_generator_with_return,
     r#"
 
@@ -45,8 +49,10 @@ reveal_type(gen_with_return()) # E: Generator[Literal[1, 2], Unknown, Literal['d
 "#,
 );
 
-// TODO zeina: we should correctly determine the send() type based on the signature of the generator. Additionally, we should correctly handle the return type of the generator.
 testcase_with_bug!(
+    r#"
+TODO zeina: we should correctly determine the send() type based on the signature of the generator. Additionally, we should correctly handle the return type of the generator.
+    "#,
     test_generator_send,
     r#"
 
@@ -63,6 +69,7 @@ gen.send(5)
 );
 
 testcase_with_bug!(
+    "TODOs",
     test_yield_with_iterator,
     r#"
 from typing import Iterator, reveal_type
@@ -77,10 +84,12 @@ reveal_type(gen_numbers()) # E: revealed type: Iterator[int]
 "#,
 );
 
-// TODO zeina: showcases return type inference for nested generators.
-// Type of "nested_generator()" should be "Generator[Literal[1, 2, 3], Unknown, None]"
-// and Type of "another_generator()" should be "Generator[Literal[2], Any, None]"
 testcase_with_bug!(
+    r#"
+TODO zeina: showcases return type inference for nested generators.
+Type of "nested_generator()" should be "Generator[Literal[1, 2, 3], Unknown, None]"
+and Type of "another_generator()" should be "Generator[Literal[2], Any, None]"
+    "#,
     test_nested_generator,
     r#"
 from typing import Generator, reveal_type
@@ -99,8 +108,8 @@ reveal_type(another_generator()) # E: revealed type: Generator[Literal[2], Unkno
 "#,
 );
 
-// TODO zeina: This should typecheck. Handle nested generator resulting type.
 testcase_with_bug!(
+    "TODO zeina: This should typecheck. Handle nested generator resulting type.",
     test_basic_generator_type,
     r#"
 from typing import Generator, reveal_type
@@ -114,8 +123,8 @@ reveal_type(f(3)) # E: revealed type: Generator[int, None, None]
 "#,
 );
 
-// TODO zeina: This should typecheck. Handle nested generator resulting type.
 testcase_with_bug!(
+    "TODO zeina: This should typecheck. Handle nested generator resulting type.",
     test_parametric_generator_type,
     r#"
 from typing import Generator, TypeVar, reveal_type
@@ -131,8 +140,8 @@ reveal_type(f(3)) # E: revealed type: Generator[int, None, None]
 "#,
 );
 
-// TODO zeina: This should typecheck; we should first support async generators.
 testcase_with_bug!(
+    "TODO zeina: This should typecheck; we should first support async generators.",
     test_async_generator_basic_type,
     r#"
 from typing import AsyncGenerator, reveal_type # E: Could not import `AsyncGenerator` from `typing`
@@ -145,8 +154,8 @@ reveal_type(async_count_up_to()) # E: Generator[Literal[2], Unknown, Error]
 "#,
 );
 
-// TODO zeina: This should typecheck; we should first support async generators.
 testcase_with_bug!(
+    "TODO zeina: This should typecheck; we should first support async generators.",
     test_async_generator_basic_inference,
     r#"
 from typing import reveal_type

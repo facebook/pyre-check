@@ -179,8 +179,8 @@ C().f(0)    # E: EXPECTED Literal[0] <: C
     "#,
 );
 
-// Make sure we don't treat `foo` like an instance method.
 testcase_with_bug!(
+    "Make sure we don't treat `foo` like an instance method.",
     test_non_method_callable_attribute,
     r#"
 from typing import assert_type, Literal, reveal_type

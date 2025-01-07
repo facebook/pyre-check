@@ -470,6 +470,7 @@ x3: B
 );
 
 testcase_with_bug!(
+    "Wrong asserted type",
     test_walrus_narrow,
     r#"
 from typing import assert_type
@@ -481,6 +482,7 @@ if x := f():
 );
 
 testcase_with_bug!(
+    "False negative",
     test_read_before_write,
     r#"
 x = y  # this should be an error

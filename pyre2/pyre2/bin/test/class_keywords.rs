@@ -124,10 +124,12 @@ class A(B0, B1):  # E:  Class `A` has metaclass `M0` which is not a subclass of 
 "#,
 );
 
-// TODO(stroxler): Ideally we would not only report a duplicate keyword here,
-// but also catch all type errors even in duplicate keywords. Here we miss a type
-// error in the first value for `foo` because it gets overwritten.
 testcase_with_bug!(
+    r#"
+TODO(stroxler): Ideally we would not only report a duplicate keyword here,
+but also catch all type errors even in duplicate keywords. Here we miss a type
+error in the first value for `foo` because it gets overwritten.
+    "#,
     test_duplicate_class_keyword,
     r#"
 class A(foo="x" + 5, foo=True):  # E: Parse error: Duplicate keyword argument "foo"

@@ -121,6 +121,7 @@ assert_type(x, int)
 );
 
 testcase_with_bug!(
+    "False negative",
     test_access_nonexistent_module,
     env_imports_dot(),
     r#"
@@ -287,8 +288,8 @@ fn env_dunder_init_with_submodule() -> TestEnv {
     t
 }
 
-// TODO: foo.bar.x should exist and should be an int
 testcase_with_bug!(
+    "TODO: foo.bar.x should exist and should be an int",
     test_import_dunder_init_and_submodule,
     env_dunder_init_with_submodule(),
     r#"
@@ -311,9 +312,11 @@ foo.bar.x # E: No attribute `bar` in module `foo`
 "#,
 );
 
-// TODO: `foo.x` should be an error
-// The assert_type(foo.x) call should fail, but the error message is not great
 testcase_with_bug!(
+    r#"
+TODO: `foo.x` should be an error
+The assert_type(foo.x) call should fail, but the error message is not great
+    "#,
     test_import_dunder_init_submodule_only,
     env_dunder_init_with_submodule(),
     r#"
@@ -332,9 +335,11 @@ fn env_dunder_init_overlap_submodule() -> TestEnv {
     t
 }
 
-// TODO: foo.bar should not be a str (it should be the module object)
-// TODO: foo.bar.x should exist and should be an int
 testcase_with_bug!(
+    r#"
+TODO: foo.bar should not be a str (it should be the module object)
+TODO: foo.bar.x should exist and should be an int
+    "#,
     test_import_dunder_init_overlap_submodule_last,
     env_dunder_init_overlap_submodule(),
     r#"
@@ -346,9 +351,11 @@ foo.bar.x # TODO # E: Object of class `str` has no attribute `x`
 "#,
 );
 
-// TODO: Surprisingly (to Sam), importing __init__ after the submodule does not
-// overwrite foo.bar with the global from __init__.py.
 testcase_with_bug!(
+    r#"
+TODO: Surprisingly (to Sam), importing __init__ after the submodule does not
+overwrite foo.bar with the global from __init__.py.
+    "#,
     test_import_dunder_init_overlap_submodule_first,
     env_dunder_init_overlap_submodule(),
     r#"
@@ -409,6 +416,7 @@ from foo import *  # E: Could not import `bad_definition` from `foo`
 );
 
 testcase_with_bug!(
+    "False negative",
     test_export_all_not_module,
     r#"
 class not_module:

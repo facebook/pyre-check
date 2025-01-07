@@ -214,6 +214,7 @@ assert_type(x, str | None)
 );
 
 testcase_with_bug!(
+    "Unwanted EXPECTED error",
     test_while_overwrite,
     r#"
 from typing import assert_type, Literal

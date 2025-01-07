@@ -50,7 +50,7 @@ macro_rules! testcase {
 
 #[macro_export]
 macro_rules! testcase_with_bug {
-    ( $($t:tt)*) =>  {
+    ( $explanatation:expr, $($t:tt)*) =>  {
         $crate::testcase!($($t)*);
     }
 }
