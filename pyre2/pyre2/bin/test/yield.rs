@@ -62,7 +62,6 @@ gen.send(5)
 "#,
 );
 
-// TODO zeina: in this case, gen_numbers returns an interator not a generator
 testcase_with_bug!(
     test_yield_with_iterator,
     r#"
@@ -73,7 +72,7 @@ def gen_numbers() -> Iterator[int]:
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
     yield 3 # E: TODO: ExprYield - Answers::expr_infer # E: EXPECTED None <: Iterator[int]
 
-reveal_type(gen_numbers()) # E: revealed type: Generator[Literal[1, 2, 3], Unknown, Iterator[int]]
+reveal_type(gen_numbers()) # E: revealed type: Iterator[int]
 
 "#,
 );

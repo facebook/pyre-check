@@ -413,6 +413,13 @@ impl Type {
         }
     }
 
+    pub fn is_iterator(&self) -> bool {
+        match self {
+            Type::ClassType(cls) => cls.class_object().name().id().as_str() == "Iterator",
+            _ => false,
+        }
+    }
+
     pub fn is_var(&self) -> bool {
         matches!(self, Type::Var(_))
     }

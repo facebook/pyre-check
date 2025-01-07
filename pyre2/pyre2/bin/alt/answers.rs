@@ -1299,7 +1299,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .get(&Key::YieldType(ShortIdentifier::new(&x.name)))
                     .arc_clone();
                 // # TODO zeina: raise a type error if return type is inconsistent with inferred generator type
-                let ret = if yield_expr_type.is_never() || ret.is_generator() {
+                let ret = if yield_expr_type.is_never() || ret.is_generator() || ret.is_iterator() {
                     ret
                 } else {
                     self.stdlib
