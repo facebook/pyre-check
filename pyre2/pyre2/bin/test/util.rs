@@ -12,8 +12,10 @@ use std::time::Duration;
 use std::time::Instant;
 
 use anyhow::anyhow;
+use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 
+use crate::binding::binding::KeyExport;
 use crate::config::Config;
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
@@ -21,6 +23,8 @@ use crate::state::loader::LoadResult;
 use crate::state::loader::Loader;
 use crate::state::state::State;
 use crate::test::stdlib::lookup_test_stdlib;
+use crate::types::class::Class;
+use crate::types::types::Type;
 use crate::util::trace::init_tracing;
 
 #[macro_export]
@@ -153,4 +157,18 @@ pub fn testcase_for_macro(
         sleep(Duration::from_secs(limit / 2));
     }
     Err(anyhow!("Test took too long (> {limit}s)"))
+}
+
+pub fn mk_state(code: &str) -> (ModuleName, State) {
+    let state = TestEnv::one("main", code).to_state();
+    (ModuleName::from_str("main"), state)
+}
+
+pub fn get_class(name: &str, module_name: ModuleName, state: &State) -> Option<Class> {
+    let solutions = state.get_solutions(module_name).unwrap();
+
+    match solutions.exports.get(&KeyExport(Name::new(name))) {
+        Some(Type::ClassDef(cls)) => Some(cls.clone()),
+        _ => None,
+    }
 }

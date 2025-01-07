@@ -5,35 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use ruff_python_ast::name::Name;
-
 use crate::binding::binding::KeyClassMetadata;
-use crate::binding::binding::KeyExport;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::state::state::State;
-use crate::test::util::TestEnv;
+use crate::test::util::get_class;
+use crate::test::util::mk_state;
 use crate::types::class_metadata::ClassMetadata;
-use crate::types::types::Type;
-
-pub fn mk_state(code: &str) -> (ModuleName, State) {
-    let state = TestEnv::one("main", code).to_state();
-    (ModuleName::from_str("main"), state)
-}
 
 pub fn get_class_metadata(name: &str, module_name: ModuleName, state: &State) -> ClassMetadata {
     let solutions = state.get_solutions(module_name).unwrap();
 
-    let res = match solutions.exports.get(&KeyExport(Name::new(name))) {
-        Some(Type::ClassDef(cls)) => {
-            println!("Class {cls:?}");
-            let x = solutions
-                .mros
-                .get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
-            x.cloned()
-        }
-        _ => None,
-    };
+    let res = get_class(name, module_name, state).and_then(|cls| {
+        let x = solutions
+            .mros
+            .get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
+        x.cloned()
+    });
     res.unwrap_or_else(|| panic!("No MRO for {name}"))
 }
 

@@ -10,7 +10,7 @@ use ruff_python_ast::name::Name;
 use crate::module::module_name::ModuleName;
 use crate::state::state::State;
 use crate::test::mro::get_class_metadata;
-use crate::test::mro::mk_state;
+use crate::test::util::mk_state;
 use crate::testcase;
 use crate::testcase_with_bug;
 use crate::types::class::ClassType;
