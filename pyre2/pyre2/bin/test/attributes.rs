@@ -180,16 +180,17 @@ C().f(0)    # E: EXPECTED Literal[0] <: C
 );
 
 testcase_with_bug!(
-    "Make sure we don't treat `foo` like an instance method.",
-    test_non_method_callable_attribute,
+    "Make sure we treat `callable_attr` as plain instance data, not a bound method.",
+    test_callable_instance_only_attribute,
     r#"
-from typing import assert_type, Literal, reveal_type
+from typing import Callable, assert_type, Literal, reveal_type
 class C:
-  def __init__(self):
-    self.foo = lambda x: x  # E: Callable[[Unknown], Unknown] <: BoundMethod[C, Callable[[Unknown], Unknown]]
+    callable_attr: Callable[[int], int]
+    def __init__(self):
+       self.callable_attr = lambda x: x  # E: Callable[[Unknown], Unknown] <: BoundMethod[C, Callable[[int], int]]
 c = C()
-x = c.foo(42)  # E: Expected 0 positional arguments, got 1
-assert_type(x, Literal[42])  # E: assert_type
+x = c.callable_attr(42)  # E: EXPECTED C <: int # E: Expected 0 positional arguments, got 1
+assert_type(x, int)
     "#,
 );
 
