@@ -13,6 +13,10 @@ ASTs. We aim to fully replace the existing Pyre by the end of 2025.
 `cd pyre2` then use the normal `cargo` commands (e.g. `cargo build`,
 `cargo test`).
 
+Typeshed can be fetched from upstream into the codebase using the following
+command (assuming this is the current directory):
+`python scripts/fetch_typeshed.py -o pyre2/stubs`
+
 ### Meta internal developers
 
 From this directory, you can run:
@@ -25,6 +29,8 @@ From this directory, you can run:
   `arc pyre check <targets_to_check> -c python.type_checker=fbcode//tools/pyre/pyre2:pyre2_for_buck`
 - Debug a file: `buck2 run pyre2 -- check <filename> --debug-info=debug.js`,
   then open `debug.html` in your browser
+- Fetch Typeshed from upstream
+  `HTTPS_PROXY=https://fwdproxy:8080 fbpython scripts/fetch_typeshed.py -o pyre2/stubs`
 
 ## Coding conventions
 
