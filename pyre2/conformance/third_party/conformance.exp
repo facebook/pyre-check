@@ -14920,16 +14920,6 @@
       "name": "PyreError",
       "stop_column": 41,
       "stop_line": 106
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED str <: Literal['PENDING']",
-      "description": "EXPECTED str <: Literal['PENDING']",
-      "line": 109,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 109
     }
   ],
   "literals_literalstring.py": [

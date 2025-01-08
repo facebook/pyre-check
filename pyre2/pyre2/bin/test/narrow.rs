@@ -34,6 +34,26 @@ def f(x: str | None, y: bool):
 );
 
 testcase!(
+    test_eq,
+    r#"
+from typing import assert_type
+def f(x: str | None):
+    if x == None:
+        assert_type(x, None)
+    "#,
+);
+
+testcase!(
+    test_neq,
+    r#"
+from typing import assert_type
+def f(x: str | None):
+    if x != None:
+        assert_type(x, str)
+    "#,
+);
+
+testcase!(
     test_is_not,
     r#"
 from typing import assert_type

@@ -1463,6 +1463,10 @@ impl<'a> BindingsBuilder<'a> {
                         CmpOp::IsNot => {
                             Some((name.id.clone(), NarrowOp::IsNot(Box::new(right)), range))
                         }
+                        CmpOp::Eq => Some((name.id.clone(), NarrowOp::Eq(Box::new(right)), range)),
+                        CmpOp::NotEq => {
+                            Some((name.id.clone(), NarrowOp::NotEq(Box::new(right)), range))
+                        }
                         _ => None,
                     }
                 })

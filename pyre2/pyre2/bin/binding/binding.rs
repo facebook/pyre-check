@@ -327,6 +327,8 @@ pub enum NarrowOp {
     IsNot(Box<Expr>),
     Truthy,
     Falsy,
+    Eq(Box<Expr>),
+    NotEq(Box<Expr>),
 }
 
 impl NarrowOp {
@@ -334,6 +336,8 @@ impl NarrowOp {
         match self {
             Self::Is(e) => Self::IsNot(e),
             Self::IsNot(e) => Self::Is(e),
+            Self::Eq(e) => Self::NotEq(e),
+            Self::NotEq(e) => Self::Eq(e),
             Self::Truthy => Self::Falsy,
             Self::Falsy => Self::Truthy,
         }

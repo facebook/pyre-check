@@ -1062,6 +1062,45 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     t.clone()
                 }
             }),
+            NarrowOp::Eq(e) => {
+                let right = self.expr(e, None);
+                if matches!(right, Type::Literal(_) | Type::None) {
+                    self.distribute_over_union(ty, |t| {
+                        if self.solver().is_subset_eq(&right, t, self.type_order()) {
+                            right.clone()
+                        } else {
+                            Type::never()
+                        }
+                    })
+                } else {
+                    ty.clone()
+                }
+            }
+            NarrowOp::NotEq(e) => {
+                let right = self.expr(e, None);
+                if matches!(right, Type::Literal(_) | Type::None) {
+                    self.distribute_over_union(ty, |t| {
+                        match (t, &right) {
+                            (_, _) if *t == right => Type::never(),
+                            (Type::ClassType(cls), Type::Literal(Lit::Bool(b)))
+                                if *cls == self.stdlib.bool() =>
+                            {
+                                Type::Literal(Lit::Bool(!b))
+                            }
+                            (
+                                Type::ClassType(left_cls),
+                                Type::Literal(Lit::Enum(box (right_cls, _name))),
+                            ) if *left_cls == *right_cls => {
+                                // TODO: narrow to a union of all other enum members.
+                                t.clone()
+                            }
+                            _ => t.clone(),
+                        }
+                    })
+                } else {
+                    ty.clone()
+                }
+            }
         }
     }
 

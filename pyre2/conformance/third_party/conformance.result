@@ -1061,8 +1061,7 @@
     "Line 51: Unexpected errors ['assert_type(Any, IO[Any]) failed']",
     "Line 71: Unexpected errors ['EXPECTED Matrix[Literal[3], Literal[7]] <: Matrix[Literal[3], TypeVar[C]]']",
     "Line 72: Unexpected errors ['assert_type(Matrix[Literal[2], TypeVar[C]], Matrix[Literal[2], Literal[7]]) failed']",
-    "Line 106: Unexpected errors [\"EXPECTED str <: Literal['ABORTED', 'MALFORMED']\"]",
-    "Line 109: Unexpected errors [\"EXPECTED str <: Literal['PENDING']\"]"
+    "Line 106: Unexpected errors [\"EXPECTED str <: Literal['ABORTED', 'MALFORMED']\"]"
   ],
   "literals_literalstring.py": [
     "Line 120: Expected 1 errors",
