@@ -1249,9 +1249,9 @@ impl<'a> BindingsBuilder<'a> {
                         .insert(Key::Anywhere(name.clone(), stat_info.loc)),
                 );
                 let initialization = if info.is_initialized {
-                    ClassFieldInitialization::Body
+                    ClassFieldInitialization::Class
                 } else {
-                    ClassFieldInitialization::NotBody
+                    ClassFieldInitialization::Instance
                 };
                 let binding = BindingClassField(flow_type, info.ann.dupe(), initialization);
                 fields.insert(name.clone());
@@ -1272,7 +1272,7 @@ impl<'a> BindingsBuilder<'a> {
                                 BindingClassField(
                                     attribute.0,
                                     attribute.1,
-                                    ClassFieldInitialization::NotBody,
+                                    ClassFieldInitialization::Instance,
                                 ),
                             );
                         }

@@ -658,8 +658,8 @@ impl DisplayWith<Bindings> for BindingAnnotation {
 /// are assigned values in the class body.
 #[derive(Clone, Copy, Debug)]
 pub enum ClassFieldInitialization {
-    Body,
-    NotBody,
+    Class,
+    Instance,
 }
 
 /// Binding for a class field, which is any attribute of a class defined in

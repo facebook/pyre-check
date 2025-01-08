@@ -211,7 +211,7 @@ impl SolveRecursive for KeyClassField {
         // to work correctly; what we have here is a fallback to permissive gradual typing.
         ClassField {
             ty: Type::any_implicit(),
-            initialization: ClassFieldInitialization::Body,
+            initialization: ClassFieldInitialization::Class,
         }
     }
     fn visit_type_mut(v: &mut ClassField, f: &mut dyn FnMut(&mut Type)) {

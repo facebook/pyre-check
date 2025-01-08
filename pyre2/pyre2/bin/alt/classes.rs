@@ -58,8 +58,8 @@ pub struct ClassField {
 impl Display for ClassField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let initialized = match self.initialization {
-            ClassFieldInitialization::Body => "initialized in body",
-            ClassFieldInitialization::NotBody => "not initialized in body",
+            ClassFieldInitialization::Class => "initialized in body",
+            ClassFieldInitialization::Instance => "not initialized in body",
         };
         write!(f, "@{} ({})", self.ty, initialized)
     }
@@ -601,10 +601,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .map(|(member, defining_class)| {
                 let instantiated_ty = cls.instantiate_member(member.ty);
                 let ty = match member.initialization {
-                    ClassFieldInitialization::Body => {
+                    ClassFieldInitialization::Class => {
                         bind_attribute(cls.self_type(), instantiated_ty)
                     }
-                    ClassFieldInitialization::NotBody => instantiated_ty,
+                    ClassFieldInitialization::Instance => instantiated_ty,
                 };
                 Attribute {
                     value: ty,
