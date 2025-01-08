@@ -421,15 +421,8 @@ pub enum Binding {
     /// An expectation that the types are identical, with an associated name for error messages.
     Eq(Idx<KeyAnnotation>, Idx<KeyAnnotation>, Name),
     /// An assignment to a name. The text range is the range of the RHS, and is used so that we
-    /// can error on bad type forms in type aliases. The boolean flag indicates whether the RHS
-    /// is a function call.
-    NameAssign(
-        Name,
-        Option<Idx<KeyAnnotation>>,
-        Box<Binding>,
-        TextRange,
-        bool,
-    ),
+    /// can error on bad type forms in type aliases.
+    NameAssign(Name, Option<Idx<KeyAnnotation>>, Box<Binding>, TextRange),
     /// A type alias declared with the `type` soft keyword
     ScopedTypeAlias(Name, Option<Box<TypeParams>>, Box<Binding>, TextRange),
     /// An entry in a MatchMapping. The Key looks up the value being matched, the Expr is the key we're extracting.
@@ -561,10 +554,10 @@ impl DisplayWith<Bindings> for Binding {
                 ctx.display(*k2),
                 name
             ),
-            Self::NameAssign(name, None, binding, _, _) => {
+            Self::NameAssign(name, None, binding, _) => {
                 write!(f, "{} = {}", name, binding.display_with(ctx))
             }
-            Self::NameAssign(name, Some(annot), binding, _, _) => {
+            Self::NameAssign(name, Some(annot), binding, _) => {
                 write!(
                     f,
                     "{}: {} = {}",

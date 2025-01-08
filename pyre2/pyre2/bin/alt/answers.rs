@@ -1464,7 +1464,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Type::None // Unused
             }
-            Binding::NameAssign(name, annot_key, binding, range, is_call) => {
+            Binding::NameAssign(name, annot_key, binding, range) => {
                 let annot = annot_key.map(|k| self.get_idx(k));
                 let ty = self.solve_binding_inner(binding);
                 match (annot, &ty) {
@@ -1472,7 +1472,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.as_type_alias(name, TypeAliasStyle::LegacyExplicit, ty, *range)
                     }
                     (None, Type::Type(box t))
-                        if *is_call && let Some(tvar) = t.as_tvar_declaration() =>
+                        if matches!(binding, box Binding::Expr(_, Expr::Call(_)))
+                            && let Some(tvar) = t.as_tvar_declaration() =>
                     {
                         let tvar_name = &tvar.name.id;
                         if *name != *tvar_name && *tvar_name != UNKNOWN {
