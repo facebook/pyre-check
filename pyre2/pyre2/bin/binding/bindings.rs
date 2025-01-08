@@ -57,6 +57,7 @@ use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingLegacyTypeParam;
+use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::Key;
@@ -228,7 +229,6 @@ struct FlowInfo {
     /// Am I the result of an import (which needs merging)
     is_import: bool,
     /// Am I initialized, or am I the result of an annotation with no value like `x: int`?
-    #[expect(dead_code)] // will be needed soon for class field metadata
     is_initialized: bool,
 }
 
@@ -1248,10 +1248,15 @@ impl<'a> BindingsBuilder<'a> {
                         .0
                         .insert(Key::Anywhere(name.clone(), stat_info.loc)),
                 );
-                let binding = if let Some(ann) = &info.ann {
-                    BindingClassField(flow_type, Some(*ann))
+                let initialization = if info.is_initialized {
+                    ClassFieldInitialization::Body
                 } else {
-                    BindingClassField(flow_type, None)
+                    ClassFieldInitialization::NotBody
+                };
+                let binding = if let Some(ann) = &info.ann {
+                    BindingClassField(flow_type, Some(*ann), initialization)
+                } else {
+                    BindingClassField(flow_type, None, initialization)
                 };
                 fields.insert(name.clone());
                 self.table.insert(
@@ -1268,7 +1273,11 @@ impl<'a> BindingsBuilder<'a> {
                             fields.insert(name.clone());
                             self.table.insert(
                                 KeyClassField(ShortIdentifier::new(&x.name), name),
-                                BindingClassField(attribute.0, attribute.1),
+                                BindingClassField(
+                                    attribute.0,
+                                    attribute.1,
+                                    ClassFieldInitialization::NotBody,
+                                ),
                             );
                         }
                     }

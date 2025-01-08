@@ -652,11 +652,25 @@ impl DisplayWith<Bindings> for BindingAnnotation {
     }
 }
 
+/// Correctly analyzing which attributes are visible on class objects, as well
+/// as handling method binding correctly, requires distinguishing which fields
+/// are assigned values in the class body.
+#[derive(Clone, Debug)]
+pub enum ClassFieldInitialization {
+    Body,
+    NotBody,
+}
+
 /// Binding for a class field, which is any attribute of a class defined in
 /// either the class body or in method (like `__init__`) that we recognize as
 /// defining instance attributes.
 #[derive(Clone, Debug)]
-pub struct BindingClassField(pub Binding, pub Option<Idx<KeyAnnotation>>);
+pub struct BindingClassField(
+    pub Binding,
+    pub Option<Idx<KeyAnnotation>>,
+    #[expect(dead_code)] // will be needed soon for attribute type analysis
+    pub  ClassFieldInitialization,
+);
 
 impl DisplayWith<Bindings> for BindingClassField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
