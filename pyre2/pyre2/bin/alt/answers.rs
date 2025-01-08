@@ -1478,17 +1478,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Type::None // Unused
             }
-            Binding::NameAssign(name, annot_key, binding, range) => {
+            Binding::NameAssign(name, annot_key, binding, range, is_call) => {
                 let annot = annot_key.map(|k| self.get_idx(k));
                 let ty = self.solve_binding_inner(binding);
                 match (annot, &ty) {
                     (Some(annot), _) if annot.qualifiers.contains(&Qualifier::TypeAlias) => {
                         self.as_type_alias(name, TypeAliasStyle::LegacyExplicit, ty, *range)
                     }
+                    (None, Type::Type(box t)) if *is_call && t.is_tvar_declaration() => ty,
                     // TODO(stroxler, rechen): Do we want to include Type::ClassDef(_)
                     // when there is no annotation, so that `mylist = list` is treated
                     // like a value assignment rather than a type alias?
-                    (None, Type::Type(box t)) if !t.is_tvar_declaration(name) => {
+                    (None, Type::Type(box t)) => {
                         self.as_type_alias(name, TypeAliasStyle::LegacyImplicit, ty, *range)
                     }
                     _ => ty,

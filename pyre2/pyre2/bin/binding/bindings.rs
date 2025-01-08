@@ -1584,7 +1584,13 @@ impl<'a> BindingsBuilder<'a> {
                     let make_binding = |k: Option<Idx<KeyAnnotation>>| {
                         let b = Binding::Expr(k, value.clone());
                         if let Some(name) = &name {
-                            Binding::NameAssign(name.clone(), k, Box::new(b), value.range())
+                            Binding::NameAssign(
+                                name.clone(),
+                                k,
+                                Box::new(b),
+                                value.range(),
+                                matches!(value, Expr::Call(_)),
+                            )
                         } else {
                             b
                         }
@@ -1623,6 +1629,7 @@ impl<'a> BindingsBuilder<'a> {
                             self.ensure_expr(&value);
                         }
                         let range = value.range();
+                        let is_call = matches!(*value, Expr::Call(_));
                         self.bind_definition(
                             &name.clone(),
                             Binding::NameAssign(
@@ -1630,6 +1637,7 @@ impl<'a> BindingsBuilder<'a> {
                                 Some(ann_key),
                                 Box::new(Binding::Expr(Some(ann_key), *value)),
                                 range,
+                                is_call,
                             ),
                             Some(ann_key),
                         );

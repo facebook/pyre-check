@@ -478,13 +478,11 @@ impl Type {
         matches!(self, Type::Forall(_, _))
     }
 
-    pub fn is_tvar_declaration(&self, name: &Name) -> bool {
-        match self {
-            Type::TypeVar(x) => x.qname().id() == name,
-            Type::TypeVarTuple(x) => x.qname().id() == name,
-            Type::ParamSpec(x) => x.qname().id() == name,
-            _ => false,
-        }
+    pub fn is_tvar_declaration(&self) -> bool {
+        matches!(
+            self,
+            Type::TypeVar(_) | Type::TypeVarTuple(_) | Type::ParamSpec(_)
+        )
     }
 
     pub fn is_none(&self) -> bool {

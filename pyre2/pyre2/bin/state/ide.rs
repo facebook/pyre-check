@@ -131,7 +131,7 @@ impl State {
                 }
                 key @ Key::Definition(_) if let Some(ty) = self.get_type(module, key) => {
                     let idx_binding = match bindings.get(idx) {
-                        Binding::NameAssign(_, _, b, _) => b,
+                        Binding::NameAssign(_, _, b, _, _) => b,
                         b => b,
                     };
                     if let Binding::Expr(None, e) = idx_binding
