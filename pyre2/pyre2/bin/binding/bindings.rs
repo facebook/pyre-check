@@ -1253,11 +1253,7 @@ impl<'a> BindingsBuilder<'a> {
                 } else {
                     ClassFieldInitialization::NotBody
                 };
-                let binding = if let Some(ann) = &info.ann {
-                    BindingClassField(flow_type, Some(*ann), initialization)
-                } else {
-                    BindingClassField(flow_type, None, initialization)
-                };
+                let binding = BindingClassField(flow_type, info.ann.dupe(), initialization);
                 fields.insert(name.clone());
                 self.table.insert(
                     KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
