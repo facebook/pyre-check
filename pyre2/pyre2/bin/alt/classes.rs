@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::fmt;
+use std::fmt::Display;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -24,6 +26,7 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::ast::Ast;
+use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
@@ -42,6 +45,25 @@ use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
+
+/// Raw information about an attribute declared somewhere in a class. We need to
+/// know whether it is initialized in the class body in order to determine
+/// both visibility rules and whether method binding should be performed.
+#[derive(Debug, Clone)]
+pub struct ClassField {
+    pub ty: Type,
+    pub initialization: ClassFieldInitialization,
+}
+
+impl Display for ClassField {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let initialized = match self.initialization {
+            ClassFieldInitialization::Body => "initialized in body",
+            ClassFieldInitialization::NotBody => "not initialized in body",
+        };
+        write!(f, "@{} ({})", self.ty, initialized)
+    }
+}
 
 /// Class members can fail to be
 pub enum NoClassAttribute {
@@ -544,11 +566,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Type> {
         if cls.contains(name) {
-            let ty = self.get_from_class(
+            let field = self.get_from_class(
                 cls,
                 &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
             );
-            Some(ty.deref().clone())
+            // TODO(stroxler): Downstream code should work with ClassField rather than Type so
+            // that we can include additional metadata needed to interpret the type.
+            Some(field.ty.clone())
         } else {
             None
         }

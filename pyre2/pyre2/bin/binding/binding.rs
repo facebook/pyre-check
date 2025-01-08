@@ -26,6 +26,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
+use crate::alt::classes::ClassField;
 use crate::binding::bindings::Bindings;
 use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
@@ -65,7 +66,7 @@ impl Keyed for Key {
 impl Keyed for KeyClassField {
     const EXPORTED: bool = true;
     type Value = BindingClassField;
-    type Answer = Type;
+    type Answer = ClassField;
 }
 impl Keyed for KeyExport {
     const EXPORTED: bool = true;
@@ -655,7 +656,7 @@ impl DisplayWith<Bindings> for BindingAnnotation {
 /// Correctly analyzing which attributes are visible on class objects, as well
 /// as handling method binding correctly, requires distinguishing which fields
 /// are assigned values in the class body.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum ClassFieldInitialization {
     Body,
     NotBody,
@@ -668,8 +669,7 @@ pub enum ClassFieldInitialization {
 pub struct BindingClassField(
     pub Binding,
     pub Option<Idx<KeyAnnotation>>,
-    #[expect(dead_code)] // will be needed soon for attribute type analysis
-    pub  ClassFieldInitialization,
+    pub ClassFieldInitialization,
 );
 
 impl DisplayWith<Bindings> for BindingClassField {
