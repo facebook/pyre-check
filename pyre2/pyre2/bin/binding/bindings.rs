@@ -1298,17 +1298,32 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     // Traverse a pattern and bind all the names; key is the reference for the value that's being matched on
-    fn bind_pattern(&mut self, pattern: Pattern, key: Idx<Key>) {
+    fn bind_pattern(&mut self, subject_name: Option<&Name>, pattern: Pattern, key: Idx<Key>) {
         match pattern {
             Pattern::MatchValue(p) => {
                 self.ensure_expr(&p.value);
+                if let Some(subject_name) = subject_name {
+                    self.bind_narrow_ops(
+                        &[(
+                            subject_name.clone(),
+                            NarrowOp::Eq(p.value.clone()),
+                            p.range(),
+                        )],
+                        p.range(),
+                    );
+                }
             }
             Pattern::MatchAs(p) => {
-                if let Some(name) = &p.name {
+                // If there's no name for this pattern, refine the variable being matched
+                // If there is a new name, refine that instead
+                let new_subject_name = if let Some(name) = &p.name {
                     self.bind_definition(name, Binding::Forward(key), None);
-                }
+                    Some(&name.id)
+                } else {
+                    subject_name
+                };
                 if let Some(box pattern) = p.pattern {
-                    self.bind_pattern(pattern, key)
+                    self.bind_pattern(new_subject_name, pattern, key)
                 }
             }
             Pattern::MatchSequence(x) => {
@@ -1345,7 +1360,7 @@ impl<'a> BindingsBuilder<'a> {
                                     position,
                                 ),
                             );
-                            self.bind_pattern(x, key);
+                            self.bind_pattern(None, x, key);
                         }
                     }
                 }
@@ -1368,7 +1383,7 @@ impl<'a> BindingsBuilder<'a> {
                             Key::Anon(key_expr.range()),
                             Binding::PatternMatchMapping(key_expr, key),
                         );
-                        self.bind_pattern(pattern, mapping_key)
+                        self.bind_pattern(None, pattern, mapping_key)
                     });
                 if let Some(rest) = x.rest {
                     self.bind_definition(&rest, Binding::Forward(key), None);
@@ -1389,7 +1404,7 @@ impl<'a> BindingsBuilder<'a> {
                                 pattern.range(),
                             ),
                         );
-                        self.bind_pattern(pattern.clone(), attr_key)
+                        self.bind_pattern(None, pattern.clone(), attr_key)
                     });
                 x.arguments.keywords.into_iter().for_each(
                     |PatternKeyword {
@@ -1401,7 +1416,7 @@ impl<'a> BindingsBuilder<'a> {
                             Key::Anon(attr.range()),
                             Binding::PatternMatchClassKeyword(x.cls.clone(), attr, key),
                         );
-                        self.bind_pattern(pattern, attr_key)
+                        self.bind_pattern(None, pattern, attr_key)
                     },
                 )
             }
@@ -1417,7 +1432,7 @@ impl<'a> BindingsBuilder<'a> {
                         )
                     }
                     let mut base = self.scopes.last().flow.clone();
-                    self.bind_pattern(pattern, key);
+                    self.bind_pattern(None, pattern, key);
                     mem::swap(&mut self.scopes.last_mut().flow, &mut base);
                     branches.push(base);
                 }
@@ -1766,9 +1781,14 @@ impl<'a> BindingsBuilder<'a> {
             }
             Stmt::Match(x) => {
                 self.ensure_expr(&x.subject);
+                let subject_name = if let Expr::Name(ref name) = *x.subject {
+                    Some(&name.id)
+                } else {
+                    None
+                };
                 let key = self.table.insert(
                     Key::Anon(x.subject.range()),
-                    Binding::Expr(None, *x.subject),
+                    Binding::Expr(None, *x.subject.clone()),
                 );
                 let mut exhaustive = false;
                 let range = x.range;
@@ -1778,7 +1798,7 @@ impl<'a> BindingsBuilder<'a> {
                     if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
                         exhaustive = true;
                     }
-                    self.bind_pattern(case.pattern, key);
+                    self.bind_pattern(subject_name, case.pattern, key);
                     if let Some(guard) = case.guard {
                         self.ensure_expr(&guard);
                         self.table

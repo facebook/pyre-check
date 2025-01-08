@@ -629,6 +629,24 @@ assert_type(x, int)  # E: assert_type(Literal[8] | int, int) failed
 );
 
 testcase!(
+    test_match_narrow,
+    r#"
+from typing import assert_type, Literal
+
+def foo(x: int):
+    match x:
+        case 1:
+            assert_type(x, Literal[1])
+        case 2 as q:
+            assert_type(x, int)
+            assert_type(q, Literal[2])
+        case q:
+            assert_type(x, int)
+            assert_type(q, int)
+"#,
+);
+
+testcase!(
     test_match_mapping,
     r#"
 from typing import assert_type
