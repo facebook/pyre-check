@@ -744,12 +744,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.type_order(),
         ) {
             self.error(
-                range,
-                format!(
-                    "Expression `{}` has type `{actual_type}` which does not derive from BaseException",
-                    self.module_info().display(x)
-                ),
-            );
+                 range,
+                 format!(
+                     "Expression `{}` has type `{actual_type}` which does not derive from BaseException",
+                     self.module_info().display(x)
+                 ),
+             );
         }
     }
 
@@ -990,6 +990,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
+    // Get the union of all members of an enum, minus the specified member
+    fn subtract_enum_member(&self, cls: &ClassType, name: &Name) -> Type {
+        let e = self.get_enum(cls).unwrap();
+        self.unions(
+            &cls.class_object()
+                .fields()
+                .iter()
+                .filter_map(|f| {
+                    if *f == *name {
+                        None
+                    } else {
+                        e.get_member(f).map(Type::Literal)
+                    }
+                })
+                .collect::<Vec<_>>(),
+        )
+    }
+
     fn narrow(&self, ty: &Type, op: &NarrowOp) -> Type {
         match op {
             NarrowOp::Is(e) => {
@@ -1021,23 +1039,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         (
                             Type::ClassType(left_cls),
                             Type::Literal(Lit::Enum(box (right_cls, name))),
-                        ) if *left_cls == *right_cls => {
-                            let e = self.get_enum(left_cls).unwrap();
-                            self.unions(
-                                &left_cls
-                                    .class_object()
-                                    .fields()
-                                    .iter()
-                                    .filter_map(|f| {
-                                        if *f == *name {
-                                            None
-                                        } else {
-                                            e.get_member(f).map(Type::Literal)
-                                        }
-                                    })
-                                    .collect::<Vec<_>>(),
-                            )
-                        }
+                        ) if *left_cls == *right_cls => self.subtract_enum_member(left_cls, name),
                         _ => t.clone(),
                     }
                 })
@@ -1046,7 +1048,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if t.as_bool() == Some(false) {
                     Type::never()
                 } else if matches!(t, Type::ClassType(cls)
-                if *cls == self.stdlib.bool())
+                 if *cls == self.stdlib.bool())
                 {
                     Type::Literal(Lit::Bool(true))
                 } else {
@@ -1057,7 +1059,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if t.as_bool() == Some(true) {
                     Type::never()
                 } else if matches!(t, Type::ClassType(cls)
-                if *cls == self.stdlib.bool())
+                 if *cls == self.stdlib.bool())
                 {
                     Type::Literal(Lit::Bool(false))
                 } else {
@@ -1081,23 +1083,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             NarrowOp::NotEq(e) => {
                 let right = self.expr(e, None);
                 if matches!(right, Type::Literal(_) | Type::None) {
-                    self.distribute_over_union(ty, |t| {
-                        match (t, &right) {
-                            (_, _) if *t == right => Type::never(),
-                            (Type::ClassType(cls), Type::Literal(Lit::Bool(b)))
-                                if *cls == self.stdlib.bool() =>
-                            {
-                                Type::Literal(Lit::Bool(!b))
-                            }
-                            (
-                                Type::ClassType(left_cls),
-                                Type::Literal(Lit::Enum(box (right_cls, _name))),
-                            ) if *left_cls == *right_cls => {
-                                // TODO: narrow to a union of all other enum members.
-                                t.clone()
-                            }
-                            _ => t.clone(),
+                    self.distribute_over_union(ty, |t| match (t, &right) {
+                        (_, _) if *t == right => Type::never(),
+                        (Type::ClassType(cls), Type::Literal(Lit::Bool(b)))
+                            if *cls == self.stdlib.bool() =>
+                        {
+                            Type::Literal(Lit::Bool(!b))
                         }
+                        (
+                            Type::ClassType(left_cls),
+                            Type::Literal(Lit::Enum(box (right_cls, name))),
+                        ) if *left_cls == *right_cls => self.subtract_enum_member(left_cls, name),
+                        _ => t.clone(),
                     })
                 } else {
                     ty.clone()
