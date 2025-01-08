@@ -227,6 +227,9 @@ struct FlowInfo {
     ann: Option<Idx<KeyAnnotation>>,
     /// Am I the result of an import (which needs merging)
     is_import: bool,
+    /// Am I initialized, or am I the result of an annotation with no value like `x: int`?
+    #[expect(dead_code)] // will be needed soon for class field metadata
+    is_initialized: bool,
 }
 
 impl FlowInfo {
@@ -235,6 +238,7 @@ impl FlowInfo {
             key,
             ann,
             is_import: false,
+            is_initialized: true,
         }
     }
 }
@@ -518,7 +522,7 @@ impl<'a> BindingsBuilder<'a> {
                     let idx = self
                         .table
                         .insert(key, Binding::Import(builtins_module, name.clone()));
-                    self.bind_key(name, idx, None, false);
+                    self.bind_key(name, idx, None, false, true);
                 }
             }
             Err(err) => {
@@ -614,7 +618,7 @@ impl<'a> BindingsBuilder<'a> {
                     Binding::AnnotatedType(ann_key, Box::new(Binding::AnyType(AnyStyle::Implicit))),
                 );
                 self.scopes.last_mut().stat.add(name.id.clone(), name.range);
-                self.bind_key(&name.id, bind_key, Some(ann_key), false);
+                self.bind_key(&name.id, bind_key, Some(ann_key), false, true);
             }
         }
     }
@@ -747,11 +751,12 @@ impl<'a> BindingsBuilder<'a> {
         name: &Identifier,
         binding: Binding,
         annotation: Option<Idx<KeyAnnotation>>,
+        is_initialized: bool,
     ) -> Option<Idx<KeyAnnotation>> {
         let idx = self
             .table
             .insert(Key::Definition(ShortIdentifier::new(name)), binding);
-        self.bind_key(&name.id, idx, annotation, false)
+        self.bind_key(&name.id, idx, annotation, false, is_initialized)
     }
 
     // `should_ensure_expr` determines whether to call `ensure_expr` recursively in `bind_target`
@@ -850,7 +855,7 @@ impl<'a> BindingsBuilder<'a> {
             Expr::Name(name) => {
                 let key = Key::Definition(ShortIdentifier::expr_name(name));
                 let idx = self.table.types.0.insert(key);
-                let ann = self.bind_key(&name.id, idx, None, false);
+                let ann = self.bind_key(&name.id, idx, None, false, true);
                 self.table.types.1.insert(idx, make_binding(ann));
             }
             Expr::Attribute(x) => {
@@ -888,6 +893,7 @@ impl<'a> BindingsBuilder<'a> {
         key: Idx<Key>,
         annotation: Option<Idx<KeyAnnotation>>,
         is_import: bool,
+        is_initialized: bool,
     ) -> Option<Idx<KeyAnnotation>> {
         match self.scopes.last_mut().flow.info.entry(name.clone()) {
             Entry::Occupied(mut e) => {
@@ -897,6 +903,7 @@ impl<'a> BindingsBuilder<'a> {
                     key,
                     ann: annotation,
                     is_import,
+                    is_initialized,
                 };
                 annotation
             }
@@ -905,6 +912,7 @@ impl<'a> BindingsBuilder<'a> {
                     key,
                     ann: annotation,
                     is_import,
+                    is_initialized,
                 });
                 annotation
             }
@@ -918,8 +926,9 @@ impl<'a> BindingsBuilder<'a> {
         key: Idx<Key>,
         annotation: Option<Idx<KeyAnnotation>>,
         is_import: bool,
+        is_initialized: bool,
     ) -> Option<Idx<KeyAnnotation>> {
-        let annotation = self.update_flow_info(name, key, annotation, is_import);
+        let annotation = self.update_flow_info(name, key, annotation, is_import, is_initialized);
         let info = self.scopes.last().stat.0.get(name).unwrap_or_else(|| {
             let module = self.module_info.name();
             panic!("Name `{name}` not found in static scope of module `{module}`")
@@ -949,7 +958,7 @@ impl<'a> BindingsBuilder<'a> {
             qs.push(q);
             let name = x.name();
             self.scopes.last_mut().stat.add(name.id.clone(), name.range);
-            self.bind_definition(name, Binding::TypeParameter(q), None);
+            self.bind_definition(name, Binding::TypeParameter(q), None, true);
         }
         qs
     }
@@ -982,7 +991,7 @@ impl<'a> BindingsBuilder<'a> {
                 Binding::AnnotatedType(ann_key, Box::new(Binding::AnyType(AnyStyle::Implicit))),
             );
             self.scopes.last_mut().stat.add(name.id.clone(), name.range);
-            self.bind_key(&name.id, bind_key, Some(ann_key), false);
+            self.bind_key(&name.id, bind_key, Some(ann_key), false, true);
         }
         if let Scope {
             kind: ScopeKind::Method(method),
@@ -1089,6 +1098,7 @@ impl<'a> BindingsBuilder<'a> {
             &func_name,
             Binding::Function(Box::new(x), kind, legacy_tparams.into_boxed_slice()),
             None,
+            true,
         );
 
         let mut return_exprs = Vec::new();
@@ -1282,6 +1292,7 @@ impl<'a> BindingsBuilder<'a> {
                 legacy_tparams.into_boxed_slice(),
             ),
             None,
+            true,
         );
     }
 
@@ -1316,7 +1327,7 @@ impl<'a> BindingsBuilder<'a> {
                 // If there's no name for this pattern, refine the variable being matched
                 // If there is a new name, refine that instead
                 let new_subject_name = if let Some(name) = &p.name {
-                    self.bind_definition(name, Binding::Forward(key), None);
+                    self.bind_definition(name, Binding::Forward(key), None, true);
                     Some(&name.id)
                 } else {
                     subject_name
@@ -1341,6 +1352,7 @@ impl<'a> BindingsBuilder<'a> {
                                         position,
                                     ),
                                     None,
+                                    true,
                                 );
                             }
                             unbounded = true;
@@ -1385,7 +1397,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.bind_pattern(None, pattern, mapping_key)
                     });
                 if let Some(rest) = x.rest {
-                    self.bind_definition(&rest, Binding::Forward(key), None);
+                    self.bind_definition(&rest, Binding::Forward(key), None, true);
                 }
             }
             Pattern::MatchClass(x) => {
@@ -1445,7 +1457,7 @@ impl<'a> BindingsBuilder<'a> {
         for x in &x.names {
             if &x.name != "*" {
                 let asname = x.asname.as_ref().unwrap_or(&x.name);
-                self.bind_definition(asname, Binding::AnyType(AnyStyle::Error), None);
+                self.bind_definition(asname, Binding::AnyType(AnyStyle::Error), None, true);
             }
         }
     }
@@ -1514,7 +1526,7 @@ impl<'a> BindingsBuilder<'a> {
                     Key::Narrow(name.clone(), *op_range, use_range),
                     Binding::Narrow(name_key, op.clone()),
                 );
-                self.update_flow_info(name, binding_key, None, false);
+                self.update_flow_info(name, binding_key, None, false, true);
             }
         }
     }
@@ -1628,6 +1640,7 @@ impl<'a> BindingsBuilder<'a> {
                                 is_call,
                             ),
                             Some(ann_key),
+                            true,
                         );
                     } else {
                         self.bind_definition(
@@ -1637,6 +1650,7 @@ impl<'a> BindingsBuilder<'a> {
                                 Box::new(Binding::AnyType(AnyStyle::Implicit)),
                             ),
                             Some(ann_key),
+                            false,
                         );
                     }
                 }
@@ -1694,7 +1708,7 @@ impl<'a> BindingsBuilder<'a> {
                         Box::new(expr_binding),
                         x.range,
                     );
-                    self.bind_definition(&Ast::expr_name_identifier(name), binding, None);
+                    self.bind_definition(&Ast::expr_name_identifier(name), binding, None, true);
                 } else {
                     self.todo("Bindings::stmt TypeAlias", &x);
                 }
@@ -1855,6 +1869,7 @@ impl<'a> BindingsBuilder<'a> {
                             &name,
                             Binding::ExceptionHandler(type_, x.is_star),
                             None,
+                            true,
                         );
                     } else if let Some(type_) = h.type_ {
                         self.ensure_expr(&type_);
@@ -1894,6 +1909,7 @@ impl<'a> BindingsBuilder<'a> {
                                 &asname,
                                 Binding::Module(m, m.components(), None),
                                 None,
+                                true,
                             );
                         }
                         None => {
@@ -1907,7 +1923,7 @@ impl<'a> BindingsBuilder<'a> {
                                 Key::Import(first.clone(), x.name.range),
                                 Binding::Module(m, vec![first.clone()], module_key),
                             );
-                            self.bind_key(&first, key, None, true);
+                            self.bind_key(&first, key, None, true, true);
                         }
                     }
                 }
@@ -1934,7 +1950,7 @@ impl<'a> BindingsBuilder<'a> {
                                             Binding::AnyType(AnyStyle::Error)
                                         };
                                         let key = self.table.insert(key, val);
-                                        self.bind_key(name, key, None, false);
+                                        self.bind_key(name, key, None, false, true);
                                     }
                                 } else {
                                     let asname = x.asname.unwrap_or_else(|| x.name.clone());
@@ -1947,7 +1963,7 @@ impl<'a> BindingsBuilder<'a> {
                                         );
                                         Binding::AnyType(AnyStyle::Error)
                                     };
-                                    self.bind_definition(&asname, val, None);
+                                    self.bind_definition(&asname, val, None, true);
                                 }
                             }
                         }
@@ -2199,6 +2215,7 @@ impl LegacyTParamBuilder {
                     // the binding created by `forward_lookup`).
                     Binding::CheckLegacyTypeParam(key, None),
                     None,
+                    true,
                 );
             }
         }
