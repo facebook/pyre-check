@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk=self.webpackChunk||[]).push([[4295],{95504:e=>{e.exports=JSON.parse('{"title":"Integrations","slug":"/category/integrations","permalink":"/docs/category/integrations","navigation":{"previous":{"title":"Pyre-Exclusive Features","permalink":"/docs/features"},"next":{"title":"Editor Integration","permalink":"/docs/editor-integration"}}}')}}]);

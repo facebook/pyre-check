@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunk=self.webpackChunk||[]).push([[8438],{17879:e=>{e.exports=JSON.parse('{"title":"Type Checker Features","slug":"/category/type-checker-features","permalink":"/docs/category/type-checker-features","navigation":{"previous":{"title":"Type Errors","permalink":"/docs/errors"},"next":{"title":"Configuration","permalink":"/docs/configuration"}}}')}}]);

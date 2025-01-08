@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunk=self.webpackChunk||[]).push([[6511],{3991:t=>{t.exports=JSON.parse('{"title":"Types in Python","slug":"/category/types-in-python","permalink":"/docs/category/types-in-python","navigation":{"previous":{"title":"Installation","permalink":"/docs/installation"},"next":{"title":"Introduction","permalink":"/docs/types-in-python"}}}')}}]);
