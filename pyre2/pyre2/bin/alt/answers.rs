@@ -1008,18 +1008,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
+    fn intersect(&self, left: &Type, right: &Type) -> Type {
+        // Get our best approximation of ty & right.
+        self.distribute_over_union(left, |t| {
+            if self.solver().is_subset_eq(right, t, self.type_order()) {
+                right.clone()
+            } else {
+                Type::never()
+            }
+        })
+    }
+
     fn narrow(&self, ty: &Type, op: &NarrowOp) -> Type {
         match op {
             NarrowOp::Is(e) => {
                 let right = self.expr(e, None);
                 // Get our best approximation of ty & right.
-                self.distribute_over_union(ty, |t| {
-                    if self.solver().is_subset_eq(&right, t, self.type_order()) {
-                        right.clone()
-                    } else {
-                        Type::never()
-                    }
-                })
+                self.intersect(ty, &right)
             }
             NarrowOp::IsNot(e) => {
                 let right = self.expr(e, None);
@@ -1044,24 +1049,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 })
             }
-            NarrowOp::Truthy => self.distribute_over_union(ty, |t| {
-                if t.as_bool() == Some(false) {
+            NarrowOp::Truthy | NarrowOp::Falsy => self.distribute_over_union(ty, |t| {
+                let boolval = matches!(op, NarrowOp::Truthy);
+                if t.as_bool() == Some(!boolval) {
                     Type::never()
-                } else if matches!(t, Type::ClassType(cls)
-                 if *cls == self.stdlib.bool())
-                {
-                    Type::Literal(Lit::Bool(true))
-                } else {
-                    t.clone()
-                }
-            }),
-            NarrowOp::Falsy => self.distribute_over_union(ty, |t| {
-                if t.as_bool() == Some(true) {
-                    Type::never()
-                } else if matches!(t, Type::ClassType(cls)
-                 if *cls == self.stdlib.bool())
-                {
-                    Type::Literal(Lit::Bool(false))
+                } else if matches!(t, Type::ClassType(cls) if *cls == self.stdlib.bool()) {
+                    Type::Literal(Lit::Bool(boolval))
                 } else {
                     t.clone()
                 }
@@ -1069,13 +1062,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             NarrowOp::Eq(e) => {
                 let right = self.expr(e, None);
                 if matches!(right, Type::Literal(_) | Type::None) {
-                    self.distribute_over_union(ty, |t| {
-                        if self.solver().is_subset_eq(&right, t, self.type_order()) {
-                            right.clone()
-                        } else {
-                            Type::never()
-                        }
-                    })
+                    self.intersect(ty, &right)
                 } else {
                     ty.clone()
                 }
