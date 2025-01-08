@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_set_attribute,
@@ -179,17 +178,17 @@ C().f(0)    # E: EXPECTED Literal[0] <: C
     "#,
 );
 
-testcase_with_bug!(
-    "Make sure we treat `callable_attr` as plain instance data, not a bound method.",
+// Make sure we treat `callable_attr` as plain instance data, not a bound method.
+testcase!(
     test_callable_instance_only_attribute,
     r#"
 from typing import Callable, assert_type, Literal, reveal_type
 class C:
     callable_attr: Callable[[int], int]
     def __init__(self):
-       self.callable_attr = lambda x: x  # E: Callable[[Unknown], Unknown] <: BoundMethod[C, Callable[[int], int]]
+       self.callable_attr = lambda x: x
 c = C()
-x = c.callable_attr(42)  # E: EXPECTED C <: int # E: Expected 0 positional arguments, got 1
+x = c.callable_attr(42)
 assert_type(x, int)
     "#,
 );

@@ -10416,16 +10416,6 @@
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "EXPECTED Callable[ParamSpec(?_), str] <: BoundMethod[Y[?_, ?_], Callable[ParamSpec(?_), str]]",
-      "description": "EXPECTED Callable[ParamSpec(?_), str] <: BoundMethod[Y[?_, ?_], Callable[ParamSpec(?_), str]]",
-      "line": 72,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
       "column": 12,
       "concise_description": "EXPECTED Callable[[int], str] <: Callable[ParamSpec(@_), str]",
       "description": "EXPECTED Callable[[int], str] <: Callable[ParamSpec(@_), str]",
@@ -10447,8 +10437,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(BoundMethod[Y[int, Any], Callable[ParamSpec(Any), str]], Callable[[int], str]) failed",
-      "description": "assert_type(BoundMethod[Y[int, Any], Callable[ParamSpec(Any), str]], Callable[[int], str]) failed",
+      "concise_description": "assert_type(Callable[ParamSpec(Any), str], Callable[[int], str]) failed",
+      "description": "assert_type(Callable[ParamSpec(Any), str], Callable[[int], str]) failed",
       "line": 84,
       "name": "PyreError",
       "stop_column": 42,

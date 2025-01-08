@@ -123,6 +123,9 @@ impl Enum {
         // TODO(stroxler, yangdanny) Enums can contain attributes that are not
         // members, we eventually need to implement enough checks to know the
         // difference.
+        //
+        // Instance-only attributes are one case of this and are correctly handled
+        // upstream, but there are other cases as well.
         if self.0.class_object().contains(name) {
             Some(Lit::Enum(Box::new((self.0.clone(), name.clone()))))
         } else {
@@ -564,31 +567,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Type> {
+    fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
         if cls.contains(name) {
             let field = self.get_from_class(
                 cls,
                 &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
             );
-            // TODO(stroxler): Downstream code should work with ClassField rather than Type so
-            // that we can include additional metadata needed to interpret the type.
-            Some(field.ty.clone())
+            Some((*field).clone())
         } else {
             None
         }
     }
 
-    fn get_class_member(&self, cls: &Class, name: &Name) -> Option<(Type, Class)> {
-        if let Some(member) = self.get_class_field(cls, name) {
-            Some((member, cls.dupe()))
+    fn get_class_member(&self, cls: &Class, name: &Name) -> Option<(ClassField, Class)> {
+        if let Some(field) = self.get_class_field(cls, name) {
+            Some((field, cls.dupe()))
         } else {
             self.get_metadata_for_class(cls)
                 .ancestors(self.stdlib)
                 .filter_map(|ancestor| {
                     self.get_class_field(ancestor.class_object(), name)
-                        .map(|ty| {
-                            let raw_member = ancestor.instantiate_member(ty);
-                            (raw_member, ancestor.class_object().dupe())
+                        .map(|mut field| {
+                            field.ty = ancestor.instantiate_member(field.ty);
+                            (field, ancestor.class_object().dupe())
                         })
                 })
                 .next()
@@ -597,10 +598,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
-            .map(|(member_ty, defining_class)| {
-                let instantiated_ty = cls.instantiate_member(member_ty);
+            .map(|(member, defining_class)| {
+                let instantiated_ty = cls.instantiate_member(member.ty);
+                let ty = match member.initialization {
+                    ClassFieldInitialization::Body => {
+                        bind_attribute(cls.self_type(), instantiated_ty)
+                    }
+                    ClassFieldInitialization::NotBody => instantiated_ty,
+                };
                 Attribute {
-                    value: bind_attribute(cls.self_type(), instantiated_ty),
+                    value: ty,
                     defining_class,
                 }
             })
@@ -622,8 +629,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Result<Attribute, NoClassAttribute> {
         match self.get_class_member(cls, name) {
             None => Err(NoClassAttribute::NoClassMember),
-            Some((ty, defining_class)) => {
-                if self.depends_on_class_type_parameter(cls, &ty) {
+            Some((member, defining_class)) => {
+                if self.depends_on_class_type_parameter(cls, &member.ty) {
                     Err(NoClassAttribute::IsGenericMember)
                 } else if let Some(e) = self.get_enum(&self.promote_to_class_type_silently(cls))
                     && let Some(member) = e.get_member(name)
@@ -634,7 +641,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     })
                 } else {
                     Ok(Attribute {
-                        value: ty,
+                        value: member.ty,
                         defining_class,
                     })
                 }
@@ -649,8 +656,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         name: &Name,
     ) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
-            .map(|(member_ty, defining_class)| Attribute {
-                value: cls.instantiate_member(member_ty),
+            .map(|(member, defining_class)| Attribute {
+                value: cls.instantiate_member(member.ty),
                 defining_class,
             })
     }

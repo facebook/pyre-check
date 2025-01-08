@@ -3,7 +3,7 @@
   "pass": 9,
   "fail": 124,
   "pass_rate": 0.07,
-  "differences": 1427,
+  "differences": 1426,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -72,7 +72,7 @@
     "generics_defaults_specialization.py": 5,
     "generics_paramspec_basic.py": 6,
     "generics_paramspec_components.py": 22,
-    "generics_paramspec_semantics.py": 28,
+    "generics_paramspec_semantics.py": 27,
     "generics_paramspec_specialization.py": 8,
     "generics_scoping.py": 7,
     "generics_self_advanced.py": 8,
