@@ -711,7 +711,6 @@
     "Line 46: Unexpected errors ['assert_type(Bar[Any], Bar[str]) failed']"
   ],
   "generics_paramspec_basic.py": [
-    "Line 10: Expected 1 errors",
     "Line 15: Expected 1 errors",
     "Line 23: Expected 1 errors",
     "Line 31: Expected 1 errors",

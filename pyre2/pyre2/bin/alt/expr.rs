@@ -25,6 +25,7 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::Iterable;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::answers::UNKNOWN;
 use crate::alt::attr::LookupResult;
 use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
@@ -768,7 +769,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 self.error(arguments.range, msg.to_owned());
                 // FIXME: This isn't ideal - we are creating a fake Identifier, which is not good.
-                Identifier::new(Name::new("unknown"), arguments.range)
+                Identifier::new(UNKNOWN, arguments.range)
             }
         };
         let constraints = args.constraints.map(|x| self.expr_untype(x));

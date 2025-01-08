@@ -9932,6 +9932,16 @@
   "generics_paramspec_basic.py": [
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "TypeVar must be assigned to a variable named NotIt",
+      "description": "TypeVar must be assigned to a variable named NotIt",
+      "line": 10,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 10
+    },
+    {
+      "code": -2,
       "column": 27,
       "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
       "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",

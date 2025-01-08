@@ -17,7 +17,6 @@ use itertools::Either;
 use itertools::Itertools;
 use parse_display::Display;
 use ruff_python_ast::name::Name;
-use ruff_python_ast::Arguments;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::Comprehension;
@@ -1566,17 +1565,6 @@ impl<'a> BindingsBuilder<'a> {
                                 self.ensure_expr(&kw.value);
                             }
                         }
-                        if let Some(type_var_name) = type_var_name(arguments) {
-                            if !matches!(name, Some(ref x) if *x == type_var_name) {
-                                self.error(
-                                    arguments.args[0].range(),
-                                    format!(
-                                        "TypeVar must be assigned to a variable named {}",
-                                        type_var_name
-                                    ),
-                                );
-                            }
-                        }
                     }
                     _ => self.ensure_expr(&value),
                 }
@@ -2247,21 +2235,5 @@ fn yield_expr(x: ExprYield) -> Expr {
     match x.value {
         Some(x) => *x,
         None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range }),
-    }
-}
-
-fn type_var_name(x: &Arguments) -> Option<Name> {
-    if !x.args.is_empty() {
-        match &x.args[0] {
-            Expr::StringLiteral(x) => Some(Name::new(x.value.to_str())),
-            _ => None,
-        }
-    } else if let Some(keyword) = x.find_keyword("name") {
-        match &keyword.value {
-            Expr::StringLiteral(x) => Some(Name::new(x.value.to_str())),
-            _ => None,
-        }
-    } else {
-        None
     }
 }

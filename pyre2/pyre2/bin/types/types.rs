@@ -23,6 +23,7 @@ use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
+use crate::types::qname::QName;
 use crate::types::special_form::SpecialForm;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
@@ -478,11 +479,13 @@ impl Type {
         matches!(self, Type::Forall(_, _))
     }
 
-    pub fn is_tvar_declaration(&self) -> bool {
-        matches!(
-            self,
-            Type::TypeVar(_) | Type::TypeVarTuple(_) | Type::ParamSpec(_)
-        )
+    pub fn as_tvar_declaration(&self) -> Option<&QName> {
+        match self {
+            Type::TypeVar(t) => Some(t.qname()),
+            Type::TypeVarTuple(t) => Some(t.qname()),
+            Type::ParamSpec(t) => Some(t.qname()),
+            _ => None,
+        }
     }
 
     pub fn is_none(&self) -> bool {

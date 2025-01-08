@@ -90,6 +90,8 @@ use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
 
+pub const UNKNOWN: Name = Name::new_static("~unknown");
+
 /// Invariants:
 ///
 /// * Every module name referenced anywhere MUST be present
@@ -1485,11 +1487,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     (Some(annot), _) if annot.qualifiers.contains(&Qualifier::TypeAlias) => {
                         self.as_type_alias(name, TypeAliasStyle::LegacyExplicit, ty, *range)
                     }
-                    (None, Type::Type(box t)) if *is_call && t.is_tvar_declaration() => ty,
+                    (None, Type::Type(box t))
+                        if *is_call && let Some(tvar) = t.as_tvar_declaration() =>
+                    {
+                        let tvar_name = &tvar.name.id;
+                        if *name != *tvar_name && *tvar_name != UNKNOWN {
+                            self.error(
+                                *range,
+                                format!("TypeVar must be assigned to a variable named {tvar_name}"),
+                            );
+                        }
+                        ty
+                    }
                     // TODO(stroxler, rechen): Do we want to include Type::ClassDef(_)
                     // when there is no annotation, so that `mylist = list` is treated
                     // like a value assignment rather than a type alias?
-                    (None, Type::Type(box t)) => {
+                    (None, Type::Type(_)) => {
                         self.as_type_alias(name, TypeAliasStyle::LegacyImplicit, ty, *range)
                     }
                     _ => ty,
