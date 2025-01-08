@@ -701,6 +701,7 @@ impl Type {
             Type::Literal(Lit::Bytes(x)) => Some(!x.is_empty()),
             Type::Literal(Lit::String(x)) => Some(!x.is_empty()),
             Type::None => Some(false),
+            Type::Tuple(Tuple::Concrete(elements)) => Some(!elements.is_empty()),
             Type::Union(options) => {
                 let mut answer = None;
                 for option in options {

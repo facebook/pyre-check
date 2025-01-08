@@ -1040,6 +1040,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 })
             }
+            NarrowOp::Truthy => self.distribute_over_union(ty, |t| {
+                if t.as_bool() == Some(false) {
+                    Type::never()
+                } else if matches!(t, Type::ClassType(cls)
+                if *cls == self.stdlib.bool())
+                {
+                    Type::Literal(Lit::Bool(true))
+                } else {
+                    t.clone()
+                }
+            }),
+            NarrowOp::Falsy => self.distribute_over_union(ty, |t| {
+                if t.as_bool() == Some(true) {
+                    Type::never()
+                } else if matches!(t, Type::ClassType(cls)
+                if *cls == self.stdlib.bool())
+                {
+                    Type::Literal(Lit::Bool(false))
+                } else {
+                    t.clone()
+                }
+            }),
         }
     }
 

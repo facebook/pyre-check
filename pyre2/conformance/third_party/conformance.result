@@ -314,7 +314,6 @@
     "Line 105: Expected 1 errors",
     "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']",
     "Line 78: Unexpected errors ['assert_type(Literal[3.1], float) failed']",
-    "Line 98: Unexpected errors ['EXPECTED str | None <: str']",
     "Line 101: Unexpected errors ['Expected 1 more positional argument', 'Object of class `NoneType` has no attribute `__add__`', 'Object of class `_PyreReadOnly_` has no attribute `__add__`', \"EXPECTED Literal['hits'] <: _PyreReadOnly_[dict[str, int]]\", \"EXPECTED Literal['hits'] <: dict[str, int]\", 'EXPECTED Literal[0] <: _PyreReadOnly_[str]', 'EXPECTED Literal[0] <: str']"
   ],
   "classes_override.py": [

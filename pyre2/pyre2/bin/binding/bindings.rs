@@ -1480,6 +1480,7 @@ impl<'a> BindingsBuilder<'a> {
                 op: UnaryOp::Not,
                 operand: box e,
             })) => Self::negate_narrow_ops(&Self::narrow_ops(Some(e))),
+            Some(Expr::Name(name)) => vec![(name.id.clone(), NarrowOp::Truthy, name.range())],
             _ => Vec::new(),
         }
     }

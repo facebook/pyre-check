@@ -325,6 +325,8 @@ pub enum FunctionKind {
 pub enum NarrowOp {
     Is(Box<Expr>),
     IsNot(Box<Expr>),
+    Truthy,
+    Falsy,
 }
 
 impl NarrowOp {
@@ -332,6 +334,8 @@ impl NarrowOp {
         match self {
             Self::Is(e) => Self::IsNot(e),
             Self::IsNot(e) => Self::Is(e),
+            Self::Truthy => Self::Falsy,
+            Self::Falsy => Self::Truthy,
         }
     }
 }

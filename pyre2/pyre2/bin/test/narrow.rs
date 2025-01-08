@@ -20,6 +20,20 @@ def f(x: str | None):
 );
 
 testcase!(
+    test_truthy_falsy,
+    r#"
+from typing import assert_type, Literal
+def f(x: str | None, y: bool):
+    if x:
+        assert_type(x, str)
+    if y:
+        assert_type(y, Literal[True])
+    else:
+        assert_type(y, Literal[False])
+    "#,
+);
+
+testcase!(
     test_is_not,
     r#"
 from typing import assert_type

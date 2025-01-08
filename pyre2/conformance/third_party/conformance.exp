@@ -4474,16 +4474,6 @@
     },
     {
       "code": -2,
-      "column": 28,
-      "concise_description": "EXPECTED str | None <: str",
-      "description": "EXPECTED str | None <: str",
-      "line": 98,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 98
-    },
-    {
-      "code": -2,
       "column": 34,
       "concise_description": "Expected 1 more positional argument",
       "description": "Expected 1 more positional argument",
