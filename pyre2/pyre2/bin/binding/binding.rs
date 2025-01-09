@@ -28,6 +28,7 @@ use static_assertions::assert_eq_size;
 
 use crate::alt::classes::ClassField;
 use crate::binding::bindings::Bindings;
+use crate::binding::narrow::NarrowOp;
 use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
@@ -320,29 +321,6 @@ pub enum ContextManagerKind {
 pub enum FunctionKind {
     Stub,
     Impl,
-}
-
-#[derive(Clone, Debug)]
-pub enum NarrowOp {
-    Is(Box<Expr>),
-    IsNot(Box<Expr>),
-    Truthy,
-    Falsy,
-    Eq(Box<Expr>),
-    NotEq(Box<Expr>),
-}
-
-impl NarrowOp {
-    pub fn negate(self) -> Self {
-        match self {
-            Self::Is(e) => Self::IsNot(e),
-            Self::IsNot(e) => Self::Is(e),
-            Self::Eq(e) => Self::NotEq(e),
-            Self::NotEq(e) => Self::Eq(e),
-            Self::Truthy => Self::Falsy,
-            Self::Falsy => Self::Truthy,
-        }
-    }
 }
 
 #[derive(Clone, Debug)]
