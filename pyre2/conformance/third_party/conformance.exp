@@ -6010,8 +6010,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Desc2[int], list[int]) failed",
-      "description": "assert_type(Desc2[int], list[int]) failed",
+      "concise_description": "assert_type(Any, list[int]) failed",
+      "description": "assert_type(Any, list[int]) failed",
       "line": 61,
       "name": "PyreError",
       "stop_column": 30,
@@ -6019,12 +6019,32 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "Instance-only attribute `x` of class `DC2` is not visible on the class",
+      "description": "Instance-only attribute `x` of class `DC2` is not visible on the class",
+      "line": 61,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 61
+    },
+    {
+      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Desc2[str], list[str]) failed",
-      "description": "assert_type(Desc2[str], list[str]) failed",
+      "concise_description": "assert_type(Any, list[str]) failed",
+      "description": "assert_type(Any, list[str]) failed",
       "line": 62,
       "name": "PyreError",
       "stop_column": 30,
+      "stop_line": 62
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Instance-only attribute `y` of class `DC2` is not visible on the class",
+      "description": "Instance-only attribute `y` of class `DC2` is not visible on the class",
+      "line": 62,
+      "name": "PyreError",
+      "stop_column": 18,
       "stop_line": 62
     },
     {
@@ -6098,6 +6118,16 @@
       "name": "PyreError",
       "stop_column": 51,
       "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Instance-only attribute `final_no_default` of class `D` is not visible on the class",
+      "description": "Instance-only attribute `final_no_default` of class `D` is not visible on the class",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 37
     }
   ],
   "dataclasses_frozen.py": [
@@ -8849,8 +8879,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Literal[Pet.genus], str) failed",
-      "description": "assert_type(Literal[Pet.genus], str) failed",
+      "concise_description": "assert_type(Any, str) failed",
+      "description": "assert_type(Any, str) failed",
       "line": 27,
       "name": "PyreError",
       "stop_column": 28,
@@ -8858,12 +8888,32 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "Instance-only attribute `genus` of class `Pet` is not visible on the class",
+      "description": "Instance-only attribute `genus` of class `Pet` is not visible on the class",
+      "line": 27,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 27
+    },
+    {
+      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Literal[Pet.species], str) failed",
-      "description": "assert_type(Literal[Pet.species], str) failed",
+      "concise_description": "assert_type(Any, str) failed",
+      "description": "assert_type(Any, str) failed",
       "line": 28,
       "name": "PyreError",
       "stop_column": 30,
+      "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Instance-only attribute `species` of class `Pet` is not visible on the class",
+      "description": "Instance-only attribute `species` of class `Pet` is not visible on the class",
+      "line": 28,
+      "name": "PyreError",
+      "stop_column": 24,
       "stop_line": 28
     },
     {

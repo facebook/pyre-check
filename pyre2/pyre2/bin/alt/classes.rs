@@ -68,6 +68,7 @@ impl Display for ClassField {
 /// Class members can fail to be
 pub enum NoClassAttribute {
     NoClassMember,
+    InstanceOnlyAttribute,
     IsGenericMember,
 }
 
@@ -632,18 +633,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some((member, defining_class)) => {
                 if self.depends_on_class_type_parameter(cls, &member.ty) {
                     Err(NoClassAttribute::IsGenericMember)
-                } else if let Some(e) = self.get_enum(&self.promote_to_class_type_silently(cls))
-                    && let Some(member) = e.get_member(name)
-                {
-                    Ok(Attribute {
-                        value: Type::Literal(member),
-                        defining_class,
-                    })
                 } else {
-                    Ok(Attribute {
-                        value: member.ty,
-                        defining_class,
-                    })
+                    match member.initialization {
+                        ClassFieldInitialization::Instance => {
+                            Err(NoClassAttribute::InstanceOnlyAttribute)
+                        }
+                        ClassFieldInitialization::Class => {
+                            if let Some(e) =
+                                self.get_enum(&self.promote_to_class_type_silently(cls))
+                                && let Some(member) = e.get_member(name)
+                            {
+                                Ok(Attribute {
+                                    value: Type::Literal(member),
+                                    defining_class,
+                                })
+                            } else {
+                                Ok(Attribute {
+                                    value: member.ty,
+                                    defining_class,
+                                })
+                            }
+                        }
+                    }
                 }
             }
         }

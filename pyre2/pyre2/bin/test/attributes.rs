@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_set_attribute,
@@ -194,18 +193,17 @@ assert_type(x, int)
     "#,
 );
 
-testcase_with_bug!(
-    "Instance-only attributes cannot be used on class objects",
+testcase!(
     test_class_access_of_instance_only_attribute,
     r#"
-from typing import assert_type
+from typing import assert_type, Any
 class C:
     x: int
     def __init__(self, y: str):
         self.x = 0
         self.y = y
-assert_type(C.x, int)
-assert_type(C.y, str)
+assert_type(C.x, Any)  # E: Instance-only attribute `x` of class `C` is not visible on the class
+assert_type(C.y, Any)  # E: Instance-only attribute `y` of class `C` is not visible on the class
 c = C("y")
 assert_type(c.x, int)
 assert_type(c.y, str)

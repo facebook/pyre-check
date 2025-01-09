@@ -55,6 +55,9 @@ pub enum NotFound {
 pub enum LookupError {
     /// An internal error caused by `as_attribute_base` being partial.
     AttributeBaseUndefined(Type),
+    /// The attribute is only initialized on instances, but we saw an attempt
+    /// to use it as a class attribute.
+    ClassUseOfInstanceAttribute(Class),
     /// A generic class attribute exists, but has an invalid definition.
     /// Callers should treat the attribute as `Any`.
     ClassAttributeIsGeneric(Class),
@@ -101,6 +104,12 @@ impl LookupError {
                 "TODO: {todo_ctx} attribute base undefined for type: {}",
                 ty.deterministic_printing()
             ),
+            LookupError::ClassUseOfInstanceAttribute(class) => {
+                let class_name = class.name();
+                format!(
+                    "Instance-only attribute `{attr_name}` of class `{class_name}` is not visible on the class"
+                )
+            }
             LookupError::ClassAttributeIsGeneric(class) => {
                 let class_name = class.name();
                 format!(
@@ -139,6 +148,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     Err(NoClassAttribute::IsGenericMember) => {
                         LookupResult::Error(LookupError::ClassAttributeIsGeneric(class))
+                    }
+                    Err(NoClassAttribute::InstanceOnlyAttribute) => {
+                        LookupResult::Error(LookupError::ClassUseOfInstanceAttribute(class))
                     }
                 }
             }
