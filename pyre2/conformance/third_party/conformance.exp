@@ -254,8 +254,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "line": 85,
       "name": "PyreError",
       "stop_column": 29,
@@ -516,8 +516,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "line": 95,
       "name": "PyreError",
       "stop_column": 25,
@@ -748,8 +748,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 54,
       "name": "PyreError",
       "stop_column": 20,
@@ -1112,8 +1112,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "line": 43,
       "name": "PyreError",
       "stop_column": 30,
@@ -1454,8 +1454,8 @@
     {
       "code": -2,
       "column": 42,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "line": 58,
       "name": "PyreError",
       "stop_column": 50,
@@ -1569,8 +1569,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "line": 47,
       "name": "PyreError",
       "stop_column": 17,
@@ -2160,16 +2160,6 @@
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]",
-      "description": "Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]",
-      "line": 159,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 159
-    },
-    {
-      "code": -2,
       "column": 15,
       "concise_description": "Missing argument 'result'",
       "description": "Missing argument 'result'",
@@ -2555,8 +2545,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "line": 94,
       "name": "PyreError",
       "stop_column": 17,
@@ -2989,8 +2979,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 13,
       "name": "PyreError",
       "stop_column": 20,
@@ -4494,42 +4484,12 @@
     },
     {
       "code": -2,
-      "column": 34,
-      "concise_description": "Object of class `_PyreReadOnly_` has no attribute `__add__`",
-      "description": "Object of class `_PyreReadOnly_` has no attribute `__add__`",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 67,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 53,
-      "concise_description": "EXPECTED Literal['hits'] <: _PyreReadOnly_[dict[str, int]]",
-      "description": "EXPECTED Literal['hits'] <: _PyreReadOnly_[dict[str, int]]",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 59,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
       "column": 53,
       "concise_description": "EXPECTED Literal['hits'] <: dict[str, int]",
       "description": "EXPECTED Literal['hits'] <: dict[str, int]",
       "line": 101,
       "name": "PyreError",
       "stop_column": 59,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 61,
-      "concise_description": "EXPECTED Literal[0] <: _PyreReadOnly_[str]",
-      "description": "EXPECTED Literal[0] <: _PyreReadOnly_[str]",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 62,
       "stop_line": 101
     },
     {
@@ -6399,9 +6359,9 @@
     },
     {
       "code": -2,
-      "column": 34,
-      "concise_description": "Unexpected keyword argument 'default'",
-      "description": "Unexpected keyword argument 'default'",
+      "column": 42,
+      "concise_description": "EXPECTED Literal[3] <: Literal[_MISSING_TYPE.MISSING]",
+      "description": "EXPECTED Literal[3] <: Literal[_MISSING_TYPE.MISSING]",
       "line": 28,
       "name": "PyreError",
       "stop_column": 43,
@@ -6980,21 +6940,11 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED str <: _PyreReadOnly_[str]",
-      "description": "EXPECTED str <: _PyreReadOnly_[str]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[LiteralString, SupportsIndex | slice[Error, Error, Error]], LiteralString] | Callable[[str, SupportsIndex | slice[Error, Error, Error]], str]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[LiteralString, SupportsIndex | slice[Error, Error, Error]], LiteralString] | Callable[[str, SupportsIndex | slice[Error, Error, Error]], str]",
       "line": 68,
       "name": "PyreError",
       "stop_column": 23,
-      "stop_line": 68
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED Literal[0] <: SupportsIndex | slice[Error, Error, Error]",
-      "description": "EXPECTED Literal[0] <: SupportsIndex | slice[Error, Error, Error]",
-      "line": 68,
-      "name": "PyreError",
-      "stop_column": 22,
       "stop_line": 68
     },
     {
@@ -7488,8 +7438,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED BoundMethod[InventoryItem, Callable[[_PyreReadOnly_[object]], str]] <: object",
-      "description": "EXPECTED BoundMethod[InventoryItem, Callable[[_PyreReadOnly_[object]], str]] <: object",
+      "concise_description": "EXPECTED BoundMethod[InventoryItem, Callable[[object], str]] <: object",
+      "description": "EXPECTED BoundMethod[InventoryItem, Callable[[object], str]] <: object",
       "line": 38,
       "name": "PyreError",
       "stop_column": 18,
@@ -7508,8 +7458,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED BoundMethod[InventoryItem, Callable[[_PyreReadOnly_[object], _PyreReadOnly_[object]], bool]] <: object",
-      "description": "EXPECTED BoundMethod[InventoryItem, Callable[[_PyreReadOnly_[object], _PyreReadOnly_[object]], bool]] <: object",
+      "concise_description": "EXPECTED BoundMethod[InventoryItem, Callable[[object, object], bool]] <: object",
+      "description": "EXPECTED BoundMethod[InventoryItem, Callable[[object, object], bool]] <: object",
       "line": 39,
       "name": "PyreError",
       "stop_column": 16,
@@ -7647,9 +7597,9 @@
     },
     {
       "code": -2,
-      "column": 20,
-      "concise_description": "Unexpected keyword argument 'default'",
-      "description": "Unexpected keyword argument 'default'",
+      "column": 28,
+      "concise_description": "EXPECTED Literal[1] <: Literal[_MISSING_TYPE.MISSING]",
+      "description": "EXPECTED Literal[1] <: Literal[_MISSING_TYPE.MISSING]",
       "line": 66,
       "name": "PyreError",
       "stop_column": 29,
@@ -7687,9 +7637,9 @@
     },
     {
       "code": -2,
-      "column": 20,
-      "concise_description": "Unexpected keyword argument 'default_factory'",
-      "description": "Unexpected keyword argument 'default_factory'",
+      "column": 36,
+      "concise_description": "EXPECTED type[str] <: Literal[_MISSING_TYPE.MISSING]",
+      "description": "EXPECTED type[str] <: Literal[_MISSING_TYPE.MISSING]",
       "line": 88,
       "name": "PyreError",
       "stop_column": 39,
@@ -7757,9 +7707,9 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "Unexpected keyword argument 'default'",
-      "description": "Unexpected keyword argument 'default'",
+      "column": 40,
+      "concise_description": "EXPECTED Literal['s'] <: Literal[_MISSING_TYPE.MISSING]",
+      "description": "EXPECTED Literal['s'] <: Literal[_MISSING_TYPE.MISSING]",
       "line": 135,
       "name": "PyreError",
       "stop_column": 43,
@@ -7777,9 +7727,9 @@
     },
     {
       "code": -2,
-      "column": 25,
-      "concise_description": "Unexpected keyword argument 'default'",
-      "description": "Unexpected keyword argument 'default'",
+      "column": 33,
+      "concise_description": "EXPECTED Literal['hello'] <: Literal[_MISSING_TYPE.MISSING]",
+      "description": "EXPECTED Literal['hello'] <: Literal[_MISSING_TYPE.MISSING]",
       "line": 185,
       "name": "PyreError",
       "stop_column": 40,
@@ -7787,9 +7737,9 @@
     },
     {
       "code": -2,
-      "column": 25,
-      "concise_description": "Unexpected keyword argument 'default_factory'",
-      "description": "Unexpected keyword argument 'default_factory'",
+      "column": 41,
+      "concise_description": "EXPECTED Callable[[], Literal['hello']] <: Literal[_MISSING_TYPE.MISSING]",
+      "description": "EXPECTED Callable[[], Literal['hello']] <: Literal[_MISSING_TYPE.MISSING]",
       "line": 186,
       "name": "PyreError",
       "stop_column": 56,
@@ -7972,8 +7922,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[object]], SupportsIndex], _PyreReadOnly_[object]] | Callable[[_PyreReadOnly_[list[object]], slice[Error, Error, Error]], list[_PyreReadOnly_[object]]] | Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[object]], SupportsIndex], _PyreReadOnly_[object]] | Callable[[_PyreReadOnly_[list[object]], slice[Error, Error, Error]], list[_PyreReadOnly_[object]]] | Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]",
       "line": 11,
       "name": "PyreError",
       "stop_column": 30,
@@ -8335,9 +8285,29 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 27
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "line": 27,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 27
     }
   ],
   "enums_definition.py": [
+    {
+      "code": -2,
+      "column": 10,
+      "concise_description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "line": 24,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 24
+    },
     {
       "code": -2,
       "column": 25,
@@ -8347,6 +8317,16 @@
       "name": "PyreError",
       "stop_column": 30,
       "stop_line": 24
+    },
+    {
+      "code": -2,
+      "column": 10,
+      "concise_description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "line": 25,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 25
     },
     {
       "code": -2,
@@ -8360,6 +8340,16 @@
     },
     {
       "code": -2,
+      "column": 10,
+      "concise_description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
       "column": 25,
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
@@ -8367,6 +8357,16 @@
       "name": "PyreError",
       "stop_column": 49,
       "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 10,
+      "concise_description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "line": 27,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 27
     },
     {
       "code": -2,
@@ -8380,6 +8380,16 @@
     },
     {
       "code": -2,
+      "column": 10,
+      "concise_description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "line": 28,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 28
+    },
+    {
+      "code": -2,
       "column": 25,
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
@@ -8387,6 +8397,16 @@
       "name": "PyreError",
       "stop_column": 41,
       "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 10,
+      "concise_description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "line": 29,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 29
     },
     {
       "code": -2,
@@ -8400,6 +8420,16 @@
     },
     {
       "code": -2,
+      "column": 10,
+      "concise_description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "line": 30,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
       "column": 25,
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
@@ -8407,6 +8437,16 @@
       "name": "PyreError",
       "stop_column": 64,
       "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 10,
+      "concise_description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "description": "Expected `__call__` to be a callable, got Callable[[EnumMeta, str, Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, KwOnly[module: str | None], KwOnly[qualname: str | None], KwOnly[type: type | None], KwOnly[start: int], KwOnly[boundary: FlagBoundary | None]], type[Enum]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, None], _EnumMemberT]] | Forall[_EnumMemberT, Callable[[type[_EnumMemberT], Any, Var[Any]], _EnumMemberT]]",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 31
     },
     {
       "code": -2,
@@ -9152,26 +9192,6 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED LinkedList[int] <: _PyreReadOnly_[Container[int]]",
-      "description": "EXPECTED LinkedList[int] <: _PyreReadOnly_[Container[int]]",
-      "line": 46,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 46
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED Literal[1] <: _PyreReadOnly_[object]",
-      "description": "EXPECTED Literal[1] <: _PyreReadOnly_[object]",
-      "line": 46,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 46
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "Expected 1 type argument for class `LinkedList`, got 2.",
       "description": "Expected 1 type argument for class `LinkedList`, got 2.",
@@ -9179,26 +9199,6 @@
       "name": "PyreError",
       "stop_column": 42,
       "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 58,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 58
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
-      "line": 58,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 58
     },
     {
       "code": -2,
@@ -9215,8 +9215,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[Sequence[?_]], int], _PyreReadOnly_[?_]] | Callable[[_PyreReadOnly_[Sequence[?_]], slice[Error, Error, Error]], _PyreReadOnly_[Sequence[?_]]] | Callable[[Sequence[?_], int], ?_] | Callable[[Sequence[?_], slice[Error, Error, Error]], Sequence[?_]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[Sequence[?_]], int], _PyreReadOnly_[?_]] | Callable[[_PyreReadOnly_[Sequence[?_]], slice[Error, Error, Error]], _PyreReadOnly_[Sequence[?_]]] | Callable[[Sequence[?_], int], ?_] | Callable[[Sequence[?_], slice[Error, Error, Error]], Sequence[?_]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[Sequence[?_], int], ?_] | Callable[[Sequence[?_], slice[Error, Error, Error]], Sequence[?_]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[Sequence[?_], int], ?_] | Callable[[Sequence[?_], slice[Error, Error, Error]], Sequence[?_]]",
       "line": 19,
       "name": "PyreError",
       "stop_column": 16,
@@ -9414,62 +9414,22 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 154,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 154
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
-      "line": 154,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 154
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 155,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 155
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
-      "line": 155,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 155
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
+      "column": 8,
+      "concise_description": "EXPECTED Literal[0] <: str",
+      "description": "EXPECTED Literal[0] <: str",
       "line": 157,
       "name": "PyreError",
-      "stop_column": 10,
+      "stop_column": 9,
       "stop_line": 157
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[Mapping[str, int], str], int] | Callable[[_PyreReadOnly_[Mapping[str, int]], _PyreReadOnly_[str]], _PyreReadOnly_[int]]",
+      "column": 8,
+      "concise_description": "EXPECTED Literal[0] <: str",
+      "description": "EXPECTED Literal[0] <: str",
       "line": 158,
       "name": "PyreError",
-      "stop_column": 10,
+      "stop_column": 9,
       "stop_line": 158
     },
     {
@@ -10833,8 +10793,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[Self]], SupportsIndex], _PyreReadOnly_[Self]] | Callable[[_PyreReadOnly_[list[Self]], slice[Error, Error, Error]], list[_PyreReadOnly_[Self]]] | Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[Self]], SupportsIndex], _PyreReadOnly_[Self]] | Callable[[_PyreReadOnly_[list[Self]], slice[Error, Error, Error]], list[_PyreReadOnly_[Self]]] | Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]",
       "line": 37,
       "name": "PyreError",
       "stop_column": 30,
@@ -10873,8 +10833,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[Self]], SupportsIndex], _PyreReadOnly_[Self]] | Callable[[_PyreReadOnly_[list[Self]], slice[Error, Error, Error]], list[_PyreReadOnly_[Self]]] | Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[Self]], SupportsIndex], _PyreReadOnly_[Self]] | Callable[[_PyreReadOnly_[list[Self]], slice[Error, Error, Error]], list[_PyreReadOnly_[Self]]] | Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[list[Self], SupportsIndex], Self] | Callable[[list[Self], slice[Error, Error, Error]], list[Self]]",
       "line": 44,
       "name": "PyreError",
       "stop_column": 29,
@@ -12605,8 +12565,8 @@
     {
       "code": -2,
       "column": 27,
-      "concise_description": "Expected 1 positional argument, got 3",
-      "description": "Expected 1 positional argument, got 3",
+      "concise_description": "Expected 2 positional arguments, got 4",
+      "description": "Expected 2 positional arguments, got 4",
       "line": 66,
       "name": "PyreError",
       "stop_column": 30,
@@ -16570,8 +16530,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED tuple[?_, ...] <: _PyreReadOnly_[Sized]",
-      "description": "EXPECTED tuple[?_, ...] <: _PyreReadOnly_[Sized]",
+      "concise_description": "EXPECTED tuple[?_, ...] <: Sized",
+      "description": "EXPECTED tuple[?_, ...] <: Sized",
       "line": 13,
       "name": "PyreError",
       "stop_column": 19,
@@ -16615,16 +16575,6 @@
       "line": 25,
       "name": "PyreError",
       "stop_column": 33,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 44,
-      "concise_description": "Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[object]]], Iterator[_PyreReadOnly_[object]]] | Callable[[list[object]], Iterator[object]]",
-      "description": "Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[object]]], Iterator[_PyreReadOnly_[object]]] | Callable[[list[object]], Iterator[object]]",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 47,
       "stop_line": 25
     },
     {
@@ -16962,8 +16912,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED tuple[?_, ...] <: _PyreReadOnly_[Sized]",
-      "description": "EXPECTED tuple[?_, ...] <: _PyreReadOnly_[Sized]",
+      "concise_description": "EXPECTED tuple[?_, ...] <: Sized",
+      "description": "EXPECTED tuple[?_, ...] <: Sized",
       "line": 15,
       "name": "PyreError",
       "stop_column": 19,
@@ -18271,16 +18221,6 @@
   "protocols_generic.py": [
     {
       "code": -2,
-      "column": 28,
-      "concise_description": "Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]",
-      "description": "Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]",
-      "line": 33,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
       "column": 24,
       "concise_description": "EXPECTED Concrete1 <: Proto1[str, int]",
       "description": "EXPECTED Concrete1 <: Proto1[str, int]",
@@ -18926,8 +18866,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[list[type[int]]], SupportsIndex], _PyreReadOnly_[type[int]]] | Callable[[_PyreReadOnly_[list[type[int]]], slice[Error, Error, Error]], list[_PyreReadOnly_[type[int]]]] | Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
+      "description": "Expected `__getitem__` to be a callable, got Callable[[list[type[int]], SupportsIndex], type[int]] | Callable[[list[type[int]], slice[Error, Error, Error]], list[type[int]]]",
       "line": 48,
       "name": "PyreError",
       "stop_column": 25,
@@ -19066,8 +19006,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 109,
       "name": "PyreError",
       "stop_column": 23,
@@ -19214,16 +19154,6 @@
       "name": "PyreError",
       "stop_column": 11,
       "stop_line": 145
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]",
-      "description": "Expected `__iter__` to be a callable, got Callable[[_PyreReadOnly_[list[int]]], Iterator[_PyreReadOnly_[int]]] | Callable[[list[int]], Iterator[int]]",
-      "line": 149,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 149
     },
     {
       "code": -2,
@@ -19442,26 +19372,6 @@
       "name": "PyreError",
       "stop_column": 23,
       "stop_line": 27
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "EXPECTED NoneType <: _PyreReadOnly_[object]",
-      "description": "EXPECTED NoneType <: _PyreReadOnly_[object]",
-      "line": 32,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED Literal[0] <: _PyreReadOnly_[object]",
-      "description": "EXPECTED Literal[0] <: _PyreReadOnly_[object]",
-      "line": 32,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 32
     },
     {
       "code": -2,
@@ -20968,8 +20878,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 10,
       "name": "PyreError",
       "stop_column": 18,
@@ -20978,8 +20888,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 14,
       "name": "PyreError",
       "stop_column": 26,
@@ -20988,8 +20898,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 23,
       "name": "PyreError",
       "stop_column": 26,
@@ -20998,8 +20908,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 27,
       "name": "PyreError",
       "stop_column": 26,
@@ -21008,8 +20918,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 31,
       "name": "PyreError",
       "stop_column": 26,
@@ -21018,8 +20928,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 35,
       "name": "PyreError",
       "stop_column": 26,
@@ -21028,8 +20938,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 41,
       "name": "PyreError",
       "stop_column": 19,
@@ -21040,8 +20950,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 10,
       "name": "PyreError",
       "stop_column": 22,
@@ -21050,8 +20960,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 18,
       "name": "PyreError",
       "stop_column": 23,
@@ -21060,8 +20970,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 25,
       "name": "PyreError",
       "stop_column": 30,
@@ -21070,8 +20980,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 44,
       "name": "PyreError",
       "stop_column": 30,
@@ -21080,8 +20990,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 49,
       "name": "PyreError",
       "stop_column": 30,
@@ -21090,8 +21000,8 @@
     {
       "code": -2,
       "column": 24,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 57,
       "name": "PyreError",
       "stop_column": 33,
@@ -21100,8 +21010,8 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 64,
       "name": "PyreError",
       "stop_column": 27,
@@ -21110,8 +21020,8 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 68,
       "name": "PyreError",
       "stop_column": 27,
@@ -21120,8 +21030,8 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 72,
       "name": "PyreError",
       "stop_column": 27,
@@ -21130,8 +21040,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 76,
       "name": "PyreError",
       "stop_column": 30,
@@ -21142,8 +21052,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 10,
       "name": "PyreError",
       "stop_column": 22,
@@ -21184,8 +21094,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 10,
       "name": "PyreError",
       "stop_column": 22,
@@ -21194,8 +21104,8 @@
     {
       "code": -2,
       "column": 26,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 17,
       "name": "PyreError",
       "stop_column": 35,
@@ -21224,8 +21134,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 27,
       "name": "PyreError",
       "stop_column": 18,
@@ -21234,8 +21144,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 30,
       "name": "PyreError",
       "stop_column": 18,
@@ -21274,8 +21184,8 @@
     {
       "code": -2,
       "column": 20,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 44,
       "name": "PyreError",
       "stop_column": 29,
@@ -21284,8 +21194,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 51,
       "name": "PyreError",
       "stop_column": 19,
@@ -21294,8 +21204,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 59,
       "name": "PyreError",
       "stop_column": 19,
@@ -21304,8 +21214,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 62,
       "name": "PyreError",
       "stop_column": 19,
@@ -21316,8 +21226,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 11,
       "name": "PyreError",
       "stop_column": 22,
@@ -21486,8 +21396,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 53,
       "name": "PyreError",
       "stop_column": 30,
@@ -21548,8 +21458,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 16,
       "name": "PyreError",
       "stop_column": 21,
@@ -21598,8 +21508,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 31,
       "name": "PyreError",
       "stop_column": 18,
@@ -21618,18 +21528,18 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[dict[str, list[str] | str]], _PyreReadOnly_[str]], _PyreReadOnly_[list[str] | str]] | Callable[[dict[str, list[str] | str], str], list[str] | str]",
-      "description": "Expected `__getitem__` to be a callable, got Callable[[_PyreReadOnly_[dict[str, list[str] | str]], _PyreReadOnly_[str]], _PyreReadOnly_[list[str] | str]] | Callable[[dict[str, list[str] | str], str], list[str] | str]",
+      "concise_description": "Object of class `str` has no attribute `append`",
+      "description": "Object of class `str` has no attribute `append`",
       "line": 37,
       "name": "PyreError",
-      "stop_column": 14,
+      "stop_column": 21,
       "stop_line": 37
     },
     {
       "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 44,
       "name": "PyreError",
       "stop_column": 23,
@@ -21668,8 +21578,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 54,
       "name": "PyreError",
       "stop_column": 23,
@@ -21720,8 +21630,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 19,
       "name": "PyreError",
       "stop_column": 19,
@@ -21730,8 +21640,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 23,
       "name": "PyreError",
       "stop_column": 19,
@@ -21740,8 +21650,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 28,
       "name": "PyreError",
       "stop_column": 19,
@@ -21810,8 +21720,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 65,
       "name": "PyreError",
       "stop_column": 19,
@@ -21820,8 +21730,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 69,
       "name": "PyreError",
       "stop_column": 19,
@@ -21830,8 +21740,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 73,
       "name": "PyreError",
       "stop_column": 19,
@@ -21902,8 +21812,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 14,
       "name": "PyreError",
       "stop_column": 26,
@@ -21962,8 +21872,8 @@
     {
       "code": -2,
       "column": 23,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 42,
       "name": "PyreError",
       "stop_column": 32,
@@ -21972,8 +21882,8 @@
     {
       "code": -2,
       "column": 20,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 57,
       "name": "PyreError",
       "stop_column": 29,
@@ -21992,8 +21902,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 71,
       "name": "PyreError",
       "stop_column": 30,
@@ -22052,8 +21962,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 87,
       "name": "PyreError",
       "stop_column": 19,
@@ -22062,8 +21972,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 109,
       "name": "PyreError",
       "stop_column": 22,
@@ -22072,8 +21982,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 114,
       "name": "PyreError",
       "stop_column": 22,
@@ -22082,8 +21992,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 122,
       "name": "PyreError",
       "stop_column": 22,
@@ -22092,8 +22002,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 127,
       "name": "PyreError",
       "stop_column": 22,
@@ -22104,8 +22014,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 18,
       "name": "PyreError",
       "stop_column": 21,
@@ -22114,8 +22024,8 @@
     {
       "code": -2,
       "column": 20,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 23,
       "name": "PyreError",
       "stop_column": 29,
@@ -22146,8 +22056,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 16,
       "name": "PyreError",
       "stop_column": 18,
@@ -22186,8 +22096,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 28,
       "name": "PyreError",
       "stop_column": 18,
@@ -22208,8 +22118,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 24,
       "name": "PyreError",
       "stop_column": 20,
@@ -22218,8 +22128,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 32,
       "name": "PyreError",
       "stop_column": 20,
@@ -22228,8 +22138,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 37,
       "name": "PyreError",
       "stop_column": 20,
@@ -22238,8 +22148,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 42,
       "name": "PyreError",
       "stop_column": 20,
@@ -22338,8 +22248,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 61,
       "name": "PyreError",
       "stop_column": 20,
@@ -22348,8 +22258,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 66,
       "name": "PyreError",
       "stop_column": 20,
@@ -22378,8 +22288,8 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 73,
       "name": "PyreError",
       "stop_column": 27,
@@ -22410,8 +22320,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 10,
       "name": "PyreError",
       "stop_column": 19,
@@ -22420,8 +22330,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 14,
       "name": "PyreError",
       "stop_column": 19,
@@ -22460,8 +22370,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 29,
       "name": "PyreError",
       "stop_column": 19,
@@ -22470,8 +22380,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 33,
       "name": "PyreError",
       "stop_column": 19,
@@ -22500,8 +22410,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 52,
       "name": "PyreError",
       "stop_column": 19,
@@ -22510,8 +22420,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 56,
       "name": "PyreError",
       "stop_column": 19,
@@ -22630,8 +22540,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 88,
       "name": "PyreError",
       "stop_column": 22,
@@ -22650,21 +22560,11 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str",
-      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str",
+      "concise_description": "EXPECTED int | str | None | None <: str",
+      "description": "EXPECTED int | str | None | None <: str",
       "line": 91,
       "name": "PyreError",
       "stop_column": 38,
-      "stop_line": 91
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED Literal['name'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "description": "EXPECTED Literal['name'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "line": 91,
-      "name": "PyreError",
-      "stop_column": 30,
       "stop_line": 91
     },
     {
@@ -22675,16 +22575,6 @@
       "line": 91,
       "name": "PyreError",
       "stop_column": 30,
-      "stop_line": 91
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED Literal['n/a'] <: _PyreReadOnly_[str]",
-      "description": "EXPECTED Literal['n/a'] <: _PyreReadOnly_[str]",
-      "line": 91,
-      "name": "PyreError",
-      "stop_column": 37,
       "stop_line": 91
     },
     {
@@ -22700,21 +22590,11 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
-      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
+      "concise_description": "EXPECTED int | str | None | None <: int",
+      "description": "EXPECTED int | str | None | None <: int",
       "line": 92,
       "name": "PyreError",
       "stop_column": 33,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "description": "EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 28,
       "stop_line": 92
     },
     {
@@ -22730,16 +22610,6 @@
     {
       "code": -2,
       "column": 30,
-      "concise_description": "EXPECTED Literal[42] <: _PyreReadOnly_[str]",
-      "description": "EXPECTED Literal[42] <: _PyreReadOnly_[str]",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 30,
       "concise_description": "EXPECTED Literal[42] <: str",
       "description": "EXPECTED Literal[42] <: str",
       "line": 92,
@@ -22750,8 +22620,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected a callable, got object",
-      "description": "Expected a callable, got object",
+      "concise_description": "Expected a callable, got _SpecialForm",
+      "description": "Expected a callable, got _SpecialForm",
       "line": 94,
       "name": "PyreError",
       "stop_column": 22,
@@ -22780,21 +22650,11 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str | None",
-      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str | None",
+      "concise_description": "EXPECTED int | str | None | None <: str | None",
+      "description": "EXPECTED int | str | None | None <: str | None",
       "line": 97,
       "name": "PyreError",
       "stop_column": 38,
-      "stop_line": 97
-    },
-    {
-      "code": -2,
-      "column": 31,
-      "concise_description": "EXPECTED Literal['name'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "description": "EXPECTED Literal['name'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "line": 97,
-      "name": "PyreError",
-      "stop_column": 37,
       "stop_line": 97
     },
     {
@@ -22830,21 +22690,11 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str",
-      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: str",
+      "concise_description": "EXPECTED int | str | None | None <: str",
+      "description": "EXPECTED int | str | None | None <: str",
       "line": 101,
       "name": "PyreError",
       "stop_column": 31,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED Literal['name'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "description": "EXPECTED Literal['name'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 30,
       "stop_line": 101
     },
     {
@@ -22870,21 +22720,11 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
-      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
+      "concise_description": "EXPECTED int | str | None | None <: int",
+      "description": "EXPECTED int | str | None | None <: int",
       "line": 103,
       "name": "PyreError",
       "stop_column": 33,
-      "stop_line": 103
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "description": "EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "line": 103,
-      "name": "PyreError",
-      "stop_column": 28,
       "stop_line": 103
     },
     {
@@ -22895,16 +22735,6 @@
       "line": 103,
       "name": "PyreError",
       "stop_column": 28,
-      "stop_line": 103
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[42] <: _PyreReadOnly_[str]",
-      "description": "EXPECTED Literal[42] <: _PyreReadOnly_[str]",
-      "line": 103,
-      "name": "PyreError",
-      "stop_column": 32,
       "stop_line": 103
     },
     {
@@ -22930,21 +22760,11 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int | str",
-      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int | str",
+      "concise_description": "EXPECTED int | str | None | None <: int | str",
+      "description": "EXPECTED int | str | None | None <: int | str",
       "line": 105,
       "name": "PyreError",
       "stop_column": 41,
-      "stop_line": 105
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "description": "EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "line": 105,
-      "name": "PyreError",
-      "stop_column": 34,
       "stop_line": 105
     },
     {
@@ -22955,16 +22775,6 @@
       "line": 105,
       "name": "PyreError",
       "stop_column": 34,
-      "stop_line": 105
-    },
-    {
-      "code": -2,
-      "column": 36,
-      "concise_description": "EXPECTED Literal['42'] <: _PyreReadOnly_[str]",
-      "description": "EXPECTED Literal['42'] <: _PyreReadOnly_[str]",
-      "line": 105,
-      "name": "PyreError",
-      "stop_column": 40,
       "stop_line": 105
     },
     {
@@ -22980,21 +22790,11 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
-      "description": "EXPECTED _PyreReadOnly_[int | str | None] | _PyreReadOnly_[int | str | None] | int | str | _PyreReadOnly_[int | str | None] | None <: int",
+      "concise_description": "EXPECTED int | str | None | None <: int",
+      "description": "EXPECTED int | str | None | None <: int",
       "line": 107,
       "name": "PyreError",
       "stop_column": 35,
-      "stop_line": 107
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "description": "EXPECTED Literal['age'] <: _PyreReadOnly_[dict[str, int | str]]",
-      "line": 107,
-      "name": "PyreError",
-      "stop_column": 28,
       "stop_line": 107
     },
     {
@@ -23009,19 +22809,9 @@
     },
     {
       "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal['42'] <: _PyreReadOnly_[str]",
-      "description": "EXPECTED Literal['42'] <: _PyreReadOnly_[str]",
-      "line": 107,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 107
-    },
-    {
-      "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 110,
       "name": "PyreError",
       "stop_column": 23,
@@ -23030,8 +22820,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 114,
       "name": "PyreError",
       "stop_column": 23,
@@ -23040,8 +22830,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 118,
       "name": "PyreError",
       "stop_column": 23,
@@ -23070,8 +22860,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 129,
       "name": "PyreError",
       "stop_column": 23,
@@ -23080,8 +22870,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 133,
       "name": "PyreError",
       "stop_column": 23,
@@ -23090,8 +22880,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 137,
       "name": "PyreError",
       "stop_column": 23,
@@ -23100,8 +22890,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 142,
       "name": "PyreError",
       "stop_column": 23,
@@ -23132,8 +22922,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 8,
       "name": "PyreError",
       "stop_column": 22,
@@ -23212,8 +23002,8 @@
     {
       "code": -2,
       "column": 24,
-      "concise_description": "untype, got object",
-      "description": "untype, got object",
+      "concise_description": "untype, got _SpecialForm",
+      "description": "untype, got _SpecialForm",
       "line": 40,
       "name": "PyreError",
       "stop_column": 33,

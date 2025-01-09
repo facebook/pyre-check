@@ -40,10 +40,12 @@ serde_json = { version = "1.0.132", features = ["float_roundtrip", "unbounded_de
 starlark_map = "0.13.0"
 static_assertions = "1.1.0"
 static_interner = "0.1.1"
+tar = "0.4.43"
 thiserror = "2"
 tracing = { version = "0.1.41", features = ["attributes", "valuable"] }
 tracing-subscriber = { version = "0.3.18", features = ["chrono", "env-filter", "json", "local-time", "parking_lot", "registry"] }
 vec1 = { version = "1", features = ["serde"] }
+zstd = { version = "0.13", features = ["experimental", "zstdmt"] }
 
 [build-dependencies]
 tar = "0.4.43"

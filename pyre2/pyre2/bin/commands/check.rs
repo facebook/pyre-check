@@ -28,6 +28,7 @@ use crate::config::PythonVersion;
 use crate::error::legacy::LegacyErrors;
 use crate::error::style::ErrorStyle;
 use crate::module::finder::find_module;
+use crate::module::finder::BundledTypeshed;
 use crate::module::module_name::ModuleName;
 use crate::report;
 use crate::state::loader::LoadResult;
@@ -69,17 +70,22 @@ pub struct Args {
 
 struct CheckLoader {
     sources: SmallMap<ModuleName, PathBuf>,
+    typeshed: BundledTypeshed,
     search_roots: Vec<PathBuf>,
     error_style: ErrorStyle,
 }
 
 impl Loader for CheckLoader {
     fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
-        let path = match self.sources.get(&name) {
-            Some(path) => Ok((*path).clone()),
-            None => find_module(name, &self.search_roots),
+        let load_result = match self.sources.get(&name) {
+            Some(path) => LoadResult::from_path((*path).clone()),
+            None => match self.typeshed.find(name) {
+                Some((path, content)) => LoadResult::Loaded(path, content),
+                // TODO(grievejia): Swap the search ordering between typeshed and search_roots
+                None => LoadResult::from_path_result(find_module(name, &self.search_roots)),
+            },
         };
-        (LoadResult::from_path_result(path), self.error_style)
+        (load_result, self.error_style)
     }
 }
 
@@ -118,6 +124,7 @@ impl Args {
             ErrorStyle::Immediate
         };
         let modules = to_check.keys().copied().collect::<Vec<_>>();
+        let bundled_typeshed = BundledTypeshed::new()?;
         let config = match &args.python_version {
             None => Config::default(),
             Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),
@@ -128,6 +135,7 @@ impl Args {
         let state = State::new(
             Box::new(CheckLoader {
                 sources: to_check,
+                typeshed: bundled_typeshed,
                 search_roots: include,
                 error_style,
             }),

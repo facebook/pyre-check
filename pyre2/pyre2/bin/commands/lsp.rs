@@ -63,6 +63,7 @@ use crate::commands::util::module_from_path;
 use crate::config::Config;
 use crate::error::style::ErrorStyle;
 use crate::module::finder::find_module;
+use crate::module::finder::BundledTypeshed;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
@@ -82,6 +83,7 @@ struct Server<'a> {
     #[expect(dead_code)] // we'll use it later on
     initialize_params: InitializeParams,
     include: Vec<PathBuf>,
+    typeshed: BundledTypeshed,
     state: State,
     open_files: SmallMap<PathBuf, (i32, String)>,
 }
@@ -120,8 +122,9 @@ impl Args {
         } else {
             self.include
         };
+        let typeshed = BundledTypeshed::new()?;
         let send = |msg| connection.sender.send(msg).unwrap();
-        let mut server = Server::new(&send, initialization_params, include);
+        let mut server = Server::new(&send, initialization_params, include, typeshed);
         eprintln!("Reading messages");
         for msg in &connection.receiver {
             if matches!(&msg, Message::Request(req) if connection.handle_shutdown(req)?) {
@@ -150,6 +153,7 @@ impl Loader for DummyLoader {
 struct LspLoader {
     open_modules: SmallMap<ModuleName, PathBuf>,
     open_files: SmallMap<PathBuf, (i32, String)>,
+    typeshed: BundledTypeshed,
     search_roots: Vec<PathBuf>,
 }
 
@@ -160,6 +164,8 @@ impl Loader for LspLoader {
                 (*path).clone(),
                 self.open_files.get(path).unwrap().1.clone(),
             )
+        } else if let Some((path, content)) = self.typeshed.find(name) {
+            LoadResult::Loaded(path, content)
         } else {
             LoadResult::from_path_result(find_module(name, &self.search_roots))
         };
@@ -228,11 +234,13 @@ impl<'a> Server<'a> {
         send: &'a dyn Fn(Message),
         initialize_params: InitializeParams,
         include: Vec<PathBuf>,
+        typeshed: BundledTypeshed,
     ) -> Self {
         Self {
             send,
             initialize_params,
             include,
+            typeshed,
             state: State::new(Box::new(DummyLoader {}), Config::default(), true),
             open_files: Default::default(),
         }
@@ -265,6 +273,7 @@ impl<'a> Server<'a> {
                 open_modules: modules,
                 open_files: self.open_files.clone(), // Not good, but all of this is a hack
                 search_roots: self.include.clone(),
+                typeshed: self.typeshed.clone(),
             }),
             Config::default(),
             true,
