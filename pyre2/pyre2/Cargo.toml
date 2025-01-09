@@ -7,6 +7,7 @@ authors = ["Meta"]
 edition = "2021"
 repository = "https://github.com/facebook/pyre-check/tree/main/pyre2"
 license = "MIT"
+build = "build.rs"
 
 [[bin]]
 name = "pyre2"
@@ -43,6 +44,10 @@ thiserror = "2"
 tracing = { version = "0.1.41", features = ["attributes", "valuable"] }
 tracing-subscriber = { version = "0.3.18", features = ["chrono", "env-filter", "json", "local-time", "parking_lot", "registry"] }
 vec1 = { version = "1", features = ["serde"] }
+
+[build-dependencies]
+tar = "0.4.43"
+zstd = { version = "0.13", features = ["experimental", "zstdmt"] }
 
 [lints]
 rust = { unexpected_cfgs = { check-cfg = ["cfg(fbcode_build)"], level = "warn" } }
