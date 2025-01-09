@@ -6,7 +6,14 @@
  */
 
 use ruff_python_ast::name::Name;
+use ruff_python_ast::BoolOp;
+use ruff_python_ast::CmpOp;
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprBoolOp;
+use ruff_python_ast::ExprCompare;
+use ruff_python_ast::ExprUnaryOp;
+use ruff_python_ast::UnaryOp;
+use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::smallmap;
@@ -74,7 +81,7 @@ impl NarrowOps {
         }
     }
 
-    pub fn and(&mut self, name: Name, op: NarrowOp, range: TextRange) {
+    fn and(&mut self, name: Name, op: NarrowOp, range: TextRange) {
         if let Some((existing_op, _)) = self.0.get_mut(&name) {
             existing_op.and(op)
         } else {
@@ -101,5 +108,68 @@ impl NarrowOps {
             return;
         }
         self_op.or(other_op);
+    }
+
+    pub fn from_expr(test: Option<Expr>) -> Self {
+        match test {
+            Some(Expr::Compare(ExprCompare {
+                range: _,
+                left: box Expr::Name(name),
+                ops,
+                comparators,
+            })) => {
+                let mut narrow_ops = Self::new();
+                for (cmp_op, right) in ops.iter().zip(comparators) {
+                    let range = right.range();
+                    let (name, op) = match cmp_op {
+                        CmpOp::Is => (name.id.clone(), NarrowOp::Is(Box::new(right))),
+                        CmpOp::IsNot => (name.id.clone(), NarrowOp::IsNot(Box::new(right))),
+                        CmpOp::Eq => (name.id.clone(), NarrowOp::Eq(Box::new(right))),
+                        CmpOp::NotEq => (name.id.clone(), NarrowOp::NotEq(Box::new(right))),
+                        _ => {
+                            continue;
+                        }
+                    };
+                    narrow_ops.and(name, op, range);
+                }
+                narrow_ops
+            }
+            Some(Expr::BoolOp(ExprBoolOp {
+                range: _,
+                op: BoolOp::And,
+                values,
+            })) => {
+                let mut narrow_ops = Self::new();
+                for e in values {
+                    narrow_ops.and_all(Self::from_expr(Some(e)))
+                }
+                narrow_ops
+            }
+            Some(Expr::BoolOp(ExprBoolOp {
+                range: _,
+                op: BoolOp::Or,
+                values,
+            })) => {
+                let mut exprs = values.into_iter();
+                if let Some(first_val) = exprs.next() {
+                    let mut narrow_ops = Self::from_expr(Some(first_val));
+                    for next_val in exprs {
+                        narrow_ops.or_all(Self::from_expr(Some(next_val)));
+                    }
+                    narrow_ops
+                } else {
+                    Self::new()
+                }
+            }
+            Some(Expr::UnaryOp(ExprUnaryOp {
+                range: _,
+                op: UnaryOp::Not,
+                operand: box e,
+            })) => Self::from_expr(Some(e)).negate(),
+            Some(Expr::Name(name)) => {
+                Self(smallmap! { name.id.clone() => (NarrowOp::Truthy, name.range()) })
+            }
+            _ => Self::new(),
+        }
     }
 }
