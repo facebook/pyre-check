@@ -8725,16 +8725,6 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(str, Literal['RED']) failed",
-      "description": "assert_type(str, Literal['RED']) failed",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 46,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
-      "column": 1,
       "concise_description": "assert_type(BoundMethod[Color, Callable[[Enum], str]], Literal['RED']) failed",
       "description": "assert_type(BoundMethod[Color, Callable[[Enum], str]], Literal['RED']) failed",
       "line": 22,

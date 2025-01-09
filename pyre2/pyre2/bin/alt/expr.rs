@@ -1177,7 +1177,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::EllipsisLiteral(_) => Type::Ellipsis,
             Expr::Attribute(x) => {
                 let obj = self.expr_infer(&x.value);
-                self.attr_infer(&obj, &x.attr.id, x.range)
+                match (&obj, x.attr.id.as_str()) {
+                    (Type::Literal(Lit::Enum(box (_, member))), "_name_") => {
+                        Type::Literal(Lit::String(member.as_str().into()))
+                    }
+                    _ => self.attr_infer(&obj, &x.attr.id, x.range),
+                }
             }
             Expr::Subscript(x) => {
                 let xs = Ast::unpack_slice(&x.slice);
