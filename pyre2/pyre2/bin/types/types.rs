@@ -164,7 +164,7 @@ impl TParams {
         let mut tparams: Vec<TParam> = Vec::with_capacity(info.len());
         for tparam in info {
             let default = if tparam.default.is_none()
-                && tparams.last().map_or(false, |p| p.default.is_some())
+                && tparams.last().is_some_and(|p| p.default.is_some())
             {
                 // Missing default.
                 error = true;

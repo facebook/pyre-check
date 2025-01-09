@@ -775,13 +775,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let constraints = args.constraints.map(|x| self.expr_untype(x));
         let bound = args.bound.map(|x| self.expr_untype(x));
         let default = args.default.map(|x| self.expr_untype(x));
-        let covariant = args.covariant.map_or(false, |x| self.literal_bool_infer(x));
+        let covariant = args.covariant.is_some_and(|x| self.literal_bool_infer(x));
         let contravariant = args
             .contravariant
-            .map_or(false, |x| self.literal_bool_infer(x));
+            .is_some_and(|x| self.literal_bool_infer(x));
         let infer_variance = args
             .infer_variance
-            .map_or(false, |x| self.literal_bool_infer(x));
+            .is_some_and(|x| self.literal_bool_infer(x));
 
         for kw in args.unknown {
             self.error(
