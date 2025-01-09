@@ -58,7 +58,6 @@ use ruff_text_size::TextSize;
 use serde::de::DeserializeOwned;
 use starlark_map::small_map::SmallMap;
 
-use crate::commands::util::default_include;
 use crate::commands::util::module_from_path;
 use crate::config::Config;
 use crate::error::style::ErrorStyle;
@@ -117,11 +116,7 @@ impl Args {
                 return Err(e.into());
             }
         };
-        let include = if self.include.is_empty() {
-            default_include()?
-        } else {
-            self.include
-        };
+        let include = self.include;
         let typeshed = BundledTypeshed::new()?;
         let send = |msg| connection.sender.send(msg).unwrap();
         let mut server = Server::new(&send, initialization_params, include, typeshed);

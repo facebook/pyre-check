@@ -21,7 +21,6 @@ use starlark_map::small_map::SmallMap;
 use tracing::info;
 
 use crate::commands::common::CommonArgs;
-use crate::commands::util::default_include;
 use crate::commands::util::module_from_path;
 use crate::config::Config;
 use crate::config::PythonVersion;
@@ -92,11 +91,7 @@ impl Loader for CheckLoader {
 impl Args {
     pub fn run(self, allow_forget: bool) -> anyhow::Result<()> {
         let args = self;
-        let include = if args.include.is_empty() {
-            default_include()?
-        } else {
-            args.include
-        };
+        let include = args.include;
 
         if args.files.is_empty() {
             return Ok(());
