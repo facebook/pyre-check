@@ -49,6 +49,7 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
+use starlark_map::smallmap;
 use vec1::Vec1;
 
 use crate::ast::Ast;
@@ -71,6 +72,7 @@ use crate::binding::binding::RaisedException;
 use crate::binding::binding::SizeExpectation;
 use crate::binding::binding::UnpackedPosition;
 use crate::binding::narrow::NarrowOp;
+use crate::binding::narrow::NarrowOps;
 use crate::binding::table::TableKeyed;
 use crate::binding::util::is_ellipse;
 use crate::binding::util::is_never;
@@ -1319,11 +1321,11 @@ impl<'a> BindingsBuilder<'a> {
                 self.ensure_expr(&p.value);
                 if let Some(subject_name) = subject_name {
                     self.bind_narrow_ops(
-                        &[(
-                            subject_name.clone(),
+                        &NarrowOps(smallmap! {
+                            subject_name.clone() => vec![(
                             NarrowOp::Eq(p.value.clone()),
                             p.range(),
-                        )],
+                        )]}),
                         p.range(),
                     );
                 }
@@ -1467,71 +1469,77 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn negate_narrow_ops(ops: &[(Name, NarrowOp, TextRange)]) -> Vec<(Name, NarrowOp, TextRange)> {
-        if ops.len() == 1 {
-            let (name, op, range) = &ops[0];
-            vec![(name.clone(), op.clone().negate(), *range)]
-        } else {
-            // Negating multiple operations requires 'or' support, which we don't have.
-            Vec::new()
+    fn negate_narrow_ops(ops: &NarrowOps) -> NarrowOps {
+        if ops.0.len() == 1 {
+            let (name, ops_for_name) = ops.0.first().unwrap();
+            if ops_for_name.len() == 1 {
+                let (op, range) = &ops_for_name[0];
+                return NarrowOps(smallmap! {
+                    name.clone() => vec![(op.clone().negate(), *range)]
+                });
+            }
         }
+        // Negating multiple operations requires 'or' support, which we don't have.
+        NarrowOps::new()
     }
 
-    fn narrow_ops(test: Option<Expr>) -> Vec<(Name, NarrowOp, TextRange)> {
+    fn narrow_ops(test: Option<Expr>) -> NarrowOps {
         match test {
             Some(Expr::Compare(ExprCompare {
                 range: _,
                 left: box Expr::Name(name),
                 ops,
                 comparators,
-            })) => ops
-                .iter()
-                .zip(comparators)
-                .filter_map(|(op, right)| {
+            })) => {
+                let mut narrow_ops = NarrowOps::new();
+                for (cmp_op, right) in ops.iter().zip(comparators) {
                     let range = right.range();
-                    match op {
-                        CmpOp::Is => Some((name.id.clone(), NarrowOp::Is(Box::new(right)), range)),
-                        CmpOp::IsNot => {
-                            Some((name.id.clone(), NarrowOp::IsNot(Box::new(right)), range))
+                    let (name, op) = match cmp_op {
+                        CmpOp::Is => (name.id.clone(), NarrowOp::Is(Box::new(right))),
+                        CmpOp::IsNot => (name.id.clone(), NarrowOp::IsNot(Box::new(right))),
+                        CmpOp::Eq => (name.id.clone(), NarrowOp::Eq(Box::new(right))),
+                        CmpOp::NotEq => (name.id.clone(), NarrowOp::NotEq(Box::new(right))),
+                        _ => {
+                            continue;
                         }
-                        CmpOp::Eq => Some((name.id.clone(), NarrowOp::Eq(Box::new(right)), range)),
-                        CmpOp::NotEq => {
-                            Some((name.id.clone(), NarrowOp::NotEq(Box::new(right)), range))
-                        }
-                        _ => None,
-                    }
-                })
-                .collect(),
+                    };
+                    narrow_ops.and(name, op, range);
+                }
+                narrow_ops
+            }
             Some(Expr::BoolOp(ExprBoolOp {
                 range: _,
                 op: BoolOp::And,
                 values,
-            })) => values
-                .into_iter()
-                .flat_map(|e| Self::narrow_ops(Some(e)))
-                .collect(),
+            })) => {
+                let mut narrow_ops = NarrowOps::new();
+                for e in values {
+                    narrow_ops.and_all(Self::narrow_ops(Some(e)))
+                }
+                narrow_ops
+            }
             Some(Expr::UnaryOp(ExprUnaryOp {
                 range: _,
                 op: UnaryOp::Not,
                 operand: box e,
             })) => Self::negate_narrow_ops(&Self::narrow_ops(Some(e))),
-            Some(Expr::Name(name)) => vec![(name.id.clone(), NarrowOp::Truthy, name.range())],
-            _ => Vec::new(),
+            Some(Expr::Name(name)) => {
+                NarrowOps(smallmap! { name.id.clone() => vec![(NarrowOp::Truthy, name.range())] })
+            }
+            _ => NarrowOps::new(),
         }
     }
 
-    fn bind_narrow_ops(
-        &mut self,
-        narrow_ops: &[(Name, NarrowOp, TextRange)],
-        use_range: TextRange,
-    ) {
-        for (name, op, op_range) in narrow_ops {
-            if let Some(name_key) = self.lookup_name(name) {
-                let binding_key = self.table.insert(
-                    Key::Narrow(name.clone(), *op_range, use_range),
-                    Binding::Narrow(name_key, op.clone()),
-                );
-                self.update_flow_info(name, binding_key, None, false, true);
+    fn bind_narrow_ops(&mut self, narrow_ops: &NarrowOps, use_range: TextRange) {
+        for (name, ops) in narrow_ops.0.iter() {
+            for (op, op_range) in ops {
+                if let Some(name_key) = self.lookup_name(name) {
+                    let binding_key = self.table.insert(
+                        Key::Narrow(name.clone(), *op_range, use_range),
+                        Binding::Narrow(name_key, op.clone()),
+                    );
+                    self.update_flow_info(name, binding_key, None, false, true);
+                }
             }
         }
     }
@@ -1711,12 +1719,12 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Stmt::For(x) => {
-                self.setup_loop(x.range, &[]);
+                self.setup_loop(x.range, &NarrowOps::new());
                 self.ensure_expr(&x.iter);
                 let make_binding = |k| Binding::IterableValue(k, *x.iter.clone());
                 self.bind_target(&x.target, &make_binding, true);
                 self.stmts(x.body);
-                self.teardown_loop(x.range, &[], x.orelse);
+                self.teardown_loop(x.range, &NarrowOps::new(), x.orelse);
             }
             Stmt::While(x) => {
                 let narrow_ops = Self::narrow_ops(Some(*x.test.clone()));
@@ -1736,7 +1744,7 @@ impl<'a> BindingsBuilder<'a> {
                 //     pass
                 // x is bound to Narrow(x, Is(None)) in the if branch, and the negation, Narrow(x, IsNot(None)),
                 // is carried over to the else branch.
-                let mut narrow_ops: Vec<(Name, NarrowOp, TextRange)> = Vec::new();
+                let mut narrow_ops = NarrowOps::new();
                 for (test, body) in Ast::if_branches_owned(x) {
                     let b = self.config.evaluate_bool_opt(test.as_ref());
                     if b == Some(false) {
@@ -1750,7 +1758,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.bind_narrow_ops(&narrow_ops, use_range);
                         self.bind_narrow_ops(&new_narrow_ops, use_range);
                     }
-                    narrow_ops.extend(Self::negate_narrow_ops(&new_narrow_ops));
+                    narrow_ops.and_all(Self::negate_narrow_ops(&new_narrow_ops));
                     self.stmts(body);
                     mem::swap(&mut self.scopes.last_mut().flow, &mut base);
                     branches.push(base);
@@ -2020,7 +2028,7 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn setup_loop(&mut self, range: TextRange, narrow_ops: &[(Name, NarrowOp, TextRange)]) {
+    fn setup_loop(&mut self, range: TextRange, narrow_ops: &NarrowOps) {
         let base = self.scopes.last().flow.clone();
         // To account for possible assignments to existing names in a loop, we
         // speculatively insert phi keys upfront.
@@ -2032,12 +2040,7 @@ impl<'a> BindingsBuilder<'a> {
             .push(Loop(vec![(LoopExit::NeverRan, base)]));
     }
 
-    fn teardown_loop(
-        &mut self,
-        range: TextRange,
-        narrow_ops: &[(Name, NarrowOp, TextRange)],
-        orelse: Vec<Stmt>,
-    ) {
+    fn teardown_loop(&mut self, range: TextRange, narrow_ops: &NarrowOps, orelse: Vec<Stmt>) {
         let done = self.scopes.last_mut().loops.pop().unwrap();
         let (breaks, other_exits): (Vec<Flow>, Vec<Flow>) =
             done.0.into_iter().partition_map(|(exit, flow)| match exit {

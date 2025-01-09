@@ -128,6 +128,25 @@ def f2(x: E | int):
 );
 
 testcase!(
+    test_tri_enum,
+    r#"
+from typing import assert_type, Literal
+import enum
+class E(enum.Enum):
+    X = 1
+    Y = 2
+    Z = 3
+def f(x: E):
+    if x is E.X:
+       assert_type(x, Literal[E.X])
+    elif x is E.Y:
+       assert_type(x, Literal[E.Y])
+    else:
+       assert_type(x, Literal[E.Z])
+    "#,
+);
+
+testcase!(
     test_is_classdef,
     r#"
 from typing import assert_type
@@ -152,6 +171,17 @@ def f(x: bool | None):
         assert_type(x, Never)
     else:
         assert_type(x, bool | None)
+    "#,
+);
+
+testcase!(
+    test_and_multiple_vars,
+    r#"
+from typing import assert_type, Literal
+def f(x: bool | None, y: bool | None):
+    if x is True and y is False:
+        assert_type(x, Literal[True])
+        assert_type(y, Literal[False])
     "#,
 );
 
