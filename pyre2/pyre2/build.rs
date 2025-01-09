@@ -18,7 +18,7 @@ fn get_input_path() -> PathBuf {
         }
         None => {
             // When building with Cargo, we could locate typeshed directly using relative dir
-            PathBuf::from("stubs/typeshed")
+            PathBuf::from("third_party/typeshed")
         }
     }
 }
@@ -38,7 +38,7 @@ fn get_output_path() -> Result<PathBuf, std::env::VarError> {
 fn main() -> Result<(), std::io::Error> {
     // Only watch for metadata changes to avoid having Cargo repeatedly crawling for
     // changes in the entire typeshed dir.
-    println!("cargo::rerun-if-changed=stubs/typeshed_metadata.json");
+    println!("cargo::rerun-if-changed=third_party/typeshed_metadata.json");
 
     let input_path = get_input_path();
     let output_path = get_output_path().unwrap();
