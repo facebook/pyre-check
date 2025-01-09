@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_set_attribute,
@@ -191,6 +192,24 @@ c = C()
 x = c.callable_attr(42)
 assert_type(x, int)
     "#,
+);
+
+testcase_with_bug!(
+    "Instance-only attributes cannot be used on class objects",
+    test_class_access_of_instance_only_attribute,
+    r#"
+from typing import assert_type
+class C:
+    x: int
+    def __init__(self, y: str):
+        self.x = 0
+        self.y = y
+assert_type(C.x, int)
+assert_type(C.y, str)
+c = C("y")
+assert_type(c.x, int)
+assert_type(c.y, str)
+"#,
 );
 
 testcase!(
