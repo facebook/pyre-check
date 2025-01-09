@@ -9019,12 +9019,32 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "revealed type: Literal[Example2.__B]",
-      "description": "revealed type: Literal[Example2.__B]",
+      "concise_description": "revealed type: Literal[2]",
+      "description": "revealed type: Literal[2]",
       "line": 128,
       "name": "PyreError",
       "stop_column": 34,
       "stop_line": 128
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "assert_type(Literal[2], Literal[False]) failed",
+      "description": "assert_type(Literal[2], Literal[False]) failed",
+      "line": 129,
+      "name": "PyreError",
+      "stop_column": 57,
+      "stop_line": 129
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
+      "description": "TODO: Attribute(ExprAttribute - Lit::from_expr",
+      "line": 129,
+      "name": "PyreError",
+      "stop_column": 55,
+      "stop_line": 129
     },
     {
       "code": -2,

@@ -40,8 +40,10 @@ from enum import Enum
 class MyEnum(Enum):
     X = 1
     Y = 2
+    __PRIVATE = 3
 
 assert_type(MyEnum.X, Literal[MyEnum.X])
+assert_type(MyEnum.__PRIVATE, Literal[3])
 "#,
 );
 

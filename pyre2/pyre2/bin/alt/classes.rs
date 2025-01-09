@@ -127,7 +127,14 @@ impl Enum {
         //
         // Instance-only attributes are one case of this and are correctly handled
         // upstream, but there are other cases as well.
-        if self.0.class_object().contains(name) {
+
+        // Names starting but not ending with __ are private
+        // Names starting and ending with _ are reserved by the enum
+        if name.starts_with("__") && !name.ends_with("__")
+            || name.starts_with("_") && name.ends_with("_")
+        {
+            None
+        } else if self.0.class_object().contains(name) {
             Some(Lit::Enum(Box::new((self.0.clone(), name.clone()))))
         } else {
             None
