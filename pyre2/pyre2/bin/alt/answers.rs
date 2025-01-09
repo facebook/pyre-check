@@ -1087,6 +1087,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ty.clone()
                 }
             }
+            NarrowOp::And(ops) => {
+                let mut ops_iter = ops.iter();
+                if let Some(first_op) = ops_iter.next() {
+                    let mut ret = self.narrow(ty, first_op);
+                    for next_op in ops_iter {
+                        ret = self.narrow(&ret, next_op);
+                    }
+                    ret
+                } else {
+                    ty.clone()
+                }
+            }
+            NarrowOp::Or(ops) => self.unions(&ops.map(|op| self.narrow(ty, op))),
         }
     }
 

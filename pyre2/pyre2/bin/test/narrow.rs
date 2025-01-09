@@ -162,15 +162,16 @@ def f1(x: type[A] | type[B]):
     "#,
 );
 
-testcase!(
+testcase_with_bug!(
+    "`Literal[False] | bool` should collapse to `bool`",
     test_and,
     r#"
-from typing import assert_type, Never
+from typing import assert_type, Literal, Never
 def f(x: bool | None):
     if x is True and x is None:
         assert_type(x, Never)
     else:
-        assert_type(x, bool | None)
+        assert_type(x, Literal[False] | bool | None)
     "#,
 );
 
@@ -182,6 +183,18 @@ def f(x: bool | None, y: bool | None):
     if x is True and y is False:
         assert_type(x, Literal[True])
         assert_type(y, Literal[False])
+    "#,
+);
+
+testcase!(
+    test_or,
+    r#"
+from typing import assert_type, Literal
+def f(x: bool | None):
+    if x == True or x is None:
+        assert_type(x, Literal[True] | None)
+    else:
+        assert_type(x, Literal[False])
     "#,
 );
 
@@ -214,13 +227,14 @@ def f(x: str | None):
     "#,
 );
 
-testcase!(
+testcase_with_bug!(
+    "`Literal[False] | bool` should collapse to `bool`",
     test_not_and,
     r#"
-from typing import assert_type
+from typing import assert_type, Literal
 def f(x: bool | None):
     if not (x is True and x is None):
-        assert_type(x, bool | None)
+        assert_type(x, Literal[False] | bool | None)
     "#,
 );
 

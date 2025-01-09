@@ -8672,16 +8672,6 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(Color, Literal[Color.GREEN]) failed",
-      "description": "assert_type(Color, Literal[Color.GREEN]) failed",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 45,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
@@ -8723,22 +8713,12 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(CustomFlags, Literal[CustomFlags.FLAG3]) failed",
-      "description": "assert_type(CustomFlags, Literal[CustomFlags.FLAG3]) failed",
-      "line": 53,
+      "concise_description": "assert_type(Literal[CustomFlags.FLAG3], CustomFlags) failed",
+      "description": "assert_type(Literal[CustomFlags.FLAG3], CustomFlags) failed",
+      "line": 52,
       "name": "PyreError",
-      "stop_column": 51,
-      "stop_line": 53
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED list[object] <: list[Answer]",
-      "description": "EXPECTED list[object] <: list[Answer]",
-      "line": 78,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 78
+      "stop_column": 36,
+      "stop_line": 52
     }
   ],
   "enums_member_names.py": [

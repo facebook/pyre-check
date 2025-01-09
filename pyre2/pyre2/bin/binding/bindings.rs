@@ -1321,11 +1321,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.ensure_expr(&p.value);
                 if let Some(subject_name) = subject_name {
                     self.bind_narrow_ops(
-                        &NarrowOps(smallmap! {
-                            subject_name.clone() => vec![(
-                            NarrowOp::Eq(p.value.clone()),
-                            p.range(),
-                        )]}),
+                        &NarrowOps(smallmap! { subject_name.clone() => (NarrowOp::Eq(p.value.clone()), p.range()) }),
                         p.range(),
                     );
                 }
@@ -1504,28 +1500,42 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 narrow_ops
             }
+            Some(Expr::BoolOp(ExprBoolOp {
+                range: _,
+                op: BoolOp::Or,
+                values,
+            })) => {
+                let mut exprs = values.into_iter();
+                if let Some(first_val) = exprs.next() {
+                    let mut narrow_ops = Self::narrow_ops(Some(first_val));
+                    for next_val in exprs {
+                        narrow_ops.or_all(Self::narrow_ops(Some(next_val)));
+                    }
+                    narrow_ops
+                } else {
+                    NarrowOps::new()
+                }
+            }
             Some(Expr::UnaryOp(ExprUnaryOp {
                 range: _,
                 op: UnaryOp::Not,
                 operand: box e,
             })) => Self::narrow_ops(Some(e)).negate(),
             Some(Expr::Name(name)) => {
-                NarrowOps(smallmap! { name.id.clone() => vec![(NarrowOp::Truthy, name.range())] })
+                NarrowOps(smallmap! { name.id.clone() => (NarrowOp::Truthy, name.range()) })
             }
             _ => NarrowOps::new(),
         }
     }
 
     fn bind_narrow_ops(&mut self, narrow_ops: &NarrowOps, use_range: TextRange) {
-        for (name, ops) in narrow_ops.0.iter() {
-            for (op, op_range) in ops {
-                if let Some(name_key) = self.lookup_name(name) {
-                    let binding_key = self.table.insert(
-                        Key::Narrow(name.clone(), *op_range, use_range),
-                        Binding::Narrow(name_key, op.clone()),
-                    );
-                    self.update_flow_info(name, binding_key, None, false, true);
-                }
+        for (name, (op, op_range)) in narrow_ops.0.iter() {
+            if let Some(name_key) = self.lookup_name(name) {
+                let binding_key = self.table.insert(
+                    Key::Narrow(name.clone(), *op_range, use_range),
+                    Binding::Narrow(name_key, op.clone()),
+                );
+                self.update_flow_info(name, binding_key, None, false, true);
             }
         }
     }

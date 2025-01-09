@@ -11,6 +11,8 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::smallmap;
 
+use crate::util::prelude::SliceExt;
+
 #[derive(Clone, Debug)]
 pub enum NarrowOp {
     Is(Box<Expr>),
@@ -19,6 +21,8 @@ pub enum NarrowOp {
     Falsy,
     Eq(Box<Expr>),
     NotEq(Box<Expr>),
+    And(Vec<NarrowOp>),
+    Or(Vec<NarrowOp>),
 }
 
 impl NarrowOp {
@@ -30,12 +34,28 @@ impl NarrowOp {
             Self::NotEq(e) => Self::Eq(e.clone()),
             Self::Truthy => Self::Falsy,
             Self::Falsy => Self::Truthy,
+            Self::And(ops) => Self::Or(ops.map(|op| op.negate())),
+            Self::Or(ops) => Self::And(ops.map(|op| op.negate())),
+        }
+    }
+
+    fn and(&mut self, other: Self) {
+        match self {
+            Self::And(ops) => ops.push(other),
+            _ => *self = Self::And(vec![self.clone(), other]),
+        }
+    }
+
+    fn or(&mut self, other: Self) {
+        match self {
+            Self::Or(ops) => ops.push(other),
+            _ => *self = Self::Or(vec![self.clone(), other]),
         }
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct NarrowOps(pub SmallMap<Name, Vec<(NarrowOp, TextRange)>>);
+pub struct NarrowOps(pub SmallMap<Name, (NarrowOp, TextRange)>);
 
 impl NarrowOps {
     pub fn new() -> Self {
@@ -44,33 +64,42 @@ impl NarrowOps {
 
     pub fn negate(&self) -> Self {
         if self.0.len() == 1 {
-            let (name, ops) = self.0.first().unwrap();
-            if ops.len() == 1 {
-                let (op, range) = &ops[0];
-                return NarrowOps(smallmap! {
-                    name.clone() => vec![(op.negate(), *range)]
-                });
-            }
+            let (name, (op, range)) = self.0.first().unwrap();
+            NarrowOps(smallmap! {
+                name.clone() => (op.negate(), *range)
+            })
+        } else {
+            // We don't have a way to model an `or` condition involving multiple variables (e.g., `x is None or not y`).
+            NarrowOps::new()
         }
-        // Negating multiple operations requires 'or' support, which we don't have.
-        NarrowOps::new()
     }
 
     pub fn and(&mut self, name: Name, op: NarrowOp, range: TextRange) {
-        if let Some(ops) = self.0.get_mut(&name) {
-            ops.push((op, range));
+        if let Some((existing_op, _)) = self.0.get_mut(&name) {
+            existing_op.and(op)
         } else {
-            self.0.insert(name, vec![(op, range)]);
+            self.0.insert(name, (op, range));
         }
     }
 
     pub fn and_all(&mut self, other: NarrowOps) {
-        for (name, ops) in other.0.into_iter() {
-            if let Some(existing_ops) = self.0.get_mut(&name) {
-                existing_ops.extend(ops);
-            } else {
-                self.0.insert(name, ops);
-            }
+        for (name, (op, range)) in other.0.into_iter() {
+            self.and(name, op, range);
         }
+    }
+
+    pub fn or_all(&mut self, other: NarrowOps) {
+        // We can only model an `or` condition involving a single variable.
+        if self.0.len() != 1 || other.0.len() != 1 {
+            *self = NarrowOps::new();
+            return;
+        }
+        let (self_name, (self_op, _)) = self.0.iter_mut().next().unwrap();
+        let (other_name, (other_op, _)) = other.0.into_iter_hashed().next().unwrap();
+        if *self_name != *other_name {
+            *self = NarrowOps::new();
+            return;
+        }
+        self_op.or(other_op);
     }
 }
