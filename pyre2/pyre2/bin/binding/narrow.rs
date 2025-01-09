@@ -9,6 +9,7 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
+use starlark_map::smallmap;
 
 #[derive(Clone, Debug)]
 pub enum NarrowOp {
@@ -21,12 +22,12 @@ pub enum NarrowOp {
 }
 
 impl NarrowOp {
-    pub fn negate(self) -> Self {
+    pub fn negate(&self) -> Self {
         match self {
-            Self::Is(e) => Self::IsNot(e),
-            Self::IsNot(e) => Self::Is(e),
-            Self::Eq(e) => Self::NotEq(e),
-            Self::NotEq(e) => Self::Eq(e),
+            Self::Is(e) => Self::IsNot(e.clone()),
+            Self::IsNot(e) => Self::Is(e.clone()),
+            Self::Eq(e) => Self::NotEq(e.clone()),
+            Self::NotEq(e) => Self::Eq(e.clone()),
             Self::Truthy => Self::Falsy,
             Self::Falsy => Self::Truthy,
         }
@@ -39,6 +40,20 @@ pub struct NarrowOps(pub SmallMap<Name, Vec<(NarrowOp, TextRange)>>);
 impl NarrowOps {
     pub fn new() -> Self {
         Self(SmallMap::new())
+    }
+
+    pub fn negate(&self) -> Self {
+        if self.0.len() == 1 {
+            let (name, ops) = self.0.first().unwrap();
+            if ops.len() == 1 {
+                let (op, range) = &ops[0];
+                return NarrowOps(smallmap! {
+                    name.clone() => vec![(op.negate(), *range)]
+                });
+            }
+        }
+        // Negating multiple operations requires 'or' support, which we don't have.
+        NarrowOps::new()
     }
 
     pub fn and(&mut self, name: Name, op: NarrowOp, range: TextRange) {

@@ -1469,20 +1469,6 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn negate_narrow_ops(ops: &NarrowOps) -> NarrowOps {
-        if ops.0.len() == 1 {
-            let (name, ops_for_name) = ops.0.first().unwrap();
-            if ops_for_name.len() == 1 {
-                let (op, range) = &ops_for_name[0];
-                return NarrowOps(smallmap! {
-                    name.clone() => vec![(op.clone().negate(), *range)]
-                });
-            }
-        }
-        // Negating multiple operations requires 'or' support, which we don't have.
-        NarrowOps::new()
-    }
-
     fn narrow_ops(test: Option<Expr>) -> NarrowOps {
         match test {
             Some(Expr::Compare(ExprCompare {
@@ -1522,7 +1508,7 @@ impl<'a> BindingsBuilder<'a> {
                 range: _,
                 op: UnaryOp::Not,
                 operand: box e,
-            })) => Self::negate_narrow_ops(&Self::narrow_ops(Some(e))),
+            })) => Self::narrow_ops(Some(e)).negate(),
             Some(Expr::Name(name)) => {
                 NarrowOps(smallmap! { name.id.clone() => vec![(NarrowOp::Truthy, name.range())] })
             }
@@ -1758,7 +1744,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.bind_narrow_ops(&narrow_ops, use_range);
                         self.bind_narrow_ops(&new_narrow_ops, use_range);
                     }
-                    narrow_ops.and_all(Self::negate_narrow_ops(&new_narrow_ops));
+                    narrow_ops.and_all(new_narrow_ops.negate());
                     self.stmts(body);
                     mem::swap(&mut self.scopes.last_mut().flow, &mut base);
                     branches.push(base);
@@ -2054,12 +2040,12 @@ impl<'a> BindingsBuilder<'a> {
             // When there are no `break`s, the loop condition is always false once the body has exited,
             // and any `orelse` always runs.
             self.merge_loop_into_current(other_exits, range);
-            self.bind_narrow_ops(&Self::negate_narrow_ops(narrow_ops), other_range);
+            self.bind_narrow_ops(&narrow_ops.negate(), other_range);
             self.stmts(orelse);
         } else {
             // Otherwise, we negate the loop condition and run the `orelse` only when we don't `break`.
             self.merge_loop_into_current(other_exits, other_range);
-            self.bind_narrow_ops(&Self::negate_narrow_ops(narrow_ops), other_range);
+            self.bind_narrow_ops(&narrow_ops.negate(), other_range);
             self.stmts(orelse);
             self.merge_loop_into_current(breaks, range);
         }
