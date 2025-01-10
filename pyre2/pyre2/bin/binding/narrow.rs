@@ -63,7 +63,7 @@ impl NarrowOp {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct NarrowOps(pub SmallMap<Name, (NarrowOp, TextRange)>);
 
 impl NarrowOps {

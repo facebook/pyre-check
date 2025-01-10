@@ -1309,15 +1309,21 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     // Traverse a pattern and bind all the names; key is the reference for the value that's being matched on
-    fn bind_pattern(&mut self, subject_name: Option<&Name>, pattern: Pattern, key: Idx<Key>) {
+    fn bind_pattern(
+        &mut self,
+        subject_name: Option<&Name>,
+        pattern: Pattern,
+        key: Idx<Key>,
+    ) -> NarrowOps {
         match pattern {
             Pattern::MatchValue(p) => {
                 self.ensure_expr(&p.value);
                 if let Some(subject_name) = subject_name {
-                    self.bind_narrow_ops(
-                        &NarrowOps(smallmap! { subject_name.clone() => (NarrowOp::Eq(p.value.clone()), p.range()) }),
-                        p.range(),
-                    );
+                    NarrowOps(
+                        smallmap! { subject_name.clone() => (NarrowOp::Eq(p.value.clone()), p.range()) },
+                    )
+                } else {
+                    NarrowOps::new()
                 }
             }
             Pattern::MatchAs(p) => {
@@ -1331,9 +1337,12 @@ impl<'a> BindingsBuilder<'a> {
                 };
                 if let Some(box pattern) = p.pattern {
                     self.bind_pattern(new_subject_name, pattern, key)
+                } else {
+                    NarrowOps::new()
                 }
             }
             Pattern::MatchSequence(x) => {
+                let mut narrow_ops = NarrowOps::new();
                 let num_patterns = x.patterns.len();
                 let mut unbounded = false;
                 for (idx, x) in x.patterns.into_iter().enumerate() {
@@ -1368,7 +1377,7 @@ impl<'a> BindingsBuilder<'a> {
                                     position,
                                 ),
                             );
-                            self.bind_pattern(None, x, key);
+                            narrow_ops.and_all(self.bind_pattern(None, x, key));
                         }
                     }
                 }
@@ -1381,8 +1390,10 @@ impl<'a> BindingsBuilder<'a> {
                     Key::Expect(x.range),
                     Binding::UnpackedLength(Box::new(Binding::Forward(key)), x.range, expect),
                 );
+                narrow_ops
             }
             Pattern::MatchMapping(x) => {
+                let mut narrow_ops = NarrowOps::new();
                 x.keys
                     .into_iter()
                     .zip(x.patterns)
@@ -1391,13 +1402,15 @@ impl<'a> BindingsBuilder<'a> {
                             Key::Anon(key_expr.range()),
                             Binding::PatternMatchMapping(key_expr, key),
                         );
-                        self.bind_pattern(None, pattern, mapping_key)
+                        narrow_ops.and_all(self.bind_pattern(None, pattern, mapping_key))
                     });
                 if let Some(rest) = x.rest {
                     self.bind_definition(&rest, Binding::Forward(key), None, true);
                 }
+                narrow_ops
             }
             Pattern::MatchClass(x) => {
+                let mut narrow_ops = NarrowOps::new();
                 x.arguments
                     .patterns
                     .into_iter()
@@ -1412,7 +1425,7 @@ impl<'a> BindingsBuilder<'a> {
                                 pattern.range(),
                             ),
                         );
-                        self.bind_pattern(None, pattern.clone(), attr_key)
+                        narrow_ops.and_all(self.bind_pattern(None, pattern.clone(), attr_key))
                     });
                 x.arguments.keywords.into_iter().for_each(
                     |PatternKeyword {
@@ -1424,11 +1437,13 @@ impl<'a> BindingsBuilder<'a> {
                             Key::Anon(attr.range()),
                             Binding::PatternMatchClassKeyword(x.cls.clone(), attr, key),
                         );
-                        self.bind_pattern(None, pattern, attr_key)
+                        narrow_ops.and_all(self.bind_pattern(None, pattern, attr_key))
                     },
-                )
+                );
+                narrow_ops
             }
             Pattern::MatchOr(x) => {
+                let mut narrow_ops: Option<NarrowOps> = None;
                 let range = x.range;
                 let mut branches = Vec::new();
                 let n_subpatterns = x.patterns.len();
@@ -1440,13 +1455,19 @@ impl<'a> BindingsBuilder<'a> {
                         )
                     }
                     let mut base = self.scopes.last().flow.clone();
-                    self.bind_pattern(None, pattern, key);
+                    let new_narrow_ops = self.bind_pattern(None, pattern, key);
+                    if let Some(ref mut ops) = narrow_ops {
+                        ops.or_all(new_narrow_ops)
+                    } else {
+                        narrow_ops = Some(new_narrow_ops);
+                    }
                     mem::swap(&mut self.scopes.last_mut().flow, &mut base);
                     branches.push(base);
                 }
                 self.scopes.last_mut().flow = self.merge_flow(branches, range, false);
+                narrow_ops.unwrap_or_default()
             }
-            _ => {}
+            _ => NarrowOps::new(),
         }
     }
 
@@ -1740,7 +1761,8 @@ impl<'a> BindingsBuilder<'a> {
                     if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
                         exhaustive = true;
                     }
-                    self.bind_pattern(subject_name, case.pattern, key);
+                    let narrow_ops = self.bind_pattern(subject_name, case.pattern, key);
+                    self.bind_narrow_ops(&narrow_ops, case.range);
                     if let Some(guard) = case.guard {
                         self.ensure_expr(&guard);
                         self.table
