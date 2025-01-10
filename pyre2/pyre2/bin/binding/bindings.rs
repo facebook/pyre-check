@@ -20,6 +20,7 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
+use ruff_python_ast::ExprBooleanLiteral;
 use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprLambda;
 use ruff_python_ast::ExprName;
@@ -30,6 +31,7 @@ use ruff_python_ast::Identifier;
 use ruff_python_ast::Parameters;
 use ruff_python_ast::Pattern;
 use ruff_python_ast::PatternKeyword;
+use ruff_python_ast::Singleton;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
@@ -1326,6 +1328,24 @@ impl<'a> BindingsBuilder<'a> {
                     NarrowOps::new()
                 }
             }
+            Pattern::MatchSingleton(p) => {
+                let value = match p.value {
+                    Singleton::None => Expr::NoneLiteral(ExprNoneLiteral::default()),
+                    Singleton::True | Singleton::False => {
+                        Expr::BooleanLiteral(ExprBooleanLiteral {
+                            range: TextRange::default(),
+                            value: matches!(p.value, Singleton::True),
+                        })
+                    }
+                };
+                if let Some(subject_name) = subject_name {
+                    NarrowOps(
+                        smallmap! { subject_name.clone() => (NarrowOp::Is(Box::new(value)), p.range()) },
+                    )
+                } else {
+                    NarrowOps::new()
+                }
+            }
             Pattern::MatchAs(p) => {
                 // If there's no name for this pattern, refine the variable being matched
                 // If there is a new name, refine that instead
@@ -1455,7 +1475,7 @@ impl<'a> BindingsBuilder<'a> {
                         )
                     }
                     let mut base = self.scopes.last().flow.clone();
-                    let new_narrow_ops = self.bind_pattern(None, pattern, key);
+                    let new_narrow_ops = self.bind_pattern(subject_name, pattern, key);
                     if let Some(ref mut ops) = narrow_ops {
                         ops.or_all(new_narrow_ops)
                     } else {
@@ -1467,7 +1487,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.scopes.last_mut().flow = self.merge_flow(branches, range, false);
                 narrow_ops.unwrap_or_default()
             }
-            _ => NarrowOps::new(),
+            Pattern::MatchStar(_) => NarrowOps::new(),
         }
     }
 

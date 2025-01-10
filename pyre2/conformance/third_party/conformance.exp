@@ -8732,16 +8732,6 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "assert_type(Literal[Color.BLUE, Color.RED], Never) failed",
-      "description": "assert_type(Literal[Color.BLUE, Color.RED], Never) failed",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
@@ -8763,8 +8753,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "assert_type(Literal[CustomFlags.FLAG1, CustomFlags.FLAG2], CustomFlags) failed",
-      "description": "assert_type(Literal[CustomFlags.FLAG1, CustomFlags.FLAG2], CustomFlags) failed",
+      "concise_description": "assert_type(Never, CustomFlags) failed",
+      "description": "assert_type(Never, CustomFlags) failed",
       "line": 63,
       "name": "PyreError",
       "stop_column": 40,

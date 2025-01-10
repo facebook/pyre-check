@@ -393,3 +393,16 @@ def f(e: E):
             assert_type(e, Literal[E.Z])
     "#,
 );
+
+testcase!(
+    test_match_or,
+    r#"
+from typing import assert_type, Literal
+def f(e: bool | None):
+    match e:
+        case True | None:
+            assert_type(e, Literal[True] | None)
+        case _:
+            assert_type(e, Literal[False])
+    "#,
+);
