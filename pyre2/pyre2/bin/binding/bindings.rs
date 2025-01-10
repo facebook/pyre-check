@@ -256,7 +256,7 @@ impl ClassBodyInner {
 /// Information about an instance attribute coming from a `self` assignment
 /// in a method.
 #[derive(Clone, Debug)]
-struct InstanceAttribute(Binding, Option<Idx<KeyAnnotation>>);
+struct InstanceAttribute(Binding, Option<Idx<KeyAnnotation>>, TextRange);
 
 #[derive(Clone, Debug)]
 struct MethodInner {
@@ -843,9 +843,10 @@ impl<'a> BindingsBuilder<'a> {
                 && matches!(&*x.value, Expr::Name(name) if name.id == self_name.id)
             {
                 if !method.instance_attributes.contains_key(&x.attr.id) {
-                    method
-                        .instance_attributes
-                        .insert(x.attr.id.clone(), InstanceAttribute(binding, annotation));
+                    method.instance_attributes.insert(
+                        x.attr.id.clone(),
+                        InstanceAttribute(binding, annotation, x.attr.range()),
+                    );
                 }
                 return true;
             }
@@ -1267,7 +1268,14 @@ impl<'a> BindingsBuilder<'a> {
                 } else {
                     ClassFieldInitialization::Instance
                 };
-                let binding = BindingClassField(flow_type, info.ann.dupe(), initialization);
+                let binding = BindingClassField {
+                    class: definition_key,
+                    name: name.clone(),
+                    value: flow_type,
+                    annotation: info.ann.dupe(),
+                    range: stat_info.loc,
+                    initialization,
+                };
                 fields.insert(name.clone());
                 self.table.insert(
                     KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
@@ -1282,12 +1290,15 @@ impl<'a> BindingsBuilder<'a> {
                         if !fields.contains(&name) {
                             fields.insert(name.clone());
                             self.table.insert(
-                                KeyClassField(ShortIdentifier::new(&x.name), name),
-                                BindingClassField(
-                                    attribute.0,
-                                    attribute.1,
-                                    ClassFieldInitialization::Instance,
-                                ),
+                                KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
+                                BindingClassField {
+                                    class: definition_key,
+                                    name,
+                                    value: attribute.0,
+                                    annotation: attribute.1,
+                                    range: attribute.2,
+                                    initialization: ClassFieldInitialization::Instance,
+                                },
                             );
                         }
                     }

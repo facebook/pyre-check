@@ -51,7 +51,7 @@ assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 assert_eq_size!(Binding, [usize; 9]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
 assert_eq_size!(BindingClassMetadata, [usize; 8]);
-assert_eq_size!(BindingClassField, [usize; 10]);
+assert_eq_size!(BindingClassField, [usize; 15]);
 assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
 
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
@@ -637,15 +637,18 @@ pub enum ClassFieldInitialization {
 /// either the class body or in method (like `__init__`) that we recognize as
 /// defining instance attributes.
 #[derive(Clone, Debug)]
-pub struct BindingClassField(
-    pub Binding,
-    pub Option<Idx<KeyAnnotation>>,
-    pub ClassFieldInitialization,
-);
+pub struct BindingClassField {
+    pub class: Idx<Key>,
+    pub name: Name,
+    pub value: Binding,
+    pub annotation: Option<Idx<KeyAnnotation>>,
+    pub range: TextRange,
+    pub initialization: ClassFieldInitialization,
+}
 
 impl DisplayWith<Bindings> for BindingClassField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
-        write!(f, "class field {}", self.0.display_with(ctx))
+        write!(f, "class field {}", self.value.display_with(ctx))
     }
 }
 

@@ -140,6 +140,10 @@ impl Enum {
             None
         }
     }
+
+    pub fn class_type(&self) -> &ClassType {
+        &self.0
+    }
 }
 
 fn is_unbound_function(ty: &Type) -> bool {
@@ -683,10 +687,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Given an identifier, see whether it is bound to an enum class. If so,
     /// return the enum, otherwise return `None`.
     pub fn get_enum_from_name(&self, name: Identifier) -> Option<Enum> {
+        self.get_enum_from_key(
+            self.bindings()
+                .key_to_idx(&Key::Usage(ShortIdentifier::new(&name))),
+        )
+    }
+
+    pub fn get_enum_from_key(&self, key: Idx<Key>) -> Option<Enum> {
         // TODO(stroxler): Eventually, we should raise type errors on generic Enum because
         // this doesn't make semantic sense. But in the meantime we need to be robust against
         // this possibility.
-        match self.get(&Key::Usage(ShortIdentifier::new(&name))).deref() {
+        match self.get_idx(key).deref() {
             Type::ClassDef(class) => self.get_enum(&self.promote_to_class_type_silently(class)),
             _ => None,
         }

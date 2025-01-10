@@ -80,3 +80,25 @@ for e in E:
     assert_type(e, E)
     "#,
 );
+
+testcase!(
+    test_value_annotation,
+    r#"
+from enum import Enum
+
+class MyEnum(Enum):
+    _value_: int
+    X = 1
+    Y = "FOO"  # E: The value for enum member `Y` must match the annotation of the _value_ attribute.
+"#,
+);
+
+testcase!(
+    test_member_annotation,
+    r#"
+from enum import Enum
+
+class MyEnum(Enum):
+    X: int = 1  # E: Enum member `X` may not be annotated directly. Instead, annotate the _value_ attribute.
+"#,
+);

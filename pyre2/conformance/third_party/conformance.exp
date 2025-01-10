@@ -8856,6 +8856,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "The value for enum member `GREEN` must match the annotation of the _value_ attribute.",
+      "description": "The value for enum member `GREEN` must match the annotation of the _value_ attribute.",
+      "line": 78,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 78
+    },
+    {
+      "code": -2,
       "column": 24,
       "concise_description": "EXPECTED int <: str",
       "description": "EXPECTED int <: str",
@@ -8995,6 +9005,16 @@
       "name": "PyreError",
       "stop_column": 39,
       "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Enum member `DOG` may not be annotated directly. Instead, annotate the _value_ attribute.",
+      "description": "Enum member `DOG` may not be annotated directly. Instead, annotate the _value_ attribute.",
+      "line": 50,
+      "name": "PyreError",
+      "stop_column": 8,
+      "stop_line": 50
     },
     {
       "code": -2,

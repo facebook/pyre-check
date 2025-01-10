@@ -616,11 +616,9 @@
   ],
   "enums_member_names.py": [],
   "enums_member_values.py": [
-    "Line 78: Expected 1 errors",
     "Line 90: Unexpected errors ['Could not find import of `_enums_member_values`, Could not find path for `_enums_member_values`']"
   ],
   "enums_members.py": [
-    "Line 50: Expected 1 errors",
     "Line 82: Expected 1 errors",
     "Line 83: Expected 1 errors",
     "Line 84: Expected 1 errors",
