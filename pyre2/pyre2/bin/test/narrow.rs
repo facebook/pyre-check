@@ -373,3 +373,23 @@ if (x := f()) is None:
     assert_type(x, None)
     "#,
 );
+
+testcase!(
+    test_match_enum_fallback,
+    r#"
+from typing import assert_type, Literal
+from enum import Enum
+class E(Enum):
+    X = 1
+    Y = 2
+    Z = 3
+def f(e: E):
+    match e:
+        case E.X:
+            assert_type(e, Literal[E.X])
+        case E.Y:
+            assert_type(e, Literal[E.Y])
+        case _:
+            assert_type(e, Literal[E.Z])
+    "#,
+);

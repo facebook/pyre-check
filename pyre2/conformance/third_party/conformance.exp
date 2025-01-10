@@ -8733,8 +8733,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "assert_type(Color, Never) failed",
-      "description": "assert_type(Color, Never) failed",
+      "concise_description": "assert_type(Literal[Color.BLUE, Color.RED], Never) failed",
+      "description": "assert_type(Literal[Color.BLUE, Color.RED], Never) failed",
       "line": 35,
       "name": "PyreError",
       "stop_column": 34,
@@ -8759,6 +8759,16 @@
       "name": "PyreError",
       "stop_column": 36,
       "stop_line": 52
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "assert_type(Literal[CustomFlags.FLAG1, CustomFlags.FLAG2], CustomFlags) failed",
+      "description": "assert_type(Literal[CustomFlags.FLAG1, CustomFlags.FLAG2], CustomFlags) failed",
+      "line": 63,
+      "name": "PyreError",
+      "stop_column": 40,
+      "stop_line": 63
     }
   ],
   "enums_member_names.py": [

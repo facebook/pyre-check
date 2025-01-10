@@ -1692,7 +1692,7 @@ impl<'a> BindingsBuilder<'a> {
                 //     pass
                 // x is bound to Narrow(x, Is(None)) in the if branch, and the negation, Narrow(x, IsNot(None)),
                 // is carried over to the else branch.
-                let mut narrow_ops = NarrowOps::new();
+                let mut negated_prev_ops = NarrowOps::new();
                 for (test, body) in Ast::if_branches_owned(x) {
                     let b = self.config.evaluate_bool_opt(test.as_ref());
                     if b == Some(false) {
@@ -1703,10 +1703,10 @@ impl<'a> BindingsBuilder<'a> {
                     let new_narrow_ops = NarrowOps::from_expr(test);
                     if let Some(stmt) = body.first() {
                         let use_range = stmt.range();
-                        self.bind_narrow_ops(&narrow_ops, use_range);
+                        self.bind_narrow_ops(&negated_prev_ops, use_range);
                         self.bind_narrow_ops(&new_narrow_ops, use_range);
                     }
-                    narrow_ops.and_all(new_narrow_ops.negate());
+                    negated_prev_ops.and_all(new_narrow_ops.negate());
                     self.stmts(body);
                     mem::swap(&mut self.scopes.last_mut().flow, &mut base);
                     branches.push(base);
@@ -1756,13 +1756,24 @@ impl<'a> BindingsBuilder<'a> {
                 let mut exhaustive = false;
                 let range = x.range;
                 let mut branches = Vec::new();
+                // Type narrowing operations that are carried over from one case to the next. For example, in:
+                //   match x:
+                //     case None:
+                //       pass
+                //     case _:
+                //       pass
+                // x is bound to Narrow(x, Eq(None)) in the first case, and the negation, Narrow(x, NotEq(None)),
+                // is carried over to the fallback case.
+                let mut negated_prev_ops = NarrowOps::new();
                 for case in x.cases {
                     let mut base = self.scopes.last().flow.clone();
                     if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
                         exhaustive = true;
                     }
-                    let narrow_ops = self.bind_pattern(subject_name, case.pattern, key);
-                    self.bind_narrow_ops(&narrow_ops, case.range);
+                    let new_narrow_ops = self.bind_pattern(subject_name, case.pattern, key);
+                    self.bind_narrow_ops(&negated_prev_ops, case.range);
+                    self.bind_narrow_ops(&new_narrow_ops, case.range);
+                    negated_prev_ops.and_all(new_narrow_ops.negate());
                     if let Some(guard) = case.guard {
                         self.ensure_expr(&guard);
                         self.table
