@@ -623,6 +623,22 @@ impl<'a> BindingsBuilder<'a> {
 
     /// Execute through the expr, ensuring every name has a binding.
     fn ensure_expr(&mut self, x: &Expr) {
+        if let Expr::If(x) = x {
+            // Ternary operation. We treat it like an if/else statement.
+            let base = self.scopes.last().flow.clone();
+            self.ensure_expr(&x.test);
+            let narrow_ops = NarrowOps::from_expr(Some((*x.test).clone()));
+            self.bind_narrow_ops(&narrow_ops, x.body.range());
+            self.ensure_expr(&x.body);
+            let if_branch = self.scopes.last().flow.clone();
+            self.scopes.last_mut().flow = base;
+            self.bind_narrow_ops(&narrow_ops.negate(), x.orelse.range());
+            self.ensure_expr(&x.orelse);
+            let else_branch = self.scopes.last().flow.clone();
+            self.scopes.last_mut().flow =
+                self.merge_flow(vec![if_branch, else_branch], x.range, false);
+            return;
+        }
         let new_scope = match x {
             Expr::Name(x) => {
                 let name = Ast::expr_name_identifier(x.clone());

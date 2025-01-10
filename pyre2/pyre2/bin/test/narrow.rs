@@ -406,3 +406,15 @@ def f(e: bool | None):
             assert_type(e, Literal[False])
     "#,
 );
+
+testcase!(
+    test_ternary,
+    r#"
+from typing import assert_type
+def f(x: str | None, y: int):
+    z = x if x else y
+    assert_type(x, str | None)
+    assert_type(y, int)
+    assert_type(z, str | int)
+    "#,
+);
