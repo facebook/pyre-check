@@ -11,6 +11,8 @@ use ruff_python_ast::CmpOp;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBoolOp;
 use ruff_python_ast::ExprCompare;
+use ruff_python_ast::ExprName;
+use ruff_python_ast::ExprNamed;
 use ruff_python_ast::ExprUnaryOp;
 use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
@@ -114,23 +116,33 @@ impl NarrowOps {
         match test {
             Some(Expr::Compare(ExprCompare {
                 range: _,
-                left: box Expr::Name(name),
-                ops,
+                left,
+                ops: cmp_ops,
                 comparators,
             })) => {
                 let mut narrow_ops = Self::new();
-                for (cmp_op, right) in ops.iter().zip(comparators) {
-                    let range = right.range();
-                    let (name, op) = match cmp_op {
-                        CmpOp::Is => (name.id.clone(), NarrowOp::Is(Box::new(right))),
-                        CmpOp::IsNot => (name.id.clone(), NarrowOp::IsNot(Box::new(right))),
-                        CmpOp::Eq => (name.id.clone(), NarrowOp::Eq(Box::new(right))),
-                        CmpOp::NotEq => (name.id.clone(), NarrowOp::NotEq(Box::new(right))),
-                        _ => {
-                            continue;
-                        }
-                    };
-                    narrow_ops.and(name, op, range);
+                let names = expr_to_names(&left);
+                let ops = cmp_ops
+                    .iter()
+                    .zip(comparators)
+                    .filter_map(|(cmp_op, right)| {
+                        let range = right.range();
+                        let op = match cmp_op {
+                            CmpOp::Is => NarrowOp::Is(Box::new(right)),
+                            CmpOp::IsNot => NarrowOp::IsNot(Box::new(right)),
+                            CmpOp::Eq => NarrowOp::Eq(Box::new(right)),
+                            CmpOp::NotEq => NarrowOp::NotEq(Box::new(right)),
+                            _ => {
+                                return None;
+                            }
+                        };
+                        Some((op, range))
+                    });
+
+                for (op, range) in ops {
+                    for name in names.iter() {
+                        narrow_ops.and(name.id.clone(), op.clone(), range);
+                    }
                 }
                 narrow_ops
             }
@@ -166,10 +178,29 @@ impl NarrowOps {
                 op: UnaryOp::Not,
                 operand: box e,
             })) => Self::from_expr(Some(e)).negate(),
-            Some(Expr::Name(name)) => {
-                Self(smallmap! { name.id.clone() => (NarrowOp::Truthy, name.range()) })
+            Some(e) => {
+                let mut narrow_ops = NarrowOps::new();
+                for name in expr_to_names(&e) {
+                    narrow_ops.and(name.id, NarrowOp::Truthy, e.range());
+                }
+                narrow_ops
             }
-            _ => Self::new(),
+            None => NarrowOps::new(),
         }
+    }
+}
+
+fn expr_to_names(expr: &Expr) -> Vec<ExprName> {
+    match expr {
+        Expr::Name(name) => vec![name.clone()],
+        Expr::Named(ExprNamed {
+            range: _,
+            target,
+            value,
+        }) => expr_to_names(target)
+            .into_iter()
+            .chain(expr_to_names(value))
+            .collect(),
+        _ => Vec::new(),
     }
 }

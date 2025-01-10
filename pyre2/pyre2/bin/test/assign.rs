@@ -470,18 +470,6 @@ x3: B
 );
 
 testcase_with_bug!(
-    "Wrong asserted type",
-    test_walrus_narrow,
-    r#"
-from typing import assert_type
-def f() -> str | None:
-    pass
-if x := f():
-    assert_type(x, str | None)  # type should be 'str'
-    "#,
-);
-
-testcase_with_bug!(
     "False negative",
     test_read_before_write,
     r#"

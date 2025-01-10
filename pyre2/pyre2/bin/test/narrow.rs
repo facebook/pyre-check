@@ -340,3 +340,36 @@ class C:
         assert_type(x, None)
     "#,
 );
+
+testcase!(
+    test_walrus_target,
+    r#"
+from typing import assert_type
+def f() -> str | None:
+    pass
+if x := f():
+    assert_type(x, str)
+    "#,
+);
+
+testcase!(
+    test_walrus_value,
+    r#"
+from typing import assert_type
+def f(x: int | None):
+    if y := x:
+        assert_type(x, int)
+        assert_type(y, int)
+    "#,
+);
+
+testcase!(
+    test_walrus_comparison,
+    r#"
+from typing import assert_type
+def f() -> str | None:
+    pass
+if (x := f()) is None:
+    assert_type(x, None)
+    "#,
+);
