@@ -74,12 +74,12 @@ impl NarrowOps {
     pub fn negate(&self) -> Self {
         if self.0.len() == 1 {
             let (name, (op, range)) = self.0.first().unwrap();
-            NarrowOps(smallmap! {
+            Self(smallmap! {
                 name.clone() => (op.negate(), *range)
             })
         } else {
             // We don't have a way to model an `or` condition involving multiple variables (e.g., `x is None or not y`).
-            NarrowOps::new()
+            Self::new()
         }
     }
 
@@ -91,22 +91,22 @@ impl NarrowOps {
         }
     }
 
-    pub fn and_all(&mut self, other: NarrowOps) {
+    pub fn and_all(&mut self, other: Self) {
         for (name, (op, range)) in other.0.into_iter() {
             self.and(name, op, range);
         }
     }
 
-    pub fn or_all(&mut self, other: NarrowOps) {
+    pub fn or_all(&mut self, other: Self) {
         // We can only model an `or` condition involving a single variable.
         if self.0.len() != 1 || other.0.len() != 1 {
-            *self = NarrowOps::new();
+            *self = Self::new();
             return;
         }
         let (self_name, (self_op, _)) = self.0.iter_mut().next().unwrap();
         let (other_name, (other_op, _)) = other.0.into_iter_hashed().next().unwrap();
         if *self_name != *other_name {
-            *self = NarrowOps::new();
+            *self = Self::new();
             return;
         }
         self_op.or(other_op);
@@ -179,13 +179,13 @@ impl NarrowOps {
                 operand: box e,
             })) => Self::from_expr(Some(e)).negate(),
             Some(e) => {
-                let mut narrow_ops = NarrowOps::new();
+                let mut narrow_ops = Self::new();
                 for name in expr_to_names(&e) {
                     narrow_ops.and(name.id, NarrowOp::Truthy, e.range());
                 }
                 narrow_ops
             }
-            None => NarrowOps::new(),
+            None => Self::new(),
         }
     }
 }
