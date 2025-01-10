@@ -83,7 +83,7 @@ impl BundledTypeshed {
     }
 }
 
-pub fn find_module(name: ModuleName, include: &[PathBuf]) -> anyhow::Result<PathBuf> {
+pub fn find_module(name: ModuleName, include: &[PathBuf]) -> Option<PathBuf> {
     let parts = name.components();
     let possibilities = vec![
         parts.join("/") + ".pyi",
@@ -97,9 +97,9 @@ pub fn find_module(name: ModuleName, include: &[PathBuf]) -> anyhow::Result<Path
             let path = include.join(suffix);
             if path.exists() {
                 debug!("Found {name} at {}", path.display());
-                return Ok(path);
+                return Some(path);
             }
         }
     }
-    Err(anyhow::anyhow!("Could not find path for `{name}`"))
+    None
 }

@@ -49,13 +49,6 @@ impl LoadResult {
         }
     }
 
-    pub fn from_path_result(path: anyhow::Result<PathBuf>) -> Self {
-        match path {
-            Ok(path) => Self::from_path(path),
-            Err(err) => LoadResult::FailedToFind(err),
-        }
-    }
-
     pub fn components(self, module_name: ModuleName) -> LoadResultComponents {
         match self {
             LoadResult::Loaded(path, code) => LoadResultComponents {

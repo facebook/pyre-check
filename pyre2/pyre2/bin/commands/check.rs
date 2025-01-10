@@ -78,10 +78,14 @@ impl Loader for CheckLoader {
     fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
         let load_result = match self.sources.get(&name) {
             Some(path) => LoadResult::from_path((*path).clone()),
-            None => match self.typeshed.find(name) {
-                Some((path, content)) => LoadResult::Loaded(path, content),
-                // TODO(grievejia): Swap the search ordering between typeshed and search_roots
-                None => LoadResult::from_path_result(find_module(name, &self.search_roots)),
+            None => match find_module(name, &self.search_roots) {
+                Some(path) => LoadResult::from_path(path),
+                None => match self.typeshed.find(name) {
+                    Some((path, content)) => LoadResult::Loaded(path, content),
+                    None => LoadResult::FailedToFind(anyhow::anyhow!(
+                        "Could not find path for `{name}`"
+                    )),
+                },
             },
         };
         (load_result, self.error_style)

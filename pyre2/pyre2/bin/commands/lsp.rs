@@ -159,10 +159,12 @@ impl Loader for LspLoader {
                 (*path).clone(),
                 self.open_files.get(path).unwrap().1.clone(),
             )
+        } else if let Some(path) = find_module(name, &self.search_roots) {
+            LoadResult::from_path(path)
         } else if let Some((path, content)) = self.typeshed.find(name) {
             LoadResult::Loaded(path, content)
         } else {
-            LoadResult::from_path_result(find_module(name, &self.search_roots))
+            LoadResult::FailedToFind(anyhow!("Could not find path for `{name}`"))
         };
         (
             loaded,
@@ -332,7 +334,7 @@ impl<'a> Server<'a> {
         let info = self.state.get_module_info(module)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
         let (module, range) = self.state.goto_definition(module, range)?;
-        let path = find_module(module, &self.include).ok()?;
+        let path = find_module(module, &self.include)?;
         let info = self.state.get_module_info(module)?;
         let path = std::fs::canonicalize(&path).unwrap_or(path);
         Some(GotoDefinitionResponse::Scalar(Location {
