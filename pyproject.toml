@@ -37,3 +37,35 @@ excludes = [
     "stubs/",
     "pyre2/",
 ]
+
+[tool.pyre]
+exclude = [
+    ".*/documentation/.*",
+    ".*/generate_taint_models/.*",
+    ".*/scripts/.*",
+    ".*/source/.*",
+    ".*/pyre-check/stubs/.*",
+]
+ignore_all_errors = [
+    "client/tests/configuration_test.py",
+    "pyre_extensions/safe_json.py",
+]
+search_path = [
+    { site-package = "click" },
+    { site-package = "dataclasses_json" },
+    { site-package = "flask" },
+    { site-package = "flask_cors" },
+    { site-package = "graphql" },
+    { site-package = "libcst" },
+    { site-package = "marshmallow" },
+    { site-package = "psutil" },
+    { site-package = "testslide" },
+    { site-package = "toml" },
+    { site-package = "tabulate" },
+    { site-package = "tomli" },
+    { site-package = "tomli_w" },
+    { is_toplevel_module = true, site-package = "typing_extensions" },
+    { is_toplevel_module = true, site-package = "typing_inspect" },
+]
+source_directories = ["."]
+strict = true

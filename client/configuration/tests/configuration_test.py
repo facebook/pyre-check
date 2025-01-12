@@ -15,6 +15,8 @@ from pathlib import Path
 import testslide
 
 from ... import command_arguments
+from ...find_directories import TOML_CONFIGURATION_FILE
+from ...commands.initialize import write_configuration
 from ...tests.setup import (
     ensure_directories_exists,
     ensure_files_exist,
@@ -1165,3 +1167,56 @@ class ConfigurationTest(testslide.TestCase):
                     SimpleElement(str(root_path / "b")),
                 ],
             )
+    def test_pyproject_dot_toml_configuration_from_string_and_file(self) -> None:
+        pyproject_config: str = """[tool.pyre]
+exclude = ["sample/exclude1", "sample/exclude2"]
+strict = true
+"""
+        config = PartialConfiguration.from_string(pyproject_config, True)
+        self.assertEqual(config.excludes, ["sample/exclude1", "sample/exclude2"])
+        self.assertEqual(config.strict, True)
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            with open(
+                root_path / TOML_CONFIGURATION_FILE, "w", encoding="UTF-8"
+            ) as configuration_file:
+                configuration_file.write(pyproject_config)
+            config = PartialConfiguration.from_file(
+                root_path / TOML_CONFIGURATION_FILE, True
+            )
+            self.assertEqual(config.excludes, ["sample/exclude1", "sample/exclude2"])
+            self.assertEqual(config.strict, True)
+
+    def test_pyproject_dot_toml_with_no_json_configuration_file(self) -> None:
+        pyproject_config: str = """[tool.pyre]
+exclude = ["another/sample/exclude1", "another/sample/exclude2"]
+strict = false
+        """
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            with open(
+                root_path / TOML_CONFIGURATION_FILE, "w", encoding="UTF-8"
+            ) as configuration_file:
+                configuration_file.write(pyproject_config)
+            config = create_configuration(
+                command_arguments.CommandArguments(), root_path
+            )
+            self.assertEqual(
+                config.excludes, ["another/sample/exclude1", "another/sample/exclude2"]
+            )
+            self.assertEqual(config.strict, False)
+    def test_write_to_pyproject_dot_toml(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            config = {"excludes": ["sample/exclude1", "sample/exclude2"], "strict": True}
+            write_configuration(config, root_path / TOML_CONFIGURATION_FILE)
+            with open(
+                root_path / TOML_CONFIGURATION_FILE, "r", encoding="UTF-8"
+            ) as configuration_file:
+                self.assertEqual(
+                    configuration_file.read(),
+                    """[tool.pyre]
+exclude = ["sample/exclude1", "sample/exclude2"]
+strict = true
+""",
+                )

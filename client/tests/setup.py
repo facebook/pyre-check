@@ -35,7 +35,7 @@ from typing import (
 
 from pyre_extensions import ParameterSpecification
 
-from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
+from ..find_directories import JSON_CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
 
 TParams = ParameterSpecification("TParams")
 T = TypeVar("T")
@@ -59,7 +59,7 @@ def write_configuration_file(
     content: Mapping[str, Any],
     relative: Optional[str] = None,
 ) -> None:
-    configuration_file = CONFIGURATION_FILE
+    configuration_file = JSON_CONFIGURATION_FILE
     if relative is None:
         (root / configuration_file).write_text(json.dumps(content))
     else:

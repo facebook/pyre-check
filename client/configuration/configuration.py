@@ -47,10 +47,16 @@ from typing import (
 
 import psutil
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
 from .. import command_arguments, dataclasses_merge, find_directories, identifiers
 from ..filesystem import expand_global_root, expand_relative_path
 from ..find_directories import (
-    CONFIGURATION_FILE,
+    JSON_CONFIGURATION_FILE,
+    TOML_CONFIGURATION_FILE,
     get_relative_local_root,
     LOCAL_CONFIGURATION_FILE,
 )
@@ -250,7 +256,7 @@ class PartialConfiguration:
         )
 
     @staticmethod
-    def from_string(contents: str) -> "PartialConfiguration":
+    def from_string(contents: str, is_pyproject_dot_toml: bool = False) -> "PartialConfiguration":
         def is_list_of_string(elements: object) -> bool:
             return isinstance(elements, list) and all(
                 isinstance(element, str) for element in elements
@@ -337,7 +343,13 @@ class PartialConfiguration:
             return search_path
 
         try:
-            configuration_json = json.loads(contents)
+            if is_pyproject_dot_toml:
+                # For usual, we write pyproject.toml as
+                # [tool.pyre]
+                # ...<configurations>
+                configuration_json = tomllib.loads(contents)["tool"]["pyre"]
+            else:
+                configuration_json = json.loads(contents)
 
             dot_pyre_directory = ensure_option_type(
                 configuration_json, "dot_pyre_directory", str
@@ -500,14 +512,16 @@ class PartialConfiguration:
                     LOG.warning(f"Unrecognized configuration item: {unrecognized_key}")
 
             return partial_configuration
-        except json.JSONDecodeError as error:
-            raise exceptions.InvalidConfiguration("Invalid JSON file") from error
+        except (json.JSONDecodeError, tomllib.TOMLDecodeError) as error:
+            raise exceptions.InvalidConfiguration(
+                f'Invalid {"TOML" if is_pyproject_dot_toml else "JSON"} file'
+            ) from error
 
     @staticmethod
-    def from_file(path: Path) -> "PartialConfiguration":
+    def from_file(path: Path, is_pyproject_dot_toml: bool = False) -> "PartialConfiguration":
         try:
             contents = path.read_text(encoding="utf-8")
-            return PartialConfiguration.from_string(contents)
+            return PartialConfiguration.from_string(contents, is_pyproject_dot_toml)
         except OSError as error:
             raise exceptions.InvalidConfiguration(
                 f"Error when reading {path}"
@@ -948,8 +962,8 @@ def create_configuration(
     if local_root_argument is not None:
         if found_root is None:
             raise exceptions.InvalidConfiguration(
-                "A local configuration path was explicitly specified, but no"
-                + f" {CONFIGURATION_FILE} file was found in {search_base}"
+                "A local configuration path was explicitly specified, but neither"
+                + f" {JSON_CONFIGURATION_FILE} nor {TOML_CONFIGURATION_FILE} file was found in {search_base}"
                 + " or its parents."
             )
         elif found_root.local_root is None:
@@ -969,9 +983,17 @@ def create_configuration(
     else:
         project_root = found_root.global_root
         relative_local_root = None
-        partial_configuration = PartialConfiguration.from_file(
-            project_root / CONFIGURATION_FILE
-        ).expand_relative_paths(str(project_root))
+        if (project_root / JSON_CONFIGURATION_FILE).is_file():
+            partial_configuration = PartialConfiguration.from_file(
+                project_root / JSON_CONFIGURATION_FILE
+            ).expand_relative_paths(str(project_root))
+        else:
+            LOG.debug(
+                "Could not find `.pyre_configuration` in the project root.Searching for `pyproject.toml`..."
+            )
+            partial_configuration = PartialConfiguration.from_file(
+                project_root / TOML_CONFIGURATION_FILE, True
+            ).expand_relative_paths(str(project_root))
         local_root = found_root.local_root
         if local_root is not None:
             relative_local_root = get_relative_local_root(project_root, local_root)

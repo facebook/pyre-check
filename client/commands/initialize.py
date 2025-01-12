@@ -20,10 +20,18 @@ from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
+import tomli_w
+
 from .. import log
 from ..find_directories import (
     BINARY_NAME,
-    CONFIGURATION_FILE,
+    JSON_CONFIGURATION_FILE,
+    TOML_CONFIGURATION_FILE,
     find_global_root,
     find_parent_directory_containing_file,
     find_taint_models_directories,
@@ -55,7 +63,7 @@ def _create_source_directory_element(source: str) -> Union[str, Dict[str, str]]:
         return source
 
 
-def _check_configuration_file_location(
+def _check_json_configuration_file_location(
     configuration_path: Path, current_directory: Path, global_root: Optional[Path]
 ) -> None:
     if os.path.isfile(configuration_path):
@@ -78,6 +86,18 @@ def _check_configuration_file_location(
             + f"`{str(local_configuration_path)}`."
         )
 
+def _check_toml_configuration_file_content(
+    configuration_path: Path, global_root: Optional[Path]
+) -> None:
+    if configuration_path.is_file() and not global_root:
+        toml_configurations = tomllib.loads(configuration_path.read_text())
+        try:
+            toml_configurations["tool"]["pyre"]
+        except KeyError:
+            return
+        raise InitializationException(
+            f"A Pyre configuration already exists at {str(configuration_path)}"
+        )
 
 def _get_local_configuration(
     current_directory: Path, buck_root: Optional[Path]
@@ -218,15 +238,27 @@ def get_configuration_and_path(
         Path("."), ".buckconfig"
     )
     current_directory: Path = Path(os.getcwd())
-    configuration_path = current_directory / CONFIGURATION_FILE
-    _check_configuration_file_location(
-        configuration_path, current_directory, global_root
+    configuration_path_json = current_directory / JSON_CONFIGURATION_FILE
+    configuration_path_toml = current_directory / TOML_CONFIGURATION_FILE
+    _check_json_configuration_file_location(
+        configuration_path_json, current_directory, global_root
     )
+    _check_toml_configuration_file_content(configuration_path_toml, global_root)
     local_configuration_path = current_directory / LOCAL_CONFIGURATION_FILE
     if global_root:
         configuration_path = local_configuration_path
         configuration = _get_local_configuration(current_directory, buck_root)
     else:
+        where_to_store = log.get_input(
+            f"Should pyre store configuration at `{JSON_CONFIGURATION_FILE}` or `{TOML_CONFIGURATION_FILE}`?",
+            suffix="Type `JSON` or `TOML` to answer(lower case work as well).Default is `JSON`",
+        ).upper()
+        if where_to_store in ("JSON", ""):
+            configuration_path = configuration_path_json
+        elif where_to_store == "TOML":
+            configuration_path = configuration_path_toml
+        else:
+            raise InitializationException("Please answer `JSON` or `TOML`.")
         configuration = _get_configuration(taint_models_directory_required)
     return configuration, configuration_path
 
@@ -235,7 +267,12 @@ def write_configuration(
     configuration: Dict[str, Any], configuration_path: Path
 ) -> None:
     with open(configuration_path, "w+") as configuration_file:
-        json.dump(configuration, configuration_file, sort_keys=True, indent=2)
+        if configuration_path.suffix.lower() == ".toml":
+            configuration = {"tool": {"pyre": configuration}}  # [tool.pyre] section
+            tomli_w.dump(configuration, configuration_file)
+        else:
+            # assume to JSON
+            json.dump(configuration, configuration_file, sort_keys=True, indent=2)
         configuration_file.write("\n")
 
 
