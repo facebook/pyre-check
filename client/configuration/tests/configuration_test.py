@@ -1216,7 +1216,10 @@ strict = false
                 self.assertEqual(
                     configuration_file.read(),
                     """[tool.pyre]
-exclude = ["sample/exclude1", "sample/exclude2"]
+excludes = [
+    "sample/exclude1",
+    "sample/exclude2",
+]
 strict = true
 """,
                 )

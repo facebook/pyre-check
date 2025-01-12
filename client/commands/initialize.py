@@ -266,12 +266,13 @@ def get_configuration_and_path(
 def write_configuration(
     configuration: Dict[str, Any], configuration_path: Path
 ) -> None:
-    with open(configuration_path, "wb+") as configuration_file:
-        if configuration_path.suffix.lower() == ".toml":
+    if configuration_path.suffix.lower() == ".toml":
+        with open(configuration_path, "wb+") as configuration_file:
             configuration = {"tool": {"pyre": configuration}}  # [tool.pyre] section
             tomli_w.dump(configuration, configuration_file)
-        else:
-            # assume to JSON
+    else:
+        # assume to JSON
+        with open(configuration_path, "w+") as configuration_file:
             json.dump(configuration, configuration_file, sort_keys=True, indent=2)
         configuration_file.write("\n")
 
