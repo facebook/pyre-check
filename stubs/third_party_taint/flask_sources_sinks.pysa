@@ -84,7 +84,7 @@ ModelQuery(
   name = "get_route_sources_sinks",
   find = "functions",
   where = [
-    Decorator(fully_qualified_callee.equals("flask.scaffold.Scaffold.route")),
+    Decorator(fully_qualified_callee.equals("flask.sansio.scaffold.Scaffold.route")),
   ],
   model = [
     Parameters(TaintSource[UserControlled, UserControlled_Parameter]),
@@ -96,7 +96,7 @@ ModelQuery(
   name = "get_errorhandler_sinks",
   find = "functions",
   where = [
-    Decorator(fully_qualified_callee.equals("flask.scaffold.Scaffold.errorhandler")),
+    Decorator(fully_qualified_callee.equals("flask.sansio.scaffold.Scaffold.errorhandler")),
   ],
   model = [
     Returns(TaintSink[ReturnedToUser])
