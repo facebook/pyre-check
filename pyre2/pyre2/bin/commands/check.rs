@@ -9,6 +9,7 @@ use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
+use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Duration;
@@ -16,6 +17,7 @@ use std::time::Instant;
 
 use anyhow::Context as _;
 use clap::Parser;
+use clap::ValueEnum;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use tracing::info;
@@ -24,6 +26,7 @@ use crate::commands::common::CommonArgs;
 use crate::commands::util::module_from_path;
 use crate::config::Config;
 use crate::config::PythonVersion;
+use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::error::style::ErrorStyle;
 use crate::module::finder::find_module;
@@ -38,16 +41,23 @@ use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
 use crate::util::memory::MemoryUsageTrace;
 
+#[derive(Debug, Clone, ValueEnum, Default)]
+enum OutputFormat {
+    #[default]
+    Text,
+    Json,
+}
+
 #[derive(Debug, Parser, Clone)]
 pub struct Args {
     files: Vec<PathBuf>,
+    /// Write the errors to a file, instead of printing them.
     #[arg(long, short = 'o')]
     output: Option<PathBuf>,
     #[clap(long, short = 'I')]
     include: Vec<PathBuf>,
-    /// Write the errors to a file, instead of printing them.
-    #[clap(long)]
-    report_errors: Option<PathBuf>,
+    #[clap(long, value_enum, default_value_t)]
+    output_format: OutputFormat,
     /// Produce debugging information about the type checking process.
     #[clap(long)]
     debug_info: Option<PathBuf>,
@@ -92,6 +102,32 @@ impl Loader for CheckLoader {
     }
 }
 
+impl OutputFormat {
+    fn write_error_text_to_file(path: &Path, errors: &[Error]) -> anyhow::Result<()> {
+        let mut file = BufWriter::new(File::create(path)?);
+        for e in errors {
+            writeln!(file, "{e}")?;
+        }
+        file.flush()?;
+        Ok(())
+    }
+
+    fn write_error_json_to_file(path: &Path, errors: &[Error]) -> anyhow::Result<()> {
+        let legacy_errors = LegacyErrors::from_errors(errors);
+        let output_bytes = serde_json::to_string_pretty(&legacy_errors)
+            .with_context(|| "failed to serialize JSON value to bytes")?;
+        fs_anyhow::write(path, output_bytes.as_bytes())?;
+        Ok(())
+    }
+
+    fn write_errors_to_file(&self, path: &Path, errors: &[Error]) -> anyhow::Result<()> {
+        match self {
+            Self::Text => Self::write_error_text_to_file(path, errors),
+            Self::Json => Self::write_error_json_to_file(path, errors),
+        }
+    }
+}
+
 impl Args {
     pub fn run(self, allow_forget: bool) -> anyhow::Result<()> {
         let args = self;
@@ -117,7 +153,7 @@ impl Args {
                 }
             }
         }
-        let error_style = if args.report_errors.is_some() {
+        let error_style = if args.output.is_some() {
             ErrorStyle::Delayed
         } else {
             ErrorStyle::Immediate
@@ -150,12 +186,11 @@ impl Args {
             state.run(&modules)
         };
         let computing = start.elapsed();
-        if let Some(file) = args.report_errors {
-            let mut file = BufWriter::new(File::create(file)?);
-            for e in state.collect_errors() {
-                writeln!(file, "{e}")?;
-            }
-            file.flush()?;
+        if let Some(path) = args.output {
+            let errors = state.collect_errors();
+            args.output_format.write_errors_to_file(&path, &errors)?;
+        } else {
+            state.check_against_expectations()?;
         }
         let printing = start.elapsed();
         memory_trace.stop();
@@ -180,15 +215,6 @@ impl Args {
                 &path,
                 report::binding_memory::binding_memory(state).as_bytes(),
             )?;
-        }
-        if let Some(path) = args.output {
-            let errors = state.collect_errors();
-            let legacy_errors = LegacyErrors::from_errors(&errors);
-            let output_bytes = serde_json::to_string_pretty(&legacy_errors)
-                .with_context(|| "failed to serialize JSON value to bytes")?;
-            fs_anyhow::write(&path, output_bytes.as_bytes())?;
-        } else {
-            state.check_against_expectations()?;
         }
         Ok(())
     }
