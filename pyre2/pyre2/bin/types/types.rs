@@ -114,10 +114,6 @@ impl Quantified {
     pub fn is_param_spec(&self) -> bool {
         matches!(self.kind, QuantifiedKind::ParamSpec)
     }
-
-    pub fn id(&self) -> Unique {
-        self.unique
-    }
 }
 
 /// Bundles together type param info for passing around while building TParams.
@@ -358,8 +354,8 @@ pub enum Type {
     SpecialForm(SpecialForm),
     /// Used to represent `P.args`. The spec describes it as an annotation,
     /// but it's easier to think of it as a type that can't occur in nested positions.
-    Args(Unique),
-    Kwargs(Unique),
+    Args(Quantified),
+    Kwargs(Quantified),
     /// Used to represent a type that has a value representation, e.g. a class
     Type(Box<Type>),
     Ellipsis,
@@ -585,9 +581,6 @@ impl Type {
                 Type::Var(v) => {
                     // FIXME: Should mostly be forcing these before printing
                     v.zero();
-                }
-                Type::Args(id) | Type::Kwargs(id) => {
-                    *id = Unique::zero();
                 }
                 _ => {}
             }

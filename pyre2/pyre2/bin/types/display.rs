@@ -232,8 +232,16 @@ impl<'a> TypeDisplayContext<'a> {
             Type::Module(m) => write!(f, "Module[{m}]"),
             Type::Var(var) => write!(f, "{var}"),
             Type::Quantified(var) => self.fmt_quantified(var, f),
-            Type::Args(id) => write!(f, "Args[{id}]"),
-            Type::Kwargs(id) => write!(f, "Kwargs[{id}]"),
+            Type::Args(q) => {
+                write!(f, "Args[")?;
+                self.fmt_quantified(q, f)?;
+                write!(f, "]")
+            }
+            Type::Kwargs(q) => {
+                write!(f, "Kwargs[")?;
+                self.fmt_quantified(q, f)?;
+                write!(f, "]")
+            }
             Type::SpecialForm(x) => write!(f, "{x}"),
             Type::Ellipsis => write!(f, "Ellipsis"),
             Type::Any(style) => match style {

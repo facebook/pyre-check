@@ -160,9 +160,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             },
             Some(AttributeBase::Quantified(q)) => {
                 if q.is_param_spec() && attr_name == "args" {
-                    LookupResult::Found(Type::type_form(Type::Args(q.id())))
+                    LookupResult::Found(Type::type_form(Type::Args(q)))
                 } else if q.is_param_spec() && attr_name == "kwargs" {
-                    LookupResult::Found(Type::type_form(Type::Kwargs(q.id())))
+                    LookupResult::Found(Type::type_form(Type::Kwargs(q)))
                 } else {
                     let class = q.as_value(self.stdlib);
                     match self.get_instance_attribute(&class, attr_name) {
