@@ -154,6 +154,27 @@ table!(
     pub struct Solutions(pub SolutionsEntry)
 );
 
+impl DisplayWith<ModuleInfo> for Solutions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
+        fn go<K: Keyed>(
+            entry: &SolutionsEntry<K>,
+            f: &mut fmt::Formatter<'_>,
+            ctx: &ModuleInfo,
+        ) -> fmt::Result
+        where
+            BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+        {
+            for (key, answer) in entry.iter() {
+                writeln!(f, "{} = {}", ctx.display(key), answer)?;
+            }
+            Ok(())
+        }
+
+        table_try_for_each!(self, |x| go(x, f, ctx));
+        Ok(())
+    }
+}
+
 #[derive(Clone)]
 pub struct AnswersSolver<'a, Ans: LookupAnswer> {
     exports: &'a dyn LookupExport,
