@@ -58,6 +58,9 @@ pub struct Args {
     include: Vec<PathBuf>,
     #[clap(long, value_enum, default_value_t)]
     output_format: OutputFormat,
+    /// Check all reachable modules, not just the ones that are passed in explicitly on CLI positional arguments.
+    #[clap(long, short = 'a')]
+    check_all: bool,
     /// Produce debugging information about the type checking process.
     #[clap(long)]
     debug_info: Option<PathBuf>,
@@ -81,24 +84,30 @@ struct CheckLoader {
     sources: SmallMap<ModuleName, PathBuf>,
     typeshed: BundledTypeshed,
     search_roots: Vec<PathBuf>,
-    error_style: ErrorStyle,
+    error_style_for_sources: ErrorStyle,
+    error_style_for_dependencies: ErrorStyle,
 }
 
 impl Loader for CheckLoader {
     fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
-        let load_result = match self.sources.get(&name) {
-            Some(path) => LoadResult::from_path((*path).clone()),
-            None => match find_module(name, &self.search_roots) {
-                Some(path) => LoadResult::from_path(path),
-                None => match self.typeshed.find(name) {
-                    Some((path, content)) => LoadResult::Loaded(path, content),
-                    None => LoadResult::FailedToFind(anyhow::anyhow!(
-                        "Could not find path for `{name}`"
-                    )),
-                },
-            },
-        };
-        (load_result, self.error_style)
+        match self.sources.get(&name) {
+            Some(path) => (
+                LoadResult::from_path((*path).clone()),
+                self.error_style_for_sources,
+            ),
+            None => {
+                let load_result = match find_module(name, &self.search_roots) {
+                    Some(path) => LoadResult::from_path(path),
+                    None => match self.typeshed.find(name) {
+                        Some((path, content)) => LoadResult::Loaded(path, content),
+                        None => LoadResult::FailedToFind(anyhow::anyhow!(
+                            "Could not find path for `{name}`"
+                        )),
+                    },
+                };
+                (load_result, self.error_style_for_dependencies)
+            }
+        }
     }
 }
 
@@ -153,16 +162,16 @@ impl Args {
                 }
             }
         }
-        let error_style = if args.output.is_some() {
-            ErrorStyle::Delayed
-        } else {
-            ErrorStyle::Immediate
-        };
         let modules = to_check.keys().copied().collect::<Vec<_>>();
         let bundled_typeshed = BundledTypeshed::new()?;
         let config = match &args.python_version {
             None => Config::default(),
             Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),
+        };
+        let error_style_for_sources = if args.output.is_some() {
+            ErrorStyle::Delayed
+        } else {
+            ErrorStyle::Immediate
         };
 
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
@@ -172,7 +181,12 @@ impl Args {
                 sources: to_check,
                 typeshed: bundled_typeshed,
                 search_roots: include,
-                error_style,
+                error_style_for_sources,
+                error_style_for_dependencies: if args.check_all {
+                    error_style_for_sources
+                } else {
+                    ErrorStyle::Never
+                },
             }),
             config,
             args.common.parallel(),
