@@ -11,43 +11,14 @@ open OUnit2
 open Ast
 open Analysis
 open Test
-open CallGraphTestHelper
 open Interprocedural
 open CallGraph
 
-let setup ~context ~test_qualifier ~define_name ~source =
-  let find_define = function
-    | { Node.value = define; _ }
-      when String.equal
-             (FunctionDefinition.qualified_name_of_define ~module_name:test_qualifier define
-             |> Reference.show)
-             define_name ->
-        Some define
-    | _ -> None
-  in
-  let project = Test.ScratchProject.setup ~context ["test.py", source] in
-  let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
-    ScratchProject.build_type_environment project
-  in
-  let test_source =
-    List.find_map_exn
-      sources
-      ~f:(fun ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) ->
-        Option.some_if (Reference.equal qualifier test_qualifier) source)
-  in
-  ( List.find_map_exn
-      (Preprocessing.defines ~include_nested:true ~include_toplevels:true test_source)
-      ~f:find_define,
-    test_source,
-    ScratchProject.pyre_pysa_read_only_api project,
-    ScratchProject.configuration_of project )
-
-
-let create_define_call_graph ~define ~test_source ~pyre_api ~configuration ~object_targets =
+let compute_define_call_graph ~define ~source ~pyre_api ~configuration ~object_targets =
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-  let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source:test_source in
+  let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
-  let mutable_call_graph =
+  let call_graph =
     CallGraph.call_graph_of_define
       ~static_analysis_configuration
       ~pyre_api
@@ -59,7 +30,24 @@ let create_define_call_graph ~define ~test_source ~pyre_api ~configuration ~obje
       ~define
   in
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
-  mutable_call_graph
+  call_graph
+
+
+let find_define_exn ~define_name source =
+  let find_define = function
+    | { Node.value = define; _ }
+      when String.equal
+             (FunctionDefinition.qualified_name_of_define
+                ~module_name:CallGraphTestHelper.test_module_name
+                define
+             |> Reference.show)
+             define_name ->
+        Some define
+    | _ -> None
+  in
+  List.find_map_exn
+    (Preprocessing.defines ~include_nested:true ~include_toplevels:true source)
+    ~f:find_define
 
 
 let assert_call_graph_of_define
@@ -72,11 +60,10 @@ let assert_call_graph_of_define
     context
   =
   let expected = CallGraphTestHelper.parse_define_call_graph_for_test expected in
-  let define, test_source, pyre_api, configuration =
-    setup ~context ~test_qualifier:(Reference.create "test") ~define_name ~source
-  in
+  let source, pyre_api, configuration = CallGraphTestHelper.setup ~context ~source in
+  let define = find_define_exn ~define_name source in
   let actual =
-    create_define_call_graph ~define ~test_source ~pyre_api ~configuration ~object_targets
+    compute_define_call_graph ~define ~source ~pyre_api ~configuration ~object_targets
     |> DefineCallGraph.for_test
   in
   assert_equal ~cmp ~printer:DefineCallGraphForTest.show expected actual
@@ -89,34 +76,36 @@ let assert_higher_order_call_graph_of_define
     ~define_name
     ~expected_call_graph
     ~expected_returned_callables
-    ?(cmp = CallGraphTestHelper.ImmutableHigherOrderCallGraph.equal)
+    ?(cmp = CallGraphTestHelper.HigherOrderCallGraphForTest.equal)
     ()
     context
   =
   let open CallGraphTestHelper in
   let expected =
-    ImmutableHigherOrderCallGraph.from_input
+    HigherOrderCallGraphForTest.from_expected
       {
-        ImmutableHigherOrderCallGraph.Input.returned_callables = expected_returned_callables;
+        HigherOrderCallGraphForTest.Expected.returned_callables = expected_returned_callables;
         call_graph = expected_call_graph;
       }
   in
-  let test_qualifier = Reference.create "test" in
-  let define, test_source, pyre_api, configuration =
-    setup ~context ~test_qualifier ~define_name ~source
+  let source, pyre_api, configuration = setup ~context ~source in
+  let override_graph_shared_memory =
+    OverrideGraph.Heap.from_source ~pyre_api ~source |> OverrideGraph.SharedMemory.from_heap
   in
+  let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
+  let define = find_define_exn ~define_name source in
   let actual =
     CallGraph.higher_order_call_graph_of_define
       ~pyre_api
       ~define_call_graph:
-        (create_define_call_graph ~define ~test_source ~pyre_api ~configuration ~object_targets)
-      ~qualifier:test_qualifier
+        (compute_define_call_graph ~define ~source ~pyre_api ~configuration ~object_targets)
+      ~qualifier:CallGraphTestHelper.test_module_name
       ~define
       ~initial_state
       ~get_callee_model:(fun _ -> None)
-    |> ImmutableHigherOrderCallGraph.from_higher_order_call_graph
+    |> HigherOrderCallGraphForTest.from_actual
   in
-  assert_equal ~cmp ~printer:ImmutableHigherOrderCallGraph.show expected actual
+  assert_equal ~cmp ~printer:HigherOrderCallGraphForTest.show expected actual
 
 
 let test_call_graph_of_define =
@@ -6242,6 +6231,7 @@ let test_return_type_from_annotation =
 
 
 let test_higher_order_call_graph_of_define =
+  let open CallGraphTestHelper in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -6861,12 +6851,7 @@ let test_higher_order_call_graph_of_define =
 
 
 let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () context =
-  let handle = "test.py" in
-  let qualifier = String.chop_suffix_exn handle ~suffix:".py" in
-  let project = Test.ScratchProject.setup ~context [qualifier, source] in
-  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
-  let configuration = Test.ScratchProject.configuration_of project in
-  let source = TestHelper.source_from_qualifier ~pyre_api (Reference.create qualifier) in
+  let source, pyre_api, configuration = CallGraphTestHelper.setup ~context ~source in
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
   let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
   let override_graph_shared_memory =

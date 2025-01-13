@@ -8,7 +8,6 @@
 open Core
 open OUnit2
 open Test
-open TestHelper
 open Interprocedural
 open CallGraph
 open CallGraphTestHelper
@@ -23,17 +22,12 @@ module Expected = struct
 end
 
 let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expected () context =
-  let handle = "test.py" in
-  let configuration, pyre_api =
-    initialize_pyre_and_fail_on_errors ~context ~handle ~source_content:source ~models_source:None
-  in
+  let source, pyre_api, configuration = setup ~context ~source in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-  let qualifier = Ast.Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
-  let source = source_from_qualifier ~pyre_api qualifier in
-  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
-  let definitions = FetchCallables.get_definitions initial_callables in
   let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
+  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let definitions = FetchCallables.get_definitions initial_callables in
   let ({ SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
     SharedMemory.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
@@ -70,20 +64,20 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
         callable
         |> CallGraphFixpoint.get_model fixpoint_state
         |> Option.value ~default:HigherOrderCallGraph.empty
-        |> ImmutableHigherOrderCallGraph.from_higher_order_call_graph
+        |> HigherOrderCallGraphForTest.from_actual
       in
       let expected_call_graph =
-        ImmutableHigherOrderCallGraph.from_input
-          { ImmutableHigherOrderCallGraph.Input.call_graph; returned_callables }
+        HigherOrderCallGraphForTest.from_expected
+          { HigherOrderCallGraphForTest.Expected.call_graph; returned_callables }
       in
       assert_equal
-        ~cmp:ImmutableHigherOrderCallGraph.equal
+        ~cmp:HigherOrderCallGraphForTest.equal
         ~printer:(fun call_graph ->
           Format.asprintf
             "For callable %a: %a"
             Target.pp
             callable
-            ImmutableHigherOrderCallGraph.pp
+            HigherOrderCallGraphForTest.pp
             call_graph)
         expected_call_graph
         actual_call_graph);

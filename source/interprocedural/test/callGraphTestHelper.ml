@@ -44,25 +44,25 @@ let parse_define_call_graph_for_test =
         ~callees)
 
 
-module ImmutableHigherOrderCallGraph = struct
+module HigherOrderCallGraphForTest = struct
   type t = {
     returned_callables: CallTarget.Set.t;
     call_graph: DefineCallGraphForTest.t;
   }
   [@@deriving eq, show]
 
-  let from_higher_order_call_graph { HigherOrderCallGraph.returned_callables; call_graph } =
+  let from_actual { HigherOrderCallGraph.returned_callables; call_graph; _ } =
     { returned_callables; call_graph = DefineCallGraph.for_test call_graph }
 
 
-  module Input = struct
+  module Expected = struct
     type t = {
       returned_callables: CallTarget.t list;
       call_graph: (string * LocationCallees.t) list;
     }
   end
 
-  let from_input { Input.call_graph; returned_callables } =
+  let from_expected { Expected.call_graph; returned_callables } =
     {
       call_graph = parse_define_call_graph_for_test call_graph;
       returned_callables = CallTarget.Set.of_list returned_callables;
@@ -75,3 +75,14 @@ let create_parameterized_target ~regular ~parameters =
 
 let create_positional_parameter ?(positional_only = false) position name =
   AccessPath.Root.PositionalParameter { position; name; positional_only }
+
+
+let test_py = "test.py"
+
+let test_module_name = Reference.create (String.chop_suffix_exn test_py ~suffix:".py")
+
+let setup ~context ~source =
+  let project = Test.ScratchProject.setup ~context [test_py, source] in
+  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+  let test_source = TestHelper.source_from_qualifier ~pyre_api test_module_name in
+  test_source, pyre_api, Test.ScratchProject.configuration_of project
