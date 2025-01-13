@@ -674,6 +674,43 @@ pass  # E: Expected an indented block
 );
 
 testcase!(
+    test_match_class_narrow,
+    r#"
+from typing import assert_type
+
+class A:
+    x: int
+    y: str
+    __match_args__ = ("x", "y")
+
+class B:
+    x: int
+    y: str
+    __match_args__ = ("x", "y")
+
+class C:
+    x: int
+    y: str
+    __match_args__ = ("x", "y")
+
+def fun(x: A | B | C) -> None:
+    match x:
+        case A(1, "a"):
+            assert_type(x, A)
+    match x:
+        case B(2, "b"):
+            assert_type(x, B)
+    match x:
+        case B(3, "B") as y:
+            assert_type(x, A | B | C)
+            assert_type(y, B)
+    match x:
+        case A(1, "a") | B(2, "b"):
+            assert_type(x, A | B)
+"#,
+);
+
+testcase!(
     test_match_class,
     r#"
 from typing import assert_type

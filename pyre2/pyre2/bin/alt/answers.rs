@@ -1094,6 +1094,32 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 })
             }
+            NarrowOp::IsInstance(e) => {
+                let right = self.expr(e, None);
+                match self.unwrap_type_form_silently(&right) {
+                    Some(right) => self.intersect(ty, &right),
+                    None => {
+                        self.error(e.range(), format!("Expected type form, got {}", right));
+                        Type::Any(AnyStyle::Error)
+                    }
+                }
+            }
+            NarrowOp::IsNotInstance(e) => {
+                let right = self.expr(e, None);
+                match self.unwrap_type_form_silently(&right) {
+                    Some(right) => self.distribute_over_union(ty, |t| {
+                        if self.solver().is_subset_eq(t, &right, self.type_order()) {
+                            Type::never()
+                        } else {
+                            t.clone()
+                        }
+                    }),
+                    None => {
+                        self.error(e.range(), format!("Expected type form, got {}", right));
+                        Type::Any(AnyStyle::Error)
+                    }
+                }
+            }
             NarrowOp::Truthy | NarrowOp::Falsy => self.distribute_over_union(ty, |t| {
                 let boolval = matches!(op, NarrowOp::Truthy);
                 if t.as_bool() == Some(!boolval) {

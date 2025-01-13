@@ -32,6 +32,8 @@ pub enum NarrowOp {
     NotEq(Box<Expr>),
     And(Vec<NarrowOp>),
     Or(Vec<NarrowOp>),
+    IsInstance(Box<Expr>),
+    IsNotInstance(Box<Expr>),
 }
 
 impl NarrowOp {
@@ -39,6 +41,8 @@ impl NarrowOp {
         match self {
             Self::Is(e) => Self::IsNot(e.clone()),
             Self::IsNot(e) => Self::Is(e.clone()),
+            Self::IsInstance(e) => Self::IsNotInstance(e.clone()),
+            Self::IsNotInstance(e) => Self::IsInstance(e.clone()),
             Self::Eq(e) => Self::NotEq(e.clone()),
             Self::NotEq(e) => Self::Eq(e.clone()),
             Self::Truthy => Self::Falsy,

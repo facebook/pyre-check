@@ -1457,7 +1457,14 @@ impl<'a> BindingsBuilder<'a> {
                 narrow_ops
             }
             Pattern::MatchClass(x) => {
-                let mut narrow_ops = NarrowOps::new();
+                self.ensure_expr(&x.cls);
+                let mut narrow_ops = if let Some(subject_name) = subject_name {
+                    NarrowOps(
+                        smallmap! { subject_name.clone() => (NarrowOp::IsInstance(x.cls.clone()), x.cls.range()) },
+                    )
+                } else {
+                    NarrowOps::new()
+                };
                 x.arguments
                     .patterns
                     .into_iter()
