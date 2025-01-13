@@ -418,3 +418,16 @@ def f(x: str | None, y: int):
     assert_type(z, str | int)
     "#,
 );
+
+testcase!(
+    test_is_supertype,
+    r#"
+from typing import Literal, assert_type
+import enum
+class E(enum.Enum):
+    X = 1
+def f(x: Literal[E.X], y: E):
+    if x is y:
+        assert_type(x, Literal[E.X])
+    "#,
+);

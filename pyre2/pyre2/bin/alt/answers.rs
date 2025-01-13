@@ -1056,6 +1056,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.distribute_over_union(left, |t| {
             if self.solver().is_subset_eq(right, t, self.type_order()) {
                 right.clone()
+            } else if self.solver().is_subset_eq(t, right, self.type_order()) {
+                t.clone()
             } else {
                 Type::never()
             }
