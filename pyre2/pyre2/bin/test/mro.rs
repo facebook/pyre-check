@@ -18,7 +18,7 @@ pub fn get_class_metadata(name: &str, module_name: ModuleName, state: &State) ->
 
     let res = get_class(name, module_name, state).and_then(|cls| {
         let x = solutions
-            .mros
+            .class_metadata
             .get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
         x.cloned()
     });

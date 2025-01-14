@@ -28,7 +28,7 @@ macro_rules! table {
             $($vis)* exports: $t<KeyExport>,
             $($vis)* class_fields: $t<KeyClassField>,
             $($vis)* annotations: $t<KeyAnnotation>,
-            $($vis)* mros: $t<KeyClassMetadata>,
+            $($vis)* class_metadata: $t<KeyClassMetadata>,
             $($vis)* legacy_tparams: $t<KeyLegacyTypeParam>,
         }
 
@@ -59,8 +59,8 @@ macro_rules! table {
 
         impl $crate::binding::table::TableKeyed<KeyClassMetadata> for $name {
             type Value = $t<KeyClassMetadata>;
-            fn get(&self) -> &Self::Value { &self.mros }
-            fn get_mut(&mut self) -> &mut Self::Value { &mut self.mros }
+            fn get(&self) -> &Self::Value { &self.class_metadata }
+            fn get_mut(&mut self) -> &mut Self::Value { &mut self.class_metadata }
         }
 
         impl $crate::binding::table::TableKeyed<KeyLegacyTypeParam> for $name {
@@ -96,7 +96,7 @@ macro_rules! table_for_each(
         $f(&($e).exports);
         $f(&($e).class_fields);
         $f(&($e).annotations);
-        $f(&($e).mros);
+        $f(&($e).class_metadata);
         $f(&($e).legacy_tparams);
     };
 );
@@ -108,7 +108,7 @@ macro_rules! table_mut_for_each(
         $f(&mut ($e).exports);
         $f(&mut ($e).class_fields);
         $f(&mut ($e).annotations);
-        $f(&mut ($e).mros);
+        $f(&mut ($e).class_metadata);
         $f(&mut ($e).legacy_tparams);
     };
 );
@@ -120,7 +120,7 @@ macro_rules! table_try_for_each(
         $f(&($e).exports)?;
         $f(&($e).class_fields)?;
         $f(&($e).annotations)?;
-        $f(&($e).mros)?;
+        $f(&($e).class_metadata)?;
         $f(&($e).legacy_tparams)?;
     };
 );
