@@ -14,6 +14,24 @@ let test_simple =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+      def foo(x: object, y: object) -> None:
+        match (x, y):
+          case (1, 2):
+            reveal_type(x)
+            reveal_type(y)
+          case (1 as x2, 2 as y2):
+            reveal_type(x2)
+            reveal_type(y2)
+    |}
+           [
+             "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`.";
+             "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[2]`.";
+             "Revealed type [-1]: Revealed type for `x2` is `typing_extensions.Literal[1]`.";
+             "Revealed type [-1]: Revealed type for `y2` is `typing_extensions.Literal[2]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       def foo(x: int) -> None:
         y = None
         match x:

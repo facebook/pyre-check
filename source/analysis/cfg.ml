@@ -55,10 +55,15 @@ module MatchTranslate = struct
 
 
   let create_subscript_index ~location ~sequence ~index =
-    create_subscript
-      ~location
-      ~container:sequence
-      ~key:(create_constant ~location (Constant.Integer index))
+    match sequence with
+    | { Node.value = Expression.Tuple elements; _ } when index >= 0 && index < List.length elements
+      ->
+        List.nth_exn elements index
+    | _ ->
+        create_subscript
+          ~location
+          ~container:sequence
+          ~key:(create_constant ~location (Constant.Integer index))
 
 
   let create_call ~location ~callee ~arguments =
