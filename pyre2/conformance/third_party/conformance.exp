@@ -951,32 +951,12 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], Any]] <: object",
-      "description": "EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], Any]] <: object",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
       "line": 22,
       "name": "PyreError",
       "stop_column": 6,
-      "stop_line": 22
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], tuple[ParamSpec | TypeVar | TypeVarTuple, ...]]] <: object",
-      "description": "EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], tuple[ParamSpec | TypeVar | TypeVarTuple, ...]]] <: object",
-      "line": 22,
-      "name": "PyreError",
-      "stop_column": 33,
       "stop_line": 22
     },
     {
@@ -1263,32 +1243,12 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], Any]] <: object",
-      "description": "EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], Any]] <: object",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
       "line": 31,
       "name": "PyreError",
       "stop_column": 6,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], tuple[ParamSpec | TypeVar | TypeVarTuple, ...]]] <: object",
-      "description": "EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], tuple[ParamSpec | TypeVar | TypeVarTuple, ...]]] <: object",
-      "line": 31,
-      "name": "PyreError",
-      "stop_column": 33,
       "stop_line": 31
     },
     {
@@ -3567,16 +3527,6 @@
       "name": "PyreError",
       "stop_column": 15,
       "stop_line": 169
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED type[Proto9[?_, ?_]] <: object",
-      "description": "EXPECTED type[Proto9[?_, ?_]] <: object",
-      "line": 184,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 184
     },
     {
       "code": -2,
@@ -7447,16 +7397,6 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED BoundMethod[InventoryItem, Callable[[object], str]] <: object",
-      "description": "EXPECTED BoundMethod[InventoryItem, Callable[[object], str]] <: object",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
@@ -7467,32 +7407,12 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED BoundMethod[InventoryItem, Callable[[object, object], bool]] <: object",
-      "description": "EXPECTED BoundMethod[InventoryItem, Callable[[object, object], bool]] <: object",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 39
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
       "line": 40,
       "name": "PyreError",
       "stop_column": 6,
-      "stop_line": 40
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED BoundMethod[InventoryItem, Callable[[object, object], bool]] <: object",
-      "description": "EXPECTED BoundMethod[InventoryItem, Callable[[object, object], bool]] <: object",
-      "line": 40,
-      "name": "PyreError",
-      "stop_column": 16,
       "stop_line": 40
     },
     {
@@ -7921,16 +7841,6 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED type[str] <: object",
-      "description": "EXPECTED type[str] <: object",
-      "line": 11,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 11
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]",
       "description": "Expected `__getitem__` to be a callable, got Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]",
@@ -7938,16 +7848,6 @@
       "name": "PyreError",
       "stop_column": 30,
       "stop_line": 11
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "EXPECTED type[int] <: object",
-      "description": "EXPECTED type[int] <: object",
-      "line": 13,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 13
     },
     {
       "code": -2,
@@ -7968,16 +7868,6 @@
       "name": "PyreError",
       "stop_column": 12,
       "stop_line": 15
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED type[int] <: object",
-      "description": "EXPECTED type[int] <: object",
-      "line": 17,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 17
     },
     {
       "code": -2,
@@ -9334,32 +9224,12 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED ?_ <: object",
-      "description": "EXPECTED ?_ <: object",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 42,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
       "column": 18,
       "concise_description": "Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]",
       "description": "Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]",
       "line": 96,
       "name": "PyreError",
       "stop_column": 43,
-      "stop_line": 96
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED ?_ <: object",
-      "description": "EXPECTED ?_ <: object",
-      "line": 96,
-      "name": "PyreError",
-      "stop_column": 42,
       "stop_line": 96
     },
     {

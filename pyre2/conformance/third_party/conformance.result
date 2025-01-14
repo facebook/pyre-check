@@ -92,8 +92,8 @@
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
     "Line 9: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 21: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], Any]] <: object']",
-    "Line 22: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], tuple[ParamSpec | TypeVar | TypeVarTuple, ...]]] <: object']",
+    "Line 21: Unexpected errors [\"Missing argument 'flush'\"]",
+    "Line 22: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 82: Unexpected errors ['untype, got list[type[int] | type[str]]']"
   ],
   "aliases_typealiastype.py": [
@@ -115,8 +115,8 @@
     "Line 19: Unexpected errors ['EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]']",
     "Line 22: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 23: Unexpected errors ['EXPECTED tuple[type[TypeVar[S]], type[TypeVar[TStr]], type[ParamSpec[P]], type[TypeVarTuple[Ts]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]']",
-    "Line 30: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], Any]] <: object']",
-    "Line 31: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED BoundMethod[TypeAliasType, Callable[[TypeAliasType], tuple[ParamSpec | TypeVar | TypeVarTuple, ...]]] <: object']",
+    "Line 30: Unexpected errors [\"Missing argument 'flush'\"]",
+    "Line 31: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 35: Unexpected errors ['untype, got GenericAlias']",
     "Line 36: Unexpected errors ['untype, got GenericAlias']",
     "Line 37: Unexpected errors ['untype, got GenericAlias']",
@@ -257,7 +257,6 @@
     "Line 135: Unexpected errors ['EXPECTED Class7_1 <: Proto7[int, int]']",
     "Line 144: Unexpected errors ['EXPECTED Class7_2 <: Proto7[int, int]']",
     "Line 168: Unexpected errors ['EXPECTED Callable[[Any], Any] <: Proto8']",
-    "Line 184: Unexpected errors ['EXPECTED type[Proto9[?_, ?_]] <: object']",
     "Line 196: Unexpected errors [\"Missing argument 'flush'\", 'Object of class `FunctionType` has no attribute `other_attribute`']",
     "Line 216: Unexpected errors ['EXPECTED Callable[[], None] <: Proto10']",
     "Line 236: Unexpected errors ['EXPECTED Callable[[int, str, None], Any] <: Proto11']",
@@ -536,9 +535,9 @@
     "Line 22: Unexpected errors ['EXPECTED int <: float']",
     "Line 25: Unexpected errors ['Expected 0 positional arguments, got 2']",
     "Line 35: Unexpected errors ['EXPECTED BoundMethod[InventoryItem, Callable[[object], None]] <: InventoryItemInitProto']",
-    "Line 38: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED BoundMethod[InventoryItem, Callable[[object], str]] <: object']",
-    "Line 39: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED BoundMethod[InventoryItem, Callable[[object, object], bool]] <: object']",
-    "Line 40: Unexpected errors [\"Missing argument 'flush'\", 'EXPECTED BoundMethod[InventoryItem, Callable[[object, object], bool]] <: object']",
+    "Line 38: Unexpected errors [\"Missing argument 'flush'\"]",
+    "Line 39: Unexpected errors [\"Missing argument 'flush'\"]",
+    "Line 40: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 41: Unexpected errors [\"Missing argument 'flush'\", 'Object of class `InventoryItem` has no attribute `__lt__`']",
     "Line 42: Unexpected errors [\"Missing argument 'flush'\", 'Object of class `InventoryItem` has no attribute `__le__`']",
     "Line 43: Unexpected errors [\"Missing argument 'flush'\", 'Object of class `InventoryItem` has no attribute `__gt__`']",
@@ -564,8 +563,7 @@
   "directives_cast.py": [
     "Line 16: Expected 1 errors",
     "Line 10: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED Generator[int, None, None] <: SupportsNext[@_]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
-    "Line 11: Unexpected errors ['EXPECTED type[str] <: object', 'Expected `__getitem__` to be a callable, got Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]']",
-    "Line 13: Unexpected errors ['EXPECTED type[int] <: object']"
+    "Line 11: Unexpected errors ['Expected `__getitem__` to be a callable, got Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]']"
   ],
   "directives_deprecated.py": [
     "Line 24: Expected 1 errors",
@@ -656,8 +654,8 @@
     "Line 34: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_']",
     "Line 67: Unexpected errors ['assert_type(MyStr, str) failed']",
     "Line 68: Unexpected errors ['assert_type(MyStr, str) failed', 'EXPECTED str <: MyStr']",
-    "Line 92: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]', 'EXPECTED ?_ <: object']",
-    "Line 96: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]', 'EXPECTED ?_ <: object']",
+    "Line 92: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]']",
+    "Line 96: Unexpected errors ['Expected `__add__` to be a callable, got Callable[[LiteralString, LiteralString], LiteralString] | Callable[[str, str], str]']",
     "Line 100: Unexpected errors ['EXPECTED str <: LiteralString', 'EXPECTED str <: LiteralString']",
     "Line 139: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument', 'EXPECTED MyIter1[int] <: SupportsNext[@_]']",
     "Line 140: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument', 'EXPECTED MyIter2[int] <: SupportsNext[@_]']",

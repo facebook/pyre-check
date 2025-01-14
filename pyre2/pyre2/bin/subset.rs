@@ -24,6 +24,13 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
     /// Implementation of subset equality for Type, other than Var.
     pub fn is_subset_eq_impl(&mut self, got: &Type, want: &Type) -> bool {
         match (got, want) {
+            (_, Type::Any(_)) | (Type::Any(_), _) => true,
+            (Type::Never(_), _) => true,
+            (_, Type::ClassType(want))
+                if *want == *self.type_order.stdlib().object_class_type() =>
+            {
+                true // everything is an instance of `object`
+            }
             (Type::Union(ls), u) => ls.iter().all(|l| self.is_subset_eq(l, u)),
             (l, Type::Intersect(us)) => us.iter().all(|u| self.is_subset_eq(l, u)),
             (l, Type::Union(us)) => us.iter().any(|u| self.is_subset_eq(l, u)),
@@ -179,9 +186,6 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 // FIXME: Probably need to do some kind of substitution here
                 false
             }
-            (_, Type::Any(_)) => true,
-            (Type::Any(_), _) => true,
-            (Type::Never(_), _) => true,
             _ => false,
         }
     }
