@@ -244,3 +244,12 @@ testcase!(
 +None  # E: Unary + is not supported on None
     "#,
 );
+
+testcase!(
+    test_operator_error,
+    r#"
+class C: pass
+
+x = C() + 1  # E: Object of class `C` has no attribute `__add__`
+"#,
+);
