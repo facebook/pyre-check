@@ -167,3 +167,20 @@ reveal_type(async_count_up_to()) # E: Generator[Literal[2], Unknown, None]
 
 "#,
 );
+
+testcase_with_bug!(
+    "TODO zeina: We are incorrectly inferring generators that return generators.",
+    test_inferring_generators_that_return_generators,
+    r#"
+from typing import Generator, assert_type
+
+def generator() -> Generator[int, None, None]: ...
+
+def generator2(x: int):
+    yield x  # E: TODO: ExprYield - Answers::expr_infer
+    return generator()
+
+
+assert_type(generator2(1), Generator[int, None, Generator[int, None, None]]) # E: assert_type(Generator[int, None, None], Generator[int, None, Generator[int, None, None]])
+"#,
+);
