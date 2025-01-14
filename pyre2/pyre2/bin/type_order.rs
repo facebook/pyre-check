@@ -43,6 +43,9 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
 
     pub fn has_metaclass(&self, cls: &Class, metaclass: &ClassType) -> bool {
         let metadata = self.0.get_metadata_for_class(cls);
-        metadata.metaclass().is_some_and(|m| *m == *metaclass)
+        match metadata.metaclass() {
+            Some(m) => *m == *metaclass,
+            None => *metaclass == self.stdlib().builtins_type(),
+        }
     }
 }

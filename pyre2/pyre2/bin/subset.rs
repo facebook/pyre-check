@@ -186,6 +186,9 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 // FIXME: Probably need to do some kind of substitution here
                 false
             }
+            (Type::TypeAlias(ta), _) => {
+                self.is_subset_eq_impl(&ta.as_value(self.type_order.stdlib()), want)
+            }
             _ => false,
         }
     }

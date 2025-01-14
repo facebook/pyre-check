@@ -544,6 +544,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match ty {
             Type::ClassDef(c) => Some(Type::ClassType(self.promote_to_class_type_silently(c))),
             Type::Type(box inner) => Some(inner.clone()),
+            Type::TypeAlias(ta) => self.unwrap_type_form_silently(&ta.as_value(self.stdlib)),
             _ => None,
         }
     }

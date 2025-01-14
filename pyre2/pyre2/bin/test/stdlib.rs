@@ -76,7 +76,8 @@ class type:
 class tuple[T](Iterable[T]):
     def __getitem__(self, index: int) -> T: ...
 
-def isinstance(obj: object, class_or_tuple: object, /) -> bool: ...
+_ClassInfo = type | tuple[_ClassInfo, ...]
+def isinstance(obj: object, class_or_tuple: _ClassInfo, /) -> bool: ...
 "#;
 
 static TYPING: &str = r#"

@@ -455,3 +455,14 @@ def f(x: str | int | None):
         assert_type(x, None)
     "#,
 );
+
+testcase!(
+    test_isinstance_alias,
+    r#"
+from typing import assert_type
+X = int
+def f(x: str | int):
+    if isinstance(x, X):
+        assert_type(x, int)
+    "#,
+);
