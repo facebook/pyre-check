@@ -154,3 +154,13 @@ for x in f():
     assert_type(x, int | bool | str)
     "#,
 );
+
+testcase!(
+    test_named_tuple,
+    r#"
+from typing import NamedTuple
+class Pair(NamedTuple):
+    x: int
+    y: int
+    "#,
+);
