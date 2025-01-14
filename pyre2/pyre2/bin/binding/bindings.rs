@@ -1713,6 +1713,8 @@ impl<'a> BindingsBuilder<'a> {
                 let narrow_ops = NarrowOps::from_expr(Some(*x.test.clone()));
                 self.setup_loop(x.range, &narrow_ops);
                 self.ensure_expr(&x.test);
+                self.table
+                    .insert(Key::Anon(x.test.range()), Binding::Expr(None, *x.test));
                 self.stmts(x.body);
                 self.teardown_loop(x.range, &narrow_ops, x.orelse);
             }
@@ -1734,7 +1736,11 @@ impl<'a> BindingsBuilder<'a> {
                         continue; // We won't pick this branch
                     }
                     let mut base = self.scopes.last().flow.clone();
-                    self.ensure_expr_opt(test.as_ref());
+                    if let Some(e) = test.as_ref() {
+                        self.ensure_expr(e);
+                        self.table
+                            .insert(Key::Anon(e.range()), Binding::Expr(None, e.clone()));
+                    }
                     let new_narrow_ops = NarrowOps::from_expr(test);
                     if let Some(stmt) = body.first() {
                         let use_range = stmt.range();

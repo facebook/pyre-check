@@ -847,3 +847,14 @@ match []:
         pass
 "#,
 );
+
+testcase!(
+    test_error_in_test_expr,
+    r#"
+def f(x: None):
+    if x.nonsense:  # E: Object of class `NoneType` has no attribute `nonsense`
+        pass
+    while x['nonsense']:  # E: Can't apply arguments to non-class
+        pass
+    "#,
+);

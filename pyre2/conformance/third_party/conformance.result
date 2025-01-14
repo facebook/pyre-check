@@ -635,9 +635,15 @@
     "Line 128: Unexpected errors ['Could not find name `reveal_type`', 'revealed type: Literal[2]']"
   ],
   "exceptions_context_managers.py": [
+    "Line 47: Unexpected errors ['EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
+    "Line 54: Unexpected errors ['EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
+    "Line 61: Unexpected errors ['EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 64: Unexpected errors ['assert_type(int | str, str) failed']",
+    "Line 68: Unexpected errors ['EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 71: Unexpected errors ['assert_type(int | str, str) failed']",
+    "Line 75: Unexpected errors ['EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 78: Unexpected errors ['assert_type(int | str, str) failed']",
+    "Line 82: Unexpected errors ['EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 85: Unexpected errors ['assert_type(int | str, str) failed']"
   ],
   "generics_base_class.py": [
@@ -1010,7 +1016,8 @@
   ],
   "generics_upper_bound.py": [
     "Line 24: Expected 1 errors",
-    "Line 51: Expected 1 errors"
+    "Line 51: Expected 1 errors",
+    "Line 31: Unexpected errors ['EXPECTED ?_ <: Sized', 'EXPECTED ?_ <: Sized']"
   ],
   "generics_variance.py": [
     "Line 77: Expected 1 errors",
@@ -1148,9 +1155,11 @@
     "Line 107: Expected 1 errors",
     "Line 13: Unexpected errors ['EXPECTED bool <: TypeGuard[tuple[?_, ?_]]', 'EXPECTED tuple[?_, ...] <: Sized']",
     "Line 17: Unexpected errors ['assert_type(tuple[str, ...], tuple[str, str]) failed']",
+    "Line 23: Unexpected errors ['EXPECTED list[object] <: Sized']",
     "Line 24: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]']",
     "Line 25: Unexpected errors ['EXPECTED bool <: TypeGuard[list[str]]', 'EXPECTED type[str] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 28: Unexpected errors ['EXPECTED bool <: TypeGuard[set[?_]]']",
+    "Line 31: Unexpected errors ['EXPECTED type[int] <: type[@_]']",
     "Line 32: Unexpected errors ['assert_type(set[object], set[int]) failed']",
     "Line 41: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 45: Unexpected errors ['EXPECTED bool <: TypeGuard[int]', 'EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
@@ -1159,7 +1168,9 @@
     "Line 55: Unexpected errors ['EXPECTED bool <: TypeGuard[?_]', 'Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]', 'Expected `__new__` to be a callable, got Callable[[type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], KwArgs[Any]], TypeVar[Self]] | Callable[[Unknown, object], type]']",
     "Line 69: Unexpected errors ['assert_type(object, int) failed']",
     "Line 73: Unexpected errors ['assert_type(object, int) failed']",
+    "Line 76: Unexpected errors [\"Missing argument 'val'\", 'EXPECTED object <: A']",
     "Line 77: Unexpected errors ['assert_type(object, int) failed']",
+    "Line 80: Unexpected errors ['Expected 0 positional arguments, got 1']",
     "Line 81: Unexpected errors ['assert_type(object, int) failed']",
     "Line 85: Unexpected errors ['assert_type(object, int) failed']",
     "Line 89: Unexpected errors ['assert_type(object, B) failed']",
@@ -1188,7 +1199,9 @@
     "Line 59: Unexpected errors ['EXPECTED bool <: TypeIs[?_]', 'Expected `__init__` to be a callable, got Callable[[type, object], None] | Callable[[type, str, tuple[type, ...], dict[str, Any], KwArgs[Any]], None]', 'Expected `__new__` to be a callable, got Callable[[type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], KwArgs[Any]], TypeVar[Self]] | Callable[[Unknown, object], type]']",
     "Line 72: Unexpected errors ['assert_type(object, int) failed']",
     "Line 76: Unexpected errors ['assert_type(object, int) failed']",
+    "Line 79: Unexpected errors [\"Missing argument 'val'\", 'EXPECTED object <: A']",
     "Line 80: Unexpected errors ['assert_type(object, int) failed']",
+    "Line 83: Unexpected errors ['Expected 0 positional arguments, got 1']",
     "Line 84: Unexpected errors ['assert_type(object, int) failed']",
     "Line 88: Unexpected errors ['assert_type(object, int) failed']",
     "Line 92: Unexpected errors ['assert_type(object, B) failed']",
@@ -1207,6 +1220,7 @@
   "overloads_basic.py": [
     "Lines 62, 63: Expected error (tag 'func1')",
     "Lines 74, 75: Expected error (tag 'func2')",
+    "Line 28: Unexpected errors ['EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]']",
     "Line 35: Unexpected errors ['assert_type(Any, int) failed', 'Expected `__getitem__` to be a callable, got Callable[[Bytes, int], int] | Callable[[Bytes, int | slice[Error, Error, Error]], bytes | int] | Callable[[Bytes, slice[Error, Error, Error]], bytes]']",
     "Line 36: Unexpected errors ['assert_type(Any, bytes) failed', 'Expected `__getitem__` to be a callable, got Callable[[Bytes, int], int] | Callable[[Bytes, int | slice[Error, Error, Error]], bytes | int] | Callable[[Bytes, slice[Error, Error, Error]], bytes]']"
   ],
@@ -1300,12 +1314,13 @@
     "Line 81: Unexpected errors ['assert_type(Any, list[int]) failed']"
   ],
   "protocols_runtime_checkable.py": [
-    "Line 23: Expected 1 errors",
-    "Line 55: Expected 1 errors",
     "Line 61: Expected 1 errors",
-    "Line 88: Expected 1 errors",
     "Line 92: Expected 1 errors",
-    "Line 96: Expected 1 errors"
+    "Line 26: Unexpected errors ['EXPECTED type[Proto2] <: UnionType | type | tuple[Unknown, ...]']",
+    "Line 49: Unexpected errors ['EXPECTED type[DataProtocol] <: UnionType | type | tuple[Unknown, ...]']",
+    "Line 52: Unexpected errors ['EXPECTED type[NonDataProtocol] <: UnionType | type | tuple[Unknown, ...]']",
+    "Line 58: Unexpected errors ['EXPECTED type[NonDataProtocol] <: UnionType | type | tuple[Unknown, ...]']",
+    "Line 85: Unexpected errors ['EXPECTED type[Proto2] <: UnionType | type | tuple[Unknown, ...]']"
   ],
   "protocols_self.py": [
     "Line 32: Unexpected errors ['EXPECTED One <: Copyable']",
@@ -1408,7 +1423,8 @@
   "specialtypes_promotions.py": [
     "Line 7: Unexpected errors ['EXPECTED Literal[1] <: float']",
     "Line 8: Unexpected errors ['EXPECTED Literal[1.2] <: complex']",
-    "Line 9: Unexpected errors ['EXPECTED Literal[1] <: complex']"
+    "Line 9: Unexpected errors ['EXPECTED Literal[1] <: complex']",
+    "Line 15: Unexpected errors ['EXPECTED type[float] <: UnionType | type | tuple[Unknown, ...]']"
   ],
   "specialtypes_type.py": [
     "Line 70: Expected 1 errors",
@@ -1451,8 +1467,11 @@
     "Line 47: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 59: Unexpected errors ['EXPECTED tuple[Any] <: tuple[int, int]']",
     "Line 71: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
+    "Line 72: Unexpected errors ['EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized']",
     "Line 74: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed']",
+    "Line 76: Unexpected errors ['EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized']",
     "Line 78: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, int] | tuple[str, str]) failed']",
+    "Line 80: Unexpected errors ['EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized']",
     "Line 82: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, str, int]) failed']",
     "Line 91: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 93: Unexpected errors ['Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 2) into 1 value', 'Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 3) into 1 value']",
@@ -1666,7 +1685,6 @@
     "Line 152: Unexpected errors ['EXPECTED Outer2 <: Outer3']"
   ],
   "typeddicts_usage.py": [
-    "Line 35: Expected 1 errors",
     "Line 8: Unexpected errors ['untype, got _SpecialForm']",
     "Line 13: Unexpected errors ['EXPECTED dict[str, int | str] <: Movie']",
     "Line 20: Unexpected errors ['EXPECTED dict[str, int | str] <: Movie']",

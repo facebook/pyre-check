@@ -982,6 +982,16 @@
     {
       "code": -2,
       "column": 22,
+      "concise_description": "EXPECTED ScopedTypeAlias[GoodAlias1, type[int]] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED ScopedTypeAlias[GoodAlias1, type[int]] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
+      "column": 22,
       "concise_description": "Expected type form, got ScopedTypeAlias[GoodAlias1, type[int]]",
       "description": "Expected type form, got ScopedTypeAlias[GoodAlias1, type[int]]",
       "line": 31,
@@ -9020,6 +9030,36 @@
   "exceptions_context_managers.py": [
     {
       "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 54,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 54
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 61,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 61
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "assert_type(int | str, str) failed",
       "description": "assert_type(int | str, str) failed",
@@ -9027,6 +9067,16 @@
       "name": "PyreError",
       "stop_column": 24,
       "stop_line": 64
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 68,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 68
     },
     {
       "code": -2,
@@ -9040,6 +9090,16 @@
     },
     {
       "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 75,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 75
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "assert_type(int | str, str) failed",
       "description": "assert_type(int | str, str) failed",
@@ -9047,6 +9107,16 @@
       "name": "PyreError",
       "stop_column": 24,
       "stop_line": 78
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 82
     },
     {
       "code": -2,
@@ -14306,6 +14376,26 @@
   "generics_upper_bound.py": [
     {
       "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED ?_ <: Sized",
+      "description": "EXPECTED ?_ <: Sized",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 13,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "EXPECTED ?_ <: Sized",
+      "description": "EXPECTED ?_ <: Sized",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "assert_type(list[int], list[int] | set[int]) failed",
       "description": "assert_type(list[int], list[int] | set[int]) failed",
@@ -16449,6 +16539,16 @@
     },
     {
       "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED list[object] <: Sized",
+      "description": "EXPECTED list[object] <: Sized",
+      "line": 23,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 23
+    },
+    {
+      "code": -2,
       "column": 16,
       "concise_description": "EXPECTED bool <: TypeGuard[list[str]]",
       "description": "EXPECTED bool <: TypeGuard[list[str]]",
@@ -16486,6 +16586,16 @@
       "name": "PyreError",
       "stop_column": 49,
       "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 23,
+      "concise_description": "EXPECTED type[int] <: type[@_]",
+      "description": "EXPECTED type[int] <: type[@_]",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 31
     },
     {
       "code": -2,
@@ -16639,6 +16749,26 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "Missing argument 'val'",
+      "description": "Missing argument 'val'",
+      "line": 76,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 76
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "EXPECTED object <: A",
+      "description": "EXPECTED object <: A",
+      "line": 76,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 76
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
@@ -16646,6 +16776,16 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 77
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Expected 0 positional arguments, got 1",
+      "description": "Expected 0 positional arguments, got 1",
+      "line": 80,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 80
     },
     {
       "code": -2,
@@ -17011,6 +17151,26 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "Missing argument 'val'",
+      "description": "Missing argument 'val'",
+      "line": 79,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 79
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "EXPECTED object <: A",
+      "description": "EXPECTED object <: A",
+      "line": 79,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 79
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
@@ -17018,6 +17178,16 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 80
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Expected 0 positional arguments, got 1",
+      "description": "Expected 0 positional arguments, got 1",
+      "line": 83,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 83
     },
     {
       "code": -2,
@@ -17281,6 +17451,16 @@
     }
   ],
   "overloads_basic.py": [
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[int] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 28,
+      "name": "PyreError",
+      "stop_column": 36,
+      "stop_line": 28
+    },
     {
       "code": -2,
       "column": 1,
@@ -18476,7 +18656,98 @@
       "stop_line": 81
     }
   ],
-  "protocols_runtime_checkable.py": [],
+  "protocols_runtime_checkable.py": [
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[Proto1] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[Proto1] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 23,
+      "name": "PyreError",
+      "stop_column": 28,
+      "stop_line": 23
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[Proto2] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[Proto2] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 28,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[DataProtocol] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[DataProtocol] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 34,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[NonDataProtocol] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[NonDataProtocol] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 52,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 52
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[DataProtocol] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[DataProtocol] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 55,
+      "name": "PyreError",
+      "stop_column": 34,
+      "stop_line": 55
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[NonDataProtocol] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[NonDataProtocol] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 58,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 58
+    },
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "EXPECTED type[Proto2] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[Proto2] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 39,
+      "stop_line": 85
+    },
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "EXPECTED type[Proto3] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[Proto3] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 88,
+      "name": "PyreError",
+      "stop_column": 39,
+      "stop_line": 88
+    },
+    {
+      "code": -2,
+      "column": 19,
+      "concise_description": "EXPECTED type[Concrete3A] <: type",
+      "description": "EXPECTED type[Concrete3A] <: type",
+      "line": 96,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 96
+    }
+  ],
   "protocols_self.py": [
     {
       "code": -2,
@@ -19364,6 +19635,16 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 13
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "EXPECTED type[float] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[float] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 15,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 15
     }
   ],
   "specialtypes_type.py": [
@@ -19901,6 +20182,16 @@
     },
     {
       "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
+      "description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
+      "line": 72,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 72
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed",
       "description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed",
@@ -19911,6 +20202,16 @@
     },
     {
       "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
+      "description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
+      "line": 76,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 76
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, int] | tuple[str, str]) failed",
       "description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, int] | tuple[str, str]) failed",
@@ -19918,6 +20219,16 @@
       "name": "PyreError",
       "stop_column": 60,
       "stop_line": 78
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
+      "description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
+      "line": 80,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 80
     },
     {
       "code": -2,
@@ -22888,6 +23199,16 @@
       "name": "PyreError",
       "stop_column": 41,
       "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED type[Movie] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED type[Movie] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 35,
+      "name": "PyreError",
+      "stop_column": 27,
+      "stop_line": 35
     },
     {
       "code": -2,
