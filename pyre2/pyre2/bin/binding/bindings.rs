@@ -598,7 +598,7 @@ impl<'a> BindingsBuilder<'a> {
         for comp in comprehensions.iter() {
             self.scopes.last_mut().stat.expr_lvalue(&comp.target);
             let make_binding = |k| Binding::IterableValue(k, comp.iter.clone());
-            self.bind_target(&comp.target, &make_binding, true);
+            self.bind_target(&comp.target, &make_binding);
         }
     }
 
@@ -649,7 +649,7 @@ impl<'a> BindingsBuilder<'a> {
             Expr::Named(x) => {
                 self.scopes.last_mut().stat.expr_lvalue(&x.target);
                 let make_binding = |k| Binding::Expr(k, (*x.value).clone());
-                self.bind_target(&x.target, &make_binding, true);
+                self.bind_target(&x.target, &make_binding);
                 false
             }
             Expr::ListComp(x) => {
@@ -773,13 +773,11 @@ impl<'a> BindingsBuilder<'a> {
         self.bind_key(&name.id, idx, annotation, false, is_initialized)
     }
 
-    // `should_ensure_expr` determines whether to call `ensure_expr` recursively in `bind_target`
     fn bind_unpacking(
         &mut self,
         elts: &[Expr],
         make_binding: &dyn Fn(Option<Idx<KeyAnnotation>>) -> Binding,
         range: TextRange,
-        should_ensure_expr: bool,
     ) {
         // An unpacking has zero or one splats (starred expressions).
         let mut splat = false;
@@ -796,7 +794,7 @@ impl<'a> BindingsBuilder<'a> {
                             UnpackedPosition::Slice(i, j),
                         )
                     };
-                    self.bind_target(&e.value, &make_nested_binding, should_ensure_expr);
+                    self.bind_target(&e.value, &make_nested_binding);
                 }
                 _ => {
                     let idx = if splat {
@@ -809,7 +807,7 @@ impl<'a> BindingsBuilder<'a> {
                     let make_nested_binding = |ann: Option<Idx<KeyAnnotation>>| {
                         Binding::UnpackedValue(Box::new(make_binding(ann)), range, idx)
                     };
-                    self.bind_target(e, &make_nested_binding, should_ensure_expr);
+                    self.bind_target(e, &make_nested_binding);
                 }
             }
         }
@@ -854,18 +852,11 @@ impl<'a> BindingsBuilder<'a> {
         false
     }
 
-    // `should_ensure_expr` determines whether to call `ensure_expr` recursively
     fn bind_target(
         &mut self,
         target: &Expr,
         make_binding: &dyn Fn(Option<Idx<KeyAnnotation>>) -> Binding,
-        should_ensure_expr: bool,
     ) {
-        let mut maybe_ensure_expr = |expr| {
-            if should_ensure_expr {
-                self.ensure_expr(expr)
-            }
-        };
         match target {
             Expr::Name(name) => {
                 let key = Key::Definition(ShortIdentifier::expr_name(name));
@@ -874,7 +865,6 @@ impl<'a> BindingsBuilder<'a> {
                 self.table.types.1.insert(idx, make_binding(ann));
             }
             Expr::Attribute(x) => {
-                maybe_ensure_expr(&x.value);
                 let ann = self.table.insert(
                     KeyAnnotation::AttrAnnotation(x.range),
                     BindingAnnotation::AttrType(x.clone()),
@@ -884,8 +874,6 @@ impl<'a> BindingsBuilder<'a> {
                 self.table.insert(Key::Anon(x.range), binding);
             }
             Expr::Subscript(x) => {
-                maybe_ensure_expr(&x.value);
-                maybe_ensure_expr(&x.slice);
                 let binding = make_binding(None);
                 self.table.insert(
                     Key::Anon(x.range),
@@ -893,10 +881,10 @@ impl<'a> BindingsBuilder<'a> {
                 );
             }
             Expr::Tuple(tup) => {
-                self.bind_unpacking(&tup.elts, make_binding, tup.range, should_ensure_expr);
+                self.bind_unpacking(&tup.elts, make_binding, tup.range);
             }
             Expr::List(lst) => {
-                self.bind_unpacking(&lst.elts, make_binding, lst.range, should_ensure_expr);
+                self.bind_unpacking(&lst.elts, make_binding, lst.range);
             }
             _ => self.todo("unrecognized assignment target", target),
         }
@@ -1604,14 +1592,15 @@ impl<'a> BindingsBuilder<'a> {
                             b
                         }
                     };
-                    self.bind_target(&target, &make_binding, true)
+                    self.bind_target(&target, &make_binding);
+                    self.ensure_expr(&target);
                 }
             }
             Stmt::AugAssign(x) => {
                 self.ensure_expr(&x.target);
                 self.ensure_expr(&x.value);
                 let make_binding = |_: Option<Idx<KeyAnnotation>>| Binding::AugAssign(x.clone());
-                self.bind_target(&x.target, &make_binding, false);
+                self.bind_target(&x.target, &make_binding);
             }
             Stmt::AnnAssign(mut x) => match *x.target {
                 Expr::Name(name) => {
@@ -1724,7 +1713,8 @@ impl<'a> BindingsBuilder<'a> {
                 self.setup_loop(x.range, &NarrowOps::new());
                 self.ensure_expr(&x.iter);
                 let make_binding = |k| Binding::IterableValue(k, *x.iter.clone());
-                self.bind_target(&x.target, &make_binding, true);
+                self.bind_target(&x.target, &make_binding);
+                self.ensure_expr(&x.target);
                 self.stmts(x.body);
                 self.teardown_loop(x.range, &NarrowOps::new(), x.orelse);
             }
@@ -1786,7 +1776,8 @@ impl<'a> BindingsBuilder<'a> {
                         let make_binding = |k: Option<Idx<KeyAnnotation>>| {
                             Binding::ContextValue(k, item.context_expr.clone(), kind)
                         };
-                        self.bind_target(&opts, &make_binding, true);
+                        self.bind_target(&opts, &make_binding);
+                        self.ensure_expr(&opts);
                     } else {
                         self.table.insert(
                             Key::Anon(item.range()),
