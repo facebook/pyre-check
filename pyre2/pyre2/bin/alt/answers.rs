@@ -1116,29 +1116,33 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 })
             }
-            NarrowOp::IsInstance(v) => {
+            NarrowOp::IsInstance(v) | NarrowOp::IsNotInstance(v) => {
+                let is_negation = matches!(op, NarrowOp::IsNotInstance(_));
                 let right = self.narrow_val_infer(v);
-                match self.unwrap_type_form_silently(&right) {
-                    Some(right) => self.intersect(ty, &right),
-                    None => {
-                        self.error(v.range(), format!("Expected type form, got {}", right));
-                        Type::Any(AnyStyle::Error)
+                if let Type::Tuple(Tuple::Concrete(ts)) = right {
+                    let distributed_op = NarrowOp::Or(
+                        ts.into_iter()
+                            .map(|t| NarrowOp::IsInstance(NarrowVal::Type(Box::new(t), v.range())))
+                            .collect(),
+                    );
+                    if is_negation {
+                        return self.narrow(ty, &distributed_op.negate());
+                    } else {
+                        return self.narrow(ty, &distributed_op);
                     }
                 }
-            }
-            NarrowOp::IsNotInstance(v) => {
-                let right = self.narrow_val_infer(v);
                 match self.unwrap_type_form_silently(&right) {
-                    Some(right) => self.distribute_over_union(ty, |t| {
+                    Some(right) if is_negation => self.distribute_over_union(ty, |t| {
                         if self.solver().is_subset_eq(t, &right, self.type_order()) {
                             Type::never()
                         } else {
                             t.clone()
                         }
                     }),
+                    Some(right) => self.intersect(ty, &right),
                     None => {
                         self.error(v.range(), format!("Expected type form, got {}", right));
-                        Type::Any(AnyStyle::Error)
+                        Type::any_error()
                     }
                 }
             }

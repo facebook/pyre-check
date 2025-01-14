@@ -443,3 +443,15 @@ def f(x: str | int):
         assert_type(x, int)
     "#,
 );
+
+testcase!(
+    test_isinstance_tuple,
+    r#"
+from typing import assert_type
+def f(x: str | int | None):
+    if isinstance(x, (str, int)):
+        assert_type(x, str | int)
+    else:
+        assert_type(x, None)
+    "#,
+);

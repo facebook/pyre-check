@@ -28,7 +28,6 @@ use crate::util::prelude::SliceExt;
 #[derive(Clone, Debug)]
 pub enum NarrowVal {
     Expr(Box<Expr>),
-    #[expect(dead_code)]
     Type(Box<Type>, TextRange),
 }
 
