@@ -12,6 +12,7 @@ use std::sync::Arc;
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
+use ruff_python_ast::Arguments;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Keyword;
 use ruff_python_ast::TypeParam;
@@ -1064,6 +1065,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
+    fn resolve_narrowing_call(&self, func: &Expr, args: &Arguments) -> Option<NarrowOp> {
+        // TODO: matching on the name is a bad way to detect an `isinstance` call.
+        if matches!(func, Expr::Name(name) if name.id == "isinstance") && args.args.len() > 1 {
+            Some(NarrowOp::IsInstance(Box::new(args.args[1].clone())))
+        } else {
+            None
+        }
+    }
+
     fn narrow(&self, ty: &Type, op: &NarrowOp) -> Type {
         match op {
             NarrowOp::Is(e) => {
@@ -1171,6 +1181,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             NarrowOp::Or(ops) => self.unions(&ops.map(|op| self.narrow(ty, op))),
+            NarrowOp::Call(func, args) | NarrowOp::NotCall(func, args) => {
+                if let Some(resolved_op) = self.resolve_narrowing_call(func, args) {
+                    if matches!(op, NarrowOp::Call(..)) {
+                        self.narrow(ty, &resolved_op)
+                    } else {
+                        self.narrow(ty, &resolved_op.negate())
+                    }
+                } else {
+                    ty.clone()
+                }
+            }
         }
     }
 

@@ -431,3 +431,15 @@ def f(x: Literal[E.X], y: E):
         assert_type(x, Literal[E.X])
     "#,
 );
+
+testcase!(
+    test_isinstance,
+    r#"
+from typing import assert_type
+def f(x: str | int):
+    if isinstance(x, str):
+        assert_type(x, str)
+    else:
+        assert_type(x, int)
+    "#,
+);

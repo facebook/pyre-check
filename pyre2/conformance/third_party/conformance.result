@@ -81,7 +81,6 @@
   ],
   "aliases_type_statement.py": [
     "Line 26: Expected 1 errors",
-    "Line 31: Expected 1 errors",
     "Line 42: Expected 1 errors",
     "Line 44: Expected 1 errors",
     "Line 48: Expected 1 errors",
@@ -1411,8 +1410,7 @@
   "specialtypes_promotions.py": [
     "Line 7: Unexpected errors ['EXPECTED Literal[1] <: float']",
     "Line 8: Unexpected errors ['EXPECTED Literal[1.2] <: complex']",
-    "Line 9: Unexpected errors ['EXPECTED Literal[1] <: complex']",
-    "Line 16: Unexpected errors ['Object of class `float` has no attribute `numerator`']"
+    "Line 9: Unexpected errors ['EXPECTED Literal[1] <: complex']"
   ],
   "specialtypes_type.py": [
     "Line 70: Expected 1 errors",

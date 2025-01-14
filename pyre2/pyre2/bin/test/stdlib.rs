@@ -75,6 +75,8 @@ class type:
 # TODO: overload for slice, tuple should be Sequence[T]
 class tuple[T](Iterable[T]):
     def __getitem__(self, index: int) -> T: ...
+
+def isinstance(obj: object, class_or_tuple: object, /) -> bool: ...
 "#;
 
 static TYPING: &str = r#"
