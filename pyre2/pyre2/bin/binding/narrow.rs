@@ -22,23 +22,40 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::smallmap;
 
+use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 
 #[derive(Clone, Debug)]
+pub enum NarrowVal {
+    Expr(Box<Expr>),
+    #[expect(dead_code)]
+    Type(Box<Type>, TextRange),
+}
+
+impl NarrowVal {
+    pub fn range(&self) -> TextRange {
+        match self {
+            Self::Expr(e) => e.range(),
+            Self::Type(_, r) => *r,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub enum NarrowOp {
-    Is(Box<Expr>),
-    IsNot(Box<Expr>),
+    Is(NarrowVal),
+    IsNot(NarrowVal),
     Truthy,
     Falsy,
-    Eq(Box<Expr>),
-    NotEq(Box<Expr>),
+    Eq(NarrowVal),
+    NotEq(NarrowVal),
     And(Vec<NarrowOp>),
     Or(Vec<NarrowOp>),
-    IsInstance(Box<Expr>),
-    IsNotInstance(Box<Expr>),
+    IsInstance(NarrowVal),
+    IsNotInstance(NarrowVal),
     /// (func, args) for a function call that may narrow the type of its first argument.
-    Call(Box<Expr>, Arguments),
-    NotCall(Box<Expr>, Arguments),
+    Call(NarrowVal, Arguments),
+    NotCall(NarrowVal, Arguments),
 }
 
 impl NarrowOp {
@@ -139,10 +156,10 @@ impl NarrowOps {
                     .filter_map(|(cmp_op, right)| {
                         let range = right.range();
                         let op = match cmp_op {
-                            CmpOp::Is => NarrowOp::Is(Box::new(right)),
-                            CmpOp::IsNot => NarrowOp::IsNot(Box::new(right)),
-                            CmpOp::Eq => NarrowOp::Eq(Box::new(right)),
-                            CmpOp::NotEq => NarrowOp::NotEq(Box::new(right)),
+                            CmpOp::Is => NarrowOp::Is(NarrowVal::Expr(Box::new(right))),
+                            CmpOp::IsNot => NarrowOp::IsNot(NarrowVal::Expr(Box::new(right))),
+                            CmpOp::Eq => NarrowOp::Eq(NarrowVal::Expr(Box::new(right))),
+                            CmpOp::NotEq => NarrowOp::NotEq(NarrowVal::Expr(Box::new(right))),
                             _ => {
                                 return None;
                             }
@@ -203,7 +220,11 @@ impl NarrowOps {
                 // it as a possible narrowing operation that we'll resolve in the answers phase.
                 let mut narrow_ops = Self::new();
                 for name in expr_to_names(&posargs[0]) {
-                    narrow_ops.and(name.id, NarrowOp::Call(func.clone(), args.clone()), range);
+                    narrow_ops.and(
+                        name.id,
+                        NarrowOp::Call(NarrowVal::Expr(func.clone()), args.clone()),
+                        range,
+                    );
                 }
                 narrow_ops
             }

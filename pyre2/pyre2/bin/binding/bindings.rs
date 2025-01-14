@@ -69,6 +69,7 @@ use crate::binding::binding::SizeExpectation;
 use crate::binding::binding::UnpackedPosition;
 use crate::binding::narrow::NarrowOp;
 use crate::binding::narrow::NarrowOps;
+use crate::binding::narrow::NarrowVal;
 use crate::binding::table::TableKeyed;
 use crate::binding::util::is_ellipse;
 use crate::binding::util::is_never;
@@ -1337,7 +1338,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.ensure_expr(&p.value);
                 if let Some(subject_name) = subject_name {
                     NarrowOps(
-                        smallmap! { subject_name.clone() => (NarrowOp::Eq(p.value.clone()), p.range()) },
+                        smallmap! { subject_name.clone() => (NarrowOp::Eq(NarrowVal::Expr(p.value.clone())), p.range()) },
                     )
                 } else {
                     NarrowOps::new()
@@ -1355,7 +1356,7 @@ impl<'a> BindingsBuilder<'a> {
                 };
                 if let Some(subject_name) = subject_name {
                     NarrowOps(
-                        smallmap! { subject_name.clone() => (NarrowOp::Is(Box::new(value)), p.range()) },
+                        smallmap! { subject_name.clone() => (NarrowOp::Is(NarrowVal::Expr(Box::new(value))), p.range()) },
                     )
                 } else {
                     NarrowOps::new()
@@ -1448,7 +1449,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.ensure_expr(&x.cls);
                 let mut narrow_ops = if let Some(subject_name) = subject_name {
                     NarrowOps(
-                        smallmap! { subject_name.clone() => (NarrowOp::IsInstance(x.cls.clone()), x.cls.range()) },
+                        smallmap! { subject_name.clone() => (NarrowOp::IsInstance(NarrowVal::Expr(x.cls.clone())), x.cls.range()) },
                     )
                 } else {
                     NarrowOps::new()
