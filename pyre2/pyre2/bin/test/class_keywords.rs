@@ -5,28 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use ruff_python_ast::name::Name;
-
 use crate::module::module_name::ModuleName;
 use crate::state::state::State;
 use crate::test::mro::get_class_metadata;
 use crate::test::util::mk_state;
 use crate::testcase;
-use crate::testcase_with_bug;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::types::Type;
 
-fn get_class_keyword(
+fn get_class_keywords(
     class_name: &str,
     keyword_name: &str,
     module_name: ModuleName,
     state: &State,
-) -> Option<Type> {
+) -> Vec<Type> {
     get_class_metadata(class_name, module_name, state)
         .keywords()
-        .get(&Name::new(keyword_name))
-        .cloned()
+        .iter()
+        .filter(|(name, _type)| name.as_str() == keyword_name)
+        .map(|(_, ty)| ty.clone())
+        .collect()
 }
 
 fn get_metaclass(class_name: &str, module_name: ModuleName, state: &State) -> Option<ClassType> {
@@ -43,10 +42,10 @@ class A(foo=True): pass
 "#,
     );
     assert_eq!(
-        get_class_keyword("A", "foo", module_name, &state),
-        Some(Type::Literal(Lit::Bool(true))),
+        get_class_keywords("A", "foo", module_name, &state),
+        vec![Type::Literal(Lit::Bool(true))],
     );
-    assert_eq!(get_class_keyword("A", "bar", module_name, &state), None);
+    assert_eq!(get_class_keywords("A", "bar", module_name, &state), vec![]);
 }
 
 #[test]
@@ -124,15 +123,10 @@ class A(B0, B1):  # E:  Class `A` has metaclass `M0` which is not a subclass of 
 "#,
 );
 
-testcase_with_bug!(
-    r#"
-TODO(stroxler): Ideally we would not only report a duplicate keyword here,
-but also catch all type errors even in duplicate keywords. Here we miss a type
-error in the first value for `foo` because it gets overwritten.
-    "#,
+testcase!(
     test_duplicate_class_keyword,
     r#"
-class A(foo="x" + 5, foo=True):  # E: Parse error: Duplicate keyword argument "foo"
+class A(foo="x" + 5, foo=True):  # E: Parse error: Duplicate keyword argument "foo" # E: EXPECTED Literal[5] <: str
     pass
 "#,
 );

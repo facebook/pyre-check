@@ -22,7 +22,6 @@ use ruff_python_ast::StmtFunctionDef;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
-use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
@@ -50,7 +49,7 @@ assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 
 assert_eq_size!(Binding, [usize; 9]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
-assert_eq_size!(BindingClassMetadata, [usize; 8]);
+assert_eq_size!(BindingClassMetadata, [usize; 7]);
 assert_eq_size!(BindingClassField, [usize; 15]);
 assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
 
@@ -657,9 +656,9 @@ impl DisplayWith<Bindings> for BindingClassField {
 ///
 /// The `Key` points to the definition of the class.
 /// The `Vec<Expr>` contains the base classes from the class header.
-/// The `SmallMap<Name, Expr>` contains the class keywords from the class header.
+/// The `Vec<(Name, Expr)>` contains the class keywords from the class header.
 #[derive(Clone, Debug)]
-pub struct BindingClassMetadata(pub Idx<Key>, pub Vec<Expr>, pub SmallMap<Name, Expr>);
+pub struct BindingClassMetadata(pub Idx<Key>, pub Vec<Expr>, pub Vec<(Name, Expr)>);
 
 impl DisplayWith<Bindings> for BindingClassMetadata {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {

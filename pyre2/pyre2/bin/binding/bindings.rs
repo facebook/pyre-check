@@ -1192,21 +1192,11 @@ impl<'a> BindingsBuilder<'a> {
             base
         });
 
-        let mut keywords = SmallMap::new();
+        let mut keywords = Vec::new();
         x.keywords().iter().for_each(|keyword| {
             if let Some(name) = &keyword.arg {
                 self.ensure_expr(&keyword.value);
-                if keywords
-                    .insert(name.id.clone(), keyword.value.clone())
-                    .is_some()
-                {
-                    // TODO(stroxler) We should use a Vec rather than a Map in the binding
-                    // so that we can still type check the values associated with
-                    // duplicate keywords.
-                    //
-                    // For now, we get a type error from the parser but never
-                    // check the expression.
-                }
+                keywords.push((name.id.clone(), keyword.value.clone()));
             } else {
                 self.error(
                     keyword.range(),

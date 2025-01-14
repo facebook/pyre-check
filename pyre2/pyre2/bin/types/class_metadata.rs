@@ -12,7 +12,6 @@ use std::iter;
 use std::sync::Arc;
 
 use ruff_python_ast::name::Name;
-use starlark_map::small_map::SmallMap;
 use vec1::Vec1;
 
 use crate::error::collector::ErrorCollector;
@@ -37,7 +36,7 @@ impl ClassMetadata {
         cls: &Class,
         bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
         metaclass: Option<ClassType>,
-        keywords: SmallMap<Name, Type>,
+        keywords: Vec<(Name, Type)>,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         ClassMetadata(
@@ -57,7 +56,7 @@ impl ClassMetadata {
     }
 
     #[allow(dead_code)] // This is used in tests now, and will be needed later in production.
-    pub fn keywords(&self) -> &SmallMap<Name, Type> {
+    pub fn keywords(&self) -> &[(Name, Type)] {
         &self.2.0
     }
 
@@ -98,7 +97,7 @@ impl Display for Metaclass {
 /// The `metaclass` keyword is not included, since we store the metaclass
 /// separately as part of `ClassMetadata`.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
-struct Keywords(SmallMap<Name, Type>);
+struct Keywords(Vec<(Name, Type)>);
 
 impl Display for Keywords {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {

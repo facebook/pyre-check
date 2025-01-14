@@ -315,7 +315,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         cls: &Class,
         bases: &[Expr],
-        keywords: &SmallMap<Name, Expr>,
+        keywords: &[(Name, Expr)],
     ) -> ClassMetadata {
         let bases_with_metadata: Vec<_> = bases
             .iter()
@@ -330,7 +330,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 _ => None,
             })
             .collect();
-        let (metaclasses, keywords): (Vec<_>, SmallMap<_, _>) =
+        let (metaclasses, keywords): (Vec<_>, Vec<(_, _)>) =
             keywords.iter().partition_map(|(n, x)| match n.as_str() {
                 "metaclass" => Either::Left(x),
                 _ => Either::Right((n.clone(), self.expr(x, None))),
