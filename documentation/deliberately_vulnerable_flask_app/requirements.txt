@@ -1,4 +1,4 @@
-Flask==2.3.3
+Flask==3.0.3
 lxml
 jsonpickle
 requests
