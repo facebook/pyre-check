@@ -1068,13 +1068,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn resolve_narrowing_call(&self, func: &NarrowVal, args: &Arguments) -> Option<NarrowOp> {
-        // TODO: matching on the name is a bad way to detect an `isinstance` call.
-        if matches!(func, NarrowVal::Expr(box Expr::Name(name)) if name.id == "isinstance")
+        // TODO: do something more reliable than matching on the name.
+        if let NarrowVal::Expr(box Expr::Name(name)) = func
             && args.args.len() > 1
         {
-            return Some(NarrowOp::IsInstance(NarrowVal::Expr(Box::new(
-                args.args[1].clone(),
-            ))));
+            let second_arg = &args.args[1];
+            let op = match name.id.as_str() {
+                "isinstance" => Some(NarrowOp::IsInstance(NarrowVal::Expr(Box::new(
+                    second_arg.clone(),
+                )))),
+                "issubclass" => Some(NarrowOp::IsSubclass(NarrowVal::Expr(Box::new(
+                    second_arg.clone(),
+                )))),
+                _ => None,
+            };
+            if op.is_some() {
+                return op;
+            }
         }
         let func_ty = self.narrow_val_infer(func);
         match func_ty {
@@ -1185,6 +1195,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.unwrap_type_form_and_narrow(&narrow, &right, v.range())
                 }
             }
+            NarrowOp::IsSubclass(_) | NarrowOp::IsNotSubclass(_) => ty.clone(), // TODO: implement this
             NarrowOp::TypeGuard(t) => t.clone(),
             NarrowOp::NotTypeGuard(_) => ty.clone(),
             NarrowOp::Truthy | NarrowOp::Falsy => self.distribute_over_union(ty, |t| {

@@ -78,6 +78,7 @@ class tuple[T](Iterable[T]):
 
 _ClassInfo = type | tuple[_ClassInfo, ...]
 def isinstance(obj: object, class_or_tuple: _ClassInfo, /) -> bool: ...
+def issubclass(cls: type, class_or_tuple: _ClassInfo, /) -> bool: ...
 "#;
 
 static TYPING: &str = r#"

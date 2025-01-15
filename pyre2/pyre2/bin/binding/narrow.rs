@@ -52,6 +52,8 @@ pub enum NarrowOp {
     Or(Vec<NarrowOp>),
     IsInstance(NarrowVal),
     IsNotInstance(NarrowVal),
+    IsSubclass(NarrowVal),
+    IsNotSubclass(NarrowVal),
     TypeGuard(Type),
     NotTypeGuard(Type),
     /// (func, args) for a function call that may narrow the type of its first argument.
@@ -62,12 +64,14 @@ pub enum NarrowOp {
 impl NarrowOp {
     pub fn negate(&self) -> Self {
         match self {
-            Self::Is(e) => Self::IsNot(e.clone()),
-            Self::IsNot(e) => Self::Is(e.clone()),
-            Self::IsInstance(e) => Self::IsNotInstance(e.clone()),
-            Self::IsNotInstance(e) => Self::IsInstance(e.clone()),
-            Self::Eq(e) => Self::NotEq(e.clone()),
-            Self::NotEq(e) => Self::Eq(e.clone()),
+            Self::Is(v) => Self::IsNot(v.clone()),
+            Self::IsNot(v) => Self::Is(v.clone()),
+            Self::IsInstance(v) => Self::IsNotInstance(v.clone()),
+            Self::IsNotInstance(v) => Self::IsInstance(v.clone()),
+            Self::IsSubclass(v) => Self::IsNotSubclass(v.clone()),
+            Self::IsNotSubclass(v) => Self::IsSubclass(v.clone()),
+            Self::Eq(v) => Self::NotEq(v.clone()),
+            Self::NotEq(v) => Self::Eq(v.clone()),
             Self::Truthy => Self::Falsy,
             Self::Falsy => Self::Truthy,
             Self::And(ops) => Self::Or(ops.map(|op| op.negate())),

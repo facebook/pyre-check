@@ -521,3 +521,18 @@ def f(x: Cat | Dog):
         assert_type(x, Cat | Dog)
     "#,
 );
+
+testcase_with_bug!(
+    "TODO",
+    test_issubclass,
+    r#"
+from typing import assert_type
+class A: ...
+class B(A): ...
+def f(x: type[B] | type[int]):
+    if issubclass(x, A):
+        assert_type(x, type[B])  # E: assert_type
+    else:
+        assert_type(x, type[int])  # E: assert_type
+    "#,
+);
