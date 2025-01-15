@@ -45,6 +45,9 @@
       "site-package": "tabulate"
     },
     {
+      "site-package": "tomli"
+    },
+    {
       "is_toplevel_module": true,
       "site-package": "typing_extensions"
     },

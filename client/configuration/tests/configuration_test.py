@@ -13,8 +13,10 @@ import unittest
 from pathlib import Path
 
 import testslide
+import tomli as tomllib
 
 from ... import command_arguments
+from ...find_directories import TOML_CONFIGURATION_FILE
 from ...tests.setup import (
     ensure_directories_exists,
     ensure_files_exist,
@@ -25,7 +27,6 @@ from ..configuration import (
     check_nested_local_configuration,
     Configuration,
     create_configuration,
-    create_overridden_configuration,
     get_default_site_roots,
     PartialConfiguration,
 )
@@ -104,7 +105,7 @@ class PartialConfigurationTest(unittest.TestCase):
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
-            PartialConfiguration.from_string(json.dumps({"binary": "foo"})).binary,
+            PartialConfiguration.from_dict({"binary": "foo"}).binary,
             "foo",
         )
 
@@ -114,9 +115,7 @@ class PartialConfigurationTest(unittest.TestCase):
             {"linux": "foo"},
             {"default": "bar", "macos": "foo", "linux": "foo"},
         ]:
-            buck_mode = PartialConfiguration.from_string(
-                json.dumps({"buck_mode": mode})
-            ).buck_mode
+            buck_mode = PartialConfiguration.from_dict({"buck_mode": mode}).buck_mode
             expected_value = PlatformAware.from_json("foo", "buck_mode")
             self.assertIsNotNone(buck_mode)
             self.assertIsNotNone(expected_value)
@@ -124,74 +123,60 @@ class PartialConfigurationTest(unittest.TestCase):
 
         for null_mode in [{}, None]:
             self.assertIsNone(
-                PartialConfiguration.from_string(
-                    json.dumps({"buck_mode": null_mode})
-                ).buck_mode
+                PartialConfiguration.from_dict({"buck_mode": null_mode}).buck_mode
             )
 
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"bxl_builder": "foo"})
-            ).bxl_builder,
+            PartialConfiguration.from_dict({"bxl_builder": "foo"}).bxl_builder,
             "foo",
         )
 
         self.assertListEqual(
             list(
-                PartialConfiguration.from_string(
-                    json.dumps({"only_check_paths": ["foo", "bar"]})
+                PartialConfiguration.from_dict(
+                    {"only_check_paths": ["foo", "bar"]}
                 ).only_check_paths
             ),
             ["foo", "bar"],
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"dot_pyre_directory": "foo"})
+            PartialConfiguration.from_dict(
+                {"dot_pyre_directory": "foo"}
             ).dot_pyre_directory,
             Path("foo"),
         )
         self.assertListEqual(
-            list(
-                PartialConfiguration.from_string(
-                    json.dumps({"exclude": "foo"})
-                ).excludes
-            ),
+            list(PartialConfiguration.from_dict({"exclude": "foo"}).excludes),
             ["foo"],
         )
         self.assertListEqual(
-            list(
-                PartialConfiguration.from_string(
-                    json.dumps({"exclude": ["foo", "bar"]})
-                ).excludes
-            ),
+            list(PartialConfiguration.from_dict({"exclude": ["foo", "bar"]}).excludes),
             ["foo", "bar"],
         )
         self.assertListEqual(
             list(
-                PartialConfiguration.from_string(
-                    json.dumps({"extensions": [".foo", ".bar"]})
+                PartialConfiguration.from_dict(
+                    {"extensions": [".foo", ".bar"]}
                 ).extensions
             ),
             [ExtensionElement(".foo", False), ExtensionElement(".bar", False)],
         )
         self.assertListEqual(
             list(
-                PartialConfiguration.from_string(
-                    json.dumps(
-                        {
-                            "extensions": [
-                                ".foo",
-                                {
-                                    "suffix": ".bar",
-                                    "include_suffix_in_module_qualifier": True,
-                                },
-                                {
-                                    "suffix": ".baz",
-                                    "include_suffix_in_module_qualifier": False,
-                                },
-                            ]
-                        }
-                    )
+                PartialConfiguration.from_dict(
+                    {
+                        "extensions": [
+                            ".foo",
+                            {
+                                "suffix": ".bar",
+                                "include_suffix_in_module_qualifier": True,
+                            },
+                            {
+                                "suffix": ".baz",
+                                "include_suffix_in_module_qualifier": False,
+                            },
+                        ]
+                    }
                 ).extensions
             ),
             [
@@ -202,48 +187,40 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertListEqual(
             list(
-                PartialConfiguration.from_string(
-                    json.dumps({"ignore_all_errors": ["foo", "bar"]})
+                PartialConfiguration.from_dict(
+                    {"ignore_all_errors": ["foo", "bar"]}
                 ).ignore_all_errors
             ),
             ["foo", "bar"],
         )
         self.assertEqual(
-            PartialConfiguration.from_string(json.dumps({"logger": "foo"})).logger,
+            PartialConfiguration.from_dict({"logger": "foo"}).logger,
             "foo",
         )
         self.assertEqual(
-            PartialConfiguration.from_string(json.dumps({"oncall": "foo"})).oncall,
+            PartialConfiguration.from_dict({"oncall": "foo"}).oncall,
             "foo",
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"workers": 42})
-            ).number_of_workers,
+            PartialConfiguration.from_dict({"workers": 42}).number_of_workers,
             42,
         )
         self.assertListEqual(
             list(
-                PartialConfiguration.from_string(
-                    json.dumps({"critical_files": ["foo", "bar"]})
+                PartialConfiguration.from_dict(
+                    {"critical_files": ["foo", "bar"]}
                 ).other_critical_files
             ),
             ["foo", "bar"],
         )
         self.assertListEqual(
-            list(
-                PartialConfiguration.from_string(
-                    json.dumps({"search_path": "foo"})
-                ).search_path
-            ),
+            list(PartialConfiguration.from_dict({"search_path": "foo"}).search_path),
             [SimpleRawElement("foo")],
         )
         self.assertListEqual(
             list(
-                PartialConfiguration.from_string(
-                    json.dumps(
-                        {"search_path": ["foo", {"root": "bar", "subdirectory": "baz"}]}
-                    )
+                PartialConfiguration.from_dict(
+                    {"search_path": ["foo", {"root": "bar", "subdirectory": "baz"}]}
                 ).search_path
             ),
             [
@@ -252,106 +229,90 @@ class PartialConfigurationTest(unittest.TestCase):
             ],
         )
         self.assertIsNone(
-            PartialConfiguration.from_string(
-                json.dumps({})
-            ).site_package_search_strategy
+            PartialConfiguration.from_dict({}).site_package_search_strategy
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"site_package_search_strategy": "pep561"})
+            PartialConfiguration.from_dict(
+                {"site_package_search_strategy": "pep561"}
             ).site_package_search_strategy,
             SearchStrategy.PEP561,
         )
-        self.assertEqual(
-            PartialConfiguration.from_string(json.dumps({"strict": True})).strict, True
-        )
+        self.assertEqual(PartialConfiguration.from_dict({"strict": True}).strict, True)
         self.assertListEqual(
             list(
-                PartialConfiguration.from_string(
-                    json.dumps({"taint_models_path": "foo"})
+                PartialConfiguration.from_dict(
+                    {"taint_models_path": "foo"}
                 ).taint_models_path
             ),
             ["foo"],
         )
         self.assertListEqual(
             list(
-                PartialConfiguration.from_string(
-                    json.dumps({"taint_models_path": ["foo", "bar"]})
+                PartialConfiguration.from_dict(
+                    {"taint_models_path": ["foo", "bar"]}
                 ).taint_models_path
             ),
             ["foo", "bar"],
         )
         self.assertEqual(
-            PartialConfiguration.from_string(json.dumps({"typeshed": "foo"})).typeshed,
+            PartialConfiguration.from_dict({"typeshed": "foo"}).typeshed,
             "foo",
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"version": "abc"})
-            ).version_hash,
+            PartialConfiguration.from_dict({"version": "abc"}).version_hash,
             "abc",
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"pysa_version": "abc"})
-            ).pysa_version_hash,
+            PartialConfiguration.from_dict({"pysa_version": "abc"}).pysa_version_hash,
             "abc",
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"python_version": "3"})
-            ).python_version,
+            PartialConfiguration.from_dict({"python_version": "3"}).python_version,
             PythonVersion(major=3, minor=0, micro=0),
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"python_version": "3.6"})
-            ).python_version,
+            PartialConfiguration.from_dict({"python_version": "3.6"}).python_version,
             PythonVersion(major=3, minor=6, micro=0),
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"python_version": "3.6.7"})
-            ).python_version,
+            PartialConfiguration.from_dict({"python_version": "3.6.7"}).python_version,
             PythonVersion(major=3, minor=6, micro=7),
         )
 
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"system_platform": "darwin"})
+            PartialConfiguration.from_dict(
+                {"system_platform": "darwin"}
             ).system_platform,
             "darwin",
         )
 
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"shared_memory": {"heap_size": 1}})
+            PartialConfiguration.from_dict(
+                {"shared_memory": {"heap_size": 1}}
             ).shared_memory,
             SharedMemory(heap_size=1),
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"shared_memory": {"dependency_table_power": 2}})
+            PartialConfiguration.from_dict(
+                {"shared_memory": {"dependency_table_power": 2}}
             ).shared_memory,
             SharedMemory(dependency_table_power=2),
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"shared_memory": {"hash_table_power": 3}})
+            PartialConfiguration.from_dict(
+                {"shared_memory": {"hash_table_power": 3}}
             ).shared_memory,
             SharedMemory(hash_table_power=3),
         )
 
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"use_buck2": False})
-            ).use_buck2,
+            PartialConfiguration.from_dict({"use_buck2": False}).use_buck2,
             False,
         )
 
-        self.assertIsNone(PartialConfiguration.from_string("{}").source_directories)
-        source_directories = PartialConfiguration.from_string(
-            json.dumps({"source_directories": ["foo", "bar"]})
+        self.assertIsNone(PartialConfiguration.from_dict({}).source_directories)
+        source_directories = PartialConfiguration.from_dict(
+            {"source_directories": ["foo", "bar"]}
         ).source_directories
         self.assertIsNotNone(source_directories)
         self.assertListEqual(
@@ -359,9 +320,9 @@ class PartialConfigurationTest(unittest.TestCase):
             [SimpleRawElement("foo"), SimpleRawElement("bar")],
         )
 
-        self.assertIsNone(PartialConfiguration.from_string(json.dumps({})).site_roots)
-        site_roots = PartialConfiguration.from_string(
-            json.dumps({"site_roots": ["foo", "bar"]})
+        self.assertIsNone(PartialConfiguration.from_dict({}).site_roots)
+        site_roots = PartialConfiguration.from_dict(
+            {"site_roots": ["foo", "bar"]}
         ).site_roots
         self.assertIsNotNone(site_roots)
         self.assertListEqual(
@@ -369,15 +330,13 @@ class PartialConfigurationTest(unittest.TestCase):
             ["foo", "bar"],
         )
 
-        source_directories = PartialConfiguration.from_string(
-            json.dumps(
-                {
-                    "source_directories": [
-                        "foo",
-                        {"root": "bar", "subdirectory": "baz"},
-                    ]
-                }
-            )
+        source_directories = PartialConfiguration.from_dict(
+            {
+                "source_directories": [
+                    "foo",
+                    {"root": "bar", "subdirectory": "baz"},
+                ]
+            }
         ).source_directories
         self.assertIsNotNone(source_directories)
         self.assertListEqual(
@@ -387,15 +346,13 @@ class PartialConfigurationTest(unittest.TestCase):
                 SubdirectoryRawElement("bar", "baz"),
             ],
         )
-        source_directories = PartialConfiguration.from_string(
-            json.dumps(
-                {
-                    "source_directories": [
-                        "foo",
-                        {"import_root": "bar", "source": "baz"},
-                    ]
-                }
-            )
+        source_directories = PartialConfiguration.from_dict(
+            {
+                "source_directories": [
+                    "foo",
+                    {"import_root": "bar", "source": "baz"},
+                ]
+            }
         ).source_directories
         self.assertIsNotNone(source_directories)
         self.assertListEqual(
@@ -406,22 +363,20 @@ class PartialConfigurationTest(unittest.TestCase):
             ],
         )
 
-        self.assertIsNone(PartialConfiguration.from_string("{}").targets)
-        targets = PartialConfiguration.from_string(
-            json.dumps({"targets": ["//foo", "//bar"]})
+        self.assertIsNone(PartialConfiguration.from_dict({}).targets)
+        targets = PartialConfiguration.from_dict(
+            {"targets": ["//foo", "//bar"]}
         ).targets
         self.assertIsNotNone(targets)
         self.assertListEqual(list(targets), ["//foo", "//bar"])
 
-        unwatched_dependency = PartialConfiguration.from_string(
-            json.dumps(
-                {
-                    "unwatched_dependency": {
-                        "change_indicator": "foo",
-                        "files": {"root": "bar", "checksum_path": "baz"},
-                    }
+        unwatched_dependency = PartialConfiguration.from_dict(
+            {
+                "unwatched_dependency": {
+                    "change_indicator": "foo",
+                    "files": {"root": "bar", "checksum_path": "baz"},
                 }
-            )
+            }
         ).unwatched_dependency
         self.assertIsNotNone(unwatched_dependency)
         self.assertEqual(
@@ -432,57 +387,51 @@ class PartialConfigurationTest(unittest.TestCase):
             ),
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"enable_readonly_analysis": True})
+            PartialConfiguration.from_dict(
+                {"enable_readonly_analysis": True}
             ).enable_readonly_analysis,
             True,
         )
         self.assertEqual(
-            PartialConfiguration.from_string(json.dumps({})).enable_readonly_analysis,
+            PartialConfiguration.from_dict({}).enable_readonly_analysis,
             None,
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"enable_strict_override_check": True})
+            PartialConfiguration.from_dict(
+                {"enable_strict_override_check": True}
             ).enable_strict_override_check,
             True,
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({})
-            ).enable_strict_override_check,
+            PartialConfiguration.from_dict({}).enable_strict_override_check,
             None,
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"enable_unawaited_awaitable_analysis": True})
+            PartialConfiguration.from_dict(
+                {"enable_unawaited_awaitable_analysis": True}
             ).enable_unawaited_awaitable_analysis,
             True,
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({})
-            ).enable_unawaited_awaitable_analysis,
+            PartialConfiguration.from_dict({}).enable_unawaited_awaitable_analysis,
             None,
         )
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"include_suppressed_errors": True})
+            PartialConfiguration.from_dict(
+                {"include_suppressed_errors": True}
             ).include_suppressed_errors,
             True,
         )
         self.assertEqual(
-            PartialConfiguration.from_string(json.dumps({})).include_suppressed_errors,
+            PartialConfiguration.from_dict({}).include_suppressed_errors,
             None,
         )
 
     def test_create_from_string_failure(self) -> None:
         def assert_raises(content: str) -> None:
             with self.assertRaises(InvalidConfiguration):
-                PartialConfiguration.from_string(content)
+                PartialConfiguration.from_dict(json.loads(content))
 
-        assert_raises("")
-        assert_raises("{")
         assert_raises(json.dumps({"binary": True}))
         assert_raises(json.dumps({"buck_mode": {"default": 5}}))
         assert_raises(json.dumps({"buck_mode": {"bad-platform": "mode"}}))
@@ -1165,3 +1114,41 @@ class ConfigurationTest(testslide.TestCase):
                     SimpleElement(str(root_path / "b")),
                 ],
             )
+
+    def test_pyproject_dot_toml_configuration_from_string_and_file(self) -> None:
+        pyproject_config: str = """[tool.pyre]
+exclude = ["sample/exclude1", "sample/exclude2"]
+strict = true
+"""
+        configuration_dict = tomllib.loads(pyproject_config)["tool"]["pyre"]
+        config = PartialConfiguration.from_dict(configuration_dict)
+        self.assertEqual(config.excludes, ["sample/exclude1", "sample/exclude2"])
+        self.assertEqual(config.strict, True)
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            with open(
+                root_path / TOML_CONFIGURATION_FILE, "w", encoding="UTF-8"
+            ) as configuration_file:
+                configuration_file.write(pyproject_config)
+            config = PartialConfiguration.from_file(root_path / TOML_CONFIGURATION_FILE)
+            self.assertEqual(config.excludes, ["sample/exclude1", "sample/exclude2"])
+            self.assertEqual(config.strict, True)
+
+    def test_pyproject_dot_toml_with_no_json_configuration_file(self) -> None:
+        pyproject_config: str = """[tool.pyre]
+exclude = ["another/sample/exclude1", "another/sample/exclude2"]
+strict = false
+        """
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            with open(
+                root_path / TOML_CONFIGURATION_FILE, "w", encoding="UTF-8"
+            ) as configuration_file:
+                configuration_file.write(pyproject_config)
+            config = create_configuration(
+                command_arguments.CommandArguments(), root_path
+            )
+            self.assertEqual(
+                config.excludes, ["another/sample/exclude1", "another/sample/exclude2"]
+            )
+            self.assertEqual(config.strict, False)

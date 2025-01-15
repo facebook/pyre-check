@@ -23,11 +23,11 @@ from typing import Any, Dict, Optional, Tuple, Union
 from .. import log
 from ..find_directories import (
     BINARY_NAME,
-    CONFIGURATION_FILE,
     find_global_root,
     find_parent_directory_containing_file,
     find_taint_models_directories,
     find_typeshed,
+    JSON_CONFIGURATION_FILE,
     LOCAL_CONFIGURATION_FILE,
 )
 from . import commands
@@ -218,7 +218,7 @@ def get_configuration_and_path(
         Path("."), ".buckconfig"
     )
     current_directory: Path = Path(os.getcwd())
-    configuration_path = current_directory / CONFIGURATION_FILE
+    configuration_path = current_directory / JSON_CONFIGURATION_FILE
     _check_configuration_file_location(
         configuration_path, current_directory, global_root
     )
