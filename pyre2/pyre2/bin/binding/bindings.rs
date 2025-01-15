@@ -17,9 +17,11 @@ use itertools::Either;
 use itertools::Itertools;
 use parse_display::Display;
 use ruff_python_ast::name::Name;
+use ruff_python_ast::BoolOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
+use ruff_python_ast::ExprBoolOp;
 use ruff_python_ast::ExprBooleanLiteral;
 use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprLambda;
@@ -622,25 +624,53 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    /// Helper to clean up an expression that does type narrowing. We merge flows for the narrowing
+    /// operation and its negation, so that narrowing is limited to the body of the expression but
+    /// newly defined names persist.
+    fn negate_and_merge_flow(
+        &mut self,
+        base: Flow,
+        ops: &NarrowOps,
+        orelse: Option<&Expr>,
+        range: TextRange,
+    ) {
+        let if_branch = self.scopes.last().flow.clone();
+        self.scopes.last_mut().flow = base;
+        self.bind_narrow_ops(&ops.negate(), range);
+        self.ensure_expr_opt(orelse);
+        let else_branch = self.scopes.last().flow.clone();
+        self.scopes.last_mut().flow = self.merge_flow(vec![if_branch, else_branch], range, false);
+    }
+
     /// Execute through the expr, ensuring every name has a binding.
     fn ensure_expr(&mut self, x: &Expr) {
-        if let Expr::If(x) = x {
-            // Ternary operation. We treat it like an if/else statement.
-            let base = self.scopes.last().flow.clone();
-            self.ensure_expr(&x.test);
-            let narrow_ops = NarrowOps::from_expr(Some((*x.test).clone()));
-            self.bind_narrow_ops(&narrow_ops, x.body.range());
-            self.ensure_expr(&x.body);
-            let if_branch = self.scopes.last().flow.clone();
-            self.scopes.last_mut().flow = base;
-            self.bind_narrow_ops(&narrow_ops.negate(), x.orelse.range());
-            self.ensure_expr(&x.orelse);
-            let else_branch = self.scopes.last().flow.clone();
-            self.scopes.last_mut().flow =
-                self.merge_flow(vec![if_branch, else_branch], x.range, false);
-            return;
-        }
         let new_scope = match x {
+            Expr::If(x) => {
+                // Ternary operation. We treat it like an if/else statement.
+                let base = self.scopes.last().flow.clone();
+                self.ensure_expr(&x.test);
+                let narrow_ops = NarrowOps::from_expr(Some((*x.test).clone()));
+                self.bind_narrow_ops(&narrow_ops, x.body.range());
+                self.ensure_expr(&x.body);
+                self.negate_and_merge_flow(base, &narrow_ops, Some(&x.orelse), x.orelse.range());
+                return;
+            }
+            Expr::BoolOp(ExprBoolOp {
+                range,
+                op: BoolOp::And,
+                values,
+            }) => {
+                // Every subsequent value is evaluated only if all previous values were truthy.
+                let base = self.scopes.last().flow.clone();
+                let mut narrow_ops = NarrowOps::new();
+                for value in values {
+                    self.bind_narrow_ops(&narrow_ops, value.range());
+                    self.ensure_expr(value);
+                    narrow_ops.and_all(NarrowOps::from_expr(Some(value.clone())));
+                }
+                self.negate_and_merge_flow(base, &narrow_ops, None, *range);
+                return;
+            }
             Expr::Name(x) => {
                 let name = Ast::expr_name_identifier(x.clone());
                 let binding = self.forward_lookup(&name);

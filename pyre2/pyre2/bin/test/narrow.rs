@@ -228,13 +228,13 @@ def f(x: str | None):
 );
 
 testcase_with_bug!(
-    "`Literal[False] | bool` should collapse to `bool`",
+    "`Literal[False, True] | bool` should collapse to `bool`",
     test_not_and,
     r#"
 from typing import assert_type, Literal
 def f(x: bool | None):
     if not (x is True and x is None):
-        assert_type(x, Literal[False] | bool | None)
+        assert_type(x, Literal[False, True] | bool | None)
     "#,
 );
 
@@ -464,5 +464,32 @@ X = int
 def f(x: str | int):
     if isinstance(x, X):
         assert_type(x, int)
+    "#,
+);
+
+testcase!(
+    test_guarded_attribute_access,
+    r#"
+class A:
+    x: str
+class B:
+    pass
+def f(x: A | B):
+    return isinstance(x, A) and x.x
+    "#,
+);
+
+testcase!(
+    test_and_chain_with_walrus,
+    r#"
+from typing import assert_type, Literal
+
+class A: ...
+class B: ...
+
+x: A | B
+y = isinstance(x, A) and (z := True)
+assert_type(x, A | B)
+assert_type(z, Literal[True])
     "#,
 );
