@@ -15,6 +15,7 @@ mod class_subtyping;
 mod config;
 mod constructors;
 mod contextual;
+mod decorators;
 mod enums;
 mod flow;
 mod imports;
