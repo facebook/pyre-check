@@ -12,6 +12,7 @@ module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 type kind =
   | Normal
   | PropertySetter
+  | Decorated
 [@@deriving show, sexp, compare, hash, eq]
 
 type function_name = {
@@ -48,6 +49,8 @@ module Regular : sig
   val get_corresponding_override_exn : t -> t
 
   val kind : t -> kind option
+
+  val set_kind : kind -> t -> t
 end
 
 module ParameterMap : Data_structures.SerializableMap.S with type key = TaintAccessPath.Root.t
@@ -151,6 +154,8 @@ val for_issue_handle : t -> t
 (** Return the define name of a Function or Method target. Note that multiple targets can match to
     the same define name (e.g, property getters and setters). Hence, use this at your own risk. *)
 val define_name_exn : t -> Reference.t
+
+val set_kind : kind -> t -> t
 
 module Set : Stdlib.Set.S with type elt = t
 

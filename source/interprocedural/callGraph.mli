@@ -336,17 +336,20 @@ module DefineCallGraph : sig
   val resolve_string_format : t -> location:Ast.Location.t -> StringFormatCallees.t option
 end
 
-module ResolvedExpression : sig
+module DecoratorDefine : sig
   type t = {
-    expression: Expression.t;
-    call_graph: DefineCallGraph.t;
+    define: Ast.Statement.Define.t;
+    (* An artificial define that returns the call to the decorators. *)
+    callable: Target.t;
+    (* `Target` representation of the above define. *)
+    call_graph: DefineCallGraph.t; (* Call graph of the above define. *)
   }
   [@@deriving show, eq]
 end
 
 module DecoratorResolution : sig
   type t =
-    | Decorators of ResolvedExpression.t
+    | Decorators of DecoratorDefine.t
     | DefinitionNotFound
     | PropertySetterUnsupported
     | Undecorated

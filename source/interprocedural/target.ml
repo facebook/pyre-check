@@ -23,6 +23,9 @@ module PyrePysaLogic = Analysis.PyrePysaLogic
 type kind =
   | Normal
   | PropertySetter
+  | Decorated
+    (* This represents a callable but with all its decorators applied (i.e., the decorated
+       function). By contrast, we use `Normal` to represent the undecorated function. *)
 [@@deriving show { with_path = false }, sexp, compare, hash, eq]
 
 type function_name = {
@@ -72,6 +75,7 @@ module Regular = struct
   let pp_kind formatter = function
     | Normal -> ()
     | PropertySetter -> Format.fprintf formatter "@setter"
+    | Decorated -> Format.fprintf formatter "@decorated"
 
 
   let kind = function
@@ -80,6 +84,13 @@ module Regular = struct
     | Override { kind; _ } ->
         Some kind
     | Object _ -> None
+
+
+  let set_kind kind = function
+    | Function (_ as function_name) -> Function { function_name with kind }
+    | Method (_ as method_name) -> Method { method_name with kind }
+    | Override (_ as method_name) -> Override { method_name with kind }
+    | Object _ as regular -> regular
 
 
   let pp_pretty formatter = function
@@ -386,6 +397,12 @@ let rec for_issue_handle = function
 
 
 let define_name_exn target = target |> get_regular |> Regular.define_name_exn
+
+let set_kind kind = function
+  | Regular regular -> Regular (Regular.set_kind kind regular)
+  | Parameterized { regular; parameters } ->
+      Parameterized { regular = Regular.set_kind kind regular; parameters }
+
 
 module Set = Stdlib.Set.Make (T)
 module Hashable = Core.Hashable.Make (T)

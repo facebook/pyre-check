@@ -6860,7 +6860,9 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
   let module TestResult = struct
     type t =
       | Decorators of {
-          expression: string;
+          return_expression: string;
+          define_name: string;
+          callable: Target.t;
           call_graph: CallGraph.DefineCallGraph.t;
         }
       | DefinitionNotFound
@@ -6869,19 +6871,48 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
     [@@deriving show, eq]
 
     let from_actual = function
-      | CallGraph.DecoratorResolution.Decorators
-          { CallGraph.ResolvedExpression.expression; call_graph } ->
-          Decorators { expression = Expression.show expression; call_graph }
       | CallGraph.DecoratorResolution.DefinitionNotFound -> DefinitionNotFound
       | CallGraph.DecoratorResolution.PropertySetterUnsupported -> PropertySetterUnsupported
       | CallGraph.DecoratorResolution.Undecorated -> Undecorated
+      | CallGraph.DecoratorResolution.Decorators
+          {
+            CallGraph.DecoratorDefine.define =
+              {
+                signature = { Ast.Statement.Define.Signature.name; _ };
+                body =
+                  [
+                    {
+                      Node.value = Ast.Statement.Statement.Return { expression = Some expression; _ };
+                      _;
+                    };
+                  ];
+                _;
+              };
+            callable;
+            call_graph;
+          } ->
+          Decorators
+            {
+              return_expression = Expression.show expression;
+              define_name = Reference.show name;
+              callable;
+              call_graph;
+            }
+      | CallGraph.DecoratorResolution.Decorators { define; _ } ->
+          Format.asprintf
+            "Expect a single return statement in define `%a`"
+            Ast.Statement.Define.pp
+            define
+          |> failwith
 
 
     let from_expected = function
-      | Result.Ok (decorator_call, call_graph) ->
+      | Result.Ok (decorator_call, callable, define_name, call_graph) ->
           Decorators
             {
-              expression = decorator_call;
+              return_expression = decorator_call;
+              callable = Target.from_regular callable;
+              define_name;
               call_graph = CallGraphTestHelper.parse_define_call_graph call_graph;
             }
       | Result.Error CallGraph.DecoratorResolution.DefinitionNotFound -> DefinitionNotFound
@@ -6951,6 +6982,8 @@ let test_resolve_decorator_callees =
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Result.Ok
                    ( "test.decorator2(test.decorator(test.foo))",
+                     Target.Regular.Function { name = "test.foo"; kind = Decorated },
+                     "test.foo.@decorated",
                      [
                        ( "12:0-13:10",
                          "foo",
@@ -7041,6 +7074,8 @@ let test_resolve_decorator_callees =
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Result.Ok
                    ( "test.decorator_factory(1, 2)(test.foo)",
+                     Target.Regular.Function { name = "test.foo"; kind = Decorated },
+                     "test.foo.@decorated",
                      [
                        ( "7:0-8:10",
                          "foo",
@@ -7109,6 +7144,8 @@ let test_resolve_decorator_callees =
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Result.Ok
                    ( "test.decorator_factory(1, test.bar)(test.foo)",
+                     Target.Regular.Function { name = "test.foo"; kind = Decorated },
+                     "test.foo.@decorated",
                      [
                        ( "9:0-10:10",
                          "foo",
@@ -7211,6 +7248,8 @@ let test_resolve_decorator_callees =
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Result.Ok
                    ( "test.ClassDecorator(test.foo)",
+                     Target.Regular.Function { name = "test.foo"; kind = Decorated },
+                     "test.foo.@decorated",
                      [
                        ( "8:0-9:10",
                          "foo",
@@ -7302,6 +7341,8 @@ let test_resolve_decorator_callees =
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Result.Ok
                    ( "test.A.decorator(test.foo)",
+                     Target.Regular.Function { name = "test.foo"; kind = Decorated },
+                     "test.foo.@decorated",
                      [
                        ( "9:0-10:10",
                          "foo",
@@ -7375,6 +7416,9 @@ let test_resolve_decorator_callees =
                ( Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal },
                  Result.Ok
                    ( "test.A.decorator(test.A.foo)",
+                     Target.Regular.Method
+                       { class_name = "test.A"; method_name = "foo"; kind = Decorated },
+                     "test.A.foo.@decorated",
                      [
                        ( "8:3-8:12",
                          "A",
@@ -7446,6 +7490,8 @@ let test_resolve_decorator_callees =
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Result.Ok
                    ( "test.a_or_b.decorator(test.foo)",
+                     Target.Regular.Function { name = "test.foo"; kind = Decorated },
+                     "test.foo.@decorated",
                      [
                        ( "11:0-12:10",
                          "foo",

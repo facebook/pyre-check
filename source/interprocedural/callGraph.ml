@@ -3252,17 +3252,20 @@ module CalleeVisitor = struct
       ~state:(ref { NodeVisitor.pyre_in_context; assignment_target; context; callees_at_location })
 end
 
-module ResolvedExpression = struct
+module DecoratorDefine = struct
   type t = {
-    expression: Expression.t;
-    call_graph: DefineCallGraph.t;
+    define: Define.t;
+    (* An artificial define that returns the call to the decorators. *)
+    callable: Target.t;
+    (* `Target` representation of the above define. *)
+    call_graph: DefineCallGraph.t; (* Call graph of the above define. *)
   }
   [@@deriving show, eq]
 end
 
 module DecoratorResolution = struct
   type t =
-    | Decorators of ResolvedExpression.t
+    | Decorators of DecoratorDefine.t
     | DefinitionNotFound
     | PropertySetterUnsupported
     | Undecorated
@@ -3355,6 +3358,7 @@ module DecoratorResolution = struct
     with
     | None, _ -> Format.asprintf "Do not support `Override` or `Object` targets." |> failwith
     | Some Target.PropertySetter, _ -> PropertySetterUnsupported
+    | Some Target.Decorated, _ -> failwith "unexpected"
     | _, None -> DefinitionNotFound
     | ( Some Target.Normal,
         Some
@@ -3362,10 +3366,9 @@ module DecoratorResolution = struct
             { Node.value = { Define.signature = { decorators; _ }; _ }; location = define_location }
           ) ) ->
         let decorators = decorators |> List.filter ~f:filter_decorator |> List.rev in
+        let define_name = Target.define_name_exn callable in
         let callable_name =
-          callable
-          |> Target.define_name_exn
-          |> Ast.Expression.create_name_from_reference ~location:define_location
+          Ast.Expression.create_name_from_reference ~location:define_location define_name
         in
         log "Decorators: [%s]" (decorators |> List.map ~f:Expression.show |> String.concat ~sep:";");
         if List.is_empty decorators then
@@ -3379,8 +3382,36 @@ module DecoratorResolution = struct
           in
           let call_graph = ref DefineCallGraph.empty in
           resolve_callees ~call_graph expression;
+          let define =
+            {
+              Define.signature =
+                {
+                  Define.Signature.name = Reference.create ~prefix:define_name "@decorated";
+                  parameters = [];
+                  decorators = [];
+                  return_annotation = None;
+                  async = false;
+                  generator = false;
+                  parent = NestingContext.create_toplevel ();
+                  (* The class owning the method *)
+                  legacy_parent = None;
+                  type_params = [];
+                };
+              captures = [];
+              unbound_names = [];
+              body =
+                [
+                  Statement.Return { Return.is_implicit = false; expression = Some expression }
+                  |> Node.create_with_default_location;
+                ];
+            }
+          in
           Decorators
-            { expression; call_graph = DefineCallGraph.filter_empty_attribute_access !call_graph }
+            {
+              define;
+              callable = Target.set_kind Target.Decorated callable;
+              call_graph = DefineCallGraph.filter_empty_attribute_access !call_graph;
+            }
 end
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
