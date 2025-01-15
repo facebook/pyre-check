@@ -503,3 +503,16 @@ assert_type(x, A | B)
 assert_type(z, Literal[True])
     "#,
 );
+
+testcase!(
+    test_typeguard,
+    r#"
+from typing import TypeGuard, assert_type
+class Cat:
+    color: str
+class Dog:
+    pass
+def is_black_cat(x: Cat | Dog) -> TypeGuard[Cat]:
+    return isinstance(x, Cat) and x.color == "black"
+    "#,
+);

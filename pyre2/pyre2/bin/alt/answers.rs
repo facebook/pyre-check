@@ -1217,6 +1217,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()))
             }
+            Binding::ReturnExpr(ann, e) => {
+                let ty = ann.map(|k| self.get_idx(k));
+                let hint = ty.as_ref().and_then(|x| x.ty.as_ref());
+                if matches!(hint, Some(Type::TypeGuard(_))) {
+                    self.expr(e, Some(&Type::ClassType(self.stdlib.bool())))
+                } else {
+                    self.expr(e, hint)
+                }
+            }
             Binding::DecoratorApplication(d, k) => self.apply_decorator(d, k),
             Binding::ExceptionHandler(box ann, is_star) => {
                 let base_exception_type = self.stdlib.base_exception().to_type();

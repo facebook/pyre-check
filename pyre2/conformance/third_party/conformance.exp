@@ -16740,16 +16740,6 @@
   "narrowing_typeguard.py": [
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED bool <: TypeGuard[tuple[?_, ?_]]",
-      "description": "EXPECTED bool <: TypeGuard[tuple[?_, ?_]]",
-      "line": 13,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 13
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "EXPECTED tuple[?_, ...] <: Sized",
       "description": "EXPECTED tuple[?_, ...] <: Sized",
@@ -16780,36 +16770,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED bool <: TypeGuard[list[str]]",
-      "description": "EXPECTED bool <: TypeGuard[list[str]]",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED bool <: TypeGuard[list[str]]",
-      "description": "EXPECTED bool <: TypeGuard[list[str]]",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 48,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED bool <: TypeGuard[set[?_]]",
-      "description": "EXPECTED bool <: TypeGuard[set[?_]]",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 49,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "EXPECTED type[int] <: type[@_]",
       "description": "EXPECTED type[int] <: type[@_]",
@@ -16830,26 +16790,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED bool <: TypeGuard[int]",
-      "description": "EXPECTED bool <: TypeGuard[int]",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED bool <: TypeGuard[int]",
-      "description": "EXPECTED bool <: TypeGuard[int]",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "EXPECTED Callable[[object], TypeGuard[int]] <: Callable[ParamSpec(@_), TypeGuard[int]]",
       "description": "EXPECTED Callable[[object], TypeGuard[int]] <: Callable[ParamSpec(@_), TypeGuard[int]]",
@@ -16857,26 +16797,6 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 47
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED bool <: TypeGuard[int]",
-      "description": "EXPECTED bool <: TypeGuard[int]",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED bool <: TypeGuard[A]",
-      "description": "EXPECTED bool <: TypeGuard[A]",
-      "line": 52,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 52
     },
     {
       "code": -2,
@@ -16897,16 +16817,6 @@
       "name": "PyreError",
       "stop_column": 36,
       "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED bool <: TypeGuard[?_]",
-      "description": "EXPECTED bool <: TypeGuard[?_]",
-      "line": 55,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 55
     },
     {
       "code": -2,
@@ -17080,36 +16990,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Literal[False] <: TypeGuard[int]",
-      "description": "EXPECTED Literal[False] <: TypeGuard[int]",
-      "line": 103,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 103
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Literal[False] <: TypeGuard[int]",
-      "description": "EXPECTED Literal[False] <: TypeGuard[int]",
-      "line": 108,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 108
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED bool <: TypeGuard[int]",
-      "description": "EXPECTED bool <: TypeGuard[int]",
-      "line": 124,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 124
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "EXPECTED Callable[[object], TypeGuard[int]] <: Callable[[object], str]",
       "description": "EXPECTED Callable[[object], TypeGuard[int]] <: Callable[[object], str]",
@@ -17137,26 +17017,6 @@
       "name": "PyreError",
       "stop_column": 42,
       "stop_line": 148
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED bool <: TypeGuard[int]",
-      "description": "EXPECTED bool <: TypeGuard[int]",
-      "line": 159,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 159
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED bool <: TypeGuard[bool]",
-      "description": "EXPECTED bool <: TypeGuard[bool]",
-      "line": 163,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 163
     }
   ],
   "narrowing_typeis.py": [
@@ -17539,16 +17399,6 @@
       "name": "PyreError",
       "stop_column": 32,
       "stop_line": 163
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED bool <: TypeGuard[int]",
-      "description": "EXPECTED bool <: TypeGuard[int]",
-      "line": 166,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 166
     },
     {
       "code": -2,
