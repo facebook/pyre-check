@@ -655,18 +655,23 @@ impl<'a> BindingsBuilder<'a> {
                 self.negate_and_merge_flow(base, &narrow_ops, Some(&x.orelse), x.orelse.range());
                 return;
             }
-            Expr::BoolOp(ExprBoolOp {
-                range,
-                op: BoolOp::And,
-                values,
-            }) => {
-                // Every subsequent value is evaluated only if all previous values were truthy.
+            Expr::BoolOp(ExprBoolOp { range, op, values }) => {
                 let base = self.scopes.last().flow.clone();
                 let mut narrow_ops = NarrowOps::new();
                 for value in values {
                     self.bind_narrow_ops(&narrow_ops, value.range());
                     self.ensure_expr(value);
-                    narrow_ops.and_all(NarrowOps::from_expr(Some(value.clone())));
+                    let new_narrow_ops = NarrowOps::from_expr(Some(value.clone()));
+                    match op {
+                        BoolOp::And => {
+                            // Every subsequent value is evaluated only if all previous values were truthy.
+                            narrow_ops.and_all(new_narrow_ops);
+                        }
+                        BoolOp::Or => {
+                            // Every subsequent value is evaluated only if all previous values were falsy.
+                            narrow_ops.and_all(new_narrow_ops.negate());
+                        }
+                    }
                 }
                 self.negate_and_merge_flow(base, &narrow_ops, None, *range);
                 return;

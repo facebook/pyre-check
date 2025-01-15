@@ -468,7 +468,7 @@ def f(x: str | int):
 );
 
 testcase!(
-    test_guarded_attribute_access,
+    test_guarded_attribute_access_and,
     r#"
 class A:
     x: str
@@ -476,6 +476,16 @@ class B:
     pass
 def f(x: A | B):
     return isinstance(x, A) and x.x
+    "#,
+);
+
+testcase!(
+    test_guarded_attribute_access_or,
+    r#"
+class A:
+    x: str
+def f(x: A | None):
+    return x is None or x.x
     "#,
 );
 
