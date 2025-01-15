@@ -10,6 +10,7 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Arguments;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::Comprehension;
+use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprSlice;
@@ -31,6 +32,7 @@ use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::dunder;
+use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Callable;
 use crate::types::callable::Param;
@@ -836,6 +838,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn expr_infer(&self, x: &Expr) -> Type {
         self.expr_infer_with_hint(x, None)
+    }
+
+    /// Apply a decorator. This effectively synthesizes a function call.
+    pub fn apply_decorator(&self, decorator: &Decorator, decoratee: &Idx<Key>) -> Type {
+        let call_target = {
+            let ty = self.expr(&decorator.expression, None);
+            self.as_call_target_or_error(ty, CallStyle::FreeForm, decorator.range)
+        };
+        let ty_decoratee = self.get_idx(*decoratee);
+        let arg = CallArg::Type(ty_decoratee.as_ref(), decorator.range);
+        self.call_infer(call_target, &[arg], &[], decorator.range)
     }
 
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>) -> Type {
