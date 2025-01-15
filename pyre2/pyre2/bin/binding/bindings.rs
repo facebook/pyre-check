@@ -1170,7 +1170,7 @@ impl<'a> BindingsBuilder<'a> {
         let mut yield_expr_keys = SmallSet::with_capacity(yield_exprs.len());
         for x in yield_exprs {
             let key = self.table.insert(
-                Key::YieldExpression(ShortIdentifier::new(&func_name), x.range()),
+                Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range()),
                 // collect the value of the yield expression.
                 Binding::Expr(None, yield_expr(x)),
             );
@@ -1187,8 +1187,10 @@ impl<'a> BindingsBuilder<'a> {
             Key::ReturnType(ShortIdentifier::new(&func_name)),
             return_type,
         );
-        self.table
-            .insert(Key::YieldType(ShortIdentifier::new(&func_name)), yield_type);
+        self.table.insert(
+            Key::YieldTypeOfGenerator(ShortIdentifier::new(&func_name)),
+            yield_type,
+        );
 
         // Handle decorators, which re-bind the name from the definition.
         for decorator in decorators {

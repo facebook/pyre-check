@@ -1465,7 +1465,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .get(&Key::ReturnType(ShortIdentifier::new(&x.name)))
                     .arc_clone();
                 let yield_expr_type = self
-                    .get(&Key::YieldType(ShortIdentifier::new(&x.name)))
+                    .get(&Key::YieldTypeOfGenerator(ShortIdentifier::new(&x.name)))
                     .arc_clone();
                 // # TODO zeina: raise a type error if return type is inconsistent with inferred generator type
                 let ret = if yield_expr_type.is_never() || ret.is_generator() || ret.is_iterator() {
