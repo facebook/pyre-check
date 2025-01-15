@@ -11,7 +11,7 @@ testcase_with_bug!(
     "Simple function decorators should be evaluated",
     test_simple_function_decorator,
     r#"
-from typing import assert_type, Callable
+from typing import assert_type, Callable, Any
 
 def decorator(f: Callable[[int], int]) -> int: ...
 
@@ -20,6 +20,6 @@ def decorated(x: int) -> int:
    return x
 
 # Oops: should be int
-assert_type(decorated, int)  # E: assert_type(Callable[[int], int], int)
+assert_type(decorated, int)  # E: assert_type(Any, int)
     "#,
 );

@@ -1044,6 +1044,7 @@ impl<'a> BindingsBuilder<'a> {
 
     fn function_def(&mut self, mut x: StmtFunctionDef) {
         let body = mem::take(&mut x.body);
+        let decorators = mem::take(&mut x.decorator_list);
         let kind = if is_ellipse(&body) {
             FunctionKind::Stub
         } else {
@@ -1134,7 +1135,7 @@ impl<'a> BindingsBuilder<'a> {
                 .insert(method.name.id.clone(), method.instance_attributes.clone());
         }
 
-        self.bind_definition(
+        let mut current_name_key = self.bind_definition(
             &func_name,
             Binding::Function(Box::new(x), kind, legacy_tparams.into_boxed_slice()),
             None,
@@ -1188,6 +1189,16 @@ impl<'a> BindingsBuilder<'a> {
         );
         self.table
             .insert(Key::YieldType(ShortIdentifier::new(&func_name)), yield_type);
+
+        // Handle decorators, which re-bind the name from the definition.
+        for decorator in decorators {
+            self.ensure_expr(&decorator.expression);
+            current_name_key = self.table.insert(
+                Key::DecoratorApplication(decorator.range),
+                Binding::DecoratorApplication(Box::new(decorator), current_name_key),
+            );
+            self.bind_key(&func_name.id, current_name_key, None, true, true);
+        }
     }
 
     fn class_def(&mut self, mut x: StmtClassDef) {

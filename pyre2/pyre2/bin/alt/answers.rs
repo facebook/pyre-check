@@ -1217,6 +1217,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()))
             }
+            Binding::DecoratorApplication(_d, _k) => {
+                // TODO(stroxler): Implement cecorator analysis.
+                Type::any_error()
+            }
             Binding::ExceptionHandler(box ann, is_star) => {
                 let base_exception_type = self.stdlib.base_exception().to_type();
                 let base_exception_group_any_type = if *is_star {
