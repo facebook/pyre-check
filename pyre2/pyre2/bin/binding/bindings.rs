@@ -767,11 +767,11 @@ impl<'a> BindingsBuilder<'a> {
         binding: Binding,
         annotation: Option<Idx<KeyAnnotation>>,
         is_initialized: bool,
-    ) -> Option<Idx<KeyAnnotation>> {
+    ) {
         let idx = self
             .table
             .insert(Key::Definition(ShortIdentifier::new(name)), binding);
-        self.bind_key(&name.id, idx, annotation, false, is_initialized)
+        self.bind_key(&name.id, idx, annotation, false, is_initialized);
     }
 
     fn bind_unpacking(
