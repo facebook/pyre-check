@@ -17,10 +17,8 @@ val load_exn : Configuration.UnwatchedFiles.t -> t
 
 val empty : t
 
-(* Expose for testing purpose *)
 val of_alist_exn : (string * string) list -> t
 
-(* Expose for testing purpose *)
 val to_alist : t -> (string * string) list
 
 module Difference : sig

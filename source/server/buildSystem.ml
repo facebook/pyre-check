@@ -330,6 +330,25 @@ module TrackUnwatchedDependencyBuildSystem = struct
     }
   end
 
+  (* This module defines how `State.t` will be preserved in the saved state. *)
+  module SerializableState = struct
+    type t = { serialized_checksum_map: (string * string) list }
+
+    module Serialized = struct
+      type nonrec t = t
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "TrackUnwatchedDependency Builder States"
+    end
+
+    let serialize = Fn.id
+
+    let deserialize = Fn.id
+  end
+
+  module SavedState = Memory.Serializer (SerializableState)
+
   let unwatched_files_may_change ~change_indicator_path paths =
     List.exists paths ~f:(fun { SourcePath.Event.path; _ } ->
         SourcePath.raw path |> PyrePath.equal change_indicator_path)
@@ -368,7 +387,10 @@ module TrackUnwatchedDependencyBuildSystem = struct
     in
     let lookup_source = default_lookup_source in
     let lookup_artifact = default_lookup_artifact in
-    let store () = () in
+    let store () =
+      { SerializableState.serialized_checksum_map = ChecksumMap.to_alist state.checksum_map }
+      |> SavedState.store
+    in
     { update; lookup_source; lookup_artifact; store }
 
 
@@ -386,6 +408,20 @@ module TrackUnwatchedDependencyBuildSystem = struct
           Log.warning "Initial checksum map loading failed: %s. Assuming an empty map." message;
           ChecksumMap.empty
     in
+    Lwt.return
+      (initialize_from_state { State.change_indicator_path; unwatched_files; checksum_map })
+
+
+  let initialize_from_saved_state
+      { Configuration.UnwatchedDependency.change_indicator; files = unwatched_files }
+    =
+    let change_indicator_path = Configuration.ChangeIndicator.to_path change_indicator in
+    (* NOTE (grievejia): For saved state loading, we are still using the passed-in
+       `change_indicator_path` and `unwatched_files`, instead of preserving these options in saved
+       state itself. This is actually mandatory since these roots may legitimately change when
+       loading states on a different machine. *)
+    let { SerializableState.serialized_checksum_map } = SavedState.load () in
+    let checksum_map = ChecksumMap.of_alist_exn serialized_checksum_map in
     Lwt.return
       (initialize_from_state { State.change_indicator_path; unwatched_files; checksum_map })
 end
@@ -448,11 +484,7 @@ module Initializer = struct
         (fun () -> TrackUnwatchedDependencyBuildSystem.initialize_from_options unwatched_dependency);
       load =
         (fun () ->
-          (* NOTE(grievejia): The only state used in this build system is the checksum map. Given
-             that checksum map loading seems to be a fairly cheap thing to do, I think it makes
-             sense to avoid putting it into saved state, and simply re-build the map on each saved
-             state loading. *)
-          TrackUnwatchedDependencyBuildSystem.initialize_from_options unwatched_dependency);
+          TrackUnwatchedDependencyBuildSystem.initialize_from_saved_state unwatched_dependency);
       cleanup = (fun () -> Lwt.return_unit);
     }
 
