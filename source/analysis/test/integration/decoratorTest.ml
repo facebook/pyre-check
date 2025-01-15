@@ -615,6 +615,78 @@ let test_check_user_decorators =
               reveal_type(foo)
             |}
            ["Revealed type [-1]: Revealed type for `test.foo` is `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources:
+             [
+               {
+                 handle = "my_module/__init__.py";
+                 source =
+                   {|
+                     from .submodule import decorated
+                   |};
+               };
+               {
+                 handle = "my_module/submodule.py";
+                 source =
+                   {|
+                      from typing import Callable
+                      
+                      def decorator(f: Callable[[int], int]) -> Callable[[int], int]:
+                        return f
+
+                      @decorator
+                      def decorated(x: int) -> int:
+                        return x
+                    |};
+               };
+             ]
+           {|
+              import my_module
+              reveal_type(my_module.decorated)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `my_module.decorated` is \
+              `typing.Callable[[int], int]`.";
+           ];
+      (* TODO(T212388542): Due to applying decorators lazily, at the call site of the decorated
+         function, decorators that are not publicly visible (for instance, hidden with a
+         __getattr__) are not applied correctly, leading to missing type information. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources:
+             [
+               {
+                 handle = "my_module/__init__.py";
+                 source =
+                   {|
+                     import typing
+                     from .submodule import decorated
+
+                     def __getattr__(name: str) -> typing.Any:
+                       raise AttributeError(name)
+                   |};
+               };
+               {
+                 handle = "my_module/submodule.py";
+                 source =
+                   {|
+                      from typing import Callable
+                      
+                      def decorator(f: Callable[[int], int]) -> Callable[[int], int]:
+                        return f
+
+                      @decorator
+                      def decorated(x: int) -> int:
+                        return x
+                    |};
+               };
+             ]
+           {|
+              import my_module
+              reveal_type(my_module.decorated)
+            |}
+           ["Revealed type [-1]: Revealed type for `my_module.decorated` is `typing.Any`."];
       (* Avoid infinite looping *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
