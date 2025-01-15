@@ -1093,6 +1093,38 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn distribute_narrow_op_over_tuple(
+        &self,
+        build_op: &dyn Fn(NarrowVal) -> NarrowOp,
+        ty: &Type,
+        range: TextRange,
+    ) -> Option<NarrowOp> {
+        if let Type::Tuple(Tuple::Concrete(ts)) = ty {
+            Some(NarrowOp::Or(
+                ts.iter()
+                    .map(|t| build_op(NarrowVal::Type(Box::new(t.clone()), range)))
+                    .collect(),
+            ))
+        } else {
+            None
+        }
+    }
+
+    fn unwrap_type_form_and_narrow(
+        &self,
+        narrow: &dyn Fn(Type) -> Type,
+        ty: &Type,
+        range: TextRange,
+    ) -> Type {
+        match self.unwrap_type_form_silently(ty) {
+            Some(right) => narrow(right),
+            None => {
+                self.error(range, format!("Expected type form, got {}", ty));
+                Type::any_error()
+            }
+        }
+    }
+
     fn narrow(&self, ty: &Type, op: &NarrowOp) -> Type {
         match op {
             NarrowOp::Is(v) => {
@@ -1123,34 +1155,34 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 })
             }
-            NarrowOp::IsInstance(v) | NarrowOp::IsNotInstance(v) => {
-                let is_negation = matches!(op, NarrowOp::IsNotInstance(_));
+            NarrowOp::IsInstance(v) => {
                 let right = self.narrow_val_infer(v);
-                if let Type::Tuple(Tuple::Concrete(ts)) = right {
-                    let distributed_op = NarrowOp::Or(
-                        ts.into_iter()
-                            .map(|t| NarrowOp::IsInstance(NarrowVal::Type(Box::new(t), v.range())))
-                            .collect(),
-                    );
-                    if is_negation {
-                        return self.narrow(ty, &distributed_op.negate());
-                    } else {
-                        return self.narrow(ty, &distributed_op);
-                    }
+                if let Some(distributed_op) =
+                    self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, v.range())
+                {
+                    self.narrow(ty, &distributed_op)
+                } else {
+                    let narrow = |right| self.intersect(ty, &right);
+                    self.unwrap_type_form_and_narrow(&narrow, &right, v.range())
                 }
-                match self.unwrap_type_form_silently(&right) {
-                    Some(right) if is_negation => self.distribute_over_union(ty, |t| {
-                        if self.solver().is_subset_eq(t, &right, self.type_order()) {
-                            Type::never()
-                        } else {
-                            t.clone()
-                        }
-                    }),
-                    Some(right) => self.intersect(ty, &right),
-                    None => {
-                        self.error(v.range(), format!("Expected type form, got {}", right));
-                        Type::any_error()
-                    }
+            }
+            NarrowOp::IsNotInstance(v) => {
+                let right = self.narrow_val_infer(v);
+                if let Some(distributed_op) =
+                    self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, v.range())
+                {
+                    self.narrow(ty, &distributed_op.negate())
+                } else {
+                    let narrow = |right| {
+                        self.distribute_over_union(ty, |t| {
+                            if self.solver().is_subset_eq(t, &right, self.type_order()) {
+                                Type::never()
+                            } else {
+                                t.clone()
+                            }
+                        })
+                    };
+                    self.unwrap_type_form_and_narrow(&narrow, &right, v.range())
                 }
             }
             NarrowOp::TypeGuard(t) => t.clone(),
