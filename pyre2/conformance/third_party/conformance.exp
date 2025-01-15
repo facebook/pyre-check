@@ -16751,8 +16751,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(tuple[str, ...], tuple[str, str]) failed",
-      "description": "assert_type(tuple[str, ...], tuple[str, str]) failed",
+      "concise_description": "assert_type(tuple[?_, ?_], tuple[str, str]) failed",
+      "description": "assert_type(tuple[?_, ?_], tuple[str, str]) failed",
       "line": 17,
       "name": "PyreError",
       "stop_column": 44,
@@ -16781,8 +16781,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(set[object], set[int]) failed",
-      "description": "assert_type(set[object], set[int]) failed",
+      "concise_description": "assert_type(set[?_], set[int]) failed",
+      "description": "assert_type(set[?_], set[int]) failed",
       "line": 32,
       "name": "PyreError",
       "stop_column": 35,
@@ -16837,16 +16837,6 @@
       "name": "PyreError",
       "stop_column": 36,
       "stop_line": 55
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(object, int) failed",
-      "description": "assert_type(object, int) failed",
-      "line": 69,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 69
     },
     {
       "code": -2,
@@ -16971,8 +16961,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(object, B) failed",
-      "description": "assert_type(object, B) failed",
+      "concise_description": "assert_type(A, B) failed",
+      "description": "assert_type(A, B) failed",
       "line": 89,
       "name": "PyreError",
       "stop_column": 29,
@@ -16981,8 +16971,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(object, B) failed",
-      "description": "assert_type(object, B) failed",
+      "concise_description": "assert_type(A, B) failed",
+      "description": "assert_type(A, B) failed",
       "line": 93,
       "name": "PyreError",
       "stop_column": 29,

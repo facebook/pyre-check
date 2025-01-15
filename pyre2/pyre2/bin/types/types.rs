@@ -484,6 +484,17 @@ impl Type {
         }
     }
 
+    pub fn as_typeguard(&self) -> Option<&Type> {
+        match self {
+            Type::Callable(box Callable {
+                params: _,
+                ret: Type::TypeGuard(t),
+            }) => Some(t),
+            Type::Forall(_, t) | Type::BoundMethod(_, t) => t.as_typeguard(),
+            _ => None,
+        }
+    }
+
     pub fn is_none(&self) -> bool {
         matches!(self, Type::None)
     }

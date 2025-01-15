@@ -536,3 +536,27 @@ def f(x: type[B] | type[int]):
         assert_type(x, type[int])  # E: assert_type
     "#,
 );
+
+testcase!(
+    test_typeguard_instance_method,
+    r#"
+from typing import TypeGuard, assert_type
+class C:
+    def is_positive_int(self, x: object) -> TypeGuard[int]:
+        return isinstance(x, int) and x > 0
+def f(c: C, x: int | str):
+    if c.is_positive_int(x):
+        assert_type(x, int)
+    "#,
+);
+
+testcase!(
+    test_typeguard_generic_function,
+    r#"
+from typing import TypeGuard, assert_type
+def f[T](x: object, y: T, z: T) -> TypeGuard[int]: ...
+def g(x: int | str):
+    if f(x, 0, 0):
+        assert_type(x, int)
+    "#,
+);

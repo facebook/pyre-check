@@ -68,7 +68,6 @@ use crate::table_try_for_each;
 use crate::type_order::TypeOrder;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
-use crate::types::callable::Callable;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
@@ -1087,13 +1086,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
         }
         let func_ty = self.narrow_val_infer(func);
-        match func_ty {
-            Type::Callable(box Callable {
-                params: _,
-                ret: Type::TypeGuard(t),
-            }) => Some(NarrowOp::TypeGuard(*t)),
-            _ => None,
-        }
+        func_ty
+            .as_typeguard()
+            .map(|t| NarrowOp::TypeGuard(t.clone()))
     }
 
     fn narrow_val_infer(&self, val: &NarrowVal) -> Type {
