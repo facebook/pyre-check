@@ -52,6 +52,8 @@ pub enum NarrowOp {
     Or(Vec<NarrowOp>),
     IsInstance(NarrowVal),
     IsNotInstance(NarrowVal),
+    TypeGuard(Type),
+    NotTypeGuard(Type),
     /// (func, args) for a function call that may narrow the type of its first argument.
     Call(NarrowVal, Arguments),
     NotCall(NarrowVal, Arguments),
@@ -70,6 +72,8 @@ impl NarrowOp {
             Self::Falsy => Self::Truthy,
             Self::And(ops) => Self::Or(ops.map(|op| op.negate())),
             Self::Or(ops) => Self::And(ops.map(|op| op.negate())),
+            Self::TypeGuard(t) => Self::NotTypeGuard(t.clone()),
+            Self::NotTypeGuard(t) => Self::TypeGuard(t.clone()),
             Self::Call(f, args) => Self::NotCall(f.clone(), args.clone()),
             Self::NotCall(f, args) => Self::Call(f.clone(), args.clone()),
         }

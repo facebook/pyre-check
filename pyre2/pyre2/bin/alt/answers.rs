@@ -68,6 +68,7 @@ use crate::table_try_for_each;
 use crate::type_order::TypeOrder;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
+use crate::types::callable::Callable;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
@@ -1071,11 +1072,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if matches!(func, NarrowVal::Expr(box Expr::Name(name)) if name.id == "isinstance")
             && args.args.len() > 1
         {
-            Some(NarrowOp::IsInstance(NarrowVal::Expr(Box::new(
+            return Some(NarrowOp::IsInstance(NarrowVal::Expr(Box::new(
                 args.args[1].clone(),
-            ))))
-        } else {
-            None
+            ))));
+        }
+        let func_ty = self.narrow_val_infer(func);
+        match func_ty {
+            Type::Callable(box Callable {
+                params: _,
+                ret: Type::TypeGuard(t),
+            }) => Some(NarrowOp::TypeGuard(*t)),
+            _ => None,
         }
     }
 
@@ -1146,6 +1153,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
             }
+            NarrowOp::TypeGuard(t) => t.clone(),
+            NarrowOp::NotTypeGuard(_) => ty.clone(),
             NarrowOp::Truthy | NarrowOp::Falsy => self.distribute_over_union(ty, |t| {
                 let boolval = matches!(op, NarrowOp::Truthy);
                 if t.as_bool() == Some(!boolval) {

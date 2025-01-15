@@ -514,5 +514,10 @@ class Dog:
     pass
 def is_black_cat(x: Cat | Dog) -> TypeGuard[Cat]:
     return isinstance(x, Cat) and x.color == "black"
+def f(x: Cat | Dog):
+    if is_black_cat(x):
+        assert_type(x, Cat)
+    else:
+        assert_type(x, Cat | Dog)
     "#,
 );
