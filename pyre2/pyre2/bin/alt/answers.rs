@@ -1573,8 +1573,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(ty) => ty.clone(),
                 None => self.solve_binding_inner(val),
             },
-            // TODO: zeina decompose the return type here
-            Binding::GeneratorReturnType(_ann, _val) => Type::any_explicit(),
             Binding::AnyType(x) => Type::Any(*x),
             Binding::StrType => self.stdlib.str().to_type(),
             Binding::TypeParameter(q) => Type::type_form(q.to_type()),
