@@ -1167,29 +1167,29 @@ impl<'a> BindingsBuilder<'a> {
             return_expr_keys.insert(key);
         }
 
-        let mut yield_expr_keys = SmallSet::with_capacity(yield_exprs.len());
-        for x in yield_exprs {
-            let key = self.table.insert(
-                Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range()),
-                // collect the value of the yield expression.
-                Binding::Expr(None, yield_expr(x)),
-            );
-            yield_expr_keys.insert(key);
-        }
-
         let mut return_type = Binding::phi(return_expr_keys);
-        let yield_type = Binding::phi(yield_expr_keys);
-
+        if !yield_exprs.is_empty() {
+            let mut yield_expr_keys = SmallSet::with_capacity(yield_exprs.len());
+            for x in yield_exprs {
+                let key = self.table.insert(
+                    Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range()),
+                    // collect the value of the yield expression.
+                    Binding::Expr(None, yield_expr(x)),
+                );
+                yield_expr_keys.insert(key);
+            }
+            let yield_type = Binding::phi(yield_expr_keys);
+            self.table.insert(
+                Key::YieldTypeOfGenerator(ShortIdentifier::new(&func_name)),
+                yield_type,
+            );
+        }
         if let Some(ann) = return_ann {
             return_type = Binding::AnnotatedType(ann, Box::new(return_type));
         }
         self.table.insert(
             Key::ReturnType(ShortIdentifier::new(&func_name)),
             return_type,
-        );
-        self.table.insert(
-            Key::YieldTypeOfGenerator(ShortIdentifier::new(&func_name)),
-            yield_type,
         );
 
         // Handle decorators, which re-bind the name from the definition.

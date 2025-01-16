@@ -24,7 +24,7 @@ f = yielding()
 
 next_f = next(f) # E: Could not find name `next`
 reveal_type(next_f) # E: revealed type: Error
-reveal_type(f) # E:  Generator[Literal[1], Unknown, None]
+reveal_type(f) # E:  None
 
 "#,
 );
@@ -44,7 +44,7 @@ def gen_with_return():
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
     return "done"
 
-reveal_type(gen_with_return()) # E: Generator[Literal[1, 2], Unknown, Literal['done']]
+reveal_type(gen_with_return()) # E: Literal['done']
 
 "#,
 );
@@ -102,8 +102,8 @@ def nested_generator():
 def another_generator():
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(nested_generator()) # E: revealed type: Generator[Literal[1, 3], Unknown, None]
-reveal_type(another_generator()) # E: revealed type: Generator[Literal[2], Unknown, None]
+reveal_type(nested_generator()) # E: revealed type: None
+reveal_type(another_generator()) # E: revealed type: None
 
 "#,
 );
@@ -149,7 +149,7 @@ from typing import AsyncGenerator, reveal_type # E: Could not import `AsyncGener
 async def async_count_up_to() -> AsyncGenerator[int, None]:
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(async_count_up_to()) # E: Generator[Literal[2], Unknown, Error]
+reveal_type(async_count_up_to()) # E:  Coroutine[Unknown, Unknown, Error]
 
 "#,
 );
@@ -163,7 +163,7 @@ from typing import reveal_type
 async def async_count_up_to():
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(async_count_up_to()) # E: Generator[Literal[2], Unknown, None]
+reveal_type(async_count_up_to()) # E: Coroutine[Unknown, Unknown, None]
 
 "#,
 );
