@@ -194,9 +194,9 @@ impl Static {
         if top_level && module_info.name() != ModuleName::builtins() {
             d.inject_builtins();
         }
-        for (name, (range, defn, count)) in d.definitions {
-            self.add_with_count(name, range, count).uses_key_import =
-                defn == DefinitionStyle::ImportModule;
+        for (name, def) in d.definitions {
+            self.add_with_count(name, def.range, def.count)
+                .uses_key_import = def.style == DefinitionStyle::ImportModule;
         }
         for (m, range) in d.import_all {
             if let Ok(exports) = modules.get(m) {

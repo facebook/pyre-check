@@ -44,15 +44,22 @@ pub enum DefinitionStyle {
     ImportModule,
 }
 
+#[derive(Debug, Clone)]
+pub struct Definition {
+    /// A location where the definition is defined, there is no guarantee it is the first/last or otherwise.
+    pub range: TextRange,
+    /// If the definition occurs multiple times, the lowest `DefinitionStyle` is used (e.g. prefer `Local`).
+    pub style: DefinitionStyle,
+    /// The number is the distinct times this variable was defined.
+    pub count: usize,
+}
+
 /// Find the definitions available in a scope. Does not traverse inside classes/functions,
 /// since they are separate scopes.
 #[derive(Debug, Clone, Default)]
 pub struct Definitions {
-    /// All the things defined in this module, along with a position pointing at the name.
-    /// While the range will be a place it is defined, there is no guarantee it is the first/last or otherwise.
-    /// If the definition occurs multiple times, the lowest `DefinitionStyle` is used (e.g. prefer `Local`).
-    /// The number is the distinct times this variable was defined.
-    pub definitions: SmallMap<Name, (TextRange, DefinitionStyle, usize)>,
+    /// All the things defined in this module.
+    pub definitions: SmallMap<Name, Definition>,
     /// All the modules that are imported with `from x import *`.
     pub import_all: SmallMap<ModuleName, TextRange>,
     /// The `__all__` variable contents.
@@ -134,13 +141,16 @@ impl Definitions {
                 self.dunder_all.push(DunderAllEntry::Module(*range, *x));
             }
         }
-        for (name, (range, defn, _)) in self.definitions.iter() {
+        for (name, def) in self.definitions.iter() {
             if !name.starts_with('_')
                 && (style == ModuleStyle::Executable
-                    || matches!(defn, DefinitionStyle::Local | DefinitionStyle::ImportAsEq))
+                    || matches!(
+                        def.style,
+                        DefinitionStyle::Local | DefinitionStyle::ImportAsEq
+                    ))
             {
                 self.dunder_all
-                    .push(DunderAllEntry::Name(*range, name.clone()));
+                    .push(DunderAllEntry::Name(def.range, name.clone()));
             }
         }
     }
@@ -156,11 +166,15 @@ impl<'a> DefinitionsBuilder<'a> {
     fn add_name(&mut self, x: &Name, range: TextRange, style: DefinitionStyle) {
         match self.inner.definitions.entry(x.clone()) {
             Entry::Occupied(mut e) => {
-                e.get_mut().1 = cmp::min(e.get().1, style);
-                e.get_mut().2 += 1;
+                e.get_mut().style = cmp::min(e.get().style, style);
+                e.get_mut().count += 1;
             }
             Entry::Vacant(e) => {
-                e.insert((range, style, 1));
+                e.insert(Definition {
+                    range,
+                    style,
+                    count: 1,
+                });
             }
         }
     }
