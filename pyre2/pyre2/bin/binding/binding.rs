@@ -109,6 +109,9 @@ pub enum Key {
     YieldTypeOfGenerator(ShortIdentifier),
     /// The actual type of the return for a function.
     ReturnType(ShortIdentifier),
+    /// The type of the return for a function after taking generators into account.
+    #[allow(dead_code)] // TODO: zeina
+    ExpectedReturnType(ShortIdentifier),
     /// I am a use in this module at this location.
     Usage(ShortIdentifier),
     /// I am an expression that does not have a simple name but needs its type inferred.
@@ -141,6 +144,7 @@ impl Ranged for Key {
             Self::ReturnExpression(_, r) => *r,
             Self::YieldTypeOfYield(_, r) => *r,
             Self::YieldTypeOfGenerator(x) => x.range(),
+            Self::ExpectedReturnType(x) => x.range(),
             Self::ReturnType(x) => x.range(),
             Self::Usage(x) => x.range(),
             Self::Anon(r) => *r,
@@ -165,6 +169,7 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::Phi(n, r) => write!(f, "phi {n} {r:?}"),
             Self::Narrow(n, r1, r2) => write!(f, "narrow {n} {r1:?} {r2:?}"),
             Self::Anywhere(n, r) => write!(f, "anywhere {n} {r:?}"),
+            Self::ExpectedReturnType(x) => write!(f, "return {} {:?}", ctx.display(x), x.range()),
             Self::ReturnType(x) => write!(f, "return {} {:?}", ctx.display(x), x.range()),
             Self::ReturnExpression(x, i) => {
                 write!(f, "return {} {:?} @ {i:?}", ctx.display(x), x.range())
@@ -353,6 +358,9 @@ pub enum Binding {
     /// If the annotation has a type inside it (e.g. `int` then use the annotation).
     /// If the annotation doesn't (e.g. it's `Final`), then use the binding.
     AnnotatedType(Idx<KeyAnnotation>, Box<Binding>),
+    /// The type annotation which is to be decomposed to extract the return type.
+    #[allow(dead_code)] // TODO: zeina
+    GeneratorReturnType(Option<Idx<KeyAnnotation>>, Box<Binding>),
     /// A record of an "augmented assignment" statement like `x -= _`
     /// or `a.b *= _`. These desugar to special method calls.
     AugAssign(StmtAugAssign),
@@ -511,6 +519,14 @@ impl DisplayWith<Bindings> for Binding {
             }
             Self::AnnotatedType(k1, k2) => {
                 write!(f, "({}): {}", k2.display_with(ctx), ctx.display(*k1))
+            }
+            Self::GeneratorReturnType(k1, k2) => {
+                write!(
+                    f,
+                    "({}): {}",
+                    k2.display_with(ctx),
+                    ctx.display(k1.unwrap())
+                )
             }
             Self::Module(m, path, key) => {
                 write!(
