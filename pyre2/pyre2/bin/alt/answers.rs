@@ -1116,16 +1116,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn unwrap_type_form_and_narrow(
+    fn unwrap_class_object_and_narrow(
         &self,
         narrow: &dyn Fn(Type) -> Type,
         ty: &Type,
         range: TextRange,
     ) -> Type {
-        match self.unwrap_type_form_silently(ty) {
+        match self.unwrap_class_object_silently(ty) {
             Some(right) => narrow(right),
             None => {
-                self.error(range, format!("Expected type form, got {}", ty));
+                self.error(range, format!("Expected class object, got {}", ty));
                 Type::any_error()
             }
         }
@@ -1169,7 +1169,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.narrow(ty, &distributed_op)
                 } else {
                     let narrow = |right| self.intersect(ty, &right);
-                    self.unwrap_type_form_and_narrow(&narrow, &right, v.range())
+                    self.unwrap_class_object_and_narrow(&narrow, &right, v.range())
                 }
             }
             NarrowOp::IsNotInstance(v) => {
@@ -1188,7 +1188,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         })
                     };
-                    self.unwrap_type_form_and_narrow(&narrow, &right, v.range())
+                    self.unwrap_class_object_and_narrow(&narrow, &right, v.range())
                 }
             }
             NarrowOp::IsSubclass(_) | NarrowOp::IsNotSubclass(_) => ty.clone(), // TODO: implement this

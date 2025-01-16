@@ -982,8 +982,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "Expected type form, got ScopedTypeAlias[GoodAlias1, type[int]]",
-      "description": "Expected type form, got ScopedTypeAlias[GoodAlias1, type[int]]",
+      "concise_description": "Expected class object, got ScopedTypeAlias[GoodAlias1, type[int]]",
+      "description": "Expected class object, got ScopedTypeAlias[GoodAlias1, type[int]]",
       "line": 31,
       "name": "PyreError",
       "stop_column": 32,
