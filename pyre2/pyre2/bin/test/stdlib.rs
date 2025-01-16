@@ -102,6 +102,8 @@ Protocol: _SpecialForm
 Never: _SpecialForm
 NoReturn: _SpecialForm
 Annotated: _SpecialForm
+TypedDict: _SpecialForm
+
 def assert_type(x, y) -> None: ...
 
 class TypeVar:

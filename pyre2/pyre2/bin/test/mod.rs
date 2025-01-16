@@ -29,6 +29,7 @@ mod simple;
 mod stdlib;
 mod tuple;
 mod type_alias;
+mod typed_dict;
 mod util;
 mod with;
 mod r#yield;

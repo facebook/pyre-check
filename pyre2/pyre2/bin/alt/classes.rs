@@ -95,7 +95,6 @@ impl Attribute {
 enum BaseClass {
     #[expect(dead_code)] // Will be used in the future
     NamedTuple,
-    #[expect(dead_code)] // Will be used in the future
     TypedDict,
     Generic(Vec<Type>),
     Protocol(Vec<Type>),
@@ -192,6 +191,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Type::Type(box Type::SpecialForm(special)) => match special {
                     SpecialForm::Protocol => Some(BaseClass::Protocol(Vec::new())),
                     SpecialForm::Generic => Some(BaseClass::Generic(Vec::new())),
+                    SpecialForm::TypedDict => Some(BaseClass::TypedDict),
                     _ => None,
                 },
                 _ => None,

@@ -45,6 +45,7 @@ pub enum SpecialForm {
     TypeAlias,
     TypeGuard,
     TypeIs,
+    TypedDict,
     Union,
     Unpack,
 }
