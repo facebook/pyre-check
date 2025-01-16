@@ -143,6 +143,15 @@ impl Enum {
     pub fn class_type(&self) -> &ClassType {
         &self.0
     }
+
+    pub fn get_members(&self) -> SmallSet<Lit> {
+        self.0
+            .class_object()
+            .fields()
+            .iter()
+            .filter_map(|f| self.get_member(f))
+            .collect()
+    }
 }
 
 fn is_unbound_function(ty: &Type) -> bool {

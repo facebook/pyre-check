@@ -1039,14 +1039,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn subtract_enum_member(&self, cls: &ClassType, name: &Name) -> Type {
         let e = self.get_enum(cls).unwrap();
         self.unions(
-            &cls.class_object()
-                .fields()
-                .iter()
+            &e.get_members()
+                .into_iter()
                 .filter_map(|f| {
-                    if *f == *name {
+                    if let Lit::Enum(box (_, ref member_name)) = f
+                        && *member_name == *name
+                    {
                         None
                     } else {
-                        e.get_member(f).map(Type::Literal)
+                        Some(Type::Literal(f))
                     }
                 })
                 .collect::<Vec<_>>(),
