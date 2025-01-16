@@ -547,6 +547,15 @@ def f(x: type[B] | type[int]):
 );
 
 testcase!(
+    test_issubclass_error,
+    r#"
+def f(x: int):
+    if issubclass(x, int):  # E: EXPECTED int <: type
+        return True
+    "#,
+);
+
+testcase!(
     test_typeguard_instance_method,
     r#"
 from typing import TypeGuard, assert_type

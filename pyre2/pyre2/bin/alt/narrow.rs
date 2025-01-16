@@ -180,8 +180,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.distribute_narrow_op_over_tuple(&NarrowOp::IsSubclass, &right, v.range())
                 {
                     self.narrow(ty, &distributed_op)
-                } else if let Some(right) = self.unwrap_class_object_or_error(&right, v.range()) {
-                    Type::type_form(self.intersect(&self.untype(ty.clone(), v.range()), &right))
+                } else if let Some(left) = self.untype_opt(ty.clone(), v.range())
+                    && let Some(right) = self.unwrap_class_object_or_error(&right, v.range())
+                {
+                    Type::type_form(self.intersect(&left, &right))
                 } else {
                     ty.clone()
                 }
@@ -192,8 +194,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.distribute_narrow_op_over_tuple(&NarrowOp::IsSubclass, &right, v.range())
                 {
                     self.narrow(ty, &distributed_op.negate())
-                } else if let Some(right) = self.unwrap_class_object_or_error(&right, v.range()) {
-                    Type::type_form(self.subtract(&self.untype(ty.clone(), v.range()), &right))
+                } else if let Some(left) = self.untype_opt(ty.clone(), v.range())
+                    && let Some(right) = self.unwrap_class_object_or_error(&right, v.range())
+                {
+                    Type::type_form(self.subtract(&left, &right))
                 } else {
                     ty.clone()
                 }
