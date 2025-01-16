@@ -20,21 +20,6 @@ use crate::types::types::AnyStyle;
 use crate::types::types::Quantified;
 use crate::types::types::Type;
 
-/// A normalized type representation which is convenient for attribute lookup,
-/// since many cases are collapsed. For example, Type::Literal is converted to
-/// it's corresponding class type.
-pub enum AttributeBase {
-    ClassInstance(ClassType),
-    ClassObject(Class),
-    Module(Module),
-    Quantified(Quantified),
-    Any(AnyStyle),
-    Never,
-    /// type[Any] is a special case where attribute lookups first check the
-    /// builtin `type` class before falling back to `Any`.
-    TypeAny(AnyStyle),
-}
-
 pub enum LookupResult {
     /// The lookup succeeded, resulting in a type.
     Found(Type),
@@ -118,6 +103,21 @@ impl LookupError {
             }
         }
     }
+}
+
+/// A normalized type representation which is convenient for attribute lookup,
+/// since many cases are collapsed. For example, Type::Literal is converted to
+/// it's corresponding class type.
+enum AttributeBase {
+    ClassInstance(ClassType),
+    ClassObject(Class),
+    Module(Module),
+    Quantified(Quantified),
+    Any(AnyStyle),
+    Never,
+    /// type[Any] is a special case where attribute lookups first check the
+    /// builtin `type` class before falling back to `Any`.
+    TypeAny(AnyStyle),
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
