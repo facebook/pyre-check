@@ -65,7 +65,7 @@ impl Exports {
     }
 
     /// What symbols will I get if I do `from <this_module> import *`?
-    pub fn wildcard(&self, modules: &dyn LookupExport) -> Arc<SmallSet<Name>> {
+    pub fn wildcard(&self, lookup: &dyn LookupExport) -> Arc<SmallSet<Name>> {
         let f = || {
             let mut result = SmallSet::new();
             for x in &self.0.definitions.dunder_all {
@@ -75,8 +75,8 @@ impl Exports {
                     }
                     DunderAllEntry::Module(_, x) => {
                         // They did `__all__.extend(foo.__all__)``, but didn't import `foo`.
-                        if let Ok(import) = modules.get(*x) {
-                            result.extend(import.wildcard(modules).iter().cloned());
+                        if let Ok(import) = lookup.get(*x) {
+                            result.extend(import.wildcard(lookup).iter().cloned());
                         }
                     }
                     DunderAllEntry::Remove(_, x) => {
@@ -89,13 +89,13 @@ impl Exports {
         self.0.wildcard.calculate(f).unwrap_or_default()
     }
 
-    fn exports(&self, modules: &dyn LookupExport) -> Arc<SmallSet<Name>> {
+    fn exports(&self, lookup: &dyn LookupExport) -> Arc<SmallSet<Name>> {
         let f = || {
             let mut result = SmallSet::new();
             result.extend(self.0.definitions.definitions.keys().cloned());
             for x in self.0.definitions.import_all.keys() {
-                if let Ok(exports) = modules.get(*x) {
-                    result.extend(exports.wildcard(modules).iter().cloned());
+                if let Ok(exports) = lookup.get(*x) {
+                    result.extend(exports.wildcard(lookup).iter().cloned());
                 }
             }
             Arc::new(result)
@@ -103,8 +103,8 @@ impl Exports {
         self.0.exports.calculate(f).unwrap_or_default()
     }
 
-    pub fn contains(&self, name: &Name, imports: &dyn LookupExport) -> bool {
-        self.exports(imports).contains(name)
+    pub fn contains(&self, name: &Name, lookup: &dyn LookupExport) -> bool {
+        self.exports(lookup).contains(name)
     }
 }
 
@@ -139,10 +139,10 @@ mod tests {
         Exports::new(&ast.body, &module_info, &Config::default())
     }
 
-    fn eq_wildcards(exports: &Exports, imports: &dyn LookupExport, all: &[&str]) {
+    fn eq_wildcards(exports: &Exports, lookup: &dyn LookupExport, all: &[&str]) {
         assert_eq!(
             exports
-                .wildcard(imports)
+                .wildcard(lookup)
                 .iter()
                 .map(|x| x.as_str())
                 .collect::<Vec<_>>(),
@@ -151,8 +151,8 @@ mod tests {
     }
 
     #[must_use]
-    fn contains(exports: &Exports, imports: &dyn LookupExport, name: &str) -> bool {
-        exports.contains(&Name::new(name), imports)
+    fn contains(exports: &Exports, lookup: &dyn LookupExport, name: &str) -> bool {
+        exports.contains(&Name::new(name), lookup)
     }
 
     #[test]
