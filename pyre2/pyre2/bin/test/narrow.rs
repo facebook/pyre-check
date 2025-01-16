@@ -467,6 +467,17 @@ def f(x: str | int):
     "#,
 );
 
+testcase_with_bug!(
+    "isinstance() should reject parameterized classes",
+    test_isinstance_error,
+    r#"
+from typing import assert_type
+def f(x: int | list[int]):
+    if isinstance(x, list[int]):  # this should be an error
+        assert_type(x, list[int])
+    "#,
+);
+
 testcase!(
     test_guarded_attribute_access_and,
     r#"
