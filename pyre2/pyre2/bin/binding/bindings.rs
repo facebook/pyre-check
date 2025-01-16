@@ -652,7 +652,7 @@ impl<'a> BindingsBuilder<'a> {
                 let narrow_ops = NarrowOps::from_expr(Some((*x.test).clone()));
                 self.bind_narrow_ops(&narrow_ops, x.body.range());
                 self.ensure_expr(&x.body);
-                self.negate_and_merge_flow(base, &narrow_ops, Some(&x.orelse), x.orelse.range());
+                self.negate_and_merge_flow(base, &narrow_ops, Some(&x.orelse), x.range());
                 return;
             }
             Expr::BoolOp(ExprBoolOp { range, op, values }) => {

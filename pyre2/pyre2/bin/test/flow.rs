@@ -858,3 +858,12 @@ def f(x: None):
         pass
     "#,
 );
+
+// Regression test for a crash
+testcase!(
+    test_ternary_and_or,
+    r#"
+def f(x: bool, y: int):
+    return 0 if x else (y or 1)
+    "#,
+);
