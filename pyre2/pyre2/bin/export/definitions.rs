@@ -50,7 +50,7 @@ pub enum DefinitionStyle {
 pub struct Definitions {
     /// All the things defined in this module, along with a position pointing at the name.
     /// While the range will be a place it is defined, there is no guarantee it is the first/last or otherwise.
-    /// If the definition occurs multiple times, the lowest `DefinitionStyle`` is used (e.g. prefer `Local`).
+    /// If the definition occurs multiple times, the lowest `DefinitionStyle` is used (e.g. prefer `Local`).
     /// The number is the distinct times this variable was defined.
     pub definitions: SmallMap<Name, (TextRange, DefinitionStyle, usize)>,
     /// All the modules that are imported with `from x import *`.
