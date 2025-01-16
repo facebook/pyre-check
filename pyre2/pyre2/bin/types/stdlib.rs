@@ -35,6 +35,7 @@ pub struct Stdlib {
     exception_group: StdlibResult<Class>,
     list: StdlibResult<Class>,
     dict: StdlibResult<Class>,
+    mapping: StdlibResult<Class>,
     set: StdlibResult<Class>,
     tuple: StdlibResult<Class>,
     iterable: StdlibResult<Class>,
@@ -110,6 +111,7 @@ impl Stdlib {
             traceback_type: lookup_str(types, "TracebackType"),
             function_type: lookup_str(types, "FunctionType"),
             method_type: lookup_str(types, "MethodType"),
+            mapping: lookup_str(typing, "Mapping"),
             enum_meta: lookup_str(enum_, "EnumMeta"),
             object_class_type: lookup_str(builtins, "object")
                 .map(|obj| ClassType::new_for_stdlib(obj, TArgs::default())),
@@ -224,6 +226,10 @@ impl Stdlib {
 
     pub fn dict(&self, key: Type, value: Type) -> ClassType {
         Self::apply(&self.dict, vec![key, value])
+    }
+
+    pub fn mapping(&self, key: Type, value: Type) -> ClassType {
+        Self::apply(&self.mapping, vec![key, value])
     }
 
     pub fn set(&self, x: Type) -> ClassType {

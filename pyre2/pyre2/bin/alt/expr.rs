@@ -734,11 +734,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// is the result of looking up the class `tparams` and synthesizing default `targs` that
     /// are gradual if needed (e.g. `list` is treated as `list[Any]` when used as an annotation).
     ///
-    /// This function canonicalizes to `Type::ClassType`.
+    /// This function canonicalizes to `Type::ClassType` or `Type::TypedDict`
     pub fn canonicalize_all_class_types(&self, ty: Type, range: TextRange) -> Type {
         ty.transform(|ty| match ty {
             Type::ClassDef(cls) => {
-                *ty = Type::type_form(Type::ClassType(self.promote_to_class_type(cls, range)));
+                if self.get_metadata_for_class(cls).is_typed_dict() {
+                    *ty = Type::type_form(Type::TypedDict(self.promote_to_class_type(cls, range)));
+                } else {
+                    *ty = Type::type_form(Type::ClassType(self.promote_to_class_type(cls, range)));
+                }
             }
             _ => {}
         })

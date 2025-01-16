@@ -3,7 +3,7 @@
   "pass": 9,
   "fail": 124,
   "pass_rate": 0.07,
-  "differences": 1381,
+  "differences": 1378,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -138,7 +138,7 @@
     "typeddicts_readonly_kwargs.py": 1,
     "typeddicts_readonly_update.py": 3,
     "typeddicts_required.py": 17,
-    "typeddicts_type_consistency.py": 18,
+    "typeddicts_type_consistency.py": 15,
     "typeddicts_usage.py": 5
   },
   "comment": "@generated"

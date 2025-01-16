@@ -102,6 +102,18 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         }
                     }
             }
+            (Type::TypedDict(_), _) => {
+                let stdlib = self.type_order.stdlib();
+                self.is_subset_eq(
+                    &stdlib
+                        .mapping(
+                            stdlib.str().to_type(),
+                            stdlib.object_class_type().clone().to_type(),
+                        )
+                        .to_type(),
+                    want,
+                )
+            }
             (Type::ClassType(got), Type::ClassType(want)) => {
                 match self.type_order.as_superclass(got, want.class_object()) {
                     Some(got) => self.check_targs(got.targs(), want.targs(), want.tparams()),

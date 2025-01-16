@@ -89,6 +89,7 @@ impl<'a> TypeDisplayContext<'a> {
             let qname = match t {
                 Type::ClassDef(cls) => Some(cls.qname()),
                 Type::ClassType(c) => Some(c.qname()),
+                Type::TypedDict(c) => Some(c.qname()),
                 Type::TypeVar(t) => Some(t.qname()),
                 Type::TypeVarTuple(t) => Some(t.qname()),
                 Type::ParamSpec(t) => Some(t.qname()),
@@ -153,7 +154,7 @@ impl<'a> TypeDisplayContext<'a> {
                 self.fmt_qname(cls.qname(), f)?;
                 write!(f, "]")
             }
-            Type::ClassType(class_type) => {
+            Type::ClassType(class_type) | Type::TypedDict(class_type) => {
                 self.fmt_qname(class_type.qname(), f)?;
                 self.fmt_targs(class_type.targs(), f)
             }

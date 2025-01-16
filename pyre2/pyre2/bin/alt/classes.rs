@@ -317,16 +317,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         bases: &[Expr],
         keywords: &[(Name, Expr)],
     ) -> ClassMetadata {
+        let mut is_typed_dict = false;
         let bases_with_metadata: Vec<_> = bases
             .iter()
             .filter_map(|x| match self.base_class_of(x) {
                 BaseClass::Expr(x) => match self.expr_untype(&x) {
                     Type::ClassType(c) => {
                         let class_metadata = self.get_metadata_for_class(c.class_object());
+                        if class_metadata.is_typed_dict() {
+                            is_typed_dict = true;
+                        }
                         Some((c, class_metadata))
                     }
                     _ => None,
                 },
+                BaseClass::TypedDict => {
+                    is_typed_dict = true;
+                    None
+                }
                 _ => None,
             })
             .collect();
@@ -337,7 +345,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             });
         let metaclass =
             self.calculate_metaclass(cls, metaclasses.into_iter().next(), &bases_with_metadata);
-        ClassMetadata::new(cls, bases_with_metadata, metaclass, keywords, self.errors())
+        ClassMetadata::new(
+            cls,
+            bases_with_metadata,
+            metaclass,
+            keywords,
+            is_typed_dict,
+            self.errors(),
+        )
     }
 
     fn calculate_metaclass(

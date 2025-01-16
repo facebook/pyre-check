@@ -340,6 +340,7 @@ pub enum Type {
     /// Instances of classes have this type, and a term of the form `C[arg1, arg2]`
     /// would have the form `Type::Type(box Type::ClassType(C, [arg1, arg2]))`.
     ClassType(ClassType),
+    TypedDict(ClassType),
     Tuple(Tuple),
     Module(Module),
     Forall(TParams, Box<Type>),
@@ -607,6 +608,7 @@ impl Type {
             }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter().for_each(f),
             Type::ClassType(x) => x.visit(f),
+            Type::TypedDict(x) => x.visit(f),
             Type::Tuple(t) => t.visit(f),
             Type::Forall(_, x) => f(x),
             Type::Type(x)
@@ -642,6 +644,7 @@ impl Type {
             }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter_mut().for_each(f),
             Type::ClassType(x) => x.visit_mut(f),
+            Type::TypedDict(x) => x.visit_mut(f),
             Type::Tuple(t) => t.visit_mut(f),
             Type::Forall(_, x) => f(x),
             Type::Type(x)

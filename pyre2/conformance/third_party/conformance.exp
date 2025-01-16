@@ -21093,8 +21093,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "`Movie` has no attribute `__getitem__`",
-      "description": "`Movie` has no attribute `__getitem__`",
+      "concise_description": "Can't apply arguments to non-class, got Movie",
+      "description": "Can't apply arguments to non-class, got Movie",
       "line": 20,
       "name": "PyreError",
       "stop_column": 28,
@@ -21103,8 +21103,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "`Movie` has no attribute `__getitem__`",
-      "description": "`Movie` has no attribute `__getitem__`",
+      "concise_description": "Can't apply arguments to non-class, got Movie",
+      "description": "Can't apply arguments to non-class, got Movie",
       "line": 26,
       "name": "PyreError",
       "stop_column": 22,
@@ -21237,8 +21237,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "`Movie` has no attribute `__getitem__`",
-      "description": "`Movie` has no attribute `__getitem__`",
+      "concise_description": "Can't apply arguments to non-class, got Movie",
+      "description": "Can't apply arguments to non-class, got Movie",
       "line": 26,
       "name": "PyreError",
       "stop_column": 21,
@@ -21287,8 +21287,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Object of class `Movie` has no attribute `get`",
-      "description": "Object of class `Movie` has no attribute `get`",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 41,
       "name": "PyreError",
       "stop_column": 10,
@@ -21297,8 +21297,28 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Object of class `Movie` has no attribute `get`",
-      "description": "Object of class `Movie` has no attribute `get`",
+      "concise_description": "Missing argument 'default'",
+      "description": "Missing argument 'default'",
+      "line": 41,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 41
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "EXPECTED Literal['name'] <: Mapping[str, object]",
+      "description": "EXPECTED Literal['name'] <: Mapping[str, object]",
+      "line": 41,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 41
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 44,
       "name": "PyreError",
       "stop_column": 10,
@@ -21307,8 +21327,28 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Object of class `Movie` has no attribute `clear`",
-      "description": "Object of class `Movie` has no attribute `clear`",
+      "concise_description": "Missing argument 'default'",
+      "description": "Missing argument 'default'",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "EXPECTED Literal['other'] <: Mapping[str, object]",
+      "description": "EXPECTED Literal['other'] <: Mapping[str, object]",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Object of class `Mapping` has no attribute `clear`",
+      "description": "Object of class `Mapping` has no attribute `clear`",
       "line": 47,
       "name": "PyreError",
       "stop_column": 12,
@@ -21337,8 +21377,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, str | None) failed",
-      "description": "assert_type(Any, str | None) failed",
+      "concise_description": "assert_type(object | Any | None, str | None) failed",
+      "description": "assert_type(object | Any | None, str | None) failed",
       "line": 60,
       "name": "PyreError",
       "stop_column": 52,
@@ -21347,8 +21387,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Object of class `MovieOptional` has no attribute `get`",
-      "description": "Object of class `MovieOptional` has no attribute `get`",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 60,
       "name": "PyreError",
       "stop_column": 31,
@@ -21356,9 +21396,29 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "Missing argument 'default'",
+      "description": "Missing argument 'default'",
+      "line": 60,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "EXPECTED Literal['name'] <: Mapping[str, object]",
+      "description": "EXPECTED Literal['name'] <: Mapping[str, object]",
+      "line": 60,
+      "name": "PyreError",
+      "stop_column": 38,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
       "column": 1,
-      "concise_description": "Object of class `MovieOptional` has no attribute `clear`",
-      "description": "Object of class `MovieOptional` has no attribute `clear`",
+      "concise_description": "Object of class `Mapping` has no attribute `clear`",
+      "description": "Object of class `Mapping` has no attribute `clear`",
       "line": 62,
       "name": "PyreError",
       "stop_column": 21,
@@ -21409,8 +21469,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "`Band` has no attribute `__getitem__`",
-      "description": "`Band` has no attribute `__getitem__`",
+      "concise_description": "Can't apply arguments to non-class, got Band",
+      "description": "Can't apply arguments to non-class, got Band",
       "line": 25,
       "name": "PyreError",
       "stop_column": 14,
@@ -21797,8 +21857,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Object of class `A` has no attribute `update`",
-      "description": "Object of class `A` has no attribute `update`",
+      "concise_description": "Object of class `Mapping` has no attribute `update`",
+      "description": "Object of class `Mapping` has no attribute `update`",
       "line": 23,
       "name": "PyreError",
       "stop_column": 10,
@@ -21807,8 +21867,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Object of class `A` has no attribute `update`",
-      "description": "Object of class `A` has no attribute `update`",
+      "concise_description": "Object of class `Mapping` has no attribute `update`",
+      "description": "Object of class `Mapping` has no attribute `update`",
       "line": 34,
       "name": "PyreError",
       "stop_column": 13,
@@ -21980,16 +22040,6 @@
     },
     {
       "code": -2,
-      "column": 28,
-      "concise_description": "EXPECTED B1 <: Mapping[str, object]",
-      "description": "EXPECTED B1 <: Mapping[str, object]",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
       "column": 10,
       "concise_description": "EXPECTED dict[str, int] <: B2",
       "description": "EXPECTED dict[str, int] <: B2",
@@ -22097,26 +22147,6 @@
       "name": "PyreError",
       "stop_column": 27,
       "stop_line": 82
-    },
-    {
-      "code": -2,
-      "column": 28,
-      "concise_description": "EXPECTED B3 <: Mapping[str, object]",
-      "description": "EXPECTED B3 <: Mapping[str, object]",
-      "line": 83,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 83
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED B3 <: Mapping[str, Any]",
-      "description": "EXPECTED B3 <: Mapping[str, Any]",
-      "line": 84,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 84
     },
     {
       "code": -2,

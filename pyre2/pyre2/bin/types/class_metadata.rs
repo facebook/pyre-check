@@ -23,11 +23,16 @@ use crate::types::types::Type;
 use crate::util::display::commas_iter;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ClassMetadata(Mro, Metaclass, Keywords);
+pub struct ClassMetadata {
+    mro: Mro,
+    metaclass: Metaclass,
+    keywords: Keywords,
+    is_typed_dict: bool,
+}
 
 impl Display for ClassMetadata {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "ClassMetadata({}, {})", self.0, self.1)
+        write!(f, "ClassMetadata({}, {})", self.mro, self.metaclass)
     }
 }
 
@@ -37,27 +42,38 @@ impl ClassMetadata {
         bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
         metaclass: Option<ClassType>,
         keywords: Vec<(Name, Type)>,
+        is_typed_dict: bool,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
-        ClassMetadata(
-            Mro::new(cls, bases_with_metadata, errors),
-            Metaclass(metaclass),
-            Keywords(keywords),
-        )
+        ClassMetadata {
+            mro: Mro::new(cls, bases_with_metadata, errors),
+            metaclass: Metaclass(metaclass),
+            keywords: Keywords(keywords),
+            is_typed_dict,
+        }
     }
 
     pub fn recursive() -> Self {
-        ClassMetadata(Mro::Cyclic, Metaclass::default(), Keywords::default())
+        ClassMetadata {
+            mro: Mro::Cyclic,
+            metaclass: Metaclass::default(),
+            keywords: Keywords::default(),
+            is_typed_dict: false,
+        }
     }
 
     #[allow(dead_code)] // This is used in tests now, and will be needed later in production.
     pub fn metaclass(&self) -> Option<&ClassType> {
-        self.1.0.as_ref()
+        self.metaclass.0.as_ref()
     }
 
     #[allow(dead_code)] // This is used in tests now, and will be needed later in production.
     pub fn keywords(&self) -> &[(Name, Type)] {
-        &self.2.0
+        &self.keywords.0
+    }
+
+    pub fn is_typed_dict(&self) -> bool {
+        self.is_typed_dict
     }
 
     pub fn ancestors<'a>(&'a self, stdlib: &'a Stdlib) -> impl Iterator<Item = &'a ClassType> {
@@ -69,11 +85,11 @@ impl ClassMetadata {
     /// The MRO doesn't track `object` directly for efficiency, since it always comes last, and
     /// some use cases (for example checking if the type is an enum) do not care about `object`.
     pub fn ancestors_no_object(&self) -> &[ClassType] {
-        self.0.ancestors_no_object()
+        self.mro.ancestors_no_object()
     }
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
-        self.0.visit_mut(&mut f)
+        self.mro.visit_mut(&mut f)
     }
 }
 
@@ -250,7 +266,10 @@ impl Linearization {
         let mut ancestor_chains = Vec::new();
         for (base, mro) in bases_with_metadata.iter() {
             match &**mro {
-                ClassMetadata(Mro::Resolved(ancestors), _, _) => {
+                ClassMetadata {
+                    mro: Mro::Resolved(ancestors),
+                    ..
+                } => {
                     let ancestors_through_base = ancestors
                         .iter()
                         .map(|ancestor| ancestor.substitute(&base.substitution()))
@@ -263,7 +282,9 @@ impl Linearization {
                 }
                 // None and Cyclic both indicate a cycle, the distinction just
                 // depends on how exactly the recursion in resolving keys plays out.
-                ClassMetadata(Mro::Cyclic, _, _) => {
+                ClassMetadata {
+                    mro: Mro::Cyclic, ..
+                } => {
                     errors.add(
                         cls.module_info(),
                         cls.name().range,

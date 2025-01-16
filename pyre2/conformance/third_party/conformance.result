@@ -1532,8 +1532,8 @@
   ],
   "typeddicts_final.py": [
     "Line 19: Unexpected errors ['EXPECTED dict[str, int | str] <: Movie']",
-    "Line 20: Unexpected errors ['`Movie` has no attribute `__getitem__`']",
-    "Line 26: Unexpected errors ['`Movie` has no attribute `__getitem__`']"
+    "Line 20: Unexpected errors [\"Can't apply arguments to non-class, got Movie\"]",
+    "Line 26: Unexpected errors [\"Can't apply arguments to non-class, got Movie\"]"
   ],
   "typeddicts_inheritance.py": [
     "Line 44: Expected 1 errors",
@@ -1547,16 +1547,16 @@
     "Line 18: Unexpected errors ['EXPECTED dict[str, int | str] <: Movie']",
     "Line 19: Unexpected errors ['`Movie` has no attribute `__setitem__`']",
     "Line 20: Unexpected errors ['`Movie` has no attribute `__setitem__`']",
-    "Line 41: Unexpected errors ['Object of class `Movie` has no attribute `get`']",
+    "Line 41: Unexpected errors ['Expected 1 more positional argument', \"Missing argument 'default'\", \"EXPECTED Literal['name'] <: Mapping[str, object]\"]",
     "Line 58: Unexpected errors ['EXPECTED dict[@_, @_] <: MovieOptional']",
-    "Line 60: Unexpected errors ['assert_type(Any, str | None) failed', 'Object of class `MovieOptional` has no attribute `get`']",
+    "Line 60: Unexpected errors ['assert_type(object | Any | None, str | None) failed', 'Expected 1 more positional argument', \"Missing argument 'default'\", \"EXPECTED Literal['name'] <: Mapping[str, object]\"]",
     "Line 64: Unexpected errors ['TODO: StmtDelete - Bindings::stmt']"
   ],
   "typeddicts_readonly.py": [
     "Line 36: Expected 1 errors",
     "Line 21: Unexpected errors ['EXPECTED dict[str, list[@_] | str] <: Band']",
     "Line 23: Unexpected errors ['`Band` has no attribute `__setitem__`']",
-    "Line 25: Unexpected errors ['`Band` has no attribute `__getitem__`']",
+    "Line 25: Unexpected errors [\"Can't apply arguments to non-class, got Band\"]",
     "Line 31: Unexpected errors ['Expected a callable, got type[TypedDict]', 'TODO: Answers::apply_special_form cannot handle `ReadOnly[list[str]]`']",
     "Line 37: Unexpected errors ['Object of class `str` has no attribute `append`']",
     "Line 49: Unexpected errors ['EXPECTED dict[str, int | str] <: Movie1']",
@@ -1590,7 +1590,7 @@
   "typeddicts_readonly_update.py": [
     "Line 21: Unexpected errors ['EXPECTED dict[str, int] <: A']",
     "Line 22: Unexpected errors ['EXPECTED dict[str, int] <: A']",
-    "Line 34: Unexpected errors ['Object of class `A` has no attribute `update`']"
+    "Line 34: Unexpected errors ['Object of class `Mapping` has no attribute `update`']"
   ],
   "typeddicts_required.py": [
     "Line 12: Expected 1 errors",
@@ -1613,13 +1613,10 @@
   ],
   "typeddicts_type_consistency.py": [
     "Line 18: Unexpected errors ['EXPECTED dict[str, int] <: B1']",
-    "Line 24: Unexpected errors ['EXPECTED B1 <: Mapping[str, object]']",
     "Line 37: Unexpected errors ['EXPECTED dict[str, int] <: B2']",
     "Line 61: Unexpected errors ['EXPECTED dict[str, int] <: B3']",
     "Line 62: Unexpected errors ['EXPECTED B3 <: A3']",
     "Line 64: Unexpected errors ['EXPECTED dict[str, int] <: A3']",
-    "Line 83: Unexpected errors ['EXPECTED B3 <: Mapping[str, object]']",
-    "Line 84: Unexpected errors ['EXPECTED B3 <: Mapping[str, Any]']",
     "Line 88: Unexpected errors ['Expected a callable, got type[TypedDict]']",
     "Line 91: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED int | str | None | None <: str', \"EXPECTED Literal['name'] <: dict[str, int | str]\"]",
     "Line 92: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED int | str | None | None <: int', \"EXPECTED Literal['age'] <: dict[str, int | str]\", 'EXPECTED Literal[42] <: str']",

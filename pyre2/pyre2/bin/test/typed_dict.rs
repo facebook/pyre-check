@@ -10,9 +10,11 @@ use crate::testcase;
 testcase!(
     test_typed_dict,
     r#"
-from typing import TypedDict
+from typing import TypedDict, Mapping
 class Coord(TypedDict):
     x: int
     y: int
+def foo(c: Coord) -> Mapping[str, object]:
+    return c
     "#,
 );
