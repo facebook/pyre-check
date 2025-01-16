@@ -467,14 +467,13 @@ def f(x: str | int):
     "#,
 );
 
-testcase_with_bug!(
-    "Wrong asserted type for x",
+testcase!(
     test_isinstance_error,
     r#"
 from typing import assert_type
 def f(x: int | list[int]):
     if isinstance(x, list[int]):  # E: Expected class object
-        assert_type(x, int | list[int])  # E: assert_type(Any, int | list[int])
+        assert_type(x, int | list[int])
     "#,
 );
 

@@ -1116,19 +1116,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn unwrap_class_object_and_narrow(
-        &self,
-        narrow: &dyn Fn(Type) -> Type,
-        ty: &Type,
-        range: TextRange,
-    ) -> Type {
-        match self.unwrap_class_object_silently(ty) {
-            Some(right) => narrow(right),
-            None => {
-                self.error(range, format!("Expected class object, got {}", ty));
-                Type::any_error()
-            }
+    fn unwrap_class_object_or_error(&self, ty: &Type, range: TextRange) -> Option<Type> {
+        let unwrapped = self.unwrap_class_object_silently(ty);
+        if unwrapped.is_none() {
+            self.error(range, format!("Expected class object, got {}", ty));
         }
+        unwrapped
     }
 
     fn narrow(&self, ty: &Type, op: &NarrowOp) -> Type {
@@ -1167,9 +1160,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, v.range())
                 {
                     self.narrow(ty, &distributed_op)
+                } else if let Some(right) = self.unwrap_class_object_or_error(&right, v.range()) {
+                    self.intersect(ty, &right)
                 } else {
-                    let narrow = |right| self.intersect(ty, &right);
-                    self.unwrap_class_object_and_narrow(&narrow, &right, v.range())
+                    ty.clone()
                 }
             }
             NarrowOp::IsNotInstance(v) => {
@@ -1178,17 +1172,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, v.range())
                 {
                     self.narrow(ty, &distributed_op.negate())
+                } else if let Some(right) = self.unwrap_class_object_or_error(&right, v.range()) {
+                    self.distribute_over_union(ty, |t| {
+                        if self.solver().is_subset_eq(t, &right, self.type_order()) {
+                            Type::never()
+                        } else {
+                            t.clone()
+                        }
+                    })
                 } else {
-                    let narrow = |right| {
-                        self.distribute_over_union(ty, |t| {
-                            if self.solver().is_subset_eq(t, &right, self.type_order()) {
-                                Type::never()
-                            } else {
-                                t.clone()
-                            }
-                        })
-                    };
-                    self.unwrap_class_object_and_narrow(&narrow, &right, v.range())
+                    ty.clone()
                 }
             }
             NarrowOp::IsSubclass(_) | NarrowOp::IsNotSubclass(_) => ty.clone(), // TODO: implement this
