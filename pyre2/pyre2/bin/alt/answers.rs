@@ -1067,6 +1067,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
+    fn subtract(&self, left: &Type, right: &Type) -> Type {
+        self.distribute_over_union(left, |left| {
+            if self.solver().is_subset_eq(left, right, self.type_order()) {
+                Type::never()
+            } else {
+                left.clone()
+            }
+        })
+    }
+
     fn resolve_narrowing_call(&self, func: &NarrowVal, args: &Arguments) -> Option<NarrowOp> {
         // TODO: do something more reliable than matching on the name.
         if let NarrowVal::Expr(box Expr::Name(name)) = func
@@ -1173,18 +1183,35 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 {
                     self.narrow(ty, &distributed_op.negate())
                 } else if let Some(right) = self.unwrap_class_object_or_error(&right, v.range()) {
-                    self.distribute_over_union(ty, |t| {
-                        if self.solver().is_subset_eq(t, &right, self.type_order()) {
-                            Type::never()
-                        } else {
-                            t.clone()
-                        }
-                    })
+                    self.subtract(ty, &right)
                 } else {
                     ty.clone()
                 }
             }
-            NarrowOp::IsSubclass(_) | NarrowOp::IsNotSubclass(_) => ty.clone(), // TODO: implement this
+            NarrowOp::IsSubclass(v) => {
+                let right = self.narrow_val_infer(v);
+                if let Some(distributed_op) =
+                    self.distribute_narrow_op_over_tuple(&NarrowOp::IsSubclass, &right, v.range())
+                {
+                    self.narrow(ty, &distributed_op)
+                } else if let Some(right) = self.unwrap_class_object_or_error(&right, v.range()) {
+                    Type::type_form(self.intersect(&self.untype(ty.clone(), v.range()), &right))
+                } else {
+                    ty.clone()
+                }
+            }
+            NarrowOp::IsNotSubclass(v) => {
+                let right = self.narrow_val_infer(v);
+                if let Some(distributed_op) =
+                    self.distribute_narrow_op_over_tuple(&NarrowOp::IsSubclass, &right, v.range())
+                {
+                    self.narrow(ty, &distributed_op.negate())
+                } else if let Some(right) = self.unwrap_class_object_or_error(&right, v.range()) {
+                    Type::type_form(self.subtract(&self.untype(ty.clone(), v.range()), &right))
+                } else {
+                    ty.clone()
+                }
+            }
             NarrowOp::TypeGuard(t) => t.clone(),
             NarrowOp::NotTypeGuard(_) => ty.clone(),
             NarrowOp::Truthy | NarrowOp::Falsy => self.distribute_over_union(ty, |t| {
