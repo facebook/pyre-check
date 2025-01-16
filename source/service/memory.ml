@@ -41,6 +41,7 @@ let worker_garbage_control =
 
 let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
   if not !initialized then (
+    let timer = Timer.start () in
     (* 4 MB *)
     let minor_heap_size = 4 * 1024 * 1024 in
     (* GC for the master process. *)
@@ -52,12 +53,14 @@ let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
         space_overhead = 120;
       };
     let shared_mem_config = { SharedMemory.heap_size; dep_table_pow; hash_table_pow; log_level } in
-    Log.info
-      "Initializing shared memory (heap_size: %d, dep_table_pow: %d, hash_table_pow: %d)"
-      heap_size
-      dep_table_pow
-      hash_table_pow;
     SharedMemory.init shared_mem_config;
+    Statistics.performance
+      ~name:"Initialized shared memory"
+      ~phase_name:"Initializing shared memory"
+      ~integers:
+        ["heap size", heap_size; "dep table pow", dep_table_pow; "hash table pow", hash_table_pow]
+      ~timer
+      ();
     initialized := true)
 
 

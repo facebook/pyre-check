@@ -108,17 +108,28 @@ let create
     ()
   =
   Memory.initialize configuration;
-  if parallel then
-    let () = Statistics.flush () in
-    let workers =
-      Hack_parallel.Std.Worker.make
-        ~nbr_procs:number_of_workers
-        ~gc_control:Memory.worker_garbage_control
-        ~long_lived_workers
-    in
-    ParallelScheduler workers
-  else
-    SequentialScheduler
+
+  let timer = Timer.start () in
+  let scheduler =
+    if parallel then
+      let () = Statistics.flush () in
+      let workers =
+        Hack_parallel.Std.Worker.make
+          ~nbr_procs:number_of_workers
+          ~gc_control:Memory.worker_garbage_control
+          ~long_lived_workers
+      in
+      ParallelScheduler workers
+    else
+      SequentialScheduler
+  in
+  Statistics.performance
+    ~name:"Initialized multiprocessing workers"
+    ~phase_name:"Initializing multiprocessing workers"
+    ~integers:[("workers", if parallel then number_of_workers else 1)]
+    ~timer
+    ();
+  scheduler
 
 
 let create_sequential () = SequentialScheduler

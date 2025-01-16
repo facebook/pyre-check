@@ -61,4 +61,6 @@
   sexplib
   ppxlib
   pyrelib.configuration
+  pyrelib.timer
+  pyrelib.statistics
   hack_parallel))
