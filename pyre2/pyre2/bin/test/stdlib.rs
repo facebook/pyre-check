@@ -154,6 +154,9 @@ class MutableMapping[K, V](Mapping[K, V]): ...
 class TypeAliasType: ...
 
 class NamedTuple(tuple[Any, ...]): ...
+
+_F = TypeVar('_F', bound=Callable[..., Any])
+def overload(func: _F) -> _F: ...
 "#;
 
 static TYPES: &str = r#"
@@ -168,12 +171,37 @@ class MethodType:
     __self__: object
 "#;
 
+static DATACLASSES: &str = r#"
+from typing import overload, Callable, TypeVar
+
+_T = TypeVar('_T')
+
+@overload
+def dataclass(cls: type[_T], /) -> type[_T]: ...
+
+@overload
+def dataclass(
+    *,
+    init: bool = True,
+    repr: bool = True,
+    eq: bool = True,
+    order: bool = False,
+    unsafe_hash: bool = False,
+    frozen: bool = False,
+    match_args: bool = True,
+    kw_only: bool = False,
+    slots: bool = False,
+    weakref_slot: bool = False,
+) -> Callable[[type[_T]], type[_T]]: ...
+"#;
+
 pub fn lookup_test_stdlib(module: ModuleName) -> Option<&'static str> {
     match module.as_str() {
         "builtins" => Some(BUILTINS),
         "typing" => Some(TYPING),
         "types" => Some(TYPES),
         "enum" => Some(ENUM),
+        "dataclasses" => Some(DATACLASSES),
         _ => None,
     }
 }
