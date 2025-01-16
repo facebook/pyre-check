@@ -1193,7 +1193,7 @@ impl<'a> BindingsBuilder<'a> {
         );
 
         // Handle decorators, which re-bind the name from the definition.
-        for decorator in decorators {
+        for decorator in decorators.into_iter().rev() {
             self.ensure_expr(&decorator.expression);
             current_name_key = self.table.insert(
                 Key::DecoratorApplication(decorator.range),
