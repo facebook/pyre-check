@@ -482,6 +482,14 @@ def foo():
 "#,
 );
 
+testcase!(
+    test_import_blank_no_reexport_builtins,
+    TestEnv::one("blank", ""),
+    r#"
+from blank import int as int_int # E: Could not import `int` from `blank`
+"#,
+);
+
 #[test]
 fn test_import_fail_to_load() {
     let mut env = TestEnv::new();
