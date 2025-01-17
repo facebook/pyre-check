@@ -8,9 +8,13 @@
 use dupe::Clone_;
 use dupe::Copy_;
 use dupe::Dupe_;
+use ruff_python_ast::name::Name;
+use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::classes::TypedDict;
+use crate::alt::classes::TypedDictField;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
@@ -47,5 +51,9 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
             Some(m) => *m == *metaclass,
             None => *metaclass == self.stdlib().builtins_type(),
         }
+    }
+
+    pub fn get_typed_dict_fields(&self, typed_dict: &TypedDict) -> SmallMap<Name, TypedDictField> {
+        self.0.get_typed_dict_fields(typed_dict)
     }
 }

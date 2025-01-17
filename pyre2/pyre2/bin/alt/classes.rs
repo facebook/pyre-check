@@ -53,7 +53,6 @@ use crate::util::prelude::SliceExt;
 #[derive(Debug, Clone)]
 pub struct ClassField {
     pub ty: Type,
-    #[allow(unused)]
     pub annotation: Option<Annotation>,
     pub initialization: ClassFieldInitialization,
 }
@@ -119,8 +118,18 @@ impl BaseClass {
     }
 }
 
-#[allow(unused)]
 pub struct TypedDict(ClassType);
+
+impl TypedDict {
+    pub fn new(cls: ClassType) -> Self {
+        Self(cls)
+    }
+}
+
+pub struct TypedDictField {
+    pub ty: Type,
+    pub required: bool,
+}
 
 pub struct Enum(ClassType);
 
@@ -763,5 +772,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             _ => None,
         }
+    }
+
+    pub fn get_typed_dict_fields(&self, typed_dict: &TypedDict) -> SmallMap<Name, TypedDictField> {
+        typed_dict
+            .0
+            .class_object()
+            .fields()
+            .iter()
+            .filter_map(|name| {
+                if let Some(ClassField {
+                    annotation: Some(Annotation { ty: Some(ty), .. }),
+                    ..
+                }) = self.get_class_field(typed_dict.0.class_object(), name)
+                {
+                    Some((name.clone(), TypedDictField { ty, required: true }))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }

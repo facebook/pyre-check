@@ -8,6 +8,7 @@
 use itertools::izip;
 
 use crate::alt::answers::LookupAnswer;
+use crate::alt::classes::TypedDict;
 use crate::solver::Subset;
 use crate::types::callable::Callable;
 use crate::types::callable::Param;
@@ -101,6 +102,27 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                             false
                         }
                     }
+            }
+            (Type::TypedDict(got), Type::TypedDict(want)) => {
+                let got_fields = self
+                    .type_order
+                    .get_typed_dict_fields(&TypedDict::new(got.clone()));
+                let want_fields = self
+                    .type_order
+                    .get_typed_dict_fields(&TypedDict::new(want.clone()));
+                // For each key in `want`, `got` has the corresponding key
+                // and the corresponding value type in `got` is consistent with the value type in `want`.
+                // For each required key in `got`, the corresponding key is required in `want`.
+                // For each non-required key in `got`, the corresponding key is not required in `want`.
+                want_fields.iter().all(|(k, want_v)| {
+                    got_fields
+                        .get(k)
+                        .map_or(false, |got_v| self.is_subset_eq(&got_v.ty, &want_v.ty))
+                }) && got_fields.iter().all(|(k, got_v)| {
+                    want_fields
+                        .get(k)
+                        .map_or(true, |want_v| got_v.required == want_v.required)
+                })
             }
             (Type::TypedDict(_), _) => {
                 let stdlib = self.type_order.stdlib();

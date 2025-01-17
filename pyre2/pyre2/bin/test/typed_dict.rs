@@ -54,3 +54,26 @@ def foo(c: Coord, key: str):
     x4: int = c["aaaaaa"]  # E: Object of class `Coord` has no attribute `aaaaaa`
     "#,
 );
+
+testcase!(
+    test_typed_dict_subtype,
+    r#"
+from typing import TypedDict
+class Coord(TypedDict):
+    x: int
+    y: int
+class Coord3D(TypedDict):
+    x: int
+    y: int
+    z: int
+class Pair(TypedDict):
+    x: object
+    y: object
+
+def foo(a: Coord, b: Coord3D, c: Pair):
+    coord: Coord = b
+    coord2: Coord3D = a  # E: EXPECTED Coord <: Coord3D
+    coord3: Coord = c  # E: Pair <: Coord
+    coord4: Pair = a
+    "#,
+);
