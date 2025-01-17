@@ -231,6 +231,7 @@ impl SolveRecursive for KeyClassField {
         // to work correctly; what we have here is a fallback to permissive gradual typing.
         ClassField {
             ty: Type::any_implicit(),
+            annotation: None,
             initialization: ClassFieldInitialization::Class,
         }
     }
@@ -1017,17 +1018,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
-        let ty = if let Some(ann) = &field.annotation {
+        if self
+            .get_typed_dict_from_key(field.class.to_owned())
+            .is_some()
+            && matches!(field.initialization, ClassFieldInitialization::Class)
+        {
+            self.error(
+                field.range,
+                format!("TypedDict item `{}` may not be initialized.", field.name),
+            );
+        }
+        let (ty, ann) = if let Some(ann) = &field.annotation {
             let ann = self.get_idx(*ann);
             match &ann.ty {
-                Some(ty) => Arc::new(ty.clone()),
-                None => value_ty,
+                Some(ty) => (Arc::new(ty.clone()), Some(ann)),
+                None => (value_ty, Some(ann)),
             }
         } else {
-            value_ty
+            (value_ty, None)
         };
         Arc::new(ClassField {
             ty: ty.deref().clone(),
+            annotation: ann.map(|ann| ann.deref().clone()),
             initialization: field.initialization,
         })
     }

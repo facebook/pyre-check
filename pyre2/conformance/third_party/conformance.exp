@@ -20890,6 +20890,26 @@
   "typeddicts_class_syntax.py": [
     {
       "code": -2,
+      "column": 9,
+      "concise_description": "TypedDict item `method1` may not be initialized.",
+      "description": "TypedDict item `method1` may not be initialized.",
+      "line": 29,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 29
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "TypedDict item `method2` may not be initialized.",
+      "description": "TypedDict item `method2` may not be initialized.",
+      "line": 34,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 34
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "EXPECTED Callable[[], None] <: Callable[ParamSpec(@_), None]",
       "description": "EXPECTED Callable[[], None] <: Callable[ParamSpec(@_), None]",
@@ -20897,6 +20917,26 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "TypedDict item `method3` may not be initialized.",
+      "description": "TypedDict item `method3` may not be initialized.",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "Typed dictionary definitions may not specify a metaclass.",
+      "description": "Typed dictionary definitions may not specify a metaclass.",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 44
     }
   ],
   "typeddicts_final.py": [
