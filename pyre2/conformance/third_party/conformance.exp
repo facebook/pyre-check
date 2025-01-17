@@ -1660,19 +1660,9 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED C <: Generator[A, B, C]",
-      "description": "EXPECTED C <: Generator[A, B, C]",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED Literal[False] <: Generator[A, B, C]",
-      "description": "EXPECTED Literal[False] <: Generator[A, B, C]",
+      "concise_description": "EXPECTED Literal[False] <: C",
+      "description": "EXPECTED Literal[False] <: C",
       "line": 54,
       "name": "PyreError",
       "stop_column": 21,
@@ -1681,8 +1671,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED None <: Generator[A, B, C]",
-      "description": "EXPECTED None <: Generator[A, B, C]",
+      "concise_description": "EXPECTED None <: C",
+      "description": "EXPECTED None <: C",
       "line": 56,
       "name": "PyreError",
       "stop_column": 16,
@@ -1697,26 +1687,6 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 57
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Literal[3] <: Generator[A, int, Any]",
-      "description": "EXPECTED Literal[3] <: Generator[A, int, Any]",
-      "line": 63,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 63
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Generator[A, int, Any]",
-      "description": "EXPECTED None <: Generator[A, int, Any]",
-      "line": 65,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 66
     },
     {
       "code": -2,
@@ -1767,16 +1737,6 @@
       "name": "PyreError",
       "stop_column": 14,
       "stop_line": 75
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Generator[None, None, None]",
-      "description": "EXPECTED None <: Generator[None, None, None]",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 79
     },
     {
       "code": -2,
@@ -1930,16 +1890,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Generator[None, float, None]",
-      "description": "EXPECTED None <: Generator[None, float, None]",
-      "line": 123,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 123
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "TODO: ExprYield - Answers::expr_infer",
       "description": "TODO: ExprYield - Answers::expr_infer",
@@ -1947,16 +1897,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 123
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Generator[None, int, None]",
-      "description": "EXPECTED None <: Generator[None, int, None]",
-      "line": 127,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 127
     },
     {
       "code": -2,
@@ -1970,16 +1910,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Generator[None, int, None]",
-      "description": "EXPECTED None <: Generator[None, int, None]",
-      "line": 131,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 131
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "TODO: ExprYield - Answers::expr_infer",
       "description": "TODO: ExprYield - Answers::expr_infer",
@@ -1987,16 +1917,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 131
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Generator[None, str, None]",
-      "description": "EXPECTED None <: Generator[None, str, None]",
-      "line": 135,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 135
     },
     {
       "code": -2,
@@ -2077,16 +1997,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 149
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Generator[int, None, None]",
-      "description": "EXPECTED None <: Generator[int, None, None]",
-      "line": 150,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 150
     },
     {
       "code": -2,

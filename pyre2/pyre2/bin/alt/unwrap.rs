@@ -103,6 +103,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    pub fn decompose_generator(&self, ty: &Type) -> Option<(Type, Type, Type)> {
+        let yield_ty = self.fresh_var();
+        let send_ty = self.fresh_var();
+        let return_ty = self.fresh_var();
+        let generator_ty = self
+            .stdlib
+            .generator(yield_ty.to_type(), send_ty.to_type(), return_ty.to_type())
+            .to_type();
+        if self.is_subset_eq(&generator_ty, ty) {
+            let yield_ty = self.expand_var_opt(yield_ty)?;
+            let send_ty = self.expand_var_opt(send_ty)?;
+            let return_ty = self.expand_var_opt(return_ty)?;
+            Some((yield_ty, send_ty, return_ty))
+        } else {
+            None
+        }
+    }
+
     pub fn decompose_tuple(&self, ty: &Type) -> Option<Type> {
         let elem = self.fresh_var();
         let tuple_type = self.stdlib.tuple(elem.to_type()).to_type();

@@ -59,7 +59,7 @@ TODO zeina: we should correctly determine the send() type based on the signature
 from typing import Generator, reveal_type
 
 def accumulate(x: int) -> Generator[int, int, None]:
-    yield x # E: TODO: ExprYield - Answers::expr_infer # E:  EXPECTED None <: Generator[int, int, None]
+    yield x # E: TODO: ExprYield - Answers::expr_infer
 
 gen = accumulate(10)
 reveal_type(gen) # E: revealed type: Generator[int, int, None]
@@ -115,7 +115,7 @@ testcase_with_bug!(
 from typing import Generator, reveal_type
 
 def f(value) -> Generator[int, None, None]:
-    while True: # E: EXPECTED None <: Generator[int, None, None]
+    while True:
         yield value # E: TODO: ExprYield - Answers::expr_infer
 
 reveal_type(f(3)) # E: revealed type: Generator[int, None, None]
@@ -132,7 +132,7 @@ from typing import Generator, TypeVar, reveal_type
 T = TypeVar('T')
 
 def f(value: T) -> Generator[T, None, None]:
-    while True: # E: EXPECTED None <: Generator[?_, None, None]
+    while True:
         yield value # E: TODO: ExprYield - Answers::expr_infer
 
 reveal_type(f(3)) # E: revealed type: Generator[int, None, None]
