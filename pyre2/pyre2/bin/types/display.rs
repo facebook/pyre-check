@@ -154,9 +154,14 @@ impl<'a> TypeDisplayContext<'a> {
                 self.fmt_qname(cls.qname(), f)?;
                 write!(f, "]")
             }
-            Type::ClassType(class_type) | Type::TypedDict(class_type) => {
+            Type::ClassType(class_type) => {
                 self.fmt_qname(class_type.qname(), f)?;
                 self.fmt_targs(class_type.targs(), f)
+            }
+            Type::TypedDict(typed_dict) => {
+                write!(f, "TypedDict[")?;
+                self.fmt_qname(typed_dict.qname(), f)?;
+                write!(f, "]")
             }
             Type::TypeVar(t) => {
                 write!(f, "TypeVar[")?;

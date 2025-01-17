@@ -738,8 +738,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn canonicalize_all_class_types(&self, ty: Type, range: TextRange) -> Type {
         ty.transform(|ty| match ty {
             Type::ClassDef(cls) => {
-                if self.get_metadata_for_class(cls).is_typed_dict() {
-                    *ty = Type::type_form(Type::TypedDict(self.promote_to_class_type(cls, range)));
+                if let Some(typed_dict) = self.get_typed_dict(cls) {
+                    *ty = Type::type_form(Type::TypedDict(typed_dict));
                 } else {
                     *ty = Type::type_form(Type::ClassType(self.promote_to_class_type(cls, range)));
                 }
@@ -1337,22 +1337,32 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &[CallArg::Expr(&x.slice)],
                         &[],
                     ),
-                    Type::TypedDict(cls) => {
-                        let class_type = Type::ClassType(cls);
-                        match self.expr_infer(&x.slice) {
-                            Type::Literal(Lit::String(field_name)) => {
-                                self.attr_infer(&class_type, &Name::new(field_name), x.range())
+                    Type::TypedDict(typed_dict) => match self.expr_infer(&x.slice) {
+                        Type::Literal(Lit::String(field_name)) => {
+                            if let Some(field) =
+                                typed_dict.fields().get(&Name::new(field_name.clone()))
+                            {
+                                field.ty.clone()
+                            } else {
+                                self.error(
+                                    x.slice.range(),
+                                    format!(
+                                        "TypedDict `{}` does not have key `{}`",
+                                        typed_dict.name(),
+                                        field_name
+                                    ),
+                                )
                             }
-                            t => self.error(
-                                x.slice.range(),
-                                format!(
-                                    "Invalid key for typed dictionary `{}`, got `{}`",
-                                    class_type.deterministic_printing(),
-                                    t.deterministic_printing()
-                                ),
-                            ),
                         }
-                    }
+                        t => self.error(
+                            x.slice.range(),
+                            format!(
+                                "Invalid key for TypedDict `{}`, got `{}`",
+                                typed_dict.name(),
+                                t.deterministic_printing()
+                            ),
+                        ),
+                    },
                     t => self.error(
                         x.range,
                         format!(

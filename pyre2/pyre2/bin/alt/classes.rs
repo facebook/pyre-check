@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Display;
 use std::ops::Deref;
@@ -40,11 +41,13 @@ use crate::types::class::ClassType;
 use crate::types::class::TArgs;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Lit;
+use crate::types::qname::QName;
 use crate::types::special_form::SpecialForm;
 use crate::types::type_var::Variance;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
+use crate::util::arc_id::ArcId;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
 
@@ -119,17 +122,46 @@ impl BaseClass {
     }
 }
 
-pub struct TypedDict(ClassType);
-
-impl TypedDict {
-    pub fn new(cls: ClassType) -> Self {
-        Self(cls)
-    }
-}
-
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypedDictField {
     pub ty: Type,
     pub required: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct TypedDictInner(QName, SmallMap<Name, TypedDictField>);
+
+impl PartialOrd for TypedDictInner {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for TypedDictInner {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
+#[derive(Debug, Clone, Dupe, Eq, PartialEq, Hash, PartialOrd, Ord)]
+pub struct TypedDict(ArcId<TypedDictInner>);
+
+impl TypedDict {
+    pub fn new(name: QName, fields: SmallMap<Name, TypedDictField>) -> Self {
+        Self(ArcId::new(TypedDictInner(name, fields)))
+    }
+
+    pub fn qname(&self) -> &QName {
+        &self.0.0
+    }
+
+    pub fn name(&self) -> &Name {
+        &self.0.0.name.id
+    }
+
+    pub fn fields(&self) -> &SmallMap<Name, TypedDictField> {
+        &self.0.1
+    }
 }
 
 pub struct Enum(ClassType);
@@ -499,10 +531,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    pub fn get_typed_dict(&self, cls: &ClassType) -> Option<TypedDict> {
-        let metadata = self.get_metadata_for_class(cls.class_object());
+    pub fn get_typed_dict(&self, cls: &Class) -> Option<TypedDict> {
+        let metadata = self.get_metadata_for_class(cls);
         if metadata.is_typed_dict() {
-            Some(TypedDict(cls.clone()))
+            Some(TypedDict::new(
+                cls.qname().clone(),
+                self.get_typed_dict_fields(cls),
+            ))
         } else {
             None
         }
@@ -768,18 +803,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn get_typed_dict_from_key(&self, key: Idx<Key>) -> Option<TypedDict> {
         match self.get_idx(key).deref() {
-            Type::ClassDef(class) => {
-                self.get_typed_dict(&self.promote_to_class_type_silently(class))
-            }
+            Type::ClassDef(cls) => self.get_typed_dict(cls),
             _ => None,
         }
     }
 
-    pub fn get_typed_dict_fields(&self, typed_dict: &TypedDict) -> SmallMap<Name, TypedDictField> {
-        typed_dict
-            .0
-            .class_object()
-            .fields()
+    fn get_typed_dict_fields(&self, cls: &Class) -> SmallMap<Name, TypedDictField> {
+        cls.fields()
             .iter()
             .filter_map(|name| {
                 if let Some(ClassField {
@@ -789,7 +819,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             qualifiers,
                         }),
                     ..
-                }) = self.get_class_field(typed_dict.0.class_object(), name)
+                }) = self.get_class_field(cls, name)
                 {
                     Some((
                         name.clone(),
