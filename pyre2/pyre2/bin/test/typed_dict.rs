@@ -39,3 +39,18 @@ class Coord(TypedDict):
     y: int = 2  # E: TypedDict item `y` may not be initialized.
     "#,
 );
+
+testcase!(
+    test_typed_dict_access,
+    r#"
+from typing import TypedDict
+class Coord(TypedDict):
+    x: int
+    y: int
+def foo(c: Coord, key: str):
+    x: int = c["x"]
+    x2: int = c.x  # E: Object of class `Mapping` has no attribute `x`
+    x3: int = c[key]  # E: Invalid key for typed dictionary `Coord`, got `str`
+    x4: int = c["aaaaaa"]  # E: Object of class `Coord` has no attribute `aaaaaa`
+    "#,
+);

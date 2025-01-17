@@ -1526,8 +1526,7 @@
   ],
   "typeddicts_final.py": [
     "Line 19: Unexpected errors ['EXPECTED dict[str, int | str] <: Movie']",
-    "Line 20: Unexpected errors [\"Can't apply arguments to non-class, got Movie\"]",
-    "Line 26: Unexpected errors [\"Can't apply arguments to non-class, got Movie\"]"
+    "Line 26: Unexpected errors [\"Invalid key for typed dictionary `Movie`, got `Literal['name', 'year']`\"]"
   ],
   "typeddicts_inheritance.py": [
     "Line 44: Expected 1 errors",
@@ -1550,7 +1549,6 @@
     "Line 36: Expected 1 errors",
     "Line 21: Unexpected errors ['EXPECTED dict[str, list[@_] | str] <: Band']",
     "Line 23: Unexpected errors ['`Band` has no attribute `__setitem__`']",
-    "Line 25: Unexpected errors [\"Can't apply arguments to non-class, got Band\"]",
     "Line 31: Unexpected errors ['Expected a callable, got type[TypedDict]', 'TODO: Answers::apply_special_form cannot handle `ReadOnly[list[str]]`']",
     "Line 37: Unexpected errors ['Object of class `str` has no attribute `append`']",
     "Line 49: Unexpected errors ['EXPECTED dict[str, int | str] <: Movie1']",

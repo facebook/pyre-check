@@ -20952,22 +20952,12 @@
     },
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "Can't apply arguments to non-class, got Movie",
-      "description": "Can't apply arguments to non-class, got Movie",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Can't apply arguments to non-class, got Movie",
-      "description": "Can't apply arguments to non-class, got Movie",
+      "column": 18,
+      "concise_description": "Invalid key for typed dictionary `Movie`, got `Literal['name', 'year']`",
+      "description": "Invalid key for typed dictionary `Movie`, got `Literal['name', 'year']`",
       "line": 26,
       "name": "PyreError",
-      "stop_column": 22,
+      "stop_column": 21,
       "stop_line": 26
     }
   ],
@@ -21097,8 +21087,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "Can't apply arguments to non-class, got Movie",
-      "description": "Can't apply arguments to non-class, got Movie",
+      "concise_description": "Object of class `Movie` has no attribute `other`",
+      "description": "Object of class `Movie` has no attribute `other`",
       "line": 26,
       "name": "PyreError",
       "stop_column": 21,
@@ -21325,16 +21315,6 @@
       "name": "PyreError",
       "stop_column": 14,
       "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Can't apply arguments to non-class, got Band",
-      "description": "Can't apply arguments to non-class, got Band",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 25
     },
     {
       "code": -2,

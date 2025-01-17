@@ -1337,6 +1337,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &[CallArg::Expr(&x.slice)],
                         &[],
                     ),
+                    Type::TypedDict(cls) => {
+                        let class_type = Type::ClassType(cls);
+                        match self.expr_infer(&x.slice) {
+                            Type::Literal(Lit::String(field_name)) => {
+                                self.attr_infer(&class_type, &Name::new(field_name), x.range())
+                            }
+                            t => self.error(
+                                x.slice.range(),
+                                format!(
+                                    "Invalid key for typed dictionary `{}`, got `{}`",
+                                    class_type.deterministic_printing(),
+                                    t.deterministic_printing()
+                                ),
+                            ),
+                        }
+                    }
                     t => self.error(
                         x.range,
                         format!(
