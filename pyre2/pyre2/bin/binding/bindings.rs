@@ -1648,10 +1648,20 @@ impl<'a> BindingsBuilder<'a> {
                     };
                     let ann_key = self.table.insert(ann_key, ann_val);
 
-                    let (binding, is_initialized) = if let Some(mut value) = x.value
-                        && (!self.module_info.is_interface()
-                            || !matches!(&*value, Expr::EllipsisLiteral(_)))
-                    {
+                    let (value, is_initialized) = if let Some(value) = x.value {
+                        // Treat a name as initialized, but skip actually checking the value, if we are assigning `...` in a stub.
+                        if self.module_info.is_interface()
+                            && matches!(&*value, Expr::EllipsisLiteral(_))
+                        {
+                            (None, true)
+                        } else {
+                            (Some(value), true)
+                        }
+                    } else {
+                        (None, false)
+                    };
+
+                    let binding = if let Some(mut value) = value {
                         // Handle forward references in explicit type aliases.
                         if let Expr::Name(name) = *x.annotation
                             && name.id == "TypeAlias"
@@ -1661,22 +1671,16 @@ impl<'a> BindingsBuilder<'a> {
                             self.ensure_expr(&value);
                         }
                         let range = value.range();
-                        (
-                            Binding::NameAssign(
-                                name.id.clone(),
-                                Some(ann_key),
-                                Box::new(Binding::Expr(Some(ann_key), *value)),
-                                range,
-                            ),
-                            true,
+                        Binding::NameAssign(
+                            name.id.clone(),
+                            Some(ann_key),
+                            Box::new(Binding::Expr(Some(ann_key), *value)),
+                            range,
                         )
                     } else {
-                        (
-                            Binding::AnnotatedType(
-                                ann_key,
-                                Box::new(Binding::AnyType(AnyStyle::Implicit)),
-                            ),
-                            false,
+                        Binding::AnnotatedType(
+                            ann_key,
+                            Box::new(Binding::AnyType(AnyStyle::Implicit)),
                         )
                     };
                     self.bind_definition(&name, binding, Some(ann_key), is_initialized);
