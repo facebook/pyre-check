@@ -1648,7 +1648,7 @@ impl<'a> BindingsBuilder<'a> {
                     };
                     let ann_key = self.table.insert(ann_key, ann_val);
 
-                    if let Some(mut value) = x.value
+                    let (binding, is_initialized) = if let Some(mut value) = x.value
                         && (!self.module_info.is_interface()
                             || !matches!(&*value, Expr::EllipsisLiteral(_)))
                     {
@@ -1661,28 +1661,25 @@ impl<'a> BindingsBuilder<'a> {
                             self.ensure_expr(&value);
                         }
                         let range = value.range();
-                        self.bind_definition(
-                            &name.clone(),
+                        (
                             Binding::NameAssign(
-                                name.id,
+                                name.id.clone(),
                                 Some(ann_key),
                                 Box::new(Binding::Expr(Some(ann_key), *value)),
                                 range,
                             ),
-                            Some(ann_key),
                             true,
-                        );
+                        )
                     } else {
-                        self.bind_definition(
-                            &name,
+                        (
                             Binding::AnnotatedType(
                                 ann_key,
                                 Box::new(Binding::AnyType(AnyStyle::Implicit)),
                             ),
-                            Some(ann_key),
                             false,
-                        );
-                    }
+                        )
+                    };
+                    self.bind_definition(&name, binding, Some(ann_key), is_initialized);
                 }
                 Expr::Attribute(attr) => {
                     self.ensure_expr(&attr.value);
