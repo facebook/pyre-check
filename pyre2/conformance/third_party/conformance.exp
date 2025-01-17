@@ -21437,6 +21437,46 @@
       "name": "PyreError",
       "stop_column": 15,
       "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "EXPECTED C2 <: A2",
+      "description": "EXPECTED C2 <: A2",
+      "line": 79,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 79
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "EXPECTED C2 <: B2",
+      "description": "EXPECTED C2 <: B2",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 82
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "EXPECTED A2 <: C2",
+      "description": "EXPECTED A2 <: C2",
+      "line": 84,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 84
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "EXPECTED B2 <: C2",
+      "description": "EXPECTED B2 <: C2",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 85
     }
   ],
   "typeddicts_readonly_inheritance.py": [
@@ -21645,6 +21685,46 @@
       "name": "PyreError",
       "stop_column": 20,
       "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED TD4 <: TD3",
+      "description": "EXPECTED TD4 <: TD3",
+      "line": 53,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 53
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED TD5 <: TD4",
+      "description": "EXPECTED TD5 <: TD4",
+      "line": 55,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 55
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED TD5 <: TD4",
+      "description": "EXPECTED TD5 <: TD4",
+      "line": 56,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED TD4 <: TD5",
+      "description": "EXPECTED TD4 <: TD5",
+      "line": 58,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 58
     },
     {
       "code": -2,

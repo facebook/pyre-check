@@ -1558,9 +1558,7 @@
   "typeddicts_readonly_consistency.py": [
     "Line 38: Expected 1 errors",
     "Line 81: Expected 1 errors",
-    "Line 82: Expected 1 errors",
-    "Line 84: Expected 1 errors",
-    "Line 85: Expected 1 errors"
+    "Line 79: Unexpected errors ['EXPECTED C2 <: A2']"
   ],
   "typeddicts_readonly_inheritance.py": [
     "Line 50: Expected 1 errors",
@@ -1592,6 +1590,10 @@
     "Line 47: Unexpected errors ['EXPECTED dict[str, int] <: TD3']",
     "Line 48: Unexpected errors ['EXPECTED dict[str, int] <: TD4']",
     "Line 49: Unexpected errors ['EXPECTED dict[str, int] <: TD5']",
+    "Line 53: Unexpected errors ['EXPECTED TD4 <: TD3']",
+    "Line 55: Unexpected errors ['EXPECTED TD5 <: TD4']",
+    "Line 56: Unexpected errors ['EXPECTED TD5 <: TD4']",
+    "Line 58: Unexpected errors ['EXPECTED TD4 <: TD5']",
     "Line 68: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[int]`']",
     "Line 70: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[Annotated[int, \"\"]]`']",
     "Line 73: Unexpected errors ['Expected a callable, got type[TypedDict]']",

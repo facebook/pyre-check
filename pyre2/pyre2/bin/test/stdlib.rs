@@ -103,6 +103,8 @@ Never: _SpecialForm
 NoReturn: _SpecialForm
 Annotated: _SpecialForm
 TypedDict: _SpecialForm
+Required: _SpecialForm
+NotRequired: _SpecialForm
 
 def assert_type(x, y) -> None: ...
 

@@ -77,3 +77,20 @@ def foo(a: Coord, b: Coord3D, c: Pair):
     coord4: Pair = a
     "#,
 );
+
+testcase!(
+    test_typed_dict_not_required,
+    r#"
+from typing import TypedDict, NotRequired
+class Coord(TypedDict):
+    x: int
+    y: int
+class CoordNotRequired(TypedDict):
+    x: NotRequired[int]
+    y: NotRequired[int]
+
+def foo(a: Coord, b: CoordNotRequired):
+    coord: Coord = b  # E: EXPECTED CoordNotRequired <: Coord
+    coord2: CoordNotRequired = a  # E: EXPECTED Coord <: CoordNotRequired
+    "#,
+);

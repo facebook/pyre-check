@@ -34,6 +34,7 @@ use crate::binding::binding::KeyLegacyTypeParam;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
+use crate::types::annotation::Qualifier;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
@@ -782,11 +783,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .iter()
             .filter_map(|name| {
                 if let Some(ClassField {
-                    annotation: Some(Annotation { ty: Some(ty), .. }),
+                    annotation:
+                        Some(Annotation {
+                            ty: Some(ty),
+                            qualifiers,
+                        }),
                     ..
                 }) = self.get_class_field(typed_dict.0.class_object(), name)
                 {
-                    Some((name.clone(), TypedDictField { ty, required: true }))
+                    Some((
+                        name.clone(),
+                        TypedDictField {
+                            ty,
+                            required: if qualifiers.contains(&Qualifier::Required) {
+                                true
+                            } else if qualifiers.contains(&Qualifier::NotRequired) {
+                                false
+                            } else {
+                                // TODO(yangdanny): consider total=True/False
+                                true
+                            },
+                        },
+                    ))
                 } else {
                     None
                 }
