@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_typed_dict,
@@ -27,6 +28,20 @@ from typing import TypedDict
 class Coord(TypedDict, metaclass=EnumMeta):  # E: Typed dictionary definitions may not specify a metaclass.
     x: int
     y: int
+    "#,
+);
+
+testcase_with_bug!(
+    "Generic typed dicts are not supported yet",
+    test_typed_dict_generic,
+    r#"
+from typing import TypedDict
+class Coord[T](TypedDict):
+    x: T
+    y: T
+def foo(c: Coord[int]):
+    x: int = c["x"]  # E: `Coord[int]` has no attribute `__getitem__`
+    y: str = c["y"]  # E: `Coord[int]` has no attribute `__getitem__`
     "#,
 );
 
