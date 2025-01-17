@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::test::util::TestEnv;
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_set_attribute,
@@ -408,5 +410,33 @@ class Meta(type):
 class C(metaclass=Meta):
     pass
 assert_type(C.x, int)
+    "#,
+);
+
+fn env_with_stub() -> TestEnv {
+    let mut t = TestEnv::new();
+    t.add_with_path(
+        "foo",
+        r#"
+class A:
+    x: int = ...
+    y: int
+    "#,
+        "foo.pyi",
+    );
+    t
+}
+
+testcase_with_bug!(
+    "We are incorrectly treating `...` assignment as not initializing attributes in stubs",
+    test_stub_initializes_attr_with_ellipses,
+    env_with_stub(),
+    r#"
+from typing import assert_type
+from foo import A
+
+# TODO(stroxler) The error on the second line below is correct, but the first line should have no errors.
+assert_type(A.x, int)  # E: Instance-only attribute `x` of class `A` is not visible on the class  # E: assert_type(Any, int)
+A.y  # E: Instance-only attribute `y` of class `A` is not visible on the class
     "#,
 );
