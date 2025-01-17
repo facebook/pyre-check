@@ -9,6 +9,7 @@ use std::slice;
 
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprName;
+use ruff_python_ast::ExprStringLiteral;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::ModModule;
 use ruff_python_ast::Parameter;
@@ -18,6 +19,7 @@ use ruff_python_ast::Pattern;
 use ruff_python_ast::PySourceType;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtIf;
+use ruff_python_ast::StringFlags;
 use ruff_python_parser::parse_expression_range;
 use ruff_python_parser::parse_unchecked_source;
 use ruff_python_parser::ParseError;
@@ -50,6 +52,17 @@ impl Ast {
         Ok(*parse_expression_range(&s, TextRange::new(pos, end))?
             .into_syntax()
             .body)
+    }
+
+    pub fn parse_type_literal(x: &ExprStringLiteral) -> anyhow::Result<Expr> {
+        let mut s = x.value.to_str().to_owned();
+        if x.value.iter().any(|x| x.flags.is_triple_quoted()) {
+            // Implicitly bracketed, so add them explicitly
+            s = format!("({s})");
+        }
+        // These positions are adequate (they are at least inside the literal) but might not be precise
+        // given string gaps.
+        Ast::parse_expr(&s, x.range.start())
     }
 
     pub fn unpack_slice(x: &Expr) -> &[Expr] {

@@ -39,7 +39,6 @@ use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
 use ruff_python_ast::StmtImportFrom;
 use ruff_python_ast::StmtReturn;
-use ruff_python_ast::StringFlags;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
@@ -759,15 +758,7 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Expr::StringLiteral(literal) => {
-                let mut s = literal.value.to_str().to_owned();
-                if literal.value.iter().any(|x| x.flags.is_triple_quoted()) {
-                    // Implicitly bracketed, so add them explicitly
-                    s = format!("({s})");
-                }
-                // We use position information to uniquely key names, so make sure we find fresh positions.
-                // Because of string escapes and splits, these might not be perfect, but they are definitely fresh
-                // as they point inside the string we got rid of.
-                match Ast::parse_expr(&s, literal.range.start()) {
+                match Ast::parse_type_literal(literal) {
                     Ok(expr) => {
                         *x = expr;
                         // You are not allowed to nest type strings in type strings,
@@ -776,7 +767,10 @@ impl<'a> BindingsBuilder<'a> {
                     Err(e) => {
                         self.error(
                             literal.range,
-                            format!("Could not parse type string: {s}, got {e}"),
+                            format!(
+                                "Could not parse type string: {}, got {e}",
+                                literal.value.to_str()
+                            ),
                         );
                     }
                 }
