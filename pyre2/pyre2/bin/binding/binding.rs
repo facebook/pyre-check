@@ -334,7 +334,7 @@ pub enum Binding {
     /// The Key must be a type of types, e.g. `Type::Type`.
     Expr(Option<Idx<KeyAnnotation>>, Expr),
     /// An expression returned from a function.
-    ReturnExpr(Option<Idx<KeyAnnotation>>, Expr),
+    ReturnExpr(Option<Idx<KeyAnnotation>>, Expr, bool),
     /// A decorator application: the Key is the entity being decorated.
     DecoratorApplication(Box<Decorator>, Idx<Key>),
     /// A value in an iterable expression, e.g. IterableValue(\[1\]) represents 1.
@@ -437,8 +437,8 @@ impl DisplayWith<Bindings> for Binding {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         let m = ctx.module_info();
         match self {
-            Self::Expr(None, x) | Self::ReturnExpr(None, x) => write!(f, "{}", m.display(x)),
-            Self::Expr(Some(k), x) | Self::ReturnExpr(Some(k), x) => {
+            Self::Expr(None, x) | Self::ReturnExpr(None, x, _) => write!(f, "{}", m.display(x)),
+            Self::Expr(Some(k), x) | Self::ReturnExpr(Some(k), x, _) => {
                 write!(f, "{}: {}", ctx.display(*k), m.display(x))
             }
             Self::IterableValue(None, x) => write!(f, "iter {}", m.display(x)),

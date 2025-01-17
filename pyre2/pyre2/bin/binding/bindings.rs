@@ -1162,7 +1162,7 @@ impl<'a> BindingsBuilder<'a> {
         for x in return_exprs {
             let key = self.table.insert(
                 Key::ReturnExpression(ShortIdentifier::new(&func_name), x.range),
-                Binding::ReturnExpr(return_ann, return_expr(x)),
+                Binding::ReturnExpr(return_ann, return_expr(x), !yield_exprs.is_empty()),
             );
             return_expr_keys.insert(key);
         }

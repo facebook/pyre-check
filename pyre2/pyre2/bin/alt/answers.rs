@@ -1038,21 +1038,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()))
             }
-            Binding::ReturnExpr(ann, e) => {
+            Binding::ReturnExpr(ann, e, has_yields) => {
                 let ann = ann.map(|k| self.get_idx(k));
                 let hint = ann.as_ref().and_then(|x| x.ty.as_ref());
 
-                // handle generators
-                // TODO: zeina add a flag to ReturnExpr binding to indicate a generator has been encountered
-                let hint = hint.map(|ty| match self.decompose_generator(ty) {
-                    Some((_, _, r)) => r,
-                    None => ty.clone(),
-                });
-
-                if matches!(hint, Some(Type::TypeGuard(_))) {
+                if *has_yields {
+                    let hint = match hint {
+                        Some(t) => {
+                            let decomposed = self.decompose_generator(t);
+                            decomposed.map(|(_, _, r)| r)
+                        }
+                        None => None,
+                    };
+                    self.expr(e, hint.as_ref())
+                } else if matches!(hint, Some(Type::TypeGuard(_))) {
                     self.expr(e, Some(&Type::ClassType(self.stdlib.bool())))
                 } else {
-                    self.expr(e, hint.as_ref())
+                    self.expr(e, hint)
                 }
             }
             Binding::DecoratorApplication(d, k) => self.apply_decorator(d, k),

@@ -77,7 +77,7 @@ from typing import Iterator, reveal_type
 def gen_numbers() -> Iterator[int]:
     yield 1 # E: TODO: ExprYield - Answers::expr_infer
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
-    yield 3 # E: TODO: ExprYield - Answers::expr_infer # E: EXPECTED None <: Iterator[int]
+    yield 3 # E: TODO: ExprYield - Answers::expr_infer
 
 reveal_type(gen_numbers()) # E: revealed type: Iterator[int]
 

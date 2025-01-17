@@ -1710,26 +1710,6 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED Literal[True] <: Iterable[A]",
-      "description": "EXPECTED Literal[True] <: Iterable[A]",
-      "line": 71,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 71
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Iterator[A]",
-      "description": "EXPECTED None <: Iterator[A]",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 75
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "TODO: ExprYield - Answers::expr_infer",
       "description": "TODO: ExprYield - Answers::expr_infer",
@@ -1747,16 +1727,6 @@
       "name": "PyreError",
       "stop_column": 10,
       "stop_line": 79
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Iterator[dict[str, int]]",
-      "description": "EXPECTED None <: Iterator[dict[str, int]]",
-      "line": 83,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 83
     },
     {
       "code": -2,
@@ -1781,16 +1751,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED None <: int",
-      "description": "EXPECTED None <: int",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "TODO: ExprYield - Answers::expr_infer",
       "description": "TODO: ExprYield - Answers::expr_infer",
       "line": 92,
@@ -1801,32 +1761,12 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED None <: IntIterator",
-      "description": "EXPECTED None <: IntIterator",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "TODO: ExprYield - Answers::expr_infer",
       "description": "TODO: ExprYield - Answers::expr_infer",
       "line": 101,
       "name": "PyreError",
       "stop_column": 12,
       "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: AsyncIntIterator",
-      "description": "EXPECTED None <: AsyncIntIterator",
-      "line": 110,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 110
     },
     {
       "code": -2,
@@ -1901,6 +1841,16 @@
     {
       "code": -2,
       "column": 5,
+      "concise_description": "EXPECTED None <: Generator[None, int, None]",
+      "description": "EXPECTED None <: Generator[None, int, None]",
+      "line": 127,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 127
+    },
+    {
+      "code": -2,
+      "column": 5,
       "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "line": 127,
@@ -1921,6 +1871,16 @@
     {
       "code": -2,
       "column": 5,
+      "concise_description": "EXPECTED None <: Generator[None, str, None]",
+      "description": "EXPECTED None <: Generator[None, str, None]",
+      "line": 135,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 135
+    },
+    {
+      "code": -2,
+      "column": 5,
       "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "line": 135,
@@ -1931,52 +1891,12 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED None <: Iterable[str]",
-      "description": "EXPECTED None <: Iterable[str]",
-      "line": 139,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 139
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Iterable[str]",
-      "description": "EXPECTED None <: Iterable[str]",
-      "line": 140,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 140
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "TODO: ExprYield - Answers::expr_infer",
       "description": "TODO: ExprYield - Answers::expr_infer",
       "line": 140,
       "name": "PyreError",
       "stop_column": 13,
       "stop_line": 140
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: AsyncIterable[str]",
-      "description": "EXPECTED None <: AsyncIterable[str]",
-      "line": 144,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 144
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: AsyncIterable[str]",
-      "description": "EXPECTED None <: AsyncIterable[str]",
-      "line": 145,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 145
     },
     {
       "code": -2,
@@ -1997,6 +1917,16 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 149
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED None <: Generator[int, None, None]",
+      "description": "EXPECTED None <: Generator[int, None, None]",
+      "line": 150,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 150
     },
     {
       "code": -2,
@@ -2027,16 +1957,6 @@
       "name": "PyreError",
       "stop_column": 26,
       "stop_line": 154
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: AsyncGenerator[str, None]",
-      "description": "EXPECTED None <: AsyncGenerator[str, None]",
-      "line": 159,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 161
     },
     {
       "code": -2,
@@ -2117,16 +2037,6 @@
       "name": "PyreError",
       "stop_column": 30,
       "stop_line": 179
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: AsyncIterator[int]",
-      "description": "EXPECTED None <: AsyncIterator[int]",
-      "line": 187,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 187
     },
     {
       "code": -2,
