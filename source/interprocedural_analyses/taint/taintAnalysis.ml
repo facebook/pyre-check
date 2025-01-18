@@ -707,6 +707,7 @@ let run_taint_analysis
   let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
   let attribute_targets = Registry.object_targets initial_models in
   let skip_analysis_targets = Registry.skip_analysis initial_models in
+  let decorator_resolution = Interprocedural.CallGraph.DecoratorResolution.Results.empty in
   let { Interprocedural.CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs }, cache
     =
     Cache.call_graph
@@ -725,7 +726,8 @@ let run_taint_analysis
           ~attribute_targets
           ~skip_analysis_targets
           ~decorators:Interprocedural.CallGraph.CallableToDecoratorsMap.empty
-          ~definitions)
+          ~definitions
+          ~decorator_resolution)
   in
   let () = StepLogger.finish step_logger in
 
@@ -816,7 +818,6 @@ let run_taint_analysis
     Taint.TaintFixpoint.compute
       ~scheduler
       ~scheduler_policy:(Taint.TaintFixpoint.get_scheduler_policy scheduler_policies)
-      ~pyre_api
       ~override_graph:override_graph_shared_memory_read_only
       ~dependency_graph
       ~context:
@@ -826,6 +827,7 @@ let run_taint_analysis
           class_interval_graph = class_interval_graph_shared_memory;
           define_call_graphs = Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs;
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
+          decorator_resolution;
         }
       ~callables_to_analyze
       ~max_iterations:100

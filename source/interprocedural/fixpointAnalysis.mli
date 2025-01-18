@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Ast
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 (** Represents the set of information that must be propagated from callees to callers during an
@@ -123,9 +122,7 @@ module type ANALYSIS = sig
       the call graph. *)
   val analyze_define
     :  context:context ->
-    qualifier:Reference.t ->
     callable:Target.t ->
-    define:Statement.Define.t Node.t ->
     previous_model:Model.t ->
     get_callee_model:(Target.t -> Model.t option) ->
     AnalyzeDefineResult.t
@@ -200,7 +197,6 @@ module Make (Analysis : ANALYSIS) : sig
   val compute
     :  scheduler:Scheduler.t ->
     scheduler_policy:Scheduler.Policy.t ->
-    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
     dependency_graph:DependencyGraph.t ->
     context:Analysis.context ->

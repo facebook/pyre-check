@@ -19,9 +19,7 @@
  *)
 
 open Core
-open Ast
 open Pyre
-open Statement
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 (** Represents the set of information that must be propagated from callees to callers during an
@@ -139,9 +137,7 @@ module type ANALYSIS = sig
       the call graph. *)
   val analyze_define
     :  context:context ->
-    qualifier:Reference.t ->
     callable:Target.t ->
-    define:Define.t Node.t ->
     previous_model:Model.t ->
     get_callee_model:(Target.t -> Model.t option) ->
     AnalyzeDefineResult.t
@@ -466,14 +462,7 @@ module Make (Analysis : ANALYSIS) = struct
       State.{ is_partial = true; model; result; additional_dependencies }
 
 
-  let analyze_define
-      ~shared_models_handle
-      ~context
-      ~step:({ iteration; _ } as step)
-      ~callable
-      ~qualifier
-      ~define
-    =
+  let analyze_define ~shared_models_handle ~context ~step:({ iteration; _ } as step) ~callable =
     let previous_model =
       match State.get_old_model shared_models_handle callable with
       | Some model -> model
@@ -488,9 +477,7 @@ module Make (Analysis : ANALYSIS) = struct
       try
         Analysis.analyze_define
           ~context
-          ~qualifier
           ~callable
-          ~define
           ~previous_model
           ~get_callee_model:(State.get_model shared_models_handle)
       with
@@ -592,7 +579,7 @@ module Make (Analysis : ANALYSIS) = struct
     state
 
 
-  let analyze_callable ~max_iterations ~pyre_api ~override_graph ~context ~step ~callable =
+  let analyze_callable ~max_iterations ~override_graph ~context ~step ~callable =
     let () =
       (* Verify invariants *)
       match State.get_meta_data callable with
@@ -610,16 +597,10 @@ module Make (Analysis : ANALYSIS) = struct
           |> failwith
       | _ -> ()
     in
-    let analyze_define_with_definition ~callable = function
-      | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
-      | Some (qualifier, define) -> analyze_define ~context ~step ~callable ~qualifier ~define
-    in
     match callable with
     | Target.Regular (Target.Regular.Function _)
     | Target.Regular (Target.Regular.Method _) ->
-        callable
-        |> Target.get_module_and_definition ~pyre_api
-        |> analyze_define_with_definition ~callable
+        analyze_define ~context ~step ~callable
     | Target.Regular (Target.Regular.Override _) ->
         Alarm.with_alarm
           ~max_time_in_seconds:60
@@ -630,11 +611,7 @@ module Make (Analysis : ANALYSIS) = struct
     | Target.Regular (Target.Regular.Object _) ->
         Format.asprintf "Found object `%a` in fixpoint analysis" Target.pp_pretty callable
         |> failwith
-    | Target.Parameterized { regular; _ } ->
-        regular
-        |> Target.from_regular
-        |> Target.get_module_and_definition ~pyre_api
-        |> analyze_define_with_definition ~callable
+    | Target.Parameterized _ -> analyze_define ~context ~step ~callable
 
 
   type iteration_result = {
@@ -648,7 +625,6 @@ module Make (Analysis : ANALYSIS) = struct
   let one_analysis_pass
       ~max_iterations
       ~shared_models_handle
-      ~pyre_api
       ~override_graph
       ~context
       ~step:({ iteration; _ } as step)
@@ -660,7 +636,6 @@ module Make (Analysis : ANALYSIS) = struct
         analyze_callable
           ~max_iterations
           ~shared_models_handle
-          ~pyre_api
           ~override_graph
           ~context
           ~step
@@ -749,7 +724,6 @@ module Make (Analysis : ANALYSIS) = struct
   let compute
       ~scheduler
       ~scheduler_policy
-      ~pyre_api
       ~override_graph
       ~dependency_graph
       ~context
@@ -779,7 +753,6 @@ module Make (Analysis : ANALYSIS) = struct
           one_analysis_pass
             ~max_iterations
             ~shared_models_handle
-            ~pyre_api
             ~override_graph
             ~context
             ~step

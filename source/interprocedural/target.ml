@@ -420,7 +420,70 @@ let set_kind kind = function
       Parameterized { regular = Regular.set_kind kind regular; parameters }
 
 
-module Set = Stdlib.Set.Make (T)
+module MakePrettyPrintContainer (Container : sig
+  type container
+
+  val pp : Format.formatter -> T.t -> unit
+
+  val elements : container -> T.t list
+
+  val separator : string
+
+  val left_bracket : string
+
+  val right_bracket : string
+end) =
+struct
+  let pp formatter container =
+    match Container.elements container with
+    | [] -> Format.fprintf formatter "%s%s" Container.left_bracket Container.right_bracket
+    | [element] ->
+        Format.fprintf
+          formatter
+          "%s%a%s"
+          Container.left_bracket
+          Container.pp
+          element
+          Container.right_bracket
+    | list ->
+        let pp_element formatter element =
+          Format.fprintf formatter "@%s%a" Container.separator Container.pp element
+        in
+        let pp_elements formatter = List.iter ~f:(pp_element formatter) in
+        Format.fprintf
+          formatter
+          "%s@[<v 2>%a@]@,%s"
+          Container.left_bracket
+          pp_elements
+          list
+          Container.right_bracket
+
+
+  let show = Format.asprintf "%a" pp
+end
+
+module Set = struct
+  include Stdlib.Set.Make (T)
+
+  module PrettyPrintWithKind = MakePrettyPrintContainer (struct
+    type container = t
+
+    let elements = elements
+
+    let pp = pp_pretty_with_kind
+
+    let separator = ","
+
+    let left_bracket = "{"
+
+    let right_bracket = "}"
+  end)
+
+  let pp_pretty_with_kind = PrettyPrintWithKind.pp
+
+  let show_pretty_with_kind = PrettyPrintWithKind.show
+end
+
 module Hashable = Core.Hashable.Make (T)
 module HashMap = Hashable.Table
 module HashSet = Hashable.Hash_set
@@ -535,4 +598,26 @@ module HashsetSharedMemory = struct
   module ReadOnly = T.ReadOnly
 
   let read_only = T.read_only
+end
+
+module List = struct
+  type t = T.t list
+
+  module PrettyPrintWithKind = MakePrettyPrintContainer (struct
+    type container = t
+
+    let elements = Fn.id
+
+    let pp = pp_pretty_with_kind
+
+    let separator = ";"
+
+    let left_bracket = "["
+
+    let right_bracket = "]"
+  end)
+
+  let pp_pretty_with_kind = PrettyPrintWithKind.pp
+
+  let show_pretty_with_kind = PrettyPrintWithKind.show
 end

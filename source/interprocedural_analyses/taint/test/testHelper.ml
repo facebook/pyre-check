@@ -426,24 +426,27 @@ let get_initial_models ~context =
   models
 
 
-type test_environment = {
-  static_analysis_configuration: Configuration.StaticAnalysis.t;
-  taint_configuration: TaintConfiguration.Heap.t;
-  taint_configuration_shared_memory: TaintConfiguration.SharedMemory.t;
-  whole_program_call_graph: CallGraph.WholeProgramCallGraph.t;
-  define_call_graphs: CallGraph.SharedMemory.t;
-  override_graph_heap: OverrideGraph.Heap.t;
-  override_graph_shared_memory: OverrideGraph.SharedMemory.t;
-  initial_callables: FetchCallables.t;
-  stubs: Target.t list;
-  initial_models: Registry.t;
-  model_query_results: ModelQueryExecution.ModelQueryRegistryMap.t;
-  pyre_api: PyrePysaEnvironment.ReadOnly.t;
-  class_interval_graph: ClassIntervalSetGraph.Heap.t;
-  class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
-  global_constants: GlobalConstants.SharedMemory.t;
-  stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
-}
+module TestEnvironment = struct
+  type t = {
+    static_analysis_configuration: Configuration.StaticAnalysis.t;
+    taint_configuration: TaintConfiguration.Heap.t;
+    taint_configuration_shared_memory: TaintConfiguration.SharedMemory.t;
+    whole_program_call_graph: CallGraph.WholeProgramCallGraph.t;
+    define_call_graphs: CallGraph.SharedMemory.t;
+    override_graph_heap: OverrideGraph.Heap.t;
+    override_graph_shared_memory: OverrideGraph.SharedMemory.t;
+    initial_callables: FetchCallables.t;
+    stubs: Target.t list;
+    initial_models: Registry.t;
+    model_query_results: ModelQueryExecution.ModelQueryRegistryMap.t;
+    pyre_api: PyrePysaEnvironment.ReadOnly.t;
+    class_interval_graph: ClassIntervalSetGraph.Heap.t;
+    class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
+    global_constants: GlobalConstants.SharedMemory.t;
+    stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
+    decorator_resolution: CallGraph.DecoratorResolution.Results.t;
+  }
+end
 
 let set_up_decorator_preprocessing ~handle models =
   let decorator_actions =
@@ -605,6 +608,7 @@ let initialize
 
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
+  let decorator_resolution = Interprocedural.CallGraph.DecoratorResolution.Results.empty in
   let { CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs } =
     CallGraph.SharedMemory.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
@@ -617,6 +621,7 @@ let initialize
       ~decorators:Interprocedural.CallGraph.CallableToDecoratorsMap.empty
       ~skip_analysis_targets:Target.Set.empty
       ~definitions
+      ~decorator_resolution
   in
   let initial_models =
     MissingFlow.add_unknown_callee_models
@@ -631,7 +636,7 @@ let initialize
     ClassIntervalSetGraph.SharedMemory.from_heap class_interval_graph
   in
   {
-    static_analysis_configuration;
+    TestEnvironment.static_analysis_configuration;
     taint_configuration;
     taint_configuration_shared_memory;
     whole_program_call_graph;
@@ -647,6 +652,7 @@ let initialize
     class_interval_graph_shared_memory;
     global_constants;
     stubs_shared_memory_handle;
+    decorator_resolution;
   }
 
 
@@ -762,7 +768,7 @@ let end_to_end_integration_test path context =
       create_expected_and_actual_files ~suffix:".overrides" actual
     in
     let {
-      static_analysis_configuration;
+      TestEnvironment.static_analysis_configuration;
       taint_configuration;
       taint_configuration_shared_memory;
       whole_program_call_graph;
@@ -778,6 +784,7 @@ let end_to_end_integration_test path context =
       class_interval_graph_shared_memory;
       global_constants;
       stubs_shared_memory_handle;
+      decorator_resolution;
     }
       =
       try
@@ -825,7 +832,6 @@ let end_to_end_integration_test path context =
       TaintFixpoint.compute
         ~scheduler:(Test.mock_scheduler ())
         ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-        ~pyre_api
         ~override_graph:override_graph_shared_memory_read_only
         ~dependency_graph
         ~context:
@@ -836,6 +842,7 @@ let end_to_end_integration_test path context =
             define_call_graphs = Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs;
             global_constants =
               Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
+            decorator_resolution;
           }
         ~callables_to_analyze
         ~max_iterations:100

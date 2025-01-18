@@ -6662,7 +6662,7 @@ let test_higher_order_call_graph_of_define =
                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
              ]
            ~initial_state:
-             (CallGraph.HigherOrderCallGraph.State.from_list
+             (CallGraph.HigherOrderCallGraph.State.initialize_from_roots
                 [
                   ( create_positional_parameter 0 "g",
                     Target.Regular.Function { name = "test.bar"; kind = Normal }

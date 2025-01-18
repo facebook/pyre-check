@@ -28,7 +28,7 @@ let assert_fixpoint
     TaintConfiguration.apply_missing_flows TaintConfiguration.Heap.default missing_flows
   in
   let {
-    static_analysis_configuration;
+    TestEnvironment.static_analysis_configuration;
     taint_configuration;
     taint_configuration_shared_memory;
     whole_program_call_graph;
@@ -71,7 +71,6 @@ let assert_fixpoint
     TaintFixpoint.compute
       ~scheduler:(Test.mock_scheduler ())
       ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~pyre_api
       ~override_graph:
         (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
       ~dependency_graph
@@ -83,6 +82,7 @@ let assert_fixpoint
           define_call_graphs = Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs;
           global_constants =
             GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only;
+          decorator_resolution = CallGraph.DecoratorResolution.Results.empty;
         }
       ~callables_to_analyze
       ~max_iterations:100

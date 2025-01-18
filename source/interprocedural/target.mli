@@ -36,7 +36,7 @@ module Regular : sig
     (* Represents a global variable or field of a class that we want to model, * e.g os.environ or
        HttpRequest.GET *)
     | Object of string
-  [@@deriving sexp, compare, hash, eq]
+  [@@deriving sexp, compare, hash, eq, show]
 
   val override_to_method : t -> t
 
@@ -161,11 +161,25 @@ val define_name_exn : t -> Reference.t
 
 val set_kind : kind -> t -> t
 
-module Set : Stdlib.Set.S with type elt = t
+module Set : sig
+  include Stdlib.Set.S with type elt = t
+
+  val pp_pretty_with_kind : Format.formatter -> t -> unit
+
+  val show_pretty_with_kind : t -> string
+end
 
 module HashMap : Core.Hashtbl.S with type key := t
 
 module HashSet : Core.Hash_set.S with type elt := t
+
+module List : sig
+  type t = T.t list
+
+  val pp_pretty_with_kind : Format.formatter -> t -> unit
+
+  val show_pretty_with_kind : t -> string
+end
 
 type definitions_result = {
   qualifier: Reference.t;

@@ -128,6 +128,10 @@ module Root = struct
 
   include T
   module Set = Stdlib.Set.Make (T)
+
+  module List = struct
+    type t = T.t list [@@deriving show]
+  end
 end
 
 module NormalizedParameter = struct
@@ -240,7 +244,6 @@ type argument_position =
 
 (* Will preserve the order in which the arguments were matched to formals. *)
 let match_actuals_to_formals arguments roots =
-  let open Root in
   let increment = function
     | `Precise n -> `Precise (n + 1)
     | `Approximate n -> `Approximate (n + 1)
@@ -251,10 +254,10 @@ let match_actuals_to_formals arguments roots =
   in
   let filter_to_named matched_names name_or_star_star formal =
     match name_or_star_star, formal with
-    | `Name actual_name, (NamedParameter { name } | PositionalParameter { name; _ })
+    | `Name actual_name, (Root.NamedParameter { name } | Root.PositionalParameter { name; _ })
       when Identifier.equal actual_name name ->
         Some { root = formal; actual_path = []; formal_path = [] }
-    | `Name actual_name, StarStarParameter { excluded }
+    | `Name actual_name, Root.StarStarParameter { excluded }
       when not (List.exists ~f:(Identifier.equal actual_name) excluded) ->
         let index = Root.chop_parameter_prefix actual_name in
         Some
@@ -263,12 +266,12 @@ let match_actuals_to_formals arguments roots =
             actual_path = [];
             formal_path = [Abstract.TreeDomain.Label.create_name_index index];
           }
-    | `StarStar, NamedParameter { name }
-    | `StarStar, PositionalParameter { name; _ }
+    | `StarStar, Root.NamedParameter { name }
+    | `StarStar, Root.PositionalParameter { name; _ }
       when not (Base.Set.mem matched_names name) ->
         Some
           { root = formal; actual_path = [Abstract.TreeDomain.Label.Index name]; formal_path = [] }
-    | `StarStar, StarStarParameter _ ->
+    | `StarStar, Root.StarStarParameter _ ->
         (* assume entire structure is passed. We can't just pick all but X fields. *)
         Some { root = formal; actual_path = []; formal_path = [] }
     | (`Name _ | `StarStar), _ -> None
@@ -276,13 +279,13 @@ let match_actuals_to_formals arguments roots =
   let filter_to_positional position formal =
     let position = (position :> [ `Star of argument_position | argument_position ]) in
     match position, formal with
-    | `Precise actual_position, PositionalParameter { position; _ } when actual_position = position
-      ->
+    | `Precise actual_position, Root.PositionalParameter { position; _ }
+      when actual_position = position ->
         Some { root = formal; actual_path = []; formal_path = [] }
-    | `Approximate minimal_position, PositionalParameter { position; _ }
+    | `Approximate minimal_position, Root.PositionalParameter { position; _ }
       when minimal_position <= position ->
         Some { root = formal; actual_path = []; formal_path = [] }
-    | `Star (`Precise actual_position), PositionalParameter { position; _ }
+    | `Star (`Precise actual_position), Root.PositionalParameter { position; _ }
       when actual_position <= position ->
         Some
           {
@@ -290,17 +293,17 @@ let match_actuals_to_formals arguments roots =
             actual_path = [Abstract.TreeDomain.Label.create_int_index (position - actual_position)];
             formal_path = [];
           }
-    | `Star (`Approximate minimal_position), PositionalParameter { position; _ }
+    | `Star (`Approximate minimal_position), Root.PositionalParameter { position; _ }
       when minimal_position <= position ->
         Some { root = formal; actual_path = [Abstract.TreeDomain.Label.AnyIndex]; formal_path = [] }
-    | `Precise actual_position, StarParameter { position } when actual_position >= position ->
+    | `Precise actual_position, Root.StarParameter { position } when actual_position >= position ->
         Some
           {
             root = formal;
             actual_path = [];
             formal_path = [Abstract.TreeDomain.Label.create_int_index (actual_position - position)];
           }
-    | `Approximate _, StarParameter _ ->
+    | `Approximate _, Root.StarParameter _ ->
         (* Approximate: We can't filter by minimal position in either direction here. Think about
            the two following cases:
 
@@ -310,7 +313,7 @@ let match_actuals_to_formals arguments roots =
            2. ```def f( *z): ... f( *[], 1, approx) ``` In this case, we'll have approx, which has a
            minimal position > the starred parameter, flow to z. *)
         Some { root = formal; actual_path = []; formal_path = [Abstract.TreeDomain.Label.AnyIndex] }
-    | `Star _, StarParameter _ ->
+    | `Star _, Root.StarParameter _ ->
         (* Approximate: can't match up ranges, so pass entire structure *)
         Some { root = formal; actual_path = []; formal_path = [] }
     | (`Star _ | `Precise _ | `Approximate _), _ -> None
@@ -327,7 +330,7 @@ let match_actuals_to_formals arguments roots =
         let formals = List.filter_map roots ~f:(filter_to_positional position) in
         increment position, (argument, formals) :: matches
     | Some { value = name; _ }, _ ->
-        let unqualified_name = chop_parameter_prefix name in
+        let unqualified_name = Root.chop_parameter_prefix name in
         let formals =
           List.filter_map roots ~f:(filter_to_named matched_names (`Name unqualified_name))
         in
@@ -354,7 +357,8 @@ let match_actuals_to_formals arguments roots =
       in
       let get_matched_root = function
         (* Positions are 0 indexed, hence the < instead of <=. *)
-        | PositionalParameter { position; name; _ } when position < matched_positions -> Some name
+        | Root.PositionalParameter { position; name; _ } when position < matched_positions ->
+            Some name
         | _ -> None
       in
       List.filter_map roots ~f:get_matched_root

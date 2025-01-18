@@ -47,6 +47,10 @@ module Root : sig
   val sink_port_in_string_combine_functions : t
 
   module Set : Stdlib.Set.S with type elt = t
+
+  module List : sig
+    type nonrec t = t list [@@deriving show]
+  end
 end
 
 module NormalizedParameter : sig

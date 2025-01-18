@@ -28,6 +28,7 @@ module Context = struct
     (* Use a lightweight handle, to avoid copying a large handle for each worker. *)
     define_call_graphs: Interprocedural.CallGraph.SharedMemory.ReadOnly.t;
     global_constants: Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t;
+    decorator_resolution: Interprocedural.CallGraph.DecoratorResolution.Results.t;
   }
 end
 
@@ -207,16 +208,22 @@ module Analysis = struct
           class_interval_graph;
           define_call_graphs;
           global_constants;
+          decorator_resolution = _;
         }
-      ~qualifier
       ~callable
-      ~define:
-        ({ Ast.Node.value = { Ast.Statement.Define.signature = { name; _ }; _ }; _ } as define)
       ~previous_model:({ Model.modes; sanitizers; _ } as previous_model)
       ~get_callee_model
     =
     let () =
       Log.log ~section:`Interprocedural "Analyzing %a" Interprocedural.Target.pp_pretty callable
+    in
+    let ( qualifier,
+          ({ Ast.Node.value = { Ast.Statement.Define.signature = { name; _ }; _ }; _ } as define) )
+      =
+      callable
+      |> Interprocedural.Target.strip_parameters
+      |> Interprocedural.Target.get_module_and_definition ~pyre_api
+      |> Option.value_exn
     in
     let define_qualifier = Ast.Reference.delocalize name in
     let open Ast in
