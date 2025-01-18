@@ -149,6 +149,10 @@ val is_override : t -> bool
 
 val is_object : t -> bool
 
+val is_normal : t -> bool
+
+val is_decorated : t -> bool
+
 val for_issue_handle : t -> t
 
 (** Return the define name of a Function or Method target. Note that multiple targets can match to

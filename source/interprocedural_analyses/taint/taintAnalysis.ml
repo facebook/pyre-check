@@ -724,6 +724,7 @@ let run_taint_analysis
           ~store_shared_memory:true
           ~attribute_targets
           ~skip_analysis_targets
+          ~decorators:Interprocedural.CallGraph.CallableToDecoratorsMap.empty
           ~definitions)
   in
   let () = StepLogger.finish step_logger in

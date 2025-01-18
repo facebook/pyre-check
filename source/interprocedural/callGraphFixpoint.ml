@@ -12,6 +12,7 @@ module CallGraphAnalysis = struct
     type t = {
       pyre_api: Analysis.PyrePysaEnvironment.ReadOnly.t;
       define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
+      decorator_resolution: CallGraph.DecoratorResolution.Results.t;
     }
   end
 
@@ -69,7 +70,7 @@ module CallGraphAnalysis = struct
   end
 
   let analyze_define
-      ~context:{ Context.pyre_api; define_call_graphs; _ }
+      ~context:{ Context.pyre_api; define_call_graphs; decorator_resolution; _ }
       ~qualifier
       ~callable
       ~define:{ Ast.Node.value = define; _ }
@@ -85,6 +86,7 @@ module CallGraphAnalysis = struct
     let ({ CallGraph.HigherOrderCallGraph.call_graph; _ } as model) =
       CallGraph.higher_order_call_graph_of_callable
         ~pyre_api
+        ~decorator_resolution
         ~define_call_graph
         ~callable
         ~get_callee_model
@@ -124,6 +126,7 @@ let compute
       { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ }
     ~override_graph_shared_memory
     ~initial_callables
+    ~decorator_resolution
     ~max_iterations
   =
   let definitions = FetchCallables.get_definitions initial_callables in
@@ -159,6 +162,7 @@ let compute
       {
         CallGraphAnalysis.Context.pyre_api;
         define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
+        decorator_resolution;
       }
     ~callables_to_analyze
     ~max_iterations

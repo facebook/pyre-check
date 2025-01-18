@@ -886,6 +886,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         CallGraph.CallCallees.call_targets;
         new_targets;
         init_targets;
+        decorated_targets = _;
         higher_order_parameters = _;
         unresolved;
       }

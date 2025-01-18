@@ -204,6 +204,18 @@ module Regular = struct
     | _ -> false
 
 
+  let is_normal regular =
+    match kind regular with
+    | Some Normal -> true
+    | _ -> false
+
+
+  let is_decorated regular =
+    match kind regular with
+    | Some Decorated -> true
+    | _ -> false
+
+
   let override_to_method = function
     | Function target -> Function target
     | Method target
@@ -385,6 +397,10 @@ let is_function target = target |> get_regular |> Regular.is_function
 let is_override target = target |> get_regular |> Regular.is_override
 
 let is_object target = target |> get_regular |> Regular.is_object
+
+let is_normal target = target |> get_regular |> Regular.is_normal
+
+let is_decorated target = target |> get_regular |> Regular.is_decorated
 
 let rec for_issue_handle = function
   | Regular regular -> regular |> Regular.override_to_method |> from_regular

@@ -614,6 +614,7 @@ let initialize
       ~override_graph:(Some override_graph_shared_memory_read_only)
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
+      ~decorators:Interprocedural.CallGraph.CallableToDecoratorsMap.empty
       ~skip_analysis_targets:Target.Set.empty
       ~definitions
   in

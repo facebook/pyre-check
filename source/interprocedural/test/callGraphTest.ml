@@ -18,6 +18,9 @@ let compute_define_call_graph ~define ~source ~pyre_api ~configuration ~object_t
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
+  let definitions =
+    FetchCallables.from_source ~configuration ~pyre_api ~source |> FetchCallables.get_definitions
+  in
   let call_graph =
     CallGraph.call_graph_of_define
       ~static_analysis_configuration
@@ -26,6 +29,7 @@ let compute_define_call_graph ~define ~source ~pyre_api ~configuration ~object_t
         (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
       ~attribute_targets:
         (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
+      ~decorators:(CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions)
       ~qualifier:(Reference.create "test")
       ~define
   in
@@ -1032,7 +1036,7 @@ let test_call_graph_of_define =
                              CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
                                (Target.Regular.Function
-                                  { name = "test.callable_target"; kind = Normal });
+                                  { name = "test.callable_target"; kind = Decorated });
                            ]
                          ())) );
                ( "9:2-9:35",
@@ -1044,7 +1048,7 @@ let test_call_graph_of_define =
                              CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
                                (Target.Regular.Function
-                                  { name = "test.callable_target"; kind = Normal });
+                                  { name = "test.callable_target"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -2635,7 +2639,7 @@ let test_call_graph_of_define =
                            [
                              CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -2679,7 +2683,7 @@ let test_call_graph_of_define =
                                ~return_type:(Some ReturnType.integer)
                                ~receiver_class:"test.Foo"
                                (Target.Regular.Method
-                                  { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
+                                  { class_name = "test.Foo"; method_name = "bar"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -2717,7 +2721,7 @@ let test_call_graph_of_define =
                            [
                              CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
-                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -2757,7 +2761,7 @@ let test_call_graph_of_define =
                                ~implicit_receiver:true
                                ~return_type:(Some ReturnType.integer)
                                (Target.Regular.Method
-                                  { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
+                                  { class_name = "test.Foo"; method_name = "bar"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -2787,7 +2791,7 @@ let test_call_graph_of_define =
                          ~call_targets:
                            [
                              CallTarget.create_regular
-                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -2819,7 +2823,7 @@ let test_call_graph_of_define =
                              CallTarget.create_regular
                                ~implicit_receiver:true
                                (Target.Regular.Method
-                                  { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
+                                  { class_name = "test.Foo"; method_name = "bar"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -2866,7 +2870,7 @@ let test_call_graph_of_define =
                                ~is_class_method:true
                                ~receiver_class:"test.Foo"
                                (Target.Regular.Method
-                                  { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
+                                  { class_name = "test.Foo"; method_name = "bar"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -2910,7 +2914,7 @@ let test_call_graph_of_define =
                                ~return_type:(Some ReturnType.integer)
                                ~is_static_method:true
                                (Target.Regular.Method
-                                  { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
+                                  { class_name = "test.Foo"; method_name = "bar"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -2957,7 +2961,7 @@ let test_call_graph_of_define =
                                ~is_class_method:true
                                ~receiver_class:"test.Foo"
                                (Target.Regular.Method
-                                  { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
+                                  { class_name = "test.Foo"; method_name = "bar"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -2995,7 +2999,7 @@ let test_call_graph_of_define =
                          ~call_targets:
                            [
                              CallTarget.create_regular
-                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                               (Target.Regular.Function { name = "test.foo"; kind = Decorated });
                            ]
                          ())) );
              ]
@@ -4448,7 +4452,7 @@ let test_call_graph_of_define =
                                   {
                                     Target.class_name = "test.Base";
                                     method_name = "query";
-                                    kind = Normal;
+                                    kind = Decorated;
                                   });
                              CallTarget.create_regular
                                ~implicit_receiver:true
@@ -4504,7 +4508,7 @@ let test_call_graph_of_define =
                                   {
                                     Target.class_name = "test.BaseA";
                                     method_name = "query";
-                                    kind = Normal;
+                                    kind = Decorated;
                                   });
                            ]
                          ())) );
@@ -4523,7 +4527,7 @@ let test_call_graph_of_define =
                                        `Child`. *)
                                     Target.class_name = "test.BaseA";
                                     method_name = "query";
-                                    kind = Normal;
+                                    kind = Decorated;
                                   });
                            ]
                          ())) );
@@ -4674,7 +4678,7 @@ let test_call_graph_of_define =
                                   {
                                     Target.class_name = "test.A";
                                     method_name = "query";
-                                    kind = Normal;
+                                    kind = Decorated;
                                   });
                              CallTarget.create_regular
                              (* TODO(T118125320): Return type is None, which is incorrect *)
@@ -4761,7 +4765,7 @@ let test_call_graph_of_define =
                                   {
                                     Target.class_name = "test.A";
                                     method_name = "query";
-                                    kind = Normal;
+                                    kind = Decorated;
                                   });
                            ]
                          ())) );
@@ -6567,21 +6571,10 @@ let test_higher_order_call_graph_of_define =
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call
                       (CallCallees.create
-                         ~call_targets:
+                         ~decorated_targets:
                            [
-                             (* TODO(T206271514): It is incorrect to create targets for the
-                                undecorated version of the functions that have decorators. Instead,
-                                we should create targets for the decorated version. *)
-                             CallTarget.create
-                               (create_parameterized_target
-                                  ~regular:
-                                    (Target.Regular.Function { name = "test.foo"; kind = Normal })
-                                  ~parameters:
-                                    [
-                                      ( create_positional_parameter 0 "x",
-                                        Target.Regular.Function { name = "test.baz"; kind = Normal }
-                                        |> Target.from_regular );
-                                    ]);
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Decorated });
                            ]
                          ())) );
                ( "12:7-12:10",
@@ -6865,13 +6858,11 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
           callable: Target.t;
           call_graph: CallGraph.DefineCallGraph.t;
         }
-      | DefinitionNotFound
       | PropertySetterUnsupported
       | Undecorated
     [@@deriving show, eq]
 
     let from_actual = function
-      | CallGraph.DecoratorResolution.DefinitionNotFound -> DefinitionNotFound
       | CallGraph.DecoratorResolution.PropertySetterUnsupported -> PropertySetterUnsupported
       | CallGraph.DecoratorResolution.Undecorated -> Undecorated
       | CallGraph.DecoratorResolution.Decorators
@@ -6915,16 +6906,16 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
               define_name;
               call_graph = CallGraphTestHelper.parse_define_call_graph call_graph;
             }
-      | Result.Error CallGraph.DecoratorResolution.DefinitionNotFound -> DefinitionNotFound
       | Result.Error CallGraph.DecoratorResolution.PropertySetterUnsupported ->
           PropertySetterUnsupported
       | Result.Error CallGraph.DecoratorResolution.Undecorated -> Undecorated
       | Result.Error _ -> failwith "Unexpected"
   end
   in
+  let definitions = FetchCallables.get_definitions initial_callables in
+  let decorators = CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions in
   let actual =
-    initial_callables
-    |> FetchCallables.get_definitions
+    definitions
     |> List.map ~f:(fun callable ->
            (* For simplicity, don't compare the cases when there exist no decorator callees. *)
            callable
@@ -6933,6 +6924,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
                 ~pyre_in_context
                 ~override_graph:
                   (Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
+                ~decorators
            |> TestResult.from_actual
            |> fun result -> callable, result)
     |> Target.Map.of_alist_exn

@@ -43,6 +43,7 @@ let assert_taint ~context source expected =
           |> Registry.object_targets
           |> Target.Set.elements
           |> Target.HashSet.of_list)
+        ~decorators:CallGraph.CallableToDecoratorsMap.empty
         ~qualifier
         ~define:(Ast.Node.value define)
     in
