@@ -81,6 +81,7 @@ use crate::export::definitions::DefinitionStyle;
 use crate::export::definitions::Definitions;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
+use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::graph::index::Index;
 use crate::graph::index_map::IndexMap;
@@ -539,20 +540,24 @@ impl<'a> BindingsBuilder<'a> {
         self.errors.todo(&self.module_info, msg, x);
     }
 
+    fn as_special_export(&self, name: &Name) -> Option<SpecialExport> {
+        SpecialExport::new(name)
+    }
+
     fn is_annotated(&self, name: &Name) -> bool {
-        name == "Annotated"
+        self.as_special_export(name) == Some(SpecialExport::Annotated)
     }
 
     fn is_type_var(&self, name: &Name) -> bool {
-        name == "TypeVar"
+        self.as_special_export(name) == Some(SpecialExport::TypeVar)
     }
 
     fn is_type_alias(&self, name: &Name) -> bool {
-        name == "TypeAlias"
+        self.as_special_export(name) == Some(SpecialExport::TypeAlias)
     }
 
     fn is_literal(&self, name: &Name) -> bool {
-        name == "Literal"
+        self.as_special_export(name) == Some(SpecialExport::Literal)
     }
 
     fn error(&self, range: TextRange, msg: String) {
