@@ -1244,7 +1244,7 @@ impl<'a> BindingsBuilder<'a> {
                 Key::DecoratorApplication(decorator.range),
                 Binding::DecoratorApplication(Box::new(decorator), current_name_key),
             );
-            self.bind_key(&func_name.id, current_name_key, None, true, true, None);
+            self.bind_key(&func_name.id, current_name_key, None, false, true, None);
         }
     }
 
