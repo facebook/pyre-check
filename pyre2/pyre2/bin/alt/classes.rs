@@ -130,7 +130,7 @@ pub struct TypedDictField {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct TypedDictInner(QName, SmallMap<Name, TypedDictField>);
+struct TypedDictInner(Class, TArgs, SmallMap<Name, TypedDictField>);
 
 impl PartialOrd for TypedDictInner {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -148,19 +148,27 @@ impl Ord for TypedDictInner {
 pub struct TypedDict(ArcId<TypedDictInner>);
 
 impl TypedDict {
-    pub fn new(name: QName, fields: SmallMap<Name, TypedDictField>) -> Self {
-        Self(ArcId::new(TypedDictInner(name, fields)))
+    pub fn new(cls: Class, targs: TArgs, fields: SmallMap<Name, TypedDictField>) -> Self {
+        Self(ArcId::new(TypedDictInner(cls, targs, fields)))
     }
 
     pub fn qname(&self) -> &QName {
-        &self.0.0
+        self.0.0.qname()
     }
 
     pub fn name(&self) -> &Name {
-        &self.0.0.name.id
+        &self.0.0.name().id
     }
 
     pub fn fields(&self) -> &SmallMap<Name, TypedDictField> {
+        &self.0.2
+    }
+
+    pub fn class_object(&self) -> &Class {
+        &self.0.0
+    }
+
+    pub fn targs(&self) -> &TArgs {
         &self.0.1
     }
 }
@@ -387,6 +395,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                         Some((c, class_metadata))
                     }
+                    Type::TypedDict(typed_dict) => {
+                        is_typed_dict = true;
+                        let class_object = typed_dict.class_object();
+                        let class_metadata = self.get_metadata_for_class(class_object);
+                        // In normal typechecking logic, TypedDicts should never be represented as ClassType.
+                        // However, we convert it to a ClassType here so that MRO works properly and we can look up
+                        // the types of the declared items.
+                        Some((
+                            ClassType::new(class_object.clone(), typed_dict.targs().clone()),
+                            class_metadata,
+                        ))
+                    }
                     _ => None,
                 },
                 BaseClass::TypedDict => {
@@ -517,7 +537,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_from_class(cls, &KeyClassMetadata(ShortIdentifier::new(cls.name())))
     }
 
-    pub fn get_enum(&self, cls: &ClassType) -> Option<Enum> {
+    pub fn get_enum(&self, ty: &Type) -> Option<Enum> {
+        if let Type::ClassType(cls) = ty {
+            self.get_enum_from_class_type(cls)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_enum_from_class_type(&self, cls: &ClassType) -> Option<Enum> {
         let metadata = self.get_metadata_for_class(cls.class_object());
         metadata.metaclass().and_then(|m| {
             if self.solver().is_subset_eq(
@@ -530,50 +558,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 None
             }
         })
-    }
-
-    pub fn specialize_as_typed_dict(
-        &self,
-        cls: &Class,
-        targs: Vec<Type>,
-        range: TextRange,
-    ) -> Option<TypedDict> {
-        let metadata = self.get_metadata_for_class(cls);
-        let targs = self.check_and_create_targs(cls, targs, range);
-        if metadata.is_typed_dict() {
-            Some(TypedDict::new(
-                cls.qname().clone(),
-                self.get_typed_dict_fields(cls, &targs),
-            ))
-        } else {
-            None
-        }
-    }
-
-    pub fn promote_to_typed_dict(&self, cls: &Class, range: TextRange) -> Option<TypedDict> {
-        let metadata = self.get_metadata_for_class(cls);
-        if metadata.is_typed_dict() {
-            let targs = self.create_default_targs(cls, Some(range));
-            Some(TypedDict::new(
-                cls.qname().clone(),
-                self.get_typed_dict_fields(cls, &targs),
-            ))
-        } else {
-            None
-        }
-    }
-
-    fn promote_to_typed_dict_silently(&self, cls: &Class) -> Option<TypedDict> {
-        let metadata = self.get_metadata_for_class(cls);
-        if metadata.is_typed_dict() {
-            let targs = self.create_default_targs(cls, None);
-            Some(TypedDict::new(
-                cls.qname().clone(),
-                self.get_typed_dict_fields(cls, &targs),
-            ))
-        } else {
-            None
-        }
     }
 
     fn check_and_create_targs(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> TArgs {
@@ -631,41 +615,63 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    /// Given a class and some (explicit) type arguments, construct a `Type`
-    /// that represents the type of an instance of the class with those `targs`.
-    pub fn specialize_as_class_type(
-        &self,
-        cls: &Class,
-        targs: Vec<Type>,
-        range: TextRange,
-    ) -> ClassType {
+    /// Given a class or typed dictionary and some (explicit) type arguments, construct a `Type`
+    /// that represents the type of an instance of the class or typed dictionary with those `targs`.
+    pub fn specialize(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> Type {
         let targs = self.check_and_create_targs(cls, targs, range);
-        ClassType::new(cls.dupe(), targs)
+        let metadata = self.get_metadata_for_class(cls);
+        if metadata.is_typed_dict() {
+            Type::TypedDict(TypedDict::new(
+                cls.dupe(),
+                targs.clone(),
+                self.get_typed_dict_fields(cls, &targs),
+            ))
+        } else {
+            Type::ClassType(ClassType::new(cls.dupe(), targs))
+        }
     }
 
-    /// Given a class, create a `Type` that represents to an instance annotated
-    /// with that class name. This will either have empty type arguments if the
-    /// class is not generic, or type arguments populated with gradual types if
+    /// Given a class or typed dictionary, create a `Type` that represents to an instance annotated
+    /// with the class or typed dictionary's bare name. This will either have empty type arguments if the
+    /// class or typed dictionary is not generic, or type arguments populated with gradual types if
     /// it is (e.g. applying an annotation of `list` to a variable means
     /// `list[Any]`).
     ///
     /// We require a range because depending on the configuration we may raise
-    /// a type error when a generic class is promoted using gradual types.
-    pub fn promote_to_class_type(&self, cls: &Class, range: TextRange) -> ClassType {
+    /// a type error when a generic class or typed dictionary is promoted using gradual types.
+    pub fn promote(&self, cls: &Class, range: TextRange) -> Type {
+        let metadata = self.get_metadata_for_class(cls);
         let targs = self.create_default_targs(cls, Some(range));
-        ClassType::new(cls.dupe(), targs)
+        if metadata.is_typed_dict() {
+            Type::TypedDict(TypedDict::new(
+                cls.dupe(),
+                targs.clone(),
+                self.get_typed_dict_fields(cls, &targs),
+            ))
+        } else {
+            Type::ClassType(ClassType::new(cls.dupe(), targs))
+        }
     }
 
-    /// Private version of `promote_to_class_type` that does not potentially
+    /// Private version of `promote` that does not potentially
     /// raise strict mode errors. Should only be used for unusual scenarios.
-    fn promote_to_class_type_silently(&self, cls: &Class) -> ClassType {
+    fn promote_silently(&self, cls: &Class) -> Type {
+        let metadata = self.get_metadata_for_class(cls);
         let targs = self.create_default_targs(cls, None);
-        ClassType::new(cls.dupe(), targs)
+        if metadata.is_typed_dict() {
+            Type::TypedDict(TypedDict::new(
+                cls.dupe(),
+                targs.clone(),
+                self.get_typed_dict_fields(cls, &targs),
+            ))
+        } else {
+            Type::ClassType(ClassType::new(cls.dupe(), targs))
+        }
     }
 
     pub fn unwrap_class_object_silently(&self, ty: &Type) -> Option<Type> {
         match ty {
-            Type::ClassDef(c) => Some(Type::ClassType(self.promote_to_class_type_silently(c))),
+            Type::ClassDef(c) => Some(self.promote_silently(c)),
             Type::TypeAlias(ta) => self.unwrap_class_object_silently(&ta.as_value(self.stdlib)),
             _ => None,
         }
@@ -673,11 +679,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Creates a type from the class with fresh variables for its type parameters.
     pub fn instantiate_fresh(&self, cls: &Class) -> Type {
+        let metadata = self.get_metadata_for_class(cls);
         let qs = cls.tparams().quantified().collect::<Vec<_>>();
-        let promoted_cls = Type::type_form(Type::ClassType(ClassType::new(
-            cls.dupe(),
-            TArgs::new(qs.map(|q| Type::Quantified(*q))),
-        )));
+        let targs = TArgs::new(qs.map(|q| Type::Quantified(*q)));
+        let promoted_cls = if metadata.is_typed_dict() {
+            Type::type_form(Type::TypedDict(TypedDict::new(
+                cls.dupe(),
+                targs.clone(),
+                self.get_typed_dict_fields(cls, &targs),
+            )))
+        } else {
+            Type::type_form(Type::ClassType(ClassType::new(cls.dupe(), targs)))
+        };
         self.solver()
             .fresh_quantified(qs.as_slice(), promoted_cls, self.uniques)
             .1
@@ -739,6 +752,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    // Get every member of a class, including those declared in parent classes.
+    fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
+        let mut members = SmallMap::new();
+        for name in cls.fields() {
+            if let Some(field) = self.get_class_field(cls, name) {
+                members.insert(name.clone(), (field, cls.dupe()));
+            }
+        }
+        for ancestor in self.get_metadata_for_class(cls).ancestors(self.stdlib) {
+            for name in ancestor.class_object().fields() {
+                if !members.contains_key(name) {
+                    if let Some(mut field) = self.get_class_field(ancestor.class_object(), name) {
+                        field.ty = ancestor.instantiate_member(field.ty);
+                        members.insert(name.clone(), (field, ancestor.class_object().dupe()));
+                    }
+                }
+            }
+        }
+        members
+    }
+
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
             .map(|(member, defining_class)| {
@@ -781,8 +815,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             Err(NoClassAttribute::InstanceOnlyAttribute)
                         }
                         ClassFieldInitialization::Class => {
-                            if let Some(e) =
-                                self.get_enum(&self.promote_to_class_type_silently(cls))
+                            if let Some(e) = self.get_enum(&self.promote_silently(cls))
                                 && let Some(member) = e.get_member(name)
                             {
                                 Ok(Attribute {
@@ -829,14 +862,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // this doesn't make semantic sense. But in the meantime we need to be robust against
         // this possibility.
         match self.get_idx(key).deref() {
-            Type::ClassDef(class) => self.get_enum(&self.promote_to_class_type_silently(class)),
+            Type::ClassDef(class) => self.get_enum(&self.promote_silently(class)),
             _ => None,
         }
     }
 
     pub fn get_typed_dict_from_key(&self, key: Idx<Key>) -> Option<TypedDict> {
         match self.get_idx(key).deref() {
-            Type::ClassDef(cls) => self.promote_to_typed_dict_silently(cls),
+            Type::ClassDef(cls) => match self.promote_silently(cls) {
+                Type::TypedDict(typed_dict) => Some(typed_dict),
+                _ => None,
+            },
             _ => None,
         }
     }
@@ -849,29 +885,35 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .zip(targs.as_slice().iter().cloned())
                 .collect(),
         );
-        cls.fields()
+        self.get_all_members(cls)
             .iter()
-            .filter_map(|name| {
-                if let Some(ClassField {
+            .filter_map(|(name, (field, cls))| {
+                if let ClassField {
                     annotation:
                         Some(Annotation {
                             ty: Some(ty),
                             qualifiers,
                         }),
                     ..
-                }) = self.get_class_field(cls, name)
+                } = field
                 {
+                    let is_total = self
+                        .get_metadata_for_class(cls)
+                        .get_keyword(&Name::new("total"))
+                        .map_or(true, |ty| match ty {
+                            Type::Literal(Lit::Bool(b)) => b,
+                            _ => true,
+                        });
                     Some((
                         name.clone(),
                         TypedDictField {
-                            ty: substitution.substitute(ty),
+                            ty: substitution.substitute(ty.clone()),
                             required: if qualifiers.contains(&Qualifier::Required) {
                                 true
                             } else if qualifiers.contains(&Qualifier::NotRequired) {
                                 false
                             } else {
-                                // TODO(yangdanny): consider total=True/False
-                                true
+                                is_total
                             },
                         },
                     ))

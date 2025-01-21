@@ -738,11 +738,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn canonicalize_all_class_types(&self, ty: Type, range: TextRange) -> Type {
         ty.transform(|ty| match ty {
             Type::ClassDef(cls) => {
-                if let Some(typed_dict) = self.promote_to_typed_dict(cls, range) {
-                    *ty = Type::type_form(Type::TypedDict(typed_dict));
-                } else {
-                    *ty = Type::type_form(Type::ClassType(self.promote_to_class_type(cls, range)));
-                }
+                *ty = Type::type_form(self.promote(cls, range));
             }
             _ => {}
         })
@@ -1239,21 +1235,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         // (https://typing.readthedocs.io/en/latest/spec/annotations.html#type-and-annotation-expressions)
                         Type::type_form(Type::type_form(targ))
                     }
-                    Type::ClassDef(cls) => {
-                        if let Some(typed_dict) = self.specialize_as_typed_dict(
-                            &cls,
-                            xs.map(|x| self.expr_untype(x)),
-                            x.range,
-                        ) {
-                            Type::type_form(Type::TypedDict(typed_dict))
-                        } else {
-                            Type::type_form(Type::ClassType(self.specialize_as_class_type(
-                                &cls,
-                                xs.map(|x| self.expr_untype(x)),
-                                x.range,
-                            )))
-                        }
-                    }
+                    Type::ClassDef(cls) => Type::type_form(self.specialize(
+                        &cls,
+                        xs.map(|x| self.expr_untype(x)),
+                        x.range,
+                    )),
                     Type::Type(box Type::SpecialForm(special)) => {
                         self.apply_special_form(special, xs, x.range)
                     }

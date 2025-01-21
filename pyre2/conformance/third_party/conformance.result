@@ -221,20 +221,20 @@
     "Line 46: Expected 1 errors",
     "Line 111: Expected 1 errors",
     "Line 122: Expected 1 errors",
-    "Line 23: Unexpected errors [\"Can't apply arguments to non-class, got Unpack[TD2]\"]",
+    "Line 23: Unexpected errors [\"Can't apply arguments to non-class, got Unpack[TypedDict[TD2]]\"]",
     "Line 24: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 31: Unexpected errors [\"Can't apply arguments to non-class, got Unpack[TD2]\"]",
+    "Line 31: Unexpected errors [\"Can't apply arguments to non-class, got Unpack[TypedDict[TD2]]\"]",
     "Line 32: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 34: Unexpected errors [\"Can't apply arguments to non-class, got Unpack[TD2]\"]",
+    "Line 34: Unexpected errors [\"Can't apply arguments to non-class, got Unpack[TypedDict[TD2]]\"]",
     "Line 35: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 41: Unexpected errors ['assert_type(Unpack[TypedDict[TD1]], TypedDict[TD1]) failed']",
-    "Line 47: Unexpected errors ['EXPECTED Literal[1] <: Unpack[TD2]', \"EXPECTED Literal[''] <: Unpack[TD2]\", \"EXPECTED Literal['5'] <: Unpack[TD2]\"]",
-    "Line 49: Unexpected errors [\"Unexpected keyword argument 'v1'\", \"Unexpected keyword argument 'v3'\"]",
-    "Line 50: Unexpected errors ['Expected argument after ** to be a mapping, got: TD2']",
-    "Line 62: Unexpected errors [\"Missing argument 'v3'\", 'Expected argument after ** to be a mapping, got: TD2']",
-    "Line 99: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TD2]]], None] <: TDProtocol1']",
-    "Line 100: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TD2]]], None] <: TDProtocol2']",
-    "Line 104: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TD2]]], None] <: TDProtocol6']"
+    "Line 47: Unexpected errors ['EXPECTED Literal[1] <: Unpack[TypedDict[TD2]]', \"EXPECTED Literal[''] <: Unpack[TypedDict[TD2]]\", \"EXPECTED Literal['5'] <: Unpack[TypedDict[TD2]]\"]",
+    "Line 49: Unexpected errors ['Expected a callable, got type[TD2]']",
+    "Line 50: Unexpected errors ['Expected argument after ** to be a mapping, got: Error']",
+    "Line 62: Unexpected errors [\"Missing argument 'v3'\", 'Expected argument after ** to be a mapping, got: Error']",
+    "Line 99: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TypedDict[TD2]]]], None] <: TDProtocol1']",
+    "Line 100: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TypedDict[TD2]]]], None] <: TDProtocol2']",
+    "Line 104: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TypedDict[TD2]]]], None] <: TDProtocol6']"
   ],
   "callables_protocol.py": [
     "Line 186: Expected 1 errors",
@@ -1532,9 +1532,8 @@
     "Line 44: Expected 1 errors",
     "Line 65: Expected 1 errors",
     "Lines 54, 55: Expected error (tag 'Y1')",
-    "Line 22: Unexpected errors ['EXPECTED dict[str, int | str] <: BookBasedMovie']",
-    "Line 24: Unexpected errors ['EXPECTED BookBasedMovie <: TypedDict[BookBasedMovieAlso]']",
-    "Line 36: Unexpected errors [\"Unexpected keyword argument 'x'\", \"Unexpected keyword argument 'y'\", \"Unexpected keyword argument 'z'\"]"
+    "Line 22: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[BookBasedMovie]']",
+    "Line 36: Unexpected errors ['Expected a callable, got type[XYZ]']"
   ],
   "typeddicts_operations.py": [
     "Line 18: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie]']",
@@ -1567,12 +1566,12 @@
     "Line 106: Expected 1 errors",
     "Line 119: Expected 1 errors",
     "Line 132: Expected 1 errors",
-    "Line 23: Unexpected errors ['EXPECTED dict[str, int | str] <: Album1']",
-    "Line 24: Unexpected errors ['`Album1` has no attribute `__setitem__`']",
-    "Line 25: Unexpected errors ['`Album1` has no attribute `__setitem__`']",
-    "Line 35: Unexpected errors ['EXPECTED dict[str, int | str] <: Album2']",
-    "Line 80: Unexpected errors ['EXPECTED dict[str, str] <: User']",
-    "Line 81: Unexpected errors ['`User` has no attribute `__setitem__`']"
+    "Line 23: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Album1]']",
+    "Line 24: Unexpected errors ['`TypedDict[Album1]` has no attribute `__setitem__`']",
+    "Line 25: Unexpected errors ['`TypedDict[Album1]` has no attribute `__setitem__`']",
+    "Line 35: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Album2]']",
+    "Line 80: Unexpected errors ['EXPECTED dict[str, str] <: TypedDict[User]']",
+    "Line 81: Unexpected errors ['`TypedDict[User]` has no attribute `__setitem__`']"
   ],
   "typeddicts_readonly_kwargs.py": [
     "Line 36: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TypedDict[ReadOnlyArgs]]]], None] <: Function']"
@@ -1590,10 +1589,6 @@
     "Line 47: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[TD3]']",
     "Line 48: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[TD4]']",
     "Line 49: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[TD5]']",
-    "Line 53: Unexpected errors ['EXPECTED TypedDict[TD4] <: TypedDict[TD3]']",
-    "Line 55: Unexpected errors ['EXPECTED TypedDict[TD5] <: TypedDict[TD4]']",
-    "Line 56: Unexpected errors ['EXPECTED TypedDict[TD5] <: TypedDict[TD4]']",
-    "Line 58: Unexpected errors ['EXPECTED TypedDict[TD4] <: TypedDict[TD5]']",
     "Line 68: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[int]`']",
     "Line 70: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[Annotated[int, \"\"]]`']",
     "Line 73: Unexpected errors ['Expected a callable, got type[TypedDict]']",
@@ -1601,7 +1596,6 @@
   ],
   "typeddicts_type_consistency.py": [
     "Line 21: Expected 1 errors",
-    "Line 38: Expected 1 errors",
     "Line 18: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[B1]']",
     "Line 37: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[B2]']",
     "Line 61: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[B3]']",
@@ -1621,6 +1615,6 @@
     "Line 40: Expected 1 errors",
     "Line 13: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie]']",
     "Line 20: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie]']",
-    "Line 30: Unexpected errors [\"Unexpected keyword argument 'name'\", \"Unexpected keyword argument 'year'\"]"
+    "Line 30: Unexpected errors ['Expected a callable, got type[Movie]']"
   ]
 }

@@ -23,7 +23,7 @@ use crate::util::prelude::SliceExt;
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     // Get the union of all members of an enum, minus the specified member
     fn subtract_enum_member(&self, cls: &ClassType, name: &Name) -> Type {
-        let e = self.get_enum(cls).unwrap();
+        let e = self.get_enum_from_class_type(cls).unwrap();
         self.unions(
             &e.get_members()
                 .into_iter()

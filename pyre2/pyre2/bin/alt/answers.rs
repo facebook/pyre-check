@@ -732,10 +732,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.iterate(&self.solver().force_var(*v), range)
             }
             Type::ClassDef(cls) => {
-                vec![self.iterate_by_metaclass(&self.promote_to_class_type(cls, range), range)]
+                if let Type::ClassType(class_type) = &self.promote(cls, range) {
+                    vec![self.iterate_by_metaclass(class_type, range)]
+                } else {
+                    // Promoted type must be a TypedDict
+                    vec![self.iterate_by_metaclass(
+                        &self.stdlib.mapping(
+                            self.stdlib.str().to_type(),
+                            self.stdlib.object_class_type().clone().to_type(),
+                        ),
+                        range,
+                    )]
+                }
             }
             Type::Type(box Type::ClassType(cls)) => vec![self.iterate_by_metaclass(cls, range)],
             Type::Union(ts) => ts.iter().flat_map(|t| self.iterate(t, range)).collect(),
+            Type::TypedDict(_) => self.iterate(
+                &self
+                    .stdlib
+                    .mapping(
+                        self.stdlib.str().to_type(),
+                        self.stdlib.object_class_type().clone().to_type(),
+                    )
+                    .to_type(),
+                range,
+            ),
             _ => vec![Iterable::OfType(self.error(
                 range,
                 format!(
@@ -836,9 +857,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             return Type::any_error();
         }
         let mut ty = match &ty {
-            Type::ClassDef(cls) => {
-                Type::type_form(Type::ClassType(self.promote_to_class_type(cls, range)))
-            }
+            Type::ClassDef(cls) => Type::type_form(self.promote(cls, range)),
             t => t.clone(),
         };
         let mut seen = SmallMap::new();

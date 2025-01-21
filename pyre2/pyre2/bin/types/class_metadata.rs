@@ -72,6 +72,14 @@ impl ClassMetadata {
         &self.keywords.0
     }
 
+    pub fn get_keyword(&self, name: &Name) -> Option<Type> {
+        self.keywords
+            .0
+            .iter()
+            .find(|(n, _)| n.as_str() == name)
+            .map(|(_, ty)| ty.clone())
+    }
+
     pub fn is_typed_dict(&self) -> bool {
         self.is_typed_dict
     }

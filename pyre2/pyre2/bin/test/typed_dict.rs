@@ -107,3 +107,42 @@ def foo(a: Coord, b: CoordNotRequired):
     coord2: CoordNotRequired = a  # E: EXPECTED TypedDict[Coord] <: TypedDict[CoordNotRequired]
     "#,
 );
+
+testcase!(
+    test_typed_dict_totality,
+    r#"
+from typing import TypedDict, NotRequired
+
+class CoordXY(TypedDict, total=True):
+    x: int
+    y: int
+class CoordZ(TypedDict, total=False):
+    z: int
+
+class Coord(CoordZ):
+    x: int
+    y: int
+class Coord2(CoordXY, total=False):
+    z: int
+class Coord3(TypedDict):
+    x: int
+    y: int
+    z: NotRequired[int]
+class Coord4(TypedDict, CoordXY, CoordZ):
+    pass
+
+def foo(a: Coord, b: Coord2, c: Coord3, d: Coord4):
+    coord: Coord = b
+    coord = c
+    coord = d
+    coord2: Coord2 = a
+    coord2 = c
+    coord2 = d
+    coord3: Coord3 = a
+    coord3 = b
+    coord3 = d
+    coord4: Coord4 = a
+    coord4 = b
+    coord4 = c
+    "#,
+);
