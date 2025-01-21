@@ -147,7 +147,7 @@ impl NarrowOps {
         self_op.or(other_op);
     }
 
-    pub fn from_expr(test: Option<Expr>) -> Self {
+    pub fn from_expr(test: Option<&Expr>) -> Self {
         match test {
             Some(Expr::Compare(ExprCompare {
                 range: _,
@@ -156,17 +156,21 @@ impl NarrowOps {
                 comparators,
             })) => {
                 let mut narrow_ops = Self::new();
-                let names = expr_to_names(&left);
+                let names = expr_to_names(left);
                 let ops = cmp_ops
                     .iter()
                     .zip(comparators)
                     .filter_map(|(cmp_op, right)| {
                         let range = right.range();
                         let op = match cmp_op {
-                            CmpOp::Is => NarrowOp::Is(NarrowVal::Expr(Box::new(right))),
-                            CmpOp::IsNot => NarrowOp::IsNot(NarrowVal::Expr(Box::new(right))),
-                            CmpOp::Eq => NarrowOp::Eq(NarrowVal::Expr(Box::new(right))),
-                            CmpOp::NotEq => NarrowOp::NotEq(NarrowVal::Expr(Box::new(right))),
+                            CmpOp::Is => NarrowOp::Is(NarrowVal::Expr(Box::new(right.clone()))),
+                            CmpOp::IsNot => {
+                                NarrowOp::IsNot(NarrowVal::Expr(Box::new(right.clone())))
+                            }
+                            CmpOp::Eq => NarrowOp::Eq(NarrowVal::Expr(Box::new(right.clone()))),
+                            CmpOp::NotEq => {
+                                NarrowOp::NotEq(NarrowVal::Expr(Box::new(right.clone())))
+                            }
                             _ => {
                                 return None;
                             }
@@ -197,7 +201,7 @@ impl NarrowOps {
                 op: BoolOp::Or,
                 values,
             })) => {
-                let mut exprs = values.into_iter();
+                let mut exprs = values.iter();
                 if let Some(first_val) = exprs.next() {
                     let mut narrow_ops = Self::from_expr(Some(first_val));
                     for next_val in exprs {
@@ -230,14 +234,14 @@ impl NarrowOps {
                     narrow_ops.and(
                         name.id,
                         NarrowOp::Call(NarrowVal::Expr(func.clone()), args.clone()),
-                        range,
+                        *range,
                     );
                 }
                 narrow_ops
             }
             Some(e) => {
                 let mut narrow_ops = Self::new();
-                for name in expr_to_names(&e) {
+                for name in expr_to_names(e) {
                     narrow_ops.and(name.id, NarrowOp::Truthy, e.range());
                 }
                 narrow_ops

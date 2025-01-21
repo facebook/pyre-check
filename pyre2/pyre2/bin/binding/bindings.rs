@@ -652,7 +652,7 @@ impl<'a> BindingsBuilder<'a> {
                 // Ternary operation. We treat it like an if/else statement.
                 let base = self.scopes.last().flow.clone();
                 self.ensure_expr(&x.test);
-                let narrow_ops = NarrowOps::from_expr(Some((*x.test).clone()));
+                let narrow_ops = NarrowOps::from_expr(Some(&x.test));
                 self.bind_narrow_ops(&narrow_ops, x.body.range());
                 self.ensure_expr(&x.body);
                 self.negate_and_merge_flow(base, &narrow_ops, Some(&x.orelse), x.range());
@@ -664,7 +664,7 @@ impl<'a> BindingsBuilder<'a> {
                 for value in values {
                     self.bind_narrow_ops(&narrow_ops, value.range());
                     self.ensure_expr(value);
-                    let new_narrow_ops = NarrowOps::from_expr(Some(value.clone()));
+                    let new_narrow_ops = NarrowOps::from_expr(Some(value));
                     match op {
                         BoolOp::And => {
                             // Every subsequent value is evaluated only if all previous values were truthy.
@@ -1738,7 +1738,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.teardown_loop(x.range, &NarrowOps::new(), x.orelse);
             }
             Stmt::While(x) => {
-                let narrow_ops = NarrowOps::from_expr(Some(*x.test.clone()));
+                let narrow_ops = NarrowOps::from_expr(Some(&x.test));
                 self.setup_loop(x.range, &narrow_ops);
                 self.ensure_expr(&x.test);
                 self.table
@@ -1769,7 +1769,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.table
                             .insert(Key::Anon(e.range()), Binding::Expr(None, e.clone()));
                     }
-                    let new_narrow_ops = NarrowOps::from_expr(test);
+                    let new_narrow_ops = NarrowOps::from_expr(test.as_ref());
                     if let Some(stmt) = body.first() {
                         let use_range = stmt.range();
                         self.bind_narrow_ops(&negated_prev_ops, use_range);
@@ -1923,7 +1923,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             Stmt::Assert(x) => {
                 self.ensure_expr(&x.test);
-                self.bind_narrow_ops(&NarrowOps::from_expr(Some(*x.test.clone())), x.range);
+                self.bind_narrow_ops(&NarrowOps::from_expr(Some(&x.test)), x.range);
                 self.table
                     .insert(Key::Anon(x.test.range()), Binding::Expr(None, *x.test));
                 if let Some(msg_expr) = x.msg {
