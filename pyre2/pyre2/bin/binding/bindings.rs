@@ -1258,8 +1258,14 @@ impl<'a> BindingsBuilder<'a> {
         let legacy_tparam_builder = legacy.unwrap();
         legacy_tparam_builder.add_name_definitions(self);
 
-        let cur_scope = self.scopes.last().clone();
-        let non_field_names = cur_scope.flow.info.keys().collect::<SmallSet<_>>();
+        let non_field_names = self
+            .scopes
+            .last()
+            .flow
+            .info
+            .keys()
+            .cloned()
+            .collect::<SmallSet<_>>();
 
         self.scopes.last_mut().stat.stmts(
             &body,
