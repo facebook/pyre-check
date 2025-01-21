@@ -731,15 +731,14 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     /// Execute through the expr, ensuring every name has a binding.
-    fn ensure_type(
-        &mut self,
-        x: &mut Expr,
-        forward_lookup: &mut impl FnMut(&mut Self, &Identifier) -> Option<Binding>,
-    ) {
+    fn ensure_type(&mut self, x: &mut Expr, tparams_builder: &mut Option<LegacyTParamBuilder>) {
         match x {
             Expr::Name(x) => {
                 let name = Ast::expr_name_identifier(x.clone());
-                let binding = forward_lookup(self, &name);
+                let binding = match tparams_builder {
+                    Some(legacy) => legacy.forward_lookup(self, &name),
+                    None => self.forward_lookup(&name),
+                };
                 self.ensure_name(&name, binding);
             }
             Expr::Subscript(ExprSubscript {
@@ -755,8 +754,8 @@ impl<'a> BindingsBuilder<'a> {
                 ..
             }) if name.id == "Annotated" && !tup.is_empty() => {
                 // Only go inside the first argument to Annotated, the rest are non-type metadata.
-                self.ensure_type(&mut Expr::Name(name.clone()), forward_lookup);
-                self.ensure_type(&mut tup.elts[0], forward_lookup);
+                self.ensure_type(&mut Expr::Name(name.clone()), tparams_builder);
+                self.ensure_type(&mut tup.elts[0], tparams_builder);
                 for e in tup.elts[1..].iter_mut() {
                     self.ensure_expr(e);
                 }
@@ -779,7 +778,7 @@ impl<'a> BindingsBuilder<'a> {
                     }
                 }
             }
-            _ => Visitors::visit_expr_mut(x, |x| self.ensure_type(x, forward_lookup)),
+            _ => Visitors::visit_expr_mut(x, |x| self.ensure_type(x, tparams_builder)),
         }
     }
 
@@ -787,10 +786,10 @@ impl<'a> BindingsBuilder<'a> {
     fn ensure_type_opt(
         &mut self,
         x: Option<&mut Expr>,
-        forward_lookup: &mut impl FnMut(&mut Self, &Identifier) -> Option<Binding>,
+        tparams_builder: &mut Option<LegacyTParamBuilder>,
     ) {
         if let Some(x) = x {
-            self.ensure_type(x, forward_lookup);
+            self.ensure_type(x, tparams_builder);
         }
     }
 
@@ -986,7 +985,7 @@ impl<'a> BindingsBuilder<'a> {
             let q = match x {
                 TypeParam::TypeVar(x) => {
                     if let Some(bound) = &mut x.bound {
-                        self.ensure_type(bound, &mut BindingsBuilder::forward_lookup);
+                        self.ensure_type(bound, &mut None);
                     }
                     Quantified::type_var(self.uniques)
                 }
@@ -1078,23 +1077,19 @@ impl<'a> BindingsBuilder<'a> {
             .as_mut()
             .map(|tparams| self.type_params(tparams));
 
-        let mut legacy_tparam_builder = LegacyTParamBuilder::new(tparams.is_some());
+        let mut legacy = Some(LegacyTParamBuilder::new(tparams.is_some()));
 
         // We need to bind all the parameters expressions _after_ the type params, but before the parameter names,
         // which might shadow some types.
         for (param, default) in Ast::parameters_iter_mut(&mut x.parameters) {
-            self.ensure_type_opt(param.annotation.as_deref_mut(), &mut |lookup_name, name| {
-                legacy_tparam_builder.forward_lookup(lookup_name, name)
-            });
+            self.ensure_type_opt(param.annotation.as_deref_mut(), &mut legacy);
             if let Some(default) = default {
                 self.ensure_expr_opt(default.as_deref());
             }
         }
-        self.ensure_type_opt(
-            return_annotation.as_deref_mut(),
-            &mut |lookup_name, name| legacy_tparam_builder.forward_lookup(lookup_name, name),
-        );
+        self.ensure_type_opt(return_annotation.as_deref_mut(), &mut legacy);
 
+        let legacy_tparam_builder = legacy.unwrap();
         legacy_tparam_builder.add_name_definitions(self);
 
         if self_type.is_none() {
@@ -1218,7 +1213,7 @@ impl<'a> BindingsBuilder<'a> {
             self.type_params(x);
         });
 
-        let mut legacy_tparam_builder = LegacyTParamBuilder::new(x.type_params.is_some());
+        let mut legacy = Some(LegacyTParamBuilder::new(x.type_params.is_some()));
         let bases = x.bases().map(|base| {
             let mut base = base.clone();
             // Forward refs are fine *inside* of a base expression in the type arguments,
@@ -1235,9 +1230,7 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 _ => {}
             }
-            self.ensure_type(&mut base, &mut |lookup_name, name| {
-                legacy_tparam_builder.forward_lookup(lookup_name, name)
-            });
+            self.ensure_type(&mut base, &mut legacy);
             base
         });
 
@@ -1262,6 +1255,7 @@ impl<'a> BindingsBuilder<'a> {
             BindingClassMetadata(definition_key, bases.clone(), keywords),
         );
 
+        let legacy_tparam_builder = legacy.unwrap();
         legacy_tparam_builder.add_name_definitions(self);
 
         let cur_scope = self.scopes.last().clone();
@@ -1606,16 +1600,13 @@ impl<'a> BindingsBuilder<'a> {
                         // The constraints (i.e., any positional arguments after the first)
                         // and some keyword arguments are types.
                         for arg in arguments.args.iter_mut().skip(1) {
-                            self.ensure_type(arg, &mut BindingsBuilder::forward_lookup);
+                            self.ensure_type(arg, &mut None);
                         }
                         for kw in arguments.keywords.iter_mut() {
                             if let Some(id) = &kw.arg
                                 && (id.id == "bound" || id.id == "default")
                             {
-                                self.ensure_type(
-                                    &mut kw.value,
-                                    &mut BindingsBuilder::forward_lookup,
-                                );
+                                self.ensure_type(&mut kw.value, &mut None);
                             } else {
                                 self.ensure_expr(&kw.value);
                             }
@@ -1646,7 +1637,7 @@ impl<'a> BindingsBuilder<'a> {
                 Expr::Name(name) => {
                     let name = Ast::expr_name_identifier(name);
                     let ann_key = KeyAnnotation::Annotation(ShortIdentifier::new(&name));
-                    self.ensure_type(&mut x.annotation, &mut BindingsBuilder::forward_lookup);
+                    self.ensure_type(&mut x.annotation, &mut None);
                     let ann_val = if let Some(special) = SpecialForm::new(&name.id, &x.annotation) {
                         BindingAnnotation::Type(special.to_type())
                     } else {
@@ -1672,7 +1663,7 @@ impl<'a> BindingsBuilder<'a> {
                         if let Expr::Name(name) = *x.annotation
                             && name.id == "TypeAlias"
                         {
-                            self.ensure_type(&mut value, &mut BindingsBuilder::forward_lookup);
+                            self.ensure_type(&mut value, &mut None);
                         } else {
                             self.ensure_expr(&value);
                         }
@@ -1693,7 +1684,7 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 Expr::Attribute(attr) => {
                     self.ensure_expr(&attr.value);
-                    self.ensure_type(&mut x.annotation, &mut BindingsBuilder::forward_lookup);
+                    self.ensure_type(&mut x.annotation, &mut None);
                     // This is the type of the attribute.
                     let attr_key = self.table.insert(
                         KeyAnnotation::AttrAnnotation(attr.range),
@@ -1737,7 +1728,7 @@ impl<'a> BindingsBuilder<'a> {
                     if let Some(params) = &mut x.type_params {
                         self.type_params(params);
                     }
-                    self.ensure_type(&mut x.value, &mut BindingsBuilder::forward_lookup);
+                    self.ensure_type(&mut x.value, &mut None);
                     let binding = Binding::ScopedTypeAlias(
                         name.id.clone(),
                         x.type_params.map(Box::new),
