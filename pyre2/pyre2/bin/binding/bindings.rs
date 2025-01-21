@@ -647,16 +647,12 @@ impl<'a> BindingsBuilder<'a> {
         if let Some(parameters) = &lambda.parameters {
             for x in parameters.iter() {
                 let name = x.name();
-                let ann_key = self.table.insert(
-                    KeyAnnotation::Annotation(ShortIdentifier::new(name)),
-                    BindingAnnotation::Type(Type::any_implicit()),
-                );
                 let bind_key = self.table.insert(
                     Key::Definition(ShortIdentifier::new(name)),
-                    Binding::AnnotatedType(ann_key, Box::new(Binding::AnyType(AnyStyle::Implicit))),
+                    Binding::AnyType(AnyStyle::Implicit),
                 );
                 self.scopes.last_mut().stat.add(name.id.clone(), name.range);
-                self.bind_key(&name.id, bind_key, Some(ann_key), false, true, None);
+                self.bind_key(&name.id, bind_key, None, false, true, None);
             }
         }
     }
