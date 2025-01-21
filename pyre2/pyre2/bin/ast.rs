@@ -125,6 +125,8 @@ impl Ast {
         imports
     }
 
+    /// Iterates over the branches of an if statement, returning the test and body.
+    /// A test on `None` is an `else` branch that is always taken.
     pub fn if_branches(x: &StmtIf) -> impl Iterator<Item = (Option<&Expr>, &[Stmt])> {
         let first = [(Some(&*x.test), x.body.as_slice())].into_iter();
         let elses = x
@@ -134,6 +136,7 @@ impl Ast {
         first.chain(elses)
     }
 
+    /// Like `if_branches`, but returns owned values.
     pub fn if_branches_owned(x: StmtIf) -> impl Iterator<Item = (Option<Expr>, Vec<Stmt>)> {
         let first = [(Some(*x.test), x.body)].into_iter();
         let elses = x.elif_else_clauses.into_iter().map(|x| (x.test, x.body));
