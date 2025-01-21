@@ -337,6 +337,8 @@ pub enum Binding {
     ReturnExpr(Option<Idx<KeyAnnotation>>, Expr, bool),
     /// A decorator application: the Key is the entity being decorated.
     DecoratorApplication(Box<Decorator>, Idx<Key>),
+    /// A grouping of both the yield expression types and the return type.
+    Generator(Box<Binding>, Box<Binding>),
     /// A value in an iterable expression, e.g. IterableValue(\[1\]) represents 1.
     IterableValue(Option<Idx<KeyAnnotation>>, Expr),
     /// A value produced by entering a context manager.
@@ -440,6 +442,14 @@ impl DisplayWith<Bindings> for Binding {
             Self::Expr(None, x) | Self::ReturnExpr(None, x, _) => write!(f, "{}", m.display(x)),
             Self::Expr(Some(k), x) | Self::ReturnExpr(Some(k), x, _) => {
                 write!(f, "{}: {}", ctx.display(*k), m.display(x))
+            }
+            Self::Generator(box target, box iterable) => {
+                write!(
+                    f,
+                    "Generator(Yield: {}, Return: {})",
+                    target.display_with(ctx),
+                    iterable.display_with(ctx)
+                )
             }
             Self::IterableValue(None, x) => write!(f, "iter {}", m.display(x)),
             Self::IterableValue(Some(k), x) => {

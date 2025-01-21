@@ -102,8 +102,8 @@ def nested_generator():
 def another_generator():
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(nested_generator()) # E: revealed type: None
-reveal_type(another_generator()) # E: revealed type: None
+reveal_type(nested_generator()) # E: revealed type: Generator[Literal[1, 3], Unknown, None]
+reveal_type(another_generator()) # E: revealed type: Generator[Literal[2], Unknown, None]
 
 "#,
 );
@@ -163,16 +163,16 @@ from typing import reveal_type
 async def async_count_up_to():
     yield 2 # E: TODO: ExprYield - Answers::expr_infer
 
-reveal_type(async_count_up_to()) # E: Coroutine[Unknown, Unknown, None]
+reveal_type(async_count_up_to()) # E: Coroutine[Unknown, Unknown, Generator[Literal[2], Unknown, None]]
 
 "#,
 );
 
 testcase_with_bug!(
-    "TODO zeina: We are incorrectly inferring generators that return generators.",
+    "TODO zeina: infer send type.",
     test_inferring_generators_that_return_generators,
     r#"
-from typing import Generator, assert_type
+from typing import Generator, assert_type, reveal_type
 
 def generator() -> Generator[int, None, None]: ...
 
@@ -180,7 +180,6 @@ def generator2(x: int):
     yield x  # E: TODO: ExprYield - Answers::expr_infer
     return generator()
 
-
-assert_type(generator2(1), Generator[int, None, Generator[int, None, None]]) # E: assert_type(Generator[int, None, None], Generator[int, None, Generator[int, None, None]])
+assert_type(generator2(1), Generator[int, None, Generator[int, None, None]]) # E: Generator[int, Any, Generator[int, None, None]]
 "#,
 );

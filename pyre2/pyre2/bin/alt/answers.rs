@@ -1050,6 +1050,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()))
             }
+            Binding::Generator(yield_type, return_type) => {
+                let yield_type = self.solve_binding_inner(yield_type);
+                let return_type = self.solve_binding_inner(return_type);
+                self.stdlib
+                    .generator(yield_type, Type::any_implicit(), return_type)
+                    .to_type()
+            }
             Binding::ReturnExpr(ann, e, has_yields) => {
                 let ann = ann.map(|k| self.get_idx(k));
                 let hint = ann.as_ref().and_then(|x| x.ty.as_ref());
