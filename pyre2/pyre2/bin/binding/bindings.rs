@@ -1121,11 +1121,11 @@ impl<'a> BindingsBuilder<'a> {
         let func_scope = self.scopes.pop().unwrap();
         self.scopes.pop().unwrap();
 
-        if let ScopeKind::Method(method) = &func_scope.kind
+        if let ScopeKind::Method(method) = func_scope.kind
             && let ScopeKind::ClassBody(body) = &mut self.scopes.last_mut().kind
         {
             body.instance_attributes_by_method
-                .insert(method.name.id.clone(), method.instance_attributes.clone());
+                .insert(method.name.id, method.instance_attributes);
         }
 
         let mut current_name_key = self.bind_definition(
