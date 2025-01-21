@@ -637,11 +637,11 @@ impl<'a> BindingsBuilder<'a> {
         orelse: Option<&Expr>,
         range: TextRange,
     ) {
-        let if_branch = self.scopes.last().flow.clone();
+        let if_branch = mem::take(&mut self.scopes.last_mut().flow);
         self.scopes.last_mut().flow = base;
         self.bind_narrow_ops(&ops.negate(), range);
         self.ensure_expr_opt(orelse);
-        let else_branch = self.scopes.last().flow.clone();
+        let else_branch = mem::take(&mut self.scopes.last_mut().flow);
         self.scopes.last_mut().flow = self.merge_flow(vec![if_branch, else_branch], range, false);
     }
 
