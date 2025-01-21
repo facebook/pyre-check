@@ -1523,8 +1523,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // TODO: check that value matches class
                 // TODO: check against duplicate keys (optional)
                 let binding_ty = self.get_idx(*key).arc_clone();
-                let match_args =
-                    self.attr_infer(&binding_ty, &Name::new_static("__match_args__"), *range);
+                let match_args = self.attr_infer(&binding_ty, &dunder::MATCH_ARGS, *range);
                 match match_args {
                     Type::Tuple(Tuple::Concrete(ts)) => {
                         if *idx < ts.len() {

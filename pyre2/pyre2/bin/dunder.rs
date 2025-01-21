@@ -19,6 +19,7 @@ pub const GETITEM: Name = Name::new_static("__getitem__");
 pub const INIT: Name = Name::new_static("__init__");
 pub const INVERT: Name = Name::new_static("__invert__");
 pub const ITER: Name = Name::new_static("__iter__");
+pub const MATCH_ARGS: Name = Name::new_static("__match_args__");
 pub const NAME: Name = Name::new_static("__name__");
 pub const NEG: Name = Name::new_static("__neg__");
 pub const NEW: Name = Name::new_static("__new__");
