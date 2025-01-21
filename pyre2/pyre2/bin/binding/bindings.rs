@@ -1764,12 +1764,12 @@ impl<'a> BindingsBuilder<'a> {
                         continue; // We won't pick this branch
                     }
                     let mut base = self.scopes.last().flow.clone();
-                    if let Some(e) = test.as_ref() {
-                        self.ensure_expr(e);
-                        self.table
-                            .insert(Key::Anon(e.range()), Binding::Expr(None, e.clone()));
-                    }
                     let new_narrow_ops = NarrowOps::from_expr(test.as_ref());
+                    if let Some(e) = test {
+                        self.ensure_expr(&e);
+                        self.table
+                            .insert(Key::Anon(e.range()), Binding::Expr(None, e));
+                    }
                     if let Some(stmt) = body.first() {
                         let use_range = stmt.range();
                         self.bind_narrow_ops(&negated_prev_ops, use_range);
