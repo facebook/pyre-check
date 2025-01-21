@@ -1791,7 +1791,7 @@ impl<'a> BindingsBuilder<'a> {
                     }
                 }
                 if !exhaustive {
-                    branches.push(self.scopes.last().flow.clone());
+                    branches.push(mem::take(&mut self.scopes.last_mut().flow));
                 }
                 self.scopes.last_mut().flow = self.merge_flow(branches, range, false);
             }
@@ -1864,7 +1864,7 @@ impl<'a> BindingsBuilder<'a> {
                     }
                 }
                 if !exhaustive {
-                    branches.push(self.scopes.last().flow.clone());
+                    branches.push(mem::take(&mut self.scopes.last_mut().flow));
                 }
                 self.scopes.last_mut().flow = self.merge_flow(branches, range, false);
             }
@@ -2066,7 +2066,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn setup_loop(&mut self, range: TextRange, narrow_ops: &NarrowOps) {
-        let base = self.scopes.last().flow.clone();
+        let base = mem::take(&mut self.scopes.last_mut().flow);
         // To account for possible assignments to existing names in a loop, we
         // speculatively insert phi keys upfront.
         self.scopes.last_mut().flow = self.insert_phi_keys(base.clone(), range);
@@ -2165,7 +2165,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn merge_loop_into_current(&mut self, mut branches: Vec<Flow>, range: TextRange) {
-        branches.push(self.scopes.last().flow.clone());
+        branches.push(mem::take(&mut self.scopes.last_mut().flow));
         self.scopes.last_mut().flow = self.merge_flow(branches, range, true);
     }
 }
