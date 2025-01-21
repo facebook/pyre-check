@@ -130,11 +130,12 @@ impl State {
                     }
                 }
                 key @ Key::Definition(_) if let Some(ty) = self.get_type(module, key) => {
-                    let idx_binding = match bindings.get(idx) {
-                        Binding::NameAssign(_, _, b, _) => b,
-                        b => b,
+                    let e = match bindings.get(idx) {
+                        Binding::NameAssign(_, None, e) => Some(&**e),
+                        Binding::Expr(None, e) => Some(e),
+                        _ => None,
                     };
-                    if let Binding::Expr(None, e) = idx_binding
+                    if let Some(e) = e
                         && is_interesting_expr(e)
                         && is_interesting_type(&ty)
                     {

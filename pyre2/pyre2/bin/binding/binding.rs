@@ -409,9 +409,8 @@ pub enum Binding {
     CheckLegacyTypeParam(Idx<KeyLegacyTypeParam>, Option<TextRange>),
     /// An expectation that the types are identical, with an associated name for error messages.
     Eq(Idx<KeyAnnotation>, Idx<KeyAnnotation>, Name),
-    /// An assignment to a name. The text range is the range of the RHS, and is used so that we
-    /// can error on bad type forms in type aliases.
-    NameAssign(Name, Option<Idx<KeyAnnotation>>, Box<Binding>, TextRange),
+    /// An assignment to a name.
+    NameAssign(Name, Option<Idx<KeyAnnotation>>, Box<Expr>),
     /// A type alias declared with the `type` soft keyword
     ScopedTypeAlias(Name, Option<TypeParams>, Box<Expr>),
     /// An entry in a MatchMapping. The Key looks up the value being matched, the Expr is the key we're extracting.
@@ -561,16 +560,16 @@ impl DisplayWith<Bindings> for Binding {
                 ctx.display(*k2),
                 name
             ),
-            Self::NameAssign(name, None, binding, _) => {
-                write!(f, "{} = {}", name, binding.display_with(ctx))
+            Self::NameAssign(name, None, expr) => {
+                write!(f, "{} = {}", name, expr.display_with(ctx.module_info()))
             }
-            Self::NameAssign(name, Some(annot), binding, _) => {
+            Self::NameAssign(name, Some(annot), expr) => {
                 write!(
                     f,
                     "{}: {} = {}",
                     name,
                     ctx.display(*annot),
-                    binding.display_with(ctx)
+                    expr.display_with(ctx.module_info())
                 )
             }
             Self::ScopedTypeAlias(name, None, expr) => {

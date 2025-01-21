@@ -1616,11 +1616,10 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 for target in x.targets {
                     let make_binding = |k: Option<Idx<KeyAnnotation>>| {
-                        let b = Binding::Expr(k, value.clone());
                         if let Some(name) = &name {
-                            Binding::NameAssign(name.clone(), k, Box::new(b), value.range())
+                            Binding::NameAssign(name.clone(), k, Box::new(value.clone()))
                         } else {
-                            b
+                            Binding::Expr(k, value.clone())
                         }
                     };
                     self.bind_target(&target, &make_binding);
@@ -1667,13 +1666,7 @@ impl<'a> BindingsBuilder<'a> {
                         } else {
                             self.ensure_expr(&value);
                         }
-                        let range = value.range();
-                        Binding::NameAssign(
-                            name.id.clone(),
-                            Some(ann_key),
-                            Box::new(Binding::Expr(Some(ann_key), *value)),
-                            range,
-                        )
+                        Binding::NameAssign(name.id.clone(), Some(ann_key), value)
                     } else {
                         Binding::AnnotatedType(
                             ann_key,

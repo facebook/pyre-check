@@ -1454,21 +1454,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Type::None // Unused
             }
-            Binding::NameAssign(name, annot_key, binding, range) => {
+            Binding::NameAssign(name, annot_key, expr) => {
                 let annot = annot_key.map(|k| self.get_idx(k));
-                let ty = self.solve_binding_inner(binding);
+                let ty = self.expr(expr, annot.as_ref().and_then(|x| x.ty.as_ref()));
+                let expr_range = expr.range();
                 match (annot, &ty) {
                     (Some(annot), _) if annot.qualifiers.contains(&Qualifier::TypeAlias) => {
-                        self.as_type_alias(name, TypeAliasStyle::LegacyExplicit, ty, *range)
+                        self.as_type_alias(name, TypeAliasStyle::LegacyExplicit, ty, expr_range)
                     }
                     (None, Type::Type(box t))
-                        if matches!(binding, box Binding::Expr(_, Expr::Call(_)))
+                        if matches!(&**expr, Expr::Call(_))
                             && let Some(tvar) = t.as_tvar_declaration() =>
                     {
                         let tvar_name = &tvar.name.id;
                         if *name != *tvar_name && *tvar_name != UNKNOWN {
                             self.error(
-                                *range,
+                                expr_range,
                                 format!("TypeVar must be assigned to a variable named {tvar_name}"),
                             );
                         }
@@ -1478,7 +1479,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     // when there is no annotation, so that `mylist = list` is treated
                     // like a value assignment rather than a type alias?
                     (None, Type::Type(_)) => {
-                        self.as_type_alias(name, TypeAliasStyle::LegacyImplicit, ty, *range)
+                        self.as_type_alias(name, TypeAliasStyle::LegacyImplicit, ty, expr_range)
                     }
                     _ => ty,
                 }
