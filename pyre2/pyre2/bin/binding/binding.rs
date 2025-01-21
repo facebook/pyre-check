@@ -395,8 +395,6 @@ pub enum Binding {
     /// An import of a module.
     /// Also contains the path along the module to bind, and optionally a key
     /// with the previous import to this binding (in which case merge the modules).
-    /// FIXME: Once we fix on alt, we the Module type will be ModuleName+Vec<Name>,
-    /// so people using the None option will be able to use Self::Type instead.
     Module(ModuleName, Vec<Name>, Option<Idx<Key>>),
     /// An exception and its cause from a raise statement.
     CheckRaisedException(RaisedException),
