@@ -26,9 +26,9 @@ some_sink(child.some_source()) # Detected as a tainted flow
 
 Additionally, Pysa is aware that child classes can be used anywhere a parent
 classes's type is present. If you access a method on a parent class and the
-implementation on any child class returns taint, Pysa will detect that and
-treat the return from the parent class as tainted. For example, this will be
-detected as a tainted flow during static analysis:
+implementation on any child class returns taint, Pysa will detect that and treat
+the return from the parent class as tainted. For example, this will be detected
+as a tainted flow during static analysis:
 
 ```python
 class Parent:
@@ -46,23 +46,23 @@ def fn(obj: Parent):
 ```
 
 **A huge caveat here is that Pysa needs to be aware of these inheritance
-relationships and function definitions for it to work.** Code that lives
-outside the repo under analysis might not be visible to Pysa, so these
-inheritances/implementations may be missed. See the Stubs section below for
-more details.
+relationships and function definitions for it to work.** Code that lives outside
+the repo under analysis might not be visible to Pysa, so these
+inheritances/implementations may be missed. See the Stubs section below for more
+details.
 
 ### Stubs
 
 The concept of stubs is covered in general _[here](pysa_basics.md)_, but this
-section in particular will cover specific issues you may encounter with
-`.pyi` stubs. These stubs can be used to prevent pyre errors for types
-that live outside the codebase you are running Pysa on. The simplest stubs are
-just empty files in the root of the `stubs` directory (assuming you have a
-`stubs` directory specified in the `search_path` list in your
-`.pyre_configuration` file). An empty stub basically prevents all type checking
-errors within the namespace of that stub. So for `uwsgi.pyi`, in the `stubs`
-directory, the following code would not raise pyre errors (though it would
-obviously fail to run):
+section in particular will cover specific issues you may encounter with `.pyi`
+stubs. These stubs can be used to prevent pyre errors for types that live
+outside the codebase you are running Pysa on. The simplest stubs are just empty
+files in the root of the `stubs` directory (assuming you have a `stubs`
+directory specified in the `search_path` list in your `.pyre_configuration`
+file). An empty stub basically prevents all type checking errors within the
+namespace of that stub. So for `uwsgi.pyi`, in the `stubs` directory, the
+following code would not raise pyre errors (though it would obviously fail to
+run):
 
 ```python
 import uwsgi
@@ -76,8 +76,8 @@ If you want to be able to create `.pysa` models (i.e. annotate sources, sinks,
 etc.) for something that is outside your codebase, such as Django's
 `django.http.request.HttpRequest` object, you need more than just an empty stub
 file. You need a directory structure and `.pyi` file that matches your import,
-such as `stubs/django/http/request.pyi`. Within that `.pyi` file, you
-then need a stub of the class:
+such as `stubs/django/http/request.pyi`. Within that `.pyi` file, you then need
+a stub of the class:
 
 ```python
 class HttpRequest(BinaryIO):
@@ -126,7 +126,7 @@ of square brackets to access a dictionary.
 You can insert a call to the (non-existent) `pyre_dump()` function in your code
 to enable verbose logging of the call graph, forward and backward analysis of
 the current function or method. This can be useful as a starting point to figure
-out why something is/isn't happening. This will produce *very* verbose output.
+out why something is/isn't happening. This will produce _very_ verbose output.
 
 ### `pyre_dump_call_graph`
 
@@ -154,17 +154,17 @@ state. The final output will be the most complete.
 ### `pyre_dump_perf()`
 
 You can insert a call to `pyre_dump_perf` (no import needed) in a function or
-method to profile the current analysis on that function or method, and dump
-the results on stdout.
+method to profile the current analysis on that function or method, and dump the
+results on stdout.
 
 ### `results.json`
 
 Another strategy for getting a bit more metadata is adding a function into your
 code, which simply constructs and returns the type you want to examine. You can
-then run Pysa, and grep for the function's name in the
-`results.json` file located wherever you pointed `--save-results-to=` to when
-running Pysa. You should then be able to see if that function is detected as
-returning taint, plus a bit more metadata about it.
+then run Pysa, and grep for the function's name in the `results.json` file
+located wherever you pointed `--save-results-to=` to when running Pysa. You
+should then be able to see if that function is detected as returning taint, plus
+a bit more metadata about it.
 
 ### `sapp`
 
@@ -173,7 +173,6 @@ has access to the same information as `results.json`. While SAPP doesn't display
 all the information `results.json` contains, it can display the information in a
 more user-friendly gdb-style way. It's especially useful for exploring flows
 which pass through many frames.
-
 
 ## Developer Quality-of-Life
 
@@ -200,14 +199,14 @@ to iterate more quickly with Pysa are:
       access to typeshed or any other type stubs. These tests reside in
       `interprocedural_analyses/taint/test/integration` and can be invoked by
       running `make test` in the root of the repo.
-1. **Skip analysis entirely if you only need to validate taint models**. `pyre
-   validate-models` can be used to validate taint models without having to run
-   the entire analysis.
+1. **Skip analysis entirely if you only need to validate taint models**.
+   `pyre validate-models` can be used to validate taint models without having to
+   run the entire analysis.
 1. **Filter runs with `--rule ###`, `--source ###` or `--sink ###`.** These
    options will cause Pysa to ignore sources and sinks that are not mentioned,
    or sources and sinks that are not involved in the given rule. This will save
-   analysis time. E.g, `pyre analyze --rule 5000` or `pyre analyze --source
-   UserControlled --sink RCE`.
+   analysis time. E.g, `pyre analyze --rule 5000` or
+   `pyre analyze --source UserControlled --sink RCE`.
 1. **Parallelize across machines.** If working in a could hosted environment,
    reserving a second machine and working on two projects in parallel can be
    effective. As Pysa is running on one machine, you can switch to the other,
@@ -219,23 +218,31 @@ to iterate more quickly with Pysa are:
    looking at. This will reduce the odds that you need to do a second run to
    figure out what's going wrong.
 1. **Enable the `--use-cache` flag.** All Pysa runs require some information
-   from Pyre, such as the typechecking environment, dependencies, etc.
-   Computing this information can be time-consuming on larger projects.
-   However, if you're only editing taint models and not the project source,
-   this information isn't expected to change between Pysa runs. By enabling
-   this flag, you can tell Pysa to save this information to cache files
-   (located in .pyre/.pysa_cache) and load from cache in subsequent runs,
-   rather than computing it from scratch each time. The cache will be
-   invalidated if any of the project source files change, in which case
-   Pysa will fall back to doing a clean run and then saving the computed
-   artifacts in new cache files.
-
+   from Pyre, such as the typechecking environment, dependencies, etc. Computing
+   this information can be time-consuming on larger projects. However, if you're
+   only editing taint models and not the project source, this information isn't
+   expected to change between Pysa runs. By enabling this flag, you can tell
+   Pysa to save this information to cache files (located in .pyre/.pysa_cache)
+   and load from cache in subsequent runs, rather than computing it from scratch
+   each time. The cache will be invalidated if any of the project source files
+   change, in which case Pysa will fall back to doing a clean run and then
+   saving the computed artifacts in new cache files.
 
 ### File Types
 
 `taint.config` is a JSON file and `.pysa` files use Python syntax. If you update
 your editor to recognize those files as JSON and Python respectively, it'll make
-development easier.
+development easier. To configure this in VSCode:
+
+1. Press Cmd-Shift-P and type `User Settings (JSON)`
+2. Add the following definition:
+
+```
+"files.associations": {
+    "*.pysa": "python",
+    "taint.config": "json"
+},
+```
 
 ## Usage Examples
 
