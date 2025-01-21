@@ -20,6 +20,21 @@ def foo(c: Coord) -> Mapping[str, object]:
 );
 
 testcase!(
+    test_typed_dict_readonly,
+    r#"
+from typing import TypedDict, ReadOnly
+class Coord(TypedDict):
+    x: int
+    y: ReadOnly[int]
+def foo(c: Coord) -> None:
+    c["x"] = 1
+    c["x"] = "foo"  # E: Expected int, got Literal['foo']
+    c["y"] = 3  # E: Key `y` in TypedDict `Coord` is read-only
+    c["z"] = 4  # E: TypedDict `Coord` does not have key `z`
+    "#,
+);
+
+testcase!(
     test_typed_dict_metaclass,
     r#"
 from enum import EnumMeta

@@ -1193,17 +1193,54 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let base = self.expr(&x.value, None);
                 let slice_ty = self.expr(&x.slice, None);
                 let value_ty = self.solve_binding_inner(b);
-                self.call_method_or_error(
-                    &base,
-                    &dunder::SETITEM,
-                    x.range,
-                    &[
-                        CallArg::Type(&slice_ty, x.slice.range()),
-                        // use the subscript's location
-                        CallArg::Type(&value_ty, x.range),
-                    ],
-                    &[],
-                )
+                match (&base, &slice_ty) {
+                    (Type::TypedDict(typed_dict), Type::Literal(Lit::String(field_name))) => {
+                        if let Some(field) = typed_dict.fields().get(&Name::new(field_name.clone()))
+                        {
+                            if field.read_only {
+                                self.error(
+                                    x.slice.range(),
+                                    format!(
+                                        "Key `{}` in TypedDict `{}` is read-only",
+                                        field_name,
+                                        typed_dict.name(),
+                                    ),
+                                )
+                            } else if !self.solver().is_subset_eq(
+                                &value_ty,
+                                &field.ty,
+                                self.type_order(),
+                            ) {
+                                self.error(
+                                    x.range(),
+                                    format!("Expected {}, got {}", field.ty, value_ty),
+                                )
+                            } else {
+                                Type::ClassType(self.stdlib.none_type())
+                            }
+                        } else {
+                            self.error(
+                                x.slice.range(),
+                                format!(
+                                    "TypedDict `{}` does not have key `{}`",
+                                    typed_dict.name(),
+                                    field_name
+                                ),
+                            )
+                        }
+                    }
+                    (_, _) => self.call_method_or_error(
+                        &base,
+                        &dunder::SETITEM,
+                        x.range,
+                        &[
+                            CallArg::Type(&slice_ty, x.slice.range()),
+                            // use the subscript's location
+                            CallArg::Type(&value_ty, x.range),
+                        ],
+                        &[],
+                    ),
+                }
             }
             Binding::UnpackedValue(b, range, pos) => {
                 let iterables = self.iterate(&self.solve_binding_inner(b), *range);

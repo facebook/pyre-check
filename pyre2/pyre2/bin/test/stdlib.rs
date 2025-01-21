@@ -105,6 +105,7 @@ Annotated: _SpecialForm
 TypedDict: _SpecialForm
 Required: _SpecialForm
 NotRequired: _SpecialForm
+ReadOnly: _SpecialForm
 
 def assert_type(x, y) -> None: ...
 

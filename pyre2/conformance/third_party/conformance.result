@@ -1537,8 +1537,6 @@
   ],
   "typeddicts_operations.py": [
     "Line 18: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie]']",
-    "Line 19: Unexpected errors ['`TypedDict[Movie]` has no attribute `__setitem__`']",
-    "Line 20: Unexpected errors ['`TypedDict[Movie]` has no attribute `__setitem__`']",
     "Line 41: Unexpected errors ['Expected 1 more positional argument', \"Missing argument 'default'\", \"EXPECTED Literal['name'] <: Mapping[str, object]\"]",
     "Line 58: Unexpected errors ['EXPECTED dict[@_, @_] <: TypedDict[MovieOptional]']",
     "Line 60: Unexpected errors ['assert_type(object | Any | None, str | None) failed', 'Expected 1 more positional argument', \"Missing argument 'default'\", \"EXPECTED Literal['name'] <: Mapping[str, object]\"]",
@@ -1546,8 +1544,8 @@
   ],
   "typeddicts_readonly.py": [
     "Line 36: Expected 1 errors",
+    "Line 61: Expected 1 errors",
     "Line 21: Unexpected errors ['EXPECTED dict[str, list[@_] | str] <: TypedDict[Band]']",
-    "Line 23: Unexpected errors ['`TypedDict[Band]` has no attribute `__setitem__`']",
     "Line 31: Unexpected errors ['Expected a callable, got type[TypedDict]', 'TODO: Answers::apply_special_form cannot handle `ReadOnly[list[str]]`']",
     "Line 37: Unexpected errors ['Object of class `str` has no attribute `append`']",
     "Line 49: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie1]']",
@@ -1567,11 +1565,8 @@
     "Line 119: Expected 1 errors",
     "Line 132: Expected 1 errors",
     "Line 23: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Album1]']",
-    "Line 24: Unexpected errors ['`TypedDict[Album1]` has no attribute `__setitem__`']",
-    "Line 25: Unexpected errors ['`TypedDict[Album1]` has no attribute `__setitem__`']",
     "Line 35: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Album2]']",
-    "Line 80: Unexpected errors ['EXPECTED dict[str, str] <: TypedDict[User]']",
-    "Line 81: Unexpected errors ['`TypedDict[User]` has no attribute `__setitem__`']"
+    "Line 80: Unexpected errors ['EXPECTED dict[str, str] <: TypedDict[User]']"
   ],
   "typeddicts_readonly_kwargs.py": [
     "Line 36: Unexpected errors ['EXPECTED Callable[[KwArgs[Unpack[TypedDict[ReadOnlyArgs]]]], None] <: Function']"

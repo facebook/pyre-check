@@ -127,6 +127,7 @@ impl BaseClass {
 pub struct TypedDictField {
     pub ty: Type,
     pub required: bool,
+    pub read_only: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -915,6 +916,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             } else {
                                 is_total
                             },
+                            read_only: qualifiers.contains(&Qualifier::ReadOnly),
                         },
                     ))
                 } else {

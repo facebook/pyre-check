@@ -20987,28 +20987,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "`TypedDict[Movie]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie]` has no attribute `__setitem__`",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Movie]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie]` has no attribute `__setitem__`",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Movie]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie]` has no attribute `__setitem__`",
+      "concise_description": "Expected str, got Literal[1982]",
+      "description": "Expected str, got Literal[1982]",
       "line": 22,
       "name": "PyreError",
       "stop_column": 14,
@@ -21017,8 +20997,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "`TypedDict[Movie]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie]` has no attribute `__setitem__`",
+      "concise_description": "Expected int, got Literal['']",
+      "description": "Expected int, got Literal['']",
       "line": 23,
       "name": "PyreError",
       "stop_column": 14,
@@ -21026,12 +21006,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Movie]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie]` has no attribute `__setitem__`",
+      "column": 7,
+      "concise_description": "TypedDict `Movie` does not have key `other`",
+      "description": "TypedDict `Movie` does not have key `other`",
       "line": 24,
       "name": "PyreError",
-      "stop_column": 15,
+      "stop_column": 14,
       "stop_line": 24
     },
     {
@@ -21258,22 +21238,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Band]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Band]` has no attribute `__setitem__`",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Band]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Band]` has no attribute `__setitem__`",
+      "column": 4,
+      "concise_description": "Key `members` in TypedDict `Band` is read-only",
+      "description": "Key `members` in TypedDict `Band` is read-only",
       "line": 24,
       "name": "PyreError",
-      "stop_column": 14,
+      "stop_column": 13,
       "stop_line": 24
     },
     {
@@ -21318,22 +21288,22 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Movie1]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie1]` has no attribute `__setitem__`",
+      "column": 4,
+      "concise_description": "Key `title` in TypedDict `Movie1` is read-only",
+      "description": "Key `title` in TypedDict `Movie1` is read-only",
       "line": 50,
       "name": "PyreError",
-      "stop_column": 12,
+      "stop_column": 11,
       "stop_line": 50
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Movie1]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie1]` has no attribute `__setitem__`",
+      "column": 4,
+      "concise_description": "Key `year` in TypedDict `Movie1` is read-only",
+      "description": "Key `year` in TypedDict `Movie1` is read-only",
       "line": 51,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 10,
       "stop_line": 51
     },
     {
@@ -21358,23 +21328,13 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Movie2]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie2]` has no attribute `__setitem__`",
+      "column": 4,
+      "concise_description": "Key `title` in TypedDict `Movie2` is read-only",
+      "description": "Key `title` in TypedDict `Movie2` is read-only",
       "line": 60,
       "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 60
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Movie2]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie2]` has no attribute `__setitem__`",
-      "line": 61,
-      "name": "PyreError",
       "stop_column": 11,
-      "stop_line": 61
+      "stop_line": 60
     }
   ],
   "typeddicts_readonly_consistency.py": [
@@ -21452,26 +21412,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Album1]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Album1]` has no attribute `__setitem__`",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Album1]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Album1]` has no attribute `__setitem__`",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
       "column": 14,
       "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Album2]",
       "description": "EXPECTED dict[str, int | str] <: TypedDict[Album2]",
@@ -21482,12 +21422,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Album2]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Album2]` has no attribute `__setitem__`",
+      "column": 4,
+      "concise_description": "Key `name` in TypedDict `Album2` is read-only",
+      "description": "Key `name` in TypedDict `Album2` is read-only",
       "line": 36,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 10,
       "stop_line": 36
     },
     {
@@ -21513,18 +21453,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "`TypedDict[User]` has no attribute `__setitem__`",
-      "description": "`TypedDict[User]` has no attribute `__setitem__`",
-      "line": 81,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 81
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[User]` has no attribute `__setitem__`",
-      "description": "`TypedDict[User]` has no attribute `__setitem__`",
+      "concise_description": "Expected str, got Literal[3]",
+      "description": "Expected str, got Literal[3]",
       "line": 82,
       "name": "PyreError",
       "stop_column": 11,
@@ -22132,19 +22062,19 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "`TypedDict[Movie]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie]` has no attribute `__setitem__`",
+      "column": 7,
+      "concise_description": "TypedDict `Movie` does not have key `director`",
+      "description": "TypedDict `Movie` does not have key `director`",
       "line": 23,
       "name": "PyreError",
-      "stop_column": 18,
+      "stop_column": 17,
       "stop_line": 23
     },
     {
       "code": -2,
       "column": 1,
-      "concise_description": "`TypedDict[Movie]` has no attribute `__setitem__`",
-      "description": "`TypedDict[Movie]` has no attribute `__setitem__`",
+      "concise_description": "Expected int, got Literal['1982']",
+      "description": "Expected int, got Literal['1982']",
       "line": 24,
       "name": "PyreError",
       "stop_column": 14,
