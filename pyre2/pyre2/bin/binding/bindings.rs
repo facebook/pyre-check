@@ -588,7 +588,7 @@ impl<'a> BindingsBuilder<'a> {
             Some(value) => {
                 self.table.insert(key, value);
             }
-            None if name.as_str() == "__file__" || name.as_str() == "__name__" => {
+            None if name.id == dunder::FILE || name.id == dunder::NAME => {
                 self.table.insert(key, Binding::StrType);
             }
             None => {
