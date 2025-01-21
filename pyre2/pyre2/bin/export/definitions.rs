@@ -334,14 +334,8 @@ impl<'a> DefinitionsBuilder<'a> {
                 }
             }
             Stmt::If(x) => {
-                for (test, body) in Ast::if_branches(x) {
-                    let b = self.config.evaluate_bool_opt(test);
-                    if b != Some(false) {
-                        self.stmts(body);
-                    }
-                    if b == Some(true) {
-                        break;
-                    }
+                for (_, body) in self.config.pruned_if_branches(x) {
+                    self.stmts(body);
                 }
                 return; // We went through the relevant branches already
             }

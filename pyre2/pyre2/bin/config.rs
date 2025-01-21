@@ -7,6 +7,7 @@
 
 use std::str::FromStr;
 
+use itertools::Itertools;
 use regex::Match;
 use regex::Regex;
 use ruff_python_ast::BoolOp;
@@ -14,7 +15,10 @@ use ruff_python_ast::CmpOp;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprNumberLiteral;
+use ruff_python_ast::Stmt;
+use ruff_python_ast::StmtIf;
 
+use crate::ast::Ast;
 use crate::util::prelude::SliceExt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -203,6 +207,22 @@ impl Config {
             },
             _ => None,
         }
+    }
+
+    /// Like `Ast::if_branches`, but skips branch that statically evaluate to `false`,
+    /// and stops if any branch evalutes to `true`.
+    pub fn pruned_if_branches<'a>(
+        &'a self,
+        x: &'a StmtIf,
+    ) -> impl Iterator<Item = (Option<&'a Expr>, &'a [Stmt])> {
+        Ast::if_branches(x)
+            .map(|(test, body)| {
+                let b = self.evaluate_bool_opt(test);
+                (b, if b == Some(true) { None } else { test }, body)
+            })
+            .filter(|x| x.0 != Some(false))
+            .map(|x| (x.1, x.2))
+            .take_while_inclusive(|x| x.0.is_some())
     }
 }
 
