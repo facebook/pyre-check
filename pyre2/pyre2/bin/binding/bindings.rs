@@ -1821,13 +1821,13 @@ impl<'a> BindingsBuilder<'a> {
             Stmt::Match(x) => {
                 self.ensure_expr(&x.subject);
                 let subject_name = if let Expr::Name(ref name) = *x.subject {
-                    Some(&name.id)
+                    Some(name.id.clone())
                 } else {
                     None
                 };
                 let key = self.table.insert(
                     Key::Anon(x.subject.range()),
-                    Binding::Expr(None, *x.subject.clone()),
+                    Binding::Expr(None, *x.subject),
                 );
                 let mut exhaustive = false;
                 let range = x.range;
@@ -1846,7 +1846,8 @@ impl<'a> BindingsBuilder<'a> {
                     if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
                         exhaustive = true;
                     }
-                    let new_narrow_ops = self.bind_pattern(subject_name, case.pattern, key);
+                    let new_narrow_ops =
+                        self.bind_pattern(subject_name.as_ref(), case.pattern, key);
                     self.bind_narrow_ops(&negated_prev_ops, case.range);
                     self.bind_narrow_ops(&new_narrow_ops, case.range);
                     negated_prev_ops.and_all(new_narrow_ops.negate());
