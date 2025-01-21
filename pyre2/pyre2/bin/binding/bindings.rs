@@ -79,6 +79,7 @@ use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::export::definitions::DefinitionStyle;
 use crate::export::definitions::Definitions;
+use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
 use crate::graph::index::Idx;
 use crate::graph::index::Index;
@@ -414,6 +415,7 @@ impl Bindings {
     pub fn new(
         x: Vec<Stmt>,
         module_info: ModuleInfo,
+        exports: Exports,
         lookup: &dyn LookupExport,
         config: &Config,
         errors: &ErrorCollector,
@@ -461,7 +463,9 @@ impl Bindings {
                     Binding::AnyType(AnyStyle::Error)
                 }
             };
-            builder.table.insert(KeyExport(k), val);
+            if exports.contains(&k, lookup) {
+                builder.table.insert(KeyExport(k), val);
+            }
         }
         Self(Arc::new(BindingsInner {
             module_info,

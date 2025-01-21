@@ -141,7 +141,7 @@ impl Step {
             Step::Load => compute_step!(<Lookup> load =),
             Step::Ast => compute_step!(<Lookup> ast = load),
             Step::Exports => compute_step!(<Lookup> exports = load, ast),
-            Step::Answers => compute_step!(<Lookup> answers = load, ast),
+            Step::Answers => compute_step!(<Lookup> answers = load, ast, exports),
             Step::Solutions => compute_step!(<Lookup> solutions = load, answers),
         }
     }
@@ -185,10 +185,12 @@ impl Step {
         ctx: &Context<Lookup>,
         load: Arc<Load>,
         ast: Arc<ModModule>,
+        exports: Exports,
     ) -> Arc<(Bindings, Answers)> {
         let bindings = Bindings::new(
             Arc::unwrap_or_clone(ast).body,
             load.module_info.dupe(),
+            exports,
             ctx.lookup,
             ctx.config,
             &load.errors,
