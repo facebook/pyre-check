@@ -8,6 +8,8 @@
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 
+use crate::module::module_name::ModuleName;
+
 /// These are names that are exported from the stdlib, but which take on
 /// a more keyword-like quality. E.g. `x: TypeAlias = ...` meaningfully
 /// changes the sense of the binding.
@@ -27,6 +29,14 @@ impl SpecialExport {
             "Annotated" => Some(Self::Annotated),
             "Literal" => Some(Self::Literal),
             _ => None,
+        }
+    }
+
+    pub fn defined_in(self, m: ModuleName) -> bool {
+        match self {
+            Self::TypeAlias | Self::TypeVar | Self::Annotated | Self::Literal => {
+                matches!(m.as_str(), "typing" | "typing_extensions")
+            }
         }
     }
 }

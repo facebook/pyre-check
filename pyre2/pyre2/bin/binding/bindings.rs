@@ -233,7 +233,6 @@ struct FlowInfo {
     /// Am I initialized, or am I the result of an annotation with no value like `x: int`?
     is_initialized: bool,
     /// Was I imported from somewhere (and if so, where)
-    #[allow(dead_code)]
     imported_from: Option<ModuleName>,
 }
 
@@ -545,7 +544,17 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn as_special_export(&self, name: &Name) -> Option<SpecialExport> {
-        SpecialExport::new(name)
+        let special = SpecialExport::new(name)?;
+        for scope in self.scopes.iter().rev() {
+            if let Some(flow) = scope.flow.info.get(name) {
+                match flow.imported_from {
+                    Some(m) if special.defined_in(m) => return Some(special),
+                    None if special.defined_in(self.module_info.name()) => return Some(special),
+                    _ => return None,
+                }
+            }
+        }
+        None
     }
 
     fn is_annotated(&self, name: &Name) -> bool {

@@ -117,6 +117,14 @@ X: TypeAlias = 1  # E: Expected `X` to be a type alias, got Literal[1]
 );
 
 testcase!(
+    test_not_a_type_alias,
+    r#"
+TypeAlias = int
+x: TypeAlias = 1
+    "#,
+);
+
+testcase!(
     test_attribute_access,
     r#"
 from typing import TypeAlias
