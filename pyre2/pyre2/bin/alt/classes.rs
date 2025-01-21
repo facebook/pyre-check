@@ -38,6 +38,7 @@ use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
+use crate::types::class::Substitution;
 use crate::types::class::TArgs;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Lit;
@@ -531,12 +532,44 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    pub fn get_typed_dict(&self, cls: &Class) -> Option<TypedDict> {
+    pub fn specialize_as_typed_dict(
+        &self,
+        cls: &Class,
+        targs: Vec<Type>,
+        range: TextRange,
+    ) -> Option<TypedDict> {
         let metadata = self.get_metadata_for_class(cls);
+        let targs = self.check_and_create_targs(cls, targs, range);
         if metadata.is_typed_dict() {
             Some(TypedDict::new(
                 cls.qname().clone(),
-                self.get_typed_dict_fields(cls),
+                self.get_typed_dict_fields(cls, &targs),
+            ))
+        } else {
+            None
+        }
+    }
+
+    pub fn promote_to_typed_dict(&self, cls: &Class, range: TextRange) -> Option<TypedDict> {
+        let metadata = self.get_metadata_for_class(cls);
+        if metadata.is_typed_dict() {
+            let targs = self.create_default_targs(cls, Some(range));
+            Some(TypedDict::new(
+                cls.qname().clone(),
+                self.get_typed_dict_fields(cls, &targs),
+            ))
+        } else {
+            None
+        }
+    }
+
+    fn promote_to_typed_dict_silently(&self, cls: &Class) -> Option<TypedDict> {
+        let metadata = self.get_metadata_for_class(cls);
+        if metadata.is_typed_dict() {
+            let targs = self.create_default_targs(cls, None);
+            Some(TypedDict::new(
+                cls.qname().clone(),
+                self.get_typed_dict_fields(cls, &targs),
             ))
         } else {
             None
@@ -803,12 +836,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn get_typed_dict_from_key(&self, key: Idx<Key>) -> Option<TypedDict> {
         match self.get_idx(key).deref() {
-            Type::ClassDef(cls) => self.get_typed_dict(cls),
+            Type::ClassDef(cls) => self.promote_to_typed_dict_silently(cls),
             _ => None,
         }
     }
 
-    fn get_typed_dict_fields(&self, cls: &Class) -> SmallMap<Name, TypedDictField> {
+    fn get_typed_dict_fields(&self, cls: &Class, targs: &TArgs) -> SmallMap<Name, TypedDictField> {
+        let tparams = cls.tparams();
+        let substitution = Substitution::new(
+            tparams
+                .quantified()
+                .zip(targs.as_slice().iter().cloned())
+                .collect(),
+        );
         cls.fields()
             .iter()
             .filter_map(|name| {
@@ -824,7 +864,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Some((
                         name.clone(),
                         TypedDictField {
-                            ty,
+                            ty: substitution.substitute(ty),
                             required: if qualifiers.contains(&Qualifier::Required) {
                                 true
                             } else if qualifiers.contains(&Qualifier::NotRequired) {

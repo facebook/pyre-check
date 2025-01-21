@@ -163,6 +163,10 @@ impl Substitution {
     pub fn substitute(&self, ty: Type) -> Type {
         ty.subst(&self.0)
     }
+
+    pub fn new(mapping: SmallMap<Quantified, Type>) -> Self {
+        Self(mapping)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
