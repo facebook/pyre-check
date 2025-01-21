@@ -8,9 +8,9 @@
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Operator;
 
-pub const ALL: Name = Name::new_static("__all__");
 pub const AENTER: Name = Name::new_static("__aenter__");
 pub const AEXIT: Name = Name::new_static("__aexit__");
+pub const ALL: Name = Name::new_static("__all__");
 pub const CALL: Name = Name::new_static("__call__");
 pub const ENTER: Name = Name::new_static("__enter__");
 pub const EXIT: Name = Name::new_static("__exit__");
