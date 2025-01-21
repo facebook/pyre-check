@@ -226,7 +226,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         bases: &[Expr],
         legacy_tparams: &[Idx<KeyLegacyTypeParam>],
     ) -> Class {
-        let scoped_tparams = self.scoped_type_params(&x.type_params);
+        let scoped_tparams = self.scoped_type_params(x.type_params.as_deref());
         let bases = bases.map(|x| self.base_class_of(x));
         let tparams = self.class_tparams(&x.name, scoped_tparams, bases, legacy_tparams);
         Class::new(

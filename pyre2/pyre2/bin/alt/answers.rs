@@ -930,9 +930,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         enter_type
     }
 
-    pub fn scoped_type_params(&self, x: &Option<Box<TypeParams>>) -> Vec<TParamInfo> {
+    pub fn scoped_type_params(&self, x: Option<&TypeParams>) -> Vec<TParamInfo> {
         match x {
-            Some(box x) => {
+            Some(x) => {
                 fn get_quantified(t: &Type) -> Quantified {
                     match t {
                         Type::Type(box Type::Quantified(q)) => *q,
@@ -1331,7 +1331,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     ret
                 };
-                let mut tparams = self.scoped_type_params(&x.type_params);
+                let mut tparams = self.scoped_type_params(x.type_params.as_deref());
                 let legacy_tparams = legacy_tparam_keys
                     .iter()
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
@@ -1475,7 +1475,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ),
                     Type::TypeAlias(_) => {
                         let params_range = params.as_ref().map_or(expr_range, |x| x.range);
-                        ta.forall(self.type_params(params_range, self.scoped_type_params(params)))
+                        ta.forall(
+                            self.type_params(
+                                params_range,
+                                self.scoped_type_params(params.as_ref()),
+                            ),
+                        )
                     }
                     _ => ta,
                 }
