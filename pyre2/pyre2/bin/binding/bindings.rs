@@ -539,6 +539,22 @@ impl<'a> BindingsBuilder<'a> {
         self.errors.todo(&self.module_info, msg, x);
     }
 
+    fn is_annotated(&self, name: &Name) -> bool {
+        name == "Annotated"
+    }
+
+    fn is_type_var(&self, name: &Name) -> bool {
+        name == "TypeVar"
+    }
+
+    fn is_type_alias(&self, name: &Name) -> bool {
+        name == "TypeAlias"
+    }
+
+    fn is_literal(&self, name: &Name) -> bool {
+        name == "Literal"
+    }
+
     fn error(&self, range: TextRange, msg: String) {
         self.errors.add(&self.module_info, range, msg);
     }
@@ -744,7 +760,7 @@ impl<'a> BindingsBuilder<'a> {
             Expr::Subscript(ExprSubscript {
                 value: box Expr::Name(name),
                 ..
-            }) if name.id == "Literal" => {
+            }) if self.is_literal(&name.id) => {
                 // Don't go inside a literal, since you might find strings which are really strings, not string-types
                 self.ensure_expr(x);
             }
@@ -752,7 +768,7 @@ impl<'a> BindingsBuilder<'a> {
                 value: box Expr::Name(name),
                 slice: box Expr::Tuple(tup),
                 ..
-            }) if name.id == "Annotated" && !tup.is_empty() => {
+            }) if self.is_annotated(&name.id) && !tup.is_empty() => {
                 // Only go inside the first argument to Annotated, the rest are non-type metadata.
                 self.ensure_type(&mut Expr::Name(name.clone()), tparams_builder);
                 self.ensure_type(&mut tup.elts[0], tparams_builder);
@@ -1601,7 +1617,7 @@ impl<'a> BindingsBuilder<'a> {
                         range: _,
                         func: box Expr::Name(type_var),
                         arguments,
-                    }) if type_var.id == "TypeVar" && !arguments.is_empty() => {
+                    }) if self.is_type_var(&type_var.id) && !arguments.is_empty() => {
                         self.ensure_expr(&Expr::Name(type_var.clone()));
                         // The constraints (i.e., any positional arguments after the first)
                         // and some keyword arguments are types.
@@ -1666,7 +1682,7 @@ impl<'a> BindingsBuilder<'a> {
                     let binding = if let Some(mut value) = value {
                         // Handle forward references in explicit type aliases.
                         if let Expr::Name(name) = *x.annotation
-                            && name.id == "TypeAlias"
+                            && self.is_type_alias(&name.id)
                         {
                             self.ensure_type(&mut value, &mut None);
                         } else {
