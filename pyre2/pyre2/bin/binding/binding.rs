@@ -411,7 +411,7 @@ pub enum Binding {
     /// can error on bad type forms in type aliases.
     NameAssign(Name, Option<Idx<KeyAnnotation>>, Box<Binding>, TextRange),
     /// A type alias declared with the `type` soft keyword
-    ScopedTypeAlias(Name, Option<Box<TypeParams>>, Box<Binding>, TextRange),
+    ScopedTypeAlias(Name, Option<Box<TypeParams>>, Box<Expr>),
     /// An entry in a MatchMapping. The Key looks up the value being matched, the Expr is the key we're extracting.
     PatternMatchMapping(Expr, Idx<Key>),
     /// An entry in a MatchClass. The Key looks up the value being matched, the Expr is the class name.
@@ -563,10 +563,15 @@ impl DisplayWith<Bindings> for Binding {
                     binding.display_with(ctx)
                 )
             }
-            Self::ScopedTypeAlias(name, None, binding, _r) => {
-                write!(f, "type {} = {}", name, binding.display_with(ctx))
+            Self::ScopedTypeAlias(name, None, expr) => {
+                write!(
+                    f,
+                    "type {} = {}",
+                    name,
+                    expr.display_with(ctx.module_info())
+                )
             }
-            Self::ScopedTypeAlias(name, Some(params), binding, _r) => {
+            Self::ScopedTypeAlias(name, Some(params), expr) => {
                 write!(
                     f,
                     "type {}[{}] = {}",
@@ -576,7 +581,7 @@ impl DisplayWith<Bindings> for Binding {
                         .map(|p| format!("{}", p.name()))
                         .collect::<Vec<_>>()
                         .join(", "),
-                    binding.display_with(ctx)
+                    expr.display_with(ctx.module_info())
                 )
             }
             Self::PatternMatchMapping(mapping_key, binding_key) => {

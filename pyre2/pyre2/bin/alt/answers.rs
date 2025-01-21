@@ -1457,16 +1457,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     _ => ty,
                 }
             }
-            Binding::ScopedTypeAlias(name, params, binding, range) => {
-                let ty = self.solve_binding_inner(binding);
-                let ta = self.as_type_alias(name, TypeAliasStyle::Scoped, ty, *range);
+            Binding::ScopedTypeAlias(name, params, expr) => {
+                let ty = self.expr(expr, None);
+                let expr_range = expr.range();
+                let ta = self.as_type_alias(name, TypeAliasStyle::Scoped, ty, expr_range);
                 match ta {
                     Type::Forall(..) => self.error(
-                        *range,
+                        expr.range(),
                         format!("Type parameters used in `{name}` but not declared"),
                     ),
                     Type::TypeAlias(_) => {
-                        ta.forall(self.type_params(*range, self.scoped_type_params(params)))
+                        let params_range = params.as_ref().map_or(expr_range, |x| x.range);
+                        ta.forall(self.type_params(params_range, self.scoped_type_params(params)))
                     }
                     _ => ta,
                 }

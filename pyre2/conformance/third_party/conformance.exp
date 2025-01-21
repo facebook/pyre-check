@@ -1041,7 +1041,7 @@
     },
     {
       "code": -2,
-      "column": 1,
+      "column": 22,
       "concise_description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
       "description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
       "line": 38,
@@ -1051,7 +1051,7 @@
     },
     {
       "code": -2,
-      "column": 1,
+      "column": 22,
       "concise_description": "Expected `BadTypeAlias3` to be a type alias, got tuple[tuple[type[int], type[str]]]",
       "description": "Expected `BadTypeAlias3` to be a type alias, got tuple[tuple[type[int], type[str]]]",
       "line": 39,
@@ -1061,7 +1061,7 @@
     },
     {
       "code": -2,
-      "column": 1,
+      "column": 22,
       "concise_description": "Expected `BadTypeAlias4` to be a type alias, got list[type[int]]",
       "description": "Expected `BadTypeAlias4` to be a type alias, got list[type[int]]",
       "line": 40,
@@ -1071,7 +1071,7 @@
     },
     {
       "code": -2,
-      "column": 1,
+      "column": 22,
       "concise_description": "Expected `BadTypeAlias5` to be a type alias, got dict[Error, Error]",
       "description": "Expected `BadTypeAlias5` to be a type alias, got dict[Error, Error]",
       "line": 41,
@@ -1111,7 +1111,7 @@
     },
     {
       "code": -2,
-      "column": 1,
+      "column": 22,
       "concise_description": "Expected `BadTypeAlias9` to be a type alias, got Literal[1]",
       "description": "Expected `BadTypeAlias9` to be a type alias, got Literal[1]",
       "line": 45,
@@ -1121,7 +1121,7 @@
     },
     {
       "code": -2,
-      "column": 1,
+      "column": 23,
       "concise_description": "Expected `BadTypeAlias10` to be a type alias, got Literal[True]",
       "description": "Expected `BadTypeAlias10` to be a type alias, got Literal[True]",
       "line": 46,
@@ -1131,7 +1131,7 @@
     },
     {
       "code": -2,
-      "column": 1,
+      "column": 23,
       "concise_description": "Expected `BadTypeAlias11` to be a type alias, got Literal[1]",
       "description": "Expected `BadTypeAlias11` to be a type alias, got Literal[1]",
       "line": 47,
@@ -1141,7 +1141,7 @@
     },
     {
       "code": -2,
-      "column": 1,
+      "column": 23,
       "concise_description": "Expected `BadTypeAlias13` to be a type alias, got str",
       "description": "Expected `BadTypeAlias13` to be a type alias, got str",
       "line": 49,
@@ -1151,7 +1151,7 @@
     },
     {
       "code": -2,
-      "column": 1,
+      "column": 15,
       "concise_description": "Type parameters used in `TA1` but not declared",
       "description": "Type parameters used in `TA1` but not declared",
       "line": 64,
@@ -1161,7 +1161,7 @@
     },
     {
       "code": -2,
-      "column": 1,
+      "column": 12,
       "concise_description": "Type parameters used in `TA2` but not declared",
       "description": "Type parameters used in `TA2` but not declared",
       "line": 69,
