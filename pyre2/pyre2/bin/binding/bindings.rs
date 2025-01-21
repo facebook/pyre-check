@@ -138,7 +138,7 @@ impl Display for Bindings {
 
 struct BindingsBuilder<'a> {
     module_info: ModuleInfo,
-    modules: &'a dyn LookupExport,
+    lookup: &'a dyn LookupExport,
     config: &'a Config,
     errors: &'a ErrorCollector,
     uniques: &'a UniqueFactory,
@@ -186,7 +186,7 @@ impl Static {
         x: &[Stmt],
         module_info: &ModuleInfo,
         top_level: bool,
-        modules: &dyn LookupExport,
+        lookup: &dyn LookupExport,
         config: &Config,
     ) {
         let mut d = Definitions::new(x, module_info.name(), module_info.is_init(), config);
@@ -198,8 +198,8 @@ impl Static {
                 .uses_key_import = def.style == DefinitionStyle::ImportModule;
         }
         for (m, range) in d.import_all {
-            if let Ok(exports) = modules.get(m) {
-                for name in exports.wildcard(modules).iter() {
+            if let Ok(exports) = lookup.get(m) {
+                for name in exports.wildcard(lookup).iter() {
                     self.add_with_count(name.clone(), range, 1).uses_key_import = true;
                 }
             }
@@ -414,14 +414,14 @@ impl Bindings {
     pub fn new(
         x: Vec<Stmt>,
         module_info: ModuleInfo,
-        modules: &dyn LookupExport,
+        lookup: &dyn LookupExport,
         config: &Config,
         errors: &ErrorCollector,
         uniques: &UniqueFactory,
     ) -> Self {
         let mut builder = BindingsBuilder {
             module_info: module_info.dupe(),
-            modules,
+            lookup,
             config,
             errors,
             uniques,
@@ -434,7 +434,7 @@ impl Bindings {
             .scopes
             .last_mut()
             .stat
-            .stmts(&x, &module_info, true, modules, config);
+            .stmts(&x, &module_info, true, lookup, config);
         if module_info.name() != ModuleName::builtins() {
             builder.inject_builtins();
         }
@@ -515,9 +515,9 @@ impl<'a> BindingsBuilder<'a> {
 
     fn inject_builtins(&mut self) {
         let builtins_module = ModuleName::builtins();
-        match self.modules.get(builtins_module) {
+        match self.lookup.get(builtins_module) {
             Ok(builtins_export) => {
-                for name in builtins_export.wildcard(self.modules).iter() {
+                for name in builtins_export.wildcard(self.lookup).iter() {
                     let key = Key::Import(name.clone(), TextRange::default());
                     let idx = self
                         .table
@@ -1115,7 +1115,7 @@ impl<'a> BindingsBuilder<'a> {
             &body,
             &self.module_info,
             false,
-            self.modules,
+            self.lookup,
             self.config,
         );
         self.stmts(body);
@@ -1265,7 +1265,7 @@ impl<'a> BindingsBuilder<'a> {
             &body,
             &self.module_info,
             false,
-            self.modules,
+            self.lookup,
             self.config,
         );
         self.stmts(body);
@@ -1951,7 +1951,7 @@ impl<'a> BindingsBuilder<'a> {
             Stmt::Import(x) => {
                 for x in x.names {
                     let m = ModuleName::from_name(&x.name.id);
-                    if let Err(err) = self.modules.get(m) {
+                    if let Err(err) = self.lookup.get(m) {
                         self.error(x.range, Arc::unwrap_or_clone(err));
                     }
                     match x.asname {
@@ -1985,13 +1985,13 @@ impl<'a> BindingsBuilder<'a> {
                     x.level,
                     x.module.as_ref().map(|x| &x.id),
                 ) {
-                    match self.modules.get(m) {
+                    match self.lookup.get(m) {
                         Ok(module_exports) => {
                             for x in x.names {
                                 if &x.name == "*" {
-                                    for name in module_exports.wildcard(self.modules).iter() {
+                                    for name in module_exports.wildcard(self.lookup).iter() {
                                         let key = Key::Import(name.clone(), x.range);
-                                        let val = if module_exports.contains(name, self.modules) {
+                                        let val = if module_exports.contains(name, self.lookup) {
                                             Binding::Import(m, name.clone())
                                         } else {
                                             self.error(
@@ -2005,7 +2005,7 @@ impl<'a> BindingsBuilder<'a> {
                                     }
                                 } else {
                                     let asname = x.asname.unwrap_or_else(|| x.name.clone());
-                                    let val = if module_exports.contains(&x.name.id, self.modules) {
+                                    let val = if module_exports.contains(&x.name.id, self.lookup) {
                                         Binding::Import(m, x.name.id)
                                     } else {
                                         self.error(
