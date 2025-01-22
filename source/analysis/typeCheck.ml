@@ -7958,6 +7958,12 @@ module State (Context : Context) = struct
                              hardcoding. This is a yucky hack. *)
                           let allowlisted_non_modifying_decorators =
                             [
+                              Reference.create "abstractmethod";
+                              Reference.create "abstractclassmethod";
+                              Reference.create "abstractstaticmethod";
+                              Reference.create "abc.abstractmethod";
+                              Reference.create "abc.abstractclassmethod";
+                              Reference.create "abc.abstractstaticmethod";
                               Reference.create "staticmethod";
                               Reference.create "classmethod";
                               Reference.create "typing.override";

@@ -77,6 +77,28 @@ let test_extra_overriding_parameter =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+     from abc import ABC, abstractmethod
+     class Base(ABC):
+       @abstractmethod
+       def foo(self, a: int) -> None:
+          pass
+     class Derived(Base):
+       def foo(
+          self,
+          b: dict[str, str],
+          a: int,
+       ) -> None:
+          pass
+    |}
+           [
+             "Inconsistent override [14]: `test.Derived.foo` overrides method defined in `Base` \
+              inconsistently. Could not find parameter `b` in overridden signature.";
+             "Invalid override [40]: `test.Derived.foo` is not decorated with @override, but \
+              overrides a method with the same name in superclasses of `Derived`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
       class C:
         def f(self) -> None:
           pass
