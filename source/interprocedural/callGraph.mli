@@ -112,6 +112,7 @@ module Unresolved : sig
     | CannotFindParentClass
     | UnknownBaseType
     | UnknownCallCallee
+    | UnknownIdentifierCallee
     | UnknownCalleeAST
   [@@deriving eq, show]
 

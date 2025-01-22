@@ -470,6 +470,7 @@ module Unresolved = struct
     | CannotFindParentClass
     | UnknownBaseType
     | UnknownCallCallee
+    | UnknownIdentifierCallee
     | UnknownCalleeAST
   [@@deriving eq, show]
 
@@ -2580,6 +2581,14 @@ let resolve_callee_ignoring_decorators
                 callee
             in
             Result.Error Unresolved.UnknownBaseType)
+    | Expression.Name (Name.Identifier _) ->
+        let () =
+          log
+            "Bypassing decorators - Unknown identifier callee `%a`"
+            Expression.pp_expression
+            callee.Node.value
+        in
+        Result.Error Unresolved.UnknownIdentifierCallee
     | Expression.Call _ ->
         let () =
           log
@@ -3925,8 +3934,12 @@ module HigherOrderCallGraph = struct
           in
           List.filter call_targets ~f:(fun call_target -> call_target |> is_parameterized |> not)
         in
-        let ({ CallCallees.call_targets = original_call_targets; higher_order_parameters; _ } as
-            original_call_callees)
+        let ({
+               CallCallees.call_targets = original_call_targets;
+               higher_order_parameters;
+               unresolved;
+               _;
+             } as original_call_callees)
           =
           Context.input_define_call_graph
           |> DefineCallGraph.resolve_call ~location ~call
@@ -4035,6 +4048,16 @@ module HigherOrderCallGraph = struct
           else
             higher_order_parameters
         in
+        (* Unset `unresolved` when the original call graph building cannot resolve callees under
+           cases like `f()` or `f`. *)
+        let unresolved =
+          match unresolved with
+          | Unresolved.True (BypassingDecorators UnknownIdentifierCallee)
+          | Unresolved.True (BypassingDecorators UnknownCallCallee)
+            when not (List.is_empty parameterized_call_targets) ->
+              Unresolved.False
+          | _ -> unresolved
+        in
         Context.output_define_call_graph :=
           DefineCallGraph.set_call_callees
             ~location
@@ -4045,6 +4068,7 @@ module HigherOrderCallGraph = struct
                 call_targets = parameterized_call_targets;
                 decorated_targets;
                 higher_order_parameters;
+                unresolved;
               }
             !Context.output_define_call_graph;
         returned_callables parameterized_call_targets, state

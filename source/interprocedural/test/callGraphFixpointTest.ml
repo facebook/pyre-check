@@ -758,8 +758,7 @@ let test_higher_order_call_graph_fixpoint =
                                    CallTarget.create_regular
                                      (Target.Regular.Function { name = "test.foo"; kind = Normal });
                                  ]
-                               ~unresolved:
-                                 (CallGraph.Unresolved.True (BypassingDecorators UnknownCallCallee))
+                               ~unresolved:CallGraph.Unresolved.False
                                ())) );
                    ];
                  returned_callables = [];

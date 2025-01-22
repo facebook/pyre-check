@@ -1789,7 +1789,7 @@ let test_call_graph_of_define =
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call
                       (CallCallees.unresolved
-                         ~reason:(CallGraph.Unresolved.BypassingDecorators UnknownCalleeAST)
+                         ~reason:(CallGraph.Unresolved.BypassingDecorators UnknownIdentifierCallee)
                          ~message:""
                          ())) );
              ]
@@ -6667,8 +6667,7 @@ let test_higher_order_call_graph_of_define =
                              CallTarget.create_regular
                                (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
-                         ~unresolved:
-                           (CallGraph.Unresolved.True (BypassingDecorators UnknownCalleeAST))
+                         ~unresolved:CallGraph.Unresolved.False
                          ())) );
              ]
            ~expected_returned_callables:
