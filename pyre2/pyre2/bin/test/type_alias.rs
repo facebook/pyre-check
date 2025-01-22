@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_type_alias_simple,
@@ -122,6 +123,48 @@ testcase!(
 TypeAlias = int
 x: TypeAlias = 1
     "#,
+);
+
+testcase!(
+    test_type_alias_import_direct,
+    r#"
+from typing import TypeAlias
+class C: pass
+x: TypeAlias = "C"
+y: x = C()
+"#,
+);
+
+testcase!(
+    test_type_alias_import_star,
+    r#"
+from typing import *
+class C: pass
+x: TypeAlias = "C"
+y: x = C()
+"#,
+);
+
+testcase_with_bug!(
+    "should know this is a type alias",
+    test_type_alias_import_module,
+    r#"
+import typing
+class C: pass
+x: typing.TypeAlias = "C"  # E: Expected `x` to be a type alias
+y: x = C()
+"#,
+);
+
+testcase_with_bug!(
+    "should know this is a type alias",
+    test_type_alias_import_named,
+    r#"
+import typing as tt
+class C: pass
+x: tt.TypeAlias = "C"  # E: Expected `x` to be a type alias
+y: x = C()
+"#,
 );
 
 testcase!(
