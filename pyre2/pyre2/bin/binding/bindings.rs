@@ -569,19 +569,24 @@ impl<'a> BindingsBuilder<'a> {
         self.errors.todo(&self.module_info, msg, x);
     }
 
-    fn as_special_export(&self, e: &Expr) -> Option<SpecialExport> {
-        let name = &e.as_name_expr()?.id;
-        let special = SpecialExport::new(name)?;
+    fn get_flow_info(&self, name: &Name) -> Option<&FlowInfo> {
         for scope in self.scopes.iter().rev() {
             if let Some(flow) = scope.flow.info.get(name) {
-                match flow.style {
-                    Some(FlowStyle::Import(m)) if special.defined_in(m) => return Some(special),
-                    _ if special.defined_in(self.module_info.name()) => return Some(special),
-                    _ => return None,
-                }
+                return Some(flow);
             }
         }
         None
+    }
+
+    fn as_special_export(&self, e: &Expr) -> Option<SpecialExport> {
+        let name = &e.as_name_expr()?.id;
+        let special = SpecialExport::new(name)?;
+        let flow = self.get_flow_info(name)?;
+        match flow.style {
+            Some(FlowStyle::Import(m)) if special.defined_in(m) => Some(special),
+            _ if special.defined_in(self.module_info.name()) => Some(special),
+            _ => None,
+        }
     }
 
     fn is_annotated(&self, e: &Expr) -> bool {
