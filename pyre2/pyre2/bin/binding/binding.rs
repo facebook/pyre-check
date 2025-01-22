@@ -101,6 +101,8 @@ pub enum Key {
     DecoratorApplication(TextRange),
     /// I am the self type for a particular class.
     SelfType(ShortIdentifier),
+    /// The send type of a yield expression.
+    SendTypeOfYield(TextRange),
     /// The type at a specific return point.
     ReturnExpression(ShortIdentifier, TextRange),
     /// The type yielded inside of a specific yield expression inside a function.
@@ -139,6 +141,7 @@ impl Ranged for Key {
             Self::Definition(x) => x.range(),
             Self::DecoratorApplication(r) => r.range(),
             Self::SelfType(x) => x.range(),
+            Self::SendTypeOfYield(x) => x.range(),
             Self::ReturnExpression(_, r) => *r,
             Self::YieldTypeOfYield(_, r) => *r,
             Self::YieldTypeOfGenerator(x) => x.range(),
@@ -160,6 +163,9 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::Definition(x) => write!(f, "{} {:?}", ctx.display(x), x.range()),
             Self::DecoratorApplication(r) => write!(f, "decorator {:?}", r),
             Self::SelfType(x) => write!(f, "self {} {:?}", ctx.display(x), x.range()),
+            Self::SendTypeOfYield(x) => {
+                write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
+            }
             Self::Usage(x) => write!(f, "use {} {:?}", ctx.display(x), x.range()),
             Self::Anon(r) => write!(f, "anon {r:?}"),
             Self::Expect(r) => write!(f, "expect {r:?}"),
@@ -336,6 +342,8 @@ pub enum Binding {
     /// An expression returned from a function.
     /// The `bool` is whether the function has `yield` within it.
     ReturnExpr(Option<Idx<KeyAnnotation>>, Expr, bool),
+    /// An expression returned from a function.
+    SendTypeOfYield(ShortIdentifier),
     /// A decorator application: the Key is the entity being decorated.
     DecoratorApplication(Box<Decorator>, Idx<Key>),
     /// A grouping of both the yield expression types and the return type.
@@ -448,6 +456,9 @@ impl DisplayWith<Bindings> for Binding {
                     target.display_with(ctx),
                     iterable.display_with(ctx)
                 )
+            }
+            self::Binding::SendTypeOfYield(x) => {
+                write!(f, "send type of yield {} {:?}", m.display(x), x.range())
             }
             Self::IterableValue(None, x) => write!(f, "iter {}", m.display(x)),
             Self::IterableValue(Some(k), x) => {

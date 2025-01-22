@@ -1086,7 +1086,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => self.error(x.range, "Expression is not awaitable".to_owned()),
                 }
             }
-            Expr::Yield(x) => self.error_todo("Answers::expr_infer", x),
+            Expr::Yield(x) => self.get(&Key::SendTypeOfYield(x.range)).arc_clone(),
+
             Expr::YieldFrom(_) => self.error_todo("Answers::expr_infer", x),
             Expr::Compare(x) => {
                 let _ty = self.expr_infer(&x.left);

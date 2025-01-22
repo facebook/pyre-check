@@ -1233,9 +1233,15 @@ impl<'a> BindingsBuilder<'a> {
                 let key = self.table.insert(
                     Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range()),
                     // collect the value of the yield expression.
-                    Binding::Expr(None, yield_expr(x)),
+                    Binding::Expr(None, yield_expr(x.clone())),
                 );
                 yield_expr_keys.insert(key);
+
+                self.table.insert(
+                    Key::SendTypeOfYield(x.range()),
+                    // collect the value of the yield expression.
+                    Binding::SendTypeOfYield(ShortIdentifier::new(&func_name)),
+                );
             }
             let yield_type = Binding::phi(yield_expr_keys);
             self.table.insert(

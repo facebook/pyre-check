@@ -1076,6 +1076,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .generator(yield_type, Type::any_implicit(), return_type)
                     .to_type()
             }
+            // TODO: Zeina, here we must construct a ReturnAnnotation key and look it up. The lookup will panic if key is not found. Figure out how to handle the failure.
+            Binding::SendTypeOfYield(_) => Type::any_explicit(),
             Binding::ReturnExpr(ann, e, has_yields) => {
                 let ann = ann.map(|k| self.get_idx(k));
                 let hint = ann.as_ref().and_then(|x| x.ty.as_ref());

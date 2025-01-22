@@ -1650,16 +1650,6 @@
   "annotations_generators.py": [
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 46,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 46
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "EXPECTED Literal[False] <: C",
       "description": "EXPECTED Literal[False] <: C",
@@ -1677,106 +1667,6 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 57
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 57,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 57
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 66,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 66
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 70,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 70
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 75
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 79
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 83,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 83
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 87,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 87
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 110,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 110
     },
     {
       "code": -2,
@@ -1830,16 +1720,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 123,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 123
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "EXPECTED None <: Generator[None, int, None]",
       "description": "EXPECTED None <: Generator[None, int, None]",
@@ -1860,16 +1740,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 131,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 131
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "EXPECTED None <: Generator[None, str, None]",
       "description": "EXPECTED None <: Generator[None, str, None]",
@@ -1887,26 +1757,6 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 135
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 140,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 140
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 145,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 145
     },
     {
       "code": -2,
@@ -1980,16 +1830,6 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 161,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 161
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
       "description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
@@ -2037,16 +1877,6 @@
       "name": "PyreError",
       "stop_column": 30,
       "stop_line": 179
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: ExprYield - Answers::expr_infer",
-      "description": "TODO: ExprYield - Answers::expr_infer",
-      "line": 187,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 187
     },
     {
       "code": -2,
