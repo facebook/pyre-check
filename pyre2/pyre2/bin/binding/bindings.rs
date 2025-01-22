@@ -569,7 +569,8 @@ impl<'a> BindingsBuilder<'a> {
         self.errors.todo(&self.module_info, msg, x);
     }
 
-    fn as_special_export(&self, name: &Name) -> Option<SpecialExport> {
+    fn as_special_export(&self, e: &Expr) -> Option<SpecialExport> {
+        let name = &e.as_name_expr()?.id;
         let special = SpecialExport::new(name)?;
         for scope in self.scopes.iter().rev() {
             if let Some(flow) = scope.flow.info.get(name) {
@@ -583,20 +584,20 @@ impl<'a> BindingsBuilder<'a> {
         None
     }
 
-    fn is_annotated(&self, name: &Name) -> bool {
-        self.as_special_export(name) == Some(SpecialExport::Annotated)
+    fn is_annotated(&self, e: &Expr) -> bool {
+        self.as_special_export(e) == Some(SpecialExport::Annotated)
     }
 
-    fn is_type_var(&self, name: &Name) -> bool {
-        self.as_special_export(name) == Some(SpecialExport::TypeVar)
+    fn is_type_var(&self, e: &Expr) -> bool {
+        self.as_special_export(e) == Some(SpecialExport::TypeVar)
     }
 
-    fn is_type_alias(&self, name: &Name) -> bool {
-        self.as_special_export(name) == Some(SpecialExport::TypeAlias)
+    fn is_type_alias(&self, e: &Expr) -> bool {
+        self.as_special_export(e) == Some(SpecialExport::TypeAlias)
     }
 
-    fn is_literal(&self, name: &Name) -> bool {
-        self.as_special_export(name) == Some(SpecialExport::Literal)
+    fn is_literal(&self, e: &Expr) -> bool {
+        self.as_special_export(e) == Some(SpecialExport::Literal)
     }
 
     fn error(&self, range: TextRange, msg: String) {
@@ -797,20 +798,17 @@ impl<'a> BindingsBuilder<'a> {
                 };
                 self.ensure_name(&name, binding);
             }
-            Expr::Subscript(ExprSubscript {
-                value: box Expr::Name(name),
-                ..
-            }) if self.is_literal(&name.id) => {
+            Expr::Subscript(ExprSubscript { value, .. }) if self.is_literal(value) => {
                 // Don't go inside a literal, since you might find strings which are really strings, not string-types
                 self.ensure_expr(x);
             }
             Expr::Subscript(ExprSubscript {
-                value: box Expr::Name(name),
+                value,
                 slice: box Expr::Tuple(tup),
                 ..
-            }) if self.is_annotated(&name.id) && !tup.is_empty() => {
+            }) if self.is_annotated(value) && !tup.is_empty() => {
                 // Only go inside the first argument to Annotated, the rest are non-type metadata.
-                self.ensure_type(&mut Expr::Name(name.clone()), tparams_builder);
+                self.ensure_type(&mut *value, tparams_builder);
                 self.ensure_type(&mut tup.elts[0], tparams_builder);
                 for e in tup.elts[1..].iter_mut() {
                     self.ensure_expr(e);
@@ -1664,10 +1662,10 @@ impl<'a> BindingsBuilder<'a> {
                 match &mut value {
                     Expr::Call(ExprCall {
                         range: _,
-                        func: box Expr::Name(type_var),
+                        func,
                         arguments,
-                    }) if self.is_type_var(&type_var.id) && !arguments.is_empty() => {
-                        self.ensure_expr(&Expr::Name(type_var.clone()));
+                    }) if self.is_type_var(func) && !arguments.is_empty() => {
+                        self.ensure_expr(func);
                         // The constraints (i.e., any positional arguments after the first)
                         // and some keyword arguments are types.
                         for arg in arguments.args.iter_mut().skip(1) {
@@ -1730,9 +1728,7 @@ impl<'a> BindingsBuilder<'a> {
 
                     let binding = if let Some(mut value) = value {
                         // Handle forward references in explicit type aliases.
-                        if let Expr::Name(name) = *x.annotation
-                            && self.is_type_alias(&name.id)
-                        {
+                        if self.is_type_alias(&x.annotation) {
                             self.ensure_type(&mut value, &mut None);
                         } else {
                             self.ensure_expr(&value);
