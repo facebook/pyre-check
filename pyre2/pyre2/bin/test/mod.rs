@@ -25,6 +25,7 @@ mod lsp;
 mod mro;
 mod narrow;
 mod operators;
+mod overload;
 mod perf;
 mod simple;
 mod stdlib;
