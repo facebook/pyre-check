@@ -1077,9 +1077,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .to_type()
             }
             // TODO: Zeina, here we must construct a ReturnAnnotation key and look it up. The lookup will panic if key is not found. Figure out how to handle the failure.
-            Binding::SendTypeOfYield(_) => Type::any_explicit(),
+            Binding::SendTypeOfYield(ann, range) => {
+                let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
+                match gen_ann {
+                    Some(gen_ann) => {
+                        let gen_type = gen_ann.get_type();
+
+                        if let Some((_, send_type, _)) = self.decompose_generator(gen_type) {
+                            send_type
+                        } else {
+                            self.error(*range, format!("Wrong yield annotation: `{gen_type}`"))
+                        }
+                    }
+
+                    None => Type::any_explicit(),
+                }
+            }
             Binding::ReturnExpr(ann, e, has_yields) => {
-                let ann = ann.map(|k| self.get_idx(k));
+                let ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
                 let hint = ann.as_ref().and_then(|x| x.ty.as_ref());
 
                 if *has_yields {

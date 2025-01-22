@@ -84,7 +84,7 @@ class Return: pass
 def my_generator(n: int) -> Generator[Yield, Send, Return]:
     s = yield Yield()
 
-    reveal_type(s) # E: revealed type: Any
+    reveal_type(s) # E: revealed type: Send
     return Return()
 
 "#,
@@ -97,9 +97,9 @@ testcase_with_bug!(
 from typing import Iterator, reveal_type
 
 def gen_numbers() -> Iterator[int]:
-    yield 1
-    yield 2
-    yield 3
+    yield 1 # E: Wrong yield annotation: `Iterator[int]`
+    yield 2 # E: Wrong yield annotation: `Iterator[int]`
+    yield 3 # E: Wrong yield annotation: `Iterator[int]`
 
 reveal_type(gen_numbers()) # E: revealed type: Iterator[int]
 
@@ -169,7 +169,7 @@ testcase_with_bug!(
 from typing import AsyncGenerator, reveal_type # E: Could not import `AsyncGenerator` from `typing`
 
 async def async_count_up_to() -> AsyncGenerator[int, None]:
-    yield 2
+    yield 2 # E: Wrong yield annotation: `Error
 
 reveal_type(async_count_up_to()) # E: revealed type: Coroutine[Unknown, Unknown, Error]
 

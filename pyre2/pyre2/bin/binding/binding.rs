@@ -343,7 +343,7 @@ pub enum Binding {
     /// The `bool` is whether the function has `yield` within it.
     ReturnExpr(Option<Idx<KeyAnnotation>>, Expr, bool),
     /// An expression returned from a function.
-    SendTypeOfYield(ShortIdentifier),
+    SendTypeOfYield(Option<Idx<KeyAnnotation>>, TextRange),
     /// A decorator application: the Key is the entity being decorated.
     DecoratorApplication(Box<Decorator>, Idx<Key>),
     /// A grouping of both the yield expression types and the return type.
@@ -457,8 +457,11 @@ impl DisplayWith<Bindings> for Binding {
                     iterable.display_with(ctx)
                 )
             }
-            self::Binding::SendTypeOfYield(x) => {
-                write!(f, "send type of yield {} {:?}", m.display(x), x.range())
+            self::Binding::SendTypeOfYield(Some(x), _) => {
+                write!(f, "annotation containing send type {}", ctx.display(*x))
+            }
+            self::Binding::SendTypeOfYield(None, _) => {
+                write!(f, "no annotation so send type is Any")
             }
             Self::IterableValue(None, x) => write!(f, "iter {}", m.display(x)),
             Self::IterableValue(Some(k), x) => {
