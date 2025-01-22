@@ -2159,6 +2159,29 @@ let test_callable_parameter_variadics =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              from typing import ParamSpec, Generic
+              P = ParamSpec("P")
+              class Foo(Generic[P]):
+                pass
+              def f(foo: Foo[...]) -> None:
+                return
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import ParamSpec, TypeVar, Generic
+              P = ParamSpec("P")
+              T = TypeVar("T")
+              class Foo(Generic[P, T]):
+                pass
+              def f(foo: Foo[..., object]) -> None:
+                return
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
               from typing import Callable, List, ParamSpec
               V = ParamSpec("V")
               def f(x: Callable[V, int]) -> Callable[V, List[int]]: ...

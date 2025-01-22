@@ -1029,8 +1029,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                               } )
                         else
                           [Type.Argument.Single given], None
-                    | ParamSpecPair (_, given), CallableParameters _ ->
-                        (* TODO(T47346673): accept w/ new kind of validation *)
+                    | ParamSpecPair (_, given), (CallableParameters _ | Single (Primitive "...")) ->
                         [CallableParameters given], None
                     | TypeVarTuplePair (_, given), Single (Tuple _) ->
                         Type.OrderedTypes.to_arguments given, None
