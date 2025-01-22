@@ -237,7 +237,11 @@ enum FlowStyle {
     /// The `ModuleName` will be the most recent entry.
     MergeableImport(ModuleName),
     /// Was I imported from somewhere (and if so, where)
+    /// E.g. `from foo import bar` would get `foo` here.
     Import(ModuleName),
+    /// Am I an alias for a module import, `import foo.bar as baz`
+    /// would get `foo.bar` here.
+    ImportAs(ModuleName),
 }
 
 #[derive(Debug, Clone)]
@@ -602,6 +606,7 @@ impl<'a> BindingsBuilder<'a> {
                 let flow = self.get_flow_info(&module.id)?;
                 match flow.style {
                     Some(FlowStyle::MergeableImport(m)) if special.defined_in(m) => Some(special),
+                    Some(FlowStyle::ImportAs(m)) if special.defined_in(m) => Some(special),
                     _ => None,
                 }
             }
@@ -2042,7 +2047,7 @@ impl<'a> BindingsBuilder<'a> {
                             self.bind_definition(
                                 &asname,
                                 Binding::Module(m, m.components(), None),
-                                None,
+                                Some(FlowStyle::ImportAs(m)),
                             );
                         }
                         None => {

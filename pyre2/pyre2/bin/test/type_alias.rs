@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_type_alias_simple,
@@ -155,13 +154,12 @@ y: x = C()
 "#,
 );
 
-testcase_with_bug!(
-    "should know this is a type alias",
+testcase!(
     test_type_alias_import_named,
     r#"
 import typing as tt
 class C: pass
-x: tt.TypeAlias = "C"  # E: Expected `x` to be a type alias
+x: tt.TypeAlias = "C"
 y: x = C()
 "#,
 );
