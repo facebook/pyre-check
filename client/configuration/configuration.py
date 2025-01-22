@@ -170,7 +170,6 @@ class PartialConfiguration:
     unwatched_dependency: Optional[unwatched.UnwatchedDependency] = None
     use_buck2: Optional[bool] = None
     version_hash: Optional[str] = None
-    use_errpy_parser: Optional[bool] = None
 
     @staticmethod
     def _get_extra_keys() -> Set[str]:
@@ -488,9 +487,6 @@ class PartialConfiguration:
                 unwatched_dependency=unwatched_dependency,
                 use_buck2=ensure_option_type(configuration_json, "use_buck2", bool),
                 version_hash=ensure_option_type(configuration_json, "version", str),
-                use_errpy_parser=ensure_option_type(
-                    configuration_json, "use_errpy_parser", bool
-                ),
             )
 
             # Check for unused keys
@@ -637,7 +633,6 @@ class Configuration:
     unwatched_dependency: Optional[unwatched.UnwatchedDependency] = None
     use_buck2: bool = True
     version_hash: Optional[str] = None
-    use_errpy_parser: bool = False
 
     @staticmethod
     def from_partial_configuration(
@@ -702,9 +697,6 @@ class Configuration:
                 partial_configuration.use_buck2, default=True
             ),
             version_hash=partial_configuration.version_hash,
-            use_errpy_parser=_get_optional_value(
-                partial_configuration.use_errpy_parser, default=False
-            ),
         )
 
     @property

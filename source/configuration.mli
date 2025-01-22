@@ -117,8 +117,6 @@ module Analysis : sig
 
   val default_include_suppressed_errors : bool
 
-  val default_use_errpy_parser : bool
-
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
@@ -148,7 +146,6 @@ module Analysis : sig
     enable_strict_override_check: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
-    use_errpy_parser: bool;
   }
 
   val create
@@ -181,7 +178,6 @@ module Analysis : sig
     ?enable_strict_override_check:bool ->
     ?enable_unawaited_awaitable_analysis:bool ->
     ?include_suppressed_errors:bool ->
-    ?use_errpy_parser:bool ->
     source_paths:SearchPath.t list ->
     unit ->
     t

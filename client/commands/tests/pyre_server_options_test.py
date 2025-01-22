@@ -63,7 +63,6 @@ class ServerOptionsTest(testslide.TestCase):
             strict_default=False,
             excludes=[],
             flavor=identifiers.PyreFlavor.CLASSIC,
-            using_errpy_parser=False,
         )
 
         self.assertEqual(result, expected)

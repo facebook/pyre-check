@@ -75,7 +75,6 @@ module InferConfiguration = struct
             remote_logging = _;
             profiling_output = _;
             memory_profiling_output = _;
-            use_errpy_parser;
           };
         _;
       }
@@ -108,7 +107,6 @@ module InferConfiguration = struct
       ~enable_strict_override_check
       ~enable_unawaited_awaitable_analysis
       ~include_suppressed_errors
-      ~use_errpy_parser
       ()
 end
 

@@ -81,7 +81,6 @@ module QueryConfiguration = struct
             remote_logging = _;
             profiling_output = _;
             memory_profiling_output = _;
-            use_errpy_parser;
           };
         query = _;
         no_validation_on_class_lookup_failure = _;
@@ -113,7 +112,6 @@ module QueryConfiguration = struct
       ~enable_strict_override_check
       ~enable_unawaited_awaitable_analysis
       ~include_suppressed_errors
-      ~use_errpy_parser
       ()
 end
 

@@ -362,8 +362,6 @@ module Analysis = struct
 
   let default_include_suppressed_errors = false
 
-  let default_use_errpy_parser = false
-
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
@@ -393,7 +391,6 @@ module Analysis = struct
     enable_strict_override_check: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
-    use_errpy_parser: bool;
   }
 
   let create
@@ -427,7 +424,6 @@ module Analysis = struct
       ?(enable_strict_override_check = default_enable_strict_override_check)
       ?(enable_unawaited_awaitable_analysis = default_enable_unawaited_awaitable_analysis)
       ?(include_suppressed_errors = default_include_suppressed_errors)
-      ?(use_errpy_parser = default_use_errpy_parser)
       ~source_paths
       ()
     =
@@ -484,7 +480,6 @@ module Analysis = struct
       enable_strict_override_check;
       enable_unawaited_awaitable_analysis;
       include_suppressed_errors;
-      use_errpy_parser;
     }
 
 

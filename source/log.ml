@@ -20,7 +20,6 @@ type section =
   | `Dump
   | `Environment
   | `Error
-  | `Errpy
   | `Event
   | `Fixpoint
   | `Infer
@@ -44,7 +43,6 @@ let section_to_string = function
   | `Dump -> "Dump"
   | `Environment -> "Environment"
   | `Error -> "Error"
-  | `Errpy -> "Errpy"
   | `Event -> "Event"
   | `Fixpoint -> "Fixpoint"
   | `Info -> "Info"

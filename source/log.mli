@@ -26,7 +26,6 @@ type section =
   | `Dump
   | `Environment
   | `Error
-  | `Errpy
   | `Event
   | `Fixpoint
   | `Info

@@ -46,7 +46,6 @@ DEFAULT_IS_STRICT = False
 DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
 DEFAULT_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
 DEFAULT_FILE_CONTENTS: str = "```\nfoo.Foo\n```"
-DEFAULT_USE_ERRPY_PARSER: bool = False
 DEFAULT_REQUEST_ID: int = 42
 DEFAULT_CONNECTION_STATUS: state.ConnectionStatus = state.ConnectionStatus.READY
 
@@ -59,7 +58,6 @@ def create_server_options(
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
     flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
-    use_errpy_parser: bool = DEFAULT_USE_ERRPY_PARSER,
 ) -> options.PyreServerOptions:
     return options.PyreServerOptions(
         frontend_configuration.DefaultServerStartCommand(binary),
@@ -69,7 +67,6 @@ def create_server_options(
         strict_default,
         excludes if excludes else [],
         flavor,
-        use_errpy_parser,
     )
 
 

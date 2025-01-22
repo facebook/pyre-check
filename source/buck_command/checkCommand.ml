@@ -37,7 +37,6 @@ let create_environment_controls ~root ~python_version ~system_platform () =
       ~enable_strict_override_check:false
       ~enable_unawaited_awaitable_analysis:true
       ~include_suppressed_errors:false
-      ~use_errpy_parser:false
       ~source_paths:[]
       ()
   in

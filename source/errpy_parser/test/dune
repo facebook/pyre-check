@@ -1,5 +1,0 @@
-(tests
- (names expressionTest statementTest locationTest)
- (preprocess
-  (pps ppx_compare ppx_sexp_conv ppx_sexp_message ppx_hash lwt_ppx))
- (libraries ounit2 pyrelib.test errpy pyreErrpyParser))

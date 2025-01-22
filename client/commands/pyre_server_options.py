@@ -45,7 +45,6 @@ class PyreServerOptions:
     strict_default: bool
     excludes: Sequence[str]
     flavor: identifiers.PyreFlavor
-    using_errpy_parser: bool
 
     def get_socket_path(self) -> Path:
         return daemon_socket.get_socket_path(
@@ -82,7 +81,6 @@ class PyreServerOptions:
             strict_default=configuration.is_strict(),
             excludes=configuration.get_excludes(),
             flavor=flavor,
-            using_errpy_parser=configuration.get_use_errpy_parser(),
         )
 
     @staticmethod

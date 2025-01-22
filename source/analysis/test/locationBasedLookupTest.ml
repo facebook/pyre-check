@@ -1799,7 +1799,7 @@ let _test_resolve_completions_for_symbol =
     =
     let type_environment =
       let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-        ScratchProject.setup ~context ["test.py", source] ~external_sources ~use_errpy_parser:true
+        ScratchProject.setup ~context ["test.py", source] ~external_sources
         |> ScratchProject.build_type_environment
       in
       type_environment

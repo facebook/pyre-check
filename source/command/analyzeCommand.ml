@@ -236,7 +236,6 @@ module AnalyzeConfiguration = struct
             remote_logging = _;
             profiling_output = _;
             memory_profiling_output = _;
-            use_errpy_parser;
           };
         dump_call_graph;
         dump_model_query_results;
@@ -308,7 +307,6 @@ module AnalyzeConfiguration = struct
         ~enable_strict_override_check
         ~enable_unawaited_awaitable_analysis
         ~include_suppressed_errors
-        ~use_errpy_parser
         ()
     in
     {

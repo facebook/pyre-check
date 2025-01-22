@@ -7,7 +7,7 @@
 
 (* Parsing: the core logic for converting a ModulePath to a parsed Source.t.
  *
- * The actual low-level parse is delegated to a parser implementation (e.g. Errpy),
+ * The actual low-level parse is delegated to a parser implementation (e.g. cpython),
  * but this module handles metadata and representing errors.
  *)
 
@@ -115,67 +115,11 @@ let parse_raw_code_with_cpython
   PyreCPythonParser.with_context parse
 
 
-let parse_raw_code_with_errpy ~configuration ({ ModulePath.qualifier; _ } as module_path) raw_code =
-  let timer = Timer.start () in
-  let log_errpy_ok ~recovered_count =
-    let integers = ["recovered_count", recovered_count] in
-    let normals =
-      match recovered_count with
-      | 0 -> []
-      | _ -> (
-          match Int.equal (Random.int 100) 0 with
-          | false -> []
-          | true ->
-              (*so as to avoid a torrent of data we only log 1/100 of the sources where there is
-                error recovery for the purposes of error recovery quality management *)
-              ["raw_code", raw_code])
-    in
-    Statistics.errpy_call ~flush:false ~name:"ok" ~timer ~integers ~normals ()
-  in
-  let log_errpy_error ~error_string =
-    Statistics.errpy_call
-      ~flush:true
-      ~name:"error"
-      ~timer
-      ~integers:[]
-      ~normals:["raw_code", raw_code; "error", error_string]
-      ()
-  in
-  let typecheck_flags = Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n') in
-  match PyreErrpyParser.parse_module raw_code with
-  | Ok statements ->
-      log_errpy_ok ~recovered_count:0;
-      Ok (create_source ~typecheck_flags ~module_path statements)
-  | Error parserError -> (
-      match parserError with
-      | Recoverable recoverable ->
-          log_errpy_ok ~recovered_count:(List.length recoverable.errors);
-          Ok (create_source ~typecheck_flags ~module_path recoverable.recovered_ast)
-      | Unrecoverable error_string ->
-          log_errpy_error ~error_string;
-          Error
-            (create_parse_error
-               ~configuration
-               ~typecheck_flags
-               ~module_path
-               ~line:1
-               ~column:1
-               ~end_line:1
-               ~end_column:1
-               ~message:error_string
-               ()))
-
-
 (* Parse the results of loading code, if no error. If there's any error (which could
  * happen either in parsing or upstream if we weren't able to load the code) represent
  * the error as a ParseError.t *)
 let parse_result_of_load_result ~controls module_path code_result =
   let configuration = EnvironmentControls.configuration controls in
-  let parse_raw_code =
-    match configuration with
-    | { use_errpy_parser = false; _ } -> parse_raw_code_with_cpython
-    | _ -> parse_raw_code_with_errpy
-  in
   let post_process_source source =
     let {
       Configuration.Analysis.python_version = { Configuration.PythonVersion.major; minor; micro };
@@ -196,7 +140,8 @@ let parse_result_of_load_result ~controls module_path code_result =
   in
   match code_result with
   | Ok raw_code ->
-      parse_raw_code ~configuration module_path raw_code |> Result.map ~f:post_process_source
+      parse_raw_code_with_cpython ~configuration module_path raw_code
+      |> Result.map ~f:post_process_source
   | Error load_error ->
       Error
         ParseResult.Error.

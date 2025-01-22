@@ -1,4 +1,0 @@
-(library
- (name pyreErrpyParser)
- (public_name pyrelib.pyreErrpyParser)
- (libraries base errpy pyrelib.ast))

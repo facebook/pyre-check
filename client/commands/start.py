@@ -179,7 +179,6 @@ class Arguments:
     skip_initial_type_check: bool = False
     use_lazy_module_tracking: bool = False
     analyze_external_sources: bool = False
-    use_errpy_parser: bool = False
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -206,7 +205,6 @@ class Arguments:
             "skip_initial_type_check": self.skip_initial_type_check,
             "use_lazy_module_tracking": self.use_lazy_module_tracking,
             "analyze_external_sources": self.analyze_external_sources,
-            "use_errpy_parser": self.use_errpy_parser,
         }
 
 
@@ -334,7 +332,6 @@ def create_server_arguments(
         else None
     )
 
-    use_errpy_parser = configuration.get_use_errpy_parser()
     return Arguments(
         base_arguments=backend_arguments.BaseArguments(
             log_path=str(log_directory),
@@ -388,7 +385,6 @@ def create_server_arguments(
             configuration.get_project_identifier(),
             flavor=start_arguments.flavor,
         ),
-        use_errpy_parser=use_errpy_parser,
     )
 
 

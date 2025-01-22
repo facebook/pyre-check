@@ -3192,7 +3192,6 @@ module ScratchProject = struct
       ?(populate_call_graph = false)
       ?(use_lazy_module_tracking = false)
       ?(no_validation_on_class_lookup_failure = false)
-      ?(use_errpy_parser = false)
       ?python_version
       ?system_platform
       ?debug
@@ -3239,7 +3238,6 @@ module ScratchProject = struct
           ~track_dependencies
           ~show_error_traces
           ~parallel:false
-          ~use_errpy_parser
           ~python_version:(Option.value python_version ~default:default_python_version)
           ?system_platform
           ?strict

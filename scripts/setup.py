@@ -13,7 +13,6 @@ as how to configure opam and then invoke dune for various flavors
 of builds.
 """
 
-
 import argparse
 import logging
 import os
@@ -23,7 +22,6 @@ from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Dict, List, Mapping, Optional, Tuple
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -46,7 +44,6 @@ DEPENDENCIES = [
     "ounit2-lwt.2.2.7",
     "pyre-ast.0.1.11",
     "mtime.1.4.0",
-    "errpy.0.0.9",
 ]
 
 
@@ -338,9 +335,7 @@ def full_setup(
     add_environment_variables: Optional[Mapping[str, str]] = None,
     rust_path: Optional[Path] = None,
 ) -> None:
-    opam_environment_variables: Mapping[
-        str, str
-    ] = _install_dependencies(
+    opam_environment_variables: Mapping[str, str] = _install_dependencies(
         opam_root,
         opam_version,
         add_environment_variables=add_environment_variables,
@@ -422,7 +417,13 @@ def setup(
     if parsed.configure:
         produce_dune_file(pyre_directory, build_type)
     else:
-        initialize_opam_switch(opam_root, opam_version, release, add_environment_variables, parsed.rust_path)
+        initialize_opam_switch(
+            opam_root,
+            opam_version,
+            release,
+            add_environment_variables,
+            parsed.rust_path,
+        )
         full_setup(
             opam_root,
             opam_version,

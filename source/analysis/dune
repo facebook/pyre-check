@@ -91,7 +91,6 @@
   pyrelib.dependencyTrackedMemory
   pyrelib.scheduler
   pyrelib.pyreMenhirParser
-  pyrelib.pyreErrpyParser
   pyrelib.pyreCPythonParser
   pyrelib.recognized
   pyrelib.statistics
