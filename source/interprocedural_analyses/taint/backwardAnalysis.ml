@@ -125,7 +125,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             FunctionContext.qualifier
             Location.pp
             location;
-          CallGraph.CallCallees.unresolved ()
+          CallGraph.CallCallees.unresolved
+            ~reason:CallGraph.Unresolved.NoRecordInCallGraph
+            ~message:"No record in call graph"
+            ()
     in
     log
       "Resolved callees for call `%a` at %a:@,%a"
@@ -941,7 +944,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     (* Apply an obscure call if the call was not fully resolved. *)
     let call_target_result =
-      if unresolved then
+      if CallGraph.Unresolved.is_unresolved unresolved then
         apply_obscure_call ~apply_tito ~callee ~arguments ~state:initial_state ~call_taint
         |> join_call_target_results call_target_result
       else

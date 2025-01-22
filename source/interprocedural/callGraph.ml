@@ -462,6 +462,47 @@ module ImplicitArgument = struct
       None
 end
 
+module Unresolved = struct
+  type bypassing_decorators =
+    | NonMethodAttribute
+    | CannotFindAttribute
+    | CannotResolveExports
+    | CannotFindParentClass
+    | UnknownBaseType
+    | UnknownCallCallee
+    | UnknownCalleeAST
+  [@@deriving eq, show]
+
+  type reason =
+    | BypassingDecorators of bypassing_decorators
+    | UnrecognizedCallee
+    | AnonymousCallableType
+    | UnknownConstructorCallable
+    | AnyTopCallableClass
+    | UnknownCallableProtocol
+    | UnknownCallableClass
+    | LambdaArgument
+    | NoRecordInCallGraph
+  [@@deriving eq, show]
+
+  type t =
+    | True of reason
+    | False
+  [@@deriving eq, show]
+
+  let is_unresolved = function
+    | True _ -> true
+    | False -> false
+
+
+  let join left right =
+    match left, right with
+    | True _, True _ -> left
+    | True _, False -> left
+    | False, True _ -> right
+    | False, False -> False
+end
+
 (** Information about an argument being a callable. *)
 module HigherOrderParameter = struct
   type t = {
@@ -469,7 +510,7 @@ module HigherOrderParameter = struct
     call_targets: CallTarget.t list;
     (* True if at least one callee could not be resolved.
      * Usually indicates missing type information at the call site. *)
-    unresolved: bool;
+    unresolved: Unresolved.t;
   }
   [@@deriving eq, show { with_path = false }]
 
@@ -483,7 +524,7 @@ module HigherOrderParameter = struct
     =
     Int.equal index_left index_right
     && List.equal CallTarget.equal_ignoring_types call_targets_left call_targets_right
-    && Bool.equal unresolved_left unresolved_right
+    && Unresolved.equal unresolved_left unresolved_right
 
 
   let join
@@ -493,7 +534,7 @@ module HigherOrderParameter = struct
     {
       index;
       call_targets = List.rev_append call_targets_left call_targets_right;
-      unresolved = unresolved_left || unresolved_right;
+      unresolved = Unresolved.join unresolved_left unresolved_right;
     }
 
 
@@ -503,7 +544,7 @@ module HigherOrderParameter = struct
 
   let to_json { index; call_targets; unresolved } =
     ["parameter_index", `Int index; "calls", `List (List.map ~f:CallTarget.to_json call_targets)]
-    |> JsonHelper.add_flag_if "unresolved" unresolved
+    |> JsonHelper.add_flag_if "unresolved" (Unresolved.is_unresolved unresolved)
     |> fun bindings -> `Assoc bindings
 end
 
@@ -578,7 +619,7 @@ module CallCallees = struct
     higher_order_parameters: HigherOrderParameterMap.t;
     (* True if at least one callee could not be resolved.
      * Usually indicates missing type information at the call site. *)
-    unresolved: bool;
+    unresolved: Unresolved.t;
   }
   [@@deriving eq, show { with_path = false }]
 
@@ -588,7 +629,7 @@ module CallCallees = struct
       ?(init_targets = [])
       ?(decorated_targets = [])
       ?(higher_order_parameters = HigherOrderParameterMap.empty)
-      ?(unresolved = false)
+      ?(unresolved = Unresolved.False)
       ()
     =
     {
@@ -601,28 +642,23 @@ module CallCallees = struct
     }
 
 
-  (* When `debug` is true, log the reason for creating `unresolved`. *)
-  let unresolved ?(debug = false) ?reason () =
-    let () =
-      match reason with
-      | Some reason when debug ->
-          (* Use `dump` so that the log can also be printed when testing. *)
-          Log.dump "Unresolved call: %s" reason
-      | _ -> ()
-    in
+  (* When `debug` is true, log the message. *)
+  let unresolved ?(debug = false) ~reason ~message () =
+    if debug then (* Use `dump` so that the log can also be printed when testing. *)
+      Log.dump "Unresolved call: %s" message;
     {
       call_targets = [];
       new_targets = [];
       init_targets = [];
       decorated_targets = [];
       higher_order_parameters = HigherOrderParameterMap.empty;
-      unresolved = true;
+      unresolved = Unresolved.True reason;
     }
 
 
-  let default_to_unresolved ?(debug = false) ?reason = function
+  let default_to_unresolved ?(debug = false) ~reason ~message = function
     | Some value -> value
-    | None -> unresolved ~debug ?reason ()
+    | None -> unresolved ~debug ~reason ~message ()
 
 
   let is_partially_resolved = function
@@ -662,7 +698,7 @@ module CallCallees = struct
     let higher_order_parameters =
       HigherOrderParameterMap.join left_higher_order_parameters right_higher_order_parameters
     in
-    let unresolved = left_unresolved || right_unresolved in
+    let unresolved = Unresolved.join left_unresolved right_unresolved in
     {
       call_targets;
       new_targets;
@@ -736,7 +772,7 @@ module CallCallees = struct
     && HigherOrderParameterMap.equal_ignoring_types
          higher_order_parameter_lefts
          higher_order_parameter_rights
-    && Bool.equal unresolved_left unresolved_right
+    && Unresolved.equal unresolved_left unresolved_right
 
 
   let is_method_of_class ~is_class_name callees =
@@ -837,7 +873,9 @@ module CallCallees = struct
       else
         bindings
     in
-    let bindings = JsonHelper.add_flag_if "unresolved" unresolved bindings in
+    let bindings =
+      JsonHelper.add_flag_if "unresolved" (Unresolved.is_unresolved unresolved) bindings
+    in
     `Assoc (List.rev bindings)
 
 
@@ -1845,7 +1883,8 @@ let rec resolve_callees_from_type
   | Type.Callable { kind = Anonymous; _ } ->
       CallCallees.unresolved
         ~debug
-        ~reason:(Format.asprintf "%s has kind `Anonymous`" callable_type_string)
+        ~message:(Format.asprintf "%s has kind `Anonymous`" callable_type_string)
+        ~reason:Unresolved.AnonymousCallableType
         ()
   | Type.Parametric { name = "BoundMethod"; arguments = [Single callable; Single receiver_type] } ->
       resolve_callees_from_type
@@ -1884,8 +1923,9 @@ let rec resolve_callees_from_type
       resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_indexer class_type
       |> CallCallees.default_to_unresolved
            ~debug
-           ~reason:
+           ~message:
              (Format.asprintf "Failed to resolve construct callees from %s" callable_type_string)
+           ~reason:Unresolved.UnknownConstructorCallable
   | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
          ignore it for now to make sure our constructor logic via `cls()` still works. *)
@@ -1899,10 +1939,11 @@ let rec resolve_callees_from_type
       | Type.Top ->
           CallCallees.unresolved
             ~debug
-            ~reason:
+            ~message:
               (Format.asprintf
                  "Resolved `Any` or `Top` when treating %s as callable class"
                  callable_type_string)
+            ~reason:Unresolved.AnyTopCallableClass
             ()
       (* Callable protocol. *)
       | Type.Callable { kind = Anonymous; _ } as resolved_dunder_call ->
@@ -1938,7 +1979,8 @@ let rec resolve_callees_from_type
                   ())
           |> CallCallees.default_to_unresolved
                ~debug
-               ~reason:(Format.asprintf "Failed to resolve protocol from %s" callable_type_string)
+               ~message:(Format.asprintf "Failed to resolve protocol from %s" callable_type_string)
+               ~reason:Unresolved.UnknownCallableProtocol
       | annotation ->
           if not dunder_call then
             resolve_callees_from_type
@@ -1953,10 +1995,11 @@ let rec resolve_callees_from_type
           else
             CallCallees.unresolved
               ~debug
-              ~reason:
+              ~message:
                 (Format.asprintf
                    "Failed to resolve %s as callable class, protocol, or a non dunder call."
                    callable_type_string)
+              ~reason:Unresolved.UnknownCallableClass
               ())
 
 
@@ -2046,7 +2089,7 @@ and resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_ind
              (init_callees.call_targets
              |> List.map ~f:set_return_type
              |> List.map ~f:unset_receiver_class)
-           ~unresolved:(new_callees.unresolved || init_callees.unresolved)
+           ~unresolved:(Unresolved.join new_callees.unresolved init_callees.unresolved)
            ())
 
 
@@ -2381,7 +2424,7 @@ let resolve_callee_ignoring_decorators
     else
       Format.ifprintf Format.err_formatter format
   in
-  let targets =
+  let result =
     match Node.value callee with
     | Expression.Name name when is_all_names (Node.value callee) -> (
         (* Resolving expressions that do not reference local variables or parameters. *)
@@ -2396,14 +2439,15 @@ let resolve_callee_ignoring_decorators
                 remaining = [];
                 _;
               }) ->
-            [
-              CallTargetIndexer.create_target
-                call_indexer
-                ~implicit_dunder_call:false
-                ~return_type:(Some (return_type ()))
-                (Target.Regular.Function { name = Reference.show name; kind = Normal }
-                |> Target.from_regular);
-            ]
+            Result.Ok
+              [
+                CallTargetIndexer.create_target
+                  call_indexer
+                  ~implicit_dunder_call:false
+                  ~return_type:(Some (return_type ()))
+                  (Target.Regular.Function { name = Reference.show name; kind = Normal }
+                  |> Target.from_regular);
+              ]
         | Some
             (PyrePysaLogic.ResolvedReference.ModuleAttribute
               {
@@ -2423,17 +2467,18 @@ let resolve_callee_ignoring_decorators
             |> function
             | Some { kind = Method { static; signatures; _ }; _ } ->
                 let is_class_method = contain_class_method signatures in
-                [
-                  CallTargetIndexer.create_target
-                    call_indexer
-                    ~implicit_dunder_call:false
-                    ~return_type:(Some (return_type ()))
-                    ~is_class_method
-                    ~is_static_method:static
-                    (Target.Regular.Method
-                       { Target.class_name; method_name = attribute; kind = Normal }
-                    |> Target.from_regular);
-                ]
+                Result.Ok
+                  [
+                    CallTargetIndexer.create_target
+                      call_indexer
+                      ~implicit_dunder_call:false
+                      ~return_type:(Some (return_type ()))
+                      ~is_class_method
+                      ~is_static_method:static
+                      (Target.Regular.Method
+                         { Target.class_name; method_name = attribute; kind = Normal }
+                      |> Target.from_regular);
+                  ]
             | Some attribute ->
                 let () =
                   log
@@ -2441,7 +2486,7 @@ let resolve_callee_ignoring_decorators
                     (PyrePysaLogic.ClassSummary.Attribute.show_attribute attribute)
                     (Expression.show callee)
                 in
-                []
+                Result.Error Unresolved.NonMethodAttribute
             | None ->
                 let () =
                   log
@@ -2449,14 +2494,14 @@ let resolve_callee_ignoring_decorators
                     attribute
                     (Expression.show callee)
                 in
-                [])
+                Result.Error Unresolved.CannotFindAttribute)
         | _ ->
             let () =
               log
                 "Bypassing decorators - Failed to resolve exports for callee `%s`"
                 (Expression.show callee)
             in
-            [])
+            Result.Error Unresolved.CannotResolveExports)
     | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
         (* Resolve `base.attribute` by looking up the type of `base` or the types of its parent
            classes in the Method Resolution Order. *)
@@ -2500,20 +2545,23 @@ let resolve_callee_ignoring_decorators
                   Type.Parametric
                     { name = "type"; arguments = [Single (Type.Primitive class_name)] }
                 in
-                Target.Regular.Method
-                  { Target.class_name = base_class; method_name = attribute; kind = Normal }
-                |> Target.from_regular
-                (* Over-approximately consider that any overriding method might be called. We
-                   prioritize reducing false negatives than reducing false positives. *)
-                |> compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type
-                |> List.map
-                     ~f:
-                       (CallTargetIndexer.create_target
-                          call_indexer
-                          ~implicit_dunder_call:false
-                          ~return_type:(Some (return_type ()))
-                          ~is_class_method
-                          ~is_static_method)
+                let targets =
+                  Target.Regular.Method
+                    { Target.class_name = base_class; method_name = attribute; kind = Normal }
+                  |> Target.from_regular
+                  (* Over-approximately consider that any overriding method might be called. We
+                     prioritize reducing false negatives than reducing false positives. *)
+                  |> compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type
+                  |> List.map
+                       ~f:
+                         (CallTargetIndexer.create_target
+                            call_indexer
+                            ~implicit_dunder_call:false
+                            ~return_type:(Some (return_type ()))
+                            ~is_class_method
+                            ~is_static_method)
+                in
+                Result.Ok targets
             | None ->
                 let () =
                   log
@@ -2522,7 +2570,7 @@ let resolve_callee_ignoring_decorators
                     class_name
                     attribute
                 in
-                [])
+                Result.Error Unresolved.CannotFindParentClass)
         | _type ->
             let () =
               log
@@ -2531,26 +2579,41 @@ let resolve_callee_ignoring_decorators
                 Expression.pp
                 callee
             in
-            [])
+            Result.Error Unresolved.UnknownBaseType)
+    | Expression.Call _ ->
+        let () =
+          log
+            "Bypassing decorators - Unknown call callee `%a`"
+            Expression.pp_expression
+            callee.Node.value
+        in
+        Result.Error Unresolved.UnknownCallCallee
     | _ ->
-        let () = log "Bypassing decorators - Unknown callee `%a`" Expression.pp callee in
-        []
+        let () =
+          log
+            "Bypassing decorators - Unknown callee AST `%a`"
+            Expression.pp_expression
+            callee.Node.value
+        in
+        Result.Error Unresolved.UnknownCalleeAST
   in
   let () =
-    match targets with
-    | [] when debug ->
+    match result with
+    | Result.Error reason when debug ->
         Log.dump
           "Bypassed decorators to resolve callees (using global resolution): Failed to resolve \
-           callee %a"
+           callee `%a` due to `%a`"
           Expression.pp
           callee
-    | targets when debug ->
+          Unresolved.pp_bypassing_decorators
+          reason
+    | Result.Ok targets when debug ->
         Log.dump
           "Bypassed decorators to resolve callees (using global resolution): `%s`"
           (targets |> List.map ~f:CallTarget.show |> String.concat ~sep:",")
     | _ -> ()
   in
-  targets
+  result
 
 
 let get_defining_attributes ~pyre_in_context ~base_type_info ~attribute =
@@ -2657,6 +2720,8 @@ let resolve_regular_callees
       ~return_type
       ~callee_type
     |> CallCallees.default_to_unresolved
+         ~reason:Unresolved.UnrecognizedCallee
+         ~message:"Unrecognized callee"
   in
   if CallCallees.is_partially_resolved recognized_callees then
     let () = log ~debug "Recognized special callee:@,`%a`" CallCallees.pp recognized_callees in
@@ -2687,8 +2752,12 @@ let resolve_regular_callees
         ~return_type
         callee
       |> function
-      | [] -> CallCallees.unresolved ()
-      | call_targets -> CallCallees.create ~call_targets ()
+      | Result.Ok call_targets -> CallCallees.create ~call_targets ()
+      | Result.Error reason ->
+          CallCallees.unresolved
+            ~reason:(Unresolved.BypassingDecorators reason)
+            ~message:"Bypassing decorators"
+            ()
 
 
 let as_identifier_reference ~define ~pyre_in_context expression =
@@ -2899,7 +2968,12 @@ let resolve_callees
       | { CallCallees.call_targets = _ :: _ as regular_targets; unresolved; _ }, _ ->
           Some { HigherOrderParameter.index; call_targets = regular_targets; unresolved }
       | _, { Node.value = Expression.Lambda _; _ } ->
-          Some { HigherOrderParameter.index; call_targets = []; unresolved = true }
+          Some
+            {
+              HigherOrderParameter.index;
+              call_targets = [];
+              unresolved = Unresolved.True LambdaArgument;
+            }
       | _ -> None
     in
     List.filter_mapi arguments ~f:get_higher_order_function_targets
@@ -3003,7 +3077,7 @@ module MissingFlowTypeAnalysis = struct
       ({ CallCallees.unresolved; call_targets; _ } as callees)
     =
     match missing_flow_type_analysis with
-    | Some { qualifier } when unresolved ->
+    | Some { qualifier } when Unresolved.is_unresolved unresolved ->
         (* TODO(T117715045): Move the target creation in `taint/missingFlow.ml`. *)
         let callee =
           match value with

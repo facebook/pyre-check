@@ -104,6 +104,36 @@ module ImplicitArgument : sig
   val implicit_argument : ?is_implicit_new:bool -> CallTarget.t -> t
 end
 
+module Unresolved : sig
+  type bypassing_decorators =
+    | NonMethodAttribute
+    | CannotFindAttribute
+    | CannotResolveExports
+    | CannotFindParentClass
+    | UnknownBaseType
+    | UnknownCallCallee
+    | UnknownCalleeAST
+  [@@deriving eq, show]
+
+  type reason =
+    | BypassingDecorators of bypassing_decorators
+    | UnrecognizedCallee
+    | AnonymousCallableType
+    | UnknownConstructorCallable
+    | AnyTopCallableClass
+    | UnknownCallableProtocol
+    | UnknownCallableClass
+    | LambdaArgument
+    | NoRecordInCallGraph
+
+  type t =
+    | True of reason
+    | False
+  [@@deriving eq, show]
+
+  val is_unresolved : t -> bool
+end
+
 (** Information about an argument being a callable. *)
 module HigherOrderParameter : sig
   type t = {
@@ -111,7 +141,7 @@ module HigherOrderParameter : sig
     call_targets: CallTarget.t list;
     (* True if at least one callee could not be resolved.
      * Usually indicates missing type information at the call site. *)
-    unresolved: bool;
+    unresolved: Unresolved.t;
   }
   [@@deriving eq, show]
 
@@ -151,7 +181,7 @@ module CallCallees : sig
     higher_order_parameters: HigherOrderParameterMap.t;
     (* True if at least one callee could not be resolved.
      * Usually indicates missing type information at the call site. *)
-    unresolved: bool;
+    unresolved: Unresolved.t;
   }
   [@@deriving eq, show]
 
@@ -161,12 +191,12 @@ module CallCallees : sig
     ?init_targets:CallTarget.t list ->
     ?decorated_targets:CallTarget.t list ->
     ?higher_order_parameters:HigherOrderParameterMap.t ->
-    ?unresolved:bool ->
+    ?unresolved:Unresolved.t ->
     unit ->
     t
 
-  (* When `debug` is true, log the reason for creating `unresolved`. *)
-  val unresolved : ?debug:bool -> ?reason:string -> unit -> t
+  (* When `debug` is true, log the message. *)
+  val unresolved : ?debug:bool -> reason:Unresolved.reason -> message:string -> unit -> t
 
   val is_partially_resolved : t -> bool
 

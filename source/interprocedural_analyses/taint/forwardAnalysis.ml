@@ -958,7 +958,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     (* Apply an obscure call if the call was not fully resolved. *)
     let taint, state =
-      if unresolved then
+      if CallGraph.Unresolved.is_unresolved unresolved then
         let obscure_taint, new_state =
           apply_obscure_call
             ~apply_tito
@@ -1080,20 +1080,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           get_attribute_access_callees ~location:callee.Node.location ~attribute |> Option.is_some
       | _ -> false
     in
+    let taint_on_self_and_callee () =
+      (* We need both the taint on self and on the whole callee. *)
+      analyze_callee ~pyre_in_context ~is_property_call ~state ~callee
+    in
     match callees, callee_is_property with
-    | _, true
-    | { CallGraph.CallCallees.unresolved = true; _ }, _
+    | _, true -> taint_on_self_and_callee ()
+    | { CallGraph.CallCallees.unresolved; _ }, _ when CallGraph.Unresolved.is_unresolved unresolved
+      ->
+        taint_on_self_and_callee ()
     | { CallGraph.CallCallees.new_targets = _ :: _; _ }, _
     | { CallGraph.CallCallees.init_targets = _ :: _; _ }, _ ->
-        (* We need both the taint on self and on the whole callee. *)
-        analyze_callee ~pyre_in_context ~is_property_call ~state ~callee
+        taint_on_self_and_callee ()
     | { CallGraph.CallCallees.call_targets; _ }, _
       when List.exists
              ~f:(fun { CallGraph.CallTarget.implicit_receiver; implicit_dunder_call; _ } ->
                implicit_receiver && implicit_dunder_call)
              call_targets ->
-        (* We need the taint on the whole callee. *)
-        analyze_callee ~pyre_in_context ~is_property_call ~state ~callee
+        taint_on_self_and_callee ()
     | { CallGraph.CallCallees.call_targets; _ }, _
       when List.exists
              ~f:(fun { CallGraph.CallTarget.implicit_receiver; _ } -> implicit_receiver)

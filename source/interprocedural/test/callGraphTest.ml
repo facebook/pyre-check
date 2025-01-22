@@ -1309,7 +1309,7 @@ let test_call_graph_of_define =
                                         (Target.Regular.Function
                                            { name = "test.bar"; kind = Normal });
                                     ];
-                                  unresolved = false;
+                                  unresolved = CallGraph.Unresolved.False;
                                 };
                               ])
                          ())) );
@@ -1368,7 +1368,7 @@ let test_call_graph_of_define =
                                         (Target.Regular.Function
                                            { name = "test.foo"; kind = Normal });
                                     ];
-                                  unresolved = false;
+                                  unresolved = CallGraph.Unresolved.False;
                                 };
                                 {
                                   index = 1;
@@ -1379,7 +1379,7 @@ let test_call_graph_of_define =
                                         (Target.Regular.Function
                                            { name = "test.bar"; kind = Normal });
                                     ];
-                                  unresolved = false;
+                                  unresolved = CallGraph.Unresolved.False;
                                 };
                               ])
                          ())) );
@@ -1453,7 +1453,7 @@ let test_call_graph_of_define =
                                              kind = Normal;
                                            });
                                     ];
-                                  unresolved = false;
+                                  unresolved = CallGraph.Unresolved.False;
                                 };
                               ])
                          ())) );
@@ -1488,7 +1488,13 @@ let test_call_graph_of_define =
                            ]
                          ~higher_order_parameters:
                            (HigherOrderParameterMap.from_list
-                              [{ index = 0; call_targets = []; unresolved = true }])
+                              [
+                                {
+                                  index = 0;
+                                  call_targets = [];
+                                  unresolved = CallGraph.Unresolved.True LambdaArgument;
+                                };
+                              ])
                          ())) );
              ]
            ();
@@ -1780,8 +1786,12 @@ let test_call_graph_of_define =
            ~expected:
              [
                ( "12:2-12:5",
-                 LocationCallees.Singleton (ExpressionCallees.from_call (CallCallees.unresolved ()))
-               );
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.unresolved
+                         ~reason:(CallGraph.Unresolved.BypassingDecorators UnknownCalleeAST)
+                         ~message:""
+                         ())) );
              ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
@@ -2349,8 +2359,12 @@ let test_call_graph_of_define =
            ~expected:
              [
                ( "8:9-8:22",
-                 LocationCallees.Singleton (ExpressionCallees.from_call (CallCallees.unresolved ()))
-               );
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.unresolved
+                         ~reason:(CallGraph.Unresolved.BypassingDecorators CannotFindParentClass)
+                         ~message:""
+                         ())) );
              ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
@@ -2520,7 +2534,7 @@ let test_call_graph_of_define =
                              CallTarget.create_regular
                                (Target.Regular.Function { name = "test.baz"; kind = Normal });
                            ]
-                         ~unresolved:true
+                         ~unresolved:(CallGraph.Unresolved.True AnonymousCallableType)
                          ())) );
              ]
            ();
@@ -2599,7 +2613,7 @@ let test_call_graph_of_define =
                              CallTarget.create_regular
                                (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
-                         ~unresolved:true
+                         ~unresolved:(CallGraph.Unresolved.True AnonymousCallableType)
                          ())) );
              ]
            ();
@@ -3083,7 +3097,7 @@ let test_call_graph_of_define =
                                              kind = Normal;
                                            });
                                     ];
-                                  unresolved = false;
+                                  unresolved = CallGraph.Unresolved.False;
                                 };
                               ])
                          ())) );
@@ -6077,7 +6091,7 @@ let test_call_graph_of_define_foo_and_bar =
                                         (Target.Regular.Function
                                            { name = "test.bar"; kind = Normal });
                                     ];
-                                  unresolved = false;
+                                  unresolved = CallGraph.Unresolved.False;
                                 };
                               ])
                          ())) );
@@ -6496,7 +6510,7 @@ let test_higher_order_call_graph_of_define =
                                         (Target.Regular.Function
                                            { name = "test.bar"; kind = Normal });
                                     ];
-                                  unresolved = false;
+                                  unresolved = CallGraph.Unresolved.False;
                                 };
                               ])
                          ())) );
@@ -6531,7 +6545,7 @@ let test_higher_order_call_graph_of_define =
                                         (Target.Regular.Function
                                            { name = "test.bar"; kind = Normal });
                                     ];
-                                  unresolved = false;
+                                  unresolved = CallGraph.Unresolved.False;
                                 };
                               ])
                          ())) );
@@ -6653,7 +6667,8 @@ let test_higher_order_call_graph_of_define =
                              CallTarget.create_regular
                                (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
-                         ~unresolved:true
+                         ~unresolved:
+                           (CallGraph.Unresolved.True (BypassingDecorators UnknownCalleeAST))
                          ())) );
              ]
            ~expected_returned_callables:
@@ -7019,7 +7034,7 @@ let test_resolve_decorator_callees =
                                              (Target.Regular.Function
                                                 { name = "test.foo"; kind = Normal });
                                          ];
-                                       unresolved = false;
+                                       unresolved = CallGraph.Unresolved.False;
                                      };
                                    ])
                               ()) );
@@ -7094,7 +7109,8 @@ let test_resolve_decorator_callees =
                          "test.decorator_factory(1, 2)",
                          ExpressionCallees.from_call
                            (CallCallees.create
-                              ~unresolved:true
+                              ~unresolved:
+                                (CallGraph.Unresolved.True (BypassingDecorators UnknownCallCallee))
                               ~higher_order_parameters:
                                 (HigherOrderParameterMap.from_list
                                    [
@@ -7106,7 +7122,7 @@ let test_resolve_decorator_callees =
                                              (Target.Regular.Function
                                                 { name = "test.foo"; kind = Normal });
                                          ];
-                                       unresolved = false;
+                                       unresolved = CallGraph.Unresolved.False;
                                      };
                                    ])
                               ()) );
@@ -7180,7 +7196,7 @@ let test_resolve_decorator_callees =
                                              (Target.Regular.Function
                                                 { name = "test.bar"; kind = Normal });
                                          ];
-                                       unresolved = false;
+                                       unresolved = CallGraph.Unresolved.False;
                                      };
                                    ])
                               ()) );
@@ -7188,7 +7204,8 @@ let test_resolve_decorator_callees =
                          "test.decorator_factory(1, test.bar)",
                          ExpressionCallees.from_call
                            (CallCallees.create
-                              ~unresolved:true
+                              ~unresolved:
+                                (CallGraph.Unresolved.True (BypassingDecorators UnknownCallCallee))
                               ~higher_order_parameters:
                                 (HigherOrderParameterMap.from_list
                                    [
@@ -7200,7 +7217,7 @@ let test_resolve_decorator_callees =
                                              (Target.Regular.Function
                                                 { name = "test.foo"; kind = Normal });
                                          ];
-                                       unresolved = false;
+                                       unresolved = CallGraph.Unresolved.False;
                                      };
                                    ])
                               ()) );
@@ -7299,7 +7316,7 @@ let test_resolve_decorator_callees =
                                                   kind = Normal;
                                                 });
                                          ];
-                                       unresolved = false;
+                                       unresolved = CallGraph.Unresolved.False;
                                      };
                                    ])
                               ()) );
@@ -7374,7 +7391,7 @@ let test_resolve_decorator_callees =
                                              (Target.Regular.Function
                                                 { name = "test.foo"; kind = Normal });
                                          ];
-                                       unresolved = false;
+                                       unresolved = CallGraph.Unresolved.False;
                                      };
                                    ])
                               ()) );
@@ -7446,7 +7463,7 @@ let test_resolve_decorator_callees =
                                                   kind = Normal;
                                                 });
                                          ];
-                                       unresolved = false;
+                                       unresolved = CallGraph.Unresolved.False;
                                      };
                                    ])
                               ()) );
@@ -7519,7 +7536,7 @@ let test_resolve_decorator_callees =
                                              (Target.Regular.Function
                                                 { name = "test.foo"; kind = Normal });
                                          ];
-                                       unresolved = false;
+                                       unresolved = CallGraph.Unresolved.False;
                                      };
                                    ])
                               ()) );
