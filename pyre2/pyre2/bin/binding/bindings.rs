@@ -19,6 +19,7 @@ use parse_display::Display;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::Comprehension;
+use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprBoolOp;
@@ -1088,6 +1089,23 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    fn decorators(
+        &mut self,
+        name: &Name,
+        mut current_name_key: Idx<Key>,
+        decorators: Vec<Decorator>,
+    ) {
+        // Handle decorators, which re-bind the name from the definition.
+        for decorator in decorators.into_iter().rev() {
+            self.ensure_expr(&decorator.expression);
+            current_name_key = self.table.insert(
+                Key::DecoratorApplication(decorator.range),
+                Binding::DecoratorApplication(Box::new(decorator), current_name_key),
+            );
+            self.bind_key(name, current_name_key, None);
+        }
+    }
+
     fn function_def(&mut self, mut x: StmtFunctionDef) {
         let body = mem::take(&mut x.body);
         let decorators = mem::take(&mut x.decorator_list);
@@ -1177,7 +1195,7 @@ impl<'a> BindingsBuilder<'a> {
                 .insert(method.name.id, method.instance_attributes);
         }
 
-        let mut current_name_key = self.bind_definition(
+        let current_name_key = self.bind_definition(
             &func_name,
             Binding::Function(Box::new(x), kind, legacy_tparams.into_boxed_slice()),
             None,
@@ -1234,20 +1252,12 @@ impl<'a> BindingsBuilder<'a> {
             Key::ReturnType(ShortIdentifier::new(&func_name)),
             return_type,
         );
-
-        // Handle decorators, which re-bind the name from the definition.
-        for decorator in decorators.into_iter().rev() {
-            self.ensure_expr(&decorator.expression);
-            current_name_key = self.table.insert(
-                Key::DecoratorApplication(decorator.range),
-                Binding::DecoratorApplication(Box::new(decorator), current_name_key),
-            );
-            self.bind_key(&func_name.id, current_name_key, None);
-        }
+        self.decorators(&func_name.id, current_name_key, decorators);
     }
 
     fn class_def(&mut self, mut x: StmtClassDef) {
         let body = mem::take(&mut x.body);
+        let decorators = mem::take(&mut x.decorator_list);
 
         self.scopes.push(Scope::class_body(x.name.clone()));
 
@@ -1390,8 +1400,9 @@ impl<'a> BindingsBuilder<'a> {
 
         let legacy_tparams = legacy_tparam_builder.lookup_keys(self);
 
-        self.bind_definition(
-            &x.name.clone(),
+        let name = x.name.clone();
+        let current_name_key = self.bind_definition(
+            &name,
             Binding::ClassDef(
                 Box::new((x, fields)),
                 bases.into_boxed_slice(),
@@ -1399,6 +1410,7 @@ impl<'a> BindingsBuilder<'a> {
             ),
             None,
         );
+        self.decorators(&name.id, current_name_key, decorators);
     }
 
     fn add_loop_exitpoint(&mut self, exit: LoopExit, range: TextRange) {

@@ -847,6 +847,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.as_call_target_or_error(ty, CallStyle::FreeForm, decorator.range)
         };
         let ty_decoratee = self.get_idx(*decoratee);
+        if matches!(ty_decoratee.as_ref(), Type::ClassDef(_)) {
+            // TODO: don't just ignore class decorators.
+            return ty_decoratee.arc_clone();
+        }
         let arg = CallArg::Type(ty_decoratee.as_ref(), decorator.range);
         self.call_infer(call_target, &[arg], &[], decorator.range)
     }
@@ -1215,7 +1219,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             .collect::<SmallMap<_, _>>();
                         ty.subst(&param_map)
                     }
-                    Type::ClassDef(cls) if cls == *self.stdlib.builtins_type().class_object() => {
+                    // Note that we have to check for `builtins.type` by name here because this code runs
+                    // when we're bootstrapping the stdlib and don't have access to class objects yet.
+                    Type::ClassDef(cls)
+                        if cls.qname().module.name().as_str() == "builtins"
+                            && cls.qname().name.id == "type" =>
+                    {
                         let targ = match xs.len() {
                             // This causes us to treat `type[list]` as equivalent to `type[list[Any]]`,
                             // which may or may not be what we want.
