@@ -234,7 +234,8 @@ enum FlowStyle {
     },
     /// Am I the result of an import (which needs merging).
     /// E.g. `import foo.bar` and `import foo.baz` need merging.
-    MergeableImport,
+    /// The `ModuleName` will be the most recent entry.
+    MergeableImport(ModuleName),
     /// Was I imported from somewhere (and if so, where)
     Import(ModuleName),
 }
@@ -579,12 +580,31 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn as_special_export(&self, e: &Expr) -> Option<SpecialExport> {
-        let name = &e.as_name_expr()?.id;
-        let special = SpecialExport::new(name)?;
-        let flow = self.get_flow_info(name)?;
-        match flow.style {
-            Some(FlowStyle::Import(m)) if special.defined_in(m) => Some(special),
-            _ if special.defined_in(self.module_info.name()) => Some(special),
+        // Only works for things with `Foo` or `source.Foo`.
+        // Does not work for things with nested modules - but no SpecialExport's have that.
+        match e {
+            Expr::Name(name) => {
+                let name = &name.id;
+                let special = SpecialExport::new(name)?;
+                let flow = self.get_flow_info(name)?;
+                match flow.style {
+                    Some(FlowStyle::Import(m)) if special.defined_in(m) => Some(special),
+                    _ if special.defined_in(self.module_info.name()) => Some(special),
+                    _ => None,
+                }
+            }
+            Expr::Attribute(ExprAttribute {
+                value: box Expr::Name(module),
+                attr: name,
+                ..
+            }) => {
+                let special = SpecialExport::new(&name.id)?;
+                let flow = self.get_flow_info(&module.id)?;
+                match flow.style {
+                    Some(FlowStyle::MergeableImport(m)) if special.defined_in(m) => Some(special),
+                    _ => None,
+                }
+            }
             _ => None,
         }
     }
@@ -2032,7 +2052,7 @@ impl<'a> BindingsBuilder<'a> {
                                 Some(flow_info)
                                     if matches!(
                                         flow_info.style,
-                                        Some(FlowStyle::MergeableImport)
+                                        Some(FlowStyle::MergeableImport(_))
                                     ) =>
                                 {
                                     Some(flow_info.key)
@@ -2043,7 +2063,7 @@ impl<'a> BindingsBuilder<'a> {
                                 Key::Import(first.clone(), x.name.range),
                                 Binding::Module(m, vec![first.clone()], module_key),
                             );
-                            self.bind_key(&first, key, Some(FlowStyle::MergeableImport));
+                            self.bind_key(&first, key, Some(FlowStyle::MergeableImport(m)));
                         }
                     }
                 }

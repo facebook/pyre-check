@@ -145,13 +145,12 @@ y: x = C()
 "#,
 );
 
-testcase_with_bug!(
-    "should know this is a type alias",
+testcase!(
     test_type_alias_import_module,
     r#"
 import typing
 class C: pass
-x: typing.TypeAlias = "C"  # E: Expected `x` to be a type alias
+x: typing.TypeAlias = "C"
 y: x = C()
 "#,
 );
