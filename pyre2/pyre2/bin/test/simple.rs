@@ -945,3 +945,15 @@ class A: pass
 assert_type(A, type[A])
     "#,
 );
+
+testcase!(
+    test_literal_string_after_if,
+    r#"
+from typing import Literal
+
+if True:
+    pass
+
+x: Literal["little", "big"] = "big"
+"#,
+);

@@ -2307,6 +2307,11 @@ impl<'a> BindingsBuilder<'a> {
         name: &Name,
         is_loop: bool,
     ) -> Option<FlowStyle> {
+        if styles.len() == 1 {
+            return styles.first().unwrap().cloned();
+        }
+
+        // The only distinct styles we can meaningfully merge are annotations
         let unordered_anns: SmallSet<Option<Idx<KeyAnnotation>>> =
             styles.iter().map(|x| x.as_ref()?.ann()).collect();
         let mut anns = unordered_anns
