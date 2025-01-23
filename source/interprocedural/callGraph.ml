@@ -31,9 +31,9 @@ module JsonHelper = struct
     | None -> bindings
 
 
-  let add_flag_if name condition bindings =
+  let add_flag_if name value condition bindings =
     if condition then
-      (name, `Bool true) :: bindings
+      (name, value) :: bindings
     else
       bindings
 
@@ -409,12 +409,12 @@ module CallTarget = struct
       }
     =
     ["index", `Int index; "target", `String (Target.external_name target)]
-    |> JsonHelper.add_flag_if "implicit_receiver" implicit_receiver
-    |> JsonHelper.add_flag_if "implicit_dunder_call" implicit_dunder_call
+    |> JsonHelper.add_flag_if "implicit_receiver" (`Bool true) implicit_receiver
+    |> JsonHelper.add_flag_if "implicit_dunder_call" (`Bool true) implicit_dunder_call
     |> JsonHelper.add_optional "return_type" return_type ReturnType.to_json
     |> JsonHelper.add_optional "receiver_class" receiver_class (fun name -> `String name)
-    |> JsonHelper.add_flag_if "is_class_method" is_class_method
-    |> JsonHelper.add_flag_if "is_static_method" is_static_method
+    |> JsonHelper.add_flag_if "is_class_method" (`Bool true) is_class_method
+    |> JsonHelper.add_flag_if "is_static_method" (`Bool true) is_static_method
     |> fun bindings -> `Assoc (List.rev bindings)
 
 
@@ -472,7 +472,7 @@ module Unresolved = struct
     | UnknownCallCallee
     | UnknownIdentifierCallee
     | UnknownCalleeAST
-  [@@deriving eq, show]
+  [@@deriving eq, show, to_yojson]
 
   type reason =
     | BypassingDecorators of bypassing_decorators
@@ -484,7 +484,7 @@ module Unresolved = struct
     | UnknownCallableClass
     | LambdaArgument
     | NoRecordInCallGraph
-  [@@deriving eq, show]
+  [@@deriving eq, show, to_yojson]
 
   type t =
     | True of reason
@@ -502,6 +502,11 @@ module Unresolved = struct
     | True _, False -> left
     | False, True _ -> right
     | False, False -> False
+
+
+  let to_json = function
+    | True reason -> reason_to_yojson reason
+    | False -> `Bool false
 end
 
 (** Information about an argument being a callable. *)
@@ -545,7 +550,10 @@ module HigherOrderParameter = struct
 
   let to_json { index; call_targets; unresolved } =
     ["parameter_index", `Int index; "calls", `List (List.map ~f:CallTarget.to_json call_targets)]
-    |> JsonHelper.add_flag_if "unresolved" (Unresolved.is_unresolved unresolved)
+    |> JsonHelper.add_flag_if
+         "unresolved"
+         (Unresolved.to_json unresolved)
+         (Unresolved.is_unresolved unresolved)
     |> fun bindings -> `Assoc bindings
 end
 
@@ -875,7 +883,11 @@ module CallCallees = struct
         bindings
     in
     let bindings =
-      JsonHelper.add_flag_if "unresolved" (Unresolved.is_unresolved unresolved) bindings
+      JsonHelper.add_flag_if
+        "unresolved"
+        (Unresolved.to_json unresolved)
+        (Unresolved.is_unresolved unresolved)
+        bindings
     in
     `Assoc (List.rev bindings)
 
@@ -987,7 +999,7 @@ module AttributeAccessCallees = struct
     |> JsonHelper.add_list "properties" property_targets CallTarget.to_json
     |> JsonHelper.add_list "globals" global_targets CallTarget.to_json
     |> JsonHelper.add_list "callables" callable_targets CallTarget.to_json
-    |> JsonHelper.add_flag_if "is_attribute" is_attribute
+    |> JsonHelper.add_flag_if "is_attribute" (`Bool true) is_attribute
     |> fun bindings -> `Assoc (List.rev bindings)
 
 
