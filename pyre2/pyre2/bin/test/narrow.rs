@@ -478,6 +478,17 @@ def f(x: int | list[int]):
 );
 
 testcase!(
+    test_isinstance_aliased,
+    r#"
+from typing import assert_type
+istype = isinstance
+def f(x: int | str):
+    if istype(x, int):
+        assert_type(x, int)
+    "#,
+);
+
+testcase!(
     test_guarded_attribute_access_and,
     r#"
 class A:

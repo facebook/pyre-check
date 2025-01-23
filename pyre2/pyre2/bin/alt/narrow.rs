@@ -7,7 +7,6 @@
 
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Arguments;
-use ruff_python_ast::Expr;
 use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
@@ -64,25 +63,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn resolve_narrowing_call(&self, func: &NarrowVal, args: &Arguments) -> Option<NarrowOp> {
-        // TODO: do something more reliable than matching on the name.
-        if let NarrowVal::Expr(box Expr::Name(name)) = func
-            && args.args.len() > 1
+        let func_ty = self.narrow_val_infer(func);
+        if args.args.len() > 1
+            && let Type::Callable(_, Some(box (module, name))) = &func_ty
         {
             let second_arg = &args.args[1];
-            let op = match name.id.as_str() {
-                "isinstance" => Some(NarrowOp::IsInstance(NarrowVal::Expr(Box::new(
-                    second_arg.clone(),
-                )))),
-                "issubclass" => Some(NarrowOp::IsSubclass(NarrowVal::Expr(Box::new(
-                    second_arg.clone(),
-                )))),
+            let op = match (module.as_str(), name.as_str()) {
+                ("builtins", "isinstance") => Some(NarrowOp::IsInstance(NarrowVal::Expr(
+                    Box::new(second_arg.clone()),
+                ))),
+                ("builtins", "issubclass") => Some(NarrowOp::IsSubclass(NarrowVal::Expr(
+                    Box::new(second_arg.clone()),
+                ))),
                 _ => None,
             };
             if op.is_some() {
                 return op;
             }
         }
-        let func_ty = self.narrow_val_infer(func);
         func_ty
             .as_typeguard()
             .map(|t| NarrowOp::TypeGuard(t.clone()))
