@@ -28,7 +28,6 @@ use ruff_python_ast::ExprLambda;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprSubscript;
-use ruff_python_ast::ExprYield;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Parameters;
 use ruff_python_ast::Pattern;
@@ -149,7 +148,7 @@ struct BindingsBuilder<'a> {
     /// Accumulate all the return statements
     returns: Vec<StmtReturn>,
     /// Accumulate all the yield statements
-    yields: Vec<ExprYield>,
+    yields: Vec<Expr>,
     table: BindingTable,
 }
 
@@ -811,8 +810,8 @@ impl<'a> BindingsBuilder<'a> {
                 self.bind_lambda(x);
                 true
             }
-            Expr::Yield(y) => {
-                self.yields.push(y.clone());
+            Expr::Yield(_) => {
+                self.yields.push(x.clone());
                 false
             }
             _ => false,
@@ -1281,7 +1280,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.table.insert(
                     Key::SendTypeOfYield(x.range()),
                     // collect the value of the yield expression.
-                    Binding::SendTypeOfYield(return_ann, x.range),
+                    Binding::SendTypeOfYield(return_ann, x.range()),
                 );
             }
             let yield_type = Binding::phi(yield_expr_keys);
@@ -2501,9 +2500,13 @@ fn return_expr(x: StmtReturn) -> Expr {
     }
 }
 
-fn yield_expr(x: ExprYield) -> Expr {
-    match x.value {
-        Some(x) => *x,
-        None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range }),
+fn yield_expr(x: Expr) -> Expr {
+    match x {
+        Expr::Yield(x) => match x.value {
+            Some(x) => *x,
+            None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range() }),
+        },
+        // This case should be unreachable.
+        _ => unreachable!("yield or yield from expression expected"),
     }
 }
