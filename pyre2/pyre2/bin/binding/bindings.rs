@@ -245,6 +245,15 @@ enum FlowStyle {
     ImportAs(ModuleName),
 }
 
+impl FlowStyle {
+    fn ann(&self) -> Option<Idx<KeyAnnotation>> {
+        match self {
+            FlowStyle::Annotated { ann, .. } => Some(*ann),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct FlowInfo {
     key: Idx<Key>,
@@ -267,10 +276,7 @@ impl FlowInfo {
     }
 
     fn ann(&self) -> Option<Idx<KeyAnnotation>> {
-        match self.style.as_ref()? {
-            FlowStyle::Annotated { ann, .. } => Some(*ann),
-            _ => None,
-        }
+        self.style.as_ref()?.ann()
     }
 
     fn is_initialized(&self) -> bool {
