@@ -73,15 +73,15 @@ assert_type(decorated, Callable[[int], list[set[str]]])
 );
 
 testcase_with_bug!(
-    "This should typecheck without error",
+    "TODO: why don't the asserted types match?",
     test_callable_instance,
     r#"
 from typing import assert_type, Callable
 class im_callable:
     def __call__[T](self, arg: T, /) -> T: ...
-@im_callable()  # E: Expected a callable, got im_callable
+@im_callable()
 def f(x: int) -> int:
     return x
-assert_type(f, Callable[[int], int])  # E: assert_type
+assert_type(f, Callable[[int], int])  # E: assert_type(Callable[[int], int], Callable[[int], int])
     "#,
 );

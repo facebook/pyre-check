@@ -288,6 +288,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::Any(style) => Some((Vec::new(), CallTarget::any(style))),
             Type::TypeAlias(ta) => self.as_call_target(ta.as_value(self.stdlib)),
+            Type::ClassType(cls) => self
+                .get_instance_attribute(&cls, &dunder::CALL)
+                .and_then(|a| self.as_call_target(a.value)),
             _ => None,
         }
     }
