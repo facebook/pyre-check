@@ -2320,7 +2320,7 @@ impl<'a> BindingsBuilder<'a> {
                 SmallSet<Option<Idx<KeyAnnotation>>>,
             ) = visible_branches
                 .iter()
-                .flat_map(|x| x.info.get(name.key()).cloned().map(|x| (x.key, x.ann())))
+                .flat_map(|x| x.info.get(name.key()).map(|x| (x.key, x.ann())))
                 .unzip();
             let mut anns = unordered_anns
                 .into_iter()
