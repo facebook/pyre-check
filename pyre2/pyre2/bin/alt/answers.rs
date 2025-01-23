@@ -1087,7 +1087,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         if let Some((_, send_type, _)) = self.decompose_generator(gen_type) {
                             send_type
                         } else {
-                            self.error(*range, format!("Wrong yield annotation: `{gen_type}`"))
+                            self.error(*range, format!("Yield expression found but the function has an incompatible annotation `{gen_type}`"))
                         }
                     }
 

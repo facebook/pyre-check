@@ -169,7 +169,7 @@ testcase_with_bug!(
 from typing import AsyncGenerator, reveal_type # E: Could not import `AsyncGenerator` from `typing`
 
 async def async_count_up_to() -> AsyncGenerator[int, None]:
-    yield 2 # E: Wrong yield annotation: `Error
+    yield 2 # E: Yield expression found but the function has an incompatible annotation `Error`
 
 reveal_type(async_count_up_to()) # E: revealed type: Coroutine[Unknown, Unknown, Error]
 
