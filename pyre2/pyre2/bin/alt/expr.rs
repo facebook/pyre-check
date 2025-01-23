@@ -193,9 +193,11 @@ impl CallArgPreEval<'_> {
 /// e.g., `__new__` followed by `__init__` for Class.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum CallTarget {
+    /// A thing whose type is a Callable, usually a function.
     Callable(Callable),
     /// Method of a class. The `Type` is the self/cls argument.
     BoundMethod(Type, Callable),
+    /// A class object.
     Class(ClassType),
 }
 
