@@ -224,7 +224,7 @@ struct Flow {
     no_next: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum FlowStyle {
     /// The annotation associated with this key, if any.
     /// If there is one, all subsequent bindings must obey this annotation.
@@ -2321,13 +2321,13 @@ impl<'a> BindingsBuilder<'a> {
             .collect::<SmallSet<_>>();
         let mut res = SmallMap::with_capacity(names.len());
         for name in names.into_iter() {
-            let (values, unordered_anns): (
-                SmallSet<Idx<Key>>,
-                SmallSet<Option<Idx<KeyAnnotation>>>,
-            ) = visible_branches
-                .iter()
-                .flat_map(|x| x.info.get(name.key()).map(|x| (x.key, x.ann())))
-                .unzip();
+            let (values, styles): (SmallSet<Idx<Key>>, SmallSet<Option<&FlowStyle>>) =
+                visible_branches
+                    .iter()
+                    .flat_map(|x| x.info.get(name.key()).map(|x| (x.key, x.style.as_ref())))
+                    .unzip();
+            let unordered_anns: SmallSet<Option<Idx<KeyAnnotation>>> =
+                styles.iter().map(|x| x.as_ref()?.ann()).collect();
             let mut anns = unordered_anns
                 .into_iter()
                 .flatten()
