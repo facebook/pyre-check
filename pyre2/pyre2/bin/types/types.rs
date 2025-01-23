@@ -592,6 +592,14 @@ impl Type {
         })
     }
 
+    pub fn anon_callables(self) -> Self {
+        self.transform(|ty| {
+            if let Type::Callable(_, name @ Some(_)) = ty {
+                *name = None;
+            }
+        })
+    }
+
     /// Used prior to display to ensure unique variables don't leak out non-deterministically.
     pub fn deterministic_printing(self) -> Self {
         self.transform(|ty| {

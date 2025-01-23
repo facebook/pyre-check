@@ -65,6 +65,7 @@ use crate::table_try_for_each;
 use crate::type_order::TypeOrder;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
+use crate::types::callable::Callable;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
@@ -1409,7 +1410,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .iter()
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
                 tparams.extend(legacy_tparams);
-                let callable = Type::callable(params, ret);
+                let callable = Type::Callable(
+                    Box::new(Callable::list(params, ret)),
+                    Some(Box::new((self.module_info().name(), x.name.id.clone()))),
+                );
                 callable.forall(self.type_params(x.range, tparams))
             }
             Binding::Import(m, name) => self

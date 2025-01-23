@@ -1108,11 +1108,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let a = self.expr_infer(expr_a);
                     let b = self.expr_untype(expr_b);
                     let a = self.canonicalize_all_class_types(
-                        self.solver().deep_force(a).explicit_any(),
+                        self.solver().deep_force(a).explicit_any().anon_callables(),
                         expr_a.range(),
                     );
                     let b = self.canonicalize_all_class_types(
-                        self.solver().deep_force(b).explicit_any(),
+                        self.solver().deep_force(b).explicit_any().anon_callables(),
                         expr_b.range(),
                     );
                     if a != b {
