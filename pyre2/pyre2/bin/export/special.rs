@@ -19,6 +19,9 @@ pub enum SpecialExport {
     TypeVar,
     Annotated,
     Literal,
+    Enum,
+    StrEnum,
+    IntEnum,
 }
 
 impl SpecialExport {
@@ -28,6 +31,9 @@ impl SpecialExport {
             "TypeVar" => Some(Self::TypeVar),
             "Annotated" => Some(Self::Annotated),
             "Literal" => Some(Self::Literal),
+            "Enum" => Some(Self::Enum),
+            "StrEnum" => Some(Self::StrEnum),
+            "IntEnum" => Some(Self::IntEnum),
             _ => None,
         }
     }
@@ -37,6 +43,7 @@ impl SpecialExport {
             Self::TypeAlias | Self::TypeVar | Self::Annotated | Self::Literal => {
                 matches!(m.as_str(), "typing" | "typing_extensions")
             }
+            Self::Enum | Self::StrEnum | Self::IntEnum => matches!(m.as_str(), "enum"),
         }
     }
 }

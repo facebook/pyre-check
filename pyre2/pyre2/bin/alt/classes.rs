@@ -247,6 +247,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
+    pub fn functional_class_definition(&self, name: &Identifier, fields: &SmallSet<Name>) -> Class {
+        Class::new(
+            name.clone(),
+            self.module_info().dupe(),
+            TParams::default(),
+            fields.clone(),
+        )
+    }
+
     /// This helper deals with special cases where we want to intercept an `Expr`
     /// manually and create a special variant of `BaseClass` instead of calling
     /// `expr_untype` and creating a `BaseClass::Type`.

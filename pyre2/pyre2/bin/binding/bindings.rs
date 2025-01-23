@@ -75,6 +75,7 @@ use crate::binding::narrow::NarrowVal;
 use crate::binding::table::TableKeyed;
 use crate::binding::util::is_ellipse;
 use crate::binding::util::is_never;
+use crate::binding::util::is_valid_identifier;
 use crate::config::Config;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
@@ -628,6 +629,13 @@ impl<'a> BindingsBuilder<'a> {
 
     fn is_literal(&self, e: &Expr) -> bool {
         self.as_special_export(e) == Some(SpecialExport::Literal)
+    }
+
+    fn is_enum(&self, name: &Expr) -> bool {
+        match self.as_special_export(name) {
+            Some(SpecialExport::Enum | SpecialExport::IntEnum | SpecialExport::StrEnum) => true,
+            _ => false,
+        }
     }
 
     fn error(&self, range: TextRange, msg: String) {
@@ -1447,6 +1455,66 @@ impl<'a> BindingsBuilder<'a> {
         self.decorators(&name.id, current_name_key, decorators);
     }
 
+    fn synthesize_enum_def(
+        &mut self,
+        class_name: Identifier,
+        base_name: ExprName,
+        members: &[Expr],
+    ) {
+        let definition_key = self
+            .table
+            .types
+            .0
+            .insert(Key::Definition(ShortIdentifier::new(&class_name)));
+        self.table.insert(
+            KeyClassMetadata(ShortIdentifier::new(&class_name)),
+            BindingClassMetadata(definition_key, vec![Expr::Name(base_name)], vec![]),
+        );
+        let mut fields = SmallSet::new();
+        match members {
+            // Enum('Color5', 'RED, GREEN, BLUE')
+            // Enum('Color6', 'RED GREEN BLUE')
+            [Expr::StringLiteral(x)] => {
+                let s = x.value.to_str();
+                let parts: Vec<&str> = if s.contains(',') {
+                    s.split(',').map(str::trim).collect()
+                } else {
+                    s.split_whitespace().collect()
+                };
+                for member in parts {
+                    if is_valid_identifier(member) {
+                        let member_name = Name::new(member);
+                        fields.insert(member_name.clone());
+                        self.table.insert(
+                            KeyClassField(ShortIdentifier::new(&class_name), member_name.clone()),
+                            BindingClassField {
+                                class: definition_key,
+                                name: member_name,
+                                value: Binding::AnyType(AnyStyle::Implicit),
+                                annotation: None,
+                                range: x.range(),
+                                initialization: ClassFieldInitialization::Class,
+                            },
+                        );
+                    } else {
+                        self.error(x.range, format!("{member} is not a valid identifier"))
+                    }
+                }
+            }
+            _ => self.error(class_name.range, "TODO enum functional syntax".to_string()),
+        }
+        let self_binding = Binding::SelfType(definition_key);
+        self.table.insert(
+            Key::SelfType(ShortIdentifier::new(&class_name)),
+            self_binding,
+        );
+        self.bind_definition(
+            &class_name,
+            Binding::FunctionalClassDef(class_name.clone(), fields),
+            None,
+        );
+    }
+
     fn add_loop_exitpoint(&mut self, exit: LoopExit, range: TextRange) {
         let scope = self.scopes.last_mut();
         let flow = scope.flow.clone();
@@ -1688,8 +1756,9 @@ impl<'a> BindingsBuilder<'a> {
                     None
                 };
                 let mut value = *x.value;
-                // Handle forward references in a TypeVar call.
+                let mut is_synthesized_class = false;
                 match &mut value {
+                    // Handle forward references in a TypeVar call.
                     Expr::Call(ExprCall {
                         range: _,
                         func,
@@ -1711,18 +1780,40 @@ impl<'a> BindingsBuilder<'a> {
                             }
                         }
                     }
+                    Expr::Call(ExprCall {
+                        range: _,
+                        func: box ref func @ Expr::Name(ref base_name),
+                        arguments,
+                    }) if self.is_enum(func)
+                        && arguments.keywords.is_empty()
+                        && let Some(ref name) = name =>
+                    {
+                        self.ensure_expr(func);
+                        for arg in arguments.args.iter_mut() {
+                            self.ensure_expr(arg);
+                        }
+                        // Use the variable name, not the string literal argument
+                        self.synthesize_enum_def(
+                            Identifier::new(name.clone(), x.targets[0].range()),
+                            base_name.clone(),
+                            &arguments.args[1..],
+                        );
+                        is_synthesized_class = true;
+                    }
                     _ => self.ensure_expr(&value),
                 }
-                for target in x.targets {
-                    let make_binding = |k: Option<Idx<KeyAnnotation>>| {
-                        if let Some(name) = &name {
-                            Binding::NameAssign(name.clone(), k, Box::new(value.clone()))
-                        } else {
-                            Binding::Expr(k, value.clone())
-                        }
-                    };
-                    self.bind_target(&target, &make_binding);
-                    self.ensure_expr(&target);
+                if !is_synthesized_class {
+                    for target in x.targets {
+                        let make_binding = |k: Option<Idx<KeyAnnotation>>| {
+                            if let Some(name) = &name {
+                                Binding::NameAssign(name.clone(), k, Box::new(value.clone()))
+                            } else {
+                                Binding::Expr(k, value.clone())
+                            }
+                        };
+                        self.bind_target(&target, &make_binding);
+                        self.ensure_expr(&target);
+                    }
                 }
             }
             Stmt::AugAssign(x) => {

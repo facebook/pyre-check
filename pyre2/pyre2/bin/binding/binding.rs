@@ -392,6 +392,7 @@ pub enum Binding {
         Box<[Expr]>,
         Box<[Idx<KeyLegacyTypeParam>]>,
     ),
+    FunctionalClassDef(Identifier, SmallSet<Name>),
     /// The Self type for a class, must point at a class.
     SelfType(Idx<Key>),
     /// A forward reference to another binding.
@@ -523,6 +524,7 @@ impl DisplayWith<Bindings> for Binding {
             Self::Function(x, _, _) => write!(f, "def {}", x.name.id),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::ClassDef(box (c, _), _, _) => write!(f, "class {}", c.name.id),
+            Self::FunctionalClassDef(x, _) => write!(f, "class {}", x.id),
             Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
             Self::AugAssign(s) => write!(f, "augmented_assign {:?}", s),

@@ -69,6 +69,20 @@ assert_type(Color.RED, Literal[Color.RED])
 );
 
 testcase!(
+    test_enum_functional,
+    r#"
+from typing import assert_type, Literal
+from enum import Enum
+
+Color5 = Enum('Color5', 'RED, GREEN, BLUE')
+Color6 = Enum('Color6', 'RED GREEN BLUE')
+
+assert_type(Color5.RED, Literal[Color5.RED])
+assert_type(Color6.RED, Literal[Color6.RED])
+"#,
+);
+
+testcase!(
     test_iterate,
     r#"
 from typing import assert_type

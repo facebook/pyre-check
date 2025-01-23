@@ -1422,6 +1422,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::ClassDef(box (x, fields), bases, legacy_tparams) => {
                 Type::ClassDef(self.class_definition(x, fields.clone(), bases, legacy_tparams))
             }
+            Binding::FunctionalClassDef(x, fields) => {
+                Type::ClassDef(self.functional_class_definition(x, fields))
+            }
             Binding::SelfType(k) => match &*self.get_idx(*k) {
                 Type::ClassDef(c) => c.self_type(),
                 _ => unreachable!(),
