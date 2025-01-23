@@ -226,7 +226,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Kwargs(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_kwargs())),
             Type::None => Some(AttributeBase::ClassInstance(stdlib.none_type())),
             Type::Never(_) => Some(AttributeBase::Never),
-            Type::Callable(_) => Some(AttributeBase::ClassInstance(stdlib.function_type())),
+            Type::Callable(_, _) => Some(AttributeBase::ClassInstance(stdlib.function_type())),
             Type::BoundMethod(_, _) => Some(AttributeBase::ClassInstance(stdlib.method_type())),
             Type::Ellipsis => Some(AttributeBase::ClassInstance(stdlib.ellipsis_type())),
             Type::TypedDict(_) => Some(AttributeBase::ClassInstance(stdlib.mapping(

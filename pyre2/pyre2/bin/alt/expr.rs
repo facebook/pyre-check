@@ -251,7 +251,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Return a pair of the quantified variables I had to instantiate, and the resulting call target.
     fn as_call_target(&self, ty: Type) -> Option<(Vec<Var>, CallTarget)> {
         match ty {
-            Type::Callable(c) => Some((Vec::new(), CallTarget::Callable(*c))),
+            Type::Callable(c, _) => Some((Vec::new(), CallTarget::Callable(*c))),
             Type::BoundMethod(obj, func) => match self.as_call_target(*func.clone()) {
                 Some((gs, CallTarget::Callable(c))) => Some((gs, CallTarget::BoundMethod(*obj, c))),
                 _ => None,
@@ -912,18 +912,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     vec![]
                 };
                 if let Some(callable) = hint_callable {
-                    let inferred_callable = Type::Callable(Box::new(Callable {
-                        params: Params::List(parameters),
-                        ret: self.expr(&lambda.body, Some(&callable.ret)),
-                    }));
-                    let wanted_callable = Type::Callable(Box::new(callable));
+                    let inferred_callable = Type::Callable(
+                        Box::new(Callable {
+                            params: Params::List(parameters),
+                            ret: self.expr(&lambda.body, Some(&callable.ret)),
+                        }),
+                        None,
+                    );
+                    let wanted_callable = Type::Callable(Box::new(callable), None);
                     self.check_type(&wanted_callable, &inferred_callable, x.range());
                     wanted_callable
                 } else {
-                    Type::Callable(Box::new(Callable {
-                        params: Params::List(parameters),
-                        ret: self.expr_infer(&lambda.body),
-                    }))
+                    Type::Callable(
+                        Box::new(Callable {
+                            params: Params::List(parameters),
+                            ret: self.expr_infer(&lambda.body),
+                        }),
+                        None,
+                    )
                 }
             }
             Expr::If(x) => {

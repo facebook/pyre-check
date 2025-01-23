@@ -17,6 +17,7 @@ use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
 use crate::alt::classes::TypedDict;
+use crate::module::module_name::ModuleName;
 use crate::types::callable::Callable;
 use crate::types::callable::Param;
 use crate::types::class::Class;
@@ -321,7 +322,8 @@ assert_eq_size!(Type, [usize; 4]);
 pub enum Type {
     Literal(Lit),
     LiteralString,
-    Callable(Box<Callable>),
+    /// Note that the name doesn't participate in subtyping, and thus two types with distinct names are still subtypes.
+    Callable(Box<Callable>, Option<Box<(ModuleName, Name)>>),
     /// A method of a class. The first `Box<Type>` is the self/cls argument,
     /// and the second is the function.
     BoundMethod(Box<Type>, Box<Type>),
@@ -424,7 +426,7 @@ impl Type {
     }
 
     pub fn is_callable(&self) -> bool {
-        matches!(self, Type::Callable(_))
+        matches!(self, Type::Callable(_, _))
     }
 
     pub fn as_var(&self) -> Option<Var> {
@@ -442,15 +444,15 @@ impl Type {
     }
 
     pub fn callable(params: Vec<Param>, ret: Type) -> Self {
-        Type::Callable(Box::new(Callable::list(params, ret)))
+        Type::Callable(Box::new(Callable::list(params, ret)), None)
     }
 
     pub fn callable_ellipsis(ret: Type) -> Self {
-        Type::Callable(Box::new(Callable::ellipsis(ret)))
+        Type::Callable(Box::new(Callable::ellipsis(ret)), None)
     }
 
     pub fn callable_param_spec(p: Type, ret: Type) -> Self {
-        Type::Callable(Box::new(Callable::param_spec(p, ret)))
+        Type::Callable(Box::new(Callable::param_spec(p, ret)), None)
     }
 
     pub fn forall(self, tparams: TParams) -> Self {
@@ -488,10 +490,13 @@ impl Type {
 
     pub fn as_typeguard(&self) -> Option<&Type> {
         match self {
-            Type::Callable(box Callable {
-                params: _,
-                ret: Type::TypeGuard(t),
-            }) => Some(t),
+            Type::Callable(
+                box Callable {
+                    params: _,
+                    ret: Type::TypeGuard(t),
+                },
+                _,
+            ) => Some(t),
             Type::Forall(_, t) | Type::BoundMethod(_, t) => t.as_typeguard(),
             _ => None,
         }
@@ -602,7 +607,7 @@ impl Type {
 
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match self {
-            Type::Callable(c) => c.visit(f),
+            Type::Callable(c, _) => c.visit(f),
             Type::BoundMethod(obj, func) => {
                 f(obj);
                 f(func);
@@ -638,7 +643,7 @@ impl Type {
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
-            Type::Callable(c) => c.visit_mut(f),
+            Type::Callable(c, _) => c.visit_mut(f),
             Type::BoundMethod(obj, func) => {
                 f(obj);
                 f(func);

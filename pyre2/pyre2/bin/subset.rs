@@ -38,18 +38,23 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (
                 Type::BoundMethod(
                     _,
-                    box Type::Callable(box Callable {
-                        params: Params::List(params),
-                        ret,
-                    }),
+                    box Type::Callable(
+                        box Callable {
+                            params: Params::List(params),
+                            ret,
+                        },
+                        _,
+                    ),
                 ),
-                Type::Callable(_),
+                Type::Callable(_, _),
             ) if !params.is_empty() => {
-                let l_no_self =
-                    Type::Callable(Box::new(Callable::list(params[1..].to_vec(), ret.clone())));
+                let l_no_self = Type::Callable(
+                    Box::new(Callable::list(params[1..].to_vec(), ret.clone())),
+                    None,
+                );
                 self.is_subset_eq_impl(&l_no_self, want)
             }
-            (Type::Callable(l), Type::Callable(u)) => {
+            (Type::Callable(l, _), Type::Callable(u, _)) => {
                 self.is_subset_eq(&l.ret, &u.ret)
                     && match (&l.params, &u.params) {
                         (Params::Ellipsis, _) | (_, Params::Ellipsis) => true,

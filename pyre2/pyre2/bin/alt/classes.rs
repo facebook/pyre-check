@@ -215,7 +215,7 @@ impl Enum {
 fn is_unbound_function(ty: &Type) -> bool {
     match ty {
         Type::Forall(_, t) => is_unbound_function(t),
-        Type::Callable(_) => true,
+        Type::Callable(_, _) => true,
         _ => false,
     }
 }

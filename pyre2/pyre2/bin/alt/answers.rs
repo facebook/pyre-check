@@ -812,7 +812,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.tvars_to_tparams_for_type_alias(t, seen, tparams);
                 }
             }
-            Type::Callable(callable) => {
+            Type::Callable(callable, _) => {
                 let visit = |t: &mut Type| self.tvars_to_tparams_for_type_alias(t, seen, tparams);
                 callable.visit_mut(visit);
             }
