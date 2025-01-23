@@ -72,7 +72,8 @@ impl Display for ClassField {
     }
 }
 
-/// Class members can fail to be
+/// Provide a root cause for why a class attribute lookup failed, which can
+/// be used to produce better error messages.
 pub enum NoClassAttribute {
     NoClassMember,
     InstanceOnlyAttribute,
