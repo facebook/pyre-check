@@ -9,7 +9,6 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::mem;
-use std::ops::Deref;
 use std::sync::Arc;
 
 use dupe::Dupe;
@@ -2302,6 +2301,45 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    fn merge_flow_style(
+        &mut self,
+        styles: SmallSet<Option<&FlowStyle>>,
+        name: &Name,
+        is_loop: bool,
+    ) -> Option<FlowStyle> {
+        let unordered_anns: SmallSet<Option<Idx<KeyAnnotation>>> =
+            styles.iter().map(|x| x.as_ref()?.ann()).collect();
+        let mut anns = unordered_anns
+            .into_iter()
+            .flatten()
+            .map(|k| (k, self.table.annotations.0.idx_to_key(k).range()))
+            .collect::<Vec<_>>();
+        anns.sort_by_key(|(_, range)| (range.start(), range.end()));
+        // If there are multiple annotations, this picks the first one.
+        let mut ann = None;
+        for other_ann in anns.into_iter() {
+            match &ann {
+                None => {
+                    ann = Some(other_ann);
+                }
+                Some(ann) => {
+                    // A loop might capture the same annotation multiple times at many exit points.
+                    // But we only want to consider it when we join up `if` statements.
+                    if !is_loop {
+                        self.table.insert(
+                            Key::Expect(other_ann.1),
+                            Binding::Eq(other_ann.0, ann.0, name.clone()),
+                        );
+                    }
+                }
+            }
+        }
+        ann.map(|x| FlowStyle::Annotated {
+            ann: x.0,
+            is_initialized: true,
+        })
+    }
+
     fn merge_flow(&mut self, mut xs: Vec<Flow>, range: TextRange, is_loop: bool) -> Flow {
         if xs.len() == 1 && xs[0].no_next {
             return xs.pop().unwrap();
@@ -2326,37 +2364,11 @@ impl<'a> BindingsBuilder<'a> {
                     .iter()
                     .flat_map(|x| x.info.get(name.key()).map(|x| (x.key, x.style.as_ref())))
                     .unzip();
-            let unordered_anns: SmallSet<Option<Idx<KeyAnnotation>>> =
-                styles.iter().map(|x| x.as_ref()?.ann()).collect();
-            let mut anns = unordered_anns
-                .into_iter()
-                .flatten()
-                .map(|k| (k, self.table.annotations.0.idx_to_key(k).range()))
-                .collect::<Vec<_>>();
-            anns.sort_by_key(|(_, range)| (range.start(), range.end()));
-            // If there are multiple annotations, this picks the first one.
-            let mut ann = None;
-            for other_ann in anns.into_iter() {
-                match &ann {
-                    None => {
-                        ann = Some(other_ann);
-                    }
-                    Some(ann) => {
-                        // A loop might capture the same annotation multiple times at many exit points.
-                        // But we only want to consider it when we join up `if` statements.
-                        if !is_loop {
-                            self.table.insert(
-                                Key::Expect(other_ann.1),
-                                Binding::Eq(other_ann.0, ann.0, name.deref().clone()),
-                            );
-                        }
-                    }
-                }
-            }
+            let style = self.merge_flow_style(styles, name.key(), is_loop);
             let key = self
                 .table
                 .insert(Key::Phi(name.key().clone(), range), Binding::phi(values));
-            res.insert_hashed(name, FlowInfo::new_with_ann(key, ann.map(|x| x.0)));
+            res.insert_hashed(name, FlowInfo { key, style });
         }
         Flow {
             info: res,
