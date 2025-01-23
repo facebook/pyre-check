@@ -6107,6 +6107,132 @@ let test_call_graph_of_define_foo_and_bar =
                          ())) );
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+     def decorator(f):
+       def inner():
+         return 0
+       return inner
+     @decorator
+     def foo1():
+       ...  # Not considered as being decorated due to missing the body
+     @decorator
+     def foo2():
+       return 0
+     def identity(x):
+       return x
+     def bar(b):
+       if b:
+         return identity(foo1)  # Redirect actual parameters
+       else:
+         return identity(foo2)
+  |}
+           ~define_name:"test.bar"
+           ~expected:
+             [
+               ( "16:11-16:25",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               ~index:1
+                               (Target.Regular.Function { name = "test.identity"; kind = Normal });
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.foo1"; kind = Normal });
+                                    ];
+                                  unresolved = CallGraph.Unresolved.False;
+                                };
+                              ])
+                         ())) );
+               ( "16:20-16:24",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo1"; kind = Normal });
+                           ]
+                         ())) );
+               ( "18:11-18:25",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.identity"; kind = Normal });
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.foo2"; kind = Normal });
+                                    ];
+                                  unresolved = CallGraph.Unresolved.False;
+                                };
+                              ])
+                         ())) );
+               ( "18:20-18:24",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo2"; kind = Decorated });
+                           ]
+                         ())) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+     def decorator(f):
+       def inner():
+         return 0
+       return inner
+     class C:
+       @decorator
+       def __init__(self, x):
+         print(x)
+       @decorator
+       def __new__(cls, *args, **kwargs):
+         ...
+     def foo():
+       return C(0)  # Redirect `__init__` and `__new__`
+  |}
+           ~define_name:"test.foo"
+           ~expected:
+             [
+               ( "14:9-14:13",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~unresolved:(Unresolved.True (BypassingDecorators CannotResolveExports))
+                         (* Because Pyre cannot resolve `C.__init__` and `C.__new__`. *)
+                         ())) );
+             ]
+           ();
     ]
 
 
