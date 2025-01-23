@@ -6185,7 +6185,7 @@ let test_call_graph_of_define_foo_and_bar =
                                     [
                                       CallTarget.create_regular
                                         (Target.Regular.Function
-                                           { name = "test.foo2"; kind = Normal });
+                                           { name = "test.foo2"; kind = Decorated });
                                     ];
                                   unresolved = CallGraph.Unresolved.False;
                                 };

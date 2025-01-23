@@ -555,6 +555,13 @@ module HigherOrderParameter = struct
          (Unresolved.to_json unresolved)
          (Unresolved.is_unresolved unresolved)
     |> fun bindings -> `Assoc bindings
+
+
+  let redirect_to_decorated ~decorators ({ call_targets; _ } as higher_order_parameter) =
+    {
+      higher_order_parameter with
+      call_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) call_targets;
+    }
 end
 
 (** Mapping from a parameter index to its HigherOrderParameter, if any. *)
@@ -610,6 +617,10 @@ module HigherOrderParameterMap = struct
 
   let to_json map =
     map |> Map.data |> List.map ~f:HigherOrderParameter.to_json |> fun elements -> `List elements
+
+
+  let redirect_to_decorated ~decorators =
+    Map.map (HigherOrderParameter.redirect_to_decorated ~decorators)
 end
 
 (** An aggregate of all possible callees at a call site. *)
@@ -892,11 +903,17 @@ module CallCallees = struct
     `Assoc (List.rev bindings)
 
 
-  let redirect_to_decorated ~decorators ({ call_targets; _ } as call_callees) =
-    (* TODO: Redirect targets in other fields. *)
+  let redirect_to_decorated
+      ~decorators
+      ({ call_targets; higher_order_parameters; new_targets; init_targets; _ } as call_callees)
+    =
     {
       call_callees with
       call_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) call_targets;
+      higher_order_parameters =
+        HigherOrderParameterMap.redirect_to_decorated ~decorators higher_order_parameters;
+      new_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) new_targets;
+      init_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) init_targets;
     }
 
 
