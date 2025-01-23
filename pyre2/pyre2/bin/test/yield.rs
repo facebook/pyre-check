@@ -40,7 +40,7 @@ It should be Generator[Literal[1, 2], Any, Literal['done']] or Generator[int, An
 from typing import reveal_type
 
 def gen_with_return():
-    yield 1 
+    yield 1
     yield 2
     return "done"
 
@@ -96,10 +96,10 @@ testcase_with_bug!(
     r#"
 from typing import Iterator, reveal_type
 
-def gen_numbers() -> Iterator[int]:
-    yield 1 # E: Wrong yield annotation: `Iterator[int]`
-    yield 2 # E: Wrong yield annotation: `Iterator[int]`
-    yield 3 # E: Wrong yield annotation: `Iterator[int]`
+def gen_numbers() -> Iterator[int]: 
+    yield 1 
+    yield 2 
+    yield 3
 
 reveal_type(gen_numbers()) # E: revealed type: Iterator[int]
 
@@ -117,12 +117,12 @@ and Type of "another_generator()" should be "Generator[Literal[2], Any, None]"
 from typing import Generator, reveal_type
 
 def nested_generator():
-    yield 1 
+    yield 1
     yield from another_generator()  # E: TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer
-    yield 3 
+    yield 3
 
 def another_generator():
-    yield 2 
+    yield 2
 
 reveal_type(nested_generator()) # E: revealed type: Generator[Literal[1, 3], Unknown, None]
 reveal_type(another_generator()) # E: revealed type: Generator[Literal[2], Unknown, None]
@@ -202,6 +202,6 @@ def generator2(x: int):
     yield x
     return generator()
 
-assert_type(generator2(1), Generator[int, Any, Generator[int, None, None]]) 
+assert_type(generator2(1), Generator[int, Any, Generator[int, None, None]])
 "#,
 );

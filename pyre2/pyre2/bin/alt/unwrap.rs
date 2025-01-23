@@ -112,10 +112,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .generator(yield_ty.to_type(), send_ty.to_type(), return_ty.to_type())
             .to_type();
         if self.is_subset_eq(&generator_ty, ty) {
-            let yield_ty = self.expand_var_opt(yield_ty)?;
-            let send_ty = self.expand_var_opt(send_ty)?;
-            let return_ty = self.expand_var_opt(return_ty)?;
+            let yield_ty: Type = self.expand_var_opt(yield_ty)?;
+            let send_ty = self.expand_var_opt(send_ty).unwrap_or(Type::None);
+            let return_ty = self.expand_var_opt(return_ty).unwrap_or(Type::None);
             Some((yield_ty, send_ty, return_ty))
+        } else if ty.is_any() {
+            Some((
+                Type::any_explicit(),
+                Type::any_explicit(),
+                Type::any_explicit(),
+            ))
         } else {
             None
         }

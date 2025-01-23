@@ -1670,33 +1670,13 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Wrong yield annotation: `Iterable[A]`",
-      "description": "Wrong yield annotation: `Iterable[A]`",
-      "line": 70,
+      "column": 12,
+      "concise_description": "EXPECTED Literal[True] <: None",
+      "description": "EXPECTED Literal[True] <: None",
+      "line": 71,
       "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 70
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Wrong yield annotation: `Iterator[A]`",
-      "description": "Wrong yield annotation: `Iterator[A]`",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 75
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Wrong yield annotation: `Iterator[dict[str, int]]`",
-      "description": "Wrong yield annotation: `Iterator[dict[str, int]]`",
-      "line": 83,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 83
+      "stop_column": 16,
+      "stop_line": 71
     },
     {
       "code": -2,
@@ -1837,16 +1817,6 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 135
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Wrong yield annotation: `Iterable[str]`",
-      "description": "Wrong yield annotation: `Iterable[str]`",
-      "line": 140,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 140
     },
     {
       "code": -2,
