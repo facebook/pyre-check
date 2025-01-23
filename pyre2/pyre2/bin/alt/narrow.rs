@@ -13,6 +13,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::binding::narrow::NarrowOp;
 use crate::binding::narrow::NarrowVal;
+use crate::types::callable::Kind;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::tuple::Tuple;
@@ -65,16 +66,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn resolve_narrowing_call(&self, func: &NarrowVal, args: &Arguments) -> Option<NarrowOp> {
         let func_ty = self.narrow_val_infer(func);
         if args.args.len() > 1
-            && let Type::Callable(_, Some(box (module, name))) = &func_ty
+            && let Type::Callable(_, kind) = &func_ty
         {
             let second_arg = &args.args[1];
-            let op = match (module.as_str(), name.as_str()) {
-                ("builtins", "isinstance") => Some(NarrowOp::IsInstance(NarrowVal::Expr(
-                    Box::new(second_arg.clone()),
-                ))),
-                ("builtins", "issubclass") => Some(NarrowOp::IsSubclass(NarrowVal::Expr(
-                    Box::new(second_arg.clone()),
-                ))),
+            let op = match kind {
+                Kind::IsInstance => Some(NarrowOp::IsInstance(NarrowVal::Expr(Box::new(
+                    second_arg.clone(),
+                )))),
+                Kind::IsSubclass => Some(NarrowOp::IsSubclass(NarrowVal::Expr(Box::new(
+                    second_arg.clone(),
+                )))),
                 _ => None,
             };
             if op.is_some() {

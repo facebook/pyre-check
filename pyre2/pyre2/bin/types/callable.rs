@@ -10,6 +10,7 @@ use std::fmt::Display;
 
 use ruff_python_ast::name::Name;
 
+use crate::module::module_name::ModuleName;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
 use crate::util::display::Fmt;
@@ -40,6 +41,14 @@ pub enum Param {
 pub enum Required {
     Required,
     Optional,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Kind {
+    IsInstance,
+    IsSubclass,
+    Def,
+    Anon,
 }
 
 impl Callable {
@@ -162,6 +171,16 @@ impl Param {
             | Param::Pos(_, _, Required::Required)
             | Param::KwOnly(_, _, Required::Required) => true,
             _ => false,
+        }
+    }
+}
+
+impl Kind {
+    pub fn from_name(module: &ModuleName, name: &Name) -> Self {
+        match (module.as_str(), name.as_str()) {
+            ("builtins", "isinstance") => Self::IsInstance,
+            ("builtins", "issubclass") => Self::IsSubclass,
+            _ => Self::Def,
         }
     }
 }

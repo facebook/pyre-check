@@ -17,8 +17,8 @@ use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
 use crate::alt::classes::TypedDict;
-use crate::module::module_name::ModuleName;
 use crate::types::callable::Callable;
+use crate::types::callable::Kind;
 use crate::types::callable::Param;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
@@ -322,8 +322,8 @@ assert_eq_size!(Type, [usize; 4]);
 pub enum Type {
     Literal(Lit),
     LiteralString,
-    /// Note that the name doesn't participate in subtyping, and thus two types with distinct names are still subtypes.
-    Callable(Box<Callable>, Option<Box<(ModuleName, Name)>>),
+    /// Note that the Kind metadata doesn't participate in subtyping, and thus two types with distinct metadata are still subtypes.
+    Callable(Box<Callable>, Kind),
     /// A method of a class. The first `Box<Type>` is the self/cls argument,
     /// and the second is the function.
     BoundMethod(Box<Type>, Box<Type>),
@@ -444,15 +444,15 @@ impl Type {
     }
 
     pub fn callable(params: Vec<Param>, ret: Type) -> Self {
-        Type::Callable(Box::new(Callable::list(params, ret)), None)
+        Type::Callable(Box::new(Callable::list(params, ret)), Kind::Anon)
     }
 
     pub fn callable_ellipsis(ret: Type) -> Self {
-        Type::Callable(Box::new(Callable::ellipsis(ret)), None)
+        Type::Callable(Box::new(Callable::ellipsis(ret)), Kind::Anon)
     }
 
     pub fn callable_param_spec(p: Type, ret: Type) -> Self {
-        Type::Callable(Box::new(Callable::param_spec(p, ret)), None)
+        Type::Callable(Box::new(Callable::param_spec(p, ret)), Kind::Anon)
     }
 
     pub fn forall(self, tparams: TParams) -> Self {
@@ -594,8 +594,8 @@ impl Type {
 
     pub fn anon_callables(self) -> Self {
         self.transform(|ty| {
-            if let Type::Callable(_, name @ Some(_)) = ty {
-                *name = None;
+            if let Type::Callable(_, name) = ty {
+                *name = Kind::Anon;
             }
         })
     }

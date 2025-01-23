@@ -35,6 +35,7 @@ use crate::dunder;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Callable;
+use crate::types::callable::Kind;
 use crate::types::callable::Param;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
@@ -917,9 +918,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             params: Params::List(parameters),
                             ret: self.expr(&lambda.body, Some(&callable.ret)),
                         }),
-                        None,
+                        Kind::Anon,
                     );
-                    let wanted_callable = Type::Callable(Box::new(callable), None);
+                    let wanted_callable = Type::Callable(Box::new(callable), Kind::Anon);
                     self.check_type(&wanted_callable, &inferred_callable, x.range());
                     wanted_callable
                 } else {
@@ -928,7 +929,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             params: Params::List(parameters),
                             ret: self.expr_infer(&lambda.body),
                         }),
-                        None,
+                        Kind::Anon,
                     )
                 }
             }
