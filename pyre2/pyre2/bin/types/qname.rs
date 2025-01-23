@@ -9,6 +9,7 @@
 
 use std::cmp::Ordering;
 use std::fmt;
+use std::fmt::Display;
 
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
@@ -42,6 +43,12 @@ impl PartialOrd for QName {
 impl Ord for QName {
     fn cmp(&self, other: &Self) -> Ordering {
         self.key().cmp(&other.key())
+    }
+}
+
+impl Display for QName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.fmt_with_location(f)
     }
 }
 
