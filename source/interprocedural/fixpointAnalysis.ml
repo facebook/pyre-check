@@ -285,6 +285,8 @@ module Make (Analysis : ANALYSIS) = struct
       | None -> get_old_model shared_models_handle callable
 
 
+    let set_model = SharedModels.add
+
     let get_result callable = SharedResults.get callable |> Option.value ~default:Result.empty
 
     let set_result callable result =
@@ -827,6 +829,22 @@ module Make (Analysis : ANALYSIS) = struct
   let get_iterations { fixpoint_reached_iterations; _ } = fixpoint_reached_iterations
 
   let cleanup { shared_models_handle; _ } = State.cleanup shared_models_handle
+
+  let update_models ~scheduler ~scheduler_policy ~update_model { shared_models_handle; _ } =
+    let update_model target =
+      match State.get_model shared_models_handle target with
+      | None -> ()
+      | Some model -> State.set_model shared_models_handle target (update_model model)
+    in
+    let targets = State.KeySet.elements (State.targets ()) in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
+      ~initial:()
+      ~map:(List.iter ~f:update_model)
+      ~reduce:(fun () () -> ())
+      ~inputs:targets
+      ()
 end
 
 module WithoutLogging = struct

@@ -629,12 +629,6 @@ let test_higher_order_call_graph_fixpoint =
                                               |> Target.from_regular );
                                           ]);
                                  ]
-                               ~decorated_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function
-                                        { name = "test.foo"; kind = Decorated });
-                                 ]
                                ())) );
                      ( "13:14-13:17",
                        LocationCallees.Singleton
@@ -741,12 +735,6 @@ let test_higher_order_call_graph_fixpoint =
                                                 { name = "test.decorated"; kind = Normal }
                                               |> Target.from_regular );
                                           ]);
-                                 ]
-                               ~decorated_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function
-                                        { name = "test.decorated"; kind = Decorated });
                                  ]
                                ())) );
                      ( "14:9-14:23",

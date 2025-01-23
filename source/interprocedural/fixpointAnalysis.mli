@@ -220,6 +220,13 @@ module Make (Analysis : ANALYSIS) : sig
   (** Remove the fixpoint state from the shared memory. This must be called before computing another
       fixpoint. *)
   val cleanup : t -> unit
+
+  val update_models
+    :  scheduler:Scheduler.t ->
+    scheduler_policy:Scheduler.Policy.t ->
+    update_model:(Analysis.Model.t -> Analysis.Model.t) ->
+    t ->
+    unit
 end
 
 module WithoutLogging : LOGGER

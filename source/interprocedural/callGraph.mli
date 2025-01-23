@@ -369,6 +369,9 @@ module DefineCallGraph : sig
     IdentifierCallees.t option
 
   val resolve_string_format : t -> location:Ast.Location.t -> StringFormatCallees.t option
+
+  (* Ensure the taint analysis does not use these targets. *)
+  val drop_decorated_targets : t -> t
 end
 
 module DecoratorDefine : sig

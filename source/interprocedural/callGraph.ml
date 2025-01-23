@@ -886,6 +886,9 @@ module CallCallees = struct
       call_callees with
       call_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) call_targets;
     }
+
+
+  let drop_decorated_targets call_callees = { call_callees with decorated_targets = [] }
 end
 
 (** An aggregrate of all possible callees for a given attribute access. *)
@@ -993,6 +996,9 @@ module AttributeAccessCallees = struct
       attribute_callees with
       callable_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) callable_targets;
     }
+
+
+  let drop_decorated_targets = Fn.id
 end
 
 (** An aggregate of all possible callees for a given identifier expression, i.e `foo`. *)
@@ -1067,6 +1073,9 @@ module IdentifierCallees = struct
       identifier_callees with
       callable_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) callable_targets;
     }
+
+
+  let drop_decorated_targets = Fn.id
 end
 
 (** An aggregate of callees for formatting strings. *)
@@ -1116,6 +1125,8 @@ module StringFormatCallees = struct
 
 
   let redirect_to_decorated ~decorators:_ = Fn.id
+
+  let drop_decorated_targets = Fn.id
 end
 
 (** An aggregate of all possible callees for an arbitrary expression. *)
@@ -1252,6 +1263,15 @@ module ExpressionCallees = struct
         attribute_access >>| AttributeAccessCallees.redirect_to_decorated ~decorators;
       identifier = identifier >>| IdentifierCallees.redirect_to_decorated ~decorators;
       string_format = string_format >>| StringFormatCallees.redirect_to_decorated ~decorators;
+    }
+
+
+  let drop_decorated_targets { call; attribute_access; identifier; string_format } =
+    {
+      call = call >>| CallCallees.drop_decorated_targets;
+      attribute_access = attribute_access >>| AttributeAccessCallees.drop_decorated_targets;
+      identifier = identifier >>| IdentifierCallees.drop_decorated_targets;
+      string_format = string_format >>| StringFormatCallees.drop_decorated_targets;
     }
 end
 
@@ -1504,6 +1524,11 @@ module DefineCallGraph = struct
   let redirect_to_decorated ~decorators =
     Location.SerializableMap.map
       (LocationCallees.Map.map (ExpressionCallees.redirect_to_decorated ~decorators))
+
+
+  (* Ensure the taint analysis does not use these targets. *)
+  let drop_decorated_targets =
+    Location.SerializableMap.map (LocationCallees.Map.map ExpressionCallees.drop_decorated_targets)
 
 
   (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
@@ -4286,7 +4311,6 @@ let higher_order_call_graph_of_define
   { HigherOrderCallGraph.returned_callables; call_graph = !Context.output_define_call_graph }
 
 
-(* TODO(T212773638): Remove `decorated_targets` from `CallCallees`. *)
 (* TODO(T206240754): Re-index `CallTarget`s after building the higher order call graphs. *)
 
 let call_graph_of_define

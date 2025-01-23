@@ -167,22 +167,35 @@ let compute
       ~override_targets
       ~initial_models
   in
-  Fixpoint.compute
-    ~scheduler
-    ~scheduler_policy
-    ~override_graph:(OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
-    ~dependency_graph
-    ~context:
-      {
-        CallGraphAnalysis.Context.pyre_api;
-        define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
-        decorator_resolution;
-      }
-    ~callables_to_analyze:(List.rev_append decorated_callables callables_to_analyze)
-    ~max_iterations
-    ~error_on_max_iterations:false
-    ~epoch:Fixpoint.Epoch.initial
-    ~shared_models
+  let fixpoint =
+    Fixpoint.compute
+      ~scheduler
+      ~scheduler_policy
+      ~override_graph:(OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
+      ~dependency_graph
+      ~context:
+        {
+          CallGraphAnalysis.Context.pyre_api;
+          define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
+          decorator_resolution;
+        }
+      ~callables_to_analyze:(List.rev_append decorated_callables callables_to_analyze)
+      ~max_iterations
+      ~error_on_max_iterations:false
+      ~epoch:Fixpoint.Epoch.initial
+      ~shared_models
+  in
+  let drop_decorated_targets ({ CallGraph.HigherOrderCallGraph.call_graph; _ } as model) =
+    {
+      model with
+      CallGraph.HigherOrderCallGraph.call_graph =
+        CallGraph.DefineCallGraph.drop_decorated_targets call_graph;
+    }
+  in
+  let timer = Timer.start () in
+  Fixpoint.update_models ~scheduler ~scheduler_policy ~update_model:drop_decorated_targets fixpoint;
+  Log.info "Dropping decorated targets in models took %.2fs" (Timer.stop_in_sec timer);
+  fixpoint
 
 
 let get_model = Fixpoint.get_model
