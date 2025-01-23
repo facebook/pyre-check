@@ -11,6 +11,7 @@ Test that everything works well
 """
 
 from __future__ import annotations
+
 import os
 import signal
 import subprocess
@@ -19,7 +20,7 @@ import time
 from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
-from typing import Any, ContextManager, Generator, Iterable
+from typing import Generator, Iterable
 
 
 class Colors(Enum):
