@@ -29,19 +29,19 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         Self(solver)
     }
 
-    pub fn stdlib(&self) -> &Stdlib {
+    pub fn stdlib(self) -> &'a Stdlib {
         self.0.stdlib
     }
 
-    pub fn has_superclass(&self, got: &Class, want: &Class) -> bool {
+    pub fn has_superclass(self, got: &Class, want: &Class) -> bool {
         self.0.has_superclass(got, want)
     }
 
-    pub fn as_superclass(&self, class: &ClassType, want: &Class) -> Option<ClassType> {
+    pub fn as_superclass(self, class: &ClassType, want: &Class) -> Option<ClassType> {
         self.0.as_superclass(class, want)
     }
 
-    pub fn has_metaclass(&self, cls: &Class, metaclass: &ClassType) -> bool {
+    pub fn has_metaclass(self, cls: &Class, metaclass: &ClassType) -> bool {
         let metadata = self.0.get_metadata_for_class(cls);
         match metadata.metaclass() {
             Some(m) => *m == *metaclass,
