@@ -753,6 +753,7 @@ let test_call_graph_of_define =
                         global_targets = [];
                         is_attribute = false;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
                ( "8:8-8:11",
                  LocationCallees.Singleton
@@ -769,6 +770,7 @@ let test_call_graph_of_define =
                         global_targets = [];
                         is_attribute = false;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
              ]
            ();
@@ -1875,6 +1877,7 @@ let test_call_graph_of_define =
                         global_targets = [];
                         is_attribute = false;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
                ( "11:2-11:7",
                  LocationCallees.Singleton
@@ -1891,6 +1894,7 @@ let test_call_graph_of_define =
                         global_targets = [];
                         is_attribute = false;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
              ]
            ();
@@ -1982,6 +1986,7 @@ let test_call_graph_of_define =
                         global_targets = [];
                         is_attribute = false;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
                ( "17:6-17:16",
                  LocationCallees.Singleton
@@ -1999,6 +2004,7 @@ let test_call_graph_of_define =
                         global_targets = [];
                         is_attribute = true;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
              ]
            ();
@@ -2044,6 +2050,7 @@ let test_call_graph_of_define =
                         global_targets = [];
                         is_attribute = false;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
              ]
            ();
@@ -3133,6 +3140,7 @@ let test_call_graph_of_define =
                           ];
                         is_attribute = true;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
              ]
            ();
@@ -3175,6 +3183,7 @@ let test_call_graph_of_define =
                           ];
                         is_attribute = true;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
              ]
            ();
@@ -3210,6 +3219,7 @@ let test_call_graph_of_define =
                           ];
                         is_attribute = true;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
              ]
            ();
@@ -3252,6 +3262,7 @@ let test_call_graph_of_define =
                                 ];
                               is_attribute = true;
                               callable_targets = [];
+                              decorated_targets = [];
                             } );
                       ]) );
              ]
@@ -3844,6 +3855,7 @@ let test_call_graph_of_define =
                               global_targets = [];
                               is_attribute = false;
                               callable_targets = [];
+                              decorated_targets = [];
                             } );
                       ]) );
              ]
@@ -3903,6 +3915,7 @@ let test_call_graph_of_define =
                               global_targets = [];
                               is_attribute = false;
                               callable_targets = [];
+                              decorated_targets = [];
                             } );
                       ]) );
              ]
@@ -5577,6 +5590,7 @@ let test_call_graph_of_define =
                           ];
                         is_attribute = true;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
                ( "13:4-13:18",
                  LocationCallees.Singleton
@@ -5630,6 +5644,7 @@ let test_call_graph_of_define =
                           ];
                         is_attribute = true;
                         callable_targets = [];
+                        decorated_targets = [];
                       }) );
                ( "11:4-11:18",
                  LocationCallees.Singleton

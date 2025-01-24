@@ -928,13 +928,22 @@ module AttributeAccessCallees = struct
     (* True if the attribute access should also be considered a regular attribute.
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
     is_attribute: bool;
+    (* Function-typed runtime values that the attribute access may evaluate into. *)
     callable_targets: CallTarget.t list;
-        (* Function-typed runtime values that the identifiers may evaluate into. *)
+    (* Call targets for the calls to artificially created callables that call the decorators. Only
+       used by call graph building. *)
+    decorated_targets: CallTarget.t list;
   }
   [@@deriving eq, show { with_path = false }]
 
   let empty =
-    { property_targets = []; global_targets = []; is_attribute = true; callable_targets = [] }
+    {
+      property_targets = [];
+      global_targets = [];
+      is_attribute = true;
+      callable_targets = [];
+      decorated_targets = [];
+    }
 
 
   let is_empty attribute_access_callees = equal attribute_access_callees empty
@@ -944,17 +953,21 @@ module AttributeAccessCallees = struct
       ?(global_targets = empty.global_targets)
       ?(callable_targets = empty.callable_targets)
       ?(is_attribute = empty.is_attribute)
+      ?(decorated_targets = empty.decorated_targets)
       ()
     =
-    { property_targets; global_targets; is_attribute; callable_targets }
+    { property_targets; global_targets; is_attribute; callable_targets; decorated_targets }
 
 
-  let deduplicate { property_targets; global_targets; is_attribute; callable_targets } =
+  let deduplicate
+      { property_targets; global_targets; is_attribute; callable_targets; decorated_targets }
+    =
     {
       property_targets = CallTarget.dedup_and_sort property_targets;
       global_targets = CallTarget.dedup_and_sort global_targets;
       is_attribute;
       callable_targets = CallTarget.dedup_and_sort callable_targets;
+      decorated_targets = CallTarget.dedup_and_sort decorated_targets;
     }
 
 
@@ -964,12 +977,14 @@ module AttributeAccessCallees = struct
         global_targets = left_global_targets;
         is_attribute = left_is_attribute;
         callable_targets = left_callable_targets;
+        decorated_targets = left_decorated_targets;
       }
       {
         property_targets = right_property_targets;
         global_targets = right_global_targets;
         is_attribute = right_is_attribute;
         callable_targets = right_callable_targets;
+        decorated_targets = right_decorated_targets;
       }
     =
     {
@@ -977,17 +992,21 @@ module AttributeAccessCallees = struct
       global_targets = List.rev_append left_global_targets right_global_targets;
       is_attribute = left_is_attribute || right_is_attribute;
       callable_targets = List.rev_append left_callable_targets right_callable_targets;
+      decorated_targets = List.rev_append left_decorated_targets right_decorated_targets;
     }
 
 
   let all_targets
       ~exclude_reference_only
-      { property_targets; global_targets; callable_targets; is_attribute = _ }
+      { property_targets; global_targets; callable_targets; is_attribute = _; decorated_targets }
     =
     (if exclude_reference_only then
-       List.rev_append property_targets global_targets
+       global_targets |> List.rev_append property_targets |> List.rev_append decorated_targets
     else
-      global_targets |> List.rev_append property_targets |> List.rev_append callable_targets)
+      global_targets
+      |> List.rev_append property_targets
+      |> List.rev_append callable_targets
+      |> List.rev_append decorated_targets)
     |> List.map ~f:CallTarget.target
 
 
@@ -997,25 +1016,31 @@ module AttributeAccessCallees = struct
         global_targets = global_targets_left;
         is_attribute = is_attribute_left;
         callable_targets = callable_targets_left;
+        decorated_targets = decorated_targets_left;
       }
       {
         property_targets = property_targets_right;
         global_targets = global_targets_right;
         is_attribute = is_attribute_right;
         callable_targets = callable_targets_right;
+        decorated_targets = decorated_targets_right;
       }
     =
     List.equal CallTarget.equal_ignoring_types property_targets_left property_targets_right
     && List.equal CallTarget.equal_ignoring_types global_targets_left global_targets_right
     && Bool.equal is_attribute_left is_attribute_right
     && List.equal CallTarget.equal_ignoring_types callable_targets_left callable_targets_right
+    && List.equal CallTarget.equal_ignoring_types decorated_targets_left decorated_targets_right
 
 
-  let to_json { property_targets; global_targets; is_attribute; callable_targets } =
+  let to_json
+      { property_targets; global_targets; is_attribute; callable_targets; decorated_targets }
+    =
     []
     |> JsonHelper.add_list "properties" property_targets CallTarget.to_json
     |> JsonHelper.add_list "globals" global_targets CallTarget.to_json
     |> JsonHelper.add_list "callables" callable_targets CallTarget.to_json
+    |> JsonHelper.add_list "decorated_targets" decorated_targets CallTarget.to_json
     |> JsonHelper.add_flag_if "is_attribute" (`Bool true) is_attribute
     |> fun bindings -> `Assoc (List.rev bindings)
 
@@ -1027,7 +1052,8 @@ module AttributeAccessCallees = struct
     }
 
 
-  let drop_decorated_targets = Fn.id
+  let drop_decorated_targets attribute_access_callees =
+    { attribute_access_callees with decorated_targets = [] }
 end
 
 (** An aggregate of all possible callees for a given identifier expression, i.e `foo`. *)
@@ -1035,8 +1061,11 @@ module IdentifierCallees = struct
   type t = {
     global_targets: CallTarget.t list;
     nonlocal_targets: CallTarget.t list;
+    (* Function-typed runtime values that the identifier may evaluate into. *)
     callable_targets: CallTarget.t list;
-        (* Function-typed runtime values that the identifiers may evaluate into. *)
+    (* Call targets for the calls to artificially created callables that call the decorators. Only
+       used by call graph building. *)
+    decorated_targets: CallTarget.t list;
   }
   [@@deriving eq, show { with_path = false }]
 
@@ -1049,15 +1078,22 @@ module IdentifierCallees = struct
       | Nonlocal of Reference.t
   end
 
-  let create ?(global_targets = []) ?(nonlocal_targets = []) ?(callable_targets = []) () =
-    { global_targets; nonlocal_targets; callable_targets }
+  let create
+      ?(global_targets = [])
+      ?(nonlocal_targets = [])
+      ?(callable_targets = [])
+      ?(decorated_targets = [])
+      ()
+    =
+    { global_targets; nonlocal_targets; callable_targets; decorated_targets }
 
 
-  let deduplicate { global_targets; nonlocal_targets; callable_targets } =
+  let deduplicate { global_targets; nonlocal_targets; callable_targets; decorated_targets } =
     {
       global_targets = CallTarget.dedup_and_sort global_targets;
       nonlocal_targets = CallTarget.dedup_and_sort nonlocal_targets;
       callable_targets = CallTarget.dedup_and_sort callable_targets;
+      decorated_targets = CallTarget.dedup_and_sort decorated_targets;
     }
 
 
@@ -1066,34 +1102,44 @@ module IdentifierCallees = struct
         global_targets = left_global_targets;
         nonlocal_targets = left_nonlocal_targets;
         callable_targets = left_callable_targets;
+        decorated_targets = left_decorated_targets;
       }
       {
         global_targets = right_global_targets;
         nonlocal_targets = right_nonlocal_targets;
         callable_targets = right_callable_targets;
+        decorated_targets = right_decorated_targets;
       }
     =
     {
       global_targets = List.rev_append left_global_targets right_global_targets;
       nonlocal_targets = List.rev_append left_nonlocal_targets right_nonlocal_targets;
       callable_targets = List.rev_append left_callable_targets right_callable_targets;
+      decorated_targets = List.rev_append left_decorated_targets right_decorated_targets;
     }
 
 
-  let all_targets ~exclude_reference_only { global_targets; nonlocal_targets; callable_targets } =
+  let all_targets
+      ~exclude_reference_only
+      { global_targets; nonlocal_targets; callable_targets; decorated_targets }
+    =
     (if exclude_reference_only then
-       []
+       decorated_targets
     else
-      nonlocal_targets |> List.rev_append global_targets |> List.rev_append callable_targets)
+      nonlocal_targets
+      |> List.rev_append global_targets
+      |> List.rev_append callable_targets
+      |> List.rev_append decorated_targets)
     |> List.map ~f:CallTarget.target
 
 
-  let to_json { global_targets; nonlocal_targets; callable_targets } =
+  let to_json { global_targets; nonlocal_targets; callable_targets; decorated_targets } =
     `Assoc
       [
         "globals", `List (List.map ~f:CallTarget.to_json global_targets);
         "nonlocals", `List (List.map ~f:CallTarget.to_json nonlocal_targets);
         "callables", `List (List.map ~f:CallTarget.to_json callable_targets);
+        "decorated_targets", `List (List.map ~f:CallTarget.to_json decorated_targets);
       ]
 
 
@@ -1104,7 +1150,7 @@ module IdentifierCallees = struct
     }
 
 
-  let drop_decorated_targets = Fn.id
+  let drop_decorated_targets identifier_callees = { identifier_callees with decorated_targets = [] }
 end
 
 (** An aggregate of callees for formatting strings. *)
@@ -1524,7 +1570,8 @@ module DefineCallGraph = struct
             Some (LocationCallees.Map.add existing_callees ~expression_identifier ~callees))
 
 
-  let set_call_callees ~expression_identifier ~location ~call_callees =
+  let set_call_callees ~call ~location ~call_callees =
+    let expression_identifier = call_identifier call in
     Location.SerializableMap.update location (function
         | None ->
             Some
@@ -1539,6 +1586,46 @@ module DefineCallGraph = struct
                    | Some callees ->
                        Some { callees with ExpressionCallees.call = Some call_callees }
                    | None -> Some (ExpressionCallees.from_call call_callees))
+                 callees))
+
+
+  let set_identifier_callees ~identifier ~location ~identifier_callees =
+    Location.SerializableMap.update location (function
+        | None ->
+            Some
+              (LocationCallees.Map.singleton
+                 ~expression_identifier:identifier
+                 ~callees:(ExpressionCallees.from_identifier identifier_callees))
+        | Some callees ->
+            Some
+              (LocationCallees.Map.update
+                 identifier
+                 (function
+                   | Some callees ->
+                       Some { callees with ExpressionCallees.identifier = Some identifier_callees }
+                   | None -> Some (ExpressionCallees.from_identifier identifier_callees))
+                 callees))
+
+
+  let set_attribute_access_callees ~attribute ~location ~attribute_access_callees =
+    Location.SerializableMap.update location (function
+        | None ->
+            Some
+              (LocationCallees.Map.singleton
+                 ~expression_identifier:attribute
+                 ~callees:(ExpressionCallees.from_attribute_access attribute_access_callees))
+        | Some callees ->
+            Some
+              (LocationCallees.Map.update
+                 attribute
+                 (function
+                   | Some callees ->
+                       Some
+                         {
+                           callees with
+                           ExpressionCallees.attribute_access = Some attribute_access_callees;
+                         }
+                   | None -> Some (ExpressionCallees.from_attribute_access attribute_access_callees))
                  callees))
 
 
@@ -3001,7 +3088,13 @@ let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
   | [], [], [] -> None
   | _ ->
       (* Exist at least a non-empty list. *)
-      Some { IdentifierCallees.global_targets; nonlocal_targets; callable_targets }
+      Some
+        {
+          IdentifierCallees.global_targets;
+          nonlocal_targets;
+          callable_targets;
+          decorated_targets = [];
+        }
 
 
 let resolve_callees
@@ -3122,7 +3215,13 @@ let resolve_attribute_access
     |> resolve_callable_targets_from_global_identifiers ~define:define_name ~pyre_in_context
   in
 
-  { AttributeAccessCallees.property_targets; global_targets; is_attribute; callable_targets }
+  {
+    AttributeAccessCallees.property_targets;
+    global_targets;
+    is_attribute;
+    callable_targets;
+    decorated_targets = [];
+  }
 
 
 module AssignmentTarget = struct
@@ -3947,6 +4046,19 @@ module HigherOrderCallGraph = struct
         |> Algorithms.fold_balanced ~f:CallTarget.Set.join ~init:CallTarget.Set.bottom
 
 
+      let partition_decorated_targets call_targets =
+        let decorated_targets, non_decorated_targets =
+          List.partition_tf
+            ~f:(fun { CallTarget.target; _ } -> Target.is_decorated target)
+            call_targets
+        in
+        log
+          "Decorated targets: `%a`"
+          Target.List.pp_pretty_with_kind
+          (List.map ~f:CallTarget.target decorated_targets);
+        decorated_targets, non_decorated_targets
+
+
       let rec analyze_call ~location ~call ~arguments ~state =
         let formal_arguments_if_non_stub target =
           target
@@ -4011,14 +4123,8 @@ module HigherOrderCallGraph = struct
                     location)
         in
         let decorated_targets, non_decorated_targets =
-          List.partition_tf
-            ~f:(fun { CallTarget.target; _ } -> Target.is_decorated target)
-            original_call_targets
+          partition_decorated_targets original_call_targets
         in
-        log
-          "Decorated targets: `%a`"
-          Target.List.pp_pretty_with_kind
-          (List.map ~f:CallTarget.target decorated_targets);
         (* The analysis of the callee AST handles the redirection to artifically created decorator
            defines. *)
         let callee_return_values, state = analyze_expression ~state ~expression:call.Call.callee in
@@ -4115,7 +4221,7 @@ module HigherOrderCallGraph = struct
         Context.output_define_call_graph :=
           DefineCallGraph.set_call_callees
             ~location
-            ~expression_identifier:(call_identifier call)
+            ~call
             ~call_callees:
               {
                 original_call_callees with
@@ -4155,8 +4261,24 @@ module HigherOrderCallGraph = struct
               let global_callables =
                 Context.input_define_call_graph
                 |> DefineCallGraph.resolve_identifier ~location ~identifier
-                |> Option.map ~f:(fun { IdentifierCallees.callable_targets; _ } ->
-                       CallTarget.Set.of_list callable_targets)
+                >>| (fun ({ IdentifierCallees.callable_targets; _ } as identifier_callees) ->
+                      let decorated_targets, non_decorated_targets =
+                        partition_decorated_targets callable_targets
+                      in
+                      Context.output_define_call_graph :=
+                        DefineCallGraph.set_identifier_callees
+                          ~identifier
+                          ~location
+                          ~identifier_callees:
+                            {
+                              identifier_callees with
+                              callable_targets = non_decorated_targets;
+                              decorated_targets;
+                            }
+                          !Context.output_define_call_graph;
+                      non_decorated_targets
+                      |> CallTarget.Set.of_list
+                      |> CallTarget.Set.join (returned_callables decorated_targets))
                 |> Option.value ~default:CallTarget.Set.bottom
               in
               let callables_from_variable =
@@ -4167,8 +4289,25 @@ module HigherOrderCallGraph = struct
               let callables =
                 Context.input_define_call_graph
                 |> DefineCallGraph.resolve_attribute_access ~location ~attribute
-                |> Option.map ~f:(fun { AttributeAccessCallees.callable_targets; _ } ->
-                       CallTarget.Set.of_list callable_targets)
+                >>| (fun ({ AttributeAccessCallees.callable_targets; _ } as
+                         attribute_access_callees) ->
+                      let decorated_targets, non_decorated_targets =
+                        partition_decorated_targets callable_targets
+                      in
+                      Context.output_define_call_graph :=
+                        DefineCallGraph.set_attribute_access_callees
+                          ~attribute
+                          ~location
+                          ~attribute_access_callees:
+                            {
+                              attribute_access_callees with
+                              callable_targets = non_decorated_targets;
+                              decorated_targets;
+                            }
+                          !Context.output_define_call_graph;
+                      non_decorated_targets
+                      |> CallTarget.Set.of_list
+                      |> CallTarget.Set.join (returned_callables decorated_targets))
                 |> Option.value ~default:CallTarget.Set.bottom
               in
               callables, state

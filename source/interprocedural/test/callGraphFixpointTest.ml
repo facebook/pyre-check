@@ -762,18 +762,24 @@ let test_higher_order_call_graph_fixpoint =
          return f
        return inner
      @decorator
-     def foo():
+     def foo1():
        return 0
      class C:
        @decorator
        @classmethod
-       def foo(cls):
+       def foo2(cls):
          return 0
-     def bar(x):
+     @decorator
+     def foo3():
+       return 0
+     def bar(x: bool, y: bool):
        if x:
-         return foo  # Return `Decorated` target from identifiers
+         return foo1  # Redirect `Decorated` target from attribute access
+       elif y:
+         return C.foo2  # Redirect `Decorated` target from attribute access
        else:
-         return C.foo  # Redirect `Decorated` target from attribute access
+         f = foo3
+         return f  # Return `Decorated` target from identifiers
   |}
            ~expected:
              [
@@ -783,7 +789,12 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "16:11-16:14",
+                     ( "19:11-19:15",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_attribute_access
+                            (AttributeAccessCallees.create ())) );
+                     (* TODO: Resolve `C.foo`. *)
+                     ( "23:8-23:12",
                        LocationCallees.Singleton
                          (ExpressionCallees.from_attribute_access
                             (AttributeAccessCallees.create
@@ -791,15 +802,24 @@ let test_higher_order_call_graph_fixpoint =
                                  [
                                    CallTarget.create_regular
                                      (Target.Regular.Function
-                                        { name = "test.foo"; kind = Decorated });
+                                        { name = "test.foo3"; kind = Decorated });
                                  ]
                                ())) );
-                     (* TODO: Resolve `C.foo`. *)
                    ];
                  returned_callables =
                    [
-                     CallTarget.create_regular
-                       (Target.Regular.Function { name = "test.foo"; kind = Decorated });
+                     CallTarget.create
+                       (create_parameterized_target
+                          ~regular:
+                            (Target.Regular.Function
+                               { name = "test.decorator.inner"; kind = Normal })
+                          ~parameters:
+                            [
+                              ( AccessPath.Root.Variable "$parameter$f",
+                                Target.Regular.Function { name = "test.foo1"; kind = Normal }
+                                |> Target.from_regular );
+                            ]);
+                     (* TODO: Expect `foo3` after handling assignments. *)
                    ];
                };
              ]

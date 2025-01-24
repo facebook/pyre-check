@@ -224,7 +224,11 @@ module AttributeAccessCallees : sig
     (* True if the attribute access should also be considered a regular attribute.
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
     is_attribute: bool;
+    (* Function-typed runtime values that the attribute access may evaluate into. *)
     callable_targets: CallTarget.t list;
+    (* Call targets for the calls to artificially created callables that call the decorators. Only
+       used by call graph building. *)
+    decorated_targets: CallTarget.t list;
   }
   [@@deriving eq, show]
 
@@ -233,6 +237,7 @@ module AttributeAccessCallees : sig
     ?global_targets:CallTarget.t list ->
     ?callable_targets:CallTarget.t list ->
     ?is_attribute:bool ->
+    ?decorated_targets:CallTarget.t list ->
     unit ->
     t
 
@@ -246,8 +251,11 @@ module IdentifierCallees : sig
   type t = {
     global_targets: CallTarget.t list;
     nonlocal_targets: CallTarget.t list;
+    (* Function-typed runtime values that the identifier may evaluate into. *)
     callable_targets: CallTarget.t list;
-        (* Function-typed runtime values that the identifiers may evaluate into. *)
+    (* Call targets for the calls to artificially created callables that call the decorators. Only
+       used by call graph building. *)
+    decorated_targets: CallTarget.t list;
   }
   [@@deriving eq, show]
 
@@ -255,6 +263,7 @@ module IdentifierCallees : sig
     :  ?global_targets:CallTarget.t list ->
     ?nonlocal_targets:CallTarget.t list ->
     ?callable_targets:CallTarget.t list ->
+    ?decorated_targets:CallTarget.t list ->
     unit ->
     t
 
