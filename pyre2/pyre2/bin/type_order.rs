@@ -53,15 +53,15 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         }
     }
 
-    pub fn is_protocol(&self, cls: &Class) -> bool {
+    pub fn is_protocol(self, cls: &Class) -> bool {
         self.0.get_metadata_for_class(cls).is_protocol()
     }
 
-    pub fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
+    pub fn get_all_members(self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
         self.0.get_all_members(cls)
     }
 
-    pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
+    pub fn get_instance_attribute(self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.0.get_instance_attribute(cls, name)
     }
 }
