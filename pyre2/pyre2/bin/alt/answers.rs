@@ -729,14 +729,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Type::ClassType(class_type) = &self.promote(cls, range) {
                     vec![self.iterate_by_metaclass(class_type, range)]
                 } else {
-                    // Promoted type must be a TypedDict
-                    vec![self.iterate_by_metaclass(
-                        &self.stdlib.mapping(
-                            self.stdlib.str().to_type(),
-                            self.stdlib.object_class_type().clone().to_type(),
-                        ),
+                    // Promoted type must be a TypedDict, which is known to not be iterable.
+                    vec![Iterable::OfType(self.error(
                         range,
-                    )]
+                        format!(
+                            "Type `{}` (a `TypedDict` class object) is not iterable",
+                            iterable.clone().deterministic_printing()
+                        ),
+                    ))]
                 }
             }
             Type::TypedDict(_) => self.iterate(
