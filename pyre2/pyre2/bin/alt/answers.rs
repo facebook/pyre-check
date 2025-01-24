@@ -726,10 +726,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 vec![Iterable::OfType(ty)]
             }
             Type::ClassDef(cls) => {
-                if let Type::ClassType(class_type) = &self.promote(cls, range) {
-                    vec![self.iterate_by_metaclass(class_type, range)]
-                } else {
-                    // Promoted type must be a TypedDict, which is known to not be iterable.
+                if self.get_metadata_for_class(cls).is_typed_dict() {
                     vec![Iterable::OfType(self.error(
                         range,
                         format!(
@@ -737,6 +734,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             iterable.clone().deterministic_printing()
                         ),
                     ))]
+                } else if let Type::ClassType(class_type) = &self.promote(cls, range) {
+                    vec![self.iterate_by_metaclass(class_type, range)]
+                } else {
+                    // TODO(stroxler): clean this up by eliminating `iterate_by_metaclass`, this is needed
+                    // in an intermediate refactor state.
+                    unreachable!("A non-typed-dict ClassDef should always promote to a ClassType")
                 }
             }
             Type::TypedDict(_) => self.iterate(
