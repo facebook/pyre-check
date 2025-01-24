@@ -15,6 +15,7 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::wrong_self_convention)]
+#![deny(clippy::cloned_instead_of_copied)]
 #![deny(clippy::inefficient_to_string)]
 #![deny(clippy::str_to_string)]
 #![deny(clippy::string_to_string)]
