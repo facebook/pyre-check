@@ -45,6 +45,7 @@ pub enum Required {
 pub enum Kind {
     IsInstance,
     IsSubclass,
+    Dataclass,
     Def,
     Anon,
 }
@@ -178,6 +179,7 @@ impl Kind {
         match (module.as_str(), name.as_str()) {
             ("builtins", "isinstance") => Self::IsInstance,
             ("builtins", "issubclass") => Self::IsSubclass,
+            ("dataclasses", "dataclass") => Self::Dataclass,
             _ => Self::Def,
         }
     }

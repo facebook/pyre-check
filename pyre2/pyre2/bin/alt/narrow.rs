@@ -65,15 +65,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn resolve_narrowing_call(&self, func: &NarrowVal, args: &Arguments) -> Option<NarrowOp> {
         let func_ty = self.narrow_val_infer(func);
-        if args.args.len() > 1
-            && let Type::Callable(_, kind) = &func_ty
-        {
+        if args.args.len() > 1 {
             let second_arg = &args.args[1];
-            let op = match kind {
-                Kind::IsInstance => Some(NarrowOp::IsInstance(NarrowVal::Expr(Box::new(
+            let op = match func_ty.function_kind() {
+                Some(Kind::IsInstance) => Some(NarrowOp::IsInstance(NarrowVal::Expr(Box::new(
                     second_arg.clone(),
                 )))),
-                Kind::IsSubclass => Some(NarrowOp::IsSubclass(NarrowVal::Expr(Box::new(
+                Some(Kind::IsSubclass) => Some(NarrowOp::IsSubclass(NarrowVal::Expr(Box::new(
                     second_arg.clone(),
                 )))),
                 _ => None,

@@ -844,6 +844,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             return ty_decoratee.arc_clone();
         }
         let ty_decorator = self.expr(&decorator.expression, None);
+        match ty_decorator.function_kind() {
+            Some(Kind::Dataclass) => {
+                // TODO: Implement dataclass functionality
+            }
+            _ => {}
+        }
         if matches!(ty_decoratee.as_ref(), Type::ClassDef(_)) {
             // TODO: don't blanket ignore class decorators.
             return ty_decoratee.arc_clone();

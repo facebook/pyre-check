@@ -499,6 +499,14 @@ impl Type {
         matches!(self, Type::None)
     }
 
+    pub fn function_kind(&self) -> Option<&Kind> {
+        match self {
+            Type::Callable(_, kind) => Some(kind),
+            Type::Forall(_, t) => t.function_kind(),
+            _ => None,
+        }
+    }
+
     pub fn subst(self, mp: &SmallMap<Quantified, Type>) -> Self {
         self.transform(|ty| {
             if let Type::Quantified(x) = &ty {
