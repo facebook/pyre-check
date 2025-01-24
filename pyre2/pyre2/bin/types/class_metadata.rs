@@ -28,6 +28,7 @@ pub struct ClassMetadata {
     metaclass: Metaclass,
     keywords: Keywords,
     is_typed_dict: bool,
+    is_named_tuple: bool,
 }
 
 impl Display for ClassMetadata {
@@ -43,6 +44,7 @@ impl ClassMetadata {
         metaclass: Option<ClassType>,
         keywords: Vec<(Name, Type)>,
         is_typed_dict: bool,
+        is_named_tuple: bool,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         ClassMetadata {
@@ -50,6 +52,7 @@ impl ClassMetadata {
             metaclass: Metaclass(metaclass),
             keywords: Keywords(keywords),
             is_typed_dict,
+            is_named_tuple,
         }
     }
 
@@ -59,6 +62,7 @@ impl ClassMetadata {
             metaclass: Metaclass::default(),
             keywords: Keywords::default(),
             is_typed_dict: false,
+            is_named_tuple: false,
         }
     }
 
@@ -82,6 +86,10 @@ impl ClassMetadata {
 
     pub fn is_typed_dict(&self) -> bool {
         self.is_typed_dict
+    }
+
+    pub fn is_named_tuple(&self) -> bool {
+        self.is_named_tuple
     }
 
     pub fn ancestors<'a>(&'a self, stdlib: &'a Stdlib) -> impl Iterator<Item = &'a ClassType> {
@@ -188,7 +196,7 @@ impl Mro {
     /// https://en.wikipedia.org/wiki/C3_linearization
     ///
     /// TODO: We currently omit some classes that are in the runtime MRO:
-    /// `Generic`, `Protocol`, `NamedTuple`, and `object`.
+    /// `Generic`, `Protocol`, and `object`.
     pub fn new(
         cls: &Class,
         bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,

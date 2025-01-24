@@ -23,6 +23,7 @@ mod imports;
 mod legacy_generic;
 mod lsp;
 mod mro;
+mod named_tuple;
 mod narrow;
 mod operators;
 mod overload;

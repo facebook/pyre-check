@@ -101,8 +101,6 @@ impl Attribute {
 /// work of computing inherticance information and the MRO.
 #[derive(Debug, Clone)]
 enum BaseClass {
-    #[expect(dead_code)] // Will be used in the future
-    NamedTuple,
     TypedDict,
     Generic(Vec<Type>),
     Protocol(Vec<Type>),
@@ -280,7 +278,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn base_class_of(&self, base_expr: &Expr) -> BaseClass {
         if let Some(special_base_class) = self.special_base_class(base_expr) {
-            // This branch handles cases like `NamedTuple` or `Protocol`
+            // This branch handles cases like `Protocol`
             special_base_class
         } else if let Expr::Subscript(subscript) = base_expr
             && let Some(mut special_base_class) = self.special_base_class(&subscript.value)
@@ -395,14 +393,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[(Name, Expr)],
     ) -> ClassMetadata {
         let mut is_typed_dict = false;
+        let mut is_named_tuple = false;
         let bases_with_metadata: Vec<_> = bases
             .iter()
             .filter_map(|x| match self.base_class_of(x) {
                 BaseClass::Expr(x) => match self.expr_untype(&x) {
                     Type::ClassType(c) => {
-                        let class_metadata = self.get_metadata_for_class(c.class_object());
+                        let cls = c.class_object();
+                        let class_metadata = self.get_metadata_for_class(cls);
                         if class_metadata.is_typed_dict() {
                             is_typed_dict = true;
+                        }
+                        if class_metadata.is_named_tuple()
+                            || cls.qname().module.name().as_str() == "typing"
+                                && cls.qname().name.id == "NamedTuple"
+                        {
+                            is_named_tuple = true;
                         }
                         Some((c, class_metadata))
                     }
@@ -427,6 +433,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 _ => None,
             })
             .collect();
+        if is_named_tuple && bases_with_metadata.len() > 1 {
+            self.error(
+                cls.name().range,
+                "Named tuples do not support multiple inheritance".to_owned(),
+            );
+        }
         let (metaclasses, keywords): (Vec<_>, Vec<(_, _)>) =
             keywords.iter().partition_map(|(n, x)| match n.as_str() {
                 "metaclass" => Either::Left(x),
@@ -446,6 +458,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             metaclass,
             keywords,
             is_typed_dict,
+            is_named_tuple,
             self.errors(),
         )
     }

@@ -15589,6 +15589,16 @@
       "name": "PyreError",
       "stop_column": 14,
       "stop_line": 98
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "Named tuples do not support multiple inheritance",
+      "description": "Named tuples do not support multiple inheritance",
+      "line": 105,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 105
     }
   ],
   "namedtuples_define_functional.py": [

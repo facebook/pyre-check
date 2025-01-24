@@ -1083,7 +1083,6 @@
   "namedtuples_define_class.py": [
     "Line 59: Expected 1 errors",
     "Line 79: Expected 1 errors",
-    "Line 105: Expected 1 errors",
     "Line 21: Unexpected errors ['Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]']",
     "Line 23: Unexpected errors ['assert_type(Any, int) failed', '`Point` has no attribute `__getitem__`']",
     "Line 24: Unexpected errors ['assert_type(Any, int) failed', '`Point` has no attribute `__getitem__`']",
