@@ -6864,7 +6864,7 @@ let test_higher_order_call_graph_of_define =
                            ]
                          ())) );
              ]
-           ~expected_returned_callables:[] (* TODO: Expect returning `bar` *)
+           ~expected_returned_callables:[]
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_higher_order_call_graph_of_define
@@ -6878,10 +6878,10 @@ let test_higher_order_call_graph_of_define =
          pass
      class B(A):
        pass
-     def foo(a: A):
-       if 1 == 1:
+     def foo(a: A, b1: bool, b2: bool):
+       if b1:
          return A.bar
-       elif 1 == 1:
+       elif b2:
          return A().baz
        else:
          return a.baz
@@ -6889,88 +6889,6 @@ let test_higher_order_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected_call_graph:
              [
-               ( "11:5-11:11",
-                 LocationCallees.Compound
-                   (SerializableStringMap.of_alist_exn
-                      [
-                        ( "__eq__",
-                          ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     ~receiver_class:"int"
-                                     ~return_type:(Some ReturnType.bool)
-                                     ~index:1
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "int";
-                                          method_name = "__eq__";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ()) );
-                        ( "__ne__",
-                          ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     ~receiver_class:"int"
-                                     ~return_type:(Some ReturnType.bool)
-                                     ~index:0
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "int";
-                                          method_name = "__ne__";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ()) );
-                      ]) );
-               ( "13:7-13:13",
-                 LocationCallees.Compound
-                   (SerializableStringMap.of_alist_exn
-                      [
-                        ( "__eq__",
-                          ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     ~receiver_class:"int"
-                                     ~return_type:(Some ReturnType.bool)
-                                     ~index:0
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "int";
-                                          method_name = "__eq__";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ()) );
-                        ( "__ne__",
-                          ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     ~receiver_class:"int"
-                                     ~return_type:(Some ReturnType.bool)
-                                     ~index:1
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "int";
-                                          method_name = "__ne__";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ()) );
-                      ]) );
                ( "14:11-14:14",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call
@@ -6993,7 +6911,23 @@ let test_higher_order_call_graph_of_define =
                            ]
                          ())) );
              ]
-           ~expected_returned_callables:[] (* TODO: Expect returning `A.bar` and `A.baz` *)
+           ~expected_returned_callables:[]
+             (* TODO(T213339738): Expect resolving attribute access and hence returning `A.bar` and
+                `A.baz` *)
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     class C:
+       def foo(self):
+         return 0
+     def bar(c: C):
+       return c.foo
+  |}
+           ~define_name:"test.bar"
+           ~expected_call_graph:[] (* TODO(T213339738): Expect resolving attribute access. *)
+           ~expected_returned_callables:[]
            ();
     ]
 

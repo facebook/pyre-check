@@ -4476,7 +4476,10 @@ let higher_order_call_graph_of_define
     >>| Fixpoint.get_result
     |> Option.value ~default:CallTarget.Set.bottom
   in
-  { HigherOrderCallGraph.returned_callables; call_graph = !Context.output_define_call_graph }
+  {
+    HigherOrderCallGraph.returned_callables;
+    call_graph = DefineCallGraph.filter_empty_attribute_access !Context.output_define_call_graph;
+  }
 
 
 (* TODO(T206240754): Re-index `CallTarget`s after building the higher order call graphs. *)
