@@ -753,6 +753,57 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def decorator(f):
+       def inner():
+         return f
+       return inner
+     @decorator
+     def foo():
+       return 0
+     class C:
+       @decorator
+       @classmethod
+       def foo(cls):
+         return 0
+     def bar(x):
+       if x:
+         return foo  # Return `Decorated` target from identifiers
+       else:
+         return C.foo  # Redirect `Decorated` target from attribute access
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.bar"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "16:11-16:14",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_attribute_access
+                            (AttributeAccessCallees.create
+                               ~callable_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function
+                                        { name = "test.foo"; kind = Decorated });
+                                 ]
+                               ())) );
+                     (* TODO: Resolve `C.foo`. *)
+                   ];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       (Target.Regular.Function { name = "test.foo"; kind = Decorated });
+                   ];
+               };
+             ]
+           ();
     ]
 
 
