@@ -32,6 +32,7 @@ use crate::binding::binding::Key;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyLegacyTypeParam;
+use crate::dunder;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
@@ -868,17 +869,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    /// Gets an attribute from a class with type arguments (i.e., a ClassType).
-    pub fn get_class_attribute_with_targs(
-        &self,
-        cls: &ClassType,
-        name: &Name,
-    ) -> Option<Attribute> {
-        self.get_class_member(cls.class_object(), name)
+    /// Get the class's `__new__` method.
+    pub fn get_dunder_new(&self, cls: &ClassType) -> Option<Type> {
+        let new_attr = self
+            .get_class_member(cls.class_object(), &dunder::NEW)
             .map(|(member, defining_class)| Attribute {
                 value: cls.instantiate_member(member.ty),
                 defining_class,
-            })
+            })?;
+        if new_attr.defined_on(self.stdlib.object_class_type().class_object()) {
+            // The default behavior of `object.__new__` is already baked into our implementation of
+            // class construction; we only care about `__new__` if it is overridden.
+            return None;
+        }
+        Some(new_attr.value)
     }
 
     /// Given an identifier, see whether it is bound to an enum class. If so,

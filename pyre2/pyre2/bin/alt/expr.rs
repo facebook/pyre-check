@@ -612,17 +612,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.solver().expand(ret)
     }
 
-    /// Get the class's `__new__` method.
-    fn get_new(&self, cls: &ClassType) -> Option<Type> {
-        let new_attr = self.get_class_attribute_with_targs(cls, &dunder::NEW)?;
-        if new_attr.defined_on(self.stdlib.object_class_type().class_object()) {
-            // The default behavior of `object.__new__` is already baked into our implementation of
-            // class construction; we only care about `__new__` if it is overridden.
-            return None;
-        }
-        Some(new_attr.value)
-    }
-
     fn construct(
         &self,
         cls: ClassType,
@@ -640,7 +629,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // Got something other than an instance of the class under construction.
             return ret;
         }
-        let overrides_new = if let Some(new_method) = self.get_new(&cls) {
+        let overrides_new = if let Some(new_method) = self.get_dunder_new(&cls) {
             let cls_ty = Type::type_form(instance_ty.clone());
             let mut full_args = vec![CallArg::Type(&cls_ty, range)];
             full_args.extend_from_slice(args);
