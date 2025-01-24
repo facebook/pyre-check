@@ -59,6 +59,7 @@ impl ReportKey {
 
 /// Report on how many there are of each binding, and how much memory they take up, per module.
 pub fn binding_memory(state: &State) -> String {
+    #[allow(clippy::trivially_copy_pass_by_ref)] // required to match the macro signature
     fn f<K: Keyed>(
         _: &PhantomData<K>,
         module: ModuleName,
