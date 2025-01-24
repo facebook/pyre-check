@@ -138,7 +138,7 @@ impl ModuleName {
         Ok(ModuleName::from_string(itertools::join(components, ".")))
     }
 
-    pub fn append(&self, name: &Name) -> Self {
+    pub fn append(self, name: &Name) -> Self {
         Self::from_string(format!("{}.{}", self.as_str(), name))
     }
 
