@@ -1790,7 +1790,7 @@ impl<'a> BindingsBuilder<'a> {
                         arguments,
                     }) if self.is_enum(func)
                         && arguments.keywords.is_empty()
-                        && let Some(ref name) = name =>
+                        && let Some(name) = &name =>
                     {
                         self.ensure_expr(func);
                         for arg in arguments.args.iter_mut() {
@@ -2013,7 +2013,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             Stmt::Match(x) => {
                 self.ensure_expr(&x.subject);
-                let subject_name = if let Expr::Name(ref name) = *x.subject {
+                let subject_name = if let Expr::Name(name) = &*x.subject {
                     Some(name.id.clone())
                 } else {
                     None

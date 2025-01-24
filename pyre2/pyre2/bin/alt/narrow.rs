@@ -28,7 +28,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &e.get_members()
                 .into_iter()
                 .filter_map(|f| {
-                    if let Lit::Enum(box (_, ref member_name)) = f
+                    if let Lit::Enum(box (_, member_name)) = &f
                         && *member_name == *name
                     {
                         None
