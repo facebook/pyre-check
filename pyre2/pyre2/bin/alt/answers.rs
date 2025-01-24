@@ -725,16 +725,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     });
                 vec![Iterable::OfType(ty)]
             }
-            Type::Tuple(Tuple::Concrete(elts)) => vec![Iterable::FixedLen(elts.clone())],
-            Type::Tuple(Tuple::Unbounded(box elt)) => vec![Iterable::OfType(elt.clone())],
-            Type::LiteralString => vec![Iterable::OfType(self.stdlib.str().to_type())],
-            Type::Literal(lit) if lit.is_string() => {
-                vec![Iterable::OfType(self.stdlib.str().to_type())]
-            }
-            Type::Any(_) => vec![Iterable::OfType(Type::any_implicit())],
-            Type::Var(v) if let Some(_guard) = self.recurser.recurse(*v) => {
-                self.iterate(&self.solver().force_var(*v), range)
-            }
             Type::ClassDef(cls) => {
                 if let Type::ClassType(class_type) = &self.promote(cls, range) {
                     vec![self.iterate_by_metaclass(class_type, range)]
@@ -749,8 +739,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     )]
                 }
             }
-            Type::Type(box Type::ClassType(cls)) => vec![self.iterate_by_metaclass(cls, range)],
-            Type::Union(ts) => ts.iter().flat_map(|t| self.iterate(t, range)).collect(),
             Type::TypedDict(_) => self.iterate(
                 &self
                     .stdlib
@@ -761,6 +749,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .to_type(),
                 range,
             ),
+            Type::Tuple(Tuple::Concrete(elts)) => vec![Iterable::FixedLen(elts.clone())],
+            Type::Tuple(Tuple::Unbounded(box elt)) => vec![Iterable::OfType(elt.clone())],
+            Type::LiteralString => vec![Iterable::OfType(self.stdlib.str().to_type())],
+            Type::Literal(lit) if lit.is_string() => {
+                vec![Iterable::OfType(self.stdlib.str().to_type())]
+            }
+            Type::Any(_) => vec![Iterable::OfType(Type::any_implicit())],
+            Type::Var(v) if let Some(_guard) = self.recurser.recurse(*v) => {
+                self.iterate(&self.solver().force_var(*v), range)
+            }
+            Type::Type(box Type::ClassType(cls)) => vec![self.iterate_by_metaclass(cls, range)],
+            Type::Union(ts) => ts.iter().flat_map(|t| self.iterate(t, range)).collect(),
             _ => vec![Iterable::OfType(self.error(
                 range,
                 format!(

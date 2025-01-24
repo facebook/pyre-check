@@ -197,6 +197,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn as_attribute_base(&self, ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         match ty {
             Type::ClassType(class_type) => Some(AttributeBase::ClassInstance(class_type)),
+            Type::ClassDef(cls) => Some(AttributeBase::ClassObject(cls)),
+            Type::TypedDict(_) => Some(AttributeBase::ClassInstance(stdlib.mapping(
+                stdlib.str().to_type(),
+                stdlib.object_class_type().clone().to_type(),
+            ))),
             Type::Tuple(Tuple::Unbounded(box element)) => {
                 Some(AttributeBase::ClassInstance(stdlib.tuple(element)))
             }
@@ -212,7 +217,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::Any(style) => Some(AttributeBase::Any(style)),
             Type::TypeAlias(ta) => self.as_attribute_base(ta.as_value(stdlib), stdlib),
-            Type::ClassDef(cls) => Some(AttributeBase::ClassObject(cls)),
             Type::Type(box Type::ClassType(class)) => {
                 Some(AttributeBase::ClassObject(class.class_object().dupe()))
             }
@@ -229,10 +233,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Callable(_, _) => Some(AttributeBase::ClassInstance(stdlib.function_type())),
             Type::BoundMethod(_, _) => Some(AttributeBase::ClassInstance(stdlib.method_type())),
             Type::Ellipsis => Some(AttributeBase::ClassInstance(stdlib.ellipsis_type())),
-            Type::TypedDict(_) => Some(AttributeBase::ClassInstance(stdlib.mapping(
-                stdlib.str().to_type(),
-                stdlib.object_class_type().clone().to_type(),
-            ))),
             Type::Forall(_, box base) => self.as_attribute_base(base, stdlib),
             Type::Var(v) => self.as_attribute_base(self.solver().force_var(v), stdlib),
             // TODO: check to see which ones should have class representations
