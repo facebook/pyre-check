@@ -124,7 +124,7 @@ def nested_generator():
 def another_generator():
     yield 2
 
-reveal_type(nested_generator()) # E: revealed type: Generator[Literal[1, 3], Unknown, None]
+reveal_type(nested_generator()) # E: revealed type: Generator[Literal[1, 2, 3], Unknown, None]
 reveal_type(another_generator()) # E: revealed type: Generator[Literal[2], Unknown, None]
 
 "#,

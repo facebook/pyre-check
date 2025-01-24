@@ -1006,17 +1006,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn yield_expr(&self, x: Expr) -> Expr {
-        match x {
-            Expr::Yield(x) => match x.value {
-                Some(x) => *x,
-                None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range() }),
-            },
-            // This case should be unreachable.
-            _ => unreachable!("yield or yield from expression expected"),
-        }
-    }
-
     fn solve_binding(&self, binding: &Binding) -> Arc<Type> {
         // Replace any solved recursive variables with their answers.
         // We call self.unions() to simplify cases like
@@ -1108,10 +1097,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => Type::any_explicit(),
                 }
             }
-            Binding::YieldTypeOfYield(x) => {
-                let yield_value = self.yield_expr(x.clone());
-                self.expr(&yield_value, None)
-            }
+            Binding::YieldTypeOfYield(x) => match x.clone() {
+                Expr::Yield(x) => match x.value {
+                    Some(x) => self.expr(&x, None),
+                    None => self.expr(
+                        &Expr::NoneLiteral(ExprNoneLiteral { range: x.range() }),
+                        None,
+                    ),
+                },
+                Expr::YieldFrom(x) => {
+                    let gen_type = self.expr(&x.value, None);
+                    self.decompose_generator(&gen_type)
+                        .map_or(Type::any_implicit(), |(y, _, _)| y)
+                }
+                _ => unreachable!("yield or yield from expression expected"),
+            },
 
             Binding::ReturnExpr(ann, e, has_yields) => {
                 let ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));

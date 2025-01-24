@@ -814,6 +814,10 @@ impl<'a> BindingsBuilder<'a> {
                 self.yields.push(x.clone());
                 false
             }
+            Expr::YieldFrom(_) => {
+                self.yields.push(x.clone());
+                false
+            }
             _ => false,
         };
         Visitors::visit_expr(x, |x| self.ensure_expr(x));
