@@ -14,7 +14,6 @@ use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprNoneLiteral;
-use ruff_python_ast::Keyword;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
@@ -72,7 +71,6 @@ use crate::types::callable::Kind;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
-use crate::types::class::ClassType;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
@@ -682,48 +680,34 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn iterate_by_method(
-        &self,
-        call_method: &dyn Fn(&Name, TextRange, &[CallArg], &[Keyword]) -> Option<Type>,
-        range: TextRange,
-    ) -> Option<Type> {
-        if let Some(iterator_ty) = call_method(&dunder::ITER, range, &[], &[]) {
-            Some(self.call_method_or_error(&iterator_ty, &dunder::NEXT, range, &[], &[]))
-        } else {
-            let int_ty = self.stdlib.int().to_type();
-            let arg = CallArg::Type(&int_ty, range);
-            call_method(&dunder::GETITEM, range, &[arg], &[])
-        }
-    }
-
-    fn iterate_by_metaclass(&self, cls: &ClassType, range: TextRange) -> Iterable {
-        let call_method =
-            |method_name: &Name, range: TextRange, args: &[CallArg], keywords: &[Keyword]| {
-                self.call_metaclass_method(cls, method_name, range, args, keywords)
-            };
-        let ty = self
-            .iterate_by_method(&call_method, range)
-            .unwrap_or_else(|| {
-                self.error(range, format!("Class object `{}` is not iterable", cls))
-            });
-        Iterable::OfType(ty)
-    }
-
+    /// Given an `iterable` type, determine the iteration type; this is the type
+    /// of `x` if we were to loop using `for x in iterable`.
     pub fn iterate(&self, iterable: &Type, range: TextRange) -> Vec<Iterable> {
+        // Use the iterable protocol interfaces to determine the iterable type.
+        // Special cases like Tuple should be intercepted first.
+        let iterate_by_interface = || {
+            let iteration_ty = if let Some(iterator_ty) =
+                self.call_method(iterable, &dunder::ITER, range, &[], &[])
+            {
+                Some(self.call_method_or_error(&iterator_ty, &dunder::NEXT, range, &[], &[]))
+            } else {
+                let int_ty = self.stdlib.int().to_type();
+                let arg = CallArg::Type(&int_ty, range);
+                self.call_method(iterable, &dunder::GETITEM, range, &[arg], &[])
+            };
+            Iterable::OfType(iteration_ty.unwrap_or_else(|| {
+                self.error(
+                    range,
+                    format!(
+                        "Type `{}` is not iterable",
+                        iterable.clone().deterministic_printing()
+                    ),
+                )
+            }))
+        };
         match iterable {
-            Type::ClassType(cls) => {
-                let call_method = |method_name: &Name,
-                                   range: TextRange,
-                                   args: &[CallArg],
-                                   keywords: &[Keyword]| {
-                    self.call_method(iterable, method_name, range, args, keywords)
-                };
-                let ty = self
-                    .iterate_by_method(&call_method, range)
-                    .unwrap_or_else(|| {
-                        self.error(range, format!("Class `{}` is not iterable", cls.name()))
-                    });
-                vec![Iterable::OfType(ty)]
+            Type::ClassType(_) | Type::Type(box Type::ClassType(_)) => {
+                vec![iterate_by_interface()]
             }
             Type::ClassDef(cls) => {
                 if self.get_metadata_for_class(cls).is_typed_dict() {
@@ -734,12 +718,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             iterable.clone().deterministic_printing()
                         ),
                     ))]
-                } else if let Type::ClassType(class_type) = &self.promote(cls, range) {
-                    vec![self.iterate_by_metaclass(class_type, range)]
                 } else {
-                    // TODO(stroxler): clean this up by eliminating `iterate_by_metaclass`, this is needed
-                    // in an intermediate refactor state.
-                    unreachable!("A non-typed-dict ClassDef should always promote to a ClassType")
+                    vec![iterate_by_interface()]
                 }
             }
             Type::TypedDict(_) => self.iterate(
@@ -762,7 +742,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Var(v) if let Some(_guard) = self.recurser.recurse(*v) => {
                 self.iterate(&self.solver().force_var(*v), range)
             }
-            Type::Type(box Type::ClassType(cls)) => vec![self.iterate_by_metaclass(cls, range)],
             Type::Union(ts) => ts.iter().flat_map(|t| self.iterate(t, range)).collect(),
             _ => vec![Iterable::OfType(self.error(
                 range,

@@ -646,7 +646,7 @@ testcase!(
 class A:
     pass
 def f(x: A):
-    for _ in x:  # E: Class `A` is not iterable
+    for _ in x:  # E: Type `A` is not iterable
         pass
     "#,
 );
@@ -656,7 +656,7 @@ testcase!(
     r#"
 class A:
     pass
-for _ in A:  # E: Class object `A` is not iterable
+for _ in A:  # E: Type `type[A]` is not iterable
     pass
     "#,
 );
@@ -673,7 +673,7 @@ class B[T]:
     pass
 for x in A[str]:
     assert_type(x, int)
-for _ in B[str]:  # E: Class object `B[str]` is not iterable
+for _ in B[str]:  # E: Type `type[B[str]]` is not iterable
     pass
     "#,
 );

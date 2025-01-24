@@ -1721,6 +1721,16 @@
     {
       "code": -2,
       "column": 5,
+      "concise_description": "EXPECTED None <: Iterator[A]",
+      "description": "EXPECTED None <: Iterator[A]",
+      "line": 114,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 114
+    },
+    {
+      "code": -2,
+      "column": 5,
       "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "line": 114,
@@ -1741,12 +1751,32 @@
     {
       "code": -2,
       "column": 5,
+      "concise_description": "EXPECTED None <: Iterator[B]",
+      "description": "EXPECTED None <: Iterator[B]",
+      "line": 119,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 5,
       "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "line": 119,
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED None <: Generator[None, int, None]",
+      "description": "EXPECTED None <: Generator[None, int, None]",
+      "line": 127,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 127
     },
     {
       "code": -2,
@@ -1767,6 +1797,16 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 131
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED None <: Generator[None, str, None]",
+      "description": "EXPECTED None <: Generator[None, str, None]",
+      "line": 135,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 135
     },
     {
       "code": -2,
@@ -1797,6 +1837,16 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 149
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED None <: Generator[int, None, None]",
+      "description": "EXPECTED None <: Generator[int, None, None]",
+      "line": 150,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 150
     },
     {
       "code": -2,
@@ -5978,16 +6028,6 @@
     }
   ],
   "dataclasses_transform_converter.py": [
-    {
-      "code": -2,
-      "column": 39,
-      "concise_description": "EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]",
-      "description": "EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 53,
-      "stop_line": 29
-    },
     {
       "code": -2,
       "column": 41,
@@ -10555,16 +10595,6 @@
       "name": "PyreError",
       "stop_column": 6,
       "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "untype, got int",
-      "description": "untype, got int",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 44
     },
     {
       "code": -2,

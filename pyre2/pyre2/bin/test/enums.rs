@@ -10,6 +10,7 @@ use itertools::Itertools;
 use crate::test::util::get_class;
 use crate::test::util::mk_state;
 use crate::testcase;
+use crate::testcase_with_bug;
 
 #[test]
 fn test_fields() {
@@ -82,7 +83,17 @@ assert_type(Color6.RED, Literal[Color6.RED])
 "#,
 );
 
-testcase!(
+// TODO(stroxler) This test case involves a metaclass method that uses a `self` annotation
+// to tie the output type to the class object being called on.
+//
+// At one point we had a special code path that could handle exactly this one case, but
+// there were structural issues with that logic. The actual solution - which is mandatory
+// to handle other cases like overloads that use `self` annotations - is to rework method
+// types and method calls so that binding is handled at call time.
+//
+// This test should be fixed as part of making that work in a general way.
+testcase_with_bug!(
+    "Call resolution for metaclasses does not play well with the constraint solver, we need better method types to fix.",
     test_iterate,
     r#"
 from typing import assert_type
@@ -90,8 +101,8 @@ from enum import Enum
 class E(Enum):
     X = 1
     Y = 2
-for e in E:
-    assert_type(e, E)
+for e in E:  # E: EXPECTED EnumMeta <: type[@_]
+    assert_type(e, E)  # E: assert_type(Any, E)
     "#,
 );
 
