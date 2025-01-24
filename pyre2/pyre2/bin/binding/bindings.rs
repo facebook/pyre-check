@@ -2197,11 +2197,23 @@ impl<'a> BindingsBuilder<'a> {
                                     let val = if module_exports.contains(&x.name.id, self.lookup) {
                                         Binding::Import(m, x.name.id)
                                     } else {
-                                        self.error(
-                                            x.range,
-                                            format!("Could not import `{}` from `{m}`", x.name.id),
-                                        );
-                                        Binding::AnyType(AnyStyle::Error)
+                                        let x_as_module_name = m.append(&x.name.id);
+                                        if self.lookup.get(x_as_module_name).is_ok() {
+                                            Binding::Module(
+                                                x_as_module_name,
+                                                x_as_module_name.components(),
+                                                None,
+                                            )
+                                        } else {
+                                            self.error(
+                                                x.range,
+                                                format!(
+                                                    "Could not import `{}` from `{m}`",
+                                                    x.name.id
+                                                ),
+                                            );
+                                            Binding::AnyType(AnyStyle::Error)
+                                        }
                                     };
                                     self.bind_definition(&asname, val, Some(FlowStyle::Import(m)));
                                 }

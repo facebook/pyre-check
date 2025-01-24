@@ -288,6 +288,17 @@ fn env_dunder_init_with_submodule() -> TestEnv {
     t
 }
 
+testcase!(
+    test_from_package_import_module,
+    env_dunder_init_with_submodule(),
+    r#"
+from foo import bar
+from typing import assert_type
+assert_type(bar.x, int)
+from foo import baz  # E: Could not import `baz` from `foo`
+"#,
+);
+
 testcase_with_bug!(
     "TODO: foo.bar.x should exist and should be an int",
     test_import_dunder_init_and_submodule,
