@@ -848,15 +848,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Apply a decorator. This effectively synthesizes a function call.
     pub fn apply_decorator(&self, decorator: &Decorator, decoratee: &Idx<Key>) -> Type {
+        let ty_decoratee = self.get_idx(*decoratee);
+        if matches!(ty_decoratee.as_ref(), Type::ClassDef(_)) {
+            // TODO: don't blanket ignore class decorators.
+            return ty_decoratee.arc_clone();
+        }
+        // Note: for now it is necessary that this come *after* special cases for the
+        // decoratee to avoid recursion in key edge cases like `TypedDict`
+        // (which is decorated with `@final`, whose type signature itself
+        // depends on a typed dict).
+        //
+        // Eventually these edge cases might be handled by instead short-circuiting the
+        // important decorators (in particular `final`) in bindings.
         let call_target = {
             let ty = self.expr(&decorator.expression, None);
             self.as_call_target_or_error(ty, CallStyle::FreeForm, decorator.range)
         };
-        let ty_decoratee = self.get_idx(*decoratee);
-        if matches!(ty_decoratee.as_ref(), Type::ClassDef(_)) {
-            // TODO: don't just ignore class decorators.
-            return ty_decoratee.arc_clone();
-        }
         let arg = CallArg::Type(ty_decoratee.as_ref(), decorator.range);
         self.call_infer(call_target, &[arg], &[], decorator.range)
     }

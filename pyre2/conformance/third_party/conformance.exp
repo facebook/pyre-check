@@ -6670,16 +6670,6 @@
   "dataclasses_transform_converter.py": [
     {
       "code": -2,
-      "column": 39,
-      "concise_description": "EXPECTED tuple[Forall[S, T, Callable[[KwOnly[converter: Callable[[S], T]], KwOnly[default: S | None], KwOnly[default_factory: Callable[[], S] | None]], T]]] <: tuple[Callable[..., Any] | type[Any], ...]",
-      "description": "EXPECTED tuple[Forall[S, T, Callable[[KwOnly[converter: Callable[[S], T]], KwOnly[default: S | None], KwOnly[default_factory: Callable[[], S] | None]], T]]] <: tuple[Callable[..., Any] | type[Any], ...]",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 53,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
       "column": 41,
       "concise_description": "EXPECTED Callable[[], int] <: Callable[[@_], int]",
       "description": "EXPECTED Callable[[], int] <: Callable[[@_], int]",
@@ -11326,16 +11316,6 @@
       "name": "PyreError",
       "stop_column": 6,
       "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "untype, got int",
-      "description": "untype, got int",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 44
     },
     {
       "code": -2,
@@ -17108,6 +17088,36 @@
     },
     {
       "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED IO[Any] <: SupportsClose",
+      "description": "EXPECTED IO[Any] <: SupportsClose",
+      "line": 29,
+      "name": "PyreError",
+      "stop_column": 13,
+      "stop_line": 29
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "EXPECTED Resource <: SupportsClose",
+      "description": "EXPECTED Resource <: SupportsClose",
+      "line": 29,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 29
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED Literal[1] <: SupportsClose",
+      "description": "EXPECTED Literal[1] <: SupportsClose",
+      "line": 30,
+      "name": "PyreError",
+      "stop_column": 13,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "EXPECTED None <: int",
       "description": "EXPECTED None <: int",
@@ -17158,6 +17168,16 @@
     },
     {
       "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED Literal[2] <: float",
+      "description": "EXPECTED Literal[2] <: float",
+      "line": 102,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 102
+    },
+    {
+      "code": -2,
       "column": 23,
       "concise_description": "EXPECTED Concrete2_Good1 <: Template2",
       "description": "EXPECTED Concrete2_Good1 <: Template2",
@@ -17205,6 +17225,16 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 117
+    },
+    {
+      "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 148,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 148
     },
     {
       "code": -2,
@@ -17268,6 +17298,26 @@
     },
     {
       "code": -2,
+      "column": 17,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 172,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 172
+    },
+    {
+      "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 182,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 182
+    },
+    {
+      "code": -2,
       "column": 26,
       "concise_description": "EXPECTED Literal[0] <: float",
       "description": "EXPECTED Literal[0] <: float",
@@ -17275,6 +17325,26 @@
       "name": "PyreError",
       "stop_column": 27,
       "stop_line": 190
+    },
+    {
+      "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 194,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 194
+    },
+    {
+      "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 199,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 199
     },
     {
       "code": -2,
@@ -17558,6 +17628,16 @@
     },
     {
       "code": -2,
+      "column": 17,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 305,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 305
+    },
+    {
+      "code": -2,
       "column": 6,
       "concise_description": "Object of class `FunctionType` has no attribute `setter`",
       "description": "Object of class `FunctionType` has no attribute `setter`",
@@ -17565,6 +17645,56 @@
       "name": "PyreError",
       "stop_column": 17,
       "stop_line": 307
+    },
+    {
+      "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 313,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 313
+    },
+    {
+      "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 318,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 318
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 324,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 324
+    },
+    {
+      "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 328,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 328
+    },
+    {
+      "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED Literal[0] <: float",
+      "description": "EXPECTED Literal[0] <: float",
+      "line": 333,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 333
     },
     {
       "code": -2,
