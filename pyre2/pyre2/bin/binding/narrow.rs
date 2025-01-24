@@ -221,9 +221,9 @@ impl NarrowOps {
                 range,
                 func,
                 arguments:
-                    ref args @ Arguments {
+                    args @ Arguments {
                         range: _,
-                        args: ref posargs,
+                        args: posargs,
                         keywords: _,
                     },
             })) if !posargs.is_empty() => {
