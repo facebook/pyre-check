@@ -109,9 +109,11 @@ ReadOnly: _SpecialForm
 
 def assert_type(x, y) -> None: ...
 
-
 def final(f: _T) -> _T: ...
 
+# This use of `final` matches typeshed stubs, and we have a test that relies on
+# it to ensure that our handling of `@final` does not lead to recursion issues
+# for type variables.
 @final
 class TypeVar:
     def __init__(self, name: str) -> None: ...
