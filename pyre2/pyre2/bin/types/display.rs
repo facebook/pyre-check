@@ -286,6 +286,10 @@ mod tests {
 
     use super::*;
     use crate::module::module_info::ModuleInfo;
+    use crate::types::callable::Callable;
+    use crate::types::callable::Kind;
+    use crate::types::callable::Param;
+    use crate::types::callable::Required;
     use crate::types::class::Class;
     use crate::types::class::ClassType;
     use crate::types::literal::Lit;
@@ -438,6 +442,17 @@ mod tests {
         assert_eq!(
             Type::Union(vec![nonlit1, lit1, nonlit2, lit2]).to_string(),
             "None | Literal[True, 'test'] | LiteralString"
+        );
+    }
+
+    #[test]
+    fn test_display_callable() {
+        let param1 = Param::Pos(Name::new("hello"), Type::None, Required::Required);
+        let param2 = Param::KwOnly(Name::new("world"), Type::None, Required::Required);
+        let callable = Callable::list(vec![param1, param2], Type::None);
+        assert_eq!(
+            Type::Callable(Box::new(callable), Kind::Anon).to_string(),
+            "(hello: None, *, world: None) -> None"
         );
     }
 }

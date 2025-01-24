@@ -222,10 +222,10 @@ def f1(c: Callable[[int], None]):
     pass
 def f2(c: Callable[[C, int], None]):
     pass
-f1(C.f)  # E: EXPECTED Callable[[Pos[self: C], Pos[x: int]], None] <: Callable[[int], None]
+f1(C.f)  # E: EXPECTED (self: C, x: int) -> None <: (int) -> None
 f1(C().f)
 f2(C.f)
-f2(C().f)  # E: EXPECTED BoundMethod[C, Callable[[Pos[self: C], Pos[x: int]], None]] <: Callable[[C, int], None]
+f2(C().f)  # E: EXPECTED BoundMethod[C, (self: C, x: int) -> None] <: (C, int) -> None
     "#,
 );
 

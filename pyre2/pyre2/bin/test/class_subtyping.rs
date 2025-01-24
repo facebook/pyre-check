@@ -112,11 +112,11 @@ def t3() -> bool: ...
 test0: Callable[[], bool] = t0
 test1: Callable[[], TypeGuard[int]] = t0
 test2: Callable[[], bool] = t1
-test3: Callable[[], TypeGuard[bool]] = t1  # E: Callable[[], TypeGuard[int]] <: Callable[[], TypeGuard[bool]]
+test3: Callable[[], TypeGuard[bool]] = t1  # E: () -> TypeGuard[int] <: () -> TypeGuard[bool]
 test4: Callable[[], bool] = t2
 test5: Callable[[], TypeGuard[int]] = t2
-test6: Callable[[], TypeGuard[bool]] = t2  # E: Callable[[], TypeGuard[bool] | TypeGuard[int]] <: Callable[[], TypeGuard[bool]]
-test7: Callable[[], TypeGuard[bool]] = t3  # E: Callable[[], bool] <: Callable[[], TypeGuard[bool]]
+test6: Callable[[], TypeGuard[bool]] = t2  # E: () -> TypeGuard[bool] | TypeGuard[int] <: () -> TypeGuard[bool]
+test7: Callable[[], TypeGuard[bool]] = t3  # E: () -> bool <: () -> TypeGuard[bool]
 
 test8: Callable[[], object] = t0
 test9: Callable[[], object] = t2
@@ -134,10 +134,10 @@ def t2() -> TypeIs[bool] | TypeIs[int]: ...
 def t3() -> bool: ...
 
 test0: Callable[[], bool] = t0
-test1: Callable[[], TypeIs[int]] = t0  # E: Callable[[], TypeIs[bool]] <: Callable[[], TypeIs[int]]
+test1: Callable[[], TypeIs[int]] = t0  # E: () -> TypeIs[bool] <: () -> TypeIs[int]
 test2: Callable[[], bool] = t1
 test4: Callable[[], bool] = t2
-test5: Callable[[], TypeIs[int]] = t3  # E: Callable[[], bool] <: Callable[[], TypeIs[int]]
+test5: Callable[[], TypeIs[int]] = t3  # E: () -> bool <: () -> TypeIs[int]
 
 test6: Callable[[], object] = t0
 test7: Callable[[], object] = t2

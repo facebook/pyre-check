@@ -12,8 +12,6 @@ use ruff_python_ast::name::Name;
 
 use crate::module::module_name::ModuleName;
 use crate::types::types::Type;
-use crate::util::display::commas_iter;
-use crate::util::display::Fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Callable {
@@ -59,16 +57,23 @@ impl Callable {
     ) -> fmt::Result {
         match &self.params {
             Params::List(params) => {
-                write!(
-                    f,
-                    "Callable[[{}], {}]",
-                    commas_iter(|| params.iter().map(|x| x.display_with_type(wrap))),
-                    wrap(&self.ret),
-                )
+                write!(f, "(")?;
+                let mut kwonly = false;
+                for (i, param) in params.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    if !kwonly && matches!(param, Param::KwOnly(..)) {
+                        kwonly = true;
+                        write!(f, "*, ")?;
+                    }
+                    param.fmt_with_type(f, wrap)?;
+                }
+                write!(f, ") -> {}", wrap(&self.ret))
             }
-            Params::Ellipsis => write!(f, "Callable[..., {}]", wrap(&self.ret)),
+            Params::Ellipsis => write!(f, "(...) -> {}", wrap(&self.ret)),
             Params::ParamSpec(ty) => {
-                write!(f, "Callable[ParamSpec({}), {}]", wrap(ty), wrap(&self.ret))
+                write!(f, "(ParamSpec({})) -> {}", wrap(ty), wrap(&self.ret))
             }
         }
     }
@@ -131,18 +136,11 @@ impl Param {
     ) -> fmt::Result {
         match self {
             Param::PosOnly(ty, _required) => write!(f, "{}", wrap(ty)),
-            Param::Pos(name, ty, _required) => write!(f, "Pos[{}: {}]", name, wrap(ty)),
-            Param::VarArg(ty) => write!(f, "Var[{}]", wrap(ty)),
-            Param::KwOnly(name, ty, _required) => write!(f, "KwOnly[{}: {}]", name, wrap(ty)),
-            Param::Kwargs(ty) => write!(f, "KwArgs[{}]", wrap(ty)),
+            Param::Pos(name, ty, _required) => write!(f, "{}: {}", name, wrap(ty)),
+            Param::VarArg(ty) => write!(f, "*{}", wrap(ty)),
+            Param::KwOnly(name, ty, _required) => write!(f, "{}: {}", name, wrap(ty)),
+            Param::Kwargs(ty) => write!(f, "**{}", wrap(ty)),
         }
-    }
-
-    pub fn display_with_type<'a, D: Display + 'a>(
-        &'a self,
-        wrap: &'a impl Fn(&'a Type) -> D,
-    ) -> impl Display + 'a {
-        Fmt(move |f| self.fmt_with_type(f, wrap))
     }
 
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
