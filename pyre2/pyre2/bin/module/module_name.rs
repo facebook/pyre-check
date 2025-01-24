@@ -180,15 +180,6 @@ impl ModuleName {
     pub fn components(self) -> Vec<Name> {
         self.0.split('.').map(Name::new).collect()
     }
-
-    #[allow(dead_code)] // Only used in tests, for now
-    pub fn prefix_match_count(self, path: &[Name]) -> usize {
-        self.0
-            .split('.')
-            .zip(path.iter())
-            .take_while(|(a, b)| *a == *b)
-            .count()
-    }
 }
 
 #[cfg(test)]
