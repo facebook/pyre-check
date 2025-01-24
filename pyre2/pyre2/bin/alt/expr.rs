@@ -375,14 +375,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         args: &[CallArg],
         keywords: &[Keyword],
     ) -> Option<Type> {
-        let metadata = self.get_metadata_for_class(cls.class_object());
-        let metaclass = metadata.metaclass()?;
-        let attr = self.get_instance_attribute(metaclass, &dunder::CALL)?;
-        if attr.defined_on(self.stdlib.builtins_type().class_object()) {
-            // In general, we ignore the default `type` metaclass, so ignore methods inherited from it as well.
-            return None;
-        }
-        let method = match attr.value {
+        let dunder_call = match self.get_metaclass_dunder_call(cls)? {
             Type::BoundMethod(_, func) => {
                 // This method was bound to a general instance of the metaclass, but we have more
                 // information about the particular instance that it should be bound to.
@@ -391,10 +384,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     func,
                 )
             }
-            _ => attr.value,
+            dunder_call => dunder_call,
         };
         Some(self.call_infer(
-            self.as_call_target_or_error(method, CallStyle::Method(&dunder::CALL), range),
+            self.as_call_target_or_error(dunder_call, CallStyle::Method(&dunder::CALL), range),
             args,
             keywords,
             range,

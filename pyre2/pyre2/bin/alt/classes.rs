@@ -884,6 +884,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Some(new_attr.value)
     }
 
+    /// Get the metaclass `__call__` method.
+    pub fn get_metaclass_dunder_call(&self, cls: &ClassType) -> Option<Type> {
+        let metadata = self.get_metadata_for_class(cls.class_object());
+        let metaclass = metadata.metaclass()?;
+        let attr = self.get_instance_attribute(metaclass, &dunder::CALL)?;
+        if attr.defined_on(self.stdlib.builtins_type().class_object()) {
+            // The behavior of `type.__call__` is already baked into our implementation of constructors,
+            // so we can skip analyzing it at the type level.
+            None
+        } else {
+            Some(attr.value)
+        }
+    }
+
     /// Given an identifier, see whether it is bound to an enum class. If so,
     /// return the enum, otherwise return `None`.
     pub fn get_enum_from_name(&self, name: Identifier) -> Option<Enum> {
