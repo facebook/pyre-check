@@ -66,7 +66,6 @@ impl ClassMetadata {
         }
     }
 
-    #[allow(dead_code)] // This is used in tests now, and will be needed later in production.
     pub fn metaclass(&self) -> Option<&ClassType> {
         self.metaclass.0.as_ref()
     }
