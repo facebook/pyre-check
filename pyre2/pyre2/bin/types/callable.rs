@@ -176,7 +176,7 @@ impl Param {
 }
 
 impl Kind {
-    pub fn from_name(module: &ModuleName, name: &Name) -> Self {
+    pub fn from_name(module: ModuleName, name: &Name) -> Self {
         match (module.as_str(), name.as_str()) {
             ("builtins", "isinstance") => Self::IsInstance,
             ("builtins", "issubclass") => Self::IsSubclass,

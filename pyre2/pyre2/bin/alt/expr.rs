@@ -847,8 +847,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     /// Apply a decorator. This effectively synthesizes a function call.
-    pub fn apply_decorator(&self, decorator: &Decorator, decoratee: &Idx<Key>) -> Type {
-        let ty_decoratee = self.get_idx(*decoratee);
+    pub fn apply_decorator(&self, decorator: &Decorator, decoratee: Idx<Key>) -> Type {
+        let ty_decoratee = self.get_idx(decoratee);
         if matches!(ty_decoratee.as_ref(), Type::ClassDef(_)) {
             // TODO: don't blanket ignore class decorators.
             return ty_decoratee.arc_clone();

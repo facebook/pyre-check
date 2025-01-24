@@ -1083,7 +1083,7 @@ impl<'a> BindingsBuilder<'a> {
         qs
     }
 
-    fn parameters(&mut self, x: &mut Parameters, self_type: &Option<Idx<Key>>) {
+    fn parameters(&mut self, x: &mut Parameters, self_type: Option<Idx<Key>>) {
         let mut self_name = None;
         for x in x.iter() {
             let name = x.name();
@@ -1091,7 +1091,7 @@ impl<'a> BindingsBuilder<'a> {
                 self_name = Some(name.clone());
             }
             let ann_val = match x.annotation() {
-                Some(a) => BindingAnnotation::AnnotateExpr(a.clone(), *self_type),
+                Some(a) => BindingAnnotation::AnnotateExpr(a.clone(), self_type),
                 None => {
                     if let Some(self_name) = &self_name
                         && name.id == *self_name.id
@@ -1211,9 +1211,9 @@ impl<'a> BindingsBuilder<'a> {
             &mut x.parameters,
             if func_name.id == dunder::NEW {
                 // __new__ is a staticmethod that is special-cased at runtime to not need @staticmethod decoration.
-                &None
+                None
             } else {
-                &self_type
+                self_type
             },
         );
 

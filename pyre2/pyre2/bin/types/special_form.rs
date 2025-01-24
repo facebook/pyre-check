@@ -67,7 +67,7 @@ impl SpecialForm {
         }
     }
 
-    pub fn to_qualifier(&self) -> Option<Qualifier> {
+    pub fn to_qualifier(self) -> Option<Qualifier> {
         match self {
             Self::Annotated => Some(Qualifier::Annotated),
             Self::ClassVar => Some(Qualifier::ClassVar),

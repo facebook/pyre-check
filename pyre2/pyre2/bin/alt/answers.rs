@@ -1114,7 +1114,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.expr(e, hint)
                 }
             }
-            Binding::DecoratorApplication(d, k) => self.apply_decorator(d, k),
+            Binding::DecoratorApplication(d, k) => self.apply_decorator(d, *k),
             Binding::ExceptionHandler(box ann, is_star) => {
                 let base_exception_type = self.stdlib.base_exception().to_type();
                 let base_exception_group_any_type = if *is_star {
@@ -1413,7 +1413,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 tparams.extend(legacy_tparams);
                 let callable = Type::Callable(
                     Box::new(Callable::list(params, ret)),
-                    Kind::from_name(&self.module_info().name(), &x.name.id),
+                    Kind::from_name(self.module_info().name(), &x.name.id),
                 );
                 callable.forall(self.type_params(x.range, tparams))
             }
