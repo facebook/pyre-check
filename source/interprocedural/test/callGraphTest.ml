@@ -6929,6 +6929,211 @@ let test_higher_order_call_graph_of_define =
            ~expected_call_graph:[] (* TODO(T213339738): Expect resolving attribute access. *)
            ~expected_returned_callables:[]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     def foo():
+       return 0
+     def bar(c: C):
+       x = foo  # Test assignments
+       return x
+  |}
+           ~define_name:"test.bar"
+           ~expected_call_graph:
+             [
+               ( "5:6-5:9",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     from typing import Callable
+     def foo():
+       return 0
+     class C:
+       f: Callable
+     def bar(c: C):
+       c.f = foo  # Test assignments
+       return c.f
+  |}
+           ~define_name:"test.bar"
+           ~expected_call_graph:
+             [
+               ( "8:8-8:11",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     def foo():
+       return 0
+     def bar():
+       l = []
+       l[0] = foo  # Test assignments
+       return l[0]
+  |}
+           ~define_name:"test.bar"
+           ~expected_call_graph:
+             [
+               ( "6:2-6:12",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               ~receiver_class:"list"
+                               ~implicit_receiver:true
+                               (Target.Regular.Method
+                                  {
+                                    class_name = "list";
+                                    method_name = "__setitem__";
+                                    kind = Normal;
+                                  });
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 1;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.foo"; kind = Normal });
+                                    ];
+                                  unresolved = CallGraph.Unresolved.False;
+                                };
+                              ])
+                         ())) );
+               ( "6:9-6:12",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ())) );
+               ( "7:9-7:13",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               ~receiver_class:"list"
+                               ~implicit_receiver:true
+                               (Target.Regular.Method
+                                  {
+                                    class_name = "list";
+                                    method_name = "__getitem__";
+                                    kind = Normal;
+                                  });
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     def foo():
+       return 0
+     def bar():
+       l = []
+       l['key'] = foo  # Test assignments
+       return l['key']
+  |}
+           ~define_name:"test.bar"
+           ~expected_call_graph:
+             [
+               ( "6:2-6:16",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               ~receiver_class:"list"
+                               ~implicit_receiver:true
+                               (Target.Regular.Method
+                                  {
+                                    class_name = "list";
+                                    method_name = "__setitem__";
+                                    kind = Normal;
+                                  });
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 1;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.foo"; kind = Normal });
+                                    ];
+                                  unresolved = CallGraph.Unresolved.False;
+                                };
+                              ])
+                         ())) );
+               ( "6:13-6:16",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ())) );
+               ( "7:9-7:17",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               ~receiver_class:"list"
+                               ~implicit_receiver:true
+                               (Target.Regular.Method
+                                  {
+                                    class_name = "list";
+                                    method_name = "__getitem__";
+                                    kind = Normal;
+                                  });
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
     ]
 
 
