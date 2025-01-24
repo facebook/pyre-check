@@ -449,7 +449,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if is_typed_dict && metaclass.is_some() {
             self.error(
                 cls.name().range,
-                "Typed dictionary definitions may not specify a metaclass.".to_string(),
+                "Typed dictionary definitions may not specify a metaclass.".to_owned(),
             );
         }
         ClassMetadata::new(

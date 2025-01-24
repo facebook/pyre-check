@@ -1142,7 +1142,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.type_order(),
                         )
                     {
-                        self.error(range, "Exception handler annotation in `except*` clause may not extend `BaseExceptionGroup`".to_string());
+                        self.error(range, "Exception handler annotation in `except*` clause may not extend `BaseExceptionGroup`".to_owned());
                     }
                     exception
                 };

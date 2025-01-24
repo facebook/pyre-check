@@ -1505,7 +1505,7 @@ impl<'a> BindingsBuilder<'a> {
                     }
                 }
             }
-            _ => self.error(class_name.range, "TODO enum functional syntax".to_string()),
+            _ => self.error(class_name.range, "TODO enum functional syntax".to_owned()),
         }
         let self_binding = Binding::SelfType(definition_key);
         self.table.insert(
