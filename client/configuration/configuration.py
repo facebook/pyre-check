@@ -891,11 +891,11 @@ class Configuration:
         if number_of_workers is not None and number_of_workers > 0:
             return number_of_workers
 
-        number_of_physical_cores = psutil.cpu_count(logical=False)
-        if number_of_physical_cores is None:
+        number_of_logical_cores = psutil.cpu_count(logical=True)
+        if number_of_logical_cores is None:
             default_number_of_workers = 1
         else:
-            default_number_of_workers = max(1, number_of_physical_cores - 1)
+            default_number_of_workers = max(1, number_of_logical_cores // 2 - 1)
 
         LOG.info(
             "Could not determine the number of Pyre workers from configuration. "
