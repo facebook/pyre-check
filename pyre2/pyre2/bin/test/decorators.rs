@@ -85,3 +85,16 @@ def f(x: int) -> int:
 assert_type(f, Callable[[int], int])  # E: assert_type(Callable[[int], int], Callable[[int], int])
     "#,
 );
+
+// This test case does not directly use a decorator, but it verifies our
+// handling of the `@final` decorator applied to `typing.TypeVar`, which can
+// trigger recursion that breaks legacy type parameter handling if we are not
+// careful.
+testcase_with_bug!(
+    "There is a recursion bug we need to fix with @final on TypeVar",
+    test_that_final_decorator_on_type_var_works,
+    r#"
+from typing import MutableSequence
+x: MutableSequence[int]  # E: Expected 0 type arguments for class `MutableSequence`, got 1.
+    "#,
+);

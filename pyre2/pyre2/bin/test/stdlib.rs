@@ -109,6 +109,10 @@ ReadOnly: _SpecialForm
 
 def assert_type(x, y) -> None: ...
 
+
+def final(f: _T) -> _T: ...
+
+@final
 class TypeVar:
     def __init__(self, name: str) -> None: ...
 
@@ -127,6 +131,7 @@ class TypeVarTuple:
 def reveal_type(obj, /):
     return obj
 
+_T = TypeVar('_T')
 _T_co = TypeVar('_T_co', covariant=True)
 class Iterable(Protocol[_T_co]):
     def __iter__(self) -> Iterator[_T_co]: ...
@@ -160,6 +165,10 @@ class NamedTuple(tuple[Any, ...]): ...
 
 _F = TypeVar('_F', bound=Callable[..., Any])
 def overload(func: _F) -> _F: ...
+
+class Sequence[T]: ...
+
+class MutableSequence(Sequence[_T]): ...
 "#;
 
 static TYPES: &str = r#"
