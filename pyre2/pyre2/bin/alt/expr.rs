@@ -366,19 +366,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    /// Calls a method on the metaclass of `cls`. Returns None without attempting a call if we
-    /// don't find a method defined on a metaclass that isn't the default `builtins.type`.
-    pub fn call_metaclass_method(
+    /// If the metaclass defines a custom `__call__`, call it. If the `__call__` comes from `type`, ignore
+    /// it because `type.__call__` behavior is baked into our constructor logic.
+    pub fn call_metaclass(
         &self,
         cls: &ClassType,
-        method_name: &Name,
         range: TextRange,
         args: &[CallArg],
         keywords: &[Keyword],
     ) -> Option<Type> {
         let metadata = self.get_metadata_for_class(cls.class_object());
         let metaclass = metadata.metaclass()?;
-        let attr = self.get_instance_attribute(metaclass, method_name)?;
+        let attr = self.get_instance_attribute(metaclass, &dunder::CALL)?;
         if attr.defined_on(self.stdlib.builtins_type().class_object()) {
             // In general, we ignore the default `type` metaclass, so ignore methods inherited from it as well.
             return None;
@@ -395,7 +394,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             _ => attr.value,
         };
         Some(self.call_infer(
-            self.as_call_target_or_error(method, CallStyle::Method(method_name), range),
+            self.as_call_target_or_error(method, CallStyle::Method(&dunder::CALL), range),
             args,
             keywords,
             range,
@@ -621,7 +620,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         // Based on https://typing.readthedocs.io/en/latest/spec/constructors.html.
         let instance_ty = Type::ClassType(cls.clone());
-        if let Some(ret) = self.call_metaclass_method(&cls, &dunder::CALL, range, args, keywords)
+        if let Some(ret) = self.call_metaclass(&cls, range, args, keywords)
             && !self
                 .solver()
                 .is_subset_eq(&ret, &instance_ty, self.type_order())
