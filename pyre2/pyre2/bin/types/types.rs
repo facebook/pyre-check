@@ -402,14 +402,7 @@ impl Type {
 
     pub fn is_generator(&self) -> bool {
         match self {
-            Type::ClassType(cls) => {
-                let typ = cls.class_object();
-                let name = typ.name().as_str();
-                if name == "Generator" {
-                    return true;
-                }
-                false
-            }
+            Type::ClassType(cls) => cls.class_object().name() == "Generator",
             _ => false,
         }
     }
