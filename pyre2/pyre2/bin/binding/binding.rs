@@ -348,6 +348,8 @@ pub enum Binding {
     DecoratorApplication(Box<Decorator>, Idx<Key>),
     /// A grouping of both the yield expression types and the return type.
     Generator(Box<Binding>, Box<Binding>),
+    /// Actual value of yield expression
+    YieldTypeOfYield(Expr),
     /// A value in an iterable expression, e.g. IterableValue(\[1\]) represents 1.
     IterableValue(Option<Idx<KeyAnnotation>>, Expr),
     /// A value produced by entering a context manager.
@@ -464,6 +466,7 @@ impl DisplayWith<Bindings> for Binding {
             self::Binding::SendTypeOfYield(None, _) => {
                 write!(f, "no annotation so send type is Any")
             }
+            Self::YieldTypeOfYield(x) => write!(f, "yield expr {}", m.display(x)),
             Self::IterableValue(None, x) => write!(f, "iter {}", m.display(x)),
             Self::IterableValue(Some(k), x) => {
                 write!(f, "iter {}: {}", ctx.display(*k), m.display(x))

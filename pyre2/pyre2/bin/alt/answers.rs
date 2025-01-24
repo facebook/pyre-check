@@ -13,6 +13,7 @@ use std::sync::Arc;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::Keyword;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
@@ -1005,6 +1006,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn yield_expr(&self, x: Expr) -> Expr {
+        match x {
+            Expr::Yield(x) => match x.value {
+                Some(x) => *x,
+                None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range() }),
+            },
+            // This case should be unreachable.
+            _ => unreachable!("yield or yield from expression expected"),
+        }
+    }
+
     fn solve_binding(&self, binding: &Binding) -> Arc<Type> {
         // Replace any solved recursive variables with their answers.
         // We call self.unions() to simplify cases like
@@ -1096,6 +1108,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => Type::any_explicit(),
                 }
             }
+            Binding::YieldTypeOfYield(x) => {
+                let yield_value = self.yield_expr(x.clone());
+                self.expr(&yield_value, None)
+            }
+
             Binding::ReturnExpr(ann, e, has_yields) => {
                 let ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
                 let hint = ann.as_ref().and_then(|x| x.ty.as_ref());

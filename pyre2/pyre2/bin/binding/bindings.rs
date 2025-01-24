@@ -1273,7 +1273,7 @@ impl<'a> BindingsBuilder<'a> {
                 let key = self.table.insert(
                     Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range()),
                     // collect the value of the yield expression.
-                    Binding::Expr(None, yield_expr(x.clone())),
+                    Binding::YieldTypeOfYield(x.clone()),
                 );
                 yield_expr_keys.insert(key);
 
@@ -2497,16 +2497,5 @@ fn return_expr(x: StmtReturn) -> Expr {
     match x.value {
         Some(x) => *x,
         None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range }),
-    }
-}
-
-fn yield_expr(x: Expr) -> Expr {
-    match x {
-        Expr::Yield(x) => match x.value {
-            Some(x) => *x,
-            None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range() }),
-        },
-        // This case should be unreachable.
-        _ => unreachable!("yield or yield from expression expected"),
     }
 }
