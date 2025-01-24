@@ -1413,7 +1413,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 tparams.extend(legacy_tparams);
                 let callable = Type::Callable(
                     Box::new(Callable::list(params, ret)),
-                    Kind::from_name(&self.module_info().name(), x.name.id()),
+                    Kind::from_name(&self.module_info().name(), &x.name.id),
                 );
                 callable.forall(self.type_params(x.range, tparams))
             }

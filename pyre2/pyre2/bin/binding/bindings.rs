@@ -676,7 +676,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn forward_lookup(&mut self, name: &Identifier) -> Option<Binding> {
-        self.lookup_name(name.id()).map(Binding::Forward)
+        self.lookup_name(&name.id).map(Binding::Forward)
     }
 
     /// Given a name appearing in an expression, create a `Usage` key for that
@@ -2418,7 +2418,7 @@ impl LegacyTParamBuilder {
     ) -> Option<Binding> {
         self.legacy_tparams
             .entry(name.id.clone())
-            .or_insert_with(|| builder.lookup_name(name.id()).map(|x| (name.clone(), x)))
+            .or_insert_with(|| builder.lookup_name(&name.id).map(|x| (name.clone(), x)))
             .as_ref()
             .map(|(id, _)| {
                 let range_if_scoped_params_exist = if self.has_scoped_tparams {

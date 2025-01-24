@@ -404,7 +404,7 @@ impl Type {
         match self {
             Type::ClassType(cls) => {
                 let typ = cls.class_object();
-                let name = typ.name().id().as_str();
+                let name = typ.name().as_str();
                 if name == "Generator" {
                     return true;
                 }
@@ -416,7 +416,7 @@ impl Type {
 
     pub fn is_iterator(&self) -> bool {
         match self {
-            Type::ClassType(cls) => cls.class_object().name().id().as_str() == "Iterator",
+            Type::ClassType(cls) => cls.class_object().name() == "Iterator",
             _ => false,
         }
     }
