@@ -136,9 +136,28 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 )
             }
             (Type::ClassType(got), Type::ClassType(want)) => {
+                let got_is_protocol = self.type_order.is_protocol(got.class_object());
+                let want_is_protocol = self.type_order.is_protocol(want.class_object());
+                if got_is_protocol && !want_is_protocol {
+                    // Protocols are never assignable to concrete types
+                    return false;
+                }
                 match self.type_order.as_superclass(got, want.class_object()) {
                     Some(got) => self.check_targs(got.targs(), want.targs(), want.tparams()),
-                    None => false,
+                    // Structural checking for assigning to protocols
+                    None if want_is_protocol => {
+                        let want_members = self.type_order.get_all_members(want.class_object());
+                        for name in want_members.keys() {
+                            if self.type_order.get_instance_attribute(got, name).is_some() {
+                                // TODO: check types of attributes
+                                continue;
+                            } else {
+                                return false;
+                            }
+                        }
+                        true
+                    }
+                    _ => false,
                 }
             }
             (Type::ClassDef(got), Type::ClassDef(want)) => {

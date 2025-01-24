@@ -891,7 +891,8 @@ async def test() -> None:
 "#,
 );
 
-testcase!(
+testcase_with_bug!(
+    "TODO(yangdanny) Protocol checking",
     test_await_wrong_await_return_type,
     r#"
 class Foo:
@@ -899,7 +900,7 @@ class Foo:
         ...
 
 async def test() -> None:
-    await Foo()  # E: Expression is not awaitable
+    await Foo()  # this should be an error because the return type of __await__ doesn't match the protocol
 "#,
 );
 

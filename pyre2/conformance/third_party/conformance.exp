@@ -2606,46 +2606,6 @@
     },
     {
       "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED Proto3 <: Proto4[Ellipsis]",
-      "description": "EXPECTED Proto3 <: Proto4[Ellipsis]",
-      "line": 155,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 155
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED Proto4[Ellipsis] <: Proto3",
-      "description": "EXPECTED Proto4[Ellipsis] <: Proto3",
-      "line": 156,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 156
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED Proto7 <: Proto6",
-      "description": "EXPECTED Proto7 <: Proto6",
-      "line": 157,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 157
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED Proto8 <: Proto5[Any]",
-      "description": "EXPECTED Proto8 <: Proto5[Any]",
-      "line": 159,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 159
-    },
-    {
-      "code": -2,
       "column": 33,
       "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
       "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
@@ -3280,26 +3240,6 @@
     },
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "EXPECTED Class7_1 <: Proto7[int, int]",
-      "description": "EXPECTED Class7_1 <: Proto7[int, int]",
-      "line": 135,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 135
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "EXPECTED Class7_2 <: Proto7[int, int]",
-      "description": "EXPECTED Class7_2 <: Proto7[int, int]",
-      "line": 144,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 144
-    },
-    {
-      "code": -2,
       "column": 15,
       "concise_description": "EXPECTED Callable[[Any], Any] <: Proto8",
       "description": "EXPECTED Callable[[Any], Any] <: Proto8",
@@ -3592,406 +3532,6 @@
     },
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED PosOnly2 <: Standard2",
-      "description": "EXPECTED PosOnly2 <: Standard2",
-      "line": 51,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 51
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED KwOnly2 <: Standard2",
-      "description": "EXPECTED KwOnly2 <: Standard2",
-      "line": 52,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED Standard2 <: PosOnly2",
-      "description": "EXPECTED Standard2 <: PosOnly2",
-      "line": 54,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 54
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED KwOnly2 <: PosOnly2",
-      "description": "EXPECTED KwOnly2 <: PosOnly2",
-      "line": 55,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 55
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED Standard2 <: KwOnly2",
-      "description": "EXPECTED Standard2 <: KwOnly2",
-      "line": 57,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 57
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED PosOnly2 <: KwOnly2",
-      "description": "EXPECTED PosOnly2 <: KwOnly2",
-      "line": 58,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 58
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED IntArgs3 <: NoArgs3",
-      "description": "EXPECTED IntArgs3 <: NoArgs3",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 79
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED FloatArgs3 <: NoArgs3",
-      "description": "EXPECTED FloatArgs3 <: NoArgs3",
-      "line": 80,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 80
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED NoArgs3 <: IntArgs3",
-      "description": "EXPECTED NoArgs3 <: IntArgs3",
-      "line": 82,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 82
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED FloatArgs3 <: IntArgs3",
-      "description": "EXPECTED FloatArgs3 <: IntArgs3",
-      "line": 83,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 83
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED NoArgs3 <: FloatArgs3",
-      "description": "EXPECTED NoArgs3 <: FloatArgs3",
-      "line": 85,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 85
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED IntArgs3 <: FloatArgs3",
-      "description": "EXPECTED IntArgs3 <: FloatArgs3",
-      "line": 86,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 86
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED IntArgs4 <: PosOnly4",
-      "description": "EXPECTED IntArgs4 <: PosOnly4",
-      "line": 116,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 116
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED IntStrArgs4 <: PosOnly4",
-      "description": "EXPECTED IntStrArgs4 <: PosOnly4",
-      "line": 117,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 117
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED StrArgs4 <: PosOnly4",
-      "description": "EXPECTED StrArgs4 <: PosOnly4",
-      "line": 118,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 118
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED StrArgs4 <: IntStrArgs4",
-      "description": "EXPECTED StrArgs4 <: IntStrArgs4",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 119
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED IntArgs4 <: IntStrArgs4",
-      "description": "EXPECTED IntArgs4 <: IntStrArgs4",
-      "line": 120,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 120
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED IntStrArgs4 <: StrArgs4",
-      "description": "EXPECTED IntStrArgs4 <: StrArgs4",
-      "line": 121,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 121
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED IntArgs4 <: StrArgs4",
-      "description": "EXPECTED IntArgs4 <: StrArgs4",
-      "line": 122,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 122
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED IntStrArgs4 <: IntArgs4",
-      "description": "EXPECTED IntStrArgs4 <: IntArgs4",
-      "line": 123,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 123
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED StrArgs4 <: IntArgs4",
-      "description": "EXPECTED StrArgs4 <: IntArgs4",
-      "line": 124,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 124
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED IntStrArgs4 <: Standard4",
-      "description": "EXPECTED IntStrArgs4 <: Standard4",
-      "line": 125,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 125
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED StrArgs4 <: Standard4",
-      "description": "EXPECTED StrArgs4 <: Standard4",
-      "line": 126,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 126
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED IntKwargs5 <: NoKwargs5",
-      "description": "EXPECTED IntKwargs5 <: NoKwargs5",
-      "line": 148,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 148
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED FloatKwargs5 <: NoKwargs5",
-      "description": "EXPECTED FloatKwargs5 <: NoKwargs5",
-      "line": 149,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 149
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED NoKwargs5 <: IntKwargs5",
-      "description": "EXPECTED NoKwargs5 <: IntKwargs5",
-      "line": 151,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 151
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED FloatKwargs5 <: IntKwargs5",
-      "description": "EXPECTED FloatKwargs5 <: IntKwargs5",
-      "line": 152,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 152
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED NoKwargs5 <: FloatKwargs5",
-      "description": "EXPECTED NoKwargs5 <: FloatKwargs5",
-      "line": 154,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 154
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED IntKwargs5 <: FloatKwargs5",
-      "description": "EXPECTED IntKwargs5 <: FloatKwargs5",
-      "line": 155,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 155
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED IntKwargs6 <: KwOnly6",
-      "description": "EXPECTED IntKwargs6 <: KwOnly6",
-      "line": 187,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 187
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED IntStrKwargs6 <: KwOnly6",
-      "description": "EXPECTED IntStrKwargs6 <: KwOnly6",
-      "line": 188,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 188
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED StrKwargs6 <: KwOnly6",
-      "description": "EXPECTED StrKwargs6 <: KwOnly6",
-      "line": 189,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 189
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED StrKwargs6 <: IntStrKwargs6",
-      "description": "EXPECTED StrKwargs6 <: IntStrKwargs6",
-      "line": 190,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 190
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED IntKwargs6 <: IntStrKwargs6",
-      "description": "EXPECTED IntKwargs6 <: IntStrKwargs6",
-      "line": 191,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 191
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED IntStrKwargs6 <: StrKwargs6",
-      "description": "EXPECTED IntStrKwargs6 <: StrKwargs6",
-      "line": 192,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 192
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED IntKwargs6 <: StrKwargs6",
-      "description": "EXPECTED IntKwargs6 <: StrKwargs6",
-      "line": 193,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 193
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED IntStrKwargs6 <: IntKwargs6",
-      "description": "EXPECTED IntStrKwargs6 <: IntKwargs6",
-      "line": 194,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 194
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED StrKwargs6 <: IntKwargs6",
-      "description": "EXPECTED StrKwargs6 <: IntKwargs6",
-      "line": 195,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 195
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED IntStrKwargs6 <: Standard6",
-      "description": "EXPECTED IntStrKwargs6 <: Standard6",
-      "line": 196,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 196
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED StrKwargs6 <: Standard6",
-      "description": "EXPECTED StrKwargs6 <: Standard6",
-      "line": 197,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 197
-    },
-    {
-      "code": -2,
       "column": 40,
       "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[Callable[ParamSpec(ParamSpec[P]), None]]]",
       "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[Callable[ParamSpec(ParamSpec[P]), None]]]",
@@ -4009,116 +3549,6 @@
       "name": "PyreError",
       "stop_column": 26,
       "stop_line": 213
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED NoDefaultArg8 <: DefaultArg8",
-      "description": "EXPECTED NoDefaultArg8 <: DefaultArg8",
-      "line": 236,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 236
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED NoX8 <: DefaultArg8",
-      "description": "EXPECTED NoX8 <: DefaultArg8",
-      "line": 237,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 237
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED DefaultArg8 <: NoDefaultArg8",
-      "description": "EXPECTED DefaultArg8 <: NoDefaultArg8",
-      "line": 239,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 239
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED NoX8 <: NoDefaultArg8",
-      "description": "EXPECTED NoX8 <: NoDefaultArg8",
-      "line": 240,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 240
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED DefaultArg8 <: NoX8",
-      "description": "EXPECTED DefaultArg8 <: NoX8",
-      "line": 242,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 242
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED NoDefaultArg8 <: NoX8",
-      "description": "EXPECTED NoDefaultArg8 <: NoX8",
-      "line": 243,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 243
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED Overloaded9 <: IntArg9",
-      "description": "EXPECTED Overloaded9 <: IntArg9",
-      "line": 271,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 271
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED Overloaded9 <: StrArg9",
-      "description": "EXPECTED Overloaded9 <: StrArg9",
-      "line": 272,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 272
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED Overloaded9 <: FloatArg9",
-      "description": "EXPECTED Overloaded9 <: FloatArg9",
-      "line": 273,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 273
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED IntStrArg10 <: Overloaded10",
-      "description": "EXPECTED IntStrArg10 <: Overloaded10",
-      "line": 296,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 296
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED StrArg10 <: Overloaded10",
-      "description": "EXPECTED StrArg10 <: Overloaded10",
-      "line": 297,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 297
     }
   ],
   "classes_classvar.py": [
@@ -5896,16 +5326,6 @@
   "dataclasses_hash.py": [
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED DC1 <: Hashable",
-      "description": "EXPECTED DC1 <: Hashable",
-      "line": 15,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -5913,16 +5333,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 15
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED DC2 <: Hashable",
-      "description": "EXPECTED DC2 <: Hashable",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 23
     },
     {
       "code": -2,
@@ -5936,16 +5346,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED DC3 <: Hashable",
-      "description": "EXPECTED DC3 <: Hashable",
-      "line": 32,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 32
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -5953,16 +5353,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED DC4 <: Hashable",
-      "description": "EXPECTED DC4 <: Hashable",
-      "line": 40,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 40
     },
     {
       "code": -2,
@@ -5976,16 +5366,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED DC5 <: Hashable",
-      "description": "EXPECTED DC5 <: Hashable",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -5996,16 +5376,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED DC6 <: Hashable",
-      "description": "EXPECTED DC6 <: Hashable",
-      "line": 59,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 59
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -6013,16 +5383,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 59
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED DC7 <: Hashable",
-      "description": "EXPECTED DC7 <: Hashable",
-      "line": 70,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 70
     },
     {
       "code": -2,
@@ -7642,16 +7002,6 @@
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "EXPECTED Generator[int, None, None] <: SupportsNext[@_]",
-      "description": "EXPECTED Generator[int, None, None] <: SupportsNext[@_]",
-      "line": 10,
-      "name": "PyreError",
-      "stop_column": 66,
-      "stop_line": 10
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "Expected `__getitem__` to be a callable, got Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]",
       "description": "Expected `__getitem__` to be a callable, got Callable[[list[object], SupportsIndex], object] | Callable[[list[object], slice[Error, Error, Error]], list[object]]",
@@ -7721,16 +7071,6 @@
       "name": "PyreError",
       "stop_column": 4,
       "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED FooConcrete2 <: SupportsFoo2",
-      "description": "EXPECTED FooConcrete2 <: SupportsFoo2",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 119
     }
   ],
   "directives_no_type_check.py": [
@@ -8915,16 +8255,6 @@
     },
     {
       "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED MyIter1[int] <: SupportsNext[@_]",
-      "description": "EXPECTED MyIter1[int] <: SupportsNext[@_]",
-      "line": 139,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 139
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
@@ -8941,16 +8271,6 @@
       "line": 140,
       "name": "PyreError",
       "stop_column": 21,
-      "stop_line": 140
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED MyIter2[int] <: SupportsNext[@_]",
-      "description": "EXPECTED MyIter2[int] <: SupportsNext[@_]",
-      "line": 140,
-      "name": "PyreError",
-      "stop_column": 24,
       "stop_line": 140
     },
     {
@@ -10696,48 +10016,7 @@
       "stop_line": 67
     }
   ],
-  "generics_self_protocols.py": [
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED ReturnSelf <: ShapeProtocol",
-      "description": "EXPECTED ReturnSelf <: ShapeProtocol",
-      "line": 57,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 57
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED ReturnConcreteShape <: ShapeProtocol",
-      "description": "EXPECTED ReturnConcreteShape <: ShapeProtocol",
-      "line": 58,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 58
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED BadReturnType <: ShapeProtocol",
-      "description": "EXPECTED BadReturnType <: ShapeProtocol",
-      "line": 61,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED ReturnDifferentClass <: ShapeProtocol",
-      "description": "EXPECTED ReturnDifferentClass <: ShapeProtocol",
-      "line": 64,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 64
-    }
-  ],
+  "generics_self_protocols.py": [],
   "generics_self_usage.py": [
     {
       "code": -2,
@@ -16200,16 +15479,6 @@
   "narrowing_typeguard.py": [
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED tuple[?_, ...] <: Sized",
-      "description": "EXPECTED tuple[?_, ...] <: Sized",
-      "line": 13,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 13
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "assert_type(tuple[?_, ?_], tuple[str, str]) failed",
       "description": "assert_type(tuple[?_, ?_], tuple[str, str]) failed",
@@ -16217,16 +15486,6 @@
       "name": "PyreError",
       "stop_column": 44,
       "stop_line": 17
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED list[object] <: Sized",
-      "description": "EXPECTED list[object] <: Sized",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 23
     },
     {
       "code": -2,
@@ -16478,16 +15737,6 @@
       "line": 15,
       "name": "PyreError",
       "stop_column": 25,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED tuple[?_, ...] <: Sized",
-      "description": "EXPECTED tuple[?_, ...] <: Sized",
-      "line": 15,
-      "name": "PyreError",
-      "stop_column": 19,
       "stop_line": 15
     },
     {
@@ -17099,26 +16348,6 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "EXPECTED IO[Any] <: SupportsClose",
-      "description": "EXPECTED IO[Any] <: SupportsClose",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "EXPECTED Resource <: SupportsClose",
-      "description": "EXPECTED Resource <: SupportsClose",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 12,
       "concise_description": "EXPECTED Literal[1] <: SupportsClose",
       "description": "EXPECTED Literal[1] <: SupportsClose",
       "line": 30,
@@ -17168,16 +16397,6 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED Concrete <: Template",
-      "description": "EXPECTED Concrete <: Template",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 79
-    },
-    {
-      "code": -2,
       "column": 30,
       "concise_description": "EXPECTED Literal[2] <: float",
       "description": "EXPECTED Literal[2] <: float",
@@ -17185,16 +16404,6 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 102
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete2_Good1 <: Template2",
-      "description": "EXPECTED Concrete2_Good1 <: Template2",
-      "line": 113,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 113
     },
     {
       "code": -2,
@@ -17208,36 +16417,6 @@
     },
     {
       "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete2_Bad2 <: Template2",
-      "description": "EXPECTED Concrete2_Bad2 <: Template2",
-      "line": 115,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 115
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete2_Bad3 <: Template2",
-      "description": "EXPECTED Concrete2_Bad3 <: Template2",
-      "line": 116,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 116
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete2_Bad4 <: Template2",
-      "description": "EXPECTED Concrete2_Bad4 <: Template2",
-      "line": 117,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 117
-    },
-    {
-      "code": -2,
       "column": 30,
       "concise_description": "EXPECTED Literal[0] <: float",
       "description": "EXPECTED Literal[0] <: float",
@@ -17248,16 +16427,6 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete3_Good1 <: Template3",
-      "description": "EXPECTED Concrete3_Good1 <: Template3",
-      "line": 155,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 155
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "EXPECTED Concrete3_Bad1 <: Template3",
       "description": "EXPECTED Concrete3_Bad1 <: Template3",
@@ -17265,46 +16434,6 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 156
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete3_Bad2 <: Template3",
-      "description": "EXPECTED Concrete3_Bad2 <: Template3",
-      "line": 157,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 157
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete3_Bad3 <: Template3",
-      "description": "EXPECTED Concrete3_Bad3 <: Template3",
-      "line": 158,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 158
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete3_Bad4 <: Template3",
-      "description": "EXPECTED Concrete3_Bad4 <: Template3",
-      "line": 159,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 159
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete3_Bad5 <: Template3",
-      "description": "EXPECTED Concrete3_Bad5 <: Template3",
-      "line": 160,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 160
     },
     {
       "code": -2,
@@ -17359,92 +16488,12 @@
     {
       "code": -2,
       "column": 23,
-      "concise_description": "EXPECTED Concrete4_Good1 <: Template4",
-      "description": "EXPECTED Concrete4_Good1 <: Template4",
-      "line": 211,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 211
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete4_Good2 <: Template4",
-      "description": "EXPECTED Concrete4_Good2 <: Template4",
-      "line": 212,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 212
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete4_Good3 <: Template4",
-      "description": "EXPECTED Concrete4_Good3 <: Template4",
-      "line": 213,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 213
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete4_Good4 <: Template4",
-      "description": "EXPECTED Concrete4_Good4 <: Template4",
-      "line": 214,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 214
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete4_Good5 <: Template4",
-      "description": "EXPECTED Concrete4_Good5 <: Template4",
-      "line": 215,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 215
-    },
-    {
-      "code": -2,
-      "column": 23,
       "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "line": 216,
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 216
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete4_Good6 <: Template4",
-      "description": "EXPECTED Concrete4_Good6 <: Template4",
-      "line": 216,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 216
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete4_Good7 <: Template4",
-      "description": "EXPECTED Concrete4_Good7 <: Template4",
-      "line": 217,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 217
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete4_Bad1 <: Template4",
-      "description": "EXPECTED Concrete4_Bad1 <: Template4",
-      "line": 218,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 218
     },
     {
       "code": -2,
@@ -17528,106 +16577,6 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete5_Good1 <: Template5",
-      "description": "EXPECTED Concrete5_Good1 <: Template5",
-      "line": 280,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 280
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete5_Good2 <: Template5",
-      "description": "EXPECTED Concrete5_Good2 <: Template5",
-      "line": 281,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 281
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete5_Good3 <: Template5",
-      "description": "EXPECTED Concrete5_Good3 <: Template5",
-      "line": 282,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 282
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete5_Good4 <: Template5",
-      "description": "EXPECTED Concrete5_Good4 <: Template5",
-      "line": 283,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 283
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete5_Good5 <: Template5",
-      "description": "EXPECTED Concrete5_Good5 <: Template5",
-      "line": 284,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 284
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete5_Bad1 <: Template5",
-      "description": "EXPECTED Concrete5_Bad1 <: Template5",
-      "line": 285,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 285
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete5_Bad2 <: Template5",
-      "description": "EXPECTED Concrete5_Bad2 <: Template5",
-      "line": 286,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 286
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete5_Bad3 <: Template5",
-      "description": "EXPECTED Concrete5_Bad3 <: Template5",
-      "line": 287,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 287
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete5_Bad4 <: Template5",
-      "description": "EXPECTED Concrete5_Bad4 <: Template5",
-      "line": 288,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 288
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete5_Bad5 <: Template5",
-      "description": "EXPECTED Concrete5_Bad5 <: Template5",
-      "line": 289,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 289
-    },
-    {
-      "code": -2,
       "column": 6,
       "concise_description": "Object of class `FunctionType` has no attribute `setter`",
       "description": "Object of class `FunctionType` has no attribute `setter`",
@@ -17708,46 +16657,6 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete6_Good1 <: Template6",
-      "description": "EXPECTED Concrete6_Good1 <: Template6",
-      "line": 336,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 336
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete6_Good2 <: Template6",
-      "description": "EXPECTED Concrete6_Good2 <: Template6",
-      "line": 337,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 337
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete6_Good3 <: Template6",
-      "description": "EXPECTED Concrete6_Good3 <: Template6",
-      "line": 338,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 338
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete6_Bad1 <: Template6",
-      "description": "EXPECTED Concrete6_Bad1 <: Template6",
-      "line": 339,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 339
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
       "description": "Expected `__init__` to be a callable, got Callable[[NamedTuple, str, Iterable[tuple[str, Any]]], None] | Callable[[NamedTuple, str, None, KwArgs[Any]], None]",
@@ -17755,26 +16664,6 @@
       "name": "PyreError",
       "stop_column": 36,
       "stop_line": 340
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete6_Bad2 <: Template6",
-      "description": "EXPECTED Concrete6_Bad2 <: Template6",
-      "line": 340,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 340
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Concrete6_Bad3 <: Template6",
-      "description": "EXPECTED Concrete6_Bad3 <: Template6",
-      "line": 341,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 341
     }
   ],
   "protocols_explicit.py": [
@@ -17797,39 +16686,9 @@
       "name": "PyreError",
       "stop_column": 28,
       "stop_line": 27
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED ImplicitColor <: PColor",
-      "description": "EXPECTED ImplicitColor <: PColor",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 39
     }
   ],
   "protocols_generic.py": [
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED Concrete1 <: Proto1[str, int]",
-      "description": "EXPECTED Concrete1 <: Proto1[str, int]",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 39
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED Concrete1 <: Proto1[int, str]",
-      "description": "EXPECTED Concrete1 <: Proto1[int, str]",
-      "line": 40,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 40
-    },
     {
       "code": -2,
       "column": 7,
@@ -17929,89 +16788,9 @@
       "name": "PyreError",
       "stop_column": 14,
       "stop_line": 109
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED ConcreteHasProperty1 <: HasPropertyProto",
-      "description": "EXPECTED ConcreteHasProperty1 <: HasPropertyProto",
-      "line": 144,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 144
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED ConcreteHasProperty2 <: HasPropertyProto",
-      "description": "EXPECTED ConcreteHasProperty2 <: HasPropertyProto",
-      "line": 145,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 145
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED ConcreteHasProperty3 <: HasPropertyProto",
-      "description": "EXPECTED ConcreteHasProperty3 <: HasPropertyProto",
-      "line": 146,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 146
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED ConcreteHasProperty4 <: HasPropertyProto",
-      "description": "EXPECTED ConcreteHasProperty4 <: HasPropertyProto",
-      "line": 147,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 147
     }
   ],
   "protocols_merging.py": [
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED SCConcrete1 <: SizedAndClosable1",
-      "description": "EXPECTED SCConcrete1 <: SizedAndClosable1",
-      "line": 46,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 46
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED SCConcrete1 <: SizedAndClosable2",
-      "description": "EXPECTED SCConcrete1 <: SizedAndClosable2",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED SizedAndClosable3 <: SizedAndClosable2",
-      "description": "EXPECTED SizedAndClosable3 <: SizedAndClosable2",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 44,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED SCConcrete1 <: Sized",
-      "description": "EXPECTED SCConcrete1 <: Sized",
-      "line": 50,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 50
-    },
     {
       "code": -2,
       "column": 25,
@@ -18044,23 +16823,13 @@
     },
     {
       "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED SizedAndClosable1 <: SizedAndClosable2",
-      "description": "EXPECTED SizedAndClosable1 <: SizedAndClosable2",
-      "line": 59,
+      "column": 16,
+      "concise_description": "If `Protocol` is included as a base class, all other bases must be protocols.",
+      "description": "If `Protocol` is included as a base class, all other bases must be protocols.",
+      "line": 67,
       "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 59
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED SizedAndClosable2 <: SizedAndClosable1",
-      "description": "EXPECTED SizedAndClosable2 <: SizedAndClosable1",
-      "line": 60,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 60
+      "stop_column": 33,
+      "stop_line": 67
     },
     {
       "code": -2,
@@ -18148,36 +16917,6 @@
   "protocols_recursive.py": [
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED SimpleTree <: Traversable",
-      "description": "EXPECTED SimpleTree <: Traversable",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "EXPECTED Tree[float] <: Traversable",
-      "description": "EXPECTED Tree[float] <: Traversable",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED ImplB <: ProtoA[Never, @_]",
-      "description": "EXPECTED ImplB <: ProtoA[Never, @_]",
-      "line": 80,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 80
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, list[int]) failed",
       "description": "assert_type(Any, list[int]) failed",
@@ -18188,79 +16927,8 @@
     }
   ],
   "protocols_runtime_checkable.py": [],
-  "protocols_self.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED One <: Copyable",
-      "description": "EXPECTED One <: Copyable",
-      "line": 32,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED Other <: Copyable",
-      "description": "EXPECTED Other <: Copyable",
-      "line": 33,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED C1[str] <: P1Parent[str]",
-      "description": "EXPECTED C1[str] <: P1Parent[str]",
-      "line": 54,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 54
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED C1[str] <: P1Child[str]",
-      "description": "EXPECTED C1[str] <: P1Child[str]",
-      "line": 55,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 55
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED C2[str] <: P2Parent[str]",
-      "description": "EXPECTED C2[str] <: P2Parent[str]",
-      "line": 72,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED C2[str] <: P2Child[str]",
-      "description": "EXPECTED C2[str] <: P2Child[str]",
-      "line": 73,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 73
-    }
-  ],
+  "protocols_self.py": [],
   "protocols_subtyping.py": [
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "EXPECTED Concrete2 <: Proto2",
-      "description": "EXPECTED Concrete2 <: Proto2",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 37
-    },
     {
       "code": -2,
       "column": 21,
@@ -18274,132 +16942,12 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "EXPECTED Proto3 <: Proto2",
-      "description": "EXPECTED Proto3 <: Proto2",
-      "line": 54,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 54
-    },
-    {
-      "code": -2,
-      "column": 18,
       "concise_description": "EXPECTED Proto2 <: Proto3",
       "description": "EXPECTED Proto2 <: Proto3",
       "line": 55,
       "name": "PyreError",
       "stop_column": 20,
       "stop_line": 55
-    },
-    {
-      "code": -2,
-      "column": 28,
-      "concise_description": "EXPECTED Proto5[int] <: Proto4[int, int]",
-      "description": "EXPECTED Proto5[int] <: Proto4[int, int]",
-      "line": 77,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 77
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Proto4[int, int] <: Proto5[int]",
-      "description": "EXPECTED Proto4[int, int] <: Proto5[int]",
-      "line": 78,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 78
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Proto5[int] <: Proto4[int, float]",
-      "description": "EXPECTED Proto5[int] <: Proto4[int, float]",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 79
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED Proto4[int, int] <: Proto5[float]",
-      "description": "EXPECTED Proto4[int, int] <: Proto5[float]",
-      "line": 80,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 80
-    },
-    {
-      "code": -2,
-      "column": 31,
-      "concise_description": "EXPECTED Proto6[float, float] <: Proto7[object, int]",
-      "description": "EXPECTED Proto6[float, float] <: Proto7[object, int]",
-      "line": 98,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 98
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED Proto6[float, float] <: Proto7[float, float]",
-      "description": "EXPECTED Proto6[float, float] <: Proto7[float, float]",
-      "line": 99,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 99
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED Proto6[float, float] <: Proto7[complex, int]",
-      "description": "EXPECTED Proto6[float, float] <: Proto7[complex, int]",
-      "line": 100,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 100
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Proto6[float, float] <: Proto7[int, float]",
-      "description": "EXPECTED Proto6[float, float] <: Proto7[int, float]",
-      "line": 102,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 102
-    },
-    {
-      "code": -2,
-      "column": 33,
-      "concise_description": "EXPECTED Proto6[float, float] <: Proto7[float, object]",
-      "description": "EXPECTED Proto6[float, float] <: Proto7[float, object]",
-      "line": 103,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 103
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "EXPECTED DefaultJob <: SupportsExit | SupportsQuit",
-      "description": "EXPECTED DefaultJob <: SupportsExit | SupportsQuit",
-      "line": 128,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 128
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED tuple[Literal[1], Literal[2], Literal[3]] <: HashableFloats",
-      "description": "EXPECTED tuple[Literal[1], Literal[2], Literal[3]] <: HashableFloats",
-      "line": 142,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 142
     }
   ],
   "protocols_variance.py": [],
@@ -18953,16 +17501,6 @@
       "name": "PyreError",
       "stop_column": 17,
       "stop_line": 21
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED None <: Hashable",
-      "description": "EXPECTED None <: Hashable",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 24
     },
     {
       "code": -2,
@@ -19572,16 +18110,6 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
-      "description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
-      "line": 72,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed",
       "description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed",
@@ -19592,16 +18120,6 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
-      "description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
-      "line": 76,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 76
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, int] | tuple[str, str]) failed",
       "description": "assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, int] | tuple[str, str]) failed",
@@ -19609,16 +18127,6 @@
       "name": "PyreError",
       "stop_column": 60,
       "stop_line": 78
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
-      "description": "EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized",
-      "line": 80,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 80
     },
     {
       "code": -2,

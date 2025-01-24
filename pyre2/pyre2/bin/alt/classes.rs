@@ -394,10 +394,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> ClassMetadata {
         let mut is_typed_dict = false;
         let mut is_named_tuple = false;
+        let bases: Vec<BaseClass> = bases.iter().map(|x| self.base_class_of(x)).collect();
+        let is_protocol = bases.iter().any(|x| matches!(x, BaseClass::Protocol(_)));
         let bases_with_metadata: Vec<_> = bases
             .iter()
-            .filter_map(|x| match self.base_class_of(x) {
-                BaseClass::Expr(x) => match self.expr_untype(&x) {
+            .filter_map(|x| match x {
+                BaseClass::Expr(x) => match self.expr_untype(x) {
                     Type::ClassType(c) => {
                         let cls = c.class_object();
                         let class_metadata = self.get_metadata_for_class(cls);
@@ -409,6 +411,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 && cls.qname().name.id == "NamedTuple"
                         {
                             is_named_tuple = true;
+                        }
+                        if is_protocol && !class_metadata.is_protocol() {
+                            self.error(
+                                x.range(),
+                                "If `Protocol` is included as a base class, all other bases must be protocols.".to_owned(),
+                            );
                         }
                         Some((c, class_metadata))
                     }
@@ -459,6 +467,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             keywords,
             is_typed_dict,
             is_named_tuple,
+            is_protocol,
             self.errors(),
         )
     }
@@ -777,7 +786,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     // Get every member of a class, including those declared in parent classes.
-    fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
+    pub fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
         let mut members = SmallMap::new();
         for name in cls.fields() {
             if let Some(field) = self.get_class_field(cls, name) {

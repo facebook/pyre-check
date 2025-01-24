@@ -28,6 +28,7 @@ mod narrow;
 mod operators;
 mod overload;
 mod perf;
+mod protocol;
 mod simple;
 mod stdlib;
 mod tuple;

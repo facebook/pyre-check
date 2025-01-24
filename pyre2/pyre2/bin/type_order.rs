@@ -8,9 +8,13 @@
 use dupe::Clone_;
 use dupe::Copy_;
 use dupe::Dupe_;
+use ruff_python_ast::name::Name;
+use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::classes::Attribute;
+use crate::alt::classes::ClassField;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
@@ -47,5 +51,17 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
             Some(m) => *m == *metaclass,
             None => *metaclass == self.stdlib().builtins_type(),
         }
+    }
+
+    pub fn is_protocol(&self, cls: &Class) -> bool {
+        self.0.get_metadata_for_class(cls).is_protocol()
+    }
+
+    pub fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
+        self.0.get_all_members(cls)
+    }
+
+    pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
+        self.0.get_instance_attribute(cls, name)
     }
 }
