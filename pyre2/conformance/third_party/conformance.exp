@@ -5980,6 +5980,16 @@
   "dataclasses_transform_converter.py": [
     {
       "code": -2,
+      "column": 39,
+      "concise_description": "EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]",
+      "description": "EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]",
+      "line": 29,
+      "name": "PyreError",
+      "stop_column": 53,
+      "stop_line": 29
+    },
+    {
+      "code": -2,
       "column": 41,
       "concise_description": "EXPECTED () -> int <: (@_) -> int",
       "description": "EXPECTED () -> int <: (@_) -> int",
@@ -10545,6 +10555,16 @@
       "name": "PyreError",
       "stop_column": 6,
       "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "untype, got int",
+      "description": "untype, got int",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 44
     },
     {
       "code": -2,

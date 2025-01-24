@@ -490,6 +490,7 @@
   ],
   "dataclasses_transform_converter.py": [
     "Line 118: Expected 1 errors",
+    "Line 29: Unexpected errors ['EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]']",
     "Line 60: Unexpected errors ['Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int']",
     "Line 64: Unexpected errors ['Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int']",
     "Line 68: Unexpected errors ['Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int', 'Expected `__getitem__` to be a callable, got (LiteralString, SupportsIndex | slice[Error, Error, Error]) -> LiteralString | (str, SupportsIndex | slice[Error, Error, Error]) -> str']",
@@ -855,7 +856,6 @@
   ],
   "generics_syntax_scoping.py": [
     "Line 14: Expected 1 errors",
-    "Line 44: Expected 1 errors",
     "Line 92: Expected 1 errors",
     "Line 95: Expected 1 errors",
     "Line 98: Expected 1 errors",
