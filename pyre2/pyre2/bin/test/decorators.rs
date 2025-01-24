@@ -34,7 +34,7 @@ def decorated(x: int) -> str:
    return f"{x}"
 
 # Uses the error message to verify the type of `decorated`
-check: Never = decorated  # E: EXPECTED Callable[[int], str]
+check: Never = decorated  # E: EXPECTED Callable[[Pos[x: int]], str]
     "#,
 );
 
@@ -81,7 +81,7 @@ class im_callable:
 def f(x: int) -> int:
     return x
 # Uses the error message to verify the type of `f`
-check: Never = f  # E: EXPECTED Callable[[int], int]
+check: Never = f  # E: EXPECTED Callable[[Pos[x: int]], int]
     "#,
 );
 

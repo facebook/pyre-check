@@ -131,7 +131,7 @@ impl Param {
     ) -> fmt::Result {
         match self {
             Param::PosOnly(ty, _required) => write!(f, "{}", wrap(ty)),
-            Param::Pos(_name, ty, _required) => write!(f, "{}", wrap(ty)),
+            Param::Pos(name, ty, _required) => write!(f, "Pos[{}: {}]", name, wrap(ty)),
             Param::VarArg(ty) => write!(f, "Var[{}]", wrap(ty)),
             Param::KwOnly(name, ty, _required) => write!(f, "KwOnly[{}: {}]", name, wrap(ty)),
             Param::Kwargs(ty) => write!(f, "KwArgs[{}]", wrap(ty)),

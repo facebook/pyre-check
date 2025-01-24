@@ -14,14 +14,14 @@ testcase_with_bug!(
     r#"
 from typing import Callable, reveal_type
 f1 = lambda x: 1
-reveal_type(f1)  # E: revealed type: Callable[[Unknown], Literal[1]]
+reveal_type(f1)  # E: revealed type: Callable[[Pos[x: Unknown]], Literal[1]]
 f2 = lambda x: reveal_type(x)  # E: revealed type: Unknown
 f3: Callable[[int], int] = lambda x: 1
 reveal_type(f3)  # E: revealed type: Callable[[int], int]
 f4: Callable[[int], None] = lambda x: reveal_type(x)  # E: revealed type: Unknown
 f5: Callable[[int], int] = lambda x: x
 f6: Callable[[int], int] = lambda x: "foo"  # E: EXPECTED Literal['foo'] <: int
-f7: Callable[[int, int], int] = lambda x: 1  # E: EXPECTED Callable[[Unknown], Literal[1]] <: Callable[[int, int], int]
+f7: Callable[[int, int], int] = lambda x: 1  # E: EXPECTED Callable[[Pos[x: Unknown]], Literal[1]] <: Callable[[int, int], int]
 # this is a bug, when we analyze the body of the lambda `x` doesn't use the type from the hint
 f8: Callable[[int], int] = lambda x: x + "foo"
 "#,
@@ -98,15 +98,15 @@ test(f1) # OK
 
 # Lower bound has too many args
 def f2(x: int, y: int, z: int) -> None: ...
-test(f2) # E: EXPECTED Callable[[int, int, int], None] <: Callable[[int, int], None]
+test(f2) # E: EXPECTED Callable[[Pos[x: int], Pos[y: int], Pos[z: int]], None] <: Callable[[int, int], None]
 
 # Lower bound has too few args
 def f3(x: int) -> None: ...
-test(f3) # E: EXPECTED Callable[[int], None] <: Callable[[int, int], None]
+test(f3) # E: EXPECTED Callable[[Pos[x: int]], None] <: Callable[[int, int], None]
 
 # Lower bound has wrong arg types
 def f4(x: str, y: int) -> None: ...
-test(f4) # E: EXPECTED Callable[[str, int], None] <: Callable[[int, int], None]
+test(f4) # E: EXPECTED Callable[[Pos[x: str], Pos[y: int]], None] <: Callable[[int, int], None]
 
 # Lower bound has variadic args of compatible type
 def f5(*args: int) -> None: ...
@@ -338,7 +338,7 @@ def test_corountine() -> Callable[[int], Coroutine[Any, Any, int]]:
 def test_awaitable() -> Callable[[int], Awaitable[int]]:
     return f
 def test_sync() -> Callable[[int], int]:
-    return f  # E: Callable[[int], Coroutine[Unknown, Unknown, int]] <: Callable[[int], int]
+    return f  # E: Callable[[Pos[x: int]], Coroutine[Unknown, Unknown, int]] <: Callable[[int], int]
 "#,
 );
 
@@ -353,4 +353,16 @@ def test(f: Callable[P, None]) -> Callable[P, None]:
         f(*args, **kwargs) # E: Answers::expr_infer wrong number of arguments to call
     return inner # E: EXPECTED Callable[[Var[Args[?_]], KwArgs[Kwargs[?_]]], None] <: Callable[ParamSpec(?_), None]
 "#,
+);
+
+testcase!(
+    test_function_vs_callable,
+    r#"
+from typing import assert_type, Callable
+def f(x: int) -> int:
+    return x
+# This assertion (correctly) fails because x is a positional parameter rather than a positional-only one.
+# This test verifies that we produce a sensible error message that shows the mismatch.
+assert_type(f, Callable[[int], int])  # E: assert_type(Callable[[Pos[x: int]], int], Callable[[int], int]) failed
+    "#,
 );

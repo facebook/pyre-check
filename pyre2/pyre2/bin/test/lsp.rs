@@ -71,7 +71,7 @@ fn test_hover() {
     );
     assert_eq!(
         state.hover(module, at(6, "f").end()).unwrap().to_string(),
-        "Callable[[list[int], str, Literal[42]], list[int]]"
+        "Callable[[Pos[x: list[int]], Pos[y: str], Pos[z: Literal[42]]], list[int]]"
     );
 }
 
