@@ -1230,10 +1230,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     // Note that we have to check for `builtins.type` by name here because this code runs
                     // when we're bootstrapping the stdlib and don't have access to class objects yet.
-                    Type::ClassDef(cls)
-                        if cls.qname().module.name().as_str() == "builtins"
-                            && cls.qname().name.id == "type" =>
-                    {
+                    Type::ClassDef(cls) if cls.has_qname("builtins", "type") => {
                         let targ = match xs.len() {
                             // This causes us to treat `type[list]` as equivalent to `type[list[Any]]`,
                             // which may or may not be what we want.

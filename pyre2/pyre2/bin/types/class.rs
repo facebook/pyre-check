@@ -109,6 +109,10 @@ impl Class {
     pub fn fields(&self) -> &SmallSet<Name> {
         &self.0.fields
     }
+
+    pub fn has_qname(&self, module: &str, name: &str) -> bool {
+        self.0.qname.module.name().as_str() == module && self.0.qname.name.id == name
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]

@@ -408,8 +408,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             is_typed_dict = true;
                         }
                         if class_metadata.is_named_tuple()
-                            || cls.qname().module.name().as_str() == "typing"
-                                && cls.qname().name.id == "NamedTuple"
+                        || cls.has_qname("typing", "NamedTuple")
                         {
                             is_named_tuple = true;
                         }

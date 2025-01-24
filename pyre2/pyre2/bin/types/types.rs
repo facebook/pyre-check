@@ -402,14 +402,14 @@ impl Type {
 
     pub fn is_generator(&self) -> bool {
         match self {
-            Type::ClassType(cls) => cls.class_object().name() == "Generator",
+            Type::ClassType(cls) => cls.class_object().has_qname("typing", "Generator"),
             _ => false,
         }
     }
 
     pub fn is_iterator(&self) -> bool {
         match self {
-            Type::ClassType(cls) => cls.class_object().name() == "Iterator",
+            Type::ClassType(cls) => cls.class_object().has_qname("typing", "Iterator"),
             _ => false,
         }
     }
