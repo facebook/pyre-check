@@ -150,12 +150,12 @@
     "Line 56: Unexpected errors ['EXPECTED None <: C']",
     "Line 101: Unexpected errors ['Yield expression found but the function has an incompatible annotation `IntIterator`']",
     "Line 110: Unexpected errors ['Yield expression found but the function has an incompatible annotation `AsyncIntIterator`']",
-    "Line 114: Unexpected errors ['EXPECTED None <: Iterator[A]', 'TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer']",
-    "Line 127: Unexpected errors ['EXPECTED None <: Generator[None, int, None]', 'TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer']",
+    "Line 114: Unexpected errors ['TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer']",
+    "Line 127: Unexpected errors ['TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer']",
     "Line 131: Unexpected errors ['EXPECTED int <: float']",
     "Line 145: Unexpected errors ['Yield expression found but the function has an incompatible annotation `AsyncIterable[str]`']",
     "Line 149: Unexpected errors ['TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer']",
-    "Line 150: Unexpected errors ['EXPECTED None <: Generator[int, None, None]', 'TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer']",
+    "Line 150: Unexpected errors ['TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer']",
     "Line 154: Unexpected errors [\"Missing argument 'result'\", 'EXPECTED Literal[1] <: float']",
     "Line 160: Unexpected errors [\"Missing argument 'result'\", 'EXPECTED Literal[1] <: float']",
     "Line 161: Unexpected errors ['Yield expression found but the function has an incompatible annotation `AsyncGenerator[str, None]`']",
@@ -490,6 +490,7 @@
   ],
   "dataclasses_transform_converter.py": [
     "Line 118: Expected 1 errors",
+    "Line 29: Unexpected errors ['EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]']",
     "Line 60: Unexpected errors ['Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int']",
     "Line 64: Unexpected errors ['Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int']",
     "Line 68: Unexpected errors ['Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int', 'Expected `__getitem__` to be a callable, got (LiteralString, SupportsIndex | slice[Error, Error, Error]) -> LiteralString | (str, SupportsIndex | slice[Error, Error, Error]) -> str']",
@@ -597,6 +598,8 @@
   "directives_version_platform.py": [],
   "enums_behaviors.py": [
     "Line 39: Expected 1 errors",
+    "Line 19: Unexpected errors ['EXPECTED EnumMeta <: type[@_]']",
+    "Line 20: Unexpected errors ['assert_type(Any, Color) failed']",
     "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for class `Color`, got 1.', \"untype, got Literal['RED']\"]",
     "Line 27: Unexpected errors ['assert_type(Enum, Color) failed', 'Expected `__call__` to be a callable, got (cls: EnumMeta, value: str, names: Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, *, module: str | None, qualname: str | None, type: type | None, start: int, boundary: FlagBoundary | None) -> type[Enum] | Forall[_EnumMemberT, (cls: type[_EnumMemberT], value: Any, names: None) -> _EnumMemberT] | Forall[_EnumMemberT, (cls: type[_EnumMemberT], value: Any, *Any) -> _EnumMemberT]']"
   ],
@@ -855,7 +858,6 @@
   ],
   "generics_syntax_scoping.py": [
     "Line 14: Expected 1 errors",
-    "Line 44: Expected 1 errors",
     "Line 92: Expected 1 errors",
     "Line 95: Expected 1 errors",
     "Line 98: Expected 1 errors",
@@ -1140,11 +1142,11 @@
     "Line 30: Unexpected errors ['assert_type(Any, str) failed', '`Point` has no attribute `__getitem__`']",
     "Line 31: Unexpected errors ['assert_type(Any, int) failed', '`Point` has no attribute `__getitem__`']",
     "Line 32: Unexpected errors ['assert_type(Any, int) failed', '`Point` has no attribute `__getitem__`']",
-    "Line 48: Unexpected errors ['Class `Point` is not iterable']",
+    "Line 48: Unexpected errors ['Type `Point` is not iterable']",
     "Line 49: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 50: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 60: Unexpected errors ['Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None']",
-    "Line 61: Unexpected errors ['Class `PointWithName` is not iterable']"
+    "Line 61: Unexpected errors ['Type `PointWithName` is not iterable']"
   ],
   "narrowing_typeguard.py": [
     "Line 102: Expected 1 errors",

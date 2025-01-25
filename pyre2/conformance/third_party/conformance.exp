@@ -1721,16 +1721,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED None <: Iterator[A]",
-      "description": "EXPECTED None <: Iterator[A]",
-      "line": 114,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 114
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "line": 114,
@@ -1751,32 +1741,12 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED None <: Iterator[B]",
-      "description": "EXPECTED None <: Iterator[B]",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 119
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
       "line": 119,
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 119
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Generator[None, int, None]",
-      "description": "EXPECTED None <: Generator[None, int, None]",
-      "line": 127,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 127
     },
     {
       "code": -2,
@@ -1797,16 +1767,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 131
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Generator[None, str, None]",
-      "description": "EXPECTED None <: Generator[None, str, None]",
-      "line": 135,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 135
     },
     {
       "code": -2,
@@ -1837,16 +1797,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 149
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Generator[int, None, None]",
-      "description": "EXPECTED None <: Generator[int, None, None]",
-      "line": 150,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 150
     },
     {
       "code": -2,
@@ -6030,6 +5980,16 @@
   "dataclasses_transform_converter.py": [
     {
       "code": -2,
+      "column": 39,
+      "concise_description": "EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]",
+      "description": "EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]",
+      "line": 29,
+      "name": "PyreError",
+      "stop_column": 53,
+      "stop_line": 29
+    },
+    {
+      "code": -2,
       "column": 41,
       "concise_description": "EXPECTED () -> int <: (@_) -> int",
       "description": "EXPECTED () -> int <: (@_) -> int",
@@ -7287,6 +7247,26 @@
     }
   ],
   "enums_behaviors.py": [
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "EXPECTED EnumMeta <: type[@_]",
+      "description": "EXPECTED EnumMeta <: type[@_]",
+      "line": 19,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 19
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "assert_type(Any, Color) failed",
+      "description": "assert_type(Any, Color) failed",
+      "line": 20,
+      "name": "PyreError",
+      "stop_column": 30,
+      "stop_line": 20
+    },
     {
       "code": -2,
       "column": 1,
@@ -10595,6 +10575,16 @@
       "name": "PyreError",
       "stop_column": 6,
       "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "untype, got int",
+      "description": "untype, got int",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 44
     },
     {
       "code": -2,
@@ -15408,8 +15398,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Class `Point` is not iterable",
-      "description": "Class `Point` is not iterable",
+      "concise_description": "Type `Point` is not iterable",
+      "description": "Type `Point` is not iterable",
       "line": 48,
       "name": "PyreError",
       "stop_column": 15,
@@ -15438,8 +15428,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Class `Point` is not iterable",
-      "description": "Class `Point` is not iterable",
+      "concise_description": "Type `Point` is not iterable",
+      "description": "Type `Point` is not iterable",
       "line": 52,
       "name": "PyreError",
       "stop_column": 7,
@@ -15448,8 +15438,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Class `Point` is not iterable",
-      "description": "Class `Point` is not iterable",
+      "concise_description": "Type `Point` is not iterable",
+      "description": "Type `Point` is not iterable",
       "line": 53,
       "name": "PyreError",
       "stop_column": 21,
@@ -15468,8 +15458,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Class `PointWithName` is not iterable",
-      "description": "Class `PointWithName` is not iterable",
+      "concise_description": "Type `PointWithName` is not iterable",
+      "description": "Type `PointWithName` is not iterable",
       "line": 61,
       "name": "PyreError",
       "stop_column": 15,
