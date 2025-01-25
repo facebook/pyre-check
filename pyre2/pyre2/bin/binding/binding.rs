@@ -103,6 +103,8 @@ pub enum Key {
     SelfType(ShortIdentifier),
     /// The send type of a yield expression.
     SendTypeOfYield(TextRange),
+    /// The return type of a yield expression.
+    ReturnTypeOfYield(TextRange),
     /// The type at a specific return point.
     ReturnExpression(ShortIdentifier, TextRange),
     /// The type yielded inside of a specific yield expression inside a function.
@@ -142,6 +144,7 @@ impl Ranged for Key {
             Self::DecoratorApplication(r) => r.range(),
             Self::SelfType(x) => x.range(),
             Self::SendTypeOfYield(x) => x.range(),
+            Self::ReturnTypeOfYield(x) => x.range(),
             Self::ReturnExpression(_, r) => *r,
             Self::YieldTypeOfYield(_, r) => *r,
             Self::YieldTypeOfGenerator(x) => x.range(),
@@ -164,6 +167,9 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::DecoratorApplication(r) => write!(f, "decorator {:?}", r),
             Self::SelfType(x) => write!(f, "self {} {:?}", ctx.display(x), x.range()),
             Self::SendTypeOfYield(x) => {
+                write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
+            }
+            Self::ReturnTypeOfYield(x) => {
                 write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
             }
             Self::Usage(x) => write!(f, "use {} {:?}", ctx.display(x), x.range()),
@@ -344,6 +350,8 @@ pub enum Binding {
     ReturnExpr(Option<Idx<KeyAnnotation>>, Expr, bool),
     /// An expression returned from a function.
     SendTypeOfYield(Option<Idx<KeyAnnotation>>, TextRange),
+    /// Return type of yield
+    ReturnTypeOfYield(Option<Idx<KeyAnnotation>>, TextRange),
     /// A decorator application: the Key is the entity being decorated.
     DecoratorApplication(Box<Decorator>, Idx<Key>),
     /// A grouping of both the yield expression types and the return type.
@@ -464,6 +472,12 @@ impl DisplayWith<Bindings> for Binding {
                 write!(f, "annotation containing send type {}", ctx.display(*x))
             }
             self::Binding::SendTypeOfYield(None, _) => {
+                write!(f, "no annotation so send type is Any")
+            }
+            self::Binding::ReturnTypeOfYield(Some(x), _) => {
+                write!(f, "annotation containing send type {}", ctx.display(*x))
+            }
+            self::Binding::ReturnTypeOfYield(None, _) => {
                 write!(f, "no annotation so send type is Any")
             }
             Self::YieldTypeOfYield(x) => write!(f, "yield expr {}", m.display(x)),

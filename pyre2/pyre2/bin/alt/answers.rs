@@ -1061,7 +1061,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .generator(yield_type, Type::any_implicit(), return_type)
                     .to_type()
             }
-            // TODO: Zeina, here we must construct a ReturnAnnotation key and look it up. The lookup will panic if key is not found. Figure out how to handle the failure.
             Binding::SendTypeOfYield(ann, range) => {
                 let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
                 match gen_ann {
@@ -1072,6 +1071,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             send_type
                         } else {
                             self.error(*range, format!("Yield expression found but the function has an incompatible annotation `{gen_type}`"))
+                        }
+                    }
+
+                    None => Type::any_explicit(),
+                }
+            }
+            Binding::ReturnTypeOfYield(ann, range) => {
+                let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
+                match gen_ann {
+                    Some(gen_ann) => {
+                        let gen_type = gen_ann.get_type();
+
+                        if let Some((_, _, return_type)) = self.decompose_generator(gen_type) {
+                            return_type
+                        } else {
+                            self.error(*range, format!("YieldFrom expression found but the function has an incompatible annotation `{gen_type}`"))
                         }
                     }
 

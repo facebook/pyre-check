@@ -81,10 +81,17 @@ class Yield: pass
 class Send: pass
 class Return: pass
 
-def my_generator(n: int) -> Generator[Yield, Send, Return]:
+def my_generator_nested() -> Generator[Yield, Send, Return]:
+    yield Yield()
+    return Return()
+
+def my_generator() -> Generator[Yield, Send, Return]:
     s = yield Yield()
+    y = yield from  my_generator_nested()
 
     reveal_type(s) # E: revealed type: Send
+    reveal_type(y) # E: revealed type: Return
+
     return Return()
 
 "#,
@@ -118,7 +125,7 @@ from typing import Generator, reveal_type
 
 def nested_generator():
     yield 1
-    yield from another_generator()  # E: TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer
+    yield from another_generator()
     yield 3
 
 def another_generator():
@@ -169,7 +176,7 @@ testcase_with_bug!(
 from typing import AsyncGenerator, reveal_type # E: Could not import `AsyncGenerator` from `typing`
 
 async def async_count_up_to() -> AsyncGenerator[int, None]:
-    yield 2 # E: Yield expression found but the function has an incompatible annotation `Error`
+    yield 2 # E: Yield expression found but the function has an incompatible annotation `Error` # E: YieldFrom expression found but the function has an incompatible annotation `Error`
 
 reveal_type(async_count_up_to()) # E: revealed type: Coroutine[Unknown, Unknown, Error]
 
