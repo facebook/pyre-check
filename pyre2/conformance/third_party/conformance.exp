@@ -1691,8 +1691,28 @@
     {
       "code": -2,
       "column": 5,
+      "concise_description": "YieldFrom expression found but the function has an incompatible annotation `int`",
+      "description": "YieldFrom expression found but the function has an incompatible annotation `int`",
+      "line": 87,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 87
+    },
+    {
+      "code": -2,
+      "column": 5,
       "concise_description": "Yield expression found but the function has an incompatible annotation `int`",
       "description": "Yield expression found but the function has an incompatible annotation `int`",
+      "line": 92,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 92
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "YieldFrom expression found but the function has an incompatible annotation `int`",
+      "description": "YieldFrom expression found but the function has an incompatible annotation `int`",
       "line": 92,
       "name": "PyreError",
       "stop_column": 15,
@@ -1711,6 +1731,16 @@
     {
       "code": -2,
       "column": 5,
+      "concise_description": "YieldFrom expression found but the function has an incompatible annotation `IntIterator`",
+      "description": "YieldFrom expression found but the function has an incompatible annotation `IntIterator`",
+      "line": 101,
+      "name": "PyreError",
+      "stop_column": 12,
+      "stop_line": 101
+    },
+    {
+      "code": -2,
+      "column": 5,
       "concise_description": "Yield expression found but the function has an incompatible annotation `AsyncIntIterator`",
       "description": "Yield expression found but the function has an incompatible annotation `AsyncIntIterator`",
       "line": 110,
@@ -1721,42 +1751,12 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "line": 114,
+      "concise_description": "YieldFrom expression found but the function has an incompatible annotation `AsyncIntIterator`",
+      "description": "YieldFrom expression found but the function has an incompatible annotation `AsyncIntIterator`",
+      "line": 110,
       "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 114
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "line": 118,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 118
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 119
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "line": 127,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 127
+      "stop_column": 12,
+      "stop_line": 110
     },
     {
       "code": -2,
@@ -1771,16 +1771,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "line": 135,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 135
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "Yield expression found but the function has an incompatible annotation `AsyncIterable[str]`",
       "description": "Yield expression found but the function has an incompatible annotation `AsyncIterable[str]`",
       "line": 145,
@@ -1791,22 +1781,12 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "line": 149,
+      "concise_description": "YieldFrom expression found but the function has an incompatible annotation `AsyncIterable[str]`",
+      "description": "YieldFrom expression found but the function has an incompatible annotation `AsyncIterable[str]`",
+      "line": 145,
       "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 149
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "description": "TODO: YieldFrom(ExprYieldFrom - Answers::expr_infer",
-      "line": 150,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 150
+      "stop_column": 13,
+      "stop_line": 145
     },
     {
       "code": -2,
@@ -1853,6 +1833,16 @@
       "column": 9,
       "concise_description": "Yield expression found but the function has an incompatible annotation `AsyncGenerator[str, None]`",
       "description": "Yield expression found but the function has an incompatible annotation `AsyncGenerator[str, None]`",
+      "line": 161,
+      "name": "PyreError",
+      "stop_column": 35,
+      "stop_line": 161
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "YieldFrom expression found but the function has an incompatible annotation `AsyncGenerator[str, None]`",
+      "description": "YieldFrom expression found but the function has an incompatible annotation `AsyncGenerator[str, None]`",
       "line": 161,
       "name": "PyreError",
       "stop_column": 35,
@@ -1913,6 +1903,16 @@
       "column": 5,
       "concise_description": "Yield expression found but the function has an incompatible annotation `AsyncIterator[int]`",
       "description": "Yield expression found but the function has an incompatible annotation `AsyncIterator[int]`",
+      "line": 187,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 187
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "YieldFrom expression found but the function has an incompatible annotation `AsyncIterator[int]`",
+      "description": "YieldFrom expression found but the function has an incompatible annotation `AsyncIterator[int]`",
       "line": 187,
       "name": "PyreError",
       "stop_column": 10,
