@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Display;
 use std::ops::Deref;
@@ -44,13 +43,13 @@ use crate::types::class::TArgs;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Enum;
 use crate::types::literal::Lit;
-use crate::types::qname::QName;
 use crate::types::special_form::SpecialForm;
 use crate::types::type_var::Variance;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
-use crate::util::arc_id::ArcId;
+use crate::types::types::TypedDict;
+use crate::types::types::TypedDictField;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
 
@@ -121,57 +120,6 @@ impl BaseClass {
             }
             _ => panic!("cannot apply base class"),
         }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TypedDictField {
-    pub ty: Type,
-    pub required: bool,
-    pub read_only: bool,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct TypedDictInner(Class, TArgs, SmallMap<Name, TypedDictField>);
-
-impl PartialOrd for TypedDictInner {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for TypedDictInner {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.0.cmp(&other.0)
-    }
-}
-
-#[derive(Debug, Clone, Dupe, Eq, PartialEq, Hash, PartialOrd, Ord)]
-pub struct TypedDict(ArcId<TypedDictInner>);
-
-impl TypedDict {
-    pub fn new(cls: Class, targs: TArgs, fields: SmallMap<Name, TypedDictField>) -> Self {
-        Self(ArcId::new(TypedDictInner(cls, targs, fields)))
-    }
-
-    pub fn qname(&self) -> &QName {
-        self.0.0.qname()
-    }
-
-    pub fn name(&self) -> &Name {
-        &self.0.0.name().id
-    }
-
-    pub fn fields(&self) -> &SmallMap<Name, TypedDictField> {
-        &self.0.2
-    }
-
-    pub fn class_object(&self) -> &Class {
-        &self.0.0
-    }
-
-    pub fn targs(&self) -> &TArgs {
-        &self.0.1
     }
 }
 
