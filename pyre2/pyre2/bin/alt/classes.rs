@@ -42,6 +42,7 @@ use crate::types::class::ClassType;
 use crate::types::class::Substitution;
 use crate::types::class::TArgs;
 use crate::types::class_metadata::ClassMetadata;
+use crate::types::literal::Enum;
 use crate::types::literal::Lit;
 use crate::types::qname::QName;
 use crate::types::special_form::SpecialForm;
@@ -171,44 +172,6 @@ impl TypedDict {
 
     pub fn targs(&self) -> &TArgs {
         &self.0.1
-    }
-}
-
-pub struct Enum(ClassType);
-
-impl Enum {
-    pub fn get_member(&self, name: &Name) -> Option<Lit> {
-        // TODO(stroxler, yangdanny) Enums can contain attributes that are not
-        // members, we eventually need to implement enough checks to know the
-        // difference.
-        //
-        // Instance-only attributes are one case of this and are correctly handled
-        // upstream, but there are other cases as well.
-
-        // Names starting but not ending with __ are private
-        // Names starting and ending with _ are reserved by the enum
-        if name.starts_with("__") && !name.ends_with("__")
-            || name.starts_with("_") && name.ends_with("_")
-        {
-            None
-        } else if self.0.class_object().contains(name) {
-            Some(Lit::Enum(Box::new((self.0.clone(), name.clone()))))
-        } else {
-            None
-        }
-    }
-
-    pub fn class_type(&self) -> &ClassType {
-        &self.0
-    }
-
-    pub fn get_members(&self) -> SmallSet<Lit> {
-        self.0
-            .class_object()
-            .fields()
-            .iter()
-            .filter_map(|f| self.get_member(f))
-            .collect()
     }
 }
 
@@ -586,7 +549,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &Type::ClassType(self.stdlib.enum_meta()),
                 self.type_order(),
             ) {
-                Some(Enum(cls.clone()))
+                Some(Enum { cls: cls.clone() })
             } else {
                 None
             }

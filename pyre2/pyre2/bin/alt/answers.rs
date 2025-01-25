@@ -1010,10 +1010,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(field.range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", field.name));
             }
 
-            if let LookupResult::Found(enum_value_ty) = self.lookup_attr(
-                Type::ClassType(enum_.class_type().clone()),
-                &Name::new_static("_value_"),
-            ) {
+            if let LookupResult::Found(enum_value_ty) =
+                self.lookup_attr(Type::ClassType(enum_.cls), &Name::new_static("_value_"))
+            {
                 if !matches!(*value_ty, Type::Tuple(_))
                     && !self
                         .solver()
