@@ -98,6 +98,37 @@ def my_generator() -> Generator[Yield, Send, Return]:
 );
 
 testcase_with_bug!(
+    r#"
+TODO zeina: we should correctly determine the send() type based on the signature of the generator. Additionally, we should correctly handle the return type of the generator.
+    "#,
+    test_nested_generator_error,
+    r#"
+
+from typing import Generator, reveal_type
+
+class Yield: pass
+class Send: pass
+class Return: pass
+
+class Yield2: pass
+
+def my_generator_nested() -> Generator[Yield2, Send, Return]:
+    yield Yield()
+    return Return()
+
+def my_generator() -> Generator[Yield, Send, Return]:
+    s = yield Yield()
+    y = yield from  my_generator_nested()
+    
+    reveal_type(s) # E: revealed type: Send
+    reveal_type(y) # E: revealed type: Return
+
+    return Return()
+
+"#,
+);
+
+testcase_with_bug!(
     "TODOs",
     test_yield_with_iterator,
     r#"
