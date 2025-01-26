@@ -17,7 +17,7 @@ impl CommonArgs {
     /// Sets up the parallelism and returns what you should pass to driver.
     /// You can call this function at most once.
     pub fn parallel(&self) -> bool {
-        let mut builder = rayon::ThreadPoolBuilder::new();
+        let mut builder = rayon::ThreadPoolBuilder::new().stack_size(4 * 1024 * 1024);
         if self.threads != 0 {
             builder = builder.num_threads(self.threads);
         }
