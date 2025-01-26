@@ -860,8 +860,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::BinOp(x) => self.binop_infer(x),
             Expr::UnaryOp(x) => {
                 let t = self.expr_infer(&x.operand);
-                let unop = |t: &Type, f: &dyn Fn(&Lit) -> Lit, method: &Name| match t {
-                    Type::Literal(lit) => Type::Literal(f(lit)),
+                let unop = |t: &Type, f: &dyn Fn(&Lit) -> Type, method: &Name| match t {
+                    Type::Literal(lit) => f(lit),
                     Type::ClassType(_) => self.call_method_or_error(t, method, x.range, &[], &[]),
                     _ => self.error(
                         x.range,
@@ -870,11 +870,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 self.distribute_over_union(&t, |t| match x.op {
                     UnaryOp::USub => {
-                        let f = |lit: &Lit| lit.negate(self.module_info(), x.range, self.errors());
+                        let f = |lit: &Lit| {
+                            lit.negate(self.module_info(), x.range, self.errors())
+                                .to_type()
+                        };
                         unop(t, &f, &dunder::NEG)
                     }
                     UnaryOp::UAdd => {
-                        let f = |lit: &Lit| lit.clone();
+                        let f = |lit: &Lit| lit.clone().to_type();
                         unop(t, &f, &dunder::POS)
                     }
                     UnaryOp::Not => match t.as_bool() {
@@ -882,7 +885,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Some(b) => Type::Literal(Lit::Bool(!b)),
                     },
                     UnaryOp::Invert => {
-                        let f = |lit: &Lit| lit.invert(self.module_info(), x.range, self.errors());
+                        let f = |lit: &Lit| {
+                            lit.invert(self.module_info(), x.range, self.errors())
+                                .to_type()
+                        };
                         unop(t, &f, &dunder::INVERT)
                     }
                 })
