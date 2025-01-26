@@ -87,7 +87,7 @@ impl Lit {
                 }
                 UnaryOp::USub => {
                     match Self::from_expr(&x.operand, module_info, get_enum_from_name, errors) {
-                        Type::Literal(l) => l.negate(module_info, x.range, errors),
+                        Type::Literal(l) => l.negate_internal(module_info, x.range, errors),
                         x => x,
                     }
                 }
@@ -119,7 +119,7 @@ impl Lit {
         }
     }
 
-    pub fn negate(
+    fn negate_internal(
         &self,
         module_info: &ModuleInfo,
         range: TextRange,
@@ -127,6 +127,25 @@ impl Lit {
     ) -> Type {
         match self {
             Lit::Int(x) if let Some(x) = x.checked_neg() => Lit::Int(x).to_type(),
+            _ => {
+                errors.add(module_info, range, format!("Cannot negate type {self}"));
+                Type::any_error()
+            }
+        }
+    }
+
+    pub fn negate(
+        &self,
+        stdlib: &Stdlib,
+        module_info: &ModuleInfo,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        match self {
+            Lit::Int(x) => match x.checked_neg() {
+                Some(x) => Lit::Int(x).to_type(),
+                None => stdlib.int().to_type(), // Loss of precision
+            },
             _ => {
                 errors.add(module_info, range, format!("Cannot negate type {self}"));
                 Type::any_error()

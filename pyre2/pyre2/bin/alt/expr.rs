@@ -870,7 +870,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 self.distribute_over_union(&t, |t| match x.op {
                     UnaryOp::USub => {
-                        let f = |lit: &Lit| lit.negate(self.module_info(), x.range, self.errors());
+                        let f = |lit: &Lit| {
+                            lit.negate(self.stdlib, self.module_info(), x.range, self.errors())
+                        };
                         unop(t, &f, &dunder::NEG)
                     }
                     UnaryOp::UAdd => {
