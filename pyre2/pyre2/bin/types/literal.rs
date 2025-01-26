@@ -20,6 +20,7 @@ use ruff_python_ast::ExprStringLiteral;
 use ruff_python_ast::FStringElement;
 use ruff_python_ast::FStringPart;
 use ruff_python_ast::Identifier;
+use ruff_python_ast::Int;
 use ruff_python_ast::Number;
 use ruff_python_ast::UnaryOp;
 use ruff_text_size::TextRange;
@@ -177,7 +178,11 @@ impl Lit {
         Some(Lit::String(collected_literals.join("").into_boxed_str()))
     }
 
-    pub fn from_number_literal(
+    pub fn from_int(x: &Int) -> Option<Self> {
+        Some(Lit::Int(x.as_i64()?))
+    }
+
+    fn from_number_literal(
         x: &ExprNumberLiteral,
         module_info: &ModuleInfo,
         errors: &ErrorCollector,

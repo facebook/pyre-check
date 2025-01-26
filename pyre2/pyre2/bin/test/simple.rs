@@ -781,6 +781,17 @@ y: Literal[x]  # E: TODO: Name(ExprName - Lit::from_expr
 );
 
 testcase!(
+    test_large_int_literal,
+    r#"
+from typing import assert_type, Literal
+x = 1
+y = 0xFFFFFFFFFFFFFFFFFF
+assert_type(x, Literal[1])
+assert_type(y, int)
+"#,
+);
+
+testcase!(
     test_invalid_type_arguments,
     r#"
 from typing import assert_type
