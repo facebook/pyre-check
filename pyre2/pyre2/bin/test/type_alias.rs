@@ -227,3 +227,14 @@ def g(x: list[bool]):
     f2(x)  # E: EXPECTED
     "#,
 );
+
+testcase!(
+    test_type_alias_inside_class,
+    r#"
+from typing import assert_type
+class C:
+    type X = int
+def f(x: C.X):
+    assert_type(x, int)
+    "#,
+);
