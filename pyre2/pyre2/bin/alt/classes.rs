@@ -84,8 +84,11 @@ impl ClassField {
         }
     }
 
-    pub fn visit_type_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+    pub fn visit_type_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
         f(&mut self.ty);
+        for a in self.annotation.iter_mut() {
+            a.visit_type_mut(&mut f);
+        }
     }
 }
 

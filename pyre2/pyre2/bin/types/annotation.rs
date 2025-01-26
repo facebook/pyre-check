@@ -51,6 +51,12 @@ impl Annotation {
     pub fn get_type(&self) -> &Type {
         self.ty.as_ref().unwrap_or(&Type::Any(AnyStyle::Implicit))
     }
+
+    pub fn visit_type_mut(&mut self, mut f: impl FnMut(&mut Type)) {
+        if let Some(ty) = &mut self.ty {
+            f(ty);
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
