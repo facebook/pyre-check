@@ -999,7 +999,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.expr(&x.value, Some(&hint.value));
                         }
                         None => {
-                            self.error_todo("Answers::expr_infer expansion in dict literal", x);
+                            self.todo("Answers::expr_infer expansion in dict literal", x);
                         }
                     });
                     hint.to_type(self.stdlib)
@@ -1018,7 +1018,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             value_tys.push(value_t);
                         }
                         None => {
-                            self.error_todo("Answers::expr_infer expansion in dict literal", x);
+                            self.todo("Answers::expr_infer expansion in dict literal", x);
                         }
                     });
                     let key_ty = self.unions(&key_tys);
@@ -1295,7 +1295,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                         elts[lower as usize..upper as usize].to_vec(),
                                     ))
                                 }
-                                _ => self.error_todo("tuple slice", x),
+                                _ => self.todo("tuple slice", x),
                             }
                         }
                         _ => {
@@ -1380,7 +1380,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ),
                 }
             }
-            Expr::Starred(_) => self.error_todo("Answers::expr_infer", x),
+            Expr::Starred(_) => self.todo("Answers::expr_infer", x),
             Expr::Name(x) => match x.id.as_str() {
                 "Any" => Type::type_form(Type::any_explicit()),
                 _ => self
@@ -1392,7 +1392,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let int = self.stdlib.int().to_type();
                 self.stdlib.slice(int.clone(), int.clone(), int).to_type()
             }
-            Expr::IpyEscapeCommand(_) => self.error_todo("Answers::expr_infer", x),
+            Expr::IpyEscapeCommand(_) => self.todo("Answers::expr_infer", x),
         }
     }
 }

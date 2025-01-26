@@ -1668,7 +1668,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.unions(&[x.clone(), y.clone()])
     }
 
-    pub fn error_todo(&self, msg: &str, x: impl Ranged + Debug) -> Type {
+    pub fn todo(&self, msg: &str, x: impl Ranged + Debug) -> Type {
         self.errors().todo(self.module_info(), msg, x);
         Type::any_error()
     }
