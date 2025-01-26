@@ -770,13 +770,12 @@ z: foo(y=x)  # E: untype, got Never
 "#,
 );
 
-testcase_with_bug!(
-    "FIXME: Should give a better error message",
+testcase!(
     test_invalid_literal,
     r#"
 from typing import Literal
 x = 1
-y: Literal[x]  # E: TODO: Name(ExprName - Lit::from_expr
+y: Literal[x]  # E: Invalid literal expression
 "#,
 );
 

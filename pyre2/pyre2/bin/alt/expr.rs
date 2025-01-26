@@ -1183,13 +1183,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     })
                 }
             }
-            Expr::FString(x) => {
-                if let Some(lit) = Lit::from_fstring(x) {
-                    lit.to_type()
-                } else {
-                    self.stdlib.str().to_type()
-                }
-            }
+            Expr::FString(x) => match Lit::from_fstring(x) {
+                Some(lit) => lit.to_type(),
+                _ => self.stdlib.str().to_type(),
+            },
             Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
             Expr::BytesLiteral(x) => Lit::from_bytes_literal(x).to_type(),
             Expr::NumberLiteral(x) => match &x.value {

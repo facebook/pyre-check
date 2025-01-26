@@ -9,7 +9,7 @@
     "Line 23: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
     "Line 27: Unexpected errors [\"Expected `GoodTypeAlias13` to be a type alias, got Literal['int | str']\"]",
     "Line 28: Unexpected errors [\"untype, got Literal['int | str']\"]",
-    "Line 29: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr']",
+    "Line 29: Unexpected errors ['Invalid literal expression']",
     "Line 38: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]\"]",
     "Line 41: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias9, Error]\"]",
     "Line 53: Unexpected errors ['assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed']",
@@ -18,7 +18,7 @@
     "Line 60: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']",
     "Line 61: Unexpected errors ['assert_type(Any, int | str) failed']",
     "Line 62: Unexpected errors ['assert_type(list[Any], list[int | str]) failed']",
-    "Line 63: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr']",
+    "Line 63: Unexpected errors ['Invalid literal expression']",
     "Line 97: Unexpected errors ['Expected `__init__` to be a callable, got (list[Error], Iterable[Error]) -> None | (self: list[Error]) -> None']",
     "Line 98: Unexpected errors ['assert_type(list[Any], list[str]) failed']"
   ],
@@ -626,8 +626,8 @@
     "Line 33: Unexpected errors ['Could not find import of `_enums_members`, Could not find path for `_enums_members`']",
     "Line 35: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 36: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 37: Unexpected errors ['TODO: Attribute(ExprAttribute - Lit::from_expr']",
-    "Line 38: Unexpected errors ['TODO: Attribute(ExprAttribute - Lit::from_expr']",
+    "Line 37: Unexpected errors ['Literal expression `Pet2` is not an enumeration']",
+    "Line 38: Unexpected errors ['Literal expression `Pet2` is not an enumeration']",
     "Line 67: Unexpected errors ['Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str']",
     "Line 68: Unexpected errors ['EXPECTED (x: int) -> int <: (ParamSpec(@_)) -> int']",
     "Line 75: Unexpected errors [\"Missing argument 'flush'\"]",
@@ -1073,13 +1073,13 @@
   "literals_parameterizations.py": [
     "Line 46: Expected 1 errors",
     "Line 60: Expected 1 errors",
-    "Line 26: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr']",
-    "Line 33: Unexpected errors ['TODO: Name(ExprName - Lit::from_expr', 'TODO: Name(ExprName - Lit::from_expr', 'TODO: Name(ExprName - Lit::from_expr', 'TODO: Name(ExprName - Lit::from_expr']",
-    "Line 35: Unexpected errors ['TODO: Subscript(ExprSubscript - Lit::from_expr', 'TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr']"
+    "Line 26: Unexpected errors ['Invalid literal expression']",
+    "Line 33: Unexpected errors ['Invalid literal expression', 'Invalid literal expression', 'Invalid literal expression', 'Invalid literal expression']",
+    "Line 35: Unexpected errors ['Invalid literal expression', 'Invalid literal expression']"
   ],
   "literals_semantics.py": [
-    "Line 38: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr', 'Could not find name `foo`', 'TODO: Name(ExprName - Lit::from_expr']",
-    "Line 39: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr']"
+    "Line 38: Unexpected errors ['Invalid literal expression', 'Could not find name `foo`', 'Invalid literal expression']",
+    "Line 39: Unexpected errors ['Invalid literal expression']"
   ],
   "namedtuples_define_class.py": [
     "Line 59: Expected 1 errors",
@@ -1322,7 +1322,7 @@
     "Line 76: Expected 1 errors",
     "Line 77: Expected 1 errors",
     "Line 85: Expected 1 errors",
-    "Line 36: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr']",
+    "Line 36: Unexpected errors ['Invalid literal expression']",
     "Line 81: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 98: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[int]`']",
     "Line 100: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Final[int]`']",

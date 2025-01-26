@@ -109,19 +109,43 @@ impl Lit {
             Expr::BytesLiteral(x) => Self::from_bytes_literal(x).to_type(),
             Expr::BooleanLiteral(x) => Self::from_boolean_literal(x).to_type(),
             Expr::Attribute(ExprAttribute {
-                range: _,
+                range,
                 value: box Expr::Name(maybe_enum_name),
                 attr: member_name,
                 ctx: _,
             }) => match get_enum_from_name(Ast::expr_name_identifier(maybe_enum_name.clone())) {
-                Some(e) if let Some(lit) = e.get_member(&member_name.id) => lit.to_type(),
-                _ => {
-                    errors.todo(module_info, "Lit::from_expr", x);
+                Some(e) => match e.get_member(&member_name.id) {
+                    Some(lit) => lit.to_type(),
+                    None => {
+                        errors.add(
+                            module_info,
+                            *range,
+                            format!(
+                                "Enumeration `{}` does not have member `{}`",
+                                maybe_enum_name.id, member_name.id
+                            ),
+                        );
+                        Type::any_error()
+                    }
+                },
+                None => {
+                    errors.add(
+                        module_info,
+                        *range,
+                        format!(
+                            "Literal expression `{}` is not an enumeration",
+                            maybe_enum_name.id
+                        ),
+                    );
                     Type::any_error()
                 }
             },
             _ => {
-                errors.todo(module_info, "Lit::from_expr", x);
+                errors.add(
+                    module_info,
+                    x.range(),
+                    "Invalid literal expression".to_owned(),
+                );
                 Type::any_error()
             }
         }
