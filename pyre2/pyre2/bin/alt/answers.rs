@@ -231,14 +231,10 @@ impl SolveRecursive for KeyClassField {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         // TODO(stroxler) Revisit the recursive handling, which needs changes in the plumbing
         // to work correctly; what we have here is a fallback to permissive gradual typing.
-        ClassField {
-            ty: Type::any_implicit(),
-            annotation: None,
-            initialization: ClassFieldInitialization::Class,
-        }
+        ClassField::recursive()
     }
     fn visit_type_mut(v: &mut ClassField, f: &mut dyn FnMut(&mut Type)) {
-        f(&mut v.ty);
+        v.visit_type_mut(f);
     }
 }
 impl SolveRecursive for KeyAnnotation {
@@ -1041,11 +1037,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             (value_ty, None)
         };
-        Arc::new(ClassField {
-            ty: ty.deref().clone(),
-            annotation: ann.map(|ann| ann.deref().clone()),
-            initialization: field.initialization,
-        })
+        Arc::new(ClassField::new(
+            ty.deref().clone(),
+            ann.map(|ann| ann.deref().clone()),
+            field.initialization,
+        ))
     }
 
     fn solve_binding_inner(&self, binding: &Binding) -> Type {

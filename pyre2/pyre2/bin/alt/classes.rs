@@ -58,9 +58,35 @@ use crate::util::prelude::SliceExt;
 /// both visibility rules and whether method binding should be performed.
 #[derive(Debug, Clone)]
 pub struct ClassField {
-    pub ty: Type,
-    pub annotation: Option<Annotation>,
-    pub initialization: ClassFieldInitialization,
+    ty: Type,
+    annotation: Option<Annotation>,
+    initialization: ClassFieldInitialization,
+}
+
+impl ClassField {
+    pub fn new(
+        ty: Type,
+        annotation: Option<Annotation>,
+        initialization: ClassFieldInitialization,
+    ) -> Self {
+        Self {
+            ty,
+            annotation,
+            initialization,
+        }
+    }
+
+    pub fn recursive() -> Self {
+        Self {
+            ty: Type::any_implicit(),
+            annotation: None,
+            initialization: ClassFieldInitialization::Class,
+        }
+    }
+
+    pub fn visit_type_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        f(&mut self.ty);
+    }
 }
 
 impl Display for ClassField {
