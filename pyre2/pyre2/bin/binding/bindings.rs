@@ -2258,7 +2258,9 @@ impl<'a> BindingsBuilder<'a> {
             Stmt::Continue(x) => {
                 self.add_loop_exitpoint(LoopExit::Continue, x.range);
             }
-            Stmt::IpyEscapeCommand(x) => self.todo("Bindings::stmt", &x),
+            Stmt::IpyEscapeCommand(x) => {
+                self.error(x.range, "IPython escapes are not supported".to_owned())
+            }
         }
     }
 

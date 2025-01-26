@@ -1392,7 +1392,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let int = self.stdlib.int().to_type();
                 self.stdlib.slice(int.clone(), int.clone(), int).to_type()
             }
-            Expr::IpyEscapeCommand(_) => self.todo("Answers::expr_infer", x),
+            Expr::IpyEscapeCommand(x) => {
+                self.error(x.range, "IPython escapes are not supported".to_owned())
+            }
         }
     }
 }
