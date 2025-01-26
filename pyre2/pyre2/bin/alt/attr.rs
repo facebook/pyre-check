@@ -28,7 +28,9 @@ pub enum LookupResult {
     NotFound(NotFound),
     /// The lookup failed for some other reason. Fallback behavior does not
     /// make sense and callers should just bail.
-    Error(LookupError),
+    AccessNotAllowed(AccessNotAllowed),
+    /// There was a Pyre-internal error
+    InternalError(InternalError),
 }
 
 pub enum NotFound {
@@ -37,9 +39,12 @@ pub enum NotFound {
     ModuleExport(Module),
 }
 
-pub enum LookupError {
+pub enum InternalError {
     /// An internal error caused by `as_attribute_base` being partial.
     AttributeBaseUndefined(Type),
+}
+
+pub enum AccessNotAllowed {
     /// The attribute is only initialized on instances, but we saw an attempt
     /// to use it as a class attribute.
     ClassUseOfInstanceAttribute(Class),
@@ -59,7 +64,8 @@ impl LookupResult {
         match self {
             LookupResult::Found(ty) => Ok(ty),
             LookupResult::NotFound(err) => Err(err.to_error_msg(attr_name)),
-            LookupResult::Error(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
+            LookupResult::AccessNotAllowed(err) => Err(err.to_error_msg(attr_name)),
+            LookupResult::InternalError(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
         }
     }
 }
@@ -82,25 +88,33 @@ impl NotFound {
     }
 }
 
-impl LookupError {
-    pub fn to_error_msg(self, attr_name: &Name, todo_ctx: &str) -> String {
+impl AccessNotAllowed {
+    pub fn to_error_msg(self, attr_name: &Name) -> String {
         match self {
-            LookupError::AttributeBaseUndefined(ty) => format!(
-                "TODO: {todo_ctx} attribute base undefined for type: {}",
-                ty.deterministic_printing()
-            ),
-            LookupError::ClassUseOfInstanceAttribute(class) => {
+            AccessNotAllowed::ClassUseOfInstanceAttribute(class) => {
                 let class_name = class.name();
                 format!(
                     "Instance-only attribute `{attr_name}` of class `{class_name}` is not visible on the class"
                 )
             }
-            LookupError::ClassAttributeIsGeneric(class) => {
+            AccessNotAllowed::ClassAttributeIsGeneric(class) => {
                 let class_name = class.name();
                 format!(
                     "Generic attribute `{attr_name}` of class `{class_name}` is not visible on the class"
                 )
             }
+        }
+    }
+}
+
+impl InternalError {
+    pub fn to_error_msg(self, attr_name: &Name, todo_ctx: &str) -> String {
+        match self {
+            InternalError::AttributeBaseUndefined(ty) => format!(
+                "TODO: {todo_ctx} attribute base undefined for type: {} (trying to access {})",
+                ty.deterministic_printing(),
+                attr_name
+            ),
         }
     }
 }
@@ -146,12 +160,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             None => LookupResult::NotFound(NotFound::ClassAttribute(class)),
                         }
                     }
-                    Err(NoClassAttribute::IsGenericMember) => {
-                        LookupResult::Error(LookupError::ClassAttributeIsGeneric(class))
-                    }
-                    Err(NoClassAttribute::InstanceOnlyAttribute) => {
-                        LookupResult::Error(LookupError::ClassUseOfInstanceAttribute(class))
-                    }
+                    Err(NoClassAttribute::IsGenericMember) => LookupResult::AccessNotAllowed(
+                        AccessNotAllowed::ClassAttributeIsGeneric(class),
+                    ),
+                    Err(NoClassAttribute::InstanceOnlyAttribute) => LookupResult::AccessNotAllowed(
+                        AccessNotAllowed::ClassUseOfInstanceAttribute(class),
+                    ),
                 }
             }
             Some(AttributeBase::Module(module)) => match self.get_module_attr(&module, attr_name) {
@@ -180,7 +194,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Some(AttributeBase::Any(style)) => LookupResult::Found(style.propagate()),
             Some(AttributeBase::Never) => LookupResult::Found(Type::never()),
-            None => LookupResult::Error(LookupError::AttributeBaseUndefined(ty)),
+            None => LookupResult::InternalError(InternalError::AttributeBaseUndefined(ty)),
         }
     }
 

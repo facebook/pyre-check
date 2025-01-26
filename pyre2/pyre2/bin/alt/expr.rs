@@ -335,7 +335,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             LookupResult::NotFound(_) => {
                 return None;
             }
-            LookupResult::Error(e) => {
+            LookupResult::AccessNotAllowed(e) => {
+                self.error_call_target(range, e.to_error_msg(method_name))
+            }
+            LookupResult::InternalError(e) => {
                 self.error_call_target(range, e.to_error_msg(method_name, "Expr::call_method"))
             }
             LookupResult::Found(attr) => {
