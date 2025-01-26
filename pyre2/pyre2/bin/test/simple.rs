@@ -792,6 +792,14 @@ assert_type(y, int)
 );
 
 testcase!(
+    test_large_int_type,
+    r#"
+from typing import Literal
+x: Literal[0xFFFFFFFFFFFFFFFFFF]  # E: Int literal exceeds range
+"#,
+);
+
+testcase!(
     test_invalid_type_arguments,
     r#"
 from typing import assert_type

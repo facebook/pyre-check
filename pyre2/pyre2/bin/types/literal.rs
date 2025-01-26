@@ -15,14 +15,15 @@ use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprBooleanLiteral;
 use ruff_python_ast::ExprBytesLiteral;
 use ruff_python_ast::ExprFString;
-use ruff_python_ast::ExprNumberLiteral;
 use ruff_python_ast::ExprStringLiteral;
+use ruff_python_ast::ExprUnaryOp;
 use ruff_python_ast::FStringElement;
 use ruff_python_ast::FStringPart;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Int;
 use ruff_python_ast::Number;
 use ruff_python_ast::UnaryOp;
+use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
@@ -80,25 +81,32 @@ impl Lit {
         get_enum_from_name: &dyn Fn(Identifier) -> Option<Enum>,
         errors: &ErrorCollector,
     ) -> Type {
+        let int = |i| match i {
+            Some(i) => Lit::Int(i).to_type(),
+            None => {
+                errors.add(
+                    module_info,
+                    x.range(),
+                    "Int literal exceeds range, expected to fit within 64 bits".to_owned(),
+                );
+                Type::any_error()
+            }
+        };
+
         match x {
-            Expr::UnaryOp(x) => match x.op {
-                UnaryOp::UAdd => {
-                    Self::from_expr(&x.operand, module_info, get_enum_from_name, errors)
-                }
-                UnaryOp::USub => {
-                    match Self::from_expr(&x.operand, module_info, get_enum_from_name, errors) {
-                        Type::Literal(l) => l.negate_internal(module_info, x.range, errors),
-                        x => x,
-                    }
-                }
-                _ => {
-                    errors.todo(module_info, "Lit::from_expr", x);
-                    Type::any_error()
-                }
-            },
+            Expr::UnaryOp(ExprUnaryOp {
+                op: UnaryOp::UAdd,
+                operand: box Expr::NumberLiteral(n),
+                ..
+            }) if let Number::Int(i) = &n.value => int(i.as_i64()),
+            Expr::UnaryOp(ExprUnaryOp {
+                op: UnaryOp::USub,
+                operand: box Expr::NumberLiteral(n),
+                ..
+            }) if let Number::Int(i) = &n.value => int(i.as_i64().and_then(|x| x.checked_neg())),
+            Expr::NumberLiteral(n) if let Number::Int(i) = &n.value => int(i.as_i64()),
             Expr::StringLiteral(x) => Self::from_string_literal(x).to_type(),
             Expr::BytesLiteral(x) => Self::from_bytes_literal(x).to_type(),
-            Expr::NumberLiteral(x) => Self::from_number_literal(x, module_info, errors),
             Expr::BooleanLiteral(x) => Self::from_boolean_literal(x).to_type(),
             Expr::Attribute(ExprAttribute {
                 range: _,
@@ -114,21 +122,6 @@ impl Lit {
             },
             _ => {
                 errors.todo(module_info, "Lit::from_expr", x);
-                Type::any_error()
-            }
-        }
-    }
-
-    fn negate_internal(
-        &self,
-        module_info: &ModuleInfo,
-        range: TextRange,
-        errors: &ErrorCollector,
-    ) -> Type {
-        match self {
-            Lit::Int(x) if let Some(x) = x.checked_neg() => Lit::Int(x).to_type(),
-            _ => {
-                errors.add(module_info, range, format!("Cannot negate type {self}"));
                 Type::any_error()
             }
         }
@@ -199,36 +192,6 @@ impl Lit {
 
     pub fn from_int(x: &Int) -> Option<Self> {
         Some(Lit::Int(x.as_i64()?))
-    }
-
-    fn from_number_literal(
-        x: &ExprNumberLiteral,
-        module_info: &ModuleInfo,
-        errors: &ErrorCollector,
-    ) -> Type {
-        match &x.value {
-            Number::Int(x) if let Some(x) = x.as_i64() => Lit::Int(x).to_type(),
-            Number::Float(v) => {
-                errors.add(
-                    module_info,
-                    x.range,
-                    format!("Float literals are disallowed by the spec, got `{v}`"),
-                );
-                Type::any_error()
-            }
-            Number::Complex { real, imag } => {
-                errors.add(
-                    module_info,
-                    x.range,
-                    format!("Complex literals are not allowed, got `{real} + {imag}j`"),
-                );
-                Type::any_error()
-            }
-            _ => {
-                errors.todo(module_info, "Lit::from_number_literal", x);
-                Type::any_error()
-            }
-        }
     }
 
     pub fn from_boolean_literal(x: &ExprBooleanLiteral) -> Self {
