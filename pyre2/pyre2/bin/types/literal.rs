@@ -9,7 +9,6 @@ use std::char;
 use std::fmt;
 use std::fmt::Display;
 
-use ordered_float::NotNan;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
@@ -41,11 +40,6 @@ assert_eq_size!(Lit, [usize; 3]);
 pub enum Lit {
     String(Box<str>),
     Int(i64),
-    Float(NotNan<f64>),
-    Complex {
-        real: NotNan<f64>,
-        imag: NotNan<f64>,
-    },
     Bool(bool),
     Bytes(Box<[u8]>),
     Enum(Box<(ClassType, Name)>),
@@ -56,14 +50,6 @@ impl Display for Lit {
         match self {
             Lit::String(x) => write!(f, "'{x}'"),
             Lit::Int(x) => write!(f, "{x}"),
-            Lit::Float(x) => {
-                let mut s = x.to_string();
-                if !s.contains('.') {
-                    s.push_str(".0");
-                }
-                write!(f, "{s}")
-            }
-            Lit::Complex { real, imag } => write!(f, "{real}+{imag}j"),
             Lit::Bool(x) => {
                 let s = if *x { "True" } else { "False" };
                 write!(f, "{s}")
@@ -199,11 +185,21 @@ impl Lit {
     ) -> Self {
         match &x.value {
             Number::Int(x) if let Some(x) = x.as_i64() => Lit::Int(x),
-            Number::Float(x) if let Ok(x) = NotNan::new(*x) => Lit::Float(x),
-            Number::Complex { real, imag }
-                if let (Ok(real), Ok(imag)) = (NotNan::new(*real), NotNan::new(*imag)) =>
-            {
-                Lit::Complex { imag, real }
+            Number::Float(v) => {
+                errors.add(
+                    module_info,
+                    x.range,
+                    format!("Float literals are disallowed by the spec, got `{v}`"),
+                );
+                Lit::Int(0)
+            }
+            Number::Complex { real, imag } => {
+                errors.add(
+                    module_info,
+                    x.range,
+                    format!("Complex literals are not allowed, got `{real} + {imag}j`"),
+                );
+                Lit::Int(0)
             }
             _ => {
                 errors.todo(module_info, "Lit::from_number_literal", x);
@@ -229,8 +225,6 @@ impl Lit {
             Lit::Int(_) => stdlib.int(),
             Lit::Bool(_) => stdlib.bool(),
             Lit::Bytes(_) => stdlib.bytes(),
-            Lit::Float(_) => stdlib.float(),
-            Lit::Complex { .. } => stdlib.complex(),
             Lit::Enum(box (class_type, _)) => class_type.clone(),
         }
     }

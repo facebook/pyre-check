@@ -1072,7 +1072,6 @@
   ],
   "literals_parameterizations.py": [
     "Line 46: Expected 1 errors",
-    "Line 51: Expected 1 errors",
     "Line 60: Expected 1 errors",
     "Line 26: Unexpected errors ['TODO: NoneLiteral(ExprNoneLiteral - Lit::from_expr']",
     "Line 33: Unexpected errors ['TODO: Name(ExprName - Lit::from_expr', 'TODO: Name(ExprName - Lit::from_expr', 'TODO: Name(ExprName - Lit::from_expr', 'TODO: Name(ExprName - Lit::from_expr']",

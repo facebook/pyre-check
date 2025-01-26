@@ -14308,6 +14308,16 @@
     {
       "code": -2,
       "column": 16,
+      "concise_description": "Float literals are disallowed by the spec, got `3.14`",
+      "description": "Float literals are disallowed by the spec, got `3.14`",
+      "line": 51,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 51
+    },
+    {
+      "code": -2,
+      "column": 16,
       "concise_description": "TODO: Name(ExprName - Lit::from_expr",
       "description": "TODO: Name(ExprName - Lit::from_expr",
       "line": 52,
