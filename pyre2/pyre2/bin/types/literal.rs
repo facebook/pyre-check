@@ -78,43 +78,42 @@ impl Lit {
         module_info: &ModuleInfo,
         get_enum_from_name: &dyn Fn(Identifier) -> Option<Enum>,
         errors: &ErrorCollector,
-    ) -> Self {
+    ) -> Type {
         match x {
             Expr::UnaryOp(x) => match x.op {
                 UnaryOp::UAdd => {
                     Self::from_expr(&x.operand, module_info, get_enum_from_name, errors)
                 }
                 UnaryOp::USub => {
-                    Self::from_expr(&x.operand, module_info, get_enum_from_name, errors).negate(
-                        module_info,
-                        x.range,
-                        errors,
-                    )
+                    match Self::from_expr(&x.operand, module_info, get_enum_from_name, errors) {
+                        Type::Literal(l) => l.negate(module_info, x.range, errors),
+                        x => x,
+                    }
                 }
                 _ => {
                     errors.todo(module_info, "Lit::from_expr", x);
-                    Lit::Bool(false)
+                    Type::any_error()
                 }
             },
-            Expr::StringLiteral(x) => Self::from_string_literal(x),
-            Expr::BytesLiteral(x) => Self::from_bytes_literal(x),
+            Expr::StringLiteral(x) => Self::from_string_literal(x).to_type(),
+            Expr::BytesLiteral(x) => Self::from_bytes_literal(x).to_type(),
             Expr::NumberLiteral(x) => Self::from_number_literal(x, module_info, errors),
-            Expr::BooleanLiteral(x) => Self::from_boolean_literal(x),
+            Expr::BooleanLiteral(x) => Self::from_boolean_literal(x).to_type(),
             Expr::Attribute(ExprAttribute {
                 range: _,
                 value: box Expr::Name(maybe_enum_name),
                 attr: member_name,
                 ctx: _,
             }) => match get_enum_from_name(Ast::expr_name_identifier(maybe_enum_name.clone())) {
-                Some(e) if let Some(lit) = e.get_member(&member_name.id) => lit,
+                Some(e) if let Some(lit) = e.get_member(&member_name.id) => lit.to_type(),
                 _ => {
                     errors.todo(module_info, "Lit::from_expr", x);
-                    Lit::Bool(false)
+                    Type::any_error()
                 }
             },
             _ => {
                 errors.todo(module_info, "Lit::from_expr", x);
-                Lit::Bool(false)
+                Type::any_error()
             }
         }
     }
@@ -124,12 +123,12 @@ impl Lit {
         module_info: &ModuleInfo,
         range: TextRange,
         errors: &ErrorCollector,
-    ) -> Self {
+    ) -> Type {
         match self {
-            Lit::Int(x) if let Some(x) = x.checked_neg() => Lit::Int(x),
+            Lit::Int(x) if let Some(x) = x.checked_neg() => Lit::Int(x).to_type(),
             _ => {
                 errors.add(module_info, range, format!("Cannot negate type {self}"));
-                self.clone()
+                Type::any_error()
             }
         }
     }
@@ -139,15 +138,15 @@ impl Lit {
         module_info: &ModuleInfo,
         range: TextRange,
         errors: &ErrorCollector,
-    ) -> Self {
+    ) -> Type {
         match self {
             Lit::Int(x) => {
                 let x = !x;
-                Lit::Int(x)
+                Lit::Int(x).to_type()
             }
             _ => {
                 errors.add(module_info, range, format!("Cannot invert type {self}"));
-                self.clone()
+                Type::any_error()
             }
         }
     }
@@ -182,16 +181,16 @@ impl Lit {
         x: &ExprNumberLiteral,
         module_info: &ModuleInfo,
         errors: &ErrorCollector,
-    ) -> Self {
+    ) -> Type {
         match &x.value {
-            Number::Int(x) if let Some(x) = x.as_i64() => Lit::Int(x),
+            Number::Int(x) if let Some(x) = x.as_i64() => Lit::Int(x).to_type(),
             Number::Float(v) => {
                 errors.add(
                     module_info,
                     x.range,
                     format!("Float literals are disallowed by the spec, got `{v}`"),
                 );
-                Lit::Int(0)
+                Type::any_error()
             }
             Number::Complex { real, imag } => {
                 errors.add(
@@ -199,11 +198,11 @@ impl Lit {
                     x.range,
                     format!("Complex literals are not allowed, got `{real} + {imag}j`"),
                 );
-                Lit::Int(0)
+                Type::any_error()
             }
             _ => {
                 errors.todo(module_info, "Lit::from_number_literal", x);
-                Lit::Int(0)
+                Type::any_error()
             }
         }
     }

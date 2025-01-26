@@ -870,10 +870,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 self.distribute_over_union(&t, |t| match x.op {
                     UnaryOp::USub => {
-                        let f = |lit: &Lit| {
-                            lit.negate(self.module_info(), x.range, self.errors())
-                                .to_type()
-                        };
+                        let f = |lit: &Lit| lit.negate(self.module_info(), x.range, self.errors());
                         unop(t, &f, &dunder::NEG)
                     }
                     UnaryOp::UAdd => {
@@ -885,10 +882,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Some(b) => Type::Literal(Lit::Bool(!b)),
                     },
                     UnaryOp::Invert => {
-                        let f = |lit: &Lit| {
-                            lit.invert(self.module_info(), x.range, self.errors())
-                                .to_type()
-                        };
+                        let f = |lit: &Lit| lit.invert(self.module_info(), x.range, self.errors());
                         unop(t, &f, &dunder::INVERT)
                     }
                 })
@@ -1197,9 +1191,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
             Expr::BytesLiteral(x) => Lit::from_bytes_literal(x).to_type(),
             Expr::NumberLiteral(x) => match &x.value {
-                Number::Int(_) => {
-                    Lit::from_number_literal(x, self.module_info(), self.errors()).to_type()
-                }
+                Number::Int(_) => Lit::from_number_literal(x, self.module_info(), self.errors()),
                 Number::Float(_) => self.stdlib.float().to_type(),
                 Number::Complex { .. } => self.stdlib.complex().to_type(),
             },

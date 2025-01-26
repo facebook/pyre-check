@@ -71,7 +71,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &|name| self.get_enum_from_name(name),
                         self.errors(),
                     );
-                    literals.push(Type::Literal(lit));
+                    literals.push(lit);
                 }
                 Type::type_form(self.unions(&literals))
             }
