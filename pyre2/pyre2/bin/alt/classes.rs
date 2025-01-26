@@ -92,7 +92,7 @@ pub struct Attribute {
 }
 
 impl Attribute {
-    pub fn defined_on(&self, cls: &Class) -> bool {
+    fn defined_on(&self, cls: &Class) -> bool {
         self.defining_class == *cls
     }
 }
