@@ -795,6 +795,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Some(new_attr.value)
     }
 
+    /// Get the class's `__init__` method, if we should analyze it
+    /// We skip analyzing the call to `__init__` if:
+    /// (1) it isn't defined (possible if we've been passed a custom typeshed), or
+    /// (2) the class overrides `object.__new__` but not `object.__init__`, in wich case the
+    ///     `__init__` call always succeeds at runtime.
+    pub fn get_dunder_init(&self, cls: &ClassType, overrides_new: bool) -> Option<Type> {
+        let init_method = self.get_instance_attribute(cls, &dunder::INIT)?;
+        if !(overrides_new
+            && init_method.defined_on(self.stdlib.object_class_type().class_object()))
+        {
+            Some(init_method.value)
+        } else {
+            None
+        }
+    }
+
     /// Get the metaclass `__call__` method.
     pub fn get_metaclass_dunder_call(&self, cls: &ClassType) -> Option<Type> {
         let metadata = self.get_metadata_for_class(cls.class_object());

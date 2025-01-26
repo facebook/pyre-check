@@ -643,21 +643,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             false
         };
-        let init_method = self.get_instance_attribute(&cls, &dunder::INIT);
-        // We skip calling `__init__` if:
-        // (1) it isn't defined (possible if we've been passed a custom typeshed), or
-        // (2) the class overrides `object.__new__` but not `object.__init__`, in wich case the
-        //     `__init__` call always succeeds at runtime.
-        if let Some(init_method) = init_method
-            && !(overrides_new
-                && init_method.defined_on(self.stdlib.object_class_type().class_object()))
-        {
+        if let Some(init_method) = self.get_dunder_init(&cls, overrides_new) {
             self.call_infer(
-                self.as_call_target_or_error(
-                    init_method.value,
-                    CallStyle::Method(&dunder::INIT),
-                    range,
-                ),
+                self.as_call_target_or_error(init_method, CallStyle::Method(&dunder::INIT), range),
                 args,
                 keywords,
                 range,
