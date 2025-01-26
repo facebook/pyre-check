@@ -16,6 +16,7 @@ use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprSlice;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Keyword;
+use ruff_python_ast::Number;
 use ruff_python_ast::Operator;
 use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
@@ -1189,9 +1190,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
             Expr::BytesLiteral(x) => Lit::from_bytes_literal(x).to_type(),
-            Expr::NumberLiteral(x) => {
-                Lit::from_number_literal(x, self.module_info(), self.errors()).to_type()
-            }
+            Expr::NumberLiteral(x) => match &x.value {
+                Number::Int(_) => {
+                    Lit::from_number_literal(x, self.module_info(), self.errors()).to_type()
+                }
+                Number::Float(_) => self.stdlib.float().to_type(),
+                Number::Complex { .. } => self.stdlib.complex().to_type(),
+            },
             Expr::BooleanLiteral(x) => Lit::from_boolean_literal(x).to_type(),
             Expr::NoneLiteral(_) => Type::None,
             Expr::EllipsisLiteral(_) => Type::Ellipsis,

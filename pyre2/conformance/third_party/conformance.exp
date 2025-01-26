@@ -3594,16 +3594,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Literal[3.1], float) failed",
-      "description": "assert_type(Literal[3.1], float) failed",
-      "line": 78,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 78
-    },
-    {
-      "code": -2,
       "column": 34,
       "concise_description": "Expected 1 more positional argument",
       "description": "Expected 1 more positional argument",
@@ -3689,8 +3679,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED Literal[1.0] <: int",
-      "description": "EXPECTED Literal[1.0] <: int",
+      "concise_description": "EXPECTED float <: int",
+      "description": "EXPECTED float <: int",
       "line": 21,
       "name": "PyreError",
       "stop_column": 16,
@@ -4083,8 +4073,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED Literal[1.0] <: int",
-      "description": "EXPECTED Literal[1.0] <: int",
+      "concise_description": "EXPECTED float <: int",
+      "description": "EXPECTED float <: int",
       "line": 21,
       "name": "PyreError",
       "stop_column": 16,
@@ -10685,26 +10675,6 @@
       "name": "PyreError",
       "stop_column": 36,
       "stop_line": 116
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(Literal[0+3j], complex) failed",
-      "description": "assert_type(Literal[0+3j], complex) failed",
-      "line": 121,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 121
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "assert_type(Literal[0+3j], complex) failed",
-      "description": "assert_type(Literal[0+3j], complex) failed",
-      "line": 124,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 124
     }
   ],
   "generics_type_erasure.py": [
@@ -17567,8 +17537,8 @@
     {
       "code": -2,
       "column": 15,
-      "concise_description": "EXPECTED Literal[1.2] <: complex",
-      "description": "EXPECTED Literal[1.2] <: complex",
+      "concise_description": "EXPECTED float <: complex",
+      "description": "EXPECTED float <: complex",
       "line": 8,
       "name": "PyreError",
       "stop_column": 18,
@@ -18381,8 +18351,8 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[''], Literal[1.2]] <: tuple[int, Error, int]",
-      "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[''], Literal[1.2]] <: tuple[int, Error, int]",
+      "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[''], float] <: tuple[int, Error, int]",
+      "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[''], float] <: tuple[int, Error, int]",
       "line": 157,
       "name": "PyreError",
       "stop_column": 22,
@@ -18431,8 +18401,8 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "EXPECTED tuple[Literal[''], Literal[''], Literal[1.2]] <: tuple[Error, int]",
-      "description": "EXPECTED tuple[Literal[''], Literal[''], Literal[1.2]] <: tuple[Error, int]",
+      "concise_description": "EXPECTED tuple[Literal[''], Literal[''], float] <: tuple[Error, int]",
+      "description": "EXPECTED tuple[Literal[''], Literal[''], float] <: tuple[Error, int]",
       "line": 163,
       "name": "PyreError",
       "stop_column": 19,

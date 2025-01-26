@@ -307,7 +307,6 @@
     "Line 71: Expected 1 errors",
     "Line 105: Expected 1 errors",
     "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']",
-    "Line 78: Unexpected errors ['assert_type(Literal[3.1], float) failed']",
     "Line 101: Unexpected errors ['Expected 1 more positional argument', 'Object of class `NoneType` has no attribute `__add__`', \"EXPECTED Literal['hits'] <: dict[str, int]\", 'EXPECTED Literal[0] <: str']",
     "Line 146: Unexpected errors ['EXPECTED () -> None <: (ParamSpec(@_)) -> None']"
   ],
@@ -869,9 +868,7 @@
     "Line 102: Unexpected errors ['Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int']",
     "Line 106: Unexpected errors ['Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int']",
     "Line 111: Unexpected errors ['Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str']",
-    "Line 116: Unexpected errors ['assert_type(int, TypeVar) failed']",
-    "Line 121: Unexpected errors ['assert_type(Literal[0+3j], complex) failed']",
-    "Line 124: Unexpected errors ['assert_type(Literal[0+3j], complex) failed']"
+    "Line 116: Unexpected errors ['assert_type(int, TypeVar) failed']"
   ],
   "generics_type_erasure.py": [
     "Line 56: Unexpected errors ['assert_type(Any, bytes) failed']"
@@ -1389,7 +1386,7 @@
   ],
   "specialtypes_promotions.py": [
     "Line 7: Unexpected errors ['EXPECTED Literal[1] <: float']",
-    "Line 8: Unexpected errors ['EXPECTED Literal[1.2] <: complex']",
+    "Line 8: Unexpected errors ['EXPECTED float <: complex']",
     "Line 9: Unexpected errors ['EXPECTED Literal[1] <: complex']"
   ],
   "specialtypes_type.py": [
