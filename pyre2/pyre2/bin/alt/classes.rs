@@ -25,6 +25,7 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::attr::AccessNotAllowed;
 use crate::ast::Ast;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
@@ -52,6 +53,18 @@ use crate::types::types::TypedDict;
 use crate::types::types::TypedDictField;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
+
+pub struct AttributeAccess(pub Result<Type, AccessNotAllowed>);
+
+impl AttributeAccess {
+    fn allowed(ty: Type) -> Self {
+        AttributeAccess(Ok(ty))
+    }
+
+    fn not_allowed(reason: AccessNotAllowed) -> Self {
+        AttributeAccess(Err(reason))
+    }
+}
 
 /// Raw information about an attribute declared somewhere in a class. We need to
 /// know whether it is initialized in the class body in order to determine
@@ -100,14 +113,6 @@ impl Display for ClassField {
         };
         write!(f, "@{} ({})", self.ty, initialized)
     }
-}
-
-/// Provide a root cause for why a class attribute lookup failed, which can
-/// be used to produce better error messages.
-pub enum NoClassAttribute {
-    NoClassMember,
-    InstanceOnlyAttribute,
-    IsGenericMember,
 }
 
 /// Result of looking up a member of a class in the MRO, including a handle to the defining
@@ -779,28 +784,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         tparams.quantified().any(|q| qs.contains(&q))
     }
 
-    /// Gets an attribute from a class definition. Returns an error if the attribute is not found
-    /// or if its type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
-    pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Result<Type, NoClassAttribute> {
-        match self.get_class_member(cls, name) {
-            None => Err(NoClassAttribute::NoClassMember),
-            Some((member, _)) => {
-                if self.depends_on_class_type_parameter(cls, &member.ty) {
-                    Err(NoClassAttribute::IsGenericMember)
-                } else {
-                    match member.initialization {
-                        ClassFieldInitialization::Instance => {
-                            Err(NoClassAttribute::InstanceOnlyAttribute)
-                        }
-                        ClassFieldInitialization::Class => {
-                            if let Some(e) = self.get_enum(&self.promote_silently(cls))
-                                && let Some(member) = e.get_member(name)
-                            {
-                                Ok(Type::Literal(member))
-                            } else {
-                                Ok(member.ty)
-                            }
-                        }
+    /// Gets an attribute from a class definition.
+    ///
+    /// Returns `None` if there is no such attribute, otherwise an `Attribute` object
+    /// that describes whether access is allowed and the type if so.
+    ///
+    /// Access is disallowed for instance-only attributes and for attributes whose
+    /// type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
+    pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<AttributeAccess> {
+        let (member, _) = self.get_class_member(cls, name)?;
+        if self.depends_on_class_type_parameter(cls, &member.ty) {
+            Some(AttributeAccess::not_allowed(
+                AccessNotAllowed::ClassAttributeIsGeneric(cls.clone()),
+            ))
+        } else {
+            match member.initialization {
+                ClassFieldInitialization::Instance => Some(AttributeAccess::not_allowed(
+                    AccessNotAllowed::ClassUseOfInstanceAttribute(cls.clone()),
+                )),
+                ClassFieldInitialization::Class => {
+                    if let Some(e) = self.get_enum(&self.promote_silently(cls))
+                        && let Some(member) = e.get_member(name)
+                    {
+                        Some(AttributeAccess::allowed(Type::Literal(member)))
+                    } else {
+                        Some(AttributeAccess::allowed(member.ty))
                     }
                 }
             }

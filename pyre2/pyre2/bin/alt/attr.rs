@@ -10,7 +10,6 @@ use ruff_python_ast::name::Name;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::classes::NoClassAttribute;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::module::Module;
@@ -39,11 +38,6 @@ pub enum NotFound {
     ModuleExport(Module),
 }
 
-pub enum InternalError {
-    /// An internal error caused by `as_attribute_base` being partial.
-    AttributeBaseUndefined(Type),
-}
-
 pub enum AccessNotAllowed {
     /// The attribute is only initialized on instances, but we saw an attempt
     /// to use it as a class attribute.
@@ -51,6 +45,30 @@ pub enum AccessNotAllowed {
     /// A generic class attribute exists, but has an invalid definition.
     /// Callers should treat the attribute as `Any`.
     ClassAttributeIsGeneric(Class),
+}
+
+pub enum InternalError {
+    /// An internal error caused by `as_attribute_base` being partial.
+    AttributeBaseUndefined(Type),
+}
+
+impl AccessNotAllowed {
+    pub fn to_error_msg(self, attr_name: &Name) -> String {
+        match self {
+            AccessNotAllowed::ClassUseOfInstanceAttribute(class) => {
+                let class_name = class.name();
+                format!(
+                    "Instance-only attribute `{attr_name}` of class `{class_name}` is not visible on the class"
+                )
+            }
+            AccessNotAllowed::ClassAttributeIsGeneric(class) => {
+                let class_name = class.name();
+                format!(
+                    "Generic attribute `{attr_name}` of class `{class_name}` is not visible on the class"
+                )
+            }
+        }
+    }
 }
 
 impl LookupResult {
@@ -83,25 +101,6 @@ impl NotFound {
             }
             NotFound::ModuleExport(module) => {
                 format!("No attribute `{attr_name}` in module `{module}`")
-            }
-        }
-    }
-}
-
-impl AccessNotAllowed {
-    pub fn to_error_msg(self, attr_name: &Name) -> String {
-        match self {
-            AccessNotAllowed::ClassUseOfInstanceAttribute(class) => {
-                let class_name = class.name();
-                format!(
-                    "Instance-only attribute `{attr_name}` of class `{class_name}` is not visible on the class"
-                )
-            }
-            AccessNotAllowed::ClassAttributeIsGeneric(class) => {
-                let class_name = class.name();
-                format!(
-                    "Generic attribute `{attr_name}` of class `{class_name}` is not visible on the class"
-                )
             }
         }
     }
@@ -145,8 +144,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Some(AttributeBase::ClassObject(class)) => {
                 match self.get_class_attribute(&class, attr_name) {
-                    Ok(attr) => LookupResult::Found(attr),
-                    Err(NoClassAttribute::NoClassMember) => {
+                    Some(access) => match access.0 {
+                        Ok(attr) => LookupResult::Found(attr),
+                        Err(e) => LookupResult::AccessNotAllowed(e),
+                    },
+                    None => {
                         // Classes are instances of their metaclass, which defaults to `builtins.type`.
                         let metadata = self.get_metadata_for_class(&class);
                         let instance_attr = match metadata.metaclass() {
@@ -160,12 +162,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             None => LookupResult::NotFound(NotFound::ClassAttribute(class)),
                         }
                     }
-                    Err(NoClassAttribute::IsGenericMember) => LookupResult::AccessNotAllowed(
-                        AccessNotAllowed::ClassAttributeIsGeneric(class),
-                    ),
-                    Err(NoClassAttribute::InstanceOnlyAttribute) => LookupResult::AccessNotAllowed(
-                        AccessNotAllowed::ClassUseOfInstanceAttribute(class),
-                    ),
                 }
             }
             Some(AttributeBase::Module(module)) => match self.get_module_attr(&module, attr_name) {
