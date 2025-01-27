@@ -291,6 +291,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::TypeAlias(ta) => self.as_call_target(ta.as_value(self.stdlib)),
             Type::ClassType(cls) => self
                 .get_instance_attribute(&cls, &dunder::CALL)
+                .and_then(|attr| attr.get_type().cloned())
                 .and_then(|ty| self.as_call_target(ty)),
             _ => None,
         }

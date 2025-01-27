@@ -72,12 +72,11 @@ pub enum InternalError {
 }
 
 impl Attribute {
-    fn access_allowed(ty: Type) -> Self {
+    pub fn access_allowed(ty: Type) -> Self {
         Attribute(AttributeAccess::allowed(ty))
     }
-
-    fn with_access(access: AttributeAccess) -> Self {
-        Attribute(access)
+    pub fn access_not_allowed(reason: AccessNotAllowed) -> Self {
+        Attribute(AttributeAccess::not_allowed(reason))
     }
 
     pub fn get(&self) -> &AttributeAccess {
@@ -197,13 +196,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.as_attribute_base(ty.clone(), self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
                 match self.get_instance_attribute(&class, attr_name) {
-                    Some(attr) => LookupResult::found_type(attr),
+                    Some(attr) => LookupResult::Found(attr),
                     None => LookupResult::NotFound(NotFound::Attribute(class)),
                 }
             }
             Some(AttributeBase::ClassObject(class)) => {
                 match self.get_class_attribute(&class, attr_name) {
-                    Some(access) => LookupResult::Found(Attribute::with_access(access)),
+                    Some(attr) => LookupResult::Found(attr),
                     None => {
                         // Classes are instances of their metaclass, which defaults to `builtins.type`.
                         let metadata = self.get_metadata_for_class(&class);
@@ -214,7 +213,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         };
                         match instance_attr {
-                            Some(attr) => LookupResult::found_type(attr),
+                            Some(attr) => LookupResult::Found(attr),
                             None => LookupResult::NotFound(NotFound::ClassAttribute(class)),
                         }
                     }
@@ -232,16 +231,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     let class = q.as_value(self.stdlib);
                     match self.get_instance_attribute(&class, attr_name) {
-                        Some(attr) => LookupResult::found_type(attr),
+                        Some(attr) => LookupResult::Found(attr),
                         None => LookupResult::NotFound(NotFound::Attribute(class)),
                     }
                 }
             }
             Some(AttributeBase::TypeAny(style)) => {
-                let class = self.stdlib.builtins_type();
+                let builtins_type_classtype = self.stdlib.builtins_type();
                 LookupResult::found_type(
-                    self.get_instance_attribute(&class, attr_name)
-                        .map_or_else(|| style.propagate(), |attr| attr),
+                    self.get_instance_attribute(&builtins_type_classtype, attr_name)
+                        .and_then(|attr| attr.get_type().cloned())
+                        .map_or_else(|| style.propagate(), |ty| ty),
                 )
             }
             Some(AttributeBase::Any(style)) => LookupResult::found_type(style.propagate()),

@@ -13,11 +13,11 @@ use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::attr::Attribute;
 use crate::alt::classes::ClassField;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
-use crate::types::types::Type;
 
 /// `TypeOrder` provides a minimal API allowing `Subset` to request additional
 /// information about types that may be required for solving bindings
@@ -61,7 +61,7 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.get_all_members(cls)
     }
 
-    pub fn get_instance_attribute(self, cls: &ClassType, name: &Name) -> Option<Type> {
+    pub fn get_instance_attribute(self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.0.get_instance_attribute(cls, name)
     }
 }

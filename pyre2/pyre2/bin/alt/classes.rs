@@ -26,7 +26,7 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::AccessNotAllowed;
-use crate::alt::attr::AttributeAccess;
+use crate::alt::attr::Attribute;
 use crate::ast::Ast;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
@@ -761,9 +761,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             })
     }
 
-    pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Type> {
+    pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_instance_attribute_with_defining_class(cls, name)
-            .map(|attr| attr.value)
+            .map(|attr| Attribute::access_allowed(attr.value))
     }
 
     fn depends_on_class_type_parameter(&self, cls: &Class, ty: &Type) -> bool {
@@ -780,24 +780,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ///
     /// Access is disallowed for instance-only attributes and for attributes whose
     /// type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
-    pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<AttributeAccess> {
+    pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<Attribute> {
         let (member, _) = self.get_class_member(cls, name)?;
         if self.depends_on_class_type_parameter(cls, &member.ty) {
-            Some(AttributeAccess::not_allowed(
+            Some(Attribute::access_not_allowed(
                 AccessNotAllowed::ClassAttributeIsGeneric(cls.clone()),
             ))
         } else {
             match member.initialization {
-                ClassFieldInitialization::Instance => Some(AttributeAccess::not_allowed(
+                ClassFieldInitialization::Instance => Some(Attribute::access_not_allowed(
                     AccessNotAllowed::ClassUseOfInstanceAttribute(cls.clone()),
                 )),
                 ClassFieldInitialization::Class => {
                     if let Some(e) = self.get_enum(&self.promote_silently(cls))
                         && let Some(member) = e.get_member(name)
                     {
-                        Some(AttributeAccess::allowed(Type::Literal(member)))
+                        Some(Attribute::access_allowed(Type::Literal(member)))
                     } else {
-                        Some(AttributeAccess::allowed(member.ty))
+                        Some(Attribute::access_allowed(member.ty))
                     }
                 }
             }
