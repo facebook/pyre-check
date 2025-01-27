@@ -651,7 +651,7 @@
     "Line 121: Expected 1 errors",
     "Line 191: Expected 1 errors",
     "Line 19: Unexpected errors ['Expected `__getitem__` to be a callable, got (self: Sequence[?_], index: int) -> ?_ | (self: Sequence[?_], index: slice[Error, Error, Error]) -> Sequence[?_]']",
-    "Line 34: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_']",
+    "Line 34: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access __add__)']",
     "Line 67: Unexpected errors ['assert_type(MyStr, str) failed']",
     "Line 68: Unexpected errors ['assert_type(MyStr, str) failed', 'EXPECTED str <: MyStr']",
     "Line 92: Unexpected errors ['Expected `__add__` to be a callable, got (LiteralString, LiteralString) -> LiteralString | (str, str) -> str']",
@@ -828,7 +828,7 @@
     "Line 30: Unexpected errors ['EXPECTED ReturnsSelf <: type[ReturnsSelf]']",
     "Line 50: Unexpected errors ['EXPECTED (self: CallableAttribute) -> int <: (Self) -> int']",
     "Line 59: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 60: Unexpected errors [\"Missing argument 'flush'\", 'TODO: Expr::attr_infer attribute base undefined for type: Self']",
+    "Line 60: Unexpected errors [\"Missing argument 'flush'\", 'TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)']",
     "Line 63: Unexpected errors ['EXPECTED HasNestedFunction <: Self']",
     "Line 93: Unexpected errors ['Object of class `Foo3` has no attribute `child_value`']",
     "Line 109: Unexpected errors ['EXPECTED () -> Base <: (ParamSpec(@_)) -> Base']",
@@ -842,7 +842,7 @@
     "Line 14: Unexpected errors ['assert_type(type[?_], TypeVar) failed']",
     "Line 15: Unexpected errors ['assert_type(type[?_], TypeVarTuple) failed']",
     "Line 16: Unexpected errors ['assert_type(type[?_], ParamSpec) failed']",
-    "Line 33: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_']"
+    "Line 33: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access capitalize)']"
   ],
   "generics_syntax_infer_variance.py": [
     "Line 28: Unexpected errors ['EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]']",
@@ -1273,7 +1273,7 @@
     "Line 147: Expected 1 errors",
     "Line 55: Unexpected errors ['EXPECTED Box[int] <: Box[float]']",
     "Line 65: Unexpected errors ['EXPECTED Sender[float] <: Sender[int]']",
-    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_']",
+    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access get_parent)']",
     "Line 100: Unexpected errors ['EXPECTED Forall[T, (self: T) -> T] <: (Any) -> Any | None']",
     "Line 109: Unexpected errors ['EXPECTED Forall[T, (self: T) -> T] <: (Any) -> Any | None']"
   ],
@@ -1402,9 +1402,9 @@
     "Line 99: Unexpected errors ['Object of class `type` has no attribute `unknown`']",
     "Line 100: Unexpected errors ['Object of class `type` has no attribute `unknown`']",
     "Line 102: Unexpected errors ['assert_type((self: type) -> tuple[type, ...] | property, tuple[type, ...]) failed']",
-    "Line 106: Unexpected errors ['assert_type(Any, tuple[type, ...]) failed', 'TODO: Expr::attr_infer attribute base undefined for type: Type']",
-    "Line 107: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Type']",
-    "Line 108: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Type']",
+    "Line 106: Unexpected errors ['assert_type(Any, tuple[type, ...]) failed', 'TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access __mro__)']",
+    "Line 107: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access unknown)']",
+    "Line 108: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access unknown)']",
     "Line 110: Unexpected errors ['assert_type((self: type) -> tuple[type, ...] | property, tuple[type, ...]) failed']",
     "Line 137: Unexpected errors ['assert_type(Type, type[Any]) failed']",
     "Line 139: Unexpected errors ['assert_type(type, type[Any]) failed']",
