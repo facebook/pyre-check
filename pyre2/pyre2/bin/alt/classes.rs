@@ -110,17 +110,17 @@ pub enum NoClassAttribute {
     IsGenericMember,
 }
 
-/// Result of attribute lookup
-pub struct Attribute {
-    /// The attribute
-    pub value: Type,
-    /// The class that defines the attribute, which may be different from the one the attribute is
-    /// looked up on. For example, given `class A: x: int; class B(A): pass`, the defining class
-    /// for attribute `x` is `A` even when `x` is looked up on `B`.
+/// Result of looking up a member of a class in the MRO, including a handle to the defining
+/// class which may be some ancestor.
+///
+/// For example, given `class A: x: int; class B(A): pass`, the defining class
+/// for attribute `x` is `A` even when `x` is looked up on `B`.
+struct WithDefiningClass<T> {
+    value: T,
     defining_class: Class,
 }
 
-impl Attribute {
+impl<T> WithDefiningClass<T> {
     fn defined_on(&self, cls: &Class) -> bool {
         self.defining_class == *cls
     }
@@ -746,7 +746,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         members
     }
 
-    pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
+    fn get_instance_attribute_with_defining_class(
+        &self,
+        cls: &ClassType,
+        name: &Name,
+    ) -> Option<WithDefiningClass<Type>> {
         self.get_class_member(cls.class_object(), name)
             .map(|(member, defining_class)| {
                 let instantiated_ty = cls.instantiate_member(member.ty);
@@ -756,11 +760,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     ClassFieldInitialization::Instance => instantiated_ty,
                 };
-                Attribute {
+                WithDefiningClass {
                     value: ty,
                     defining_class,
                 }
             })
+    }
+
+    pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Type> {
+        self.get_instance_attribute_with_defining_class(cls, name)
+            .map(|attr| attr.value)
     }
 
     fn depends_on_class_type_parameter(&self, cls: &Class, ty: &Type) -> bool {
@@ -772,14 +781,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Gets an attribute from a class definition. Returns an error if the attribute is not found
     /// or if its type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
-    pub fn get_class_attribute(
-        &self,
-        cls: &Class,
-        name: &Name,
-    ) -> Result<Attribute, NoClassAttribute> {
+    pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Result<Type, NoClassAttribute> {
         match self.get_class_member(cls, name) {
             None => Err(NoClassAttribute::NoClassMember),
-            Some((member, defining_class)) => {
+            Some((member, _)) => {
                 if self.depends_on_class_type_parameter(cls, &member.ty) {
                     Err(NoClassAttribute::IsGenericMember)
                 } else {
@@ -791,15 +796,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             if let Some(e) = self.get_enum(&self.promote_silently(cls))
                                 && let Some(member) = e.get_member(name)
                             {
-                                Ok(Attribute {
-                                    value: Type::Literal(member),
-                                    defining_class,
-                                })
+                                Ok(Type::Literal(member))
                             } else {
-                                Ok(Attribute {
-                                    value: member.ty,
-                                    defining_class,
-                                })
+                                Ok(member.ty)
                             }
                         }
                     }
@@ -812,7 +811,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_dunder_new(&self, cls: &ClassType) -> Option<Type> {
         let new_attr = self
             .get_class_member(cls.class_object(), &dunder::NEW)
-            .map(|(member, defining_class)| Attribute {
+            .map(|(member, defining_class)| WithDefiningClass {
                 value: cls.instantiate_member(member.ty),
                 defining_class,
             })?;
@@ -830,7 +829,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// (2) the class overrides `object.__new__` but not `object.__init__`, in wich case the
     ///     `__init__` call always succeeds at runtime.
     pub fn get_dunder_init(&self, cls: &ClassType, overrides_new: bool) -> Option<Type> {
-        let init_method = self.get_instance_attribute(cls, &dunder::INIT)?;
+        let init_method = self.get_instance_attribute_with_defining_class(cls, &dunder::INIT)?;
         if !(overrides_new
             && init_method.defined_on(self.stdlib.object_class_type().class_object()))
         {
@@ -844,7 +843,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_metaclass_dunder_call(&self, cls: &ClassType) -> Option<Type> {
         let metadata = self.get_metadata_for_class(cls.class_object());
         let metaclass = metadata.metaclass()?;
-        let attr = self.get_instance_attribute(metaclass, &dunder::CALL)?;
+        let attr = self.get_instance_attribute_with_defining_class(metaclass, &dunder::CALL)?;
         if attr.defined_on(self.stdlib.builtins_type().class_object()) {
             // The behavior of `type.__call__` is already baked into our implementation of constructors,
             // so we can skip analyzing it at the type level.
