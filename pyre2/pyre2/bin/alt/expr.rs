@@ -28,7 +28,6 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::Iterable;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::UNKNOWN;
-use crate::alt::attr::LookupResult;
 use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
@@ -290,7 +289,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::TypeAlias(ta) => self.as_call_target(ta.as_value(self.stdlib)),
             Type::ClassType(cls) => self
                 .get_instance_attribute(&cls, &dunder::CALL)
-                .and_then(|attr| attr.get_type().cloned())
+                .and_then(|attr| attr.get_type())
                 .and_then(|ty| self.as_call_target(ty)),
             _ => None,
         }
@@ -331,16 +330,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         args: &[CallArg],
         keywords: &[Keyword],
     ) -> Option<Type> {
-        let callee_ty = match self.lookup_attr(ty.clone(), method_name) {
-            LookupResult::NotFound(_) => return None,
-            LookupResult::Found(attr) => match &attr.get().0 {
-                Ok(ty) => ty.clone(),
-                Err(e) => self.error(range, e.to_error_msg(method_name)),
-            },
-            LookupResult::InternalError(e) => {
-                self.error(range, e.to_error_msg(method_name, "Expr::call_method"))
-            }
-        };
+        let callee_ty =
+            self.type_of_attr_get_if_found(ty.clone(), method_name, range, "Expr::call_method")?;
         let call_target =
             self.as_call_target_or_error(callee_ty, CallStyle::Method(method_name), range);
         Some(self.call_infer(call_target, args, keywords, range))
@@ -678,9 +669,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
         self.distribute_over_union(obj, |obj| {
-            self.lookup_attr(obj.clone(), attr_name)
-                .get_type_or_conflated_error_msg(attr_name, "Expr::attr_infer")
-                .unwrap_or_else(|msg| self.error(range, msg))
+            self.type_of_attr_get(obj.clone(), attr_name, range, "Expr::attr_infer")
         })
     }
 

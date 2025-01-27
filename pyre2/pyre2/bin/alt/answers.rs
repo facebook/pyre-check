@@ -1005,14 +1005,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(field.range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", field.name));
             }
 
-            if let Some(enum_value_ty) = self
-                .lookup_attr(Type::ClassType(enum_.cls), &Name::new_static("_value_"))
-                .get_type()
-            {
+            if let Some(enum_value_ty) = self.type_of_attr_get_if_gettable(
+                Type::ClassType(enum_.cls),
+                &Name::new_static("_value_"),
+            ) {
                 if !matches!(*value_ty, Type::Tuple(_))
                     && !self
                         .solver()
-                        .is_subset_eq(&value_ty, enum_value_ty, self.type_order())
+                        .is_subset_eq(&value_ty, &enum_value_ty, self.type_order())
                 {
                     self.error(field.range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", field.name));
                 }

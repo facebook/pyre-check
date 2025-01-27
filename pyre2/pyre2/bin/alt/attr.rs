@@ -7,6 +7,7 @@
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
+use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
@@ -19,7 +20,7 @@ use crate::types::types::AnyStyle;
 use crate::types::types::Quantified;
 use crate::types::types::Type;
 
-pub enum LookupResult {
+enum LookupResult {
     /// The lookup succeeded, resulting in a type.
     Found(Attribute),
     /// The attribute was not found. Callers can use fallback behavior, for
@@ -50,7 +51,7 @@ impl AttributeAccess {
     }
 }
 
-pub enum NotFound {
+enum NotFound {
     Attribute(ClassType),
     ClassAttribute(Class),
     ModuleExport(Module),
@@ -66,7 +67,7 @@ pub enum AccessNotAllowed {
     ClassAttributeIsGeneric(Class),
 }
 
-pub enum InternalError {
+enum InternalError {
     /// An internal error caused by `as_attribute_base` being partial.
     AttributeBaseUndefined(Type),
 }
@@ -79,12 +80,12 @@ impl Attribute {
         Attribute(AttributeAccess::not_allowed(reason))
     }
 
-    pub fn get(&self) -> &AttributeAccess {
-        &self.0
+    pub fn get(self) -> AttributeAccess {
+        self.0
     }
 
-    pub fn get_type(&self) -> Option<&Type> {
-        match &self.0.0 {
+    pub fn get_type(self) -> Option<Type> {
+        match self.0.0 {
             Ok(ty) => Some(ty),
             _ => None,
         }
@@ -137,13 +138,6 @@ impl LookupResult {
             LookupResult::InternalError(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
         }
     }
-
-    pub fn get_type(&self) -> Option<&Type> {
-        match &self {
-            LookupResult::Found(attribute) => attribute.get_type(),
-            _ => None,
-        }
-    }
 }
 
 impl NotFound {
@@ -192,7 +186,61 @@ enum AttributeBase {
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    pub fn lookup_attr(&self, ty: Type, attr_name: &Name) -> LookupResult {
+    /// Compute the get (i.e. read) type of an attribute. If the attribute cannot be found or read,
+    /// error and return `Any`. Use this to infer the type of a direct attribute fetch.
+    pub fn type_of_attr_get(
+        &self,
+        ty: Type,
+        attr_name: &Name,
+        range: TextRange,
+        todo_ctx: &str,
+    ) -> Type {
+        match self
+            .lookup_attr(ty, attr_name)
+            .get_type_or_conflated_error_msg(attr_name, todo_ctx)
+        {
+            Ok(ty) => ty,
+            Err(msg) => self.error(range, msg),
+        }
+    }
+
+    /// Compute the get (i.e. read) type of an attribute, if it can be found. If read is not
+    /// permitted, error and return `Some(Any)`. If no attribute is found, return `None`. Use this
+    /// to infer special methods where we can fall back if it is missing (for example binary operators).
+    pub fn type_of_attr_get_if_found(
+        &self,
+        ty: Type,
+        attr_name: &Name,
+        range: TextRange,
+        todo_ctx: &str,
+    ) -> Option<Type> {
+        match self.lookup_attr(ty, attr_name) {
+            LookupResult::Found(attr) => match attr.get() {
+                AttributeAccess(Ok(ty)) => Some(ty),
+                AttributeAccess(Err(e)) => Some(self.error(range, e.to_error_msg(attr_name))),
+            },
+            LookupResult::InternalError(e) => {
+                Some(self.error(range, e.to_error_msg(attr_name, todo_ctx)))
+            }
+            _ => None,
+        }
+    }
+
+    // TODO(stroxler) Revisit the use case of checking `_value`; we probably should enforce that it
+    // has a "raw" type (and complain if it is a descriptor of any kind) but the
+    // API for that doesn't exist yet and it's a non-urgent edge case.
+    //
+    /// Compute the get (i.e. read) type of an attribute if it is gettable. If it is not found or
+    /// access is denied, return `None`; never produce a type error. Used for internal special cases
+    /// like checking enum values.
+    pub fn type_of_attr_get_if_gettable(&self, ty: Type, attr_name: &Name) -> Option<Type> {
+        match self.lookup_attr(ty, attr_name) {
+            LookupResult::Found(attr) => attr.get_type(),
+            _ => None,
+        }
+    }
+
+    fn lookup_attr(&self, ty: Type, attr_name: &Name) -> LookupResult {
         match self.as_attribute_base(ty.clone(), self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
                 match self.get_instance_attribute(&class, attr_name) {
@@ -240,7 +288,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let builtins_type_classtype = self.stdlib.builtins_type();
                 LookupResult::found_type(
                     self.get_instance_attribute(&builtins_type_classtype, attr_name)
-                        .and_then(|attr| attr.get_type().cloned())
+                        .and_then(|attr| attr.get_type())
                         .map_or_else(|| style.propagate(), |ty| ty),
                 )
             }
