@@ -411,6 +411,8 @@ pub enum Type {
     TypeVarTuple(TypeVarTuple),
     SpecialForm(SpecialForm),
     Concatenate(Box<[Type]>, Box<Type>),
+    #[expect(dead_code)]
+    ParamSpecValue(ParamList),
     /// Used to represent `P.args`. The spec describes it as an annotation,
     /// but it's easier to think of it as a type that can't occur in nested positions.
     Args(Quantified),
@@ -683,6 +685,7 @@ impl Type {
                 }
                 f(pspec);
             }
+            Type::ParamSpecValue(x) => x.visit(f),
             Type::Type(x)
             | Type::TypeGuard(x)
             | Type::TypeIs(x)
@@ -725,6 +728,7 @@ impl Type {
                 }
                 f(pspec);
             }
+            Type::ParamSpecValue(x) => x.visit_mut(f),
             Type::Type(x)
             | Type::TypeGuard(x)
             | Type::TypeIs(x)

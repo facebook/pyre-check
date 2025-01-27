@@ -183,6 +183,7 @@ impl<'a> TypeDisplayContext<'a> {
             Type::Literal(lit) => write!(f, "Literal[{}]", lit),
             Type::LiteralString => write!(f, "LiteralString"),
             Type::Callable(c, _) => c.fmt_with_type(f, &|t| self.display(t)),
+            Type::ParamSpecValue(x) => x.fmt_with_type(f, &|t| self.display(t)),
             Type::BoundMethod(obj, func) => {
                 write!(
                     f,
