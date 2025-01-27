@@ -22,6 +22,19 @@ def requests.api.request(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.api.request(
+        method: AttachToTito[Via[http_query], Via[external_query]],
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.get(
         url: TaintSink[HTTPClientRequest_URI],
@@ -40,6 +53,19 @@ def requests.api.get(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.api.get(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
+
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.options(
         url: TaintSink[HTTPClientRequest_URI],
@@ -58,6 +84,19 @@ def requests.api.options(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.api.options(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
+
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.head(
         url: TaintSink[HTTPClientRequest_URI],
@@ -76,6 +115,18 @@ def requests.api.head(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.api.head(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.post(
         url: TaintSink[HTTPClientRequest_URI],
@@ -94,6 +145,18 @@ def requests.api.post(
         verify: TaintSink[HTTPClientRequest_METADATA] = ...,
         cert = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.api.post(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.put(
         url: TaintSink[HTTPClientRequest_URI],
@@ -112,6 +175,18 @@ def requests.api.put(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.api.put(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.patch(
         url: TaintSink[HTTPClientRequest_URI],
@@ -130,6 +205,18 @@ def requests.api.patch(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.api.patch(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.delete(
         url: TaintSink[HTTPClientRequest_URI],
@@ -148,8 +235,20 @@ def requests.api.delete(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
-
+def requests.api.delete(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 # SSRF [requests.Session]
+
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.get(
         self,
@@ -169,6 +268,18 @@ def requests.sessions.Session.get(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.sessions.Session.get(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.options(
         self,
@@ -188,6 +299,18 @@ def requests.sessions.Session.options(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.sessions.Session.options(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.head(
         self,
@@ -207,6 +330,18 @@ def requests.sessions.Session.head(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.sessions.Session.head(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.post(
         self,
@@ -226,6 +361,18 @@ def requests.sessions.Session.post(
         verify: TaintSink[HTTPClientRequest_METADATA] = ...,
         cert = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.sessions.Session.post(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.put(
         self,
@@ -245,6 +392,18 @@ def requests.sessions.Session.put(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.sessions.Session.put(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.patch(
         self,
@@ -264,6 +423,18 @@ def requests.sessions.Session.patch(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.sessions.Session.patch(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.delete(
         self,
@@ -283,6 +454,18 @@ def requests.sessions.Session.delete(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.sessions.Session.delete(
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.request(
         self,
@@ -303,37 +486,44 @@ def requests.sessions.Session.request(
         cert = ...,
         json: TaintSink[HTTPClientRequest_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+def requests.sessions.Session.request(
+        method: AttachToTito[Via[http_query], Via[external_query]],
+        url: AttachToTito[Via[http_query], Via[external_query]],
+        params: AttachToTito[Via[http_query], Via[external_query]],
+        data: AttachToTito[Via[http_query], Via[external_query]],
+        headers: AttachToTito[Via[http_query], Via[external_query]],
+        cookies: AttachToTito[Via[http_query], Via[external_query]],
+        timeout: AttachToTito[Via[http_query], Via[external_query]],
+        proxies: AttachToTito[Via[http_query], Via[external_query]],
+        hooks: AttachToTito[Via[http_query], Via[external_query]],
+        stream: AttachToTito[Via[http_query], Via[external_query]],
+        json: AttachToTito[Via[http_query], Via[external_query]],
+): ...
 
 # Authentication sinks
 def requests.models.Request.__init__(self, auth: TaintSink[Authentication] = ...): ...
 def requests.models.PreparedRequest.prepare(auth: TaintSink[Authentication] = ...): ...
 
 # SSRF [urllib.request]
-if sys.version >= (3, 13, 0):
-    @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
-    def urllib.request.urlopen(url: TaintSink[HTTPClientRequest_URI],
-                               data: TaintSink[HTTPClientRequest_DATA],
-                               timeout,
-                               *,
-                               context) -> TaintSource[DataFromInternet]: ...
-else:
-    @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
-    def urllib.request.urlopen(url: TaintSink[HTTPClientRequest_URI],
-                               data: TaintSink[HTTPClientRequest_DATA],
-                               timeout,
-                               *,
-                               cafile,
-                               capath,
-                               cadefault,
-                               context) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
+def urllib.request.urlopen(url: TaintSink[HTTPClientRequest_URI], data: TaintSink[HTTPClientRequest_DATA]) -> TaintSource[DataFromInternet]: ...
+def urllib.request.urlopen(url: AttachToTito[Via[http_query], Via[external_query]], data: AttachToTito[Via[http_query], Via[external_query]]): ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def urllib.request.urlretrieve(url: TaintSink[HTTPClientRequest_URI], filename, reporthook, data: TaintSink[HTTPClientRequest_DATA] ) -> TaintSource[DataFromInternet]: ...
+def urllib.request.urlretrieve(url: AttachToTito[Via[http_query], Via[external_query]], data: AttachToTito[Via[http_query], Via[external_query]] ): ...
+
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def urllib.request.URLopener.open(self, fullurl: TaintSink[HTTPClientRequest_URI], data: TaintSink[HTTPClientRequest_DATA] ) -> TaintSource[DataFromInternet]: ...
+def urllib.request.URLopener.open(fullurl: AttachToTito[Via[http_query], Via[external_query]], data: AttachToTito[Via[http_query], Via[external_query]] ): ...
+
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def urllib.request.URLopener.open_unknown(self, fullurl: TaintSink[HTTPClientRequest_URI], data: TaintSink[HTTPClientRequest_DATA]) -> TaintSource[DataFromInternet]: ...
+def urllib.request.URLopener.open_unknown(fullurl: AttachToTito[Via[http_query], Via[external_query]], data: AttachToTito[Via[http_query], Via[external_query]]): ...
+
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def urllib.request.URLopener.retrieve(self, url: TaintSink[HTTPClientRequest_URI], filename, reporthook, data: TaintSink[HTTPClientRequest_DATA]) -> TaintSource[DataFromInternet]: ...
+def urllib.request.URLopener.retrieve(url: AttachToTito[Via[http_query], Via[external_query]], data: AttachToTito[Via[http_query], Via[external_query]]): ...
+
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 @SkipObscure
 def urllib.parse.urlencode(query: TaintInTaintOut[Via[urlencode]], doseq, safe, encoding, errors, quote_via): ...
@@ -381,6 +571,11 @@ def http.client.HTTPConnection.request(self,
                                        *,
                                        encode_chunked
                                       ): ...
+def http.client.HTTPConnection.request(method: AttachToTito[Via[http_query], Via[external_query]],
+                                       url: AttachToTito[Via[http_query], Via[external_query]],
+                                       body: AttachToTito[Via[http_query], Via[external_query]],
+                                       headers: AttachToTito[Via[http_query], Via[external_query]]
+                                      ): ...
 def http.client.HTTPConnection.set_tunnel(self,
                                           host: TaintSink[HTTPClientRequest_URI],
                                           port: TaintSink[HTTPClientRequest_METADATA],
@@ -391,6 +586,9 @@ def http.client.HTTPConnection.putrequest(self,
                                           url: TaintSink[HTTPClientRequest_URI],
                                           skip_host,
                                           skip_accept_encoding
+                                         ): ...
+def http.client.HTTPConnection.putrequest(method: AttachToTito[Via[http_query], Via[external_query]],
+                                          url: AttachToTito[Via[http_query], Via[external_query]]
                                          ): ...
 def http.client.HTTPConnection.putheader(self,
                                          header: TaintSink[HTTPClientRequest_METADATA],
