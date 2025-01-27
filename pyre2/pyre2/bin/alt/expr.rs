@@ -335,15 +335,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             LookupResult::NotFound(_) => {
                 return None;
             }
-            LookupResult::AccessNotAllowed(e) => {
-                self.error_call_target(range, e.to_error_msg(method_name))
-            }
             LookupResult::InternalError(e) => {
                 self.error_call_target(range, e.to_error_msg(method_name, "Expr::call_method"))
             }
-            LookupResult::Found(attr) => {
-                self.as_call_target_or_error(attr, CallStyle::Method(method_name), range)
-            }
+            LookupResult::Found(attr) => match &attr.get().0 {
+                Ok(ty) => {
+                    self.as_call_target_or_error(ty.clone(), CallStyle::Method(method_name), range)
+                }
+                Err(e) => self.error_call_target(range, e.to_error_msg(method_name)),
+            },
         };
         Some(self.call_infer(call_target, args, keywords, range))
     }
@@ -681,7 +681,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {
         self.distribute_over_union(obj, |obj| {
             self.lookup_attr(obj.clone(), attr_name)
-                .ok_or_conflated_error_msg(attr_name, "Expr::attr_infer")
+                .get_type_or_conflated_error_msg(attr_name, "Expr::attr_infer")
                 .unwrap_or_else(|msg| self.error(range, msg))
         })
     }

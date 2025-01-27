@@ -22,7 +22,6 @@ use starlark_map::ordered_set::OrderedSet;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 
-use crate::alt::attr::LookupResult;
 use crate::alt::classes::ClassField;
 use crate::alt::expr::CallArg;
 use crate::ast::Ast;
@@ -1006,13 +1005,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(field.range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", field.name));
             }
 
-            if let LookupResult::Found(enum_value_ty) =
-                self.lookup_attr(Type::ClassType(enum_.cls), &Name::new_static("_value_"))
+            if let Some(enum_value_ty) = self
+                .lookup_attr(Type::ClassType(enum_.cls), &Name::new_static("_value_"))
+                .get_type()
             {
                 if !matches!(*value_ty, Type::Tuple(_))
                     && !self
                         .solver()
-                        .is_subset_eq(&value_ty, &enum_value_ty, self.type_order())
+                        .is_subset_eq(&value_ty, enum_value_ty, self.type_order())
                 {
                     self.error(field.range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", field.name));
                 }

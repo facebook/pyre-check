@@ -21,15 +21,33 @@ use crate::types::types::Type;
 
 pub enum LookupResult {
     /// The lookup succeeded, resulting in a type.
-    Found(Type),
+    Found(Attribute),
     /// The attribute was not found. Callers can use fallback behavior, for
     /// example looking up a different attribute.
     NotFound(NotFound),
-    /// The lookup failed for some other reason. Fallback behavior does not
-    /// make sense and callers should just bail.
-    AccessNotAllowed(AccessNotAllowed),
     /// There was a Pyre-internal error
     InternalError(InternalError),
+}
+
+/// The result of looking up an attribute. We can analyze get and set actions
+/// on an attribute, each of which can be allowed with some type or disallowed.
+pub struct Attribute(AttributeAccess);
+
+/// The result of an attempt to access an attribute (with a get or set operation).
+///
+/// The operation is either permitted with an attribute `Type`, or is not allowed
+/// and has a reason.
+#[derive(Clone)]
+pub struct AttributeAccess(pub Result<Type, AccessNotAllowed>);
+
+impl AttributeAccess {
+    pub fn allowed(ty: Type) -> Self {
+        AttributeAccess(Ok(ty))
+    }
+
+    pub fn not_allowed(reason: AccessNotAllowed) -> Self {
+        AttributeAccess(Err(reason))
+    }
 }
 
 pub enum NotFound {
@@ -38,6 +56,7 @@ pub enum NotFound {
     ModuleExport(Module),
 }
 
+#[derive(Clone)]
 pub enum AccessNotAllowed {
     /// The attribute is only initialized on instances, but we saw an attempt
     /// to use it as a class attribute.
@@ -52,8 +71,29 @@ pub enum InternalError {
     AttributeBaseUndefined(Type),
 }
 
+impl Attribute {
+    fn access_allowed(ty: Type) -> Self {
+        Attribute(AttributeAccess::allowed(ty))
+    }
+
+    fn with_access(access: AttributeAccess) -> Self {
+        Attribute(access)
+    }
+
+    pub fn get(&self) -> &AttributeAccess {
+        &self.0
+    }
+
+    pub fn get_type(&self) -> Option<&Type> {
+        match &self.0.0 {
+            Ok(ty) => Some(ty),
+            _ => None,
+        }
+    }
+}
+
 impl AccessNotAllowed {
-    pub fn to_error_msg(self, attr_name: &Name) -> String {
+    pub fn to_error_msg(&self, attr_name: &Name) -> String {
         match self {
             AccessNotAllowed::ClassUseOfInstanceAttribute(class) => {
                 let class_name = class.name();
@@ -72,18 +112,37 @@ impl AccessNotAllowed {
 }
 
 impl LookupResult {
+    /// We found a simple attribute type.
+    ///
+    /// This means we assume it is both readable and writeable with that type.
+    ///
+    /// TODO(stroxler) The uses of this eventually need to be audited, but we
+    /// need to prioiritize the class logic first.
+    fn found_type(ty: Type) -> Self {
+        Self::Found(Attribute::access_allowed(ty))
+    }
+
     /// A convenience function for callers which do not need to distinguish
     /// between NotFound and Error results.
-    pub fn ok_or_conflated_error_msg(
+    pub fn get_type_or_conflated_error_msg(
         self,
         attr_name: &Name,
         todo_ctx: &str,
     ) -> Result<Type, String> {
         match self {
-            LookupResult::Found(ty) => Ok(ty),
+            LookupResult::Found(attr) => match &attr.get() {
+                AttributeAccess(Ok(ty)) => Ok(ty.clone()),
+                AttributeAccess(Err(err)) => Err(err.to_error_msg(attr_name)),
+            },
             LookupResult::NotFound(err) => Err(err.to_error_msg(attr_name)),
-            LookupResult::AccessNotAllowed(err) => Err(err.to_error_msg(attr_name)),
             LookupResult::InternalError(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
+        }
+    }
+
+    pub fn get_type(&self) -> Option<&Type> {
+        match &self {
+            LookupResult::Found(attribute) => attribute.get_type(),
+            _ => None,
         }
     }
 }
@@ -138,16 +197,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.as_attribute_base(ty.clone(), self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
                 match self.get_instance_attribute(&class, attr_name) {
-                    Some(attr) => LookupResult::Found(attr),
+                    Some(attr) => LookupResult::found_type(attr),
                     None => LookupResult::NotFound(NotFound::Attribute(class)),
                 }
             }
             Some(AttributeBase::ClassObject(class)) => {
                 match self.get_class_attribute(&class, attr_name) {
-                    Some(access) => match access.0 {
-                        Ok(attr) => LookupResult::Found(attr),
-                        Err(e) => LookupResult::AccessNotAllowed(e),
-                    },
+                    Some(access) => LookupResult::Found(Attribute::with_access(access)),
                     None => {
                         // Classes are instances of their metaclass, which defaults to `builtins.type`.
                         let metadata = self.get_metadata_for_class(&class);
@@ -158,38 +214,38 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         };
                         match instance_attr {
-                            Some(attr) => LookupResult::Found(attr),
+                            Some(attr) => LookupResult::found_type(attr),
                             None => LookupResult::NotFound(NotFound::ClassAttribute(class)),
                         }
                     }
                 }
             }
             Some(AttributeBase::Module(module)) => match self.get_module_attr(&module, attr_name) {
-                Some(attr) => LookupResult::Found(attr),
+                Some(attr) => LookupResult::found_type(attr),
                 None => LookupResult::NotFound(NotFound::ModuleExport(module)),
             },
             Some(AttributeBase::Quantified(q)) => {
                 if q.is_param_spec() && attr_name == "args" {
-                    LookupResult::Found(Type::type_form(Type::Args(q)))
+                    LookupResult::found_type(Type::type_form(Type::Args(q)))
                 } else if q.is_param_spec() && attr_name == "kwargs" {
-                    LookupResult::Found(Type::type_form(Type::Kwargs(q)))
+                    LookupResult::found_type(Type::type_form(Type::Kwargs(q)))
                 } else {
                     let class = q.as_value(self.stdlib);
                     match self.get_instance_attribute(&class, attr_name) {
-                        Some(attr) => LookupResult::Found(attr),
+                        Some(attr) => LookupResult::found_type(attr),
                         None => LookupResult::NotFound(NotFound::Attribute(class)),
                     }
                 }
             }
             Some(AttributeBase::TypeAny(style)) => {
                 let class = self.stdlib.builtins_type();
-                LookupResult::Found(
+                LookupResult::found_type(
                     self.get_instance_attribute(&class, attr_name)
                         .map_or_else(|| style.propagate(), |attr| attr),
                 )
             }
-            Some(AttributeBase::Any(style)) => LookupResult::Found(style.propagate()),
-            Some(AttributeBase::Never) => LookupResult::Found(Type::never()),
+            Some(AttributeBase::Any(style)) => LookupResult::found_type(style.propagate()),
+            Some(AttributeBase::Never) => LookupResult::found_type(Type::never()),
             None => LookupResult::InternalError(InternalError::AttributeBaseUndefined(ty)),
         }
     }

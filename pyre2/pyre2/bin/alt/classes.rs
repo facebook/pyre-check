@@ -26,6 +26,7 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::AccessNotAllowed;
+use crate::alt::attr::AttributeAccess;
 use crate::ast::Ast;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
@@ -53,18 +54,6 @@ use crate::types::types::TypedDict;
 use crate::types::types::TypedDictField;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
-
-pub struct AttributeAccess(pub Result<Type, AccessNotAllowed>);
-
-impl AttributeAccess {
-    fn allowed(ty: Type) -> Self {
-        AttributeAccess(Ok(ty))
-    }
-
-    fn not_allowed(reason: AccessNotAllowed) -> Self {
-        AttributeAccess(Err(reason))
-    }
-}
 
 /// Raw information about an attribute declared somewhere in a class. We need to
 /// know whether it is initialized in the class body in order to determine
