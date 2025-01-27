@@ -9,12 +9,11 @@ use dupe::Clone_;
 use dupe::Copy_;
 use dupe::Dupe_;
 use ruff_python_ast::name::Name;
-use starlark_map::small_map::SmallMap;
+use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::Attribute;
-use crate::alt::classes::ClassField;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
@@ -57,8 +56,8 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.get_metadata_for_class(cls).is_protocol()
     }
 
-    pub fn get_all_members(self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
-        self.0.get_all_members(cls)
+    pub fn get_all_member_names(self, cls: &Class) -> SmallSet<Name> {
+        self.0.get_all_member_names(cls)
     }
 
     pub fn get_instance_attribute(self, cls: &ClassType, name: &Name) -> Option<Attribute> {

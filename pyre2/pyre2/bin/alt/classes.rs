@@ -720,7 +720,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     // Get every member of a class, including those declared in parent classes.
-    pub fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
+    fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
         let mut members = SmallMap::new();
         for name in cls.fields() {
             if let Some(field) = self.get_class_field(cls, name) {
@@ -738,6 +738,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
         }
         members
+    }
+
+    pub fn get_all_member_names(&self, cls: &Class) -> SmallSet<Name> {
+        self.get_all_members(cls)
+            .keys()
+            .cloned()
+            .collect::<SmallSet<_>>()
     }
 
     fn get_instance_attribute_with_defining_class(
