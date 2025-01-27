@@ -50,7 +50,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 Type::Callable(_, _),
             ) if !params.is_empty() => {
                 let l_no_self = Type::Callable(
-                    Box::new(Callable::list(params[1..].to_vec(), ret.clone())),
+                    Box::new(Callable::list(params.tail(), ret.clone())),
                     Kind::Anon,
                 );
                 self.is_subset_eq_impl(&l_no_self, want)
@@ -60,8 +60,8 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     && match (&l.params, &u.params) {
                         (Params::Ellipsis, _) | (_, Params::Ellipsis) => true,
                         (Params::List(l_args), Params::List(u_args)) => {
-                            let mut l_args_iter = l_args.iter();
-                            let mut u_args_iter = u_args.iter();
+                            let mut l_args_iter = l_args.items().iter();
+                            let mut u_args_iter = u_args.items().iter();
                             let mut l_arg = l_args_iter.next();
                             let mut u_arg = u_args_iter.next();
                             loop {

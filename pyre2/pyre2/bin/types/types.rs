@@ -20,6 +20,7 @@ use static_assertions::assert_eq_size;
 use crate::types::callable::Callable;
 use crate::types::callable::Kind;
 use crate::types::callable::Param;
+use crate::types::callable::ParamList;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
@@ -491,7 +492,10 @@ impl Type {
     }
 
     pub fn callable(params: Vec<Param>, ret: Type) -> Self {
-        Type::Callable(Box::new(Callable::list(params, ret)), Kind::Anon)
+        Type::Callable(
+            Box::new(Callable::list(ParamList::new(params), ret)),
+            Kind::Anon,
+        )
     }
 
     pub fn callable_ellipsis(ret: Type) -> Self {

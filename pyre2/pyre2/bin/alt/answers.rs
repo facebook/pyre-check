@@ -68,6 +68,7 @@ use crate::types::annotation::Qualifier;
 use crate::types::callable::Callable;
 use crate::types::callable::Kind;
 use crate::types::callable::Param;
+use crate::types::callable::ParamList;
 use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class_metadata::ClassMetadata;
@@ -1434,7 +1435,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
                 tparams.extend(legacy_tparams);
                 let callable = Type::Callable(
-                    Box::new(Callable::list(params, ret)),
+                    Box::new(Callable::list(ParamList::new(params), ret)),
                     Kind::from_name(self.module_info().name(), &x.name.id),
                 );
                 let mut ty = callable.forall(self.type_params(x.range, tparams));

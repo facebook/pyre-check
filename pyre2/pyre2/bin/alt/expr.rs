@@ -37,6 +37,7 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Callable;
 use crate::types::callable::Kind;
 use crate::types::callable::Param;
+use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
 use crate::types::class::ClassType;
@@ -419,7 +420,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let iargs = self_arg.iter().chain(args.iter());
         let ret = match callable.params {
             Params::List(params) => {
-                let mut iparams = params.iter().enumerate().peekable();
+                let mut iparams = params.items().iter().enumerate().peekable();
                 let mut num_positional_params = 0;
                 let mut num_positional_args = 0;
                 let mut seen_names: SmallMap<Name, usize> = SmallMap::new();
@@ -554,10 +555,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     kw.range,
                                     format!("Multiple values for argument '{}'", id.id),
                                 );
-                                params[p_idx].visit(|ty| hint = Some(ty));
+                                params.items()[p_idx].visit(|ty| hint = Some(ty));
                             } else if let Some(&p_idx) = kwparams.get(&id.id) {
                                 seen_names.insert(id.id.clone(), p_idx);
-                                params[p_idx].visit(|ty| hint = Some(ty));
+                                params.items()[p_idx].visit(|ty| hint = Some(ty));
                             } else if kwargs.is_none() {
                                 self.error(
                                     kw.range,
@@ -570,7 +571,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 for (name, &p_idx) in kwparams.iter() {
                     if !seen_names.contains_key(name) {
-                        let param = &params[p_idx];
+                        let param = &params.items()[p_idx];
                         if splat_kwargs.is_empty() && param.is_required() {
                             self.error(range, format!("Missing argument '{}'", name));
                         }
@@ -903,7 +904,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(callable) = hint_callable {
                     let inferred_callable = Type::Callable(
                         Box::new(Callable {
-                            params: Params::List(parameters),
+                            params: Params::List(ParamList::new(parameters)),
                             ret: self.expr(&lambda.body, Some(&callable.ret)),
                         }),
                         Kind::Anon,
@@ -914,7 +915,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     Type::Callable(
                         Box::new(Callable {
-                            params: Params::List(parameters),
+                            params: Params::List(ParamList::new(parameters)),
                             ret: self.expr_infer(&lambda.body),
                         }),
                         Kind::Anon,

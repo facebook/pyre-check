@@ -294,6 +294,7 @@ mod tests {
     use crate::types::callable::Callable;
     use crate::types::callable::Kind;
     use crate::types::callable::Param;
+    use crate::types::callable::ParamList;
     use crate::types::callable::Required;
     use crate::types::class::Class;
     use crate::types::class::ClassType;
@@ -454,7 +455,7 @@ mod tests {
     fn test_display_callable() {
         let param1 = Param::Pos(Name::new("hello"), Type::None, Required::Required);
         let param2 = Param::KwOnly(Name::new("world"), Type::None, Required::Required);
-        let callable = Callable::list(vec![param1, param2], Type::None);
+        let callable = Callable::list(ParamList::new(vec![param1, param2]), Type::None);
         assert_eq!(
             Type::Callable(Box::new(callable), Kind::Anon).to_string(),
             "(hello: None, *, world: None) -> None"
