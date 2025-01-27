@@ -1089,13 +1089,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => Type::any_explicit(),
                 }
             }
-            Binding::YieldTypeOfYield(x) => match x.clone() {
-                Expr::Yield(x) => match x.value {
-                    Some(x) => self.expr(&x, None),
-                    None => self.expr(
-                        &Expr::NoneLiteral(ExprNoneLiteral { range: x.range() }),
-                        None,
-                    ),
+            Binding::YieldTypeOfYield(x) => match x {
+                Expr::Yield(x) => match &x.value {
+                    Some(x) => self.expr(x, None),
+                    None => self.expr(&Expr::NoneLiteral(ExprNoneLiteral { range: x.range }), None),
                 },
                 Expr::YieldFrom(x) => {
                     let gen_type = self.expr(&x.value, None);
