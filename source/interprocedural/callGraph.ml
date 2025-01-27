@@ -1767,11 +1767,7 @@ let rec is_all_names = function
 
 module CalleeKind = struct
   type t =
-    | Method of {
-        is_direct_call: bool;
-        is_class_method: bool;
-        is_static_method: bool;
-      }
+    | Method of { is_direct_call: bool }
     | Function
 
   let rec from_callee ~pyre_in_context callee callee_type =
@@ -1786,41 +1782,10 @@ module CalleeKind = struct
       in
       is_super callee
     in
-    let is_static_method, is_class_method =
-      (* TODO(T171340051): A better implementation that uses `Annotation`. *)
-      match
-        PyrePysaEnvironment.ReadOnly.get_define_body
-          pyre_api
-          (callee |> Expression.show |> Reference.create)
-      with
-      | Some define_body ->
-          let define = Node.value define_body in
-          ( List.exists static_method_decorators ~f:(Ast.Statement.Define.has_decorator define),
-            List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define) )
-      | None -> false, false
-    in
     match callee_type with
-    | _ when is_super_call -> Method { is_direct_call = true; is_static_method; is_class_method }
-    | Type.Parametric { name = "BoundMethod"; arguments = [Single _; Single receiver_type] } ->
-        let is_class_method =
-          (* Sometimes the define body of the callee is unavailable, in which case we identify calls
-             to class methods via the receiver type. The callee is a class method, if the callee
-             type is `BoundMethod` and the receiver type is the type of a class type.
-
-             TODO(T171340051): We can delete this pattern matching case if using a better
-             implementation. *)
-          let type_, parameters = Type.split receiver_type in
-          match Type.primitive_name type_, parameters with
-          | Some "type", [Type.Record.Argument.Single (Type.Primitive _)]
-          | Some "type", [Type.Record.Argument.Single (Type.Parametric _)] ->
-              true
-          | _ -> false
-        in
-        Method
-          { is_direct_call = is_all_names (Node.value callee); is_static_method; is_class_method }
+    | _ when is_super_call -> Method { is_direct_call = true }
     | Type.Parametric { name = "BoundMethod"; _ } ->
-        Method
-          { is_direct_call = is_all_names (Node.value callee); is_static_method; is_class_method }
+        Method { is_direct_call = is_all_names (Node.value callee) }
     | Type.Callable _ -> (
         match Node.value callee with
         | Expression.Name (Name.Attribute { base; _ }) ->
@@ -1832,26 +1797,16 @@ module CalleeKind = struct
               |> Option.is_some
             in
             if Type.is_class_type parent_type then
-              Method { is_direct_call = true; is_static_method; is_class_method }
+              Method { is_direct_call = true }
             else if is_class () then
-              Method { is_direct_call = false; is_static_method; is_class_method }
+              Method { is_direct_call = false }
             else
               Function
         | _ -> Function)
     | Type.Union (callee_type :: _) -> from_callee ~pyre_in_context callee callee_type
     | _ ->
         (* We must be dealing with a callable class. *)
-        Method { is_direct_call = false; is_static_method; is_class_method }
-
-
-  let is_class_method = function
-    | Method { is_class_method; _ } -> is_class_method
-    | _ -> false
-
-
-  let is_static_method = function
-    | Method { is_static_method; _ } -> is_static_method
-    | _ -> false
+        Method { is_direct_call = false }
 end
 
 let strip_optional annotation = Type.optional_value annotation |> Option.value ~default:annotation
@@ -1949,6 +1904,19 @@ let compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type imp
         implementation_target :: override_targets
 
 
+let get_method_kind ~pyre_api target =
+  let target = target |> Target.get_regular |> Target.Regular.override_to_method in
+  match target with
+  | Target.Regular.Method { method_name = "__new__"; _ } -> false, true
+  | Target.Regular.Method _ as target ->
+      Target.get_module_and_definition ~pyre_api (Target.from_regular target)
+      >>| (fun (_, { Node.value = define; _ }) ->
+            ( List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define),
+              List.exists static_method_decorators ~f:(Ast.Statement.Define.has_decorator define) ))
+      |> Option.value ~default:(false, false)
+  | _ -> false, false
+
+
 let rec resolve_callees_from_type
     ~debug
     ~pyre_in_context
@@ -1991,13 +1959,14 @@ let rec resolve_callees_from_type
           let targets =
             List.map
               ~f:(fun target ->
+                let is_class_method, is_static_method = get_method_kind ~pyre_api target in
                 CallTargetIndexer.create_target
                   call_indexer
                   ~implicit_dunder_call:dunder_call
                   ~return_type:(Some return_type)
                   ~receiver_type
-                  ~is_class_method:(CalleeKind.is_class_method callee_kind)
-                  ~is_static_method:(CalleeKind.is_static_method callee_kind)
+                  ~is_class_method
+                  ~is_static_method
                   target)
               targets
           in
@@ -2008,6 +1977,7 @@ let rec resolve_callees_from_type
             | Method _ -> Target.create_method name
             | _ -> Target.create_function name
           in
+          let is_class_method, is_static_method = get_method_kind ~pyre_api target in
           CallCallees.create
             ~call_targets:
               [
@@ -2016,8 +1986,8 @@ let rec resolve_callees_from_type
                   ~explicit_receiver:true
                   ~implicit_dunder_call:dunder_call
                   ~return_type:(Some return_type)
-                  ~is_class_method:(CalleeKind.is_class_method callee_kind)
-                  ~is_static_method:(CalleeKind.is_static_method callee_kind)
+                  ~is_class_method
+                  ~is_static_method
                   ?receiver_type
                   target;
               ]
@@ -2106,6 +2076,7 @@ let rec resolve_callees_from_type
                     }
                   |> Target.from_regular
                 in
+                let is_class_method, is_static_method = get_method_kind ~pyre_api target in
                 CallCallees.create
                   ~call_targets:
                     [
@@ -2113,8 +2084,8 @@ let rec resolve_callees_from_type
                         call_indexer
                         ~implicit_dunder_call:true
                         ~return_type:(Some return_type)
-                        ~is_class_method:(CalleeKind.is_class_method callee_kind)
-                        ~is_static_method:(CalleeKind.is_static_method callee_kind)
+                        ~is_class_method
+                        ~is_static_method
                         ?receiver_type
                         target;
                     ]
@@ -2191,8 +2162,7 @@ and resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_ind
           ~call_indexer
           ~receiver_type:meta_type
           ~return_type:(lazy class_type)
-          ~callee_kind:
-            (Method { is_direct_call = true; is_static_method = true; is_class_method = false })
+          ~callee_kind:(Method { is_direct_call = true })
             (* __new__() is a static method. See
                https://docs.python.org/3/reference/datamodel.html#object.__new__ *)
           new_callable_type
@@ -2205,8 +2175,7 @@ and resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_ind
           ~call_indexer
           ~receiver_type:meta_type
           ~return_type:(lazy Type.none)
-          ~callee_kind:
-            (Method { is_direct_call = true; is_static_method = false; is_class_method = false })
+          ~callee_kind:(Method { is_direct_call = true })
           init_callable_type
       in
       (* Technically, `object.__new__` returns `object` and `C.__init__` returns None.
@@ -2309,9 +2278,7 @@ let resolve_callee_from_defining_expression
                ~call_indexer
                ~return_type
                ~receiver_type:implementing_class
-               ~callee_kind:
-                 (Method
-                    { is_direct_call = false; is_class_method = false; is_static_method = false })
+               ~callee_kind:(Method { is_direct_call = false })
                callable_type)
       | _ -> None)
 

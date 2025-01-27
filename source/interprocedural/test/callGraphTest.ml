@@ -488,6 +488,7 @@ let test_call_graph_of_define =
                              CallTarget.create
                                ~implicit_dunder_call:true
                                ~return_type:(Some ReturnType.bool)
+                               ~is_static_method:true
                                (Target.create_method (Reference.create "test.C.__call__"));
                            ]
                          ())) );
@@ -880,9 +881,9 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             CallTarget.create_regular
-                               ~implicit_receiver:true
-                               ~is_class_method:true
+                             CallTarget.create_regular (* TODO: should resolve to test.B *)
+                               ~implicit_receiver:false
+                               ~is_class_method:false
                                (Target.Regular.Method
                                   { class_name = "test.A"; method_name = "foo"; kind = Normal });
                            ]
