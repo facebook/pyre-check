@@ -238,3 +238,26 @@ def f(x: C.X):
     assert_type(x, int)
     "#,
 );
+
+// Note: this test documents how Pyre currently treats type aliases inside classes
+// when the try to "close" over class type parameters. It is not 100% clear what
+// the behavior should be. But we disagree with Pyright, which disallows the use of
+// an instance attribute `c.X` and *does* allow both `bad1` (as `list[Any]`) and
+// `bad2` (as `list[int]`).
+//
+// TODO(stroxler) We probably should at least allow the uses that Pyright allows.
+testcase!(
+    test_parameterized_type_alias_inside_class,
+    r#"
+from typing import assert_type
+class C[T]:
+    type X = list[T]
+    x: X
+def f(c: C[int]):
+    assert_type(c.x, list[int])
+    x: c.X
+    assert_type(x, list[int])
+bad1: C.X  # E: Generic attribute `X` of class `C` is not visible on the class
+bad2: C[int].X  # E: Generic attribute `X` of class `C` is not visible on the class
+    "#,
+);
