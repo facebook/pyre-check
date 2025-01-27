@@ -97,8 +97,6 @@ pub enum Key {
     Import(Name, TextRange),
     /// I am defined in this module at this location.
     Definition(ShortIdentifier),
-    /// I am the result of applying a decorator to some definition or preceding decorator
-    DecoratorApplication(TextRange),
     /// I am the self type for a particular class.
     SelfType(ShortIdentifier),
     /// The send type of a yield expression.
@@ -141,7 +139,6 @@ impl Ranged for Key {
         match self {
             Self::Import(_, r) => *r,
             Self::Definition(x) => x.range(),
-            Self::DecoratorApplication(r) => r.range(),
             Self::SelfType(x) => x.range(),
             Self::SendTypeOfYield(x) => x.range(),
             Self::ReturnTypeOfYield(x) => x.range(),
@@ -164,7 +161,6 @@ impl DisplayWith<ModuleInfo> for Key {
         match self {
             Self::Import(n, r) => write!(f, "import {n} {r:?}"),
             Self::Definition(x) => write!(f, "{} {:?}", ctx.display(x), x.range()),
-            Self::DecoratorApplication(r) => write!(f, "decorator {:?}", r),
             Self::SelfType(x) => write!(f, "self {} {:?}", ctx.display(x), x.range()),
             Self::SendTypeOfYield(x) => {
                 write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
@@ -352,8 +348,6 @@ pub enum Binding {
     SendTypeOfYield(Option<Idx<KeyAnnotation>>, TextRange),
     /// Return type of yield
     ReturnTypeOfYield(Option<Idx<KeyAnnotation>>, TextRange),
-    /// A decorator application: the Key is the entity being decorated.
-    DecoratorApplication(Box<Decorator>, Idx<Key>),
     /// A grouping of both the yield expression types and the return type.
     Generator(Box<Binding>, Box<Binding>),
     /// Actual value of yield expression
@@ -389,6 +383,7 @@ pub enum Binding {
     Function(
         Box<StmtFunctionDef>,
         FunctionKind,
+        Box<[Decorator]>,
         Box<[Idx<KeyLegacyTypeParam>]>,
     ),
     /// An import statement, typically with Self::Import.
@@ -400,6 +395,7 @@ pub enum Binding {
     ClassDef(
         Box<(StmtClassDef, SmallSet<Name>)>,
         Box<[Expr]>,
+        Box<[Decorator]>,
         Box<[Idx<KeyLegacyTypeParam>]>,
     ),
     FunctionalClassDef(Identifier, SmallSet<Name>),
@@ -485,14 +481,6 @@ impl DisplayWith<Bindings> for Binding {
             Self::IterableValue(Some(k), x) => {
                 write!(f, "iter {}: {}", ctx.display(*k), m.display(x))
             }
-            Self::DecoratorApplication(box x, k) => {
-                write!(
-                    f,
-                    "decorator {} {}",
-                    m.display(&x.expression),
-                    ctx.display(*k)
-                )
-            }
             Self::ExceptionHandler(box x, true) => write!(f, "except* {}", m.display(x)),
             Self::ExceptionHandler(box x, false) => write!(f, "except {}", m.display(x)),
             Self::ContextValue(_ann, x, kind) => {
@@ -538,9 +526,9 @@ impl DisplayWith<Bindings> for Binding {
                     range
                 )
             }
-            Self::Function(x, _, _) => write!(f, "def {}", x.name.id),
+            Self::Function(x, _, _, _) => write!(f, "def {}", x.name.id),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
-            Self::ClassDef(box (c, _), _, _) => write!(f, "class {}", c.name.id),
+            Self::ClassDef(box (c, _), _, _, _) => write!(f, "class {}", c.name.id),
             Self::FunctionalClassDef(x, _) => write!(f, "class {}", x.id),
             Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),

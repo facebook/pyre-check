@@ -1121,7 +1121,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.expr(e, hint)
                 }
             }
-            Binding::DecoratorApplication(d, k) => self.apply_decorator(d, *k),
             Binding::ExceptionHandler(box ann, is_star) => {
                 let base_exception_type = self.stdlib.base_exception().to_type();
                 let base_exception_group_any_type = if *is_star {
@@ -1354,7 +1353,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Type::None // Unused
             }
-            Binding::Function(x, kind, legacy_tparam_keys) => {
+            Binding::Function(x, kind, decorators, legacy_tparam_keys) => {
                 let check_default = |default: &Option<Box<Expr>>, ty: &Type| {
                     let mut required = Required::Required;
                     if let Some(default) = default {
@@ -1422,13 +1421,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Box::new(Callable::list(params, ret)),
                     Kind::from_name(self.module_info().name(), &x.name.id),
                 );
-                callable.forall(self.type_params(x.range, tparams))
+                let mut ty = callable.forall(self.type_params(x.range, tparams));
+                for x in decorators.iter().rev() {
+                    ty = self.apply_decorator(x, ty)
+                }
+                ty
             }
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExport(name.clone()))
                 .arc_clone(),
-            Binding::ClassDef(box (x, fields), bases, legacy_tparams) => {
-                Type::ClassDef(self.class_definition(x, fields.clone(), bases, legacy_tparams))
+            Binding::ClassDef(box (x, fields), bases, decorators, legacy_tparams) => {
+                let mut ty =
+                    Type::ClassDef(self.class_definition(x, fields.clone(), bases, legacy_tparams));
+                for x in decorators.iter().rev() {
+                    ty = self.apply_decorator(x, ty)
+                }
+                ty
             }
             Binding::FunctionalClassDef(x, fields) => {
                 Type::ClassDef(self.functional_class_definition(x, fields))

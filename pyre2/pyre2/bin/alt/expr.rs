@@ -33,7 +33,6 @@ use crate::alt::unwrap::UnwrappedDict;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::dunder;
-use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Callable;
 use crate::types::callable::Kind;
@@ -819,12 +818,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     /// Apply a decorator. This effectively synthesizes a function call.
-    pub fn apply_decorator(&self, decorator: &Decorator, decoratee: Idx<Key>) -> Type {
-        let ty_decoratee = self.get_idx(decoratee);
-        if matches!(&*ty_decoratee, Type::ClassDef(cls) if cls.has_qname("typing", "TypeVar")) {
+    pub fn apply_decorator(&self, decorator: &Decorator, decoratee: Type) -> Type {
+        if matches!(&decoratee, Type::ClassDef(cls) if cls.has_qname("typing", "TypeVar")) {
             // Avoid recursion in TypeVar, which is decorated with `@final`, whose type signature
             // itself depends on a TypeVar.
-            return ty_decoratee.arc_clone();
+            return decoratee;
         }
         let ty_decorator = self.expr(&decorator.expression, None);
         match ty_decorator.function_kind() {
@@ -833,13 +831,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             _ => {}
         }
-        if matches!(ty_decoratee.as_ref(), Type::ClassDef(_)) {
+        if matches!(&decoratee, Type::ClassDef(_)) {
             // TODO: don't blanket ignore class decorators.
-            return ty_decoratee.arc_clone();
+            return decoratee;
         }
         let call_target =
             { self.as_call_target_or_error(ty_decorator, CallStyle::FreeForm, decorator.range) };
-        let arg = CallArg::Type(ty_decoratee.as_ref(), decorator.range);
+        let arg = CallArg::Type(&decoratee, decorator.range);
         self.call_infer(call_target, &[arg], &[], decorator.range)
     }
 
