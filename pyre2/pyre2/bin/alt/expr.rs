@@ -332,20 +332,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         args: &[CallArg],
         keywords: &[Keyword],
     ) -> Option<Type> {
-        let call_target = match self.lookup_attr(ty.clone(), method_name) {
-            LookupResult::NotFound(_) => {
-                return None;
-            }
-            LookupResult::InternalError(e) => {
-                self.error_call_target(range, e.to_error_msg(method_name, "Expr::call_method"))
-            }
+        let callee_ty = match self.lookup_attr(ty.clone(), method_name) {
+            LookupResult::NotFound(_) => return None,
             LookupResult::Found(attr) => match &attr.get().0 {
-                Ok(ty) => {
-                    self.as_call_target_or_error(ty.clone(), CallStyle::Method(method_name), range)
-                }
-                Err(e) => self.error_call_target(range, e.to_error_msg(method_name)),
+                Ok(ty) => ty.clone(),
+                Err(e) => self.error(range, e.to_error_msg(method_name)),
             },
+            LookupResult::InternalError(e) => {
+                self.error(range, e.to_error_msg(method_name, "Expr::call_method"))
+            }
         };
+        let call_target =
+            self.as_call_target_or_error(callee_ty, CallStyle::Method(method_name), range);
         Some(self.call_infer(call_target, args, keywords, range))
     }
 
