@@ -132,6 +132,7 @@ class PartialConfiguration:
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
+    max_number_of_workers: Optional[int] = None
     oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(
         default_factory=list,
@@ -216,6 +217,7 @@ class PartialConfiguration:
             isolation_prefix=arguments.isolation_prefix,
             logger=arguments.logger,
             number_of_workers=arguments.number_of_workers,
+            max_number_of_workers=arguments.max_number_of_workers,
             oncall=None,
             other_critical_files=[],
             pysa_version_hash=None,
@@ -459,6 +461,9 @@ class PartialConfiguration:
                 number_of_workers=ensure_option_type(
                     configuration_json, "workers", int
                 ),
+                max_number_of_workers=ensure_option_type(
+                    configuration_json, "max_workers", int
+                ),
                 oncall=ensure_option_type(configuration_json, "oncall", str),
                 other_critical_files=ensure_string_list(
                     configuration_json, "critical_files"
@@ -608,6 +613,7 @@ class Configuration:
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
+    max_number_of_workers: Optional[int] = None
     oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
     pysa_version_hash: Optional[str] = None
@@ -670,6 +676,7 @@ class Configuration:
             isolation_prefix=partial_configuration.isolation_prefix,
             logger=partial_configuration.logger,
             number_of_workers=partial_configuration.number_of_workers,
+            max_number_of_workers=partial_configuration.max_number_of_workers,
             oncall=partial_configuration.oncall,
             other_critical_files=partial_configuration.other_critical_files,
             pysa_version_hash=partial_configuration.pysa_version_hash,
@@ -722,6 +729,7 @@ class Configuration:
         isolation_prefix = self.isolation_prefix
         logger = self.logger
         number_of_workers = self.number_of_workers
+        max_number_of_workers = self.max_number_of_workers
         oncall = self.oncall
         pysa_version_hash = self.pysa_version_hash
         python_version = self.python_version
@@ -775,6 +783,11 @@ class Configuration:
             **({"logger": logger} if logger is not None else {}),
             **({"oncall": oncall} if oncall is not None else {}),
             **({"workers": number_of_workers} if number_of_workers is not None else {}),
+            **(
+                {"max_workers": max_number_of_workers}
+                if max_number_of_workers is not None
+                else {}
+            ),
             "other_critical_files": list(self.other_critical_files),
             **(
                 {"pysa_version_hash": pysa_version_hash}
@@ -896,6 +909,16 @@ class Configuration:
             default_number_of_workers = 1
         else:
             default_number_of_workers = max(1, number_of_logical_cores // 2 - 1)
+            max_number_of_workers = self.max_number_of_workers
+            if (
+                max_number_of_workers is not None
+                and max_number_of_workers > 0
+                and default_number_of_workers > max_number_of_workers
+            ):
+                LOG.info(
+                    f"The number of workers is capped at the maximum {max_number_of_workers}."
+                )
+                default_number_of_workers = max_number_of_workers
 
         LOG.info(
             "Could not determine the number of Pyre workers from configuration. "

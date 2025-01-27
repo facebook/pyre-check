@@ -97,6 +97,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.site_package_search_strategy, None)
         self.assertEqual(configuration.site_roots, None)
         self.assertEqual(configuration.number_of_workers, 43)
+        self.assertEqual(configuration.max_number_of_workers, None)
         self.assertEqual(configuration.use_buck2, True)
         self.assertEqual(configuration.enable_readonly_analysis, None)
         self.assertEqual(configuration.enable_strict_override_check, None)
@@ -203,6 +204,10 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_dict({"workers": 42}).number_of_workers,
+            42,
+        )
+        self.assertEqual(
+            PartialConfiguration.from_dict({"max_workers": 42}).max_number_of_workers,
             42,
         )
         self.assertListEqual(
@@ -615,6 +620,7 @@ class ConfigurationTest(testslide.TestCase):
                 include_suppressed_errors=True,
                 logger="logger",
                 number_of_workers=3,
+                max_number_of_workers=10,
                 oncall="oncall",
                 other_critical_files=["critical"],
                 python_version=PythonVersion(major=3, minor=6, micro=7),
@@ -651,6 +657,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.include_suppressed_errors, True)
         self.assertEqual(configuration.logger, "logger")
         self.assertEqual(configuration.number_of_workers, 3)
+        self.assertEqual(configuration.max_number_of_workers, 10)
         self.assertEqual(configuration.oncall, "oncall")
         self.assertListEqual(list(configuration.other_critical_files), ["critical"])
         self.assertListEqual(
@@ -749,6 +756,26 @@ class ConfigurationTest(testslide.TestCase):
                 number_of_workers=None,
             ).get_number_of_workers(),
             0,
+        )
+
+        # `max_number_of_workers` only takes effect when `number_of_workers` is None
+        self.assertEqual(
+            Configuration(
+                global_root=Path("irrelevant"),
+                dot_pyre_directory=Path(".pyre"),
+                number_of_workers=None,
+                max_number_of_workers=1,
+            ).get_number_of_workers(),
+            1,
+        )
+        self.assertEqual(
+            Configuration(
+                global_root=Path("irrelevant"),
+                dot_pyre_directory=Path(".pyre"),
+                number_of_workers=42,
+                max_number_of_workers=10,
+            ).get_number_of_workers(),
+            42,
         )
 
     def test_get_python_versions(self) -> None:

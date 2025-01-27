@@ -32,7 +32,6 @@ from . import (
     command_arguments,
     commands,
     configuration as configuration_module,
-    find_directories,
     frontend_configuration,
     identifiers,
     log,
@@ -315,6 +314,11 @@ def _create_and_check_configuration(
     hidden=True,
 )
 @click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
+@click.option(
+    "--max-number-of-workers",
+    type=int,
+    help="When `--number-of-workers` is not set, this is the maximum number when calculating the default.",
+)
 @click.option("--no-logger", is_flag=True, default=False, hidden=True)
 def pyre(
     context: click.Context,
@@ -345,6 +349,7 @@ def pyre(
     shared_memory_dependency_table_power: Optional[int],
     shared_memory_hash_table_power: Optional[int],
     number_of_workers: Optional[int],
+    max_number_of_workers: Optional[int],
     no_logger: bool,
 ) -> None:
     arguments = command_arguments.CommandArguments(
@@ -384,6 +389,7 @@ def pyre(
         shared_memory_dependency_table_power=shared_memory_dependency_table_power,
         shared_memory_hash_table_power=shared_memory_hash_table_power,
         number_of_workers=number_of_workers,
+        max_number_of_workers=max_number_of_workers,
         use_buck2=None,
     )
     context.ensure_object(dict)
