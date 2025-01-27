@@ -340,6 +340,13 @@ module DefineCallGraphForTest : sig
   val equal_ignoring_types : t -> t -> bool
 end
 
+module AllTargetsUseCase : sig
+  type t =
+    | TaintAnalysisDependency
+    | CallGraphDependency
+    | Everything
+end
+
 (** The call graph of a function or method definition. *)
 module DefineCallGraph : sig
   type t [@@deriving show, eq]
@@ -353,9 +360,8 @@ module DefineCallGraph : sig
     t ->
     t
 
-  (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
-      true excludes the targets that are not required in building the dependency graph. *)
-  val all_targets : exclude_reference_only:bool -> t -> Target.t list
+  (** Return all callees of the call graph, depending on the use case. *)
+  val all_targets : use_case:AllTargetsUseCase.t -> t -> Target.t list
 
   val for_test : t -> DefineCallGraphForTest.t
 

@@ -97,7 +97,8 @@ module CallGraphAnalysis = struct
     in
     let dependencies call_graph =
       call_graph
-      |> CallGraph.DefineCallGraph.all_targets ~exclude_reference_only:true
+      |> CallGraph.DefineCallGraph.all_targets
+           ~use_case:CallGraph.AllTargetsUseCase.CallGraphDependency
       |> Target.Set.of_list
     in
     let additional_dependencies =

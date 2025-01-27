@@ -60,7 +60,8 @@ let create_call_graph ?(other_sources = []) ~context source_text =
         ~attribute_targets:(Target.HashSet.create ())
         ~decorators:CallGraph.CallableToDecoratorsMap.empty
         ~callable
-      |> CallGraph.DefineCallGraph.all_targets ~exclude_reference_only:true
+      |> CallGraph.DefineCallGraph.all_targets
+           ~use_case:CallGraph.AllTargetsUseCase.TaintAnalysisDependency
     in
     CallGraph.WholeProgramCallGraph.add_or_exn call_graph ~callable ~callees
   in

@@ -509,6 +509,13 @@ module Unresolved = struct
     | False -> `Bool false
 end
 
+module AllTargetsUseCase = struct
+  type t =
+    | TaintAnalysisDependency
+    | CallGraphDependency
+    | Everything
+end
+
 (** Information about an argument being a callable. *)
 module HigherOrderParameter = struct
   type t = {
@@ -520,9 +527,7 @@ module HigherOrderParameter = struct
   }
   [@@deriving eq, show { with_path = false }]
 
-  let all_targets ~exclude_reference_only:_ { call_targets; _ } =
-    List.map ~f:CallTarget.target call_targets
-
+  let all_targets ~use_case:_ { call_targets; _ } = List.map ~f:CallTarget.target call_targets
 
   let equal_ignoring_types
       { index = index_left; call_targets = call_targets_left; unresolved = unresolved_left }
@@ -588,12 +593,10 @@ module HigherOrderParameterMap = struct
 
   let deduplicate map = Map.map HigherOrderParameter.deduplicate map
 
-  let all_targets ~exclude_reference_only map =
+  let all_targets ~use_case map =
     Map.fold
       (fun _ higher_order_parameter targets ->
-        List.rev_append
-          targets
-          (HigherOrderParameter.all_targets ~exclude_reference_only higher_order_parameter))
+        List.rev_append targets (HigherOrderParameter.all_targets ~use_case higher_order_parameter))
       map
       []
 
@@ -755,7 +758,7 @@ module CallCallees = struct
 
 
   let all_targets
-      ~exclude_reference_only
+      ~use_case
       { call_targets; new_targets; init_targets; higher_order_parameters; decorated_targets; _ }
     =
     call_targets
@@ -763,8 +766,7 @@ module CallCallees = struct
     |> List.rev_append init_targets
     |> List.rev_append decorated_targets
     |> List.map ~f:CallTarget.target
-    |> List.rev_append
-         (HigherOrderParameterMap.all_targets ~exclude_reference_only higher_order_parameters)
+    |> List.rev_append (HigherOrderParameterMap.all_targets ~use_case higher_order_parameters)
 
 
   let equal_ignoring_types
@@ -997,16 +999,19 @@ module AttributeAccessCallees = struct
 
 
   let all_targets
-      ~exclude_reference_only
+      ~use_case
       { property_targets; global_targets; callable_targets; is_attribute = _; decorated_targets }
     =
-    (if exclude_reference_only then
-       global_targets |> List.rev_append property_targets |> List.rev_append decorated_targets
-    else
-      global_targets
-      |> List.rev_append property_targets
-      |> List.rev_append callable_targets
-      |> List.rev_append decorated_targets)
+    (match use_case with
+    | AllTargetsUseCase.CallGraphDependency ->
+        (* A property could (in theory) return a callable. *)
+        List.rev_append property_targets decorated_targets
+    | AllTargetsUseCase.TaintAnalysisDependency -> List.rev_append property_targets global_targets
+    | AllTargetsUseCase.Everything ->
+        global_targets
+        |> List.rev_append property_targets
+        |> List.rev_append callable_targets
+        |> List.rev_append decorated_targets)
     |> List.map ~f:CallTarget.target
 
 
@@ -1120,16 +1125,17 @@ module IdentifierCallees = struct
 
 
   let all_targets
-      ~exclude_reference_only
+      ~use_case
       { global_targets; nonlocal_targets; callable_targets; decorated_targets }
     =
-    (if exclude_reference_only then
-       decorated_targets
-    else
-      nonlocal_targets
-      |> List.rev_append global_targets
-      |> List.rev_append callable_targets
-      |> List.rev_append decorated_targets)
+    (match use_case with
+    | AllTargetsUseCase.CallGraphDependency -> decorated_targets
+    | AllTargetsUseCase.TaintAnalysisDependency -> []
+    | AllTargetsUseCase.Everything ->
+        nonlocal_targets
+        |> List.rev_append global_targets
+        |> List.rev_append callable_targets
+        |> List.rev_append decorated_targets)
     |> List.map ~f:CallTarget.target
 
 
@@ -1180,11 +1186,11 @@ module StringFormatCallees = struct
     }
 
 
-  let all_targets ~exclude_reference_only { stringify_targets; f_string_targets } =
-    (if exclude_reference_only then
-       stringify_targets
-    else
-      List.rev_append f_string_targets stringify_targets)
+  let all_targets ~use_case { stringify_targets; f_string_targets } =
+    (match use_case with
+    | AllTargetsUseCase.CallGraphDependency -> []
+    | AllTargetsUseCase.TaintAnalysisDependency -> stringify_targets
+    | AllTargetsUseCase.Everything -> List.rev_append f_string_targets stringify_targets)
     |> List.map ~f:CallTarget.target
 
 
@@ -1263,24 +1269,16 @@ module ExpressionCallees = struct
     }
 
 
-  let all_targets ~exclude_reference_only { call; attribute_access; identifier; string_format } =
-    let call_targets =
-      call >>| CallCallees.all_targets ~exclude_reference_only |> Option.value ~default:[]
-    in
+  let all_targets ~use_case { call; attribute_access; identifier; string_format } =
+    let call_targets = call >>| CallCallees.all_targets ~use_case |> Option.value ~default:[] in
     let attribute_access_targets =
-      attribute_access
-      >>| AttributeAccessCallees.all_targets ~exclude_reference_only
-      |> Option.value ~default:[]
+      attribute_access >>| AttributeAccessCallees.all_targets ~use_case |> Option.value ~default:[]
     in
     let identifier_targets =
-      identifier
-      >>| IdentifierCallees.all_targets ~exclude_reference_only
-      |> Option.value ~default:[]
+      identifier >>| IdentifierCallees.all_targets ~use_case |> Option.value ~default:[]
     in
     let string_format_targets =
-      string_format
-      >>| StringFormatCallees.all_targets ~exclude_reference_only
-      |> Option.value ~default:[]
+      string_format >>| StringFormatCallees.all_targets ~use_case |> Option.value ~default:[]
     in
     call_targets
     |> List.rev_append attribute_access_targets
@@ -1647,15 +1645,14 @@ module DefineCallGraph = struct
     Location.SerializableMap.map (LocationCallees.Map.map ExpressionCallees.drop_decorated_targets)
 
 
-  (** Return all callees of the call graph, as a sorted list. Setting `exclude_reference_only` to
-      true excludes the targets that are not required in building the dependency graph. *)
-  let all_targets ~exclude_reference_only call_graph =
+  (** Return all callees of the call graph, depending on the use case. *)
+  let all_targets ~use_case call_graph =
     call_graph
     |> Location.SerializableMap.data
     |> List.concat_map ~f:(fun map ->
            map
            |> LocationCallees.Map.data
-           |> List.concat_map ~f:(ExpressionCallees.all_targets ~exclude_reference_only))
+           |> List.concat_map ~f:(ExpressionCallees.all_targets ~use_case))
     |> List.dedup_and_sort ~compare:Target.compare
 
 
@@ -4688,7 +4685,9 @@ module SharedMemory = struct
               whole_program_call_graph
               ~callable
               ~callees:
-                (DefineCallGraph.all_targets ~exclude_reference_only:true callable_call_graph)
+                (DefineCallGraph.all_targets
+                   ~use_case:AllTargetsUseCase.TaintAnalysisDependency
+                   callable_call_graph)
           in
           define_call_graphs, whole_program_call_graph
       in
