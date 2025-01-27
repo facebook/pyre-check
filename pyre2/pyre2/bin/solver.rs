@@ -211,7 +211,20 @@ impl Solver {
         t: Type,
         uniques: &UniqueFactory,
     ) -> (Vec<Var>, Type) {
-        let (vs, t) = t.instantiate_fresh(qs, uniques);
+        fn instantiate_fresh(
+            t: Type,
+            gargs: &[Quantified],
+            uniques: &UniqueFactory,
+        ) -> (Vec<Var>, Type) {
+            let mp: SmallMap<Quantified, Type> = gargs
+                .iter()
+                .map(|x| (*x, Var::new(uniques).to_type()))
+                .collect();
+            let res = t.subst(&mp);
+            (mp.into_values().map(|x| x.as_var().unwrap()).collect(), res)
+        }
+
+        let (vs, t) = instantiate_fresh(t, qs, uniques);
         let mut lock = self.variables.write().unwrap();
         for v in &vs {
             lock.insert(*v, Variable::Quantified);

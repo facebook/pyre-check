@@ -578,19 +578,6 @@ impl Type {
         });
     }
 
-    pub fn instantiate_fresh(
-        self,
-        gargs: &[Quantified],
-        uniques: &UniqueFactory,
-    ) -> (Vec<Var>, Self) {
-        let mp: SmallMap<Quantified, Type> = gargs
-            .iter()
-            .map(|x| (*x, Var::new(uniques).to_type()))
-            .collect();
-        let res = self.subst(&mp);
-        (mp.into_values().map(|x| x.as_var().unwrap()).collect(), res)
-    }
-
     pub fn for_each_quantified(&self, f: &mut impl FnMut(Quantified)) {
         self.universe(|x| {
             if let Type::Quantified(x) = x {
