@@ -4305,75 +4305,89 @@ module HigherOrderCallGraph = struct
 
       let analyze_statement ~state ~statement =
         log "Analyzing statement `%a` with state `%a`" Statement.pp statement State.pp state;
-        match Node.value statement with
-        | Statement.Assign { Assign.target = _; value = Some _; _ } -> state
-        | Assign { Assign.target = _; value = None; _ } -> state
-        | AugmentedAssign _ -> state
-        | Assert _ -> state
-        | Break
-        | Class _
-        | Continue ->
-            state
-        | Define ({ Define.signature = { name; _ }; _ } as define) ->
-            let regular_target =
-              define |> Target.create (Reference.delocalize name) |> Target.as_regular_exn
-            in
-            let callees =
-              if State.is_bottom state then
-                regular_target
-                |> Target.from_regular
-                |> CallTarget.create
-                |> CallTarget.Set.singleton
-              else
-                let parameters_roots, parameters_targets =
-                  state
-                  |> State.to_alist
-                  |> List.map ~f:(fun (variable, call_targets) ->
-                         ( variable,
-                           call_targets |> CallTarget.Set.elements |> List.map ~f:CallTarget.target
-                         ))
-                  |> List.unzip
-                in
-                parameters_targets
-                |> Algorithms.cartesian_product
-                |> List.map ~f:(fun parameters_targets ->
-                       Target.Parameterized
-                         {
-                           regular = regular_target;
-                           parameters =
-                             parameters_targets
-                             |> List.zip_exn parameters_roots
-                             |> Target.ParameterMap.of_alist_exn;
-                         }
-                       |> CallTarget.create)
-                |> CallTarget.Set.of_list
-            in
-            store_callees
-              ~weak:false
-              ~root:(name |> Reference.show |> State.create_root_from_identifier)
-              ~callees
+        let state =
+          match Node.value statement with
+          | Statement.Assign { Assign.target; value = Some value; _ } -> (
+              match TaintAccessPath.of_expression ~self_variable:None target with
+              | None -> state
+              | Some { root; path = _ } ->
+                  let callees, state = analyze_expression ~state ~expression:value in
+                  store_callees ~weak:false ~root ~callees state)
+          | Assign { Assign.target; value = None; _ } -> (
+              match TaintAccessPath.of_expression ~self_variable:None target with
+              | None -> state
+              | Some { root; path = _ } ->
+                  store_callees ~weak:false ~root ~callees:CallTarget.Set.bottom state)
+          | AugmentedAssign _ -> state
+          | Assert _ -> state
+          | Break
+          | Class _
+          | Continue ->
               state
-        | Delete _ -> state
-        | Expression expression -> analyze_expression ~state ~expression |> Core.snd
-        | For _
-        | Global _
-        | If _
-        | Import _
-        | Match _
-        | Nonlocal _
-        | Pass
-        | Raise { expression = None; _ } ->
-            state
-        | Raise { expression = Some _; _ } -> state
-        | Return { expression = Some expression; _ } ->
-            let callees, state = analyze_expression ~state ~expression in
-            store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
-        | Return { expression = None; _ }
-        | Try _
-        | TypeAlias _
-        | With _
-        | While _ ->
-            state
+          | Define ({ Define.signature = { name; _ }; _ } as define) ->
+              let regular_target =
+                define |> Target.create (Reference.delocalize name) |> Target.as_regular_exn
+              in
+              let callees =
+                if State.is_bottom state then
+                  regular_target
+                  |> Target.from_regular
+                  |> CallTarget.create
+                  |> CallTarget.Set.singleton
+                else
+                  let parameters_roots, parameters_targets =
+                    state
+                    |> State.to_alist
+                    |> List.map ~f:(fun (variable, call_targets) ->
+                           ( variable,
+                             call_targets
+                             |> CallTarget.Set.elements
+                             |> List.map ~f:CallTarget.target ))
+                    |> List.unzip
+                  in
+                  parameters_targets
+                  |> Algorithms.cartesian_product
+                  |> List.map ~f:(fun parameters_targets ->
+                         Target.Parameterized
+                           {
+                             regular = regular_target;
+                             parameters =
+                               parameters_targets
+                               |> List.zip_exn parameters_roots
+                               |> Target.ParameterMap.of_alist_exn;
+                           }
+                         |> CallTarget.create)
+                  |> CallTarget.Set.of_list
+              in
+              store_callees
+                ~weak:false
+                ~root:(name |> Reference.show |> State.create_root_from_identifier)
+                ~callees
+                state
+          | Delete _ -> state
+          | Expression expression -> analyze_expression ~state ~expression |> Core.snd
+          | For _
+          | Global _
+          | If _
+          | Import _
+          | Match _
+          | Nonlocal _
+          | Pass
+          | Raise { expression = None; _ } ->
+              state
+          | Raise { expression = Some _; _ } -> state
+          | Return { expression = Some expression; _ } ->
+              let callees, state = analyze_expression ~state ~expression in
+              store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
+          | Return { expression = None; _ }
+          | Try _
+          | TypeAlias _
+          | With _
+          | While _ ->
+              state
+        in
+        log "Finished analyzing statement `%a`: `%a`" Statement.pp statement State.pp state;
+        state
 
 
       let forward ~statement_key:_ state ~statement = analyze_statement ~state ~statement

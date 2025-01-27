@@ -576,6 +576,9 @@ let test_higher_order_call_graph_fixpoint =
                               ( AccessPath.Root.Variable "$parameter$f",
                                 Target.Regular.Function { name = "test.bar"; kind = Normal }
                                 |> Target.from_regular );
+                              ( AccessPath.Root.Variable "$local_test?decorator$g",
+                                Target.Regular.Function { name = "test.bar"; kind = Normal }
+                                |> Target.from_regular );
                             ]);
                    ];
                };
@@ -622,6 +625,10 @@ let test_higher_order_call_graph_fixpoint =
                                             ( create_positional_parameter 0 "x",
                                               Target.Regular.Function
                                                 { name = "test.baz"; kind = Normal }
+                                              |> Target.from_regular );
+                                            ( AccessPath.Root.Variable "$local_test?decorator$g",
+                                              Target.Regular.Function
+                                                { name = "test.foo"; kind = Normal }
                                               |> Target.from_regular );
                                             ( AccessPath.Root.Variable "$parameter$f",
                                               Target.Regular.Function
@@ -797,14 +804,7 @@ let test_higher_order_call_graph_fixpoint =
                      ( "23:8-23:12",
                        LocationCallees.Singleton
                          (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function
-                                        { name = "test.foo3"; kind = Decorated });
-                                 ]
-                               ())) );
+                            (AttributeAccessCallees.create ())) );
                    ];
                  returned_callables =
                    [
@@ -819,7 +819,17 @@ let test_higher_order_call_graph_fixpoint =
                                 Target.Regular.Function { name = "test.foo1"; kind = Normal }
                                 |> Target.from_regular );
                             ]);
-                     (* TODO: Expect `foo3` after handling assignments. *)
+                     CallTarget.create
+                       (create_parameterized_target
+                          ~regular:
+                            (Target.Regular.Function
+                               { name = "test.decorator.inner"; kind = Normal })
+                          ~parameters:
+                            [
+                              ( AccessPath.Root.Variable "$parameter$f",
+                                Target.Regular.Function { name = "test.foo3"; kind = Normal }
+                                |> Target.from_regular );
+                            ]);
                    ];
                };
              ]
