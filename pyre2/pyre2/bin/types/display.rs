@@ -235,6 +235,11 @@ impl<'a> TypeDisplayContext<'a> {
             Type::TypeGuard(ty) => write!(f, "TypeGuard[{}]", self.display(ty)),
             Type::TypeIs(ty) => write!(f, "TypeIs[{}]", self.display(ty)),
             Type::Unpack(ty) => write!(f, "Unpack[{}]", self.display(ty)),
+            Type::Concatenate(args, pspec) => write!(
+                f,
+                "Concatenate[{}]",
+                commas_iter(|| append(args.iter(), [pspec]))
+            ),
             Type::Module(m) => write!(f, "Module[{m}]"),
             Type::Var(var) => write!(f, "{var}"),
             Type::Quantified(var) => self.fmt_quantified(var, f),

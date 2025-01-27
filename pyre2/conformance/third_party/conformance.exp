@@ -8430,16 +8430,6 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 10
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "TODO: Answers::apply_special_form cannot handle `Concatenate[int, P]`",
-      "description": "TODO: Answers::apply_special_form cannot handle `Concatenate[int, P]`",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 27
     }
   ],
   "generics_paramspec_components.py": [
@@ -9137,16 +9127,6 @@
     }
   ],
   "generics_paramspec_specialization.py": [
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "TODO: Answers::apply_special_form cannot handle `Concatenate[int, P2]`",
-      "description": "TODO: Answers::apply_special_form cannot handle `Concatenate[int, P2]`",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 28
-    },
     {
       "code": -2,
       "column": 27,

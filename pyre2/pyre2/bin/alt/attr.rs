@@ -355,6 +355,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             | Type::Type(_)
             | Type::Intersect(_)
             | Type::Unpack(_)
+            | Type::Concatenate(_, _)
             | Type::Quantified(_) => None,
         }
     }

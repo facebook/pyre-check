@@ -696,6 +696,7 @@
   "generics_paramspec_basic.py": [
     "Line 15: Expected 1 errors",
     "Line 23: Expected 1 errors",
+    "Line 27: Expected 1 errors",
     "Line 31: Expected 1 errors",
     "Line 35: Expected 1 errors",
     "Line 39: Expected 1 errors"
@@ -747,7 +748,6 @@
   ],
   "generics_paramspec_specialization.py": [
     "Line 44: Expected 1 errors",
-    "Line 28: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Concatenate[int, P2]`']",
     "Line 32: Unexpected errors ['untype, got list[type[bool] | type[int]]']",
     "Line 40: Unexpected errors ['untype, got list[@_]', 'untype, got list[@_]']",
     "Line 52: Unexpected errors ['untype, got list[type[bool] | type[int] | type[str]]']",
