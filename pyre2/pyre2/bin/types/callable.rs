@@ -23,7 +23,10 @@ pub struct Callable {
 pub enum Params {
     List(Vec<Param>),
     Ellipsis,
-    ParamSpec(Type),
+    /// Any arguments to Concatenate, followed by a ParamSpec.
+    /// E.g. `Concatenate[int, str, P]` would be `ParamSpec([int, str], P)`,
+    /// while `P` alone would be `ParamSpec([], P)`.
+    ParamSpec(Box<[Type]>, Type),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -73,8 +76,12 @@ impl Callable {
                 write!(f, ") -> {}", wrap(&self.ret))
             }
             Params::Ellipsis => write!(f, "(...) -> {}", wrap(&self.ret)),
-            Params::ParamSpec(ty) => {
-                write!(f, "(ParamSpec({})) -> {}", wrap(ty), wrap(&self.ret))
+            Params::ParamSpec(args, pspec) => {
+                write!(f, "(")?;
+                for a in args {
+                    write!(f, "{}, ", wrap(a))?;
+                }
+                write!(f, "ParamSpec({})) -> {}", wrap(pspec), wrap(&self.ret))
             }
         }
     }
@@ -95,7 +102,7 @@ impl Callable {
 
     pub fn param_spec(p: Type, ret: Type) -> Self {
         Self {
-            params: Params::ParamSpec(p),
+            params: Params::ParamSpec(Box::default(), p),
             ret,
         }
     }
@@ -116,7 +123,10 @@ impl Params {
         match &self {
             Params::List(params) => params.iter().for_each(|x| x.visit(&mut f)),
             Params::Ellipsis => {}
-            Params::ParamSpec(ty) => f(ty),
+            Params::ParamSpec(args, pspec) => {
+                args.iter().for_each(&mut f);
+                f(pspec);
+            }
         }
     }
 
@@ -124,7 +134,10 @@ impl Params {
         match self {
             Params::List(params) => params.iter_mut().for_each(|x| x.visit_mut(&mut f)),
             Params::Ellipsis => {}
-            Params::ParamSpec(ty) => f(ty),
+            Params::ParamSpec(args, pspec) => {
+                args.iter_mut().for_each(&mut f);
+                f(pspec);
+            }
         }
     }
 }

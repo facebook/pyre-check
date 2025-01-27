@@ -102,7 +102,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                                 }
                             }
                         }
-                        (Params::ParamSpec(_), _) | (_, Params::ParamSpec(_)) => {
+                        (Params::ParamSpec(_, _), _) | (_, Params::ParamSpec(_, _)) => {
                             // TODO: need instantiation for param spec
                             false
                         }
