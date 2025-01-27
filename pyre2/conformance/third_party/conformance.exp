@@ -3,16 +3,6 @@
   "aliases_explicit.py": [
     {
       "code": -2,
-      "column": 31,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 50,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "Expected `GoodTypeAlias13` to be a type alias, got Literal['int | str']",
       "description": "Expected `GoodTypeAlias13` to be a type alias, got Literal['int | str']",
@@ -53,12 +43,12 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias9, Error]",
-      "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias9, Error]",
+      "column": 24,
+      "concise_description": "untype, got list[type[str]]",
+      "description": "untype, got list[type[str]]",
       "line": 41,
       "name": "PyreError",
-      "stop_column": 41,
+      "stop_column": 34,
       "stop_line": 41
     },
     {
@@ -84,8 +74,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, (int, str, str) -> None) failed",
-      "description": "assert_type(Any, (int, str, str) -> None) failed",
+      "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
+      "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
       "line": 57,
       "name": "PyreError",
       "stop_column": 53,
@@ -150,16 +140,6 @@
       "name": "PyreError",
       "stop_column": 28,
       "stop_line": 68
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias9, Error]",
-      "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias9, Error]",
-      "line": 71,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 71
     },
     {
       "code": -2,
@@ -355,16 +335,6 @@
     },
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 46,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]",
       "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]",
@@ -372,6 +342,16 @@
       "name": "PyreError",
       "stop_column": 33,
       "stop_line": 51
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "untype, got list[type[str]]",
+      "description": "untype, got list[type[str]]",
+      "line": 54,
+      "name": "PyreError",
+      "stop_column": 34,
+      "stop_line": 54
     },
     {
       "code": -2,
@@ -396,8 +376,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, (int, str, str) -> None) failed",
-      "description": "assert_type(Any, (int, str, str) -> None) failed",
+      "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
+      "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
       "line": 68,
       "name": "PyreError",
       "stop_column": 53,
@@ -1812,6 +1792,16 @@
   "annotations_methods.py": [
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED Forall[T, (cls: type[T]) -> T] <: (type[@_], ParamSpec(@_)) -> @_",
+      "description": "EXPECTED Forall[T, (cls: type[T]) -> T] <: (type[@_], ParamSpec(@_)) -> @_",
+      "line": 17,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 17
+    },
+    {
+      "code": -2,
       "column": 16,
       "concise_description": "Expected a callable, got type[?_]",
       "description": "Expected a callable, got type[?_]",
@@ -2246,23 +2236,43 @@
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 89,
+      "column": 7,
+      "concise_description": "EXPECTED (x: int) -> str <: (int, ParamSpec(Ellipsis)) -> str",
+      "description": "EXPECTED (x: int) -> str <: (int, ParamSpec(Ellipsis)) -> str",
+      "line": 90,
       "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 89
+      "stop_column": 15,
+      "stop_line": 90
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 145,
+      "column": 7,
+      "concise_description": "EXPECTED () -> str <: (int, ParamSpec(Ellipsis)) -> str",
+      "description": "EXPECTED () -> str <: (int, ParamSpec(Ellipsis)) -> str",
+      "line": 91,
       "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 145
+      "stop_column": 15,
+      "stop_line": 91
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (a: int, b: int, c: int) -> str <: (int, ParamSpec(Ellipsis)) -> str",
+      "description": "EXPECTED (a: int, b: int, c: int) -> str <: (int, ParamSpec(Ellipsis)) -> str",
+      "line": 92,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 92
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (*, a: int) -> str <: (int, ParamSpec(Ellipsis)) -> str",
+      "description": "EXPECTED (*, a: int) -> str <: (int, ParamSpec(Ellipsis)) -> str",
+      "line": 93,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 93
     },
     {
       "code": -2,
@@ -2306,13 +2316,23 @@
     },
     {
       "code": -2,
-      "column": 19,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
+      "column": 50,
+      "concise_description": "EXPECTED Proto2 <: (int, ParamSpec(Ellipsis)) -> None",
+      "description": "EXPECTED Proto2 <: (int, ParamSpec(Ellipsis)) -> None",
       "line": 151,
       "name": "PyreError",
-      "stop_column": 40,
+      "stop_column": 52,
       "stop_line": 151
+    },
+    {
+      "code": -2,
+      "column": 19,
+      "concise_description": "EXPECTED (int, ParamSpec(Ellipsis)) -> None <: Proto2",
+      "description": "EXPECTED (int, ParamSpec(Ellipsis)) -> None <: Proto2",
+      "line": 152,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 152
     },
     {
       "code": -2,
@@ -2336,16 +2356,6 @@
     },
     {
       "code": -2,
-      "column": 33,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 167,
-      "name": "PyreError",
-      "stop_column": 52,
-      "stop_line": 167
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback1, type[(ParamSpec(ParamSpec[P])) -> str]]",
       "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback1, type[(ParamSpec(ParamSpec[P])) -> str]]",
@@ -2357,8 +2367,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, Error]",
-      "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, Error]",
+      "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, type[(int, ParamSpec(ParamSpec[P])) -> str]]",
+      "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, type[(int, ParamSpec(ParamSpec[P])) -> str]]",
       "line": 172,
       "name": "PyreError",
       "stop_column": 23,
@@ -2377,8 +2387,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, Error]",
-      "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, Error]",
+      "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, type[(int, ParamSpec(ParamSpec[P])) -> str]]",
+      "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, type[(int, ParamSpec(ParamSpec[P])) -> str]]",
       "line": 175,
       "name": "PyreError",
       "stop_column": 23,
@@ -2386,49 +2396,29 @@
     },
     {
       "code": -2,
-      "column": 39,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 181,
-      "name": "PyreError",
-      "stop_column": 58,
-      "stop_line": 181
-    },
-    {
-      "code": -2,
-      "column": 39,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 182,
-      "name": "PyreError",
-      "stop_column": 58,
-      "stop_line": 182
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
+      "column": 48,
+      "concise_description": "EXPECTED (int, str) -> str <: (int, ParamSpec(Ellipsis)) -> str",
+      "description": "EXPECTED (int, str) -> str <: (int, ParamSpec(Ellipsis)) -> str",
       "line": 186,
       "name": "PyreError",
-      "stop_column": 39,
+      "stop_column": 50,
       "stop_line": 186
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
+      "column": 48,
+      "concise_description": "EXPECTED (int, str) -> str <: (str, ParamSpec(Ellipsis)) -> str",
+      "description": "EXPECTED (int, str) -> str <: (str, ParamSpec(Ellipsis)) -> str",
       "line": 187,
       "name": "PyreError",
-      "stop_column": 39,
+      "stop_column": 50,
       "stop_line": 187
     },
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithInt, Error]",
-      "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithInt, Error]",
+      "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithInt, type[(int, ParamSpec(ParamSpec[P])) -> str]]",
+      "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithInt, type[(int, ParamSpec(ParamSpec[P])) -> str]]",
       "line": 188,
       "name": "PyreError",
       "stop_column": 29,
@@ -2437,8 +2427,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithStr, Error]",
-      "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithStr, Error]",
+      "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithStr, type[(str, ParamSpec(ParamSpec[P])) -> str]]",
+      "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithStr, type[(str, ParamSpec(ParamSpec[P])) -> str]]",
       "line": 189,
       "name": "PyreError",
       "stop_column": 29,
@@ -3425,6 +3415,16 @@
     {
       "code": -2,
       "column": 5,
+      "concise_description": "EXPECTED (cls: ProtoB) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "description": "EXPECTED (cls: ProtoB) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "line": 142,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 142
+    },
+    {
+      "code": -2,
+      "column": 5,
       "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
       "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
       "line": 146,
@@ -3443,6 +3443,16 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 77
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: ChildA) -> int <: (type[@_], ParamSpec(@_)) -> int",
+      "description": "EXPECTED (cls: ChildA) -> int <: (type[@_], ParamSpec(@_)) -> int",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 82
     }
   ],
   "constructors_call_init.py": [
@@ -8423,16 +8433,6 @@
     },
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 18,
-      "name": "PyreError",
-      "stop_column": 46,
-      "stop_line": 18
-    },
-    {
-      "code": -2,
       "column": 14,
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Concatenate[int, P]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Concatenate[int, P]`",
@@ -8495,52 +8495,42 @@
     },
     {
       "code": -2,
-      "column": 42,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 56,
+      "column": 12,
+      "concise_description": "EXPECTED (s: str, *Args[?_], **Kwargs[?_]) -> None <: (str, ParamSpec(?_)) -> None",
+      "description": "EXPECTED (s: str, *Args[?_], **Kwargs[?_]) -> None <: (str, ParamSpec(?_)) -> None",
+      "line": 63,
       "name": "PyreError",
-      "stop_column": 61,
-      "stop_line": 56
+      "stop_column": 15,
+      "stop_line": 63
     },
     {
       "code": -2,
-      "column": 24,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 66,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 66
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "`Args[?_]` is not iterable",
-      "description": "`Args[?_]` is not iterable",
+      "column": 9,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 68,
       "name": "PyreError",
-      "stop_column": 19,
+      "stop_column": 10,
       "stop_line": 68
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "`Args[?_]` is not iterable",
-      "description": "`Args[?_]` is not iterable",
+      "column": 9,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 70,
       "name": "PyreError",
-      "stop_column": 16,
+      "stop_column": 10,
       "stop_line": 70
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "`Args[?_]` is not iterable",
-      "description": "`Args[?_]` is not iterable",
+      "column": 9,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 72,
       "name": "PyreError",
-      "stop_column": 16,
+      "stop_column": 10,
       "stop_line": 72
     },
     {
@@ -8927,16 +8917,6 @@
     },
     {
       "code": -2,
-      "column": 42,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 91,
-      "name": "PyreError",
-      "stop_column": 61,
-      "stop_line": 91
-    },
-    {
-      "code": -2,
       "column": 10,
       "concise_description": "EXPECTED (x: int, *bool) -> int <: (ParamSpec(@_)) -> int",
       "description": "EXPECTED (x: int, *bool) -> int <: (ParamSpec(@_)) -> int",
@@ -8957,6 +8937,16 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 96,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 96
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, bool) failed",
       "description": "assert_type(Any, bool) failed",
@@ -8967,13 +8957,33 @@
     },
     {
       "code": -2,
-      "column": 24,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 101,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 97,
       "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 101
+      "stop_column": 15,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 98,
+      "name": "PyreError",
+      "stop_column": 3,
+      "stop_line": 98
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
+      "description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
+      "line": 105,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 105
     },
     {
       "code": -2,
@@ -9027,23 +9037,13 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 112,
+      "column": 16,
+      "concise_description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
+      "description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
+      "line": 117,
       "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 112
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 113,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 113
+      "stop_column": 19,
+      "stop_line": 117
     },
     {
       "code": -2,
@@ -9053,6 +9053,16 @@
       "line": 118,
       "name": "PyreError",
       "stop_column": 45,
+      "stop_line": 118
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 118,
+      "name": "PyreError",
+      "stop_column": 15,
       "stop_line": 118
     },
     {
@@ -9067,13 +9077,63 @@
     },
     {
       "code": -2,
-      "column": 35,
-      "concise_description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "description": "TODO: Subscript(ExprSubscript - expr_infer, Callable type",
-      "line": 123,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 119,
       "name": "PyreError",
-      "stop_column": 54,
-      "stop_line": 123
+      "stop_column": 15,
+      "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 120,
+      "name": "PyreError",
+      "stop_column": 3,
+      "stop_line": 120
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "EXPECTED (x: str) -> int <: (int, ParamSpec(@_)) -> int",
+      "description": "EXPECTED (x: str) -> int <: (int, ParamSpec(@_)) -> int",
+      "line": 127,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 127
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "EXPECTED (*, x: int) -> int <: (int, ParamSpec(@_)) -> int",
+      "description": "EXPECTED (*, x: int) -> int <: (int, ParamSpec(@_)) -> int",
+      "line": 132,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 132
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "EXPECTED (**int) -> int <: (int, ParamSpec(@_)) -> int",
+      "description": "EXPECTED (**int) -> int <: (int, ParamSpec(@_)) -> int",
+      "line": 137,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 137
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "EXPECTED (*int) -> int <: (int, ParamSpec(@_)) -> int",
+      "description": "EXPECTED (*int) -> int <: (int, ParamSpec(@_)) -> int",
+      "line": 142,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 142
     }
   ],
   "generics_paramspec_specialization.py": [
@@ -9253,6 +9313,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: ParentB) -> ParentB <: (type[@_], ParamSpec(@_)) -> ParentB",
+      "description": "EXPECTED (cls: ParentB) -> ParentB <: (type[@_], ParamSpec(@_)) -> ParentB",
+      "line": 27,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 27
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "assert_type(ChildB, Self) failed",
       "description": "assert_type(ChildB, Self) failed",
@@ -9294,12 +9364,22 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, @_]",
-      "description": "Expected a callable, got classmethod[@_, @_, @_]",
+      "concise_description": "Expected a callable, got classmethod[@_, @_, ParentB]",
+      "description": "Expected a callable, got classmethod[@_, @_, ParentB]",
       "line": 38,
       "name": "PyreError",
       "stop_column": 33,
       "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: ChildB) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "description": "EXPECTED (cls: ChildB) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 40
     },
     {
       "code": -2,
@@ -9344,8 +9424,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, @_]",
-      "description": "Expected a callable, got classmethod[@_, @_, @_]",
+      "concise_description": "Expected a callable, got classmethod[@_, @_, ParentB]",
+      "description": "Expected a callable, got classmethod[@_, @_, ParentB]",
       "line": 45,
       "name": "PyreError",
       "stop_column": 32,
@@ -9477,6 +9557,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: Shape, config: dict[str, float]) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
+      "description": "EXPECTED (cls: Shape, config: dict[str, float]) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
+      "line": 25,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 25
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "assert_type(Shape, type[Self]) failed",
       "description": "assert_type(Shape, type[Self]) failed",
@@ -9494,6 +9584,26 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: Shape) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
+      "description": "EXPECTED (cls: Shape) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
+      "line": 30,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: Shape) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
+      "description": "EXPECTED (cls: Shape) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
+      "line": 35,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 35
     },
     {
       "code": -2,
@@ -9538,8 +9648,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, @_]",
-      "description": "Expected a callable, got classmethod[@_, @_, @_]",
+      "concise_description": "Expected a callable, got classmethod[@_, @_, Shape]",
+      "description": "Expected a callable, got classmethod[@_, @_, Shape]",
       "line": 54,
       "name": "PyreError",
       "stop_column": 30,
@@ -9558,8 +9668,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, @_]",
-      "description": "Expected a callable, got classmethod[@_, @_, @_]",
+      "concise_description": "Expected a callable, got classmethod[@_, @_, Shape]",
+      "description": "Expected a callable, got classmethod[@_, @_, Shape]",
       "line": 55,
       "name": "PyreError",
       "stop_column": 31,
@@ -9580,6 +9690,16 @@
   "generics_self_usage.py": [
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: ReturnsSelf) -> ReturnsSelf <: (type[@_], ParamSpec(@_)) -> ReturnsSelf",
+      "description": "EXPECTED (cls: ReturnsSelf) -> ReturnsSelf <: (type[@_], ParamSpec(@_)) -> ReturnsSelf",
+      "line": 13,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 13
+    },
+    {
+      "code": -2,
       "column": 16,
       "concise_description": "Expected a callable, got ReturnsSelf",
       "description": "Expected a callable, got ReturnsSelf",
@@ -9587,6 +9707,16 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 15
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: ReturnsSelf) -> type[ReturnsSelf] <: (type[@_], ParamSpec(@_)) -> type[ReturnsSelf]",
+      "description": "EXPECTED (cls: ReturnsSelf) -> type[ReturnsSelf] <: (type[@_], ParamSpec(@_)) -> type[ReturnsSelf]",
+      "line": 28,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 28
     },
     {
       "code": -2,
@@ -14960,6 +15090,16 @@
     {
       "code": -2,
       "column": 5,
+      "concise_description": "EXPECTED (cls: A, val: object) -> TypeGuard[int] <: (type[@_], ParamSpec(@_)) -> TypeGuard[int]",
+      "description": "EXPECTED (cls: A, val: object) -> TypeGuard[int] <: (type[@_], ParamSpec(@_)) -> TypeGuard[int]",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 5,
       "concise_description": "EXPECTED (val: object) -> TypeGuard[int] <: (ParamSpec(@_)) -> TypeGuard[int]",
       "description": "EXPECTED (val: object) -> TypeGuard[int] <: (ParamSpec(@_)) -> TypeGuard[int]",
       "line": 47,
@@ -15010,8 +15150,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, @_]",
-      "description": "Expected a callable, got classmethod[@_, @_, @_]",
+      "concise_description": "Expected a callable, got classmethod[@_, @_, TypeGuard[int]]",
+      "description": "Expected a callable, got classmethod[@_, @_, TypeGuard[int]]",
       "line": 72,
       "name": "PyreError",
       "stop_column": 16,
@@ -15030,8 +15170,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, @_]",
-      "description": "Expected a callable, got classmethod[@_, @_, @_]",
+      "concise_description": "Expected a callable, got classmethod[@_, @_, TypeGuard[int]]",
+      "description": "Expected a callable, got classmethod[@_, @_, TypeGuard[int]]",
       "line": 76,
       "name": "PyreError",
       "stop_column": 14,
@@ -15106,6 +15246,16 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 93
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: C) -> TypeGuard[int] <: (type[@_], ParamSpec(@_)) -> TypeGuard[int]",
+      "description": "EXPECTED (cls: C) -> TypeGuard[int] <: (type[@_], ParamSpec(@_)) -> TypeGuard[int]",
+      "line": 105,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 105
     },
     {
       "code": -2,
@@ -15198,6 +15348,16 @@
       "name": "PyreError",
       "stop_column": 36,
       "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: A, val: object) -> TypeIs[int] <: (type[@_], ParamSpec(@_)) -> TypeIs[int]",
+      "description": "EXPECTED (cls: A, val: object) -> TypeIs[int] <: (type[@_], ParamSpec(@_)) -> TypeIs[int]",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 47
     },
     {
       "code": -2,
@@ -15302,8 +15462,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, @_]",
-      "description": "Expected a callable, got classmethod[@_, @_, @_]",
+      "concise_description": "Expected a callable, got classmethod[@_, @_, TypeIs[int]]",
+      "description": "Expected a callable, got classmethod[@_, @_, TypeIs[int]]",
       "line": 75,
       "name": "PyreError",
       "stop_column": 16,
@@ -15322,8 +15482,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, @_]",
-      "description": "Expected a callable, got classmethod[@_, @_, @_]",
+      "concise_description": "Expected a callable, got classmethod[@_, @_, TypeIs[int]]",
+      "description": "Expected a callable, got classmethod[@_, @_, TypeIs[int]]",
       "line": 79,
       "name": "PyreError",
       "stop_column": 14,
@@ -15408,6 +15568,16 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 106
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: C) -> TypeIs[int] <: (type[@_], ParamSpec(@_)) -> TypeIs[int]",
+      "description": "EXPECTED (cls: C) -> TypeIs[int] <: (type[@_], ParamSpec(@_)) -> TypeIs[int]",
+      "line": 108,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 108
     },
     {
       "code": -2,
@@ -15747,6 +15917,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: Example) -> int <: (type[@_], ParamSpec(@_)) -> int",
+      "description": "EXPECTED (cls: Example) -> int <: (type[@_], ParamSpec(@_)) -> int",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "Object of class `Template` has no attribute `temp`",
       "description": "Object of class `Template` has no attribute `temp`",
@@ -15874,6 +16054,16 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 219
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: Concrete5_Good4, a: int, b: int) -> float <: (type[@_], ParamSpec(@_)) -> float",
+      "description": "EXPECTED (cls: Concrete5_Good4, a: int, b: int) -> float <: (type[@_], ParamSpec(@_)) -> float",
+      "line": 243,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 243
     },
     {
       "code": -2,
@@ -16267,6 +16457,36 @@
   "protocols_recursive.py": [
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: ProtoA[?_, ?_], value: ?_) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "description": "EXPECTED (cls: ProtoA[?_, ?_], value: ?_) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: ImplA, value: int) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "description": "EXPECTED (cls: ImplA, value: int) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "line": 59,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 59
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED Forall[T, (cls: type[ProtoB[object, T]], value: list[T]) -> None] <: (type[@_], ParamSpec(@_)) -> @_",
+      "description": "EXPECTED Forall[T, (cls: type[ProtoB[object, T]], value: list[T]) -> None] <: (type[@_], ParamSpec(@_)) -> @_",
+      "line": 71,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 71
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, list[int]) failed",
       "description": "assert_type(Any, list[int]) failed",
@@ -16300,7 +16520,18 @@
       "stop_line": 55
     }
   ],
-  "protocols_variance.py": [],
+  "protocols_variance.py": [
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: type[Protocol13[?_]]) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "description": "EXPECTED (cls: type[Protocol13[?_]]) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "line": 114,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 114
+    }
+  ],
   "qualifiers_annotated.py": [
     {
       "code": -2,
@@ -16659,12 +16890,32 @@
     {
       "code": -2,
       "column": 5,
+      "concise_description": "EXPECTED (cls: Base2) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "description": "EXPECTED (cls: Base2) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
+      "column": 5,
       "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
       "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
       "line": 36,
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: Derived2) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "description": "EXPECTED (cls: Derived2) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "line": 59,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 59
     },
     {
       "code": -2,
@@ -18405,6 +18656,16 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 29
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (cls: BadTypedDict1) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "description": "EXPECTED (cls: BadTypedDict1) -> None <: (type[@_], ParamSpec(@_)) -> None",
+      "line": 33,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 33
     },
     {
       "code": -2,

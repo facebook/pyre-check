@@ -3,18 +3,18 @@
   "aliases_explicit.py": [
     "Line 69: Expected 1 errors",
     "Line 70: Expected 1 errors",
+    "Line 71: Expected 1 errors",
     "Line 84: Expected 1 errors",
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
-    "Line 23: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
     "Line 27: Unexpected errors [\"Expected `GoodTypeAlias13` to be a type alias, got Literal['int | str']\"]",
     "Line 28: Unexpected errors [\"untype, got Literal['int | str']\"]",
     "Line 29: Unexpected errors ['Invalid literal expression']",
     "Line 38: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]\"]",
-    "Line 41: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias9, Error]\"]",
+    "Line 41: Unexpected errors ['untype, got list[type[str]]']",
     "Line 53: Unexpected errors ['assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed']",
     "Line 54: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
-    "Line 57: Unexpected errors ['assert_type(Any, (int, str, str) -> None) failed']",
+    "Line 57: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
     "Line 60: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']",
     "Line 61: Unexpected errors ['assert_type(Any, int | str) failed']",
     "Line 62: Unexpected errors ['assert_type(list[Any], list[int | str]) failed']",
@@ -34,11 +34,11 @@
     "Line 117: Expected 1 errors",
     "Line 14: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Vector, type[Iterable[tuple[TypeVar[TFloat], TypeVar[TFloat]]]]]\"]",
     "Line 18: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Vector, type[Iterable[tuple[TypeVar[TFloat], TypeVar[TFloat]]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Vector, type[Iterable[tuple[TypeVar[TFloat], TypeVar[TFloat]]]]]\"]",
-    "Line 38: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
     "Line 51: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]\"]",
+    "Line 54: Unexpected errors ['untype, got list[type[str]]']",
     "Line 64: Unexpected errors ['assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed']",
     "Line 65: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
-    "Line 68: Unexpected errors ['assert_type(Any, (int, str, str) -> None) failed']",
+    "Line 68: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
     "Line 72: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']",
     "Line 89: Unexpected errors ['Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]']",
     "Line 92: Unexpected errors ['Expected `__new__` to be a callable, got (Unknown, SupportsIndex) -> range | (Unknown, SupportsIndex, SupportsIndex, SupportsIndex) -> range']",
@@ -164,6 +164,7 @@
     "Line 190: Unexpected errors ['assert_type(() -> Coroutine[Any, Any, AsyncIterator[int]], () -> AsyncIterator[int]) failed']"
   ],
   "annotations_methods.py": [
+    "Line 17: Unexpected errors ['EXPECTED Forall[T, (cls: type[T]) -> T] <: (type[@_], ParamSpec(@_)) -> @_']",
     "Line 19: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 21: Unexpected errors ['EXPECTED Forall[T, (val: type[T]) -> T] <: (ParamSpec(@_)) -> @_']",
     "Line 23: Unexpected errors ['Expected a callable, got type[?_]']",
@@ -184,28 +185,24 @@
   "callables_annotation.py": [
     "Line 56: Expected 1 errors",
     "Line 59: Expected 1 errors",
-    "Line 91: Expected 1 errors",
-    "Line 93: Expected 1 errors",
     "Line 159: Expected 1 errors",
     "Line 51: Unexpected errors ['assert_type(int, tuple[int, ...]) failed']",
     "Line 52: Unexpected errors ['assert_type(int, dict[str, int]) failed']",
-    "Line 89: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
-    "Line 145: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
+    "Line 90: Unexpected errors ['EXPECTED (x: int) -> str <: (int, ParamSpec(Ellipsis)) -> str']",
+    "Line 92: Unexpected errors ['EXPECTED (a: int, b: int, c: int) -> str <: (int, ParamSpec(Ellipsis)) -> str']",
     "Line 147: Unexpected errors ['EXPECTED Proto1 <: (...) -> None']",
     "Line 148: Unexpected errors ['EXPECTED (...) -> None <: Proto1']",
     "Line 149: Unexpected errors ['EXPECTED Proto5[Any] <: (...) -> None']",
     "Line 150: Unexpected errors ['EXPECTED (...) -> None <: Proto5[Any]']",
-    "Line 151: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
+    "Line 151: Unexpected errors ['EXPECTED Proto2 <: (int, ParamSpec(Ellipsis)) -> None']",
+    "Line 152: Unexpected errors ['EXPECTED (int, ParamSpec(Ellipsis)) -> None <: Proto2']",
     "Line 153: Unexpected errors ['EXPECTED Proto3 <: (...) -> None']",
     "Line 154: Unexpected errors ['EXPECTED (...) -> None <: Proto3']",
-    "Line 167: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
     "Line 171: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback1, type[(ParamSpec(ParamSpec[P])) -> str]]\"]",
     "Line 174: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback1, type[(ParamSpec(ParamSpec[P])) -> str]]\"]",
-    "Line 175: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, Error]\"]",
-    "Line 181: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
-    "Line 182: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
-    "Line 186: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
-    "Line 188: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithInt, Error]\"]"
+    "Line 175: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, type[(int, ParamSpec(ParamSpec[P])) -> str]]\"]",
+    "Line 186: Unexpected errors ['EXPECTED (int, str) -> str <: (int, ParamSpec(Ellipsis)) -> str']",
+    "Line 188: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithInt, type[(int, ParamSpec(ParamSpec[P])) -> str]]\"]"
   ],
   "callables_kwargs.py": [
     "Line 46: Expected 1 errors",
@@ -304,6 +301,7 @@
     "Line 105: Expected 1 errors",
     "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']",
     "Line 101: Unexpected errors ['Expected 1 more positional argument', 'Object of class `NoneType` has no attribute `__add__`', \"EXPECTED Literal['hits'] <: dict[str, int]\", 'EXPECTED Literal[0] <: str']",
+    "Line 142: Unexpected errors ['EXPECTED (cls: ProtoB) -> None <: (type[@_], ParamSpec(@_)) -> None']",
     "Line 146: Unexpected errors ['EXPECTED () -> None <: (ParamSpec(@_)) -> None']"
   ],
   "classes_override.py": [
@@ -312,7 +310,8 @@
     "Line 84: Expected 1 errors",
     "Line 89: Expected 1 errors",
     "Lines 56, 65: Expected error (tag 'method4')",
-    "Line 77: Unexpected errors ['EXPECTED () -> int <: (ParamSpec(@_)) -> int']"
+    "Line 77: Unexpected errors ['EXPECTED () -> int <: (ParamSpec(@_)) -> int']",
+    "Line 82: Unexpected errors ['EXPECTED (cls: ChildA) -> int <: (type[@_], ParamSpec(@_)) -> int']"
   ],
   "constructors_call_init.py": [
     "Line 42: Expected 1 errors",
@@ -699,8 +698,7 @@
     "Line 23: Expected 1 errors",
     "Line 31: Expected 1 errors",
     "Line 35: Expected 1 errors",
-    "Line 39: Expected 1 errors",
-    "Line 18: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']"
+    "Line 39: Expected 1 errors"
   ],
   "generics_paramspec_components.py": [
     "Line 17: Expected 1 errors",
@@ -715,9 +713,8 @@
     "Line 60: Expected 1 errors",
     "Line 47: Unexpected errors ['assert_type(Any, int) failed', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 53: Unexpected errors ['EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None']",
-    "Line 56: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
-    "Line 66: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
-    "Line 68: Unexpected errors ['`Args[?_]` is not iterable']",
+    "Line 63: Unexpected errors ['EXPECTED (s: str, *Args[?_], **Kwargs[?_]) -> None <: (str, ParamSpec(?_)) -> None']",
+    "Line 68: Unexpected errors ['Answers::expr_infer wrong number of arguments to call']",
     "Line 74: Unexpected errors ['EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None']",
     "Line 79: Unexpected errors ['Answers::expr_infer wrong number of arguments to call']",
     "Line 82: Unexpected errors ['`Args[?_]` is not iterable', 'Expected argument after ** to be a mapping, got: Kwargs[?_]']",
@@ -727,11 +724,6 @@
     "Line 97: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int', \"EXPECTED Literal['A'] <: Kwargs[?_]\", 'EXPECTED Literal[1] <: Kwargs[?_]']"
   ],
   "generics_paramspec_semantics.py": [
-    "Line 98: Expected 1 errors",
-    "Line 120: Expected 1 errors",
-    "Line 127: Expected 1 errors",
-    "Line 132: Expected 1 errors",
-    "Line 137: Expected 1 errors",
     "Line 21: Unexpected errors ['EXPECTED (str, bool) -> int <: (ParamSpec(@_)) -> int']",
     "Line 22: Unexpected errors ['assert_type((ParamSpec(Any)) -> str, (str, bool) -> str) failed']",
     "Line 24: Unexpected errors ['Answers::expr_infer wrong number of arguments to call']",
@@ -742,18 +734,16 @@
     "Line 81: Unexpected errors ['EXPECTED (int) -> str <: (ParamSpec(@_)) -> str']",
     "Line 82: Unexpected errors ['untype, got list[type[int]]']",
     "Line 84: Unexpected errors ['assert_type((ParamSpec(Any)) -> str, (int) -> str) failed']",
-    "Line 91: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
     "Line 95: Unexpected errors ['EXPECTED (x: int, *bool) -> int <: (ParamSpec(@_)) -> int']",
-    "Line 96: Unexpected errors ['assert_type(Any, bool) failed']",
-    "Line 97: Unexpected errors ['assert_type(Any, bool) failed']",
-    "Line 101: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
+    "Line 96: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
+    "Line 97: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
+    "Line 105: Unexpected errors ['EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int']",
     "Line 106: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 107: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 112: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
-    "Line 113: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']",
-    "Line 118: Unexpected errors ['assert_type(Any, bool) failed']",
-    "Line 119: Unexpected errors ['assert_type(Any, bool) failed']",
-    "Line 123: Unexpected errors ['TODO: Subscript(ExprSubscript - expr_infer, Callable type']"
+    "Line 117: Unexpected errors ['EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int']",
+    "Line 118: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
+    "Line 119: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
+    "Line 142: Unexpected errors ['EXPECTED (*int) -> int <: (int, ParamSpec(@_)) -> int']"
   ],
   "generics_paramspec_specialization.py": [
     "Line 44: Expected 1 errors",
@@ -777,12 +767,14 @@
   "generics_self_advanced.py": [
     "Line 18: Unexpected errors ['assert_type(property, ParentA) failed']",
     "Line 19: Unexpected errors ['assert_type(property, ChildA) failed']",
+    "Line 27: Unexpected errors ['EXPECTED (cls: ParentB) -> ParentB <: (type[@_], ParamSpec(@_)) -> ParentB']",
     "Line 35: Unexpected errors ['assert_type(ChildB, Self) failed']",
     "Line 37: Unexpected errors ['assert_type(Any, Self) failed', 'Expected `__getitem__` to be a callable, got (list[Self], SupportsIndex) -> Self | (list[Self], slice[Error, Error, Error]) -> list[Self]']",
-    "Line 38: Unexpected errors ['assert_type(Any, Self) failed', 'Expected a callable, got classmethod[@_, @_, @_]']",
+    "Line 38: Unexpected errors ['assert_type(Any, Self) failed', 'Expected a callable, got classmethod[@_, @_, ParentB]']",
+    "Line 40: Unexpected errors ['EXPECTED (cls: ChildB) -> None <: (type[@_], ParamSpec(@_)) -> None']",
     "Line 42: Unexpected errors ['assert_type(ChildB, type[Self]) failed']",
     "Line 44: Unexpected errors ['assert_type(Any, Self) failed', 'Expected `__getitem__` to be a callable, got (list[Self], SupportsIndex) -> Self | (list[Self], slice[Error, Error, Error]) -> list[Self]']",
-    "Line 45: Unexpected errors ['assert_type(Any, Self) failed', 'Expected a callable, got classmethod[@_, @_, @_]']"
+    "Line 45: Unexpected errors ['assert_type(Any, Self) failed', 'Expected a callable, got classmethod[@_, @_, ParentB]']"
   ],
   "generics_self_attributes.py": [
     "Line 22: Unexpected errors ['Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str']",
@@ -793,13 +785,16 @@
     "Line 33: Expected 1 errors",
     "Line 14: Unexpected errors ['assert_type(Shape, Self) failed']",
     "Line 15: Unexpected errors ['Object of class `Shape` has no attribute `scale`']",
+    "Line 25: Unexpected errors ['EXPECTED (cls: Shape, config: dict[str, float]) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape']",
     "Line 27: Unexpected errors ['assert_type(Shape, type[Self]) failed']",
     "Line 28: Unexpected errors ['Expected a callable, got Shape']",
+    "Line 30: Unexpected errors ['EXPECTED (cls: Shape) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape']",
+    "Line 35: Unexpected errors ['EXPECTED (cls: Shape) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape']",
     "Line 37: Unexpected errors ['Expected a callable, got Shape']",
     "Line 40: Unexpected errors ['assert_type(Shape, Self) failed']",
     "Line 52: Unexpected errors ['assert_type(Shape, Circle) failed']",
-    "Line 54: Unexpected errors ['assert_type(Any, Shape) failed', 'Expected a callable, got classmethod[@_, @_, @_]']",
-    "Line 55: Unexpected errors ['assert_type(Any, Circle) failed', 'Expected a callable, got classmethod[@_, @_, @_]']"
+    "Line 54: Unexpected errors ['assert_type(Any, Shape) failed', 'Expected a callable, got classmethod[@_, @_, Shape]']",
+    "Line 55: Unexpected errors ['assert_type(Any, Circle) failed', 'Expected a callable, got classmethod[@_, @_, Shape]']"
   ],
   "generics_self_protocols.py": [
     "Line 61: Expected 1 errors",
@@ -817,7 +812,9 @@
     "Line 116: Expected 1 errors",
     "Line 121: Expected 1 errors",
     "Line 125: Expected 1 errors",
+    "Line 13: Unexpected errors ['EXPECTED (cls: ReturnsSelf) -> ReturnsSelf <: (type[@_], ParamSpec(@_)) -> ReturnsSelf']",
     "Line 15: Unexpected errors ['Expected a callable, got ReturnsSelf']",
+    "Line 28: Unexpected errors ['EXPECTED (cls: ReturnsSelf) -> type[ReturnsSelf] <: (type[@_], ParamSpec(@_)) -> type[ReturnsSelf]']",
     "Line 30: Unexpected errors ['EXPECTED ReturnsSelf <: type[ReturnsSelf]']",
     "Line 50: Unexpected errors ['EXPECTED (self: CallableAttribute) -> int <: (Self) -> int']",
     "Line 59: Unexpected errors [\"Missing argument 'flush'\"]",
@@ -1140,12 +1137,13 @@
     "Line 17: Unexpected errors ['assert_type(tuple[?_, ?_], tuple[str, str]) failed']",
     "Line 31: Unexpected errors ['EXPECTED type[int] <: type[@_]']",
     "Line 32: Unexpected errors ['assert_type(set[?_], set[int]) failed']",
+    "Line 43: Unexpected errors ['EXPECTED (cls: A, val: object) -> TypeGuard[int] <: (type[@_], ParamSpec(@_)) -> TypeGuard[int]']",
     "Line 47: Unexpected errors ['EXPECTED (val: object) -> TypeGuard[int] <: (ParamSpec(@_)) -> TypeGuard[int]']",
     "Line 52: Unexpected errors ['Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None', 'Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type']",
     "Line 55: Unexpected errors ['Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None', 'Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type']",
-    "Line 72: Unexpected errors ['Expected a callable, got classmethod[@_, @_, @_]']",
+    "Line 72: Unexpected errors ['Expected a callable, got classmethod[@_, @_, TypeGuard[int]]']",
     "Line 73: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 76: Unexpected errors ['Expected a callable, got classmethod[@_, @_, @_]']",
+    "Line 76: Unexpected errors ['Expected a callable, got classmethod[@_, @_, TypeGuard[int]]']",
     "Line 77: Unexpected errors ['assert_type(object, int) failed']",
     "Line 80: Unexpected errors ['EXPECTED object <: Args[?_]']",
     "Line 81: Unexpected errors ['assert_type(object, int) failed']",
@@ -1153,6 +1151,7 @@
     "Line 85: Unexpected errors ['assert_type(object, int) failed']",
     "Line 89: Unexpected errors ['assert_type(A, B) failed']",
     "Line 93: Unexpected errors ['assert_type(A, B) failed']",
+    "Line 105: Unexpected errors ['EXPECTED (cls: C) -> TypeGuard[int] <: (type[@_], ParamSpec(@_)) -> TypeGuard[int]']",
     "Line 147: Unexpected errors ['EXPECTED (val: object) -> TypeGuard[int] <: CallableBoolProto']"
   ],
   "narrowing_typeis.py": [
@@ -1166,15 +1165,16 @@
     "Line 35: Unexpected errors ['Expression is not awaitable']",
     "Line 38: Unexpected errors ['assert_type(Awaitable[int] | int, int) failed']",
     "Line 45: Unexpected errors ['EXPECTED bool <: TypeIs[int]']",
+    "Line 47: Unexpected errors ['EXPECTED (cls: A, val: object) -> TypeIs[int] <: (type[@_], ParamSpec(@_)) -> TypeIs[int]']",
     "Line 49: Unexpected errors ['EXPECTED bool <: TypeIs[int]']",
     "Line 51: Unexpected errors ['EXPECTED (val: object) -> TypeIs[int] <: (ParamSpec(@_)) -> TypeIs[int]']",
     "Line 53: Unexpected errors ['EXPECTED bool <: TypeIs[int]']",
     "Line 56: Unexpected errors ['EXPECTED bool <: TypeIs[A]', 'Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None', 'Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type']",
     "Line 59: Unexpected errors ['EXPECTED bool <: TypeIs[?_]', 'Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None', 'Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type']",
     "Line 72: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 75: Unexpected errors ['Expected a callable, got classmethod[@_, @_, @_]']",
+    "Line 75: Unexpected errors ['Expected a callable, got classmethod[@_, @_, TypeIs[int]]']",
     "Line 76: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 79: Unexpected errors ['Expected a callable, got classmethod[@_, @_, @_]']",
+    "Line 79: Unexpected errors ['Expected a callable, got classmethod[@_, @_, TypeIs[int]]']",
     "Line 80: Unexpected errors ['assert_type(object, int) failed']",
     "Line 83: Unexpected errors ['EXPECTED object <: Args[?_]']",
     "Line 84: Unexpected errors ['assert_type(object, int) failed']",
@@ -1183,6 +1183,7 @@
     "Line 92: Unexpected errors ['assert_type(object, B) failed']",
     "Line 96: Unexpected errors ['assert_type(object, B) failed']",
     "Line 106: Unexpected errors ['EXPECTED Literal[False] <: TypeIs[int]']",
+    "Line 108: Unexpected errors ['EXPECTED (cls: C) -> TypeIs[int] <: (type[@_], ParamSpec(@_)) -> TypeIs[int]']",
     "Line 111: Unexpected errors ['EXPECTED Literal[False] <: TypeIs[int]']",
     "Line 128: Unexpected errors ['EXPECTED bool <: TypeIs[int]']",
     "Line 151: Unexpected errors ['EXPECTED (val: object) -> TypeIs[int] <: CallableBoolProto']",
@@ -1226,6 +1227,7 @@
     "Line 27: Unexpected errors [\"Missing argument 'mode'\"]",
     "Line 39: Unexpected errors ['EXPECTED None <: int']",
     "Line 43: Unexpected errors ['EXPECTED () -> int <: (ParamSpec(@_)) -> int']",
+    "Line 47: Unexpected errors ['EXPECTED (cls: Example) -> int <: (type[@_], ParamSpec(@_)) -> int']",
     "Line 102: Unexpected errors ['EXPECTED Literal[2] <: float']",
     "Line 148: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 172: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1234,6 +1236,7 @@
     "Line 194: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 199: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 216: Unexpected errors ['Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None']",
+    "Line 243: Unexpected errors ['EXPECTED (cls: Concrete5_Good4, a: int, b: int) -> float <: (type[@_], ParamSpec(@_)) -> float']",
     "Line 245: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 249: Unexpected errors ['EXPECTED (a: int, b: int) -> float <: (ParamSpec(@_)) -> float']",
     "Line 251: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1276,6 +1279,9 @@
     "Line 47: Unexpected errors ['EXPECTED Module[_protocols_modules2] <: Reporter1']"
   ],
   "protocols_recursive.py": [
+    "Line 45: Unexpected errors ['EXPECTED (cls: ProtoA[?_, ?_], value: ?_) -> None <: (type[@_], ParamSpec(@_)) -> None']",
+    "Line 59: Unexpected errors ['EXPECTED (cls: ImplA, value: int) -> None <: (type[@_], ParamSpec(@_)) -> None']",
+    "Line 71: Unexpected errors ['EXPECTED Forall[T, (cls: type[ProtoB[object, T]], value: list[T]) -> None] <: (type[@_], ParamSpec(@_)) -> @_']",
     "Line 81: Unexpected errors ['assert_type(Any, list[int]) failed']"
   ],
   "protocols_runtime_checkable.py": [
@@ -1301,7 +1307,8 @@
     "Line 61: Expected 1 errors",
     "Line 66: Expected 1 errors",
     "Line 71: Expected 1 errors",
-    "Line 104: Expected 1 errors"
+    "Line 104: Expected 1 errors",
+    "Line 114: Unexpected errors ['EXPECTED (cls: type[Protocol13[?_]]) -> None <: (type[@_], ParamSpec(@_)) -> None']"
   ],
   "qualifiers_annotated.py": [
     "Line 47: Expected 1 errors",
@@ -1342,13 +1349,13 @@
     "Line 21: Expected 1 errors",
     "Line 56: Expected 1 errors",
     "Line 118: Expected 1 errors",
-    "Lines 59, 60: Expected error (tag 'method2')",
     "Lines 67, 75: Expected error (tag 'method4')",
     "Lines 80, 89: Expected error (tag 'Derived3')",
     "Lines 84, 85, 86: Expected error (tag 'Derived3-2')",
     "Lines 94, 102: Expected error (tag 'Derived4')",
     "Lines 125, 126: Expected error (tag 'func')",
     "Line 8: Unexpected errors ['Could not find import of `_qualifiers_final_decorator`, Could not find path for `_qualifiers_final_decorator`']",
+    "Line 31: Unexpected errors ['EXPECTED (cls: Base2) -> None <: (type[@_], ParamSpec(@_)) -> None']",
     "Line 36: Unexpected errors ['EXPECTED () -> None <: (ParamSpec(@_)) -> None']"
   ],
   "specialtypes_any.py": [
@@ -1466,7 +1473,6 @@
     "Line 14: Unexpected errors ['Expected a callable, got type[TypedDict]']"
   ],
   "typeddicts_class_syntax.py": [
-    "Line 33: Expected 1 errors",
     "Line 49: Expected 1 errors",
     "Line 34: Unexpected errors ['TypedDict item `method2` may not be initialized.']",
     "Line 39: Unexpected errors ['TypedDict item `method3` may not be initialized.']"

@@ -366,3 +366,12 @@ def f(x: int) -> int:
 assert_type(f, Callable[[int], int])  # E: assert_type((x: int) -> int, (int) -> int) failed
     "#,
 );
+
+testcase!(
+    test_function_concatenate,
+    r#"
+from typing import Callable, ParamSpec, Concatenate
+P = ParamSpec("P")
+t: Callable[Concatenate[int, P], int]
+"#,
+);

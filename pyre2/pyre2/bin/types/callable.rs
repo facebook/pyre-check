@@ -107,6 +107,13 @@ impl Callable {
         }
     }
 
+    pub fn concatenate(args: Box<[Type]>, param_spec: Type, ret: Type) -> Self {
+        Self {
+            params: Params::ParamSpec(args, param_spec),
+            ret,
+        }
+    }
+
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         self.params.visit(&mut f);
         f(&self.ret)

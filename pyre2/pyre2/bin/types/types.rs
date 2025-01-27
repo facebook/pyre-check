@@ -501,6 +501,13 @@ impl Type {
         Type::Callable(Box::new(Callable::param_spec(p, ret)), Kind::Anon)
     }
 
+    pub fn callable_concatenate(args: Box<[Type]>, param_spec: Type, ret: Type) -> Self {
+        Type::Callable(
+            Box::new(Callable::concatenate(args, param_spec, ret)),
+            Kind::Anon,
+        )
+    }
+
     pub fn forall(self, tparams: TParams) -> Self {
         if tparams.is_empty() {
             self

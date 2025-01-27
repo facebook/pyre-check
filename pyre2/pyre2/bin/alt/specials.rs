@@ -11,6 +11,7 @@ use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::ast::Ast;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::literal::Lit;
@@ -88,6 +89,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     name @ Expr::Name(_) => {
                         let ty = self.expr_untype(name);
                         Type::type_form(Type::callable_param_spec(ty, ret))
+                    }
+                    Expr::Subscript(x) => {
+                        let concat = self.expr_untype(&x.value);
+                        if concat != Type::SpecialForm(SpecialForm::Concatenate) {
+                            self.error(x.value.range(), format!("Callable types can only have `Concatenate` in this position, got `{}`", concat.deterministic_printing()))
+                        } else {
+                            let args_pspec = Ast::unpack_slice(&x.slice);
+                            if args_pspec.len() < 2 {
+                                self.error(
+                                    x.slice.range(),
+                                    format!(
+                                        "`Concatenate` must take at least two arguments, got {}",
+                                        args_pspec.len()
+                                    ),
+                                )
+                            } else {
+                                let args = args_pspec[0..args_pspec.len() - 1]
+                                    .iter()
+                                    .map(|x| self.expr_untype(x))
+                                    .collect();
+                                let pspec = self.expr_untype(args_pspec.last().unwrap());
+                                Type::type_form(Type::callable_concatenate(args, pspec, ret))
+                            }
+                        }
                     }
                     x => self.todo("expr_infer, Callable type", x),
                 }
