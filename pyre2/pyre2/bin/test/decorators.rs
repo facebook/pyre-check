@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_simple_function_decorator,
@@ -94,5 +95,22 @@ testcase!(
     r#"
 from typing import MutableSequence
 x: MutableSequence[int]
+    "#,
+);
+
+testcase_with_bug!(
+    "decorator application appends to the general type",
+    test_decorator_general_type,
+    r#"
+from typing import assert_type, Callable
+
+def decorator(f: Callable[[int], int]) -> int: ...
+
+def anywhere():
+    assert_type(decorated, int) # E: assert_type((x: int) -> int, int) failed
+
+@decorator
+def decorated(x: int) -> int:
+   return x
     "#,
 );
