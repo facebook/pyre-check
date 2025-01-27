@@ -26,6 +26,7 @@ use crate::types::simplify::unions;
 use crate::types::types::Quantified;
 use crate::types::types::Type;
 use crate::types::types::Var;
+use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
 
@@ -211,20 +212,13 @@ impl Solver {
         t: Type,
         uniques: &UniqueFactory,
     ) -> (Vec<Var>, Type) {
-        fn instantiate_fresh(
-            t: Type,
-            gargs: &[Quantified],
-            uniques: &UniqueFactory,
-        ) -> (Vec<Var>, Type) {
-            let mp: SmallMap<Quantified, Type> = gargs
-                .iter()
-                .map(|x| (*x, Var::new(uniques).to_type()))
-                .collect();
-            let res = t.subst(&mp);
-            (mp.into_values().map(|x| x.as_var().unwrap()).collect(), res)
-        }
-
-        let (vs, t) = instantiate_fresh(t, qs, uniques);
+        let vs = qs.map(|_| Var::new(uniques));
+        let t = t.subst(
+            &qs.iter()
+                .copied()
+                .zip(vs.iter().map(|x| x.to_type()))
+                .collect(),
+        );
         let mut lock = self.variables.write().unwrap();
         for v in &vs {
             lock.insert(*v, Variable::Quantified);
