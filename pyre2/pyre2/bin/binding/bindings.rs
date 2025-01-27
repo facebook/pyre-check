@@ -1273,14 +1273,14 @@ impl<'a> BindingsBuilder<'a> {
                 yield_expr_keys.insert(key);
 
                 self.table.insert(
-                    Key::SendTypeOfYield(x.range()),
+                    Key::SendTypeOfYieldAnnotation(x.range()),
                     // collect the value of the yield expression.
-                    Binding::SendTypeOfYield(return_ann, x.range()),
+                    Binding::SendTypeOfYieldAnnotation(return_ann, x.range()),
                 );
                 self.table.insert(
-                    Key::ReturnTypeOfYield(x.range()),
+                    Key::ReturnTypeOfYieldAnnotation(x.range()),
                     // collect the value of the yield expression.
-                    Binding::ReturnTypeOfYield(return_ann, x.range()),
+                    Binding::ReturnTypeOfYieldAnnotation(return_ann, x.range()),
                 );
 
                 self.table.insert(

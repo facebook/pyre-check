@@ -1103,9 +1103,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                 }
 
-                self.get(&Key::SendTypeOfYield(x.range())).arc_clone()
+                self.get(&Key::SendTypeOfYieldAnnotation(x.range()))
+                    .arc_clone()
             }
-            Expr::YieldFrom(_) => self.get(&Key::ReturnTypeOfYield(x.range())).arc_clone(),
+            Expr::YieldFrom(_) => self
+                .get(&Key::ReturnTypeOfYieldAnnotation(x.range()))
+                .arc_clone(),
             Expr::Compare(x) => {
                 let _ty = self.expr_infer(&x.left);
                 let _tys = x.comparators.map(|x| self.expr_infer(x));

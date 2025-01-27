@@ -1057,7 +1057,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .generator(yield_type, Type::any_implicit(), return_type)
                     .to_type()
             }
-            Binding::SendTypeOfYield(ann, range) => {
+            Binding::SendTypeOfYieldAnnotation(ann, range) => {
                 let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
                 match gen_ann {
                     Some(gen_ann) => {
@@ -1089,7 +1089,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => Type::any_explicit(),
                 }
             }
-            Binding::ReturnTypeOfYield(ann, range) => {
+            Binding::ReturnTypeOfYieldAnnotation(ann, range) => {
                 let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
                 match gen_ann {
                     Some(gen_ann) => {
