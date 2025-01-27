@@ -303,6 +303,10 @@ let get_result w =
     | 0, _ -> Printexc.raise_with_backtrace exn backtrace
     | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
         raise SharedMemory.Out_of_shared_memory
+    | _, Unix.WEXITED i when i = Exit_status.(exit_code Hash_table_full) ->
+        raise SharedMemory.Hash_table_full
+    | _, Unix.WEXITED i when i = Exit_status.(exit_code Heap_full) ->
+        raise SharedMemory.Heap_full
     | _, exit_status ->
         raise (Worker_exited_abnormally (w.pid, exit_status))
 
