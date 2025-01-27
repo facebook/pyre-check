@@ -13,6 +13,7 @@ use ruff_python_ast::Comprehension;
 use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBinOp;
+use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprSlice;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Keyword;
@@ -806,6 +807,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.expr_infer_with_hint(x, None)
     }
 
+    fn yield_expr(&self, x: Expr) -> Expr {
+        match x {
+            Expr::Yield(x) => match x.value {
+                Some(x) => *x,
+                None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range() }),
+            },
+            // This case should be unreachable.
+            _ => unreachable!("yield or yield from expression expected"),
+        }
+    }
+
     /// Apply a decorator. This effectively synthesizes a function call.
     pub fn apply_decorator(&self, decorator: &Decorator, decoratee: Type) -> Type {
         if matches!(&decoratee, Type::ClassDef(cls) if cls.has_qname("typing", "TypeVar")) {
@@ -1069,7 +1081,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => self.error(x.range, "Expression is not awaitable".to_owned()),
                 }
             }
-            Expr::Yield(_) => self.get(&Key::SendTypeOfYield(x.range())).arc_clone(),
+            Expr::Yield(_) => {
+                let yield_expr_type = &self
+                    .get(&Key::YieldTypeOfYieldAnnotation(x.clone().range()))
+                    .arc_clone();
+                let yield_value = self.yield_expr(x.clone());
+                let inferred_expr_type = &self.expr_infer(&yield_value);
+
+                if !self.solver().is_subset_eq(
+                    inferred_expr_type,
+                    yield_expr_type,
+                    self.type_order(),
+                ) {
+                    self.error(
+                        x.range(),
+                        format!(
+                            "type {} is not assignable to {}",
+                            inferred_expr_type.clone().deterministic_printing(),
+                            yield_expr_type.clone().deterministic_printing()
+                        ),
+                    );
+                }
+
+                self.get(&Key::SendTypeOfYield(x.range())).arc_clone()
+            }
             Expr::YieldFrom(_) => self.get(&Key::ReturnTypeOfYield(x.range())).arc_clone(),
             Expr::Compare(x) => {
                 let _ty = self.expr_infer(&x.left);

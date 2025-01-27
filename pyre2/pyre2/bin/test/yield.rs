@@ -99,7 +99,7 @@ def my_generator() -> Generator[Yield, Send, Return]:
 
 testcase_with_bug!(
     r#"
-TODO zeina: we should correctly determine the send() type based on the signature of the generator. Additionally, we should correctly handle the return type of the generator.
+TODO zeina: I need to complain here too: y = yield from  my_generator_nested()
     "#,
     test_nested_generator_error,
     r#"
@@ -113,7 +113,7 @@ class Return: pass
 class Yield2: pass
 
 def my_generator_nested() -> Generator[Yield2, Send, Return]:
-    yield Yield()
+    yield Yield() # E: type Yield is not assignable to Yield2
     return Return()
 
 def my_generator() -> Generator[Yield, Send, Return]:

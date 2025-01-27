@@ -1073,6 +1073,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => Type::any_explicit(),
                 }
             }
+            Binding::YieldTypeOfYieldAnnotation(ann, range) => {
+                let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
+                match gen_ann {
+                    Some(gen_ann) => {
+                        let gen_type = gen_ann.get_type();
+
+                        if let Some((yield_type, _, _)) = self.decompose_generator(gen_type) {
+                            yield_type
+                        } else {
+                            self.error(*range, format!("Yield expression found but the function has an incompatible annotation `{gen_type}`"))
+                        }
+                    }
+
+                    None => Type::any_explicit(),
+                }
+            }
             Binding::ReturnTypeOfYield(ann, range) => {
                 let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
                 match gen_ann {

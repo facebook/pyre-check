@@ -1520,6 +1520,26 @@
     },
     {
       "code": -2,
+      "column": 9,
+      "concise_description": "type Literal[3] is not assignable to A",
+      "description": "type Literal[3] is not assignable to A",
+      "line": 57,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 57
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "type Literal[3] is not assignable to A",
+      "description": "type Literal[3] is not assignable to A",
+      "line": 66,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 66
+    },
+    {
+      "code": -2,
       "column": 12,
       "concise_description": "EXPECTED Literal[True] <: None",
       "description": "EXPECTED Literal[True] <: None",
@@ -1527,6 +1547,16 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 71
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "type B is not assignable to A",
+      "description": "type B is not assignable to A",
+      "line": 75,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 75
     },
     {
       "code": -2,
@@ -10555,8 +10585,8 @@
     {
       "code": -2,
       "column": 34,
-      "concise_description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
-      "description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[@_, @_] <: tuple[Error]",
+      "description": "EXPECTED tuple[@_, @_] <: tuple[Error]",
       "line": 36,
       "name": "PyreError",
       "stop_column": 55,
@@ -10625,8 +10655,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown] <: tuple[Error]",
-      "description": "EXPECTED tuple[Unknown, Unknown, Unknown] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[@_, @_, @_] <: tuple[Error]",
+      "description": "EXPECTED tuple[@_, @_, @_] <: tuple[Error]",
       "line": 37,
       "name": "PyreError",
       "stop_column": 72,
@@ -10715,8 +10745,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
-      "description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[@_, @_, @_, @_] <: tuple[Error]",
+      "description": "EXPECTED tuple[@_, @_, @_, @_] <: tuple[Error]",
       "line": 39,
       "name": "PyreError",
       "stop_column": 45,
@@ -10845,8 +10875,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
-      "description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[tuple[Error], tuple[Error]] <: tuple[Error]",
+      "description": "EXPECTED tuple[tuple[Error], tuple[Error]] <: tuple[Error]",
       "line": 43,
       "name": "PyreError",
       "stop_column": 61,
@@ -10925,8 +10955,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
-      "description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[tuple[Error], tuple[Error], tuple[Error], tuple[Error]] <: tuple[Error]",
+      "description": "EXPECTED tuple[tuple[Error], tuple[Error], tuple[Error], tuple[Error]] <: tuple[Error]",
       "line": 45,
       "name": "PyreError",
       "stop_column": 45,

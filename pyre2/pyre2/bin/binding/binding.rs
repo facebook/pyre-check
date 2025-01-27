@@ -103,6 +103,8 @@ pub enum Key {
     SendTypeOfYield(TextRange),
     /// The return type of a yield expression.
     ReturnTypeOfYield(TextRange),
+    /// The return type of a yield expression.
+    YieldTypeOfYieldAnnotation(TextRange),
     /// The type at a specific return point.
     ReturnExpression(ShortIdentifier, TextRange),
     /// The type yielded inside of a specific yield expression inside a function.
@@ -142,6 +144,7 @@ impl Ranged for Key {
             Self::SelfType(x) => x.range(),
             Self::SendTypeOfYield(x) => x.range(),
             Self::ReturnTypeOfYield(x) => x.range(),
+            Self::YieldTypeOfYieldAnnotation(x) => x.range(),
             Self::ReturnExpression(_, r) => *r,
             Self::YieldTypeOfYield(_, r) => *r,
             Self::YieldTypeOfGenerator(x) => x.range(),
@@ -164,6 +167,14 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::SelfType(x) => write!(f, "self {} {:?}", ctx.display(x), x.range()),
             Self::SendTypeOfYield(x) => {
                 write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
+            }
+            Self::YieldTypeOfYieldAnnotation(x) => {
+                write!(
+                    f,
+                    "yield type of yield annotation{} {:?}",
+                    ctx.display(x),
+                    x.range()
+                )
             }
             Self::ReturnTypeOfYield(x) => {
                 write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
@@ -348,6 +359,8 @@ pub enum Binding {
     SendTypeOfYield(Option<Idx<KeyAnnotation>>, TextRange),
     /// Return type of yield
     ReturnTypeOfYield(Option<Idx<KeyAnnotation>>, TextRange),
+    /// Yield type of yield annotation
+    YieldTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
     /// A grouping of both the yield expression types and the return type.
     Generator(Box<Binding>, Box<Binding>),
     /// Actual value of yield expression
@@ -475,6 +488,12 @@ impl DisplayWith<Bindings> for Binding {
             }
             self::Binding::ReturnTypeOfYield(None, _) => {
                 write!(f, "no annotation so send type is Any")
+            }
+            self::Binding::YieldTypeOfYieldAnnotation(Some(x), _) => {
+                write!(f, "annotation containing yield type {}", ctx.display(*x))
+            }
+            self::Binding::YieldTypeOfYieldAnnotation(None, _) => {
+                write!(f, "no annotation so yield type is Any")
             }
             Self::YieldTypeOfYield(x) => write!(f, "yield expr {}", m.display(x)),
             Self::IterableValue(None, x) => write!(f, "iter {}", m.display(x)),
