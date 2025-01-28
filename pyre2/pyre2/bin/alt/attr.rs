@@ -7,6 +7,7 @@
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
+use ruff_python_ast::Expr;
 use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
@@ -81,6 +82,10 @@ impl Attribute {
     }
 
     fn get(self) -> AttributeAccess {
+        self.0
+    }
+
+    fn set(self) -> AttributeAccess {
         self.0
     }
 
@@ -237,6 +242,74 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => attr.get_type(),
             _ => None,
+        }
+    }
+
+    // Note: no closed form for the set type is guaranteed to exist: asking
+    // whether a an attribute set is legal can require synthesizing a call (e.g.
+    // for preoperties with setters, descriptors, or `__setattr__` fallback).
+    //
+    // As a result, no function with this api can be relied upon for valldating
+    // attribute set actions in the general case, use the `check_attr_set.*`
+    // functions instead.
+    fn set_type_or_error(
+        &self,
+        base: Type,
+        attr_name: &Name,
+        range: TextRange,
+        todo_ctx: &str,
+    ) -> Option<Type> {
+        match self.lookup_attr(base, attr_name) {
+            LookupResult::Found(attr) => match attr.set() {
+                AttributeAccess(Ok(ty)) => Some(ty),
+                AttributeAccess(Err(e)) => {
+                    self.error(range, e.to_error_msg(attr_name));
+                    None
+                }
+            },
+            LookupResult::InternalError(e) => {
+                self.error(range, e.to_error_msg(attr_name, todo_ctx));
+                None
+            }
+            LookupResult::NotFound(e) => {
+                self.error(range, e.to_error_msg(attr_name));
+                None
+            }
+        }
+    }
+
+    pub fn check_attr_set_with_expr(
+        &self,
+        base: Type,
+        attr_name: &Name,
+        got: &Expr,
+        range: TextRange,
+        todo_ctx: &str,
+    ) {
+        let want = self.set_type_or_error(base, attr_name, range, todo_ctx);
+        self.expr(got, want.as_ref());
+    }
+
+    pub fn check_attr_set_with_type(
+        &self,
+        base: Type,
+        attr_name: &Name,
+        got: &Type,
+        range: TextRange,
+        todo_ctx: &str,
+    ) {
+        if let Some(want) = self.set_type_or_error(base, attr_name, range, todo_ctx) {
+            if !self.solver().is_subset_eq(got, &want, self.type_order()) {
+                self.error(
+                    range,
+                    format!(
+                        "Could not assign type `{}` to attribute `{}` with type `{}`",
+                        got.clone().deterministic_printing(),
+                        attr_name,
+                        want.deterministic_printing(),
+                    ),
+                );
+            }
         }
     }
 

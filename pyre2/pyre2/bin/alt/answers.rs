@@ -13,7 +13,6 @@ use std::sync::Arc;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
-use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
@@ -621,14 +620,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
-    }
-
-    /// Given an attribute, what is an upper bound for setting an attribute
-    ///
-    /// TODO(stroxler) decouple this from the type of getting the attribute.
-    fn set_type_of_attr(&self, attr: &ExprAttribute) -> Type {
-        let e = Expr::Attribute(attr.clone());
-        self.expr(&e, None)
     }
 
     fn solve_annotation(&self, binding: &BindingAnnotation) -> Arc<Annotation> {
@@ -1553,24 +1544,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Type::None // Unused
             }
             Binding::CheckAssignTypeToAttribute(box (attr, got)) => {
-                let want = self.set_type_of_attr(attr);
+                let base = self.expr(&attr.value, None);
                 let got = self.solve_binding(got);
-                if !self.solver().is_subset_eq(&got, &want, self.type_order()) {
-                    self.error(
-                        attr.range,
-                        format!(
-                            "Could not assign type `{}` to attribute `{}` with type `{}`",
-                            got.as_ref().clone().deterministic_printing(),
-                            &attr.attr.id,
-                            want.deterministic_printing(),
-                        ),
-                    );
-                }
+                self.check_attr_set_with_type(
+                    base,
+                    &attr.attr.id,
+                    &got,
+                    attr.range,
+                    "Answers::solve_binding_inner::CheckAssignTypeToAttribute",
+                );
                 Type::None // Unused
             }
             Binding::CheckAssignExprToAttribute(box (attr, value)) => {
-                let want = self.set_type_of_attr(attr);
-                self.expr(value, Some(&want));
+                let base = self.expr(&attr.value, None);
+                self.check_attr_set_with_expr(
+                    base,
+                    &attr.attr.id,
+                    value,
+                    attr.range,
+                    "Answers::solve_binding_inner::CheckAssignExprToAttribute",
+                );
                 Type::None // Unused
             }
             Binding::NameAssign(name, annot_key, expr) => {
