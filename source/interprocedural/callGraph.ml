@@ -4325,39 +4325,59 @@ module HigherOrderCallGraph = struct
           | Continue ->
               state
           | Define ({ Define.signature = { name; _ }; _ } as define) ->
+              let delocalized_name = Reference.delocalize name in
               let regular_target =
-                define |> Target.create (Reference.delocalize name) |> Target.as_regular_exn
+                define |> Target.create delocalized_name |> Target.as_regular_exn
               in
               let callees =
-                if State.is_bottom state then
-                  regular_target
-                  |> Target.from_regular
-                  |> CallTarget.create
-                  |> CallTarget.Set.singleton
-                else
-                  let parameters_roots, parameters_targets =
-                    state
-                    |> State.to_alist
-                    |> List.map ~f:(fun (variable, call_targets) ->
-                           ( variable,
-                             call_targets
-                             |> CallTarget.Set.elements
-                             |> List.map ~f:CallTarget.target ))
-                    |> List.unzip
-                  in
-                  parameters_targets
-                  |> Algorithms.cartesian_product
-                  |> List.map ~f:(fun parameters_targets ->
-                         Target.Parameterized
-                           {
-                             regular = regular_target;
-                             parameters =
-                               parameters_targets
-                               |> List.zip_exn parameters_roots
-                               |> Target.ParameterMap.of_alist_exn;
-                           }
-                         |> CallTarget.create)
-                  |> CallTarget.Set.of_list
+                (* Since `Define` statements inside another `Define` are stripped out (to avoid
+                   bloat), use this API to query the definition. *)
+                match
+                  PyrePysaEnvironment.ReadOnly.get_function_definition
+                    Context.pyre_api
+                    delocalized_name
+                with
+                | Some
+                    {
+                      Analysis.FunctionDefinition.body =
+                        Some { Node.value = { Define.captures = _ :: _ as captures; _ }; _ };
+                      _;
+                    } ->
+                    let parameters_roots, parameters_targets =
+                      captures
+                      |> List.map ~f:(fun { Define.Capture.name; _ } ->
+                             let captured = State.create_root_from_identifier name in
+                             log
+                               "Inner function `%a` captures `%a`"
+                               Reference.pp
+                               delocalized_name
+                               TaintAccessPath.Root.pp
+                               captured;
+                             ( captured,
+                               state
+                               |> State.get captured
+                               |> CallTarget.Set.elements
+                               |> List.map ~f:CallTarget.target ))
+                      |> List.unzip
+                    in
+                    parameters_targets
+                    |> Algorithms.cartesian_product
+                    |> List.map ~f:(fun parameters_targets ->
+                           Target.Parameterized
+                             {
+                               regular = regular_target;
+                               parameters =
+                                 parameters_targets
+                                 |> List.zip_exn parameters_roots
+                                 |> Target.ParameterMap.of_alist_exn;
+                             }
+                           |> CallTarget.create)
+                    |> CallTarget.Set.of_list
+                | _ ->
+                    regular_target
+                    |> Target.from_regular
+                    |> CallTarget.create
+                    |> CallTarget.Set.singleton
               in
               store_callees
                 ~weak:false

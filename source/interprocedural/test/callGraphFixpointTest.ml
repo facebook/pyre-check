@@ -576,9 +576,6 @@ let test_higher_order_call_graph_fixpoint =
                               ( AccessPath.Root.Variable "$parameter$f",
                                 Target.Regular.Function { name = "test.bar"; kind = Normal }
                                 |> Target.from_regular );
-                              ( AccessPath.Root.Variable "$local_test?decorator$g",
-                                Target.Regular.Function { name = "test.bar"; kind = Normal }
-                                |> Target.from_regular );
                             ]);
                    ];
                };
@@ -625,10 +622,6 @@ let test_higher_order_call_graph_fixpoint =
                                             ( create_positional_parameter 0 "x",
                                               Target.Regular.Function
                                                 { name = "test.baz"; kind = Normal }
-                                              |> Target.from_regular );
-                                            ( AccessPath.Root.Variable "$local_test?decorator$g",
-                                              Target.Regular.Function
-                                                { name = "test.foo"; kind = Normal }
                                               |> Target.from_regular );
                                             ( AccessPath.Root.Variable "$parameter$f",
                                               Target.Regular.Function
@@ -730,18 +723,9 @@ let test_higher_order_call_graph_fixpoint =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Function
-                                             { name = "test.decorator.wrapper"; kind = Normal })
-                                        ~parameters:
-                                          [
-                                            ( AccessPath.Root.Variable "$parameter$f",
-                                              Target.Regular.Function
-                                                { name = "test.decorated"; kind = Normal }
-                                              |> Target.from_regular );
-                                          ]);
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function
+                                        { name = "test.decorator.wrapper"; kind = Normal });
                                  ]
                                ())) );
                      ( "14:9-14:23",
