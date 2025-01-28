@@ -39,10 +39,10 @@ pub struct Attribute(AttributeAccess);
 /// The operation is either permitted with an attribute `Type`, or is not allowed
 /// and has a reason.
 #[derive(Clone)]
-pub struct AttributeAccess(pub Result<Type, AccessNotAllowed>);
+struct AttributeAccess(Result<Type, AccessNotAllowed>);
 
 impl AttributeAccess {
-    pub fn allowed(ty: Type) -> Self {
+    fn allowed(ty: Type) -> Self {
         AttributeAccess(Ok(ty))
     }
 
@@ -80,7 +80,7 @@ impl Attribute {
         Attribute(AttributeAccess::not_allowed(reason))
     }
 
-    pub fn get(self) -> AttributeAccess {
+    fn get(self) -> AttributeAccess {
         self.0
     }
 
