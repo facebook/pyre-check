@@ -190,13 +190,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// error and return `Any`. Use this to infer the type of a direct attribute fetch.
     pub fn type_of_attr_get(
         &self,
-        ty: Type,
+        base: Type,
         attr_name: &Name,
         range: TextRange,
         todo_ctx: &str,
     ) -> Type {
         match self
-            .lookup_attr(ty, attr_name)
+            .lookup_attr(base, attr_name)
             .get_type_or_conflated_error_msg(attr_name, todo_ctx)
         {
             Ok(ty) => ty,
@@ -209,12 +209,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// to infer special methods where we can fall back if it is missing (for example binary operators).
     pub fn type_of_attr_get_if_found(
         &self,
-        ty: Type,
+        base: Type,
         attr_name: &Name,
         range: TextRange,
         todo_ctx: &str,
     ) -> Option<Type> {
-        match self.lookup_attr(ty, attr_name) {
+        match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => match attr.get() {
                 AttributeAccess(Ok(ty)) => Some(ty),
                 AttributeAccess(Err(e)) => Some(self.error(range, e.to_error_msg(attr_name))),
@@ -233,15 +233,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Compute the get (i.e. read) type of an attribute if it is gettable. If it is not found or
     /// access is denied, return `None`; never produce a type error. Used for internal special cases
     /// like checking enum values.
-    pub fn type_of_attr_get_if_gettable(&self, ty: Type, attr_name: &Name) -> Option<Type> {
-        match self.lookup_attr(ty, attr_name) {
+    pub fn type_of_attr_get_if_gettable(&self, base: Type, attr_name: &Name) -> Option<Type> {
+        match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => attr.get_type(),
             _ => None,
         }
     }
 
-    fn lookup_attr(&self, ty: Type, attr_name: &Name) -> LookupResult {
-        match self.as_attribute_base(ty.clone(), self.stdlib) {
+    fn lookup_attr(&self, base: Type, attr_name: &Name) -> LookupResult {
+        match self.as_attribute_base(base.clone(), self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
                 match self.get_instance_attribute(&class, attr_name) {
                     Some(attr) => LookupResult::Found(attr),
@@ -294,7 +294,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Some(AttributeBase::Any(style)) => LookupResult::found_type(style.propagate()),
             Some(AttributeBase::Never) => LookupResult::found_type(Type::never()),
-            None => LookupResult::InternalError(InternalError::AttributeBaseUndefined(ty)),
+            None => LookupResult::InternalError(InternalError::AttributeBaseUndefined(base)),
         }
     }
 
