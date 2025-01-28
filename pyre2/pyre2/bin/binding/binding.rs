@@ -436,6 +436,14 @@ pub enum Binding {
     CheckLegacyTypeParam(Idx<KeyLegacyTypeParam>, Option<TextRange>),
     /// An expectation that the types are identical, with an associated name for error messages.
     Eq(Idx<KeyAnnotation>, Idx<KeyAnnotation>, Name),
+    /// Verify that an attribute assignment or annotation is legal, given an expr for the
+    /// assignment (use this when an expr is available, to get bidirectional typing).
+    #[allow(dead_code)]
+    CheckAssignExprToAttribute(Box<(ExprAttribute, Expr)>),
+    /// Verify that an attribute assignment or annotation is legal, given a type for the
+    /// assignment (use this when no expr is available).
+    #[allow(dead_code)]
+    CheckAssignTypeToAttribute(Box<(ExprAttribute, Binding)>),
     /// An assignment to a name.
     NameAssign(Name, Option<Idx<KeyAnnotation>>, Box<Expr>),
     /// A type alias declared with the `type` soft keyword
@@ -599,6 +607,24 @@ impl DisplayWith<Bindings> for Binding {
                 ctx.display(*k2),
                 name
             ),
+            Self::CheckAssignExprToAttribute(box (attr, value)) => {
+                write!(
+                    f,
+                    "check assign expr to attr {}.{} {}",
+                    m.display(attr.value.as_ref()),
+                    attr.attr,
+                    m.display(value),
+                )
+            }
+            Self::CheckAssignTypeToAttribute(box (attr, binding)) => {
+                write!(
+                    f,
+                    "check assign type to attr {}.{} ({})",
+                    m.display(attr.value.as_ref()),
+                    attr.attr,
+                    binding.display_with(ctx)
+                )
+            }
             Self::NameAssign(name, None, expr) => {
                 write!(f, "{} = {}", name, expr.display_with(ctx.module_info()))
             }

@@ -13,6 +13,7 @@ use std::sync::Arc;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
@@ -622,6 +623,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    /// Given an attribute, what is an upper bound for setting an attribute
+    ///
+    /// TODO(stroxler) decouple this from the type of getting the attribute.
+    fn set_type_of_attr(&self, attr: &ExprAttribute) -> Type {
+        let e = Expr::Attribute(attr.clone());
+        self.expr(&e, None)
+    }
+
     fn solve_annotation(&self, binding: &BindingAnnotation) -> Arc<Annotation> {
         match binding {
             BindingAnnotation::AnnotateExpr(x, self_type) => {
@@ -636,9 +645,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             BindingAnnotation::Type(x) => Arc::new(Annotation::new_type(x.clone())),
             BindingAnnotation::AttrType(attr) => {
-                let e = Expr::Attribute(attr.clone());
-                let t = self.expr(&e, None);
-                Arc::new(Annotation::new_type(t))
+                Arc::new(Annotation::new_type(self.set_type_of_attr(attr)))
             }
             BindingAnnotation::Forward(k) => {
                 Arc::new(Annotation::new_type(self.get_idx(*k).arc_clone()))
@@ -1546,6 +1553,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ),
                     );
                 }
+                Type::None // Unused
+            }
+            Binding::CheckAssignTypeToAttribute(box (attr, got)) => {
+                let want = self.set_type_of_attr(attr);
+                let got = self.solve_binding(binding);
+                if !self.solver().is_subset_eq(&got, &want, self.type_order()) {
+                    self.error(
+                        attr.range,
+                        format!(
+                            "Could not assign type `{}` to attribute `{}` with type `{}`",
+                            got.as_ref().clone().deterministic_printing(),
+                            &attr.attr.id,
+                            want.deterministic_printing(),
+                        ),
+                    );
+                }
+                Type::None // Unused
+            }
+            Binding::CheckAssignExprToAttribute(box (attr, value)) => {
+                let want = self.set_type_of_attr(attr);
+                self.expr(value, Some(&want));
                 Type::None // Unused
             }
             Binding::NameAssign(name, annot_key, expr) => {
