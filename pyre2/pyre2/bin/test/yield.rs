@@ -118,7 +118,7 @@ def my_generator_nested() -> Generator[Yield2, Send, Return]:
 
 def my_generator() -> Generator[Yield, Send, Return]:
     s = yield Yield()
-    y = yield from  my_generator_nested()
+    y = yield from  my_generator_nested() # E: type Generator[Yield2, Send, Return] is not assignable to Generator[Yield, Send, Return]
     
     reveal_type(s) # E: revealed type: Send
     reveal_type(y) # E: revealed type: Return

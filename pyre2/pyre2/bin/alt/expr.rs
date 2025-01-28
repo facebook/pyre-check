@@ -1107,9 +1107,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.get(&Key::SendTypeOfYieldAnnotation(x.range()))
                     .arc_clone()
             }
-            Expr::YieldFrom(_) => self
-                .get(&Key::ReturnTypeOfYieldAnnotation(x.range()))
-                .arc_clone(),
+            Expr::YieldFrom(y) => {
+                let inferred_expr_type = &self.expr_infer(&y.value);
+
+                let final_generator_type = &self
+                    .get(&Key::TypeOfYieldAnnotation(x.clone().range()))
+                    .arc_clone();
+
+                if !self.solver().is_subset_eq(
+                    inferred_expr_type,
+                    final_generator_type,
+                    self.type_order(),
+                ) {
+                    self.error(
+                        x.range(),
+                        format!(
+                            "type {} is not assignable to {}",
+                            inferred_expr_type.clone().deterministic_printing(),
+                            final_generator_type.clone().deterministic_printing()
+                        ),
+                    );
+                }
+                self.get(&Key::ReturnTypeOfYieldAnnotation(x.range()))
+                    .arc_clone()
+            }
             Expr::Compare(x) => {
                 let _ty = self.expr_infer(&x.left);
                 let _tys = x.comparators.map(|x| self.expr_infer(x));

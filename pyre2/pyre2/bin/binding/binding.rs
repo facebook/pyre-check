@@ -99,6 +99,8 @@ pub enum Key {
     Definition(ShortIdentifier),
     /// I am the self type for a particular class.
     SelfType(ShortIdentifier),
+    /// The final type of a yield expression.
+    TypeOfYieldAnnotation(TextRange),
     /// The send type of a yield expression.
     SendTypeOfYieldAnnotation(TextRange),
     /// The return type of a yield expression.
@@ -142,6 +144,7 @@ impl Ranged for Key {
             Self::Import(_, r) => *r,
             Self::Definition(x) => x.range(),
             Self::SelfType(x) => x.range(),
+            Self::TypeOfYieldAnnotation(x) => x.range(),
             Self::SendTypeOfYieldAnnotation(x) => x.range(),
             Self::ReturnTypeOfYieldAnnotation(x) => x.range(),
             Self::YieldTypeOfYieldAnnotation(x) => x.range(),
@@ -165,6 +168,9 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::Import(n, r) => write!(f, "import {n} {r:?}"),
             Self::Definition(x) => write!(f, "{} {:?}", ctx.display(x), x.range()),
             Self::SelfType(x) => write!(f, "self {} {:?}", ctx.display(x), x.range()),
+            Self::TypeOfYieldAnnotation(x) => {
+                write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
+            }
             Self::SendTypeOfYieldAnnotation(x) => {
                 write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
             }

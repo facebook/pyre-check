@@ -1307,7 +1307,7 @@ impl<'a> BindingsBuilder<'a> {
         let mut return_type = Binding::phi(return_expr_keys);
         if !yield_exprs.is_empty() {
             let mut yield_expr_keys = SmallSet::with_capacity(yield_exprs.len());
-            for x in yield_exprs {
+            for x in yield_exprs.clone() {
                 let key = self.table.insert(
                     Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range()),
                     // collect the value of the yield expression.
@@ -1345,8 +1345,13 @@ impl<'a> BindingsBuilder<'a> {
         }
         self.table.insert(
             Key::ReturnType(ShortIdentifier::new(&func_name)),
-            return_type,
+            return_type.clone(),
         );
+
+        for x in yield_exprs {
+            self.table
+                .insert(Key::TypeOfYieldAnnotation(x.range()), return_type.clone());
+        }
     }
 
     fn class_def(&mut self, mut x: StmtClassDef) {
