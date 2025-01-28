@@ -1089,20 +1089,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let yield_value = self.yield_expr(x.clone());
                 let inferred_expr_type = &self.expr_infer(&yield_value);
 
-                if !self.solver().is_subset_eq(
-                    inferred_expr_type,
-                    yield_expr_type,
-                    self.type_order(),
-                ) {
-                    self.error(
-                        x.range(),
-                        format!(
-                            "type {} is not assignable to {}",
-                            inferred_expr_type.clone().deterministic_printing(),
-                            yield_expr_type.clone().deterministic_printing()
-                        ),
-                    );
-                }
+                self.check_type(yield_expr_type, inferred_expr_type, x.clone().range());
 
                 self.get(&Key::SendTypeOfYieldAnnotation(x.range()))
                     .arc_clone()
@@ -1114,20 +1101,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .get(&Key::TypeOfYieldAnnotation(x.clone().range()))
                     .arc_clone();
 
-                if !self.solver().is_subset_eq(
-                    inferred_expr_type,
-                    final_generator_type,
-                    self.type_order(),
-                ) {
-                    self.error(
-                        x.range(),
-                        format!(
-                            "type {} is not assignable to {}",
-                            inferred_expr_type.clone().deterministic_printing(),
-                            final_generator_type.clone().deterministic_printing()
-                        ),
-                    );
-                }
+                self.check_type(final_generator_type, inferred_expr_type, x.clone().range());
+
                 self.get(&Key::ReturnTypeOfYieldAnnotation(x.range()))
                     .arc_clone()
             }
