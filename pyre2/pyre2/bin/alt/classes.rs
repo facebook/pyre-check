@@ -885,13 +885,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get_typed_dict_from_key(&self, key: Idx<Key>) -> Option<TypedDict> {
+    pub fn is_key_typed_dict(&self, key: Idx<Key>) -> bool {
         match self.get_idx(key).deref() {
-            Type::ClassDef(cls) => match self.promote_silently(cls) {
-                Type::TypedDict(typed_dict) => Some(typed_dict),
-                _ => None,
-            },
-            _ => None,
+            Type::ClassDef(cls) => self.get_metadata_for_class(cls).is_typed_dict(),
+            _ => false,
         }
     }
 

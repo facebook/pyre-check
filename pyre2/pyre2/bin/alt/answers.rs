@@ -1014,9 +1014,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
-        if self
-            .get_typed_dict_from_key(field.class.to_owned())
-            .is_some()
+        if self.is_key_typed_dict(field.class)
             && matches!(field.initialization, ClassFieldInitialization::Class)
         {
             self.error(
