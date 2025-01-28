@@ -3344,16 +3344,6 @@
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "Inconsistent type annotations for xx: str, Error",
-      "description": "Inconsistent type annotations for xx: str, Error",
-      "line": 65,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 65
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "TODO: Answers::apply_special_form cannot handle `ClassVar[str]`",
       "description": "TODO: Answers::apply_special_form cannot handle `ClassVar[str]`",
@@ -10695,8 +10685,8 @@
     {
       "code": -2,
       "column": 34,
-      "concise_description": "EXPECTED tuple[@_, @_] <: tuple[Error]",
-      "description": "EXPECTED tuple[@_, @_] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
+      "description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
       "line": 36,
       "name": "PyreError",
       "stop_column": 55,
@@ -10765,8 +10755,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED tuple[@_, @_, @_] <: tuple[Error]",
-      "description": "EXPECTED tuple[@_, @_, @_] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown] <: tuple[Error]",
+      "description": "EXPECTED tuple[Unknown, Unknown, Unknown] <: tuple[Error]",
       "line": 37,
       "name": "PyreError",
       "stop_column": 72,
@@ -10855,8 +10845,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED tuple[@_, @_, @_, @_] <: tuple[Error]",
-      "description": "EXPECTED tuple[@_, @_, @_, @_] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
+      "description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
       "line": 39,
       "name": "PyreError",
       "stop_column": 45,
@@ -10985,8 +10975,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED tuple[tuple[Error], tuple[Error]] <: tuple[Error]",
-      "description": "EXPECTED tuple[tuple[Error], tuple[Error]] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
+      "description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
       "line": 43,
       "name": "PyreError",
       "stop_column": 61,
@@ -11065,8 +11055,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED tuple[tuple[Error], tuple[Error], tuple[Error], tuple[Error]] <: tuple[Error]",
-      "description": "EXPECTED tuple[tuple[Error], tuple[Error], tuple[Error], tuple[Error]] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
+      "description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
       "line": 45,
       "name": "PyreError",
       "stop_column": 45,
@@ -15917,16 +15907,6 @@
     },
     {
       "code": -2,
-      "column": 20,
-      "concise_description": "Inconsistent type annotations for temp: list[int], Error",
-      "description": "Inconsistent type annotations for temp: list[int], Error",
-      "line": 67,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 67
-    },
-    {
-      "code": -2,
       "column": 30,
       "concise_description": "EXPECTED Literal[2] <: float",
       "description": "EXPECTED Literal[2] <: float",
@@ -16753,16 +16733,6 @@
       "line": 63,
       "name": "PyreError",
       "stop_column": 17,
-      "stop_line": 63
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "Inconsistent type annotations for id4: int, Error",
-      "description": "Inconsistent type annotations for id4: int, Error",
-      "line": 63,
-      "name": "PyreError",
-      "stop_column": 29,
       "stop_line": 63
     },
     {

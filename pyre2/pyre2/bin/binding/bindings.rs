@@ -1427,7 +1427,7 @@ impl<'a> BindingsBuilder<'a> {
         if let ScopeKind::ClassBody(body) = last_scope.kind {
             for (method_name, instance_attributes) in body.instance_attributes_by_method {
                 if method_name == dunder::INIT {
-                    for (name, attribute) in instance_attributes {
+                    for (name, InstanceAttribute(value, annotation, range)) in instance_attributes {
                         if !fields.contains(&name) {
                             fields.insert(name.clone());
                             self.table.insert(
@@ -1435,12 +1435,14 @@ impl<'a> BindingsBuilder<'a> {
                                 BindingClassField {
                                     class: definition_key,
                                     name,
-                                    value: attribute.0,
-                                    annotation: attribute.1,
-                                    range: attribute.2,
+                                    value,
+                                    annotation,
+                                    range,
                                     initialization: ClassFieldInitialization::Instance,
                                 },
                             );
+                        } else if annotation.is_some() {
+                            self.error(range, format!("Attribute `{name}` is declared in the class body, so the assignment here should not have an annotation."));
                         }
                     }
                 }
@@ -1886,11 +1888,6 @@ impl<'a> BindingsBuilder<'a> {
                 Expr::Attribute(attr) => {
                     self.ensure_expr(&attr.value);
                     self.ensure_type(&mut x.annotation, &mut None);
-                    // This is the type of the attribute.
-                    let attr_key = self.table.insert(
-                        KeyAnnotation::AttrAnnotation(attr.range),
-                        BindingAnnotation::AttrType(attr.clone()),
-                    );
                     // This is the type annotation on the assignment.
                     let ann_key = self.table.insert(
                         KeyAnnotation::AttrAnnotation(x.annotation.range()),
@@ -1900,12 +1897,7 @@ impl<'a> BindingsBuilder<'a> {
                         Some(v) => Binding::Expr(None, *v.clone()),
                         None => Binding::AnyType(AnyStyle::Implicit),
                     };
-                    if self.bind_attr_if_self(&attr, value_type, Some(ann_key)) {
-                        self.table.insert(
-                            Key::Expect(attr.range),
-                            Binding::Eq(ann_key, attr_key, attr.attr.id),
-                        );
-                    } else {
+                    if !self.bind_attr_if_self(&attr, value_type, Some(ann_key)) {
                         self.errors.add(
                             &self.module_info,
                             x.range,
@@ -1917,9 +1909,15 @@ impl<'a> BindingsBuilder<'a> {
                         );
                     }
                     if let Some(v) = x.value {
+                        // This is the type of the attribute, which may not agree with `ann_key` if there
+                        // are duplicated annotations.
+                        let attr_key = self.table.insert(
+                            KeyAnnotation::AttrAnnotation(attr.range),
+                            BindingAnnotation::AttrType(attr.clone()),
+                        );
                         self.ensure_expr(&v);
                         self.table
-                            .insert(Key::Anon(v.range()), Binding::Expr(Some(ann_key), *v));
+                            .insert(Key::Anon(v.range()), Binding::Expr(Some(attr_key), *v));
                     }
                 }
                 _ => self.todo("Bindings::stmt AnnAssign", &x),
