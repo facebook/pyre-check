@@ -167,15 +167,14 @@ reveal_type(f(3)) # E: revealed type: Generator[int, None, None]
 );
 
 testcase_with_bug!(
-    "TODO zeina: This should typecheck; we should first support async generators.",
+    "TODO zeina: there is a yieldFrom error message here, which is incorrect. We can probably avoid this by not creating yield and yieldFrom bindings unnecessarily.",
     test_async_generator_basic_type,
     r#"
-from typing import AsyncGenerator, reveal_type # E: Could not import `AsyncGenerator` from `typing`
+from typing import AsyncGenerator, reveal_type
 
 async def async_count_up_to() -> AsyncGenerator[int, None]:
-    yield 2 # E: Yield expression found but the function has an incompatible annotation `Error` # E: YieldFrom expression found but the function has an incompatible annotation `Error`
-
-reveal_type(async_count_up_to()) # E: revealed type: Coroutine[Unknown, Unknown, Error]
+    yield 2 # E: Yield expression found but the function has an incompatible annotation `AsyncGenerator[int, None]` # E: YieldFrom expression found but the function has an incompatible annotation `AsyncGenerator[int, None]`
+reveal_type(async_count_up_to()) # E: revealed type: Coroutine[Unknown, Unknown, AsyncGenerator[int, None]]
 
 "#,
 );
