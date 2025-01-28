@@ -28,7 +28,7 @@ class A:
     x: int
     y: str
 def f(a: A):
-    a.x, a.y = "x", "y"
+    a.x, a.y = "x", "y"  # E: Could not assign type `Literal['x']` to attribute `x` with type `int`
     "#,
 );
 

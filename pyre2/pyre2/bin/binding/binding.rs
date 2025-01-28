@@ -441,7 +441,6 @@ pub enum Binding {
     CheckAssignExprToAttribute(Box<(ExprAttribute, Expr)>),
     /// Verify that an attribute assignment or annotation is legal, given a type for the
     /// assignment (use this when no expr is available).
-    #[allow(dead_code)]
     CheckAssignTypeToAttribute(Box<(ExprAttribute, Binding)>),
     /// An assignment to a name.
     NameAssign(Name, Option<Idx<KeyAnnotation>>, Box<Expr>),
@@ -696,8 +695,6 @@ pub enum BindingAnnotation {
     AnnotateExpr(Expr, Option<Idx<Key>>),
     /// A literal type we know statically.
     Type(Type),
-    /// Type of an attribute.
-    AttrType(ExprAttribute),
     /// A forward reference to another binding.
     Forward(Idx<Key>),
 }
@@ -716,7 +713,6 @@ impl DisplayWith<Bindings> for BindingAnnotation {
             ),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
             Self::Type(t) => write!(f, "type {t}"),
-            Self::AttrType(attr) => write!(f, "type {attr:?}"),
         }
     }
 }

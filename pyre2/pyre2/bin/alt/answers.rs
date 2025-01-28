@@ -644,9 +644,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Arc::new(ann)
             }
             BindingAnnotation::Type(x) => Arc::new(Annotation::new_type(x.clone())),
-            BindingAnnotation::AttrType(attr) => {
-                Arc::new(Annotation::new_type(self.set_type_of_attr(attr)))
-            }
             BindingAnnotation::Forward(k) => {
                 Arc::new(Annotation::new_type(self.get_idx(*k).arc_clone()))
             }
@@ -1557,7 +1554,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::CheckAssignTypeToAttribute(box (attr, got)) => {
                 let want = self.set_type_of_attr(attr);
-                let got = self.solve_binding(binding);
+                let got = self.solve_binding(got);
                 if !self.solver().is_subset_eq(&got, &want, self.type_order()) {
                     self.error(
                         attr.range,
