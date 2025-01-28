@@ -505,11 +505,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn get_enum_from_class(&self, cls: &Class) -> Option<Enum> {
-        if let Type::ClassType(cls) = self.promote_silently(cls) {
-            self.get_enum_from_class_type(&cls)
-        } else {
-            None
+        let metadata = self.get_metadata_for_class(cls);
+        if metadata.is_typed_dict() {
+            return None;
         }
+        let targs = self.create_default_targs(cls, None);
+        self.get_enum_from_class_type(&ClassType::new(cls.dupe(), targs))
     }
 
     pub fn get_enum_from_class_type(&self, cls: &ClassType) -> Option<Enum> {
