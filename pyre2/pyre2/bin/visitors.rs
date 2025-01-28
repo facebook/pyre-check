@@ -27,29 +27,37 @@ impl Visitors {
             .for_each(|x| Visitors::visit_stmt_expr(x, &mut f));
     }
 
-    pub fn visit_stmt<'a>(x: &'a Stmt, f: impl FnMut(&'a Stmt)) {
+    pub fn visit_stmt<'a>(x: &'a Stmt, mut f: impl FnMut(&'a [Stmt])) {
         match x {
-            Stmt::FunctionDef(x) => x.body.iter().for_each(f),
-            Stmt::ClassDef(x) => x.body.iter().for_each(f),
-            Stmt::For(x) => x.body.iter().chain(&x.orelse).for_each(f),
-            Stmt::While(x) => x.body.iter().chain(&x.orelse).for_each(f),
-            Stmt::If(x) => {
-                x.body
-                    .iter()
-                    .chain(x.elif_else_clauses.iter().flat_map(|x| x.body.iter()))
-                    .for_each(f);
+            Stmt::FunctionDef(x) => f(&x.body),
+            Stmt::ClassDef(x) => f(&x.body),
+            Stmt::For(x) => {
+                f(&x.body);
+                f(&x.orelse)
             }
-            Stmt::With(x) => x.body.iter().for_each(f),
-            Stmt::Match(x) => x.cases.iter().flat_map(|x| x.body.iter()).for_each(f),
+            Stmt::While(x) => {
+                f(&x.body);
+                f(&x.orelse);
+            }
+            Stmt::If(x) => {
+                f(&x.body);
+                for x in x.elif_else_clauses.iter() {
+                    f(&x.body);
+                }
+            }
+            Stmt::With(x) => f(&x.body),
+            Stmt::Match(x) => {
+                for x in x.cases.iter() {
+                    f(&x.body);
+                }
+            }
             Stmt::Try(x) => {
-                x.body
-                    .iter()
-                    .chain(x.handlers.iter().flat_map(|x| match x {
-                        ExceptHandler::ExceptHandler(x) => x.body.iter(),
-                    }))
-                    .chain(x.orelse.iter())
-                    .chain(x.finalbody.iter())
-                    .for_each(f);
+                f(&x.body);
+                x.handlers.iter().for_each(|x| match x {
+                    ExceptHandler::ExceptHandler(x) => f(&x.body),
+                });
+                f(&x.orelse);
+                f(&x.finalbody);
             }
             _ => {}
         }

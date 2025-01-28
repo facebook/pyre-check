@@ -91,7 +91,17 @@ impl Ast {
         module_name: ModuleName,
         is_init: bool,
     ) -> SmallMap<ModuleName, TextRange> {
-        fn f(
+        fn stmts(
+            xs: &[Stmt],
+            module_name: ModuleName,
+            is_init: bool,
+            imports: &mut SmallMap<ModuleName, TextRange>,
+        ) {
+            for x in xs {
+                stmt(x, module_name, is_init, imports);
+            }
+        }
+        fn stmt(
             x: &Stmt,
             module_name: ModuleName,
             is_init: bool,
@@ -116,12 +126,10 @@ impl Ast {
                 }
                 _ => {}
             }
-            Visitors::visit_stmt(x, |x| f(x, module_name, is_init, imports));
+            Visitors::visit_stmt(x, |xs| stmts(xs, module_name, is_init, imports));
         }
         let mut imports = SmallMap::new();
-        for x in &module.body {
-            f(x, module_name, is_init, &mut imports);
-        }
+        stmts(&module.body, module_name, is_init, &mut imports);
         imports
     }
 
