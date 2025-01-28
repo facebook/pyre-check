@@ -438,7 +438,6 @@ pub enum Binding {
     Eq(Idx<KeyAnnotation>, Idx<KeyAnnotation>, Name),
     /// Verify that an attribute assignment or annotation is legal, given an expr for the
     /// assignment (use this when an expr is available, to get bidirectional typing).
-    #[allow(dead_code)]
     CheckAssignExprToAttribute(Box<(ExprAttribute, Expr)>),
     /// Verify that an attribute assignment or annotation is legal, given a type for the
     /// assignment (use this when no expr is available).

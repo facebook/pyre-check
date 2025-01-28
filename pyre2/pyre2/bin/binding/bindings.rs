@@ -1888,16 +1888,15 @@ impl<'a> BindingsBuilder<'a> {
                 Expr::Attribute(attr) => {
                     self.ensure_expr(&attr.value);
                     self.ensure_type(&mut x.annotation, &mut None);
-                    // This is the type annotation on the assignment.
                     let ann_key = self.table.insert(
                         KeyAnnotation::AttrAnnotation(x.annotation.range()),
                         BindingAnnotation::AnnotateExpr(*x.annotation, None),
                     );
-                    let value_type = match &x.value {
+                    let value_binding = match &x.value {
                         Some(v) => Binding::Expr(None, *v.clone()),
                         None => Binding::AnyType(AnyStyle::Implicit),
                     };
-                    if !self.bind_attr_if_self(&attr, value_type, Some(ann_key)) {
+                    if !self.bind_attr_if_self(&attr, value_binding, Some(ann_key)) {
                         self.errors.add(
                             &self.module_info,
                             x.range,
@@ -1908,16 +1907,12 @@ impl<'a> BindingsBuilder<'a> {
                             ),
                         );
                     }
-                    if let Some(v) = x.value {
-                        // This is the type of the attribute, which may not agree with `ann_key` if there
-                        // are duplicated annotations.
-                        let attr_key = self.table.insert(
-                            KeyAnnotation::AttrAnnotation(attr.range),
-                            BindingAnnotation::AttrType(attr.clone()),
-                        );
+                    if let Some(box v) = x.value {
                         self.ensure_expr(&v);
-                        self.table
-                            .insert(Key::Anon(v.range()), Binding::Expr(Some(attr_key), *v));
+                        self.table.insert(
+                            Key::Anon(v.range()),
+                            Binding::CheckAssignExprToAttribute(Box::new((attr, v))),
+                        );
                     }
                 }
                 _ => self.todo("Bindings::stmt AnnAssign", &x),
