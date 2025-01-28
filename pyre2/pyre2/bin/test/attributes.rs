@@ -7,6 +7,7 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_set_attribute,
@@ -16,6 +17,18 @@ class A:
 def f(a: A):
     a.x = 1  # OK
     a.x = "oops"  # E: EXPECTED Literal['oops'] <: int
+    "#,
+);
+
+testcase_with_bug!(
+    "We incorreclty propagate annotation in complex targets",
+    test_set_attribute_in_unpacked_assign,
+    r#"
+class A:
+    x: int
+    y: str
+def f(a: A):
+    a.x, a.y = 1, "y"  # E: EXPECTED tuple[Literal[1], Literal['y']] <: int  # E: `int` is not iterable  # E: EXPECTED tuple[Literal[1], Literal['y']] <: str
     "#,
 );
 

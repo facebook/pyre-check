@@ -477,3 +477,13 @@ x = y  # this should be an error
 y = 42
     "#,
 );
+
+testcase_with_bug!(
+    "We incorrectly check the value against `ann` of sub-expressions of the target",
+    test_assign_multiple_with_existing_annotations,
+    r#"
+x: int
+y: str
+x, y = 1, "test"  # E: EXPECTED tuple[Literal[1], Literal['test']] <: int # E: Type `int` is not iterable  # E: EXPECTED tuple[Literal[1], Literal['test']] <: str
+    "#,
+);
