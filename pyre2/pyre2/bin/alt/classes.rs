@@ -329,6 +329,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> ClassMetadata {
         let mut is_typed_dict = false;
         let mut is_named_tuple = false;
+        let mut is_enum = false;
         let bases: Vec<BaseClass> = bases.iter().map(|x| self.base_class_of(x)).collect();
         let is_protocol = bases.iter().any(|x| matches!(x, BaseClass::Protocol(_)));
         let bases_with_metadata: Vec<_> = bases
@@ -396,6 +397,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
         if let Some(metaclass) = &metaclass {
             self.check_base_class_metaclasses(cls, metaclass, &base_metaclasses);
+            is_enum = self.solver().is_subset_eq(
+                &Type::ClassType(metaclass.clone()),
+                &Type::ClassType(self.stdlib.enum_meta()),
+                self.type_order(),
+            );
             if is_typed_dict {
                 self.error(
                     cls.name().range,
@@ -411,6 +417,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             keywords,
             is_typed_dict,
             is_named_tuple,
+            is_enum,
             is_protocol,
             self.errors(),
         )
@@ -528,23 +535,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn get_enum_from_class_and_targs(&self, cls: Class, targs: TArgs) -> Option<Enum> {
         let metadata = self.get_metadata_for_class(&cls);
-        // Minor optimization: a typedict can never be an enum.
-        if metadata.is_typed_dict() {
-            return None;
+        if metadata.is_enum() {
+            Some(Enum {
+                cls: ClassType::new(cls, targs),
+            })
+        } else {
+            None
         }
-        metadata.metaclass().and_then(|m| {
-            if self.solver().is_subset_eq(
-                &Type::ClassType(m.clone()),
-                &Type::ClassType(self.stdlib.enum_meta()),
-                self.type_order(),
-            ) {
-                Some(Enum {
-                    cls: ClassType::new(cls, targs),
-                })
-            } else {
-                None
-            }
-        })
     }
 
     fn check_and_create_targs(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> TArgs {

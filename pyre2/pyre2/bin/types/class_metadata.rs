@@ -29,6 +29,7 @@ pub struct ClassMetadata {
     keywords: Keywords,
     is_typed_dict: bool,
     is_named_tuple: bool,
+    is_enum: bool,
     is_protocol: bool,
 }
 
@@ -46,6 +47,7 @@ impl ClassMetadata {
         keywords: Vec<(Name, Type)>,
         is_typed_dict: bool,
         is_named_tuple: bool,
+        is_enum: bool,
         is_protocol: bool,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
@@ -55,6 +57,7 @@ impl ClassMetadata {
             keywords: Keywords(keywords),
             is_typed_dict,
             is_named_tuple,
+            is_enum,
             is_protocol,
         }
     }
@@ -66,6 +69,7 @@ impl ClassMetadata {
             keywords: Keywords::default(),
             is_typed_dict: false,
             is_named_tuple: false,
+            is_enum: false,
             is_protocol: false,
         }
     }
@@ -93,6 +97,10 @@ impl ClassMetadata {
 
     pub fn is_named_tuple(&self) -> bool {
         self.is_named_tuple
+    }
+
+    pub fn is_enum(&self) -> bool {
+        self.is_enum
     }
 
     pub fn is_protocol(&self) -> bool {
