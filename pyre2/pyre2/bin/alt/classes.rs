@@ -505,23 +505,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn get_enum_from_class(&self, cls: &Class) -> Option<Enum> {
-        let metadata = self.get_metadata_for_class(cls);
+        self.get_enum_from_class_and_targs(cls.dupe(), self.create_default_targs(cls, None))
+    }
+
+    pub fn get_enum_from_class_type(&self, class_type: &ClassType) -> Option<Enum> {
+        self.get_enum_from_class_and_targs(
+            class_type.class_object().dupe(),
+            class_type.targs().clone(),
+        )
+    }
+
+    fn get_enum_from_class_and_targs(&self, cls: Class, targs: TArgs) -> Option<Enum> {
+        let metadata = self.get_metadata_for_class(&cls);
+        // Minor optimization: a typedict can never be an enum.
         if metadata.is_typed_dict() {
             return None;
         }
-        let targs = self.create_default_targs(cls, None);
-        self.get_enum_from_class_type(&ClassType::new(cls.dupe(), targs))
-    }
-
-    pub fn get_enum_from_class_type(&self, cls: &ClassType) -> Option<Enum> {
-        let metadata = self.get_metadata_for_class(cls.class_object());
         metadata.metaclass().and_then(|m| {
             if self.solver().is_subset_eq(
                 &Type::ClassType(m.clone()),
                 &Type::ClassType(self.stdlib.enum_meta()),
                 self.type_order(),
             ) {
-                Some(Enum { cls: cls.clone() })
+                Some(Enum {
+                    cls: ClassType::new(cls, targs),
+                })
             } else {
                 None
             }
