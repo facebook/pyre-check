@@ -40,7 +40,8 @@
         "port": "formal(x, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test5_sink" ]
   }
 }
 {
@@ -54,7 +55,8 @@
         "port": "formal(x, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test5_sink" ]
   }
 }
 {
@@ -68,7 +70,8 @@
         "port": "formal(x, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test5_sink" ]
   }
 }
 {
@@ -82,7 +85,8 @@
         "port": "formal(x, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test5_sink" ]
   }
 }
 {
@@ -96,7 +100,8 @@
         "port": "formal(x, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test7_source" ]
   }
 }
 {
@@ -155,6 +160,13 @@
           }
         ]
       }
+    ],
+    "model_generators": [
+      "get_model_query_parameters_test10_SourceA",
+      "get_model_query_parameters_test10_SourceB",
+      "get_model_query_parameters_test10_SourceC",
+      "get_model_query_parameters_test10_SourceD",
+      "get_model_query_parameters_test10_source"
     ]
   }
 }
@@ -173,7 +185,8 @@
         "port": "formal(a, position=0, positional_only)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test11_source" ]
   }
 }
 {
@@ -195,7 +208,8 @@
         "port": "formal(a, position=0, positional_only)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test12_source" ]
   }
 }
 {
@@ -258,7 +272,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test1_source" ]
   }
 }
 {
@@ -392,7 +407,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test1_source" ]
   }
 }
 {
@@ -520,7 +536,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test1_source" ]
   }
 }
 {
@@ -648,7 +665,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test1_source" ]
   }
 }
 {
@@ -775,7 +793,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test1_source" ]
   }
 }
 {
@@ -904,7 +923,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test1_source" ]
   }
 }
 {
@@ -1078,7 +1098,8 @@
         "port": "formal(c, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test3_source" ]
   }
 }
 {
@@ -1186,7 +1207,8 @@
         "port": "formal(c, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test3_source" ]
   }
 }
 {
@@ -1297,7 +1319,8 @@
         "port": "formal(c, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test3_source" ]
   }
 }
 {
@@ -1337,7 +1360,8 @@
         "port": "formal(c, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test3_source" ]
   }
 }
 {
@@ -1377,7 +1401,8 @@
         "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test4_source" ]
   }
 }
 {
@@ -1481,7 +1506,8 @@
         "port": "formal(c, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test4_source" ]
   }
 }
 {
@@ -1589,7 +1615,8 @@
         "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test4_source" ]
   }
 }
 {
@@ -1625,7 +1652,8 @@
         "port": "formal(c, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test4_source" ]
   }
 }
 {
@@ -1665,7 +1693,8 @@
         "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test6_source" ]
   }
 }
 {
@@ -1773,7 +1802,8 @@
         "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test6_source" ]
   }
 }
 {
@@ -1881,7 +1911,8 @@
         "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test6_source" ]
   }
 }
 {
@@ -1921,7 +1952,8 @@
         "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test6_source" ]
   }
 }
 {
@@ -1969,7 +2001,8 @@
         "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test8_source" ]
   }
 }
 {
@@ -2085,7 +2118,8 @@
         "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test8_source" ]
   }
 }
 {
@@ -2201,7 +2235,8 @@
         "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test8_source" ]
   }
 }
 {
@@ -2317,7 +2352,8 @@
         "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_model_query_parameters_test8_source" ]
   }
 }
 {
@@ -2413,6 +2449,11 @@
           }
         ]
       }
+    ],
+    "model_generators": [
+      "get_model_query_parameters_test9_SourceA",
+      "get_model_query_parameters_test9_SourceB",
+      "get_model_query_parameters_test9_source"
     ]
   }
 }

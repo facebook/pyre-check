@@ -166,7 +166,15 @@ let check_expectation
         Core.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
-  let { Model.backward; forward; parameter_sources = actual_parameter_sources; sanitizers; modes } =
+  let {
+    Model.backward;
+    forward;
+    parameter_sources = actual_parameter_sources;
+    sanitizers;
+    model_generators = _;
+    modes;
+  }
+    =
     Option.value_exn
       ~message:(Format.asprintf "Model not found for %a" Target.pp callable)
       (get_model callable)

@@ -135,7 +135,8 @@
         "port": "formal(foo, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test1" ]
   }
 }
 {
@@ -449,7 +450,8 @@
         "port": "formal(foo, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test1" ]
   }
 }
 {

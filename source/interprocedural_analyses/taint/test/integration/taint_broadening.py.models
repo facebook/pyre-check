@@ -2406,6 +2406,7 @@
         ]
       }
     ],
+    "model_generators": [ "disable_model_broadening" ],
     "modes": [ "SkipModelBroadening" ]
   }
 }
@@ -3077,6 +3078,7 @@
         ]
       }
     ],
+    "model_generators": [ "disable_model_broadening" ],
     "modes": [ "SkipModelBroadening" ]
   }
 }
@@ -4267,6 +4269,7 @@
         ]
       }
     ],
+    "model_generators": [ "disable_model_broadening" ],
     "modes": [ "SkipModelBroadening" ]
   }
 }

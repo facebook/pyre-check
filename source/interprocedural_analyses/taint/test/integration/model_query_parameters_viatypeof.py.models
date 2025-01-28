@@ -1028,7 +1028,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_test2_sinks" ]
   }
 }
 {
@@ -1086,7 +1087,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_test2_sinks" ]
   }
 }
 {
@@ -1144,7 +1146,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_test1_sinks" ]
   }
 }
 {
@@ -1214,6 +1217,7 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_test3_sinks" ]
   }
 }

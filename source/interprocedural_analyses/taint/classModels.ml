@@ -215,6 +215,7 @@ let infer ~pyre_api ~user_models =
           backward = { Model.Backward.taint_in_taint_out; sink_taint };
           parameter_sources = Model.ParameterSources.empty;
           sanitizers = Model.Sanitizers.empty;
+          model_generators = Model.ModelGeneratorSet.empty;
           modes = Model.ModeSet.empty;
         } );
     ]
@@ -236,6 +237,7 @@ let infer ~pyre_api ~user_models =
             backward = Model.Backward.empty;
             parameter_sources = Model.ParameterSources.empty;
             sanitizers = Model.Sanitizers.empty;
+            model_generators = Model.ModelGeneratorSet.empty;
             modes = Model.ModeSet.empty;
           } );
       ]
@@ -296,6 +298,7 @@ let infer ~pyre_api ~user_models =
           backward = { Model.Backward.taint_in_taint_out; sink_taint };
           parameter_sources = Model.ParameterSources.empty;
           sanitizers = Model.Sanitizers.empty;
+          model_generators = Model.ModelGeneratorSet.empty;
           modes = Model.ModeSet.empty;
         } );
     ]

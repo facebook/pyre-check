@@ -1270,6 +1270,7 @@
         ]
       }
     ],
+    "model_generators": [ "add_tito_init_parameters" ],
     "modes": [ "SkipAnalysis" ]
   }
 }

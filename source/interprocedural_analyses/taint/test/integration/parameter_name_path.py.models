@@ -69,7 +69,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "tito_parameter_name" ]
   }
 }
 {
@@ -101,7 +102,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "tito_parameter_name" ]
   }
 }
 {
@@ -199,7 +201,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "tito_parameter_name" ]
   }
 }
 {
@@ -286,7 +289,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "tito_parameter_name" ]
   }
 }
 {
@@ -351,7 +355,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "tito_parameter_name" ]
   }
 }
 {
@@ -394,7 +399,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "tito_parameter_name" ]
   }
 }
 {
@@ -415,7 +421,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "tito_parameter_name" ]
   }
 }
 {
@@ -458,6 +465,7 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "tito_parameter_name" ]
   }
 }

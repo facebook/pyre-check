@@ -83,8 +83,7 @@ let from_model
       Model.forward = { generations };
       Model.backward = { taint_in_taint_out; sink_taint };
       Model.parameter_sources = { parameter_sources };
-      Model.sanitizers = _;
-      Model.modes = _;
+      _;
     }
   =
   let collect_sinks =

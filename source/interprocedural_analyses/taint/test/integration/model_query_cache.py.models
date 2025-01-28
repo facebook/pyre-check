@@ -40,7 +40,8 @@
         "port": "result[get_A_bar]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_A_bar" ]
   }
 }
 {
@@ -54,7 +55,8 @@
         "port": "result[get_AnyOf_BC_bar]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_AnyOf_BC_bar" ]
   }
 }
 {
@@ -68,7 +70,8 @@
         "port": "result[get_B_foo]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_B_foo" ]
   }
 }
 {
@@ -82,7 +85,8 @@
         "port": "result[get_table_Bar_x]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_table_Bar_x" ]
   }
 }
 {
@@ -96,7 +100,8 @@
         "port": "result[get_AnyOf_BC_bar]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_AnyOf_BC_bar" ]
   }
 }
 {
@@ -110,7 +115,8 @@
         "port": "result[get_invalid_table]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_invalid_table" ]
   }
 }
 {
@@ -128,7 +134,8 @@
         "port": "result[get_table_Foo_y]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_invalid_table", "get_table_Foo_y" ]
   }
 }
 {
@@ -142,7 +149,8 @@
         "port": "result[get_decorated_foo]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_decorated_foo" ]
   }
 }
 {
@@ -156,6 +164,7 @@
         "port": "result[get_decorated_foo]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_decorated_foo" ]
   }
 }

@@ -61,6 +61,7 @@ let unknown_callee_model _ =
     backward = { sink_taint; taint_in_taint_out };
     parameter_sources = Model.ParameterSources.empty;
     sanitizers = Model.Sanitizers.empty;
+    model_generators = Model.ModelGeneratorSet.empty;
     modes = Model.ModeSet.singleton Model.Mode.SkipAnalysis;
   }
 

@@ -66,6 +66,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_bar" ],
         "modes": [ "Obscure" ]
       },
       {
@@ -78,6 +79,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_bar" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -94,6 +96,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_foo" ],
         "modes": [ "Obscure" ]
       },
       {
@@ -106,6 +109,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_foo" ],
         "modes": [ "Obscure" ]
       },
       {
@@ -118,6 +122,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_foo" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -134,6 +139,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_fooo" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -175,7 +181,8 @@ let test_dump_model_query_results context =
               { "kinds": [ { "kind": "Test" } ], "declaration": null }
             ]
           }
-        ]
+        ],
+        "model_generators": [ "get_Base_child_sources" ]
       },
       {
         "callable": "test.Base.foo",
@@ -186,7 +193,8 @@ let test_dump_model_query_results context =
               { "kinds": [ { "kind": "Test" } ], "declaration": null }
             ]
           }
-        ]
+        ],
+        "model_generators": [ "get_Base_child_sources" ]
       }
     ]
   }
@@ -227,6 +235,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "ModelQueryA" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -246,6 +255,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "ModelQueryB" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -302,6 +312,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_parent_of_baz_class_sources" ],
         "modes": [ "Obscure" ]
       },
       {
@@ -314,6 +325,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_parent_of_baz_class_sources" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -376,6 +388,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_parent_of_baz_class_transitive_sources" ],
         "modes": [ "Obscure" ]
       },
       {
@@ -388,6 +401,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_parent_of_baz_class_transitive_sources" ],
         "modes": [ "Obscure" ]
       },
       {
@@ -400,6 +414,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "get_parent_of_baz_class_transitive_sources" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -452,6 +467,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "/a/b.pysa/get_bar" ],
         "modes": [ "Obscure" ]
       },
       {
@@ -464,6 +480,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "/a/b.pysa/get_bar" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -480,6 +497,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "/a/b.pysa/get_foo" ],
         "modes": [ "Obscure" ]
       },
       {
@@ -492,6 +510,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "/a/b.pysa/get_foo" ],
         "modes": [ "Obscure" ]
       },
       {
@@ -504,6 +523,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "/a/b.pysa/get_foo" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -520,6 +540,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
+        "model_generators": [ "/a/b.pysa/get_fooo" ],
         "modes": [ "Obscure" ]
       }
     ]

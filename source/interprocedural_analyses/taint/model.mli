@@ -90,11 +90,34 @@ module ModeSet : sig
   val elements : t -> Mode.t list
 end
 
+module ModelGeneratorSet : sig
+  type t [@@deriving show, equal]
+
+  val singleton : string -> t
+
+  val empty : t
+
+  val is_empty : t -> bool
+
+  val add : string -> t -> t
+
+  val remove : string -> t -> t
+
+  val contains : string -> t -> bool
+
+  val join : t -> t -> t
+
+  val of_list : string list -> t
+
+  val elements : t -> string list
+end
+
 type t = {
   forward: Forward.t;
   backward: Backward.t;
   parameter_sources: ParameterSources.t;
   sanitizers: Sanitizers.t;
+  model_generators: ModelGeneratorSet.t;
   modes: ModeSet.t;
 }
 [@@deriving show]

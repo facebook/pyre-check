@@ -1060,7 +1060,13 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~target
           ~modelable
           annotations
-        |> Result.map ~f:Option.some
+        |> Result.map ~f:(fun model ->
+               Some
+                 {
+                   model with
+                   Model.model_generators =
+                     Model.ModelGeneratorSet.singleton (ModelQuery.unique_identifier query);
+                 })
 
 
   let generate_models_from_query_on_targets

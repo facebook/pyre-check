@@ -86,7 +86,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test2" ]
   }
 }
 {
@@ -192,7 +193,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test2" ]
   }
 }
 {
@@ -364,7 +366,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test1" ]
   }
 }
 {
@@ -466,7 +469,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test1" ]
   }
 }
 {
@@ -568,7 +572,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test1" ]
   }
 }
 {
@@ -670,7 +675,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test1" ]
   }
 }
 {
@@ -804,7 +810,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test3" ]
   }
 }
 {
@@ -906,7 +913,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test3" ]
   }
 }
 {
@@ -1008,7 +1016,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test3" ]
   }
 }
 {
@@ -1110,7 +1119,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "test3" ]
   }
 }
 {

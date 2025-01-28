@@ -205,7 +205,8 @@
           { "kinds": [ { "kind": "Test1" } ], "declaration": null }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_foo" ]
   }
 }
 {
@@ -219,7 +220,8 @@
           { "kinds": [ { "kind": "SelectIntAndStr" } ], "declaration": null }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_hello_world" ]
   }
 }
 {
@@ -233,7 +235,8 @@
           { "kinds": [ { "kind": "SelectCallable" } ], "declaration": null }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_callables" ]
   }
 }
 {
@@ -247,7 +250,8 @@
           { "kinds": [ { "kind": "SelectDict" } ], "declaration": null }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_typed_dict" ]
   }
 }
 {
@@ -261,7 +265,8 @@
           { "kinds": [ { "kind": "SelectCallable" } ], "declaration": null }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_callables" ]
   }
 }
 {
@@ -275,7 +280,8 @@
           { "kinds": [ { "kind": "SelectIntAndStr" } ], "declaration": null }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_hello_world" ]
   }
 }
 {
@@ -287,7 +293,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_environ" ]
   }
 }
 {
@@ -407,6 +414,7 @@
           { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_any_functions" ]
   }
 }

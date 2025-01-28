@@ -1037,6 +1037,7 @@
         ]
       }
     ],
+    "model_generators": [ "skip_obscure_model_query" ],
     "modes": [ "SkipObscure" ]
   }
 }

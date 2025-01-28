@@ -266,7 +266,8 @@
         "port": "formal(parameter, position=0)[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -318,7 +319,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -336,7 +338,8 @@
         "port": "formal(parameter, position=0)[c]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -354,7 +357,8 @@
         "port": "formal(parameter, position=0)[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -372,7 +376,8 @@
         "port": "formal(parameter, position=0)[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -386,7 +391,8 @@
         "port": "formal(parameter, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -404,7 +410,8 @@
         "port": "formal(parameter, position=0)[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -422,7 +429,8 @@
         "port": "formal(parameter, position=0)[b]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -440,7 +448,8 @@
         "port": "formal(parameter, position=0)[b]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -454,7 +463,8 @@
         "port": "formal(parameter, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -476,7 +486,8 @@
         "port": "formal(parameter, position=0)[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -502,7 +513,8 @@
         "port": "formal(parameter, position=0)[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -516,7 +528,8 @@
         "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_parameter_fields_sinks" ]
   }
 }
 {
@@ -530,7 +543,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -544,7 +558,8 @@
         "port": "result[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -570,7 +585,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -584,7 +600,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -602,7 +619,8 @@
         "port": "result[c]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -620,7 +638,8 @@
         "port": "result[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -638,7 +657,8 @@
         "port": "result[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -652,7 +672,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -670,7 +691,8 @@
         "port": "result[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -688,7 +710,8 @@
         "port": "result[b]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -706,7 +729,8 @@
         "port": "result[b]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -720,7 +744,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -742,7 +767,8 @@
         "port": "result[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -768,7 +794,8 @@
         "port": "result[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }
 {
@@ -782,6 +809,7 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "all_return_fields_sources" ]
   }
 }

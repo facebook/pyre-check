@@ -1386,7 +1386,8 @@
         "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_private_attribute_sinks" ]
   }
 }
 {
@@ -1422,7 +1423,8 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "get_private_attribute_sources" ]
   }
 }
 {

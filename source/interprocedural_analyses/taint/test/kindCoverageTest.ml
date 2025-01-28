@@ -130,6 +130,7 @@ let test_from_model _ =
       parameter_sources = Model.ParameterSources.empty;
       sanitizers =
         { global = Sanitize.bottom; parameters = Sanitize.bottom; roots = Sanitize.RootMap.bottom };
+      model_generators = Model.ModelGeneratorSet.empty;
       modes = Model.ModeSet.empty;
     }
   in

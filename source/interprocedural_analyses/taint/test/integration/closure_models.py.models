@@ -1466,7 +1466,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "return_model_query_tito" ]
   }
 }
 {
@@ -1581,7 +1582,8 @@
         "port": "captured_variable($parameter$some_data)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "mark_captured_locals_from_decorator_as_tainted" ]
   }
 }
 {
@@ -1687,7 +1689,8 @@
         "port": "captured_variable($parameter$some_data)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
+    ],
+    "model_generators": [ "mark_captured_locals_as_tainted" ]
   }
 }
 {
@@ -1792,7 +1795,8 @@
           }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "return_model_query_tito_transform" ]
   }
 }
 {

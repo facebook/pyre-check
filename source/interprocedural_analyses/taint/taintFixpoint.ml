@@ -189,6 +189,7 @@ module Analysis = struct
         backward;
         parameter_sources = previous_model.parameter_sources;
         sanitizers;
+        model_generators = previous_model.model_generators;
         modes;
       }
     in

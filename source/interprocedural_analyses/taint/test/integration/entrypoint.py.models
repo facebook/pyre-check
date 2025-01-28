@@ -537,7 +537,8 @@
           { "kinds": [ { "kind": "GlobalSource" } ], "declaration": null }
         ]
       }
-    ]
+    ],
+    "model_generators": [ "get_all_globals" ]
   }
 }
 {
