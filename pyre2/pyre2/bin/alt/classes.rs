@@ -504,9 +504,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_from_class(cls, &KeyClassMetadata(ShortIdentifier::new(cls.name())))
     }
 
-    pub fn get_enum(&self, ty: &Type) -> Option<Enum> {
-        if let Type::ClassType(cls) = ty {
-            self.get_enum_from_class_type(cls)
+    fn get_enum_from_class(&self, cls: &Class) -> Option<Enum> {
+        if let Type::ClassType(cls) = self.promote_silently(cls) {
+            self.get_enum_from_class_type(&cls)
         } else {
             None
         }
@@ -799,7 +799,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     AccessNotAllowed::ClassUseOfInstanceAttribute(cls.clone()),
                 )),
                 ClassFieldInitialization::Class => {
-                    if let Some(e) = self.get_enum(&self.promote_silently(cls))
+                    if let Some(e) = self.get_enum_from_class(cls)
                         && let Some(member) = e.get_member(name)
                     {
                         Some(Attribute::access_allowed(Type::Literal(member)))
@@ -871,7 +871,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // this doesn't make semantic sense. But in the meantime we need to be robust against
         // this possibility.
         match self.get_idx(key).deref() {
-            Type::ClassDef(class) => self.get_enum(&self.promote_silently(class)),
+            Type::ClassDef(class) => self.get_enum_from_class(class),
             _ => None,
         }
     }
