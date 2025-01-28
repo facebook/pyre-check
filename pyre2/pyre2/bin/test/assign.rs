@@ -479,11 +479,12 @@ y = 42
 );
 
 testcase_with_bug!(
-    "We incorrectly check the value against `ann` of sub-expressions of the target",
-    test_assign_multiple_with_existing_annotations,
+    "We never validate that assignments to unpacked targets are valid",
+    test_assign_unpacked_with_existing_annotations,
     r#"
 x: int
 y: str
-x, y = 1, "test"  # E: EXPECTED tuple[Literal[1], Literal['test']] <: int # E: Type `int` is not iterable  # E: EXPECTED tuple[Literal[1], Literal['test']] <: str
+z: tuple[bool, ...]
+x, *z, y = True, 1, 2, "test"
     "#,
 );

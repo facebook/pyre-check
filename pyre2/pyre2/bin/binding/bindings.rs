@@ -919,9 +919,9 @@ impl<'a> BindingsBuilder<'a> {
                     splat = true;
                     // Counts how many elements are after the splat.
                     let j = elts.len() - i - 1;
-                    let make_nested_binding = |ann: Option<Idx<KeyAnnotation>>| {
+                    let make_nested_binding = |_: Option<Idx<KeyAnnotation>>| {
                         Binding::UnpackedValue(
-                            Box::new(make_binding(ann)),
+                            Box::new(make_binding(None)),
                             range,
                             UnpackedPosition::Slice(i, j),
                         )
@@ -936,8 +936,8 @@ impl<'a> BindingsBuilder<'a> {
                     } else {
                         UnpackedPosition::Index(i)
                     };
-                    let make_nested_binding = |ann: Option<Idx<KeyAnnotation>>| {
-                        Binding::UnpackedValue(Box::new(make_binding(ann)), range, idx)
+                    let make_nested_binding = |_: Option<Idx<KeyAnnotation>>| {
+                        Binding::UnpackedValue(Box::new(make_binding(None)), range, idx)
                     };
                     self.bind_target(e, &make_nested_binding);
                 }

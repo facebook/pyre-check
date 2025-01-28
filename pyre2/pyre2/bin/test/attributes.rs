@@ -21,14 +21,14 @@ def f(a: A):
 );
 
 testcase_with_bug!(
-    "We incorreclty propagate annotation in complex targets",
+    "We never validate that assignments to unpacked targets are valid",
     test_set_attribute_in_unpacked_assign,
     r#"
 class A:
     x: int
     y: str
 def f(a: A):
-    a.x, a.y = 1, "y"  # E: EXPECTED tuple[Literal[1], Literal['y']] <: int  # E: `int` is not iterable  # E: EXPECTED tuple[Literal[1], Literal['y']] <: str
+    a.x, a.y = "x", "y"
     "#,
 );
 

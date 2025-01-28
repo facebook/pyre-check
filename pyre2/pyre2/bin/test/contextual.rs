@@ -198,14 +198,15 @@ ys: list[A] = takes_int("") if False else [B()] # E: EXPECTED Literal[''] <: int
 );
 
 testcase_with_bug!(
-    "TODO: Unpacked assignment propagates wrong hint to RHS expression",
+    "TODO: We do not currently validate assignments in multi-target assigns.
+    Depending how we fix it, contextual typing may not work",
     test_context_assign_unpacked_tuple,
     r#"
 class A: ...
 class B(A): ...
 
 xs: list[A] = []
-(xs, _) = ([B()], None) # E: EXPECTED tuple[list[B], None] <: list[A]
+(xs, _) = ([B()], None)
 "#,
 );
 
