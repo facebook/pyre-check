@@ -372,6 +372,7 @@ testcase!(
     r#"
 from typing import Callable, ParamSpec, Concatenate
 P = ParamSpec("P")
-t: Callable[Concatenate[int, P], int]
+def f(t: Callable[Concatenate[int, P], int]):
+    pass
 "#,
 );
