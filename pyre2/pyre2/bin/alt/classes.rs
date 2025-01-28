@@ -386,14 +386,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "metaclass" => Either::Left(x),
                 _ => Either::Right((n.clone(), self.expr(x, None))),
             });
+
+        let base_metaclasses: Vec<_> = bases_with_metadata
+            .iter()
+            .filter_map(|(b, metadata)| metadata.metaclass().map(|m| (&b.name().id, m)))
+            .collect();
         let metaclass =
-            self.calculate_metaclass(cls, metaclasses.into_iter().next(), &bases_with_metadata);
-        if is_typed_dict && metaclass.is_some() {
-            self.error(
-                cls.name().range,
-                "Typed dictionary definitions may not specify a metaclass.".to_owned(),
-            );
+            self.calculate_metaclass(cls, metaclasses.into_iter().next(), &base_metaclasses);
+
+        if let Some(metaclass) = &metaclass {
+            self.check_base_class_metaclasses(cls, metaclass, &base_metaclasses);
+            if is_typed_dict {
+                self.error(
+                    cls.name().range,
+                    "Typed dictionary definitions may not specify a metaclass.".to_owned(),
+                );
+            }
         }
+
         ClassMetadata::new(
             cls,
             bases_with_metadata,
@@ -410,14 +420,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         cls: &Class,
         raw_metaclass: Option<&Expr>,
-        bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
+        base_metaclasses: &[(&Name, &ClassType)],
     ) -> Option<ClassType> {
         let direct_meta = raw_metaclass.and_then(|x| self.direct_metaclass(cls, x));
-        let base_metaclasses: Vec<_> = bases_with_metadata
-            .iter()
-            .filter_map(|(b, metadata)| metadata.metaclass().map(|m| (&b.name().id, m)))
-            .collect();
-        let metaclass = if let Some(metaclass) = direct_meta {
+
+        if let Some(metaclass) = direct_meta {
             Some(metaclass)
         } else {
             let mut inherited_meta: Option<ClassType> = None;
@@ -436,33 +443,37 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             inherited_meta
-        };
+        }
+    }
+
+    fn check_base_class_metaclasses(
+        &self,
+        cls: &Class,
+        metaclass: &ClassType,
+        base_metaclasses: &[(&Name, &ClassType)],
+    ) {
         // It is a runtime error to define a class whose metaclass (whether
         // specified directly or through inheritance) is not a subtype of all
         // base class metaclasses.
-        if let Some(metaclass) = &metaclass {
-            let metaclass_type = Type::ClassType(metaclass.clone());
-            for (base_name, m) in base_metaclasses.iter() {
-                let base_metaclass_type = Type::ClassType((*m).clone());
-                if !self.solver().is_subset_eq(
-                    &metaclass_type,
-                    &base_metaclass_type,
-                    self.type_order(),
-                ) {
-                    self.error(
-                            cls.name().range,
-                            format!(
-                                "Class `{}` has metaclass `{}` which is not a subclass of metaclass `{}` from base class `{}`",
-                                cls.name().id,
-                                metaclass_type,
-                                base_metaclass_type,
-                                base_name,
-                            )
-                        );
-                }
+        let metaclass_type = Type::ClassType(metaclass.clone());
+        for (base_name, m) in base_metaclasses.iter() {
+            let base_metaclass_type = Type::ClassType((*m).clone());
+            if !self
+                .solver()
+                .is_subset_eq(&metaclass_type, &base_metaclass_type, self.type_order())
+            {
+                self.error(
+                    cls.name().range,
+                    format!(
+                        "Class `{}` has metaclass `{}` which is not a subclass of metaclass `{}` from base class `{}`",
+                        cls.name().id,
+                        metaclass_type,
+                        base_metaclass_type,
+                        base_name,
+                    )
+                );
             }
         }
-        metaclass
     }
 
     fn direct_metaclass(&self, cls: &Class, raw_metaclass: &Expr) -> Option<ClassType> {
