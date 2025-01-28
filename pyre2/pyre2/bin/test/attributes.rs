@@ -7,6 +7,7 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_set_attribute,
@@ -82,14 +83,17 @@ def f(a: A):
     "#,
 );
 
-testcase!(
+testcase_with_bug!(
+    "Our current logic does not catch mismatched qualifiers in class-body vs constructor annotations",
     test_self_attribute_annotated_twice,
     r#"
-from typing import assert_type, Literal
+from typing import assert_type, Literal, Final
 class A:
     x: int
+    y: str
     def __init__(self):
         self.x: Literal[1] = 1  # E: Inconsistent type annotations for x: Literal[1], int
+        self.y: Final = "y"  # TODO(stroxler) We should complain here
 def f(a: A):
     assert_type(a.x, int)
     "#,
