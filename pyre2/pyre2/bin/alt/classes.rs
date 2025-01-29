@@ -59,10 +59,15 @@ use crate::util::prelude::SliceExt;
 /// know whether it is initialized in the class body in order to determine
 /// both visibility rules and whether method binding should be performed.
 #[derive(Debug, Clone)]
-pub struct ClassField {
-    ty: Type,
-    annotation: Option<Annotation>,
-    initialization: ClassFieldInitialization,
+pub struct ClassField(ClassFieldInner);
+
+#[derive(Debug, Clone)]
+pub enum ClassFieldInner {
+    Simple {
+        ty: Type,
+        annotation: Option<Annotation>,
+        initialization: ClassFieldInitialization,
+    },
 }
 
 impl ClassField {
@@ -71,44 +76,81 @@ impl ClassField {
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
     ) -> Self {
-        Self {
+        Self(ClassFieldInner::Simple {
             ty,
             annotation,
             initialization,
-        }
+        })
     }
 
     pub fn recursive() -> Self {
-        Self {
+        Self(ClassFieldInner::Simple {
             ty: Type::any_implicit(),
             annotation: None,
             initialization: ClassFieldInitialization::Class,
-        }
+        })
     }
 
     pub fn visit_type_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
-        f(&mut self.ty);
-        for a in self.annotation.iter_mut() {
-            a.visit_type_mut(&mut f);
+        match &mut self.0 {
+            ClassFieldInner::Simple { ty, annotation, .. } => {
+                f(ty);
+                for a in annotation.iter_mut() {
+                    a.visit_type_mut(&mut f);
+                }
+            }
+        }
+    }
+
+    fn initialization(&self) -> ClassFieldInitialization {
+        match &self.0 {
+            ClassFieldInner::Simple { initialization, .. } => *initialization,
         }
     }
 
     fn instantiate_for(&self, cls: &ClassType) -> Self {
-        Self {
-            ty: cls.instantiate_member(self.ty.clone()),
-            annotation: self.annotation.clone(),
-            initialization: self.initialization,
+        match &self.0 {
+            ClassFieldInner::Simple {
+                ty,
+                annotation,
+                initialization,
+            } => Self(ClassFieldInner::Simple {
+                ty: cls.instantiate_member(ty.clone()),
+                annotation: annotation.clone(),
+                initialization: *initialization,
+            }),
+        }
+    }
+
+    fn depends_on_class_type_parameter(&self, cls: &Class) -> bool {
+        let tparams = cls.tparams();
+        let mut qs = SmallSet::new();
+        match &self.0 {
+            ClassFieldInner::Simple { ty, .. } => ty.collect_quantifieds(&mut qs),
+        };
+        tparams.quantified().any(|q| qs.contains(&q))
+    }
+
+    fn ty(self) -> Type {
+        match self.0 {
+            ClassFieldInner::Simple { ty, .. } => ty,
         }
     }
 }
 
 impl Display for ClassField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let initialized = match self.initialization {
-            ClassFieldInitialization::Class => "initialized in body",
-            ClassFieldInitialization::Instance => "not initialized in body",
-        };
-        write!(f, "@{} ({})", self.ty, initialized)
+        match &self.0 {
+            ClassFieldInner::Simple {
+                ty, initialization, ..
+            } => {
+                let initialized = match initialization {
+                    ClassFieldInitialization::Class => "initialized in body",
+                    ClassFieldInitialization::Instance => "not initialized in body",
+                };
+                write!(f, "@{} ({})", ty, initialized)
+            }
+        }
     }
 }
 
@@ -816,9 +858,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_class_member(cls.class_object(), name)
             .map(|(field, defining_class)| {
                 let member = field.instantiate_for(cls);
-                let ty = match member.initialization {
-                    ClassFieldInitialization::Class => bind_attribute(cls.self_type(), member.ty),
-                    ClassFieldInitialization::Instance => member.ty,
+                let ty = match member.initialization() {
+                    ClassFieldInitialization::Class => bind_attribute(cls.self_type(), member.ty()),
+                    ClassFieldInitialization::Instance => member.ty(),
                 };
                 WithDefiningClass {
                     value: ty,
@@ -832,13 +874,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .map(|attr| Attribute::access_allowed(attr.value))
     }
 
-    fn depends_on_class_type_parameter(&self, cls: &Class, ty: &Type) -> bool {
-        let tparams = cls.tparams();
-        let mut qs = SmallSet::new();
-        ty.collect_quantifieds(&mut qs);
-        tparams.quantified().any(|q| qs.contains(&q))
-    }
-
     /// Gets an attribute from a class definition.
     ///
     /// Returns `None` if there is no such attribute, otherwise an `Attribute` object
@@ -848,12 +883,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
     pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<Attribute> {
         let (member, _) = self.get_class_member(cls, name)?;
-        if self.depends_on_class_type_parameter(cls, &member.ty) {
+        if member.depends_on_class_type_parameter(cls) {
             Some(Attribute::access_not_allowed(
                 NoAccessReason::ClassAttributeIsGeneric(cls.clone()),
             ))
         } else {
-            match member.initialization {
+            match member.initialization() {
                 ClassFieldInitialization::Instance => Some(Attribute::access_not_allowed(
                     NoAccessReason::ClassUseOfInstanceAttribute(cls.clone()),
                 )),
@@ -863,7 +898,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     {
                         Some(Attribute::access_allowed(Type::Literal(member)))
                     } else {
-                        Some(Attribute::access_allowed(member.ty))
+                        Some(Attribute::access_allowed(member.ty()))
                     }
                 }
             }
@@ -877,7 +912,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .map(|(member, defining_class)| {
                 let member = member.instantiate_for(cls);
                 WithDefiningClass {
-                    value: member.ty,
+                    value: member.ty(),
                     defining_class,
                 }
             })?;
@@ -956,14 +991,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_all_members(cls)
             .iter()
             .filter_map(|(name, (field, cls))| {
-                if let ClassField {
+                if let ClassField(ClassFieldInner::Simple {
                     annotation:
                         Some(Annotation {
                             ty: Some(ty),
                             qualifiers,
                         }),
                     ..
-                } = field
+                }) = field
                 {
                     let is_total = self
                         .get_metadata_for_class(cls)
