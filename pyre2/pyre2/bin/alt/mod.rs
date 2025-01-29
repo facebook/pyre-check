@@ -7,6 +7,7 @@
 
 pub mod answers;
 pub mod attr;
+pub mod callable;
 pub mod classes;
 pub mod expr;
 pub mod narrow;
