@@ -40,16 +40,8 @@ pub struct Attribute(AttributeInner);
 /// The operation is either permitted with an attribute `Type`, or is not allowed
 /// and has a reason.
 #[derive(Clone)]
-struct AttributeInner(Result<Type, NoAccessReason>);
-
-impl AttributeInner {
-    fn allowed(ty: Type) -> Self {
-        AttributeInner(Ok(ty))
-    }
-
-    pub fn not_allowed(reason: NoAccessReason) -> Self {
-        AttributeInner(Err(reason))
-    }
+enum AttributeInner {
+    Simple(Result<Type, NoAccessReason>),
 }
 
 enum NotFound {
@@ -75,28 +67,28 @@ enum InternalError {
 
 impl Attribute {
     pub fn access_allowed(ty: Type) -> Self {
-        Attribute(AttributeInner::allowed(ty))
+        Attribute(AttributeInner::Simple(Ok(ty)))
     }
     pub fn access_not_allowed(reason: NoAccessReason) -> Self {
-        Attribute(AttributeInner::not_allowed(reason))
+        Attribute(AttributeInner::Simple(Err(reason)))
     }
 
     fn get(self) -> Result<Type, NoAccessReason> {
         match self.0 {
-            AttributeInner(access_result) => access_result,
+            AttributeInner::Simple(access_result) => access_result,
         }
     }
 
     fn set(self) -> Result<Type, NoAccessReason> {
         match self.0 {
-            AttributeInner(access_result) => access_result,
+            AttributeInner::Simple(access_result) => access_result,
         }
     }
 
     pub fn get_type(self) -> Option<Type> {
-        match self.0.0 {
-            Ok(ty) => Some(ty),
-            _ => None,
+        match self.0 {
+            AttributeInner::Simple(Ok(ty)) => Some(ty),
+            AttributeInner::Simple(Err(_)) => None,
         }
     }
 }
