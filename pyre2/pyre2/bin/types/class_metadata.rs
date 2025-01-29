@@ -101,8 +101,8 @@ impl ClassMetadata {
         self.is_named_tuple
     }
 
-    pub fn is_enum(&self) -> bool {
-        self.enum_metadata.is_some()
+    pub fn enum_metadata(&self) -> Option<&EnumMetadata> {
+        self.enum_metadata.as_ref()
     }
 
     pub fn is_protocol(&self) -> bool {

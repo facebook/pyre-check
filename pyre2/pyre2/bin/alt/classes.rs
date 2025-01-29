@@ -584,24 +584,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn get_enum_from_class(&self, cls: &Class) -> Option<EnumMetadata> {
-        self.get_enum_from_class_and_targs(cls.dupe(), self.create_default_targs(cls, None))
+        self.get_metadata_for_class(cls).enum_metadata().cloned()
     }
 
     pub fn get_enum_from_class_type(&self, class_type: &ClassType) -> Option<EnumMetadata> {
-        self.get_enum_from_class_and_targs(
-            class_type.class_object().dupe(),
-            class_type.targs().clone(),
+        self.get_enum_from_class(class_type.class_object())
+    }
+
+    /// Given an identifier, see whether it is bound to an enum class. If so,
+    /// return the enum, otherwise return `None`.
+    pub fn get_enum_from_name(&self, name: Identifier) -> Option<EnumMetadata> {
+        self.get_enum_from_key(
+            self.bindings()
+                .key_to_idx(&Key::Usage(ShortIdentifier::new(&name))),
         )
     }
 
-    fn get_enum_from_class_and_targs(&self, cls: Class, targs: TArgs) -> Option<EnumMetadata> {
-        let metadata = self.get_metadata_for_class(&cls);
-        if metadata.is_enum() {
-            Some(EnumMetadata {
-                cls: ClassType::new(cls, targs),
-            })
-        } else {
-            None
+    pub fn get_enum_from_key(&self, key: Idx<Key>) -> Option<EnumMetadata> {
+        // TODO(stroxler): Eventually, we should raise type errors on generic Enum because
+        // this doesn't make semantic sense. But in the meantime we need to be robust against
+        // this possibility.
+        match self.get_idx(key).deref() {
+            Type::ClassDef(class) => self.get_enum_from_class(class),
+            _ => None,
         }
     }
 
@@ -956,25 +961,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         } else {
             Some(attr.value)
-        }
-    }
-
-    /// Given an identifier, see whether it is bound to an enum class. If so,
-    /// return the enum, otherwise return `None`.
-    pub fn get_enum_from_name(&self, name: Identifier) -> Option<EnumMetadata> {
-        self.get_enum_from_key(
-            self.bindings()
-                .key_to_idx(&Key::Usage(ShortIdentifier::new(&name))),
-        )
-    }
-
-    pub fn get_enum_from_key(&self, key: Idx<Key>) -> Option<EnumMetadata> {
-        // TODO(stroxler): Eventually, we should raise type errors on generic Enum because
-        // this doesn't make semantic sense. But in the meantime we need to be robust against
-        // this possibility.
-        match self.get_idx(key).deref() {
-            Type::ClassDef(class) => self.get_enum_from_class(class),
-            _ => None,
         }
     }
 
