@@ -12,6 +12,7 @@ use crate::solver::Subset;
 use crate::types::callable::Callable;
 use crate::types::callable::Kind;
 use crate::types::callable::Param;
+use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
 use crate::types::class::TArgs;
@@ -22,6 +23,47 @@ use crate::types::types::TParams;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
+    pub fn is_subset_param_list(&mut self, l_args: &ParamList, u_args: &ParamList) -> bool {
+        let mut l_args_iter = l_args.items().iter();
+        let mut u_args_iter = u_args.items().iter();
+        let mut l_arg = l_args_iter.next();
+        let mut u_arg = u_args_iter.next();
+        loop {
+            match (l_arg, u_arg) {
+                (None, None) => return true,
+                (
+                    Some(Param::PosOnly(l, _) | Param::Pos(_, l, _)),
+                    Some(Param::PosOnly(u, Required::Required)),
+                ) => {
+                    if self.is_subset_eq(u, l) {
+                        l_arg = l_args_iter.next();
+                        u_arg = u_args_iter.next();
+                    } else {
+                        return false;
+                    }
+                }
+                (
+                    Some(
+                        Param::PosOnly(_, Required::Optional)
+                        | Param::Pos(_, _, Required::Optional)
+                        | Param::KwOnly(_, _, Required::Optional),
+                    ),
+                    None,
+                ) => return true,
+                (Some(Param::VarArg(_)), None) => return true,
+                (Some(Param::VarArg(l)), Some(Param::PosOnly(u, Required::Required))) => {
+                    if self.is_subset_eq(u, l) {
+                        u_arg = u_args_iter.next();
+                    } else {
+                        return false;
+                    }
+                }
+                (Some(Param::Kwargs(_)), None) => return true,
+                _ => return false,
+            }
+        }
+    }
+
     /// Implementation of subset equality for Type, other than Var.
     pub fn is_subset_eq_impl(&mut self, got: &Type, want: &Type) -> bool {
         match (got, want) {
@@ -60,47 +102,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     && match (&l.params, &u.params) {
                         (Params::Ellipsis, _) | (_, Params::Ellipsis) => true,
                         (Params::List(l_args), Params::List(u_args)) => {
-                            let mut l_args_iter = l_args.items().iter();
-                            let mut u_args_iter = u_args.items().iter();
-                            let mut l_arg = l_args_iter.next();
-                            let mut u_arg = u_args_iter.next();
-                            loop {
-                                match (l_arg, u_arg) {
-                                    (None, None) => return true,
-                                    (
-                                        Some(Param::PosOnly(l, _) | Param::Pos(_, l, _)),
-                                        Some(Param::PosOnly(u, Required::Required)),
-                                    ) => {
-                                        if self.is_subset_eq(u, l) {
-                                            l_arg = l_args_iter.next();
-                                            u_arg = u_args_iter.next();
-                                        } else {
-                                            return false;
-                                        }
-                                    }
-                                    (
-                                        Some(
-                                            Param::PosOnly(_, Required::Optional)
-                                            | Param::Pos(_, _, Required::Optional)
-                                            | Param::KwOnly(_, _, Required::Optional),
-                                        ),
-                                        None,
-                                    ) => return true,
-                                    (Some(Param::VarArg(_)), None) => return true,
-                                    (
-                                        Some(Param::VarArg(l)),
-                                        Some(Param::PosOnly(u, Required::Required)),
-                                    ) => {
-                                        if self.is_subset_eq(u, l) {
-                                            u_arg = u_args_iter.next();
-                                        } else {
-                                            return false;
-                                        }
-                                    }
-                                    (Some(Param::Kwargs(_)), None) => return true,
-                                    _ => return false,
-                                }
-                            }
+                            self.is_subset_param_list(l_args, u_args)
                         }
                         (Params::ParamSpec(_, _), _) | (_, Params::ParamSpec(_, _)) => {
                             // TODO: need instantiation for param spec
