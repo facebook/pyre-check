@@ -449,6 +449,14 @@ pub enum FunctionKind {
 }
 
 #[derive(Clone, Debug)]
+pub struct FunctionBinding {
+    pub def: StmtFunctionDef,
+    pub kind: FunctionKind,
+    pub decorators: Box<[Decorator]>,
+    pub legacy_tparams: Box<[Idx<KeyLegacyTypeParam>]>,
+}
+
+#[derive(Clone, Debug)]
 pub enum Binding {
     /// An expression, optionally with a Key saying what the type must be.
     /// The Key must be a type of types, e.g. `Type::Type`.
@@ -494,12 +502,7 @@ pub enum Binding {
     TypeParameter(Quantified),
     /// A function definition, but with the return/body stripped out.
     /// The `Vec<Idx<LegacyTypeParam>>` contains binding information for possible legacy type params.
-    Function(
-        Box<StmtFunctionDef>,
-        FunctionKind,
-        Box<[Decorator]>,
-        Box<[Idx<KeyLegacyTypeParam>]>,
-    ),
+    Function(Box<FunctionBinding>),
     /// An import statement, typically with Self::Import.
     Import(ModuleName, Name),
     /// A class definition, but with the body stripped out.
@@ -636,7 +639,7 @@ impl DisplayWith<Bindings> for Binding {
                 };
                 write!(f, "unpack {} {:?} @ {}", x.display_with(ctx), range, pos)
             }
-            Self::Function(x, _, _, _) => write!(f, "def {}", x.name.id),
+            Self::Function(x) => write!(f, "def {}", x.def.name.id),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::ClassDef(box (c, _), _, _, _) => write!(f, "class {}", c.name.id),
             Self::FunctionalClassDef(x, _) => write!(f, "class {}", x.id),

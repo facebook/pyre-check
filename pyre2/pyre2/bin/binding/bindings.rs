@@ -56,6 +56,7 @@ use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::ContextManagerKind;
+use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
@@ -1303,12 +1304,12 @@ impl<'a> BindingsBuilder<'a> {
 
         self.bind_definition(
             &func_name,
-            Binding::Function(
-                Box::new(x),
+            Binding::Function(Box::new(FunctionBinding {
+                def: x,
                 kind,
-                decorators.into_boxed_slice(),
-                legacy_tparams.into_boxed_slice(),
-            ),
+                decorators: decorators.into_boxed_slice(),
+                legacy_tparams: legacy_tparams.into_boxed_slice(),
+            })),
             None,
         );
 

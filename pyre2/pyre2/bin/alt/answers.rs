@@ -1403,12 +1403,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(&values)
             }
-            Binding::Function(x, kind, decorators, legacy_tparam_keys) => {
+            Binding::Function(x) => {
                 let check_default = |default: &Option<Box<Expr>>, ty: &Type| {
                     let mut required = Required::Required;
                     if let Some(default) = default {
                         required = Required::Optional;
-                        if *kind != FunctionKind::Stub
+                        if x.kind != FunctionKind::Stub
                             || !matches!(default.as_ref(), Expr::EllipsisLiteral(_))
                         {
                             self.expr(default, Some(ty));
@@ -1416,8 +1416,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     required
                 };
-                let mut params = Vec::with_capacity(x.parameters.len());
-                params.extend(x.parameters.posonlyargs.iter().map(|x| {
+                let mut params = Vec::with_capacity(x.def.parameters.len());
+                params.extend(x.def.parameters.posonlyargs.iter().map(|x| {
                     let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
                         &x.parameter.name,
                     )));
@@ -1425,7 +1425,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let required = check_default(&x.default, ty);
                     Param::PosOnly(ty.clone(), required)
                 }));
-                params.extend(x.parameters.args.iter().map(|x| {
+                params.extend(x.def.parameters.args.iter().map(|x| {
                     let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
                         &x.parameter.name,
                     )));
@@ -1433,12 +1433,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let required = check_default(&x.default, ty);
                     Param::Pos(x.parameter.name.id.clone(), ty.clone(), required)
                 }));
-                params.extend(x.parameters.vararg.iter().map(|x| {
+                params.extend(x.def.parameters.vararg.iter().map(|x| {
                     let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(&x.name)));
                     let ty = annot.get_type();
                     Param::VarArg(ty.clone())
                 }));
-                params.extend(x.parameters.kwonlyargs.iter().map(|x| {
+                params.extend(x.def.parameters.kwonlyargs.iter().map(|x| {
                     let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
                         &x.parameter.name,
                     )));
@@ -1446,33 +1446,34 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let required = check_default(&x.default, ty);
                     Param::KwOnly(x.parameter.name.id.clone(), ty.clone(), required)
                 }));
-                params.extend(x.parameters.kwarg.iter().map(|x| {
+                params.extend(x.def.parameters.kwarg.iter().map(|x| {
                     let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(&x.name)));
                     let ty = annot.get_type();
                     Param::Kwargs(ty.clone())
                 }));
                 let ret = self
-                    .get(&Key::ReturnType(ShortIdentifier::new(&x.name)))
+                    .get(&Key::ReturnType(ShortIdentifier::new(&x.def.name)))
                     .arc_clone();
 
-                let ret = if x.is_async {
+                let ret = if x.def.is_async {
                     self.stdlib
                         .coroutine(Type::any_implicit(), Type::any_implicit(), ret)
                         .to_type()
                 } else {
                     ret
                 };
-                let mut tparams = self.scoped_type_params(x.type_params.as_deref());
-                let legacy_tparams = legacy_tparam_keys
+                let mut tparams = self.scoped_type_params(x.def.type_params.as_deref());
+                let legacy_tparams = x
+                    .legacy_tparams
                     .iter()
                     .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
                 tparams.extend(legacy_tparams);
                 let callable = Type::Callable(
                     Box::new(Callable::list(ParamList::new(params), ret)),
-                    CallableKind::from_name(self.module_info().name(), &x.name.id),
+                    CallableKind::from_name(self.module_info().name(), &x.def.name.id),
                 );
-                let mut ty = callable.forall(self.type_params(x.range, tparams));
-                for x in decorators.iter().rev() {
+                let mut ty = callable.forall(self.type_params(x.def.range, tparams));
+                for x in x.decorators.iter().rev() {
                     ty = self.apply_decorator(x, ty)
                 }
                 ty
