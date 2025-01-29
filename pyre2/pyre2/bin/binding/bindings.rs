@@ -553,8 +553,28 @@ impl BindingTable {
 
 impl<'a> BindingsBuilder<'a> {
     fn stmts(&mut self, x: Vec<Stmt>) {
+        // Buffer sequential functions with the same name as potential overloads.
+        let mut buf: Vec<StmtFunctionDef> = Vec::new();
         for x in x {
-            self.stmt(x);
+            match x {
+                Stmt::FunctionDef(x) => {
+                    if let Some(fst) = buf.first()
+                        && x.name.id != fst.name.id
+                    {
+                        self.function_defs(mem::take(&mut buf))
+                    }
+                    buf.push(x)
+                }
+                _ => {
+                    if !buf.is_empty() {
+                        self.function_defs(mem::take(&mut buf))
+                    }
+                    self.stmt_not_function(x);
+                }
+            }
+        }
+        if !buf.is_empty() {
+            self.function_defs(buf)
         }
     }
 
@@ -1177,6 +1197,13 @@ impl<'a> BindingsBuilder<'a> {
         } = self.scopes.last_mut()
         {
             method.self_name = self_name;
+        }
+    }
+
+    // TODO: Create a single binding for a sequence of functions with the same name.
+    fn function_defs(&mut self, x: Vec<StmtFunctionDef>) {
+        for x in x {
+            self.function_def(x)
         }
     }
 
@@ -1823,9 +1850,13 @@ impl<'a> BindingsBuilder<'a> {
 
     /// Evaluate the statements and update the bindings.
     /// Every statement should end up in the bindings, perhaps with a location that is never used.
-    fn stmt(&mut self, x: Stmt) {
+    /// Functions are coalesced into potential overloads in `fn stmts` and should not be passed in.
+    fn stmt_not_function(&mut self, x: Stmt) {
         match x {
-            Stmt::FunctionDef(x) => self.function_def(x),
+            Stmt::FunctionDef(_) => {
+                // We handle 1+ functions at a time in function_defs for overloads. See `fn stmts`
+                unreachable!("unexpected function definition")
+            }
             Stmt::ClassDef(x) => self.class_def(x),
             Stmt::Return(x) => {
                 self.ensure_expr_opt(x.value.as_deref());
