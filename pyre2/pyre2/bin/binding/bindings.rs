@@ -553,30 +553,46 @@ impl BindingTable {
 }
 
 impl<'a> BindingsBuilder<'a> {
-    fn stmts(&mut self, x: Vec<Stmt>) {
-        // Buffer sequential functions with the same name as potential overloads.
-        let mut buf: Vec<StmtFunctionDef> = Vec::new();
-        for x in x {
+    fn stmts_iter<I>(&mut self, mut xs: I)
+    where
+        I: Iterator<Item = Stmt>,
+    {
+        while let Some(x) = xs.next() {
             match x {
                 Stmt::FunctionDef(x) => {
-                    if let Some(fst) = buf.first()
-                        && x.name.id != fst.name.id
-                    {
-                        self.function_defs(mem::take(&mut buf))
+                    return self.stmts_iter1(xs, Vec1::new(x));
+                }
+                _ => self.stmt_not_function(x),
+            }
+        }
+    }
+
+    fn stmts_iter1<I>(&mut self, mut xs: I, mut defs: Vec1<StmtFunctionDef>)
+    where
+        I: Iterator<Item = Stmt>,
+    {
+        while let Some(x) = xs.next() {
+            match x {
+                Stmt::FunctionDef(x) => {
+                    if defs.first().name.id == x.name.id {
+                        defs.push(x)
+                    } else {
+                        self.function_defs(defs);
+                        defs = Vec1::new(x)
                     }
-                    buf.push(x)
                 }
                 _ => {
-                    if !buf.is_empty() {
-                        self.function_defs(mem::take(&mut buf))
-                    }
+                    self.function_defs(defs);
                     self.stmt_not_function(x);
+                    return self.stmts_iter(xs);
                 }
             }
         }
-        if !buf.is_empty() {
-            self.function_defs(buf)
-        }
+        self.function_defs(defs)
+    }
+
+    fn stmts(&mut self, x: Vec<Stmt>) {
+        self.stmts_iter(x.into_iter())
     }
 
     fn inject_builtins(&mut self) {
@@ -1202,14 +1218,9 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     // Create a single binding for a sequence of functions with the same name.
-    // Invariant: the input vec is non-empty
-    fn function_defs(&mut self, x: Vec<StmtFunctionDef>) {
-        let name = x.last().unwrap().name.clone(); // invariant
-        let bindings = x
-            .into_iter()
-            .map(|x| self.function_def(x))
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
+    fn function_defs(&mut self, x: Vec1<StmtFunctionDef>) {
+        let name = x.last().name.clone();
+        let bindings = x.mapped(|x| self.function_def(x));
         self.bind_definition(&name, Binding::Function(bindings), None);
     }
 

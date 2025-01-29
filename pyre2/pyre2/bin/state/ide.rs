@@ -131,7 +131,7 @@ impl State {
                                 && is_interesting_type(&ty)
                             {
                                 res.push((
-                                    x.last().unwrap().def.parameters.range.end(),
+                                    x.last().def.parameters.range.end(),
                                     format!(" -> {ty}"),
                                 ));
                             }
