@@ -37,6 +37,20 @@ struct ClassInner {
     fields: SmallSet<Name>,
 }
 
+pub enum ClassKind {
+    ClassMethod,
+    Class,
+}
+
+impl ClassKind {
+    fn from_qname(qname: &QName) -> Self {
+        match (qname.module.name().as_str(), qname.name.id.as_str()) {
+            ("builtins", "classmethod") => Self::ClassMethod,
+            _ => Self::Class,
+        }
+    }
+}
+
 impl PartialOrd for ClassInner {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -90,6 +104,10 @@ impl Class {
 
     pub fn qname(&self) -> &QName {
         &self.0.qname
+    }
+
+    pub fn kind(&self) -> ClassKind {
+        ClassKind::from_qname(self.qname())
     }
 
     pub fn tparams(&self) -> &TParams {

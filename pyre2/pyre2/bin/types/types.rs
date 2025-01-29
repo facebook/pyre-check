@@ -22,6 +22,7 @@ use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::class::Class;
+use crate::types::class::ClassKind;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
 use crate::types::literal::Lit;
@@ -377,6 +378,30 @@ impl TypedDict {
 assert_eq_size!(Type, [usize; 4]);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Decoration {
+    // The result of applying the `@classmethod` decorator.
+    ClassMethod(Box<Type>),
+}
+
+impl Decoration {
+    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+        match self {
+            Self::ClassMethod(ty) => f(ty),
+        }
+    }
+    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+        match self {
+            Self::ClassMethod(ty) => f(ty),
+        }
+    }
+}
+
+pub enum CalleeKind {
+    Callable(CallableKind),
+    Class(ClassKind),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
     Literal(Lit),
     LiteralString,
@@ -427,6 +452,10 @@ pub enum Type {
     Any(AnyStyle),
     Never(NeverStyle),
     TypeAlias(TypeAlias),
+    /// Used to represent decorator-related scenarios that cannot be easily
+    /// represented in terms of normal types - for example, builtin descriptors
+    /// like `@classmethod`, or the result of `@some_property.setter`.
+    Decoration(Decoration),
     None,
 }
 
@@ -570,10 +599,11 @@ impl Type {
         matches!(self, Type::None)
     }
 
-    pub fn function_kind(&self) -> Option<&CallableKind> {
+    pub fn callee_kind(&self) -> Option<CalleeKind> {
         match self {
-            Type::Callable(_, kind) => Some(kind),
-            Type::Forall(_, t) => t.function_kind(),
+            Type::Callable(_, kind) => Some(CalleeKind::Callable(kind.clone())),
+            Type::ClassDef(c) => Some(CalleeKind::Class(c.kind())),
+            Type::Forall(_, t) => t.callee_kind(),
             _ => None,
         }
     }
@@ -690,6 +720,7 @@ impl Type {
                 f(pspec);
             }
             Type::ParamSpecValue(x) => x.visit(f),
+            Type::Decoration(d) => d.visit(f),
             Type::Type(x)
             | Type::TypeGuard(x)
             | Type::TypeIs(x)
@@ -733,6 +764,7 @@ impl Type {
                 f(pspec);
             }
             Type::ParamSpecValue(x) => x.visit_mut(f),
+            Type::Decoration(d) => d.visit_mut(f),
             Type::Type(x)
             | Type::TypeGuard(x)
             | Type::TypeIs(x)

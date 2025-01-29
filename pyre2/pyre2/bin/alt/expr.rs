@@ -39,6 +39,7 @@ use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
+use crate::types::class::ClassKind;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::param_spec::ParamSpec;
@@ -50,6 +51,8 @@ use crate::types::type_var::TypeVarArgs;
 use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
+use crate::types::types::CalleeKind;
+use crate::types::types::Decoration;
 use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::prelude::SliceExt;
@@ -508,8 +511,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             return decoratee;
         }
         let ty_decorator = self.expr(&decorator.expression, None);
-        match ty_decorator.function_kind() {
-            Some(CallableKind::Dataclass) => {
+        match ty_decorator.callee_kind() {
+            Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
+                return Type::Decoration(Decoration::ClassMethod(Box::new(decoratee)));
+            }
+            Some(CalleeKind::Callable(CallableKind::Dataclass)) => {
                 // TODO: Implement dataclass functionality
             }
             _ => {}

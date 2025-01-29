@@ -1782,16 +1782,6 @@
   "annotations_methods.py": [
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED Forall[T, (cls: type[T]) -> T] <: (type[@_], ParamSpec(@_)) -> @_",
-      "description": "EXPECTED Forall[T, (cls: type[T]) -> T] <: (type[@_], ParamSpec(@_)) -> @_",
-      "line": 17,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 17
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "Expected a callable, got type[?_]",
       "description": "Expected a callable, got type[?_]",
@@ -1833,8 +1823,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, @_]",
-      "description": "Expected a callable, got classmethod[@_, @_, @_]",
+      "concise_description": "Expected a callable, got classmethod[Forall[T, (cls: type[T]) -> T]]",
+      "description": "Expected a callable, got classmethod[Forall[T, (cls: type[T]) -> T]]",
       "line": 31,
       "name": "PyreError",
       "stop_column": 22,
@@ -1853,8 +1843,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, @_]",
-      "description": "Expected a callable, got classmethod[@_, @_, @_]",
+      "concise_description": "Expected a callable, got classmethod[Forall[T, (cls: type[T]) -> T]]",
+      "description": "Expected a callable, got classmethod[Forall[T, (cls: type[T]) -> T]]",
       "line": 36,
       "name": "PyreError",
       "stop_column": 22,
@@ -3395,16 +3385,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED (cls: ProtoB) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "description": "EXPECTED (cls: ProtoB) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "line": 142,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 142
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
       "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
       "line": 146,
@@ -3423,16 +3403,6 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 77
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: ChildA) -> int <: (type[@_], ParamSpec(@_)) -> int",
-      "description": "EXPECTED (cls: ChildA) -> int <: (type[@_], ParamSpec(@_)) -> int",
-      "line": 82,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 82
     }
   ],
   "constructors_call_init.py": [
@@ -9273,16 +9243,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: ParentB) -> ParentB <: (type[@_], ParamSpec(@_)) -> ParentB",
-      "description": "EXPECTED (cls: ParentB) -> ParentB <: (type[@_], ParamSpec(@_)) -> ParentB",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 27
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "assert_type(ChildB, Self) failed",
       "description": "assert_type(ChildB, Self) failed",
@@ -9324,22 +9284,12 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, ParentB]",
-      "description": "Expected a callable, got classmethod[@_, @_, ParentB]",
+      "concise_description": "Expected a callable, got classmethod[(cls: ParentB) -> ParentB]",
+      "description": "Expected a callable, got classmethod[(cls: ParentB) -> ParentB]",
       "line": 38,
       "name": "PyreError",
       "stop_column": 33,
       "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: ChildB) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "description": "EXPECTED (cls: ChildB) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "line": 40,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 40
     },
     {
       "code": -2,
@@ -9384,8 +9334,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, ParentB]",
-      "description": "Expected a callable, got classmethod[@_, @_, ParentB]",
+      "concise_description": "Expected a callable, got classmethod[(cls: ParentB) -> ParentB]",
+      "description": "Expected a callable, got classmethod[(cls: ParentB) -> ParentB]",
       "line": 45,
       "name": "PyreError",
       "stop_column": 32,
@@ -9517,16 +9467,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: Shape, config: dict[str, float]) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
-      "description": "EXPECTED (cls: Shape, config: dict[str, float]) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "assert_type(Shape, type[Self]) failed",
       "description": "assert_type(Shape, type[Self]) failed",
@@ -9544,26 +9484,6 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 28
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: Shape) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
-      "description": "EXPECTED (cls: Shape) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: Shape) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
-      "description": "EXPECTED (cls: Shape) -> Shape <: (type[@_], ParamSpec(@_)) -> Shape",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 35
     },
     {
       "code": -2,
@@ -9608,8 +9528,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, Shape]",
-      "description": "Expected a callable, got classmethod[@_, @_, Shape]",
+      "concise_description": "Expected a callable, got classmethod[(cls: Shape, config: dict[str, float]) -> Shape]",
+      "description": "Expected a callable, got classmethod[(cls: Shape, config: dict[str, float]) -> Shape]",
       "line": 54,
       "name": "PyreError",
       "stop_column": 30,
@@ -9628,8 +9548,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, Shape]",
-      "description": "Expected a callable, got classmethod[@_, @_, Shape]",
+      "concise_description": "Expected a callable, got classmethod[(cls: Shape, config: dict[str, float]) -> Shape]",
+      "description": "Expected a callable, got classmethod[(cls: Shape, config: dict[str, float]) -> Shape]",
       "line": 55,
       "name": "PyreError",
       "stop_column": 31,
@@ -9650,16 +9570,6 @@
   "generics_self_usage.py": [
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: ReturnsSelf) -> ReturnsSelf <: (type[@_], ParamSpec(@_)) -> ReturnsSelf",
-      "description": "EXPECTED (cls: ReturnsSelf) -> ReturnsSelf <: (type[@_], ParamSpec(@_)) -> ReturnsSelf",
-      "line": 13,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 13
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "Expected a callable, got ReturnsSelf",
       "description": "Expected a callable, got ReturnsSelf",
@@ -9667,16 +9577,6 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 15
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: ReturnsSelf) -> type[ReturnsSelf] <: (type[@_], ParamSpec(@_)) -> type[ReturnsSelf]",
-      "description": "EXPECTED (cls: ReturnsSelf) -> type[ReturnsSelf] <: (type[@_], ParamSpec(@_)) -> type[ReturnsSelf]",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 28
     },
     {
       "code": -2,
@@ -15050,16 +14950,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED (cls: A, val: object) -> TypeGuard[int] <: (type[@_], ParamSpec(@_)) -> TypeGuard[int]",
-      "description": "EXPECTED (cls: A, val: object) -> TypeGuard[int] <: (type[@_], ParamSpec(@_)) -> TypeGuard[int]",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "EXPECTED (val: object) -> TypeGuard[int] <: (ParamSpec(@_)) -> TypeGuard[int]",
       "description": "EXPECTED (val: object) -> TypeGuard[int] <: (ParamSpec(@_)) -> TypeGuard[int]",
       "line": 47,
@@ -15110,8 +15000,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, TypeGuard[int]]",
-      "description": "Expected a callable, got classmethod[@_, @_, TypeGuard[int]]",
+      "concise_description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeGuard[int]]",
+      "description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeGuard[int]]",
       "line": 72,
       "name": "PyreError",
       "stop_column": 16,
@@ -15130,8 +15020,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, TypeGuard[int]]",
-      "description": "Expected a callable, got classmethod[@_, @_, TypeGuard[int]]",
+      "concise_description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeGuard[int]]",
+      "description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeGuard[int]]",
       "line": 76,
       "name": "PyreError",
       "stop_column": 14,
@@ -15206,16 +15096,6 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 93
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: C) -> TypeGuard[int] <: (type[@_], ParamSpec(@_)) -> TypeGuard[int]",
-      "description": "EXPECTED (cls: C) -> TypeGuard[int] <: (type[@_], ParamSpec(@_)) -> TypeGuard[int]",
-      "line": 105,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 105
     },
     {
       "code": -2,
@@ -15308,16 +15188,6 @@
       "name": "PyreError",
       "stop_column": 36,
       "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: A, val: object) -> TypeIs[int] <: (type[@_], ParamSpec(@_)) -> TypeIs[int]",
-      "description": "EXPECTED (cls: A, val: object) -> TypeIs[int] <: (type[@_], ParamSpec(@_)) -> TypeIs[int]",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 47
     },
     {
       "code": -2,
@@ -15422,8 +15292,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, TypeIs[int]]",
-      "description": "Expected a callable, got classmethod[@_, @_, TypeIs[int]]",
+      "concise_description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeIs[int]]",
+      "description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeIs[int]]",
       "line": 75,
       "name": "PyreError",
       "stop_column": 16,
@@ -15442,8 +15312,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got classmethod[@_, @_, TypeIs[int]]",
-      "description": "Expected a callable, got classmethod[@_, @_, TypeIs[int]]",
+      "concise_description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeIs[int]]",
+      "description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeIs[int]]",
       "line": 79,
       "name": "PyreError",
       "stop_column": 14,
@@ -15528,16 +15398,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 106
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: C) -> TypeIs[int] <: (type[@_], ParamSpec(@_)) -> TypeIs[int]",
-      "description": "EXPECTED (cls: C) -> TypeIs[int] <: (type[@_], ParamSpec(@_)) -> TypeIs[int]",
-      "line": 108,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 108
     },
     {
       "code": -2,
@@ -15877,16 +15737,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: Example) -> int <: (type[@_], ParamSpec(@_)) -> int",
-      "description": "EXPECTED (cls: Example) -> int <: (type[@_], ParamSpec(@_)) -> int",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Object of class `Template` has no attribute `temp`",
       "description": "Object of class `Template` has no attribute `temp`",
@@ -16004,16 +15854,6 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 219
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: Concrete5_Good4, a: int, b: int) -> float <: (type[@_], ParamSpec(@_)) -> float",
-      "description": "EXPECTED (cls: Concrete5_Good4, a: int, b: int) -> float <: (type[@_], ParamSpec(@_)) -> float",
-      "line": 243,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 243
     },
     {
       "code": -2,
@@ -16407,36 +16247,6 @@
   "protocols_recursive.py": [
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: ProtoA[?_, ?_], value: ?_) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "description": "EXPECTED (cls: ProtoA[?_, ?_], value: ?_) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: ImplA, value: int) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "description": "EXPECTED (cls: ImplA, value: int) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "line": 59,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 59
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED Forall[T, (cls: type[ProtoB[object, T]], value: list[T]) -> None] <: (type[@_], ParamSpec(@_)) -> @_",
-      "description": "EXPECTED Forall[T, (cls: type[ProtoB[object, T]], value: list[T]) -> None] <: (type[@_], ParamSpec(@_)) -> @_",
-      "line": 71,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 71
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, list[int]) failed",
       "description": "assert_type(Any, list[int]) failed",
@@ -16470,18 +16280,7 @@
       "stop_line": 55
     }
   ],
-  "protocols_variance.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: type[Protocol13[?_]]) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "description": "EXPECTED (cls: type[Protocol13[?_]]) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "line": 114,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 114
-    }
-  ],
+  "protocols_variance.py": [],
   "qualifiers_annotated.py": [
     {
       "code": -2,
@@ -16830,32 +16629,12 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED (cls: Base2) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "description": "EXPECTED (cls: Base2) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "line": 31,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
       "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
       "line": 36,
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: Derived2) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "description": "EXPECTED (cls: Derived2) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "line": 59,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 59
     },
     {
       "code": -2,
@@ -18596,16 +18375,6 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (cls: BadTypedDict1) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "description": "EXPECTED (cls: BadTypedDict1) -> None <: (type[@_], ParamSpec(@_)) -> None",
-      "line": 33,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 33
     },
     {
       "code": -2,

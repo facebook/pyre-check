@@ -17,6 +17,7 @@ use crate::types::callable::CallableKind;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::tuple::Tuple;
+use crate::types::types::CalleeKind;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 
@@ -67,13 +68,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let func_ty = self.narrow_val_infer(func);
         if args.args.len() > 1 {
             let second_arg = &args.args[1];
-            let op = match func_ty.function_kind() {
-                Some(CallableKind::IsInstance) => Some(NarrowOp::IsInstance(NarrowVal::Expr(
-                    Box::new(second_arg.clone()),
-                ))),
-                Some(CallableKind::IsSubclass) => Some(NarrowOp::IsSubclass(NarrowVal::Expr(
-                    Box::new(second_arg.clone()),
-                ))),
+            let op = match func_ty.callee_kind() {
+                Some(CalleeKind::Callable(CallableKind::IsInstance)) => Some(NarrowOp::IsInstance(
+                    NarrowVal::Expr(Box::new(second_arg.clone())),
+                )),
+                Some(CalleeKind::Callable(CallableKind::IsSubclass)) => Some(NarrowOp::IsSubclass(
+                    NarrowVal::Expr(Box::new(second_arg.clone())),
+                )),
                 _ => None,
             };
             if op.is_some() {

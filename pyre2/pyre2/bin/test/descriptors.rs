@@ -13,11 +13,11 @@ testcase_with_bug!(
     r#"
 from typing import reveal_type
 class C:
-    @classmethod  # E: Expected 0 positional arguments, got 1
+    @classmethod
     def foo(cls) -> int:
         return 42
 def f(c: C):
-    reveal_type(C.foo)  # E: revealed type: classmethod
-    reveal_type(c.foo)  # E: revealed type: classmethod
+    reveal_type(C.foo)  # E: revealed type: classmethod[(cls: C) -> int]
+    reveal_type(c.foo)  # E: revealed type: classmethod[(cls: C) -> int]
     "#,
 );

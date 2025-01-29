@@ -104,6 +104,7 @@ pub enum CallableKind {
     IsInstance,
     IsSubclass,
     Dataclass,
+    ClassMethod,
     Def,
     Anon,
 }
@@ -255,6 +256,7 @@ impl CallableKind {
         match (module.as_str(), name.as_str()) {
             ("builtins", "isinstance") => Self::IsInstance,
             ("builtins", "issubclass") => Self::IsSubclass,
+            ("builtins", "classmethod") => Self::ClassMethod,
             ("dataclasses", "dataclass") => Self::Dataclass,
             _ => Self::Def,
         }
