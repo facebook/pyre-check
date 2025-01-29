@@ -1201,14 +1201,19 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    // TODO: Create a single binding for a sequence of functions with the same name.
+    // Create a single binding for a sequence of functions with the same name.
+    // Invariant: the input vec is non-empty
     fn function_defs(&mut self, x: Vec<StmtFunctionDef>) {
-        for x in x {
-            self.function_def(x)
-        }
+        let name = x.last().unwrap().name.clone(); // invariant
+        let bindings = x
+            .into_iter()
+            .map(|x| self.function_def(x))
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        self.bind_definition(&name, Binding::Function(bindings), None);
     }
 
-    fn function_def(&mut self, mut x: StmtFunctionDef) {
+    fn function_def(&mut self, mut x: StmtFunctionDef) -> FunctionBinding {
         let body = mem::take(&mut x.body);
         let decorators = mem::take(&mut x.decorator_list);
         let kind = if is_ellipse(&body) {
@@ -1302,17 +1307,6 @@ impl<'a> BindingsBuilder<'a> {
         }
         let is_async = x.is_async;
 
-        self.bind_definition(
-            &func_name,
-            Binding::Function(Box::new(FunctionBinding {
-                def: x,
-                kind,
-                decorators: decorators.into_boxed_slice(),
-                legacy_tparams: legacy_tparams.into_boxed_slice(),
-            })),
-            None,
-        );
-
         let mut return_exprs = Vec::new();
         while self.returns.len() > return_count {
             return_exprs.push(self.returns.pop().unwrap());
@@ -1402,6 +1396,13 @@ impl<'a> BindingsBuilder<'a> {
         for x in yield_exprs {
             self.table
                 .insert(Key::TypeOfYieldAnnotation(x.range()), return_type.clone());
+        }
+
+        FunctionBinding {
+            def: x,
+            kind,
+            decorators: decorators.into_boxed_slice(),
+            legacy_tparams: legacy_tparams.into_boxed_slice(),
         }
     }
 

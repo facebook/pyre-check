@@ -144,8 +144,8 @@
     {
       "code": -2,
       "column": 34,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
-      "description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
+      "concise_description": "Expected 5 more positional arguments",
+      "description": "Expected 5 more positional arguments",
       "line": 79,
       "name": "PyreError",
       "stop_column": 37,
@@ -184,8 +184,8 @@
     {
       "code": -2,
       "column": 35,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, SupportsIndex) -> range | (Unknown, SupportsIndex, SupportsIndex, SupportsIndex) -> range",
-      "description": "Expected `__new__` to be a callable, got (Unknown, SupportsIndex) -> range | (Unknown, SupportsIndex, SupportsIndex, SupportsIndex) -> range",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 82,
       "name": "PyreError",
       "stop_column": 40,
@@ -204,11 +204,21 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
-      "description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
+      "concise_description": "Expected `BadTypeAlias7` to be a type alias, got list[type[int]]",
+      "description": "Expected `BadTypeAlias7` to be a type alias, got list[type[int]]",
       "line": 85,
       "name": "PyreError",
       "stop_column": 29,
+      "stop_line": 85
+    },
+    {
+      "code": -2,
+      "column": 27,
+      "concise_description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 28,
       "stop_line": 85
     },
     {
@@ -254,8 +264,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected `__init__` to be a callable, got (list[Error], Iterable[Error]) -> None | (self: list[Error]) -> None",
-      "description": "Expected `__init__` to be a callable, got (list[Error], Iterable[Error]) -> None | (self: list[Error]) -> None",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 97,
       "name": "PyreError",
       "stop_column": 26,
@@ -416,8 +426,8 @@
     {
       "code": -2,
       "column": 30,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
-      "description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
+      "concise_description": "Expected 5 more positional arguments",
+      "description": "Expected 5 more positional arguments",
       "line": 89,
       "name": "PyreError",
       "stop_column": 33,
@@ -426,8 +436,8 @@
     {
       "code": -2,
       "column": 31,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, SupportsIndex) -> range | (Unknown, SupportsIndex, SupportsIndex, SupportsIndex) -> range",
-      "description": "Expected `__new__` to be a callable, got (Unknown, SupportsIndex) -> range | (Unknown, SupportsIndex, SupportsIndex, SupportsIndex) -> range",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 92,
       "name": "PyreError",
       "stop_column": 36,
@@ -435,12 +445,12 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
-      "description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
+      "column": 23,
+      "concise_description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
       "line": 95,
       "name": "PyreError",
-      "stop_column": 25,
+      "stop_column": 24,
       "stop_line": 95
     },
     {
@@ -482,6 +492,16 @@
       "name": "PyreError",
       "stop_column": 22,
       "stop_line": 110
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "untype, got list[type[int]]",
+      "description": "untype, got list[type[int]]",
+      "line": 112,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 112
     },
     {
       "code": -2,
@@ -536,8 +556,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Expected `__init__` to be a callable, got (list[@_], Iterable[@_]) -> None | (self: list[@_]) -> None",
-      "description": "Expected `__init__` to be a callable, got (list[@_], Iterable[@_]) -> None | (self: list[@_]) -> None",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 127,
       "name": "PyreError",
       "stop_column": 26,
@@ -546,8 +566,8 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (list[int], Iterable[int]) -> None | (self: list[int]) -> None",
-      "description": "Expected `__init__` to be a callable, got (list[int], Iterable[int]) -> None | (self: list[int]) -> None",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 130,
       "name": "PyreError",
       "stop_column": 20,
@@ -922,8 +942,8 @@
     {
       "code": -2,
       "column": 35,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
-      "description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
+      "concise_description": "Expected 5 more positional arguments",
+      "description": "Expected 5 more positional arguments",
       "line": 37,
       "name": "PyreError",
       "stop_column": 38,
@@ -992,11 +1012,21 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
-      "description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
+      "concise_description": "Expected `BadTypeAlias7` to be a type alias, got list[type[int]]",
+      "description": "Expected `BadTypeAlias7` to be a type alias, got list[type[int]]",
       "line": 43,
       "name": "PyreError",
       "stop_column": 30,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 28,
+      "concise_description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 29,
       "stop_line": 43
     },
     {
@@ -1264,8 +1294,8 @@
     {
       "code": -2,
       "column": 53,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
-      "description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
+      "concise_description": "Expected 5 more positional arguments",
+      "description": "Expected 5 more positional arguments",
       "line": 52,
       "name": "PyreError",
       "stop_column": 56,
@@ -1274,8 +1304,8 @@
     {
       "code": -2,
       "column": 56,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, SupportsIndex) -> range | (Unknown, SupportsIndex, SupportsIndex, SupportsIndex) -> range",
-      "description": "Expected `__new__` to be a callable, got (Unknown, SupportsIndex) -> range | (Unknown, SupportsIndex, SupportsIndex, SupportsIndex) -> range",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 55,
       "name": "PyreError",
       "stop_column": 61,
@@ -1283,12 +1313,12 @@
     },
     {
       "code": -2,
-      "column": 42,
-      "concise_description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
-      "description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
+      "column": 48,
+      "concise_description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
       "line": 58,
       "name": "PyreError",
-      "stop_column": 50,
+      "stop_column": 49,
       "stop_line": 58
     }
   ],
@@ -1309,8 +1339,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
-      "description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
+      "concise_description": "Expected 5 more positional arguments",
+      "description": "Expected 5 more positional arguments",
       "line": 41,
       "name": "PyreError",
       "stop_column": 25,
@@ -1349,8 +1379,8 @@
     {
       "code": -2,
       "column": 23,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, SupportsIndex) -> range | (Unknown, SupportsIndex, SupportsIndex, SupportsIndex) -> range",
-      "description": "Expected `__new__` to be a callable, got (Unknown, SupportsIndex) -> range | (Unknown, SupportsIndex, SupportsIndex, SupportsIndex) -> range",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 44,
       "name": "PyreError",
       "stop_column": 28,
@@ -1369,11 +1399,21 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
-      "description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
+      "concise_description": "untype, got list[type[int]]",
+      "description": "untype, got list[type[int]]",
       "line": 47,
       "name": "PyreError",
       "stop_column": 17,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 16,
       "stop_line": 47
     },
     {
@@ -1944,12 +1984,12 @@
   "annotations_typeexpr.py": [
     {
       "code": -2,
-      "column": 22,
-      "concise_description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
-      "description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
+      "column": 29,
+      "concise_description": "EXPECTED Literal['Monty'] <: Buffer",
+      "description": "EXPECTED Literal['Monty'] <: Buffer",
       "line": 26,
       "name": "PyreError",
-      "stop_column": 28,
+      "stop_column": 36,
       "stop_line": 26
     },
     {
@@ -1975,8 +2015,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
-      "description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
+      "concise_description": "Expected 5 more positional arguments",
+      "description": "Expected 5 more positional arguments",
       "line": 88,
       "name": "PyreError",
       "stop_column": 25,
@@ -2025,11 +2065,21 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
-      "description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
+      "concise_description": "untype, got list[type[int]]",
+      "description": "untype, got list[type[int]]",
       "line": 94,
       "name": "PyreError",
       "stop_column": 17,
+      "stop_line": 94
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "line": 94,
+      "name": "PyreError",
+      "stop_column": 16,
       "stop_line": 94
     },
     {
@@ -3334,46 +3384,6 @@
     },
     {
       "code": -2,
-      "column": 34,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 52,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 34,
-      "concise_description": "Object of class `NoneType` has no attribute `__add__`",
-      "description": "Object of class `NoneType` has no attribute `__add__`",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 67,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 53,
-      "concise_description": "EXPECTED Literal['hits'] <: dict[str, int]",
-      "description": "EXPECTED Literal['hits'] <: dict[str, int]",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 59,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 61,
-      "concise_description": "EXPECTED Literal[0] <: str",
-      "description": "EXPECTED Literal[0] <: str",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 62,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "EXPECTED ProtoAImpl <: ProtoA",
       "description": "EXPECTED ProtoAImpl <: ProtoA",
@@ -3448,26 +3458,6 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Expected `__init__` to be a callable, got (self: Class5[list[int]], value: int) -> None | (self: Class5[set[str]], value: str) -> None | (self: Class5[@_], value: @_) -> None | (self: Class5[@_], value: Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (self: Class5[list[int]], value: int) -> None | (self: Class5[set[str]], value: str) -> None | (self: Class5[@_], value: @_) -> None | (self: Class5[@_], value: Any) -> None",
-      "line": 72,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Expected `__init__` to be a callable, got (self: Class5[list[int]], value: int) -> None | (self: Class5[set[str]], value: str) -> None | (self: Class5[int], value: int) -> None | (self: Class5[int], value: Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (self: Class5[list[int]], value: int) -> None | (self: Class5[set[str]], value: str) -> None | (self: Class5[int], value: int) -> None | (self: Class5[int], value: Any) -> None",
-      "line": 73,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 73
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Class5[Any], Class5[set[str]]) failed",
       "description": "assert_type(Class5[Any], Class5[set[str]]) failed",
@@ -3478,32 +3468,12 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Expected `__init__` to be a callable, got (self: Class5[list[int]], value: int) -> None | (self: Class5[set[str]], value: str) -> None | (self: Class5[@_], value: @_) -> None | (self: Class5[@_], value: Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (self: Class5[list[int]], value: int) -> None | (self: Class5[set[str]], value: str) -> None | (self: Class5[@_], value: @_) -> None | (self: Class5[@_], value: Any) -> None",
-      "line": 74,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 74
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Class5[Any], Class5[float]) failed",
       "description": "assert_type(Class5[Any], Class5[float]) failed",
       "line": 75,
       "name": "PyreError",
       "stop_column": 40,
-      "stop_line": 75
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Expected `__init__` to be a callable, got (self: Class5[list[int]], value: int) -> None | (self: Class5[set[str]], value: str) -> None | (self: Class5[@_], value: @_) -> None | (self: Class5[@_], value: Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (self: Class5[list[int]], value: int) -> None | (self: Class5[set[str]], value: str) -> None | (self: Class5[@_], value: @_) -> None | (self: Class5[@_], value: Any) -> None",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 19,
       "stop_line": 75
     },
     {
@@ -3571,16 +3541,6 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
-      "column": 16,
       "concise_description": "EXPECTED object <: Class1",
       "description": "EXPECTED object <: Class1",
       "line": 20,
@@ -3621,16 +3581,6 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 33,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 16,
       "concise_description": "EXPECTED object <: Class2",
       "description": "EXPECTED object <: Class2",
       "line": 33,
@@ -3651,32 +3601,12 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
-      "column": 16,
       "concise_description": "Object of class `super` has no attribute `__call__`",
       "description": "Object of class `super` has no attribute `__call__`",
       "line": 43,
       "name": "PyreError",
       "stop_column": 32,
       "stop_line": 43
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 48
     },
     {
       "code": -2,
@@ -3711,32 +3641,12 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 57,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 57
-    },
-    {
-      "code": -2,
-      "column": 16,
       "concise_description": "Object of class `super` has no attribute `__call__`",
       "description": "Object of class `super` has no attribute `__call__`",
       "line": 57,
       "name": "PyreError",
       "stop_column": 32,
       "stop_line": 57
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 62,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 62
     },
     {
       "code": -2,
@@ -3770,16 +3680,6 @@
     }
   ],
   "constructors_call_new.py": [
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 16,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 16
-    },
     {
       "code": -2,
       "column": 16,
@@ -3819,16 +3719,6 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 21
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 29
     },
     {
       "code": -2,
@@ -3902,16 +3792,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 98,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 98
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -3955,16 +3835,6 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 16,
       "concise_description": "EXPECTED object <: Class1",
       "description": "EXPECTED object <: Class1",
       "line": 25,
@@ -4001,16 +3871,6 @@
       "name": "PyreError",
       "stop_column": 8,
       "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 35
     },
     {
       "code": -2,
@@ -4417,16 +4277,6 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 93,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
-      "column": 16,
       "concise_description": "EXPECTED object <: Class5",
       "description": "EXPECTED object <: Class5",
       "line": 93,
@@ -4556,16 +4406,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 134,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 134
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -4673,16 +4513,6 @@
       "name": "PyreError",
       "stop_column": 15,
       "stop_line": 165
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 178,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 178
     },
     {
       "code": -2,
@@ -4806,16 +4636,6 @@
     }
   ],
   "constructors_consistency.py": [
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 22,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 22
-    },
     {
       "code": -2,
       "column": 16,
@@ -5741,8 +5561,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 60,
       "name": "PyreError",
       "stop_column": 15,
@@ -5751,8 +5571,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 64,
       "name": "PyreError",
       "stop_column": 15,
@@ -5761,8 +5581,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 68,
       "name": "PyreError",
       "stop_column": 15,
@@ -6439,8 +6259,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 92,
       "name": "PyreError",
       "stop_column": 15,
@@ -6682,16 +6502,6 @@
     },
     {
       "code": -2,
-      "column": 22,
-      "concise_description": "Expected `__getitem__` to be a callable, got (list[object], SupportsIndex) -> object | (list[object], slice[Error, Error, Error]) -> list[object]",
-      "description": "Expected `__getitem__` to be a callable, got (list[object], SupportsIndex) -> object | (list[object], slice[Error, Error, Error]) -> list[object]",
-      "line": 11,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 11
-    },
-    {
-      "code": -2,
       "column": 8,
       "concise_description": "Missing argument 'typ'",
       "description": "Missing argument 'typ'",
@@ -6745,8 +6555,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
-      "description": "Expected `__new__` to be a callable, got (Unknown, (...) -> @_, Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], Iterable[Any], *Iterable[Any]) -> map[@_] | Forall[_T1, (Unknown, (_T1) -> @_, Iterable[_T1]) -> map[@_]] | Forall[_T1, _T2, (Unknown, (_T1, _T2) -> @_, Iterable[_T1], Iterable[_T2]) -> map[@_]] | Forall[_T1, _T2, _T3, (Unknown, (_T1, _T2, _T3) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, (Unknown, (_T1, _T2, _T3, _T4) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4]) -> map[@_]] | Forall[_T1, _T2, _T3, _T4, _T5, (Unknown, (_T1, _T2, _T3, _T4, _T5) -> @_, Iterable[_T1], Iterable[_T2], Iterable[_T3], Iterable[_T4], Iterable[_T5]) -> map[@_]]",
+      "concise_description": "Expected 5 more positional arguments",
+      "description": "Expected 5 more positional arguments",
       "line": 25,
       "name": "PyreError",
       "stop_column": 4,
@@ -7519,16 +7329,6 @@
     },
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
-      "description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
-      "line": 67,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 67
-    },
-    {
-      "code": -2,
       "column": 30,
       "concise_description": "EXPECTED (x: int) -> int <: (ParamSpec(@_)) -> int",
       "description": "EXPECTED (x: int) -> int <: (ParamSpec(@_)) -> int",
@@ -7736,11 +7536,21 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Expected `__getitem__` to be a callable, got (self: Sequence[?_], index: int) -> ?_ | (self: Sequence[?_], index: slice[Error, Error, Error]) -> Sequence[?_]",
-      "description": "Expected `__getitem__` to be a callable, got (self: Sequence[?_], index: int) -> ?_ | (self: Sequence[?_], index: slice[Error, Error, Error]) -> Sequence[?_]",
+      "concise_description": "EXPECTED Sequence[?_] <: ?_",
+      "description": "EXPECTED Sequence[?_] <: ?_",
       "line": 19,
       "name": "PyreError",
       "stop_column": 16,
+      "stop_line": 19
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "line": 19,
+      "name": "PyreError",
+      "stop_column": 15,
       "stop_line": 19
     },
     {
@@ -9212,8 +9022,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected `__init__` to be a callable, got (list[TypeVar[T]], Iterable[TypeVar[T]]) -> None | (self: list[TypeVar[T]]) -> None",
-      "description": "Expected `__init__` to be a callable, got (list[TypeVar[T]], Iterable[TypeVar[T]]) -> None | (self: list[TypeVar[T]]) -> None",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 96,
       "name": "PyreError",
       "stop_column": 8,
@@ -9254,8 +9064,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(Any, Self) failed",
-      "description": "assert_type(Any, Self) failed",
+      "concise_description": "assert_type(list[Self], Self) failed",
+      "description": "assert_type(list[Self], Self) failed",
       "line": 37,
       "name": "PyreError",
       "stop_column": 37,
@@ -9263,12 +9073,12 @@
     },
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "Expected `__getitem__` to be a callable, got (list[Self], SupportsIndex) -> Self | (list[Self], slice[Error, Error, Error]) -> list[Self]",
-      "description": "Expected `__getitem__` to be a callable, got (list[Self], SupportsIndex) -> Self | (list[Self], slice[Error, Error, Error]) -> list[Self]",
+      "column": 28,
+      "concise_description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
       "line": 37,
       "name": "PyreError",
-      "stop_column": 30,
+      "stop_column": 29,
       "stop_line": 37
     },
     {
@@ -9304,8 +9114,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(Any, Self) failed",
-      "description": "assert_type(Any, Self) failed",
+      "concise_description": "assert_type(list[Self], Self) failed",
+      "description": "assert_type(list[Self], Self) failed",
       "line": 44,
       "name": "PyreError",
       "stop_column": 36,
@@ -9313,12 +9123,12 @@
     },
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "Expected `__getitem__` to be a callable, got (list[Self], SupportsIndex) -> Self | (list[Self], slice[Error, Error, Error]) -> list[Self]",
-      "description": "Expected `__getitem__` to be a callable, got (list[Self], SupportsIndex) -> Self | (list[Self], slice[Error, Error, Error]) -> list[Self]",
+      "column": 27,
+      "concise_description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
       "line": 44,
       "name": "PyreError",
-      "stop_column": 29,
+      "stop_column": 28,
       "stop_line": 44
     },
     {
@@ -9345,12 +9155,12 @@
   "generics_self_attributes.py": [
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
-      "description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
+      "column": 20,
+      "concise_description": "EXPECTED int <: Buffer",
+      "description": "EXPECTED int <: Buffer",
       "line": 22,
       "name": "PyreError",
-      "stop_column": 19,
+      "stop_column": 30,
       "stop_line": 22
     },
     {
@@ -9986,6 +9796,16 @@
     },
     {
       "code": -2,
+      "column": 6,
+      "concise_description": "Could not find name `value`",
+      "description": "Could not find name `value`",
+      "line": 90,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 90
+    },
+    {
+      "code": -2,
       "column": 38,
       "concise_description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
       "description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
@@ -10149,11 +9969,21 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 52,
       "name": "PyreError",
       "stop_column": 13,
+      "stop_line": 52
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "EXPECTED Literal[0] <: bytearray | bytes | str",
+      "description": "EXPECTED Literal[0] <: bytearray | bytes | str",
+      "line": 52,
+      "name": "PyreError",
+      "stop_column": 15,
       "stop_line": 52
     },
     {
@@ -10189,8 +10019,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 85,
       "name": "PyreError",
       "stop_column": 8,
@@ -10199,8 +10029,18 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "EXPECTED Literal[0] <: bytearray | bytes | str",
+      "description": "EXPECTED Literal[0] <: bytearray | bytes | str",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 85
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 90,
       "name": "PyreError",
       "stop_column": 12,
@@ -10208,9 +10048,19 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED Literal[1] <: bytearray | bytes | str",
+      "description": "EXPECTED Literal[1] <: bytearray | bytes | str",
+      "line": 90,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 90
+    },
+    {
+      "code": -2,
       "column": 5,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 102,
       "name": "PyreError",
       "stop_column": 8,
@@ -10219,8 +10069,18 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "EXPECTED Literal[0] <: bytearray | bytes | str",
+      "description": "EXPECTED Literal[0] <: bytearray | bytes | str",
+      "line": 102,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 102
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 106,
       "name": "PyreError",
       "stop_column": 12,
@@ -10229,11 +10089,21 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
-      "description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
+      "concise_description": "EXPECTED Literal[1] <: bytearray | bytes | str",
+      "description": "EXPECTED Literal[1] <: bytearray | bytes | str",
+      "line": 106,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 106
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "EXPECTED Literal[''] <: Buffer",
+      "description": "EXPECTED Literal[''] <: Buffer",
       "line": 111,
       "name": "PyreError",
-      "stop_column": 16,
+      "stop_column": 19,
       "stop_line": 111
     },
     {
@@ -10311,8 +10181,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
+      "concise_description": "EXPECTED type[type] <: type[TypeVar[Self]]",
+      "description": "EXPECTED type[type] <: type[TypeVar[Self]]",
       "line": 46,
       "name": "PyreError",
       "stop_column": 5,
@@ -10321,8 +10191,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
-      "description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
+      "concise_description": "Expected 2 more positional arguments",
+      "description": "Expected 2 more positional arguments",
       "line": 46,
       "name": "PyreError",
       "stop_column": 5,
@@ -10331,11 +10201,21 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Object of class `type` has no attribute `label`",
-      "description": "Object of class `type` has no attribute `label`",
+      "concise_description": "Object of class `TypeVar` has no attribute `label`",
+      "description": "Object of class `TypeVar` has no attribute `label`",
       "line": 46,
       "name": "PyreError",
       "stop_column": 15,
+      "stop_line": 46
+    },
+    {
+      "code": -2,
+      "column": 6,
+      "concise_description": "EXPECTED Node[int] <: str",
+      "description": "EXPECTED Node[int] <: str",
+      "line": 46,
+      "name": "PyreError",
+      "stop_column": 8,
       "stop_line": 46
     },
     {
@@ -11781,21 +11661,11 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Array[TypeVar[Axis2]] | Array[TypeVar[Axis3]] | Any, Array[?_]) failed",
-      "description": "assert_type(Array[TypeVar[Axis2]] | Array[TypeVar[Axis3]] | Any, Array[?_]) failed",
+      "concise_description": "assert_type(Any, Array[?_]) failed",
+      "description": "assert_type(Any, Array[?_]) failed",
       "line": 30,
       "name": "PyreError",
       "stop_column": 52,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Missing argument 'self'",
-      "description": "Missing argument 'self'",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 28,
       "stop_line": 30
     },
     {
@@ -11811,21 +11681,11 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Array[TypeVar[Axis2]] | Array[TypeVar[Axis3]] | Any, Array[?_]) failed",
-      "description": "assert_type(Array[TypeVar[Axis2]] | Array[TypeVar[Axis3]] | Any, Array[?_]) failed",
+      "concise_description": "assert_type(Any, Array[?_]) failed",
+      "description": "assert_type(Any, Array[?_]) failed",
       "line": 31,
       "name": "PyreError",
       "stop_column": 59,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Missing argument 'self'",
-      "description": "Missing argument 'self'",
-      "line": 31,
-      "name": "PyreError",
-      "stop_column": 28,
       "stop_line": 31
     },
     {
@@ -13100,6 +12960,16 @@
     },
     {
       "code": -2,
+      "column": 6,
+      "concise_description": "Could not find name `value`",
+      "description": "Could not find name `value`",
+      "line": 91,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 91
+    },
+    {
+      "code": -2,
       "column": 38,
       "concise_description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
       "description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
@@ -13445,12 +13315,12 @@
     },
     {
       "code": -2,
-      "column": 30,
-      "concise_description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
-      "description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
+      "column": 34,
+      "concise_description": "EXPECTED LiteralString <: Buffer",
+      "description": "EXPECTED LiteralString <: Buffer",
       "line": 53,
       "name": "PyreError",
-      "stop_column": 33,
+      "stop_column": 35,
       "stop_line": 53
     },
     {
@@ -13505,12 +13375,12 @@
     },
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
-      "description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
+      "column": 25,
+      "concise_description": "EXPECTED Literal[1] <: Buffer",
+      "description": "EXPECTED Literal[1] <: Buffer",
       "line": 68,
       "name": "PyreError",
-      "stop_column": 24,
+      "stop_column": 26,
       "stop_line": 68
     },
     {
@@ -13605,12 +13475,12 @@
     },
     {
       "code": -2,
-      "column": 19,
-      "concise_description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
-      "description": "Expected `__new__` to be a callable, got (cls: Unknown, object: Buffer, encoding: str, errors: str) -> str | (cls: Unknown, object: object) -> str",
+      "column": 23,
+      "concise_description": "EXPECTED Literal[1] <: Buffer",
+      "description": "EXPECTED Literal[1] <: Buffer",
       "line": 167,
       "name": "PyreError",
-      "stop_column": 22,
+      "stop_column": 24,
       "stop_line": 167
     },
     {
@@ -13931,12 +13801,22 @@
   "namedtuples_define_class.py": [
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 12,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 21,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 13,
+      "stop_line": 21
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "EXPECTED Literal[2] <: None",
+      "description": "EXPECTED Literal[2] <: None",
+      "line": 21,
+      "name": "PyreError",
+      "stop_column": 16,
       "stop_line": 21
     },
     {
@@ -14141,102 +14021,202 @@
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 12,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 35,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 13,
       "stop_line": 35
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 15,
+      "concise_description": "EXPECTED Literal[2] <: None",
+      "description": "EXPECTED Literal[2] <: None",
+      "line": 35,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
+      "line": 35,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 38,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 15,
       "stop_line": 38
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 12,
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 41,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 15,
       "stop_line": 41
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 12,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 44,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 13,
       "stop_line": 44
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 12,
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 45,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 15,
       "stop_line": 45
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 12,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 46,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 13,
       "stop_line": 46
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 15,
+      "concise_description": "EXPECTED Literal[''] <: None",
+      "description": "EXPECTED Literal[''] <: None",
+      "line": 46,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 46
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 47,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 13,
       "stop_line": 47
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 15,
+      "concise_description": "EXPECTED Literal[2] <: None",
+      "description": "EXPECTED Literal[2] <: None",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 48,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 13,
       "stop_line": 48
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 15,
+      "concise_description": "EXPECTED Literal[2] <: None",
+      "description": "EXPECTED Literal[2] <: None",
+      "line": 48,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 48
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "Expected 2 positional arguments, got 4",
+      "description": "Expected 2 positional arguments, got 4",
+      "line": 48,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 48
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 49,
       "name": "PyreError",
-      "stop_column": 12,
+      "stop_column": 14,
       "stop_line": 49
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 16,
+      "concise_description": "EXPECTED Literal[2] <: None",
+      "description": "EXPECTED Literal[2] <: None",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 19,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 72,
       "name": "PyreError",
-      "stop_column": 20,
+      "stop_column": 22,
+      "stop_line": 72
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "EXPECTED Literal[2] <: None",
+      "description": "EXPECTED Literal[2] <: None",
+      "line": 72,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 72
+    },
+    {
+      "code": -2,
+      "column": 27,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
+      "line": 72,
+      "name": "PyreError",
+      "stop_column": 29,
       "stop_line": 72
     },
     {
@@ -14251,12 +14231,12 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 20,
+      "concise_description": "EXPECTED float <: None",
+      "description": "EXPECTED float <: None",
       "line": 93,
       "name": "PyreError",
-      "stop_column": 15,
+      "stop_column": 23,
       "stop_line": 93
     },
     {
@@ -14301,12 +14281,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 19,
+      "concise_description": "EXPECTED float <: None",
+      "description": "EXPECTED float <: None",
       "line": 98,
       "name": "PyreError",
-      "stop_column": 14,
+      "stop_column": 22,
       "stop_line": 98
     },
     {
@@ -14443,12 +14423,12 @@
     },
     {
       "code": -2,
-      "column": 10,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 31,
+      "concise_description": "EXPECTED list[tuple[str, type[int]]] <: None",
+      "description": "EXPECTED list[tuple[str, type[int]]] <: None",
       "line": 33,
       "name": "PyreError",
-      "stop_column": 20,
+      "stop_column": 55,
       "stop_line": 33
     },
     {
@@ -14493,12 +14473,12 @@
     },
     {
       "code": -2,
-      "column": 10,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 31,
+      "concise_description": "EXPECTED tuple[tuple[Literal['x'], type[int]], tuple[Literal['y'], type[int]]] <: None",
+      "description": "EXPECTED tuple[tuple[Literal['x'], type[int]], tuple[Literal['y'], type[int]]] <: None",
       "line": 39,
       "name": "PyreError",
-      "stop_column": 20,
+      "stop_column": 55,
       "stop_line": 39
     },
     {
@@ -14585,12 +14565,12 @@
   "namedtuples_type_compat.py": [
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 11,
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 19,
       "name": "PyreError",
-      "stop_column": 10,
+      "stop_column": 14,
       "stop_line": 19
     },
     {
@@ -14647,12 +14627,22 @@
   "namedtuples_usage.py": [
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 11,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 19,
       "name": "PyreError",
-      "stop_column": 10,
+      "stop_column": 12,
+      "stop_line": 19
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "EXPECTED Literal[2] <: None",
+      "description": "EXPECTED Literal[2] <: None",
+      "line": 19,
+      "name": "PyreError",
+      "stop_column": 15,
       "stop_line": 19
     },
     {
@@ -14897,12 +14887,22 @@
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 20,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 60,
       "name": "PyreError",
-      "stop_column": 19,
+      "stop_column": 21,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
+      "column": 23,
+      "concise_description": "EXPECTED Literal[1] <: None",
+      "description": "EXPECTED Literal[1] <: None",
+      "line": 60,
+      "name": "PyreError",
+      "stop_column": 24,
       "stop_line": 60
     },
     {
@@ -14960,8 +14960,8 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
+      "concise_description": "EXPECTED type[type] <: type[TypeVar[Self]]",
+      "description": "EXPECTED type[type] <: type[TypeVar[Self]]",
       "line": 52,
       "name": "PyreError",
       "stop_column": 36,
@@ -14970,8 +14970,8 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
-      "description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
+      "concise_description": "Expected 2 more positional arguments",
+      "description": "Expected 2 more positional arguments",
       "line": 52,
       "name": "PyreError",
       "stop_column": 36,
@@ -14980,8 +14980,28 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
+      "concise_description": "EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 52,
+      "name": "PyreError",
+      "stop_column": 42,
+      "stop_line": 52
+    },
+    {
+      "code": -2,
+      "column": 37,
+      "concise_description": "EXPECTED A <: str",
+      "description": "EXPECTED A <: str",
+      "line": 52,
+      "name": "PyreError",
+      "stop_column": 41,
+      "stop_line": 52
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "EXPECTED type[type] <: type[TypeVar[Self]]",
+      "description": "EXPECTED type[type] <: type[TypeVar[Self]]",
       "line": 55,
       "name": "PyreError",
       "stop_column": 36,
@@ -14990,11 +15010,31 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
-      "description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
+      "concise_description": "Expected 2 more positional arguments",
+      "description": "Expected 2 more positional arguments",
       "line": 55,
       "name": "PyreError",
       "stop_column": 36,
+      "stop_line": 55
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 55,
+      "name": "PyreError",
+      "stop_column": 42,
+      "stop_line": 55
+    },
+    {
+      "code": -2,
+      "column": 37,
+      "concise_description": "EXPECTED ?_ <: str",
+      "description": "EXPECTED ?_ <: str",
+      "line": 55,
+      "name": "PyreError",
+      "stop_column": 41,
       "stop_line": 55
     },
     {
@@ -15232,8 +15272,8 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
+      "concise_description": "EXPECTED type[type] <: type[TypeVar[Self]]",
+      "description": "EXPECTED type[type] <: type[TypeVar[Self]]",
       "line": 56,
       "name": "PyreError",
       "stop_column": 36,
@@ -15242,11 +15282,31 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
-      "description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
+      "concise_description": "Expected 2 more positional arguments",
+      "description": "Expected 2 more positional arguments",
       "line": 56,
       "name": "PyreError",
       "stop_column": 36,
+      "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 56,
+      "name": "PyreError",
+      "stop_column": 42,
+      "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 37,
+      "concise_description": "EXPECTED A <: str",
+      "description": "EXPECTED A <: str",
+      "line": 56,
+      "name": "PyreError",
+      "stop_column": 41,
       "stop_line": 56
     },
     {
@@ -15262,8 +15322,8 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
+      "concise_description": "EXPECTED type[type] <: type[TypeVar[Self]]",
+      "description": "EXPECTED type[type] <: type[TypeVar[Self]]",
       "line": 59,
       "name": "PyreError",
       "stop_column": 36,
@@ -15272,11 +15332,31 @@
     {
       "code": -2,
       "column": 32,
-      "concise_description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
-      "description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
+      "concise_description": "Expected 2 more positional arguments",
+      "description": "Expected 2 more positional arguments",
       "line": 59,
       "name": "PyreError",
       "stop_column": 36,
+      "stop_line": 59
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]",
+      "line": 59,
+      "name": "PyreError",
+      "stop_column": 42,
+      "stop_line": 59
+    },
+    {
+      "code": -2,
+      "column": 37,
+      "concise_description": "EXPECTED ?_ <: str",
+      "description": "EXPECTED ?_ <: str",
+      "line": 59,
+      "name": "PyreError",
+      "stop_column": 41,
       "stop_line": 59
     },
     {
@@ -15534,8 +15614,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
+      "concise_description": "assert_type(bytes | int, int) failed",
+      "description": "assert_type(bytes | int, int) failed",
       "line": 35,
       "name": "PyreError",
       "stop_column": 23,
@@ -15543,19 +15623,9 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Expected `__getitem__` to be a callable, got (self: Bytes, __i: int) -> int | (self: Bytes, __i_or_s: int | slice[Error, Error, Error]) -> bytes | int | (self: Bytes, __s: slice[Error, Error, Error]) -> bytes",
-      "description": "Expected `__getitem__` to be a callable, got (self: Bytes, __i: int) -> int | (self: Bytes, __i_or_s: int | slice[Error, Error, Error]) -> bytes | int | (self: Bytes, __s: slice[Error, Error, Error]) -> bytes",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, bytes) failed",
-      "description": "assert_type(Any, bytes) failed",
+      "concise_description": "assert_type(bytes | int, bytes) failed",
+      "description": "assert_type(bytes | int, bytes) failed",
       "line": 36,
       "name": "PyreError",
       "stop_column": 27,
@@ -15563,22 +15633,12 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Expected `__getitem__` to be a callable, got (self: Bytes, __i: int) -> int | (self: Bytes, __i_or_s: int | slice[Error, Error, Error]) -> bytes | int | (self: Bytes, __s: slice[Error, Error, Error]) -> bytes",
-      "description": "Expected `__getitem__` to be a callable, got (self: Bytes, __i: int) -> int | (self: Bytes, __i_or_s: int | slice[Error, Error, Error]) -> bytes | int | (self: Bytes, __s: slice[Error, Error, Error]) -> bytes",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Expected `__getitem__` to be a callable, got (self: Bytes, __i: int) -> int | (self: Bytes, __i_or_s: int | slice[Error, Error, Error]) -> bytes | int | (self: Bytes, __s: slice[Error, Error, Error]) -> bytes",
-      "description": "Expected `__getitem__` to be a callable, got (self: Bytes, __i: int) -> int | (self: Bytes, __i_or_s: int | slice[Error, Error, Error]) -> bytes | int | (self: Bytes, __s: slice[Error, Error, Error]) -> bytes",
+      "column": 3,
+      "concise_description": "EXPECTED Literal[''] <: int | slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[''] <: int | slice[Error, Error, Error]",
       "line": 37,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 5,
       "stop_line": 37
     }
   ],
@@ -15838,8 +15898,8 @@
     {
       "code": -2,
       "column": 23,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 216,
       "name": "PyreError",
       "stop_column": 38,
@@ -15927,6 +15987,16 @@
     },
     {
       "code": -2,
+      "column": 6,
+      "concise_description": "Could not find name `val1`",
+      "description": "Could not find name `val1`",
+      "line": 297,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 297
+    },
+    {
+      "code": -2,
       "column": 17,
       "concise_description": "EXPECTED Literal[0] <: float",
       "description": "EXPECTED Literal[0] <: float",
@@ -15934,6 +16004,16 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 305
+    },
+    {
+      "code": -2,
+      "column": 6,
+      "concise_description": "Could not find name `val1`",
+      "description": "Could not find name `val1`",
+      "line": 307,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 307
     },
     {
       "code": -2,
@@ -15988,8 +16068,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 340,
       "name": "PyreError",
       "stop_column": 36,
@@ -15997,16 +16077,6 @@
     }
   ],
   "protocols_explicit.py": [
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "description": "Expected `__init__` to be a callable, got (super, Any) -> None | (super, Any, Any) -> None | (self: super) -> None",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 27
-    },
     {
       "code": -2,
       "column": 16,
@@ -16354,12 +16424,22 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
-      "description": "Expected `__getitem__` to be a callable, got (list[type[int]], SupportsIndex) -> type[int] | (list[type[int]], slice[Error, Error, Error]) -> list[type[int]]",
+      "column": 7,
+      "concise_description": "untype, got list[type[int]]",
+      "description": "untype, got list[type[int]]",
       "line": 48,
       "name": "PyreError",
-      "stop_column": 25,
+      "stop_column": 30,
+      "stop_line": 48
+    },
+    {
+      "code": -2,
+      "column": 23,
+      "concise_description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "description": "EXPECTED Literal[0] <: slice[Error, Error, Error]",
+      "line": 48,
+      "name": "PyreError",
+      "stop_column": 24,
       "stop_line": 48
     },
     {
@@ -16435,8 +16515,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 92,
       "name": "PyreError",
       "stop_column": 19,
@@ -16445,11 +16525,31 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
+      "line": 92,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 92
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 93,
       "name": "PyreError",
       "stop_column": 9,
+      "stop_line": 93
+    },
+    {
+      "code": -2,
+      "column": 10,
+      "concise_description": "EXPECTED Literal[1] <: bytearray | bytes | str",
+      "description": "EXPECTED Literal[1] <: bytearray | bytes | str",
+      "line": 93,
+      "name": "PyreError",
+      "stop_column": 11,
       "stop_line": 93
     },
     {
@@ -16546,12 +16646,12 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (NamedTuple, str, Iterable[tuple[str, Any]]) -> None | (NamedTuple, str, None, **Any) -> None",
+      "column": 21,
+      "concise_description": "EXPECTED list[tuple[str, type[int]]] <: None",
+      "description": "EXPECTED list[tuple[str, type[int]]] <: None",
       "line": 131,
       "name": "PyreError",
-      "stop_column": 15,
+      "stop_column": 41,
       "stop_line": 131
     },
     {
@@ -16795,8 +16895,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
+      "concise_description": "EXPECTED type[type] <: type[TypeVar[Self]]",
+      "description": "EXPECTED type[type] <: type[TypeVar[Self]]",
       "line": 21,
       "name": "PyreError",
       "stop_column": 11,
@@ -16805,8 +16905,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
-      "description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
+      "concise_description": "Expected 2 more positional arguments",
+      "description": "Expected 2 more positional arguments",
       "line": 21,
       "name": "PyreError",
       "stop_column": 11,
@@ -16815,11 +16915,21 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED type <: None",
-      "description": "EXPECTED type <: None",
+      "concise_description": "EXPECTED TypeVar[Self] <: None",
+      "description": "EXPECTED TypeVar[Self] <: None",
       "line": 21,
       "name": "PyreError",
       "stop_column": 17,
+      "stop_line": 21
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED None <: str",
+      "description": "EXPECTED None <: str",
+      "line": 21,
+      "name": "PyreError",
+      "stop_column": 16,
       "stop_line": 21
     },
     {
@@ -16835,18 +16945,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED property <: type[None]",
-      "description": "EXPECTED property <: type[None]",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 39
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
-      "description": "Expected `__init__` to be a callable, got (type, object) -> None | (type, str, tuple[type, ...], dict[str, Any], **Any) -> None",
+      "concise_description": "EXPECTED type[type] <: type[TypeVar[Self]]",
+      "description": "EXPECTED type[type] <: type[TypeVar[Self]]",
       "line": 40,
       "name": "PyreError",
       "stop_column": 11,
@@ -16855,8 +16955,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
-      "description": "Expected `__new__` to be a callable, got (type[TypeVar[Self]], str, tuple[type, ...], dict[str, Any], **Any) -> TypeVar[Self] | (Unknown, object) -> type",
+      "concise_description": "Expected 2 more positional arguments",
+      "description": "Expected 2 more positional arguments",
       "line": 40,
       "name": "PyreError",
       "stop_column": 11,
@@ -16865,11 +16965,21 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED type <: type[None]",
-      "description": "EXPECTED type <: type[None]",
+      "concise_description": "EXPECTED TypeVar[Self] <: type[None]",
+      "description": "EXPECTED TypeVar[Self] <: type[None]",
       "line": 40,
       "name": "PyreError",
       "stop_column": 17,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED None <: str",
+      "description": "EXPECTED None <: str",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 16,
       "stop_line": 40
     },
     {
@@ -18135,8 +18245,8 @@
     {
       "code": -2,
       "column": 40,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 31,
       "name": "PyreError",
       "stop_column": 43,
@@ -18144,12 +18254,32 @@
     },
     {
       "code": -2,
+      "column": 44,
+      "concise_description": "EXPECTED Literal[1] <: bytearray | bytes | str",
+      "description": "EXPECTED Literal[1] <: bytearray | bytes | str",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 45,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
       "column": 48,
-      "concise_description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
-      "description": "Expected `__new__` to be a callable, got (Unknown, Buffer | SupportsIndex | SupportsInt | SupportsTrunc | str) -> int | (Unknown, bytearray | bytes | str, base: SupportsIndex) -> int",
+      "concise_description": "Missing argument 'base'",
+      "description": "Missing argument 'base'",
       "line": 31,
       "name": "PyreError",
       "stop_column": 51,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
+      "column": 52,
+      "concise_description": "EXPECTED Literal[1] <: bytearray | bytes | str",
+      "description": "EXPECTED Literal[1] <: bytearray | bytes | str",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 53,
       "stop_line": 31
     },
     {
@@ -18575,8 +18705,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
+      "concise_description": "Missing argument 'default'",
+      "description": "Missing argument 'default'",
       "line": 41,
       "name": "PyreError",
       "stop_column": 10,
@@ -18587,49 +18717,9 @@
       "column": 1,
       "concise_description": "Missing argument 'default'",
       "description": "Missing argument 'default'",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED Literal['name'] <: Mapping[str, object]",
-      "description": "EXPECTED Literal['name'] <: Mapping[str, object]",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
       "line": 44,
       "name": "PyreError",
       "stop_column": 10,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument 'default'",
-      "description": "Missing argument 'default'",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED Literal['other'] <: Mapping[str, object]",
-      "description": "EXPECTED Literal['other'] <: Mapping[str, object]",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 18,
       "stop_line": 44
     },
     {
@@ -18665,21 +18755,11 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(object | Any | None, str | None) failed",
-      "description": "assert_type(object | Any | None, str | None) failed",
+      "concise_description": "assert_type(object | Any, str | None) failed",
+      "description": "assert_type(object | Any, str | None) failed",
       "line": 60,
       "name": "PyreError",
       "stop_column": 52,
-      "stop_line": 60
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
-      "line": 60,
-      "name": "PyreError",
-      "stop_column": 31,
       "stop_line": 60
     },
     {
@@ -18690,16 +18770,6 @@
       "line": 60,
       "name": "PyreError",
       "stop_column": 31,
-      "stop_line": 60
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED Literal['name'] <: Mapping[str, object]",
-      "description": "EXPECTED Literal['name'] <: Mapping[str, object]",
-      "line": 60,
-      "name": "PyreError",
-      "stop_column": 38,
       "stop_line": 60
     },
     {
@@ -19249,18 +19319,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
-      "line": 91,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 91
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED int | str | None | None <: str",
-      "description": "EXPECTED int | str | None | None <: str",
+      "concise_description": "EXPECTED int | str | str <: str",
+      "description": "EXPECTED int | str | str <: str",
       "line": 91,
       "name": "PyreError",
       "stop_column": 38,
@@ -19268,52 +19328,12 @@
     },
     {
       "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED Literal['name'] <: dict[str, int | str]",
-      "description": "EXPECTED Literal['name'] <: dict[str, int | str]",
-      "line": 91,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 91
-    },
-    {
-      "code": -2,
       "column": 13,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED int | str | None | None <: int",
-      "description": "EXPECTED int | str | None | None <: int",
+      "concise_description": "EXPECTED int | str | int <: int",
+      "description": "EXPECTED int | str | int <: int",
       "line": 92,
       "name": "PyreError",
       "stop_column": 33,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Literal['age'] <: dict[str, int | str]",
-      "description": "EXPECTED Literal['age'] <: dict[str, int | str]",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[42] <: str",
-      "description": "EXPECTED Literal[42] <: str",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 32,
       "stop_line": 92
     },
     {
@@ -19339,18 +19359,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected 2 more positional arguments",
-      "description": "Expected 2 more positional arguments",
-      "line": 97,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 97
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED int | str | None | None <: str | None",
-      "description": "EXPECTED int | str | None | None <: str | None",
+      "concise_description": "EXPECTED int | str | @_ <: str | None",
+      "description": "EXPECTED int | str | @_ <: str | None",
       "line": 97,
       "name": "PyreError",
       "stop_column": 38,
@@ -19358,16 +19368,6 @@
     },
     {
       "code": -2,
-      "column": 31,
-      "concise_description": "EXPECTED Literal['name'] <: dict[str, int | str]",
-      "description": "EXPECTED Literal['name'] <: dict[str, int | str]",
-      "line": 97,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 97
-    },
-    {
-      "code": -2,
       "column": 14,
       "concise_description": "Expected 1 more positional argument",
       "description": "Expected 1 more positional argument",
@@ -19379,18 +19379,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Expected 2 more positional arguments",
-      "description": "Expected 2 more positional arguments",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED int | str | None | None <: str",
-      "description": "EXPECTED int | str | None | None <: str",
+      "concise_description": "EXPECTED int | str | @_ <: str",
+      "description": "EXPECTED int | str | @_ <: str",
       "line": 101,
       "name": "PyreError",
       "stop_column": 31,
@@ -19398,29 +19388,9 @@
     },
     {
       "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED Literal['name'] <: dict[str, int | str]",
-      "description": "EXPECTED Literal['name'] <: dict[str, int | str]",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
       "column": 13,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
-      "line": 103,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 103
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED int | str | None | None <: int",
-      "description": "EXPECTED int | str | None | None <: int",
+      "concise_description": "EXPECTED int | str | int <: int",
+      "description": "EXPECTED int | str | int <: int",
       "line": 103,
       "name": "PyreError",
       "stop_column": 33,
@@ -19428,82 +19398,12 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Literal['age'] <: dict[str, int | str]",
-      "description": "EXPECTED Literal['age'] <: dict[str, int | str]",
-      "line": 103,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 103
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[42] <: str",
-      "description": "EXPECTED Literal[42] <: str",
-      "line": 103,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 103
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
-      "line": 105,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 105
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED int | str | None | None <: int | str",
-      "description": "EXPECTED int | str | None | None <: int | str",
-      "line": 105,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 105
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED Literal['age'] <: dict[str, int | str]",
-      "description": "EXPECTED Literal['age'] <: dict[str, int | str]",
-      "line": 105,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 105
-    },
-    {
-      "code": -2,
       "column": 13,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
-      "line": 107,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 107
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED int | str | None | None <: int",
-      "description": "EXPECTED int | str | None | None <: int",
+      "concise_description": "EXPECTED int | str | str <: int",
+      "description": "EXPECTED int | str | str <: int",
       "line": 107,
       "name": "PyreError",
       "stop_column": 35,
-      "stop_line": 107
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Literal['age'] <: dict[str, int | str]",
-      "description": "EXPECTED Literal['age'] <: dict[str, int | str]",
-      "line": 107,
-      "name": "PyreError",
-      "stop_column": 28,
       "stop_line": 107
     },
     {
