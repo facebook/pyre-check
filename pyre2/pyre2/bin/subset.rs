@@ -10,7 +10,7 @@ use itertools::izip;
 use crate::alt::answers::LookupAnswer;
 use crate::solver::Subset;
 use crate::types::callable::Callable;
-use crate::types::callable::Kind;
+use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
@@ -92,7 +92,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             ) if !params.is_empty() => {
                 let l_no_self = Type::Callable(
                     Box::new(Callable::list(params.tail(), ret.clone())),
-                    Kind::Anon,
+                    CallableKind::Anon,
                 );
                 self.is_subset_eq_impl(&l_no_self, want)
             }

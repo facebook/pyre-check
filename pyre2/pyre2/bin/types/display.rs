@@ -293,7 +293,7 @@ mod tests {
     use super::*;
     use crate::module::module_info::ModuleInfo;
     use crate::types::callable::Callable;
-    use crate::types::callable::Kind;
+    use crate::types::callable::CallableKind;
     use crate::types::callable::Param;
     use crate::types::callable::ParamList;
     use crate::types::callable::Required;
@@ -458,7 +458,7 @@ mod tests {
         let param2 = Param::KwOnly(Name::new("world"), Type::None, Required::Required);
         let callable = Callable::list(ParamList::new(vec![param1, param2]), Type::None);
         assert_eq!(
-            Type::Callable(Box::new(callable), Kind::Anon).to_string(),
+            Type::Callable(Box::new(callable), CallableKind::Anon).to_string(),
             "(hello: None, *, world: None) -> None"
         );
     }

@@ -34,7 +34,7 @@ use crate::binding::binding::Key;
 use crate::dunder;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Callable;
-use crate::types::callable::Kind;
+use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
@@ -509,7 +509,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         let ty_decorator = self.expr(&decorator.expression, None);
         match ty_decorator.function_kind() {
-            Some(Kind::Dataclass) => {
+            Some(CallableKind::Dataclass) => {
                 // TODO: Implement dataclass functionality
             }
             _ => {}
@@ -588,9 +588,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             params: Params::List(ParamList::new(parameters)),
                             ret: self.expr(&lambda.body, Some(&callable.ret)),
                         }),
-                        Kind::Anon,
+                        CallableKind::Anon,
                     );
-                    let wanted_callable = Type::Callable(Box::new(callable), Kind::Anon);
+                    let wanted_callable = Type::Callable(Box::new(callable), CallableKind::Anon);
                     self.check_type(&wanted_callable, &inferred_callable, x.range());
                     wanted_callable
                 } else {
@@ -599,7 +599,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             params: Params::List(ParamList::new(parameters)),
                             ret: self.expr_infer(&lambda.body),
                         }),
-                        Kind::Anon,
+                        CallableKind::Anon,
                     )
                 }
             }

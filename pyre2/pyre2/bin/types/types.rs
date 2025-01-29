@@ -18,7 +18,7 @@ use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
 use crate::types::callable::Callable;
-use crate::types::callable::Kind;
+use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::class::Class;
@@ -377,7 +377,7 @@ pub enum Type {
     Literal(Lit),
     LiteralString,
     /// Note that the Kind metadata doesn't participate in subtyping, and thus two types with distinct metadata are still subtypes.
-    Callable(Box<Callable>, Kind),
+    Callable(Box<Callable>, CallableKind),
     /// A method of a class. The first `Box<Type>` is the self/cls argument,
     /// and the second is the function.
     BoundMethod(Box<Type>, Box<Type>),
@@ -496,22 +496,22 @@ impl Type {
     pub fn callable(params: Vec<Param>, ret: Type) -> Self {
         Type::Callable(
             Box::new(Callable::list(ParamList::new(params), ret)),
-            Kind::Anon,
+            CallableKind::Anon,
         )
     }
 
     pub fn callable_ellipsis(ret: Type) -> Self {
-        Type::Callable(Box::new(Callable::ellipsis(ret)), Kind::Anon)
+        Type::Callable(Box::new(Callable::ellipsis(ret)), CallableKind::Anon)
     }
 
     pub fn callable_param_spec(p: Type, ret: Type) -> Self {
-        Type::Callable(Box::new(Callable::param_spec(p, ret)), Kind::Anon)
+        Type::Callable(Box::new(Callable::param_spec(p, ret)), CallableKind::Anon)
     }
 
     pub fn callable_concatenate(args: Box<[Type]>, param_spec: Type, ret: Type) -> Self {
         Type::Callable(
             Box::new(Callable::concatenate(args, param_spec, ret)),
-            Kind::Anon,
+            CallableKind::Anon,
         )
     }
 
@@ -566,7 +566,7 @@ impl Type {
         matches!(self, Type::None)
     }
 
-    pub fn function_kind(&self) -> Option<&Kind> {
+    pub fn function_kind(&self) -> Option<&CallableKind> {
         match self {
             Type::Callable(_, kind) => Some(kind),
             Type::Forall(_, t) => t.function_kind(),
@@ -650,7 +650,7 @@ impl Type {
     pub fn anon_callables(self) -> Self {
         self.transform(|ty| {
             if let Type::Callable(_, name) = ty {
-                *name = Kind::Anon;
+                *name = CallableKind::Anon;
             }
         })
     }

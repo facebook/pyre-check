@@ -13,7 +13,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::binding::narrow::NarrowOp;
 use crate::binding::narrow::NarrowVal;
-use crate::types::callable::Kind;
+use crate::types::callable::CallableKind;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::tuple::Tuple;
@@ -68,12 +68,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if args.args.len() > 1 {
             let second_arg = &args.args[1];
             let op = match func_ty.function_kind() {
-                Some(Kind::IsInstance) => Some(NarrowOp::IsInstance(NarrowVal::Expr(Box::new(
-                    second_arg.clone(),
-                )))),
-                Some(Kind::IsSubclass) => Some(NarrowOp::IsSubclass(NarrowVal::Expr(Box::new(
-                    second_arg.clone(),
-                )))),
+                Some(CallableKind::IsInstance) => Some(NarrowOp::IsInstance(NarrowVal::Expr(
+                    Box::new(second_arg.clone()),
+                ))),
+                Some(CallableKind::IsSubclass) => Some(NarrowOp::IsSubclass(NarrowVal::Expr(
+                    Box::new(second_arg.clone()),
+                ))),
                 _ => None,
             };
             if op.is_some() {

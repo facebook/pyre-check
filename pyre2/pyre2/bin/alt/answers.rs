@@ -66,7 +66,7 @@ use crate::type_order::TypeOrder;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
 use crate::types::callable::Callable;
-use crate::types::callable::Kind;
+use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
@@ -1429,7 +1429,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 tparams.extend(legacy_tparams);
                 let callable = Type::Callable(
                     Box::new(Callable::list(ParamList::new(params), ret)),
-                    Kind::from_name(self.module_info().name(), &x.name.id),
+                    CallableKind::from_name(self.module_info().name(), &x.name.id),
                 );
                 let mut ty = callable.forall(self.type_params(x.range, tparams));
                 for x in decorators.iter().rev() {
