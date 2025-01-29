@@ -81,12 +81,16 @@ impl Attribute {
         Attribute(AttributeInner::not_allowed(reason))
     }
 
-    fn get(self) -> AttributeInner {
-        self.0
+    fn get(self) -> Result<Type, NoAccessReason> {
+        match self.0 {
+            AttributeInner(access_result) => access_result,
+        }
     }
 
-    fn set(self) -> AttributeInner {
-        self.0
+    fn set(self) -> Result<Type, NoAccessReason> {
+        match self.0 {
+            AttributeInner(access_result) => access_result,
+        }
     }
 
     pub fn get_type(self) -> Option<Type> {
@@ -136,8 +140,8 @@ impl LookupResult {
     ) -> Result<Type, String> {
         match self {
             LookupResult::Found(attr) => match &attr.get() {
-                AttributeInner(Ok(ty)) => Ok(ty.clone()),
-                AttributeInner(Err(err)) => Err(err.to_error_msg(attr_name)),
+                Ok(ty) => Ok(ty.clone()),
+                Err(err) => Err(err.to_error_msg(attr_name)),
             },
             LookupResult::NotFound(err) => Err(err.to_error_msg(attr_name)),
             LookupResult::InternalError(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
@@ -221,8 +225,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => match attr.get() {
-                AttributeInner(Ok(ty)) => Some(ty),
-                AttributeInner(Err(e)) => Some(self.error(range, e.to_error_msg(attr_name))),
+                Ok(ty) => Some(ty),
+                Err(e) => Some(self.error(range, e.to_error_msg(attr_name))),
             },
             LookupResult::InternalError(e) => {
                 Some(self.error(range, e.to_error_msg(attr_name, todo_ctx)))
@@ -261,8 +265,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => match attr.set() {
-                AttributeInner(Ok(ty)) => Some(ty),
-                AttributeInner(Err(e)) => {
+                Ok(ty) => Some(ty),
+                Err(e) => {
                     self.error(range, e.to_error_msg(attr_name));
                     None
                 }
