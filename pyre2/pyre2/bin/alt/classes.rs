@@ -66,7 +66,7 @@ pub struct ClassField {
 }
 
 impl ClassField {
-    pub fn new(
+    fn new(
         ty: Type,
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
@@ -702,6 +702,55 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    pub fn calculate_class_field(
+        &self,
+        name: &Name,
+        value_ty: &Type,
+        annotation: Option<&Annotation>,
+        initialization: ClassFieldInitialization,
+        class_key: Idx<Key>,
+        range: TextRange,
+    ) -> ClassField {
+        if let Some(enum_) = self.get_enum_from_key(class_key)
+            && enum_.get_member(name).is_some()
+            && matches!(initialization, ClassFieldInitialization::Class)
+        {
+            if annotation.is_some() {
+                self.error(range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
+            }
+
+            if let Some(enum_value_ty) = self.type_of_attr_get_if_gettable(
+                Type::ClassType(enum_.cls),
+                &Name::new_static("_value_"),
+            ) {
+                if !matches!(value_ty, Type::Tuple(_))
+                    && !self
+                        .solver()
+                        .is_subset_eq(value_ty, &enum_value_ty, self.type_order())
+                {
+                    self.error(range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name));
+                }
+            }
+        }
+        if self.is_key_typed_dict(class_key)
+            && matches!(initialization, ClassFieldInitialization::Class)
+        {
+            self.error(
+                range,
+                format!("TypedDict item `{}` may not be initialized.", name),
+            );
+        }
+        let (ty, ann) = if let Some(ann) = annotation {
+            match &ann.ty {
+                Some(ty) => (ty, Some(ann)),
+                None => (value_ty, Some(ann)),
+            }
+        } else {
+            (value_ty, None)
+        };
+        ClassField::new(ty.clone(), ann.cloned(), initialization)
+    }
+
     fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
         if cls.contains(name) {
             let field = self.get_from_class(
@@ -888,7 +937,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn is_key_typed_dict(&self, key: Idx<Key>) -> bool {
+    fn is_key_typed_dict(&self, key: Idx<Key>) -> bool {
         match self.get_idx(key).deref() {
             Type::ClassDef(cls) => self.get_metadata_for_class(cls).is_typed_dict(),
             _ => false,

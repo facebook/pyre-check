@@ -30,7 +30,6 @@ use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingLegacyTypeParam;
-use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::Key;
@@ -993,48 +992,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn solve_class_field(&self, field: &BindingClassField) -> Arc<ClassField> {
         let value_ty = self.solve_binding(&field.value);
-        if let Some(enum_) = self.get_enum_from_key(field.class.to_owned())
-            && enum_.get_member(&field.name).is_some()
-            && matches!(field.initialization, ClassFieldInitialization::Class)
-        {
-            if field.annotation.is_some() {
-                self.error(field.range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", field.name));
-            }
-
-            if let Some(enum_value_ty) = self.type_of_attr_get_if_gettable(
-                Type::ClassType(enum_.cls),
-                &Name::new_static("_value_"),
-            ) {
-                if !matches!(*value_ty, Type::Tuple(_))
-                    && !self
-                        .solver()
-                        .is_subset_eq(&value_ty, &enum_value_ty, self.type_order())
-                {
-                    self.error(field.range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", field.name));
-                }
-            }
-        }
-        if self.is_key_typed_dict(field.class)
-            && matches!(field.initialization, ClassFieldInitialization::Class)
-        {
-            self.error(
-                field.range,
-                format!("TypedDict item `{}` may not be initialized.", field.name),
-            );
-        }
-        let (ty, ann) = if let Some(ann) = &field.annotation {
-            let ann = self.get_idx(*ann);
-            match &ann.ty {
-                Some(ty) => (Arc::new(ty.clone()), Some(ann)),
-                None => (value_ty, Some(ann)),
-            }
-        } else {
-            (value_ty, None)
-        };
-        Arc::new(ClassField::new(
-            ty.deref().clone(),
-            ann.map(|ann| ann.deref().clone()),
+        let annotation = field.annotation.map(|a| self.get_idx(a));
+        Arc::new(self.calculate_class_field(
+            &field.name,
+            value_ty.as_ref(),
+            annotation.as_deref(),
             field.initialization,
+            field.class,
+            field.range,
         ))
     }
 
