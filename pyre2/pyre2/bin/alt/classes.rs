@@ -451,6 +451,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &Type::ClassType(self.stdlib.enum_meta()),
                 self.type_order(),
             ) {
+                if !cls.tparams().is_empty() {
+                    self.error(cls.name().range, "Enums may not be generic.".to_owned());
+                }
                 enum_metadata = Some(EnumMetadata {
                     // A generic enum is an error, but we create Any type args anyway to handle it gracefully.
                     cls: ClassType::new(cls.clone(), self.create_default_targs(cls, None)),

@@ -127,3 +127,15 @@ class MyEnum(Enum):
     X: int = 1  # E: Enum member `X` may not be annotated directly. Instead, annotate the _value_ attribute.
 "#,
 );
+
+testcase!(
+    test_generic_enum,
+    r#"
+from typing import assert_type, Literal
+from enum import Enum
+class E[T](Enum):  # E: Enums may not be generic
+    X = 1
+# Even though a generic enum is an error, we still want to handle it gracefully.
+assert_type(E.X, Literal[E.X])
+    "#,
+);
