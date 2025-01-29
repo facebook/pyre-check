@@ -40,14 +40,14 @@ pub struct Attribute(AttributeAccess);
 /// The operation is either permitted with an attribute `Type`, or is not allowed
 /// and has a reason.
 #[derive(Clone)]
-struct AttributeAccess(Result<Type, AccessNotAllowed>);
+struct AttributeAccess(Result<Type, NoAccessReason>);
 
 impl AttributeAccess {
     fn allowed(ty: Type) -> Self {
         AttributeAccess(Ok(ty))
     }
 
-    pub fn not_allowed(reason: AccessNotAllowed) -> Self {
+    pub fn not_allowed(reason: NoAccessReason) -> Self {
         AttributeAccess(Err(reason))
     }
 }
@@ -59,7 +59,7 @@ enum NotFound {
 }
 
 #[derive(Clone)]
-pub enum AccessNotAllowed {
+pub enum NoAccessReason {
     /// The attribute is only initialized on instances, but we saw an attempt
     /// to use it as a class attribute.
     ClassUseOfInstanceAttribute(Class),
@@ -77,7 +77,7 @@ impl Attribute {
     pub fn access_allowed(ty: Type) -> Self {
         Attribute(AttributeAccess::allowed(ty))
     }
-    pub fn access_not_allowed(reason: AccessNotAllowed) -> Self {
+    pub fn access_not_allowed(reason: NoAccessReason) -> Self {
         Attribute(AttributeAccess::not_allowed(reason))
     }
 
@@ -97,16 +97,16 @@ impl Attribute {
     }
 }
 
-impl AccessNotAllowed {
+impl NoAccessReason {
     pub fn to_error_msg(&self, attr_name: &Name) -> String {
         match self {
-            AccessNotAllowed::ClassUseOfInstanceAttribute(class) => {
+            NoAccessReason::ClassUseOfInstanceAttribute(class) => {
                 let class_name = class.name();
                 format!(
                     "Instance-only attribute `{attr_name}` of class `{class_name}` is not visible on the class"
                 )
             }
-            AccessNotAllowed::ClassAttributeIsGeneric(class) => {
+            NoAccessReason::ClassAttributeIsGeneric(class) => {
                 let class_name = class.name();
                 format!(
                     "Generic attribute `{attr_name}` of class `{class_name}` is not visible on the class"

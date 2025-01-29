@@ -25,8 +25,8 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::attr::AccessNotAllowed;
 use crate::alt::attr::Attribute;
+use crate::alt::attr::NoAccessReason;
 use crate::ast::Ast;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
@@ -797,12 +797,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let (member, _) = self.get_class_member(cls, name)?;
         if self.depends_on_class_type_parameter(cls, &member.ty) {
             Some(Attribute::access_not_allowed(
-                AccessNotAllowed::ClassAttributeIsGeneric(cls.clone()),
+                NoAccessReason::ClassAttributeIsGeneric(cls.clone()),
             ))
         } else {
             match member.initialization {
                 ClassFieldInitialization::Instance => Some(Attribute::access_not_allowed(
-                    AccessNotAllowed::ClassUseOfInstanceAttribute(cls.clone()),
+                    NoAccessReason::ClassUseOfInstanceAttribute(cls.clone()),
                 )),
                 ClassFieldInitialization::Class => {
                     if let Some(e) = self.get_enum_from_class(cls)
