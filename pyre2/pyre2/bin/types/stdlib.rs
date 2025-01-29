@@ -40,6 +40,7 @@ pub struct Stdlib {
     tuple: StdlibResult<Class>,
     iterable: StdlibResult<Class>,
     generator: StdlibResult<Class>,
+    async_generator: StdlibResult<Class>,
     awaitable: StdlibResult<Class>,
     coroutine: StdlibResult<Class>,
     type_var: StdlibResult<Class>,
@@ -100,6 +101,7 @@ impl Stdlib {
             none_type: lookup_str(types, "NoneType"),
             iterable: lookup_str(typing, "Iterable"),
             generator: lookup_str(typing, "Generator"),
+            async_generator: lookup_str(typing, "AsyncGenerator"),
             awaitable: lookup_str(typing, "Awaitable"),
             coroutine: lookup_str(typing, "Coroutine"),
             type_var: lookup_str(typing, "TypeVar"),
@@ -242,6 +244,10 @@ impl Stdlib {
 
     pub fn generator(&self, yield_ty: Type, send_ty: Type, return_ty: Type) -> ClassType {
         Self::apply(&self.generator, vec![yield_ty, send_ty, return_ty])
+    }
+
+    pub fn async_generator(&self, yield_ty: Type, send_ty: Type) -> ClassType {
+        Self::apply(&self.async_generator, vec![yield_ty, send_ty])
     }
 
     pub fn awaitable(&self, x: Type) -> ClassType {

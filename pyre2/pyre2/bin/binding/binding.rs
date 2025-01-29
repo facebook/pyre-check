@@ -464,6 +464,8 @@ pub enum Binding {
     YieldTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
     /// A grouping of both the yield expression types and the return type.
     Generator(Box<Binding>, Box<Binding>),
+    /// Yield expression type from an async generator
+    AsyncGenerator(Box<Binding>),
     /// Actual value of yield expression
     YieldTypeOfYield(Expr),
     /// A value in an iterable expression, e.g. IterableValue(\[1\]) represents 1.
@@ -570,6 +572,13 @@ impl DisplayWith<Bindings> for Binding {
                     "Generator(Yield: {}, Return: {})",
                     target.display_with(ctx),
                     iterable.display_with(ctx)
+                )
+            }
+            Self::AsyncGenerator(box target) => {
+                write!(
+                    f,
+                    "AsyncGenerator(AsyncYield: {})",
+                    target.display_with(ctx)
                 )
             }
             self::Binding::SendTypeOfYieldAnnotation(Some(x), _) => {

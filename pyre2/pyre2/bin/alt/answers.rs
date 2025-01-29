@@ -1130,6 +1130,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .generator(yield_type, Type::any_implicit(), return_type)
                     .to_type()
             }
+            Binding::AsyncGenerator(yield_type) => {
+                let yield_type = self.solve_binding_inner(yield_type);
+                self.stdlib
+                    .async_generator(yield_type, Type::any_implicit())
+                    .to_type()
+            }
             Binding::SendTypeOfYieldAnnotation(ann, range) => {
                 let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
                 match gen_ann {

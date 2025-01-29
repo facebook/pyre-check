@@ -1272,6 +1272,7 @@ impl<'a> BindingsBuilder<'a> {
             body.instance_attributes_by_method
                 .insert(method.name.id, method.instance_attributes);
         }
+        let is_async = x.is_async;
 
         self.bind_definition(
             &func_name,
@@ -1352,8 +1353,15 @@ impl<'a> BindingsBuilder<'a> {
                 Key::YieldTypeOfGenerator(ShortIdentifier::new(&func_name)),
                 yield_type.clone(),
             );
-            // combine the original (syntactic) return type and the yield type to analyze later and obtain the final return type.
-            return_type = Binding::Generator(Box::new(yield_type), Box::new(return_type));
+            if is_async {
+                // combine the original (syntactic) return type and the yield type to analyze later and obtain the final return type.
+                // for async, we should not be returning anything.
+                // Zeina TODO: i think the range here should be every return expression.
+                return_type = Binding::AsyncGenerator(Box::new(yield_type));
+            } else {
+                // combine the original (syntactic) return type and the yield type to analyze later and obtain the final return type.
+                return_type = Binding::Generator(Box::new(yield_type), Box::new(return_type));
+            }
         }
         if let Some(ann) = return_ann {
             return_type = Binding::AnnotatedType(ann, Box::new(return_type));
