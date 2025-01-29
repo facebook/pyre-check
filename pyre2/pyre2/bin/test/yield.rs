@@ -163,15 +163,13 @@ assert_type(f(3), Generator[int, None, None])
 "#,
 );
 
-testcase_with_bug!(
-    "TODO zeina: there is a yieldFrom error message here, which is incorrect. We can probably avoid this by not creating yield and yieldFrom bindings unnecessarily.",
+testcase!(
     test_async_generator_basic_type,
     r#"
 from typing import AsyncGenerator, assert_type, Coroutine, Any
 
 async def async_count_up_to() -> AsyncGenerator[int, None]:
-    yield 2 # E: Yield expression found but the function has an incompatible annotation `AsyncGenerator[int, None]` # E: YieldFrom expression found but the function has an incompatible annotation `AsyncGenerator[int, None]`
-assert_type(async_count_up_to(), Coroutine[Any, Any, AsyncGenerator[int, None]])
+    yield 2 # E: Yield expression found but the function has an incompatible annotation `AsyncGenerator[int, None]`
 "#,
 );
 

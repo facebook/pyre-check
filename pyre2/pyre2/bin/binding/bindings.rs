@@ -1315,22 +1315,32 @@ impl<'a> BindingsBuilder<'a> {
                 );
                 yield_expr_keys.insert(key);
 
-                self.table.insert(
-                    Key::SendTypeOfYieldAnnotation(x.range()),
-                    // collect the value of the yield expression.
-                    Binding::SendTypeOfYieldAnnotation(return_ann, x.range()),
-                );
-                self.table.insert(
-                    Key::ReturnTypeOfYieldAnnotation(x.range()),
-                    // collect the value of the yield expression.
-                    Binding::ReturnTypeOfYieldAnnotation(return_ann, x.range()),
-                );
+                // create the appropriate bindings depending on whether we see a yield or a yieldFrom
+                // not all bindings are needed for all exprs
+                match x {
+                    Expr::Yield(_) => {
+                        self.table.insert(
+                            Key::SendTypeOfYieldAnnotation(x.range()),
+                            // collect the value of the yield expression.
+                            Binding::SendTypeOfYieldAnnotation(return_ann, x.range()),
+                        );
+                        self.table.insert(
+                            Key::YieldTypeOfYieldAnnotation(x.range()),
+                            // collect the yield value of the yield expression.
+                            Binding::YieldTypeOfYieldAnnotation(return_ann, x.range()),
+                        );
+                    }
 
-                self.table.insert(
-                    Key::YieldTypeOfYieldAnnotation(x.range()),
-                    // collect the yield value of the yield expression.
-                    Binding::YieldTypeOfYieldAnnotation(return_ann, x.range()),
-                );
+                    Expr::YieldFrom(_) => {
+                        self.table.insert(
+                            Key::ReturnTypeOfYieldAnnotation(x.range()),
+                            // collect the value of the yield expression.
+                            Binding::ReturnTypeOfYieldAnnotation(return_ann, x.range()),
+                        );
+                    }
+
+                    _ => unreachable!("Can only encounter a Yield or a YieldFrom here"),
+                }
             }
             let yield_type = Binding::phi(yield_expr_keys);
             self.table.insert(
