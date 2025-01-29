@@ -12,7 +12,6 @@ use crate::solver::Subset;
 use crate::types::callable::Callable;
 use crate::types::callable::Kind;
 use crate::types::callable::Param;
-use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
 use crate::types::class::TArgs;
@@ -23,9 +22,9 @@ use crate::types::types::TParams;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
-    pub fn is_subset_param_list(&mut self, l_args: &ParamList, u_args: &ParamList) -> bool {
-        let mut l_args_iter = l_args.items().iter();
-        let mut u_args_iter = u_args.items().iter();
+    pub fn is_subset_param_list(&mut self, l_args: &[Param], u_args: &[Param]) -> bool {
+        let mut l_args_iter = l_args.iter();
+        let mut u_args_iter = u_args.iter();
         let mut l_arg = l_args_iter.next();
         let mut u_arg = u_args_iter.next();
         loop {
@@ -102,7 +101,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     && match (&l.params, &u.params) {
                         (Params::Ellipsis, _) | (_, Params::Ellipsis) => true,
                         (Params::List(l_args), Params::List(u_args)) => {
-                            self.is_subset_param_list(l_args, u_args)
+                            self.is_subset_param_list(l_args.items(), u_args.items())
                         }
                         (Params::ParamSpec(_, _), _) | (_, Params::ParamSpec(_, _)) => {
                             // TODO: need instantiation for param spec
