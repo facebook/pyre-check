@@ -71,7 +71,7 @@ pub struct Quantified {
     kind: QuantifiedKind,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub enum QuantifiedKind {
     TypeVar,
     ParamSpec,
@@ -114,6 +114,10 @@ impl Quantified {
             QuantifiedKind::ParamSpec => stdlib.param_spec(),
             QuantifiedKind::TypeVarTuple => stdlib.type_var_tuple(),
         }
+    }
+
+    pub fn kind(&self) -> QuantifiedKind {
+        self.kind
     }
 
     pub fn is_param_spec(&self) -> bool {
