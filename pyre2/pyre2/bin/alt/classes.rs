@@ -394,7 +394,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .collect();
         let metaclass =
             self.calculate_metaclass(cls, metaclasses.into_iter().next(), &base_metaclasses);
-
         if let Some(metaclass) = &metaclass {
             self.check_base_class_metaclasses(cls, metaclass, &base_metaclasses);
             is_enum = self.solver().is_subset_eq(
@@ -409,7 +408,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
             }
         }
-
+        if is_typed_dict
+            && let Some(bad) = bases_with_metadata.iter().find(|x| !x.1.is_typed_dict())
+        {
+            self.error(
+                cls.name().range,
+                format!("`{}` is not a typed dictionary. Typed dictionary definitions may only extend other typed dictionaries.", bad.0),
+            );
+        }
         ClassMetadata::new(
             cls,
             bases_with_metadata,

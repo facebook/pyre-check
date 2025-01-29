@@ -20,6 +20,16 @@ def foo(c: Coord) -> Mapping[str, object]:
 );
 
 testcase!(
+    test_typed_dict_invalid_inheritance,
+    r#"
+from typing import TypedDict
+class Coord(TypedDict, object):  # E: Typed dictionary definitions may only extend other typed dictionaries.
+    x: int
+    y: int
+    "#,
+);
+
+testcase!(
     test_typed_dict_readonly,
     r#"
 from typing import TypedDict, ReadOnly

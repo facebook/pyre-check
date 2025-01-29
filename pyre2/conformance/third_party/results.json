@@ -3,7 +3,7 @@
   "pass": 10,
   "fail": 123,
   "pass_rate": 0.08,
-  "differences": 1309,
+  "differences": 1308,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -130,7 +130,7 @@
     "typeddicts_alt_syntax.py": 3,
     "typeddicts_class_syntax.py": 3,
     "typeddicts_final.py": 2,
-    "typeddicts_inheritance.py": 5,
+    "typeddicts_inheritance.py": 4,
     "typeddicts_operations.py": 5,
     "typeddicts_readonly.py": 8,
     "typeddicts_readonly_consistency.py": 3,

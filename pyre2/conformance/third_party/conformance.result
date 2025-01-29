@@ -1482,7 +1482,6 @@
     "Line 26: Unexpected errors [\"Invalid key for TypedDict `Movie`, got `Literal['name', 'year']`\"]"
   ],
   "typeddicts_inheritance.py": [
-    "Line 44: Expected 1 errors",
     "Line 65: Expected 1 errors",
     "Lines 54, 55: Expected error (tag 'Y1')",
     "Line 22: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[BookBasedMovie]']",
