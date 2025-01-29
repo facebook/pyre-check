@@ -33,22 +33,22 @@ enum LookupResult {
 
 /// The result of looking up an attribute. We can analyze get and set actions
 /// on an attribute, each of which can be allowed with some type or disallowed.
-pub struct Attribute(AttributeAccess);
+pub struct Attribute(AttributeInner);
 
 /// The result of an attempt to access an attribute (with a get or set operation).
 ///
 /// The operation is either permitted with an attribute `Type`, or is not allowed
 /// and has a reason.
 #[derive(Clone)]
-struct AttributeAccess(Result<Type, NoAccessReason>);
+struct AttributeInner(Result<Type, NoAccessReason>);
 
-impl AttributeAccess {
+impl AttributeInner {
     fn allowed(ty: Type) -> Self {
-        AttributeAccess(Ok(ty))
+        AttributeInner(Ok(ty))
     }
 
     pub fn not_allowed(reason: NoAccessReason) -> Self {
-        AttributeAccess(Err(reason))
+        AttributeInner(Err(reason))
     }
 }
 
@@ -75,17 +75,17 @@ enum InternalError {
 
 impl Attribute {
     pub fn access_allowed(ty: Type) -> Self {
-        Attribute(AttributeAccess::allowed(ty))
+        Attribute(AttributeInner::allowed(ty))
     }
     pub fn access_not_allowed(reason: NoAccessReason) -> Self {
-        Attribute(AttributeAccess::not_allowed(reason))
+        Attribute(AttributeInner::not_allowed(reason))
     }
 
-    fn get(self) -> AttributeAccess {
+    fn get(self) -> AttributeInner {
         self.0
     }
 
-    fn set(self) -> AttributeAccess {
+    fn set(self) -> AttributeInner {
         self.0
     }
 
@@ -136,8 +136,8 @@ impl LookupResult {
     ) -> Result<Type, String> {
         match self {
             LookupResult::Found(attr) => match &attr.get() {
-                AttributeAccess(Ok(ty)) => Ok(ty.clone()),
-                AttributeAccess(Err(err)) => Err(err.to_error_msg(attr_name)),
+                AttributeInner(Ok(ty)) => Ok(ty.clone()),
+                AttributeInner(Err(err)) => Err(err.to_error_msg(attr_name)),
             },
             LookupResult::NotFound(err) => Err(err.to_error_msg(attr_name)),
             LookupResult::InternalError(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
@@ -221,8 +221,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => match attr.get() {
-                AttributeAccess(Ok(ty)) => Some(ty),
-                AttributeAccess(Err(e)) => Some(self.error(range, e.to_error_msg(attr_name))),
+                AttributeInner(Ok(ty)) => Some(ty),
+                AttributeInner(Err(e)) => Some(self.error(range, e.to_error_msg(attr_name))),
             },
             LookupResult::InternalError(e) => {
                 Some(self.error(range, e.to_error_msg(attr_name, todo_ctx)))
@@ -261,8 +261,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => match attr.set() {
-                AttributeAccess(Ok(ty)) => Some(ty),
-                AttributeAccess(Err(e)) => {
+                AttributeInner(Ok(ty)) => Some(ty),
+                AttributeInner(Err(e)) => {
                     self.error(range, e.to_error_msg(attr_name));
                     None
                 }
