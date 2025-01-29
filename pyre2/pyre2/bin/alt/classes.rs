@@ -43,7 +43,7 @@ use crate::types::class::ClassType;
 use crate::types::class::Substitution;
 use crate::types::class::TArgs;
 use crate::types::class_metadata::ClassMetadata;
-use crate::types::literal::Enum;
+use crate::types::class_metadata::EnumMetadata;
 use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
 use crate::types::type_var::Variance;
@@ -379,7 +379,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> ClassMetadata {
         let mut is_typed_dict = false;
         let mut is_named_tuple = false;
-        let mut is_enum = false;
+        let mut enum_metadata = None;
         let bases: Vec<BaseClass> = bases.iter().map(|x| self.base_class_of(x)).collect();
         let is_protocol = bases.iter().any(|x| matches!(x, BaseClass::Protocol(_)));
         let bases_with_metadata: Vec<_> = bases
@@ -446,11 +446,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.calculate_metaclass(cls, metaclasses.into_iter().next(), &base_metaclasses);
         if let Some(metaclass) = &metaclass {
             self.check_base_class_metaclasses(cls, metaclass, &base_metaclasses);
-            is_enum = self.solver().is_subset_eq(
+            if self.solver().is_subset_eq(
                 &Type::ClassType(metaclass.clone()),
                 &Type::ClassType(self.stdlib.enum_meta()),
                 self.type_order(),
-            );
+            ) {
+                enum_metadata = Some(EnumMetadata {
+                    // A generic enum is an error, but we create Any type args anyway to handle it gracefully.
+                    cls: ClassType::new(cls.clone(), self.create_default_targs(cls, None)),
+                })
+            }
             if is_typed_dict {
                 self.error(
                     cls.name().range,
@@ -473,7 +478,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             keywords,
             is_typed_dict,
             is_named_tuple,
-            is_enum,
+            enum_metadata,
             is_protocol,
             self.errors(),
         )
@@ -578,21 +583,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_from_class(cls, &KeyClassMetadata(ShortIdentifier::new(cls.name())))
     }
 
-    fn get_enum_from_class(&self, cls: &Class) -> Option<Enum> {
+    fn get_enum_from_class(&self, cls: &Class) -> Option<EnumMetadata> {
         self.get_enum_from_class_and_targs(cls.dupe(), self.create_default_targs(cls, None))
     }
 
-    pub fn get_enum_from_class_type(&self, class_type: &ClassType) -> Option<Enum> {
+    pub fn get_enum_from_class_type(&self, class_type: &ClassType) -> Option<EnumMetadata> {
         self.get_enum_from_class_and_targs(
             class_type.class_object().dupe(),
             class_type.targs().clone(),
         )
     }
 
-    fn get_enum_from_class_and_targs(&self, cls: Class, targs: TArgs) -> Option<Enum> {
+    fn get_enum_from_class_and_targs(&self, cls: Class, targs: TArgs) -> Option<EnumMetadata> {
         let metadata = self.get_metadata_for_class(&cls);
         if metadata.is_enum() {
-            Some(Enum {
+            Some(EnumMetadata {
                 cls: ClassType::new(cls, targs),
             })
         } else {
@@ -956,14 +961,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Given an identifier, see whether it is bound to an enum class. If so,
     /// return the enum, otherwise return `None`.
-    pub fn get_enum_from_name(&self, name: Identifier) -> Option<Enum> {
+    pub fn get_enum_from_name(&self, name: Identifier) -> Option<EnumMetadata> {
         self.get_enum_from_key(
             self.bindings()
                 .key_to_idx(&Key::Usage(ShortIdentifier::new(&name))),
         )
     }
 
-    pub fn get_enum_from_key(&self, key: Idx<Key>) -> Option<Enum> {
+    pub fn get_enum_from_key(&self, key: Idx<Key>) -> Option<EnumMetadata> {
         // TODO(stroxler): Eventually, we should raise type errors on generic Enum because
         // this doesn't make semantic sense. But in the meantime we need to be robust against
         // this possibility.

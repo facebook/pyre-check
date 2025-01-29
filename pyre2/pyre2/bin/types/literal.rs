@@ -25,13 +25,13 @@ use ruff_python_ast::Number;
 use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
-use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
 use crate::types::class::ClassType;
+use crate::types::class_metadata::EnumMetadata;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 
@@ -78,7 +78,7 @@ impl Lit {
     pub fn from_expr(
         x: &Expr,
         module_info: &ModuleInfo,
-        get_enum_from_name: &dyn Fn(Identifier) -> Option<Enum>,
+        get_enum_from_name: &dyn Fn(Identifier) -> Option<EnumMetadata>,
         errors: &ErrorCollector,
     ) -> Type {
         let int = |i| match i {
@@ -241,41 +241,5 @@ impl Lit {
 
     pub fn is_string(&self) -> bool {
         matches!(self, Lit::String(_))
-    }
-}
-
-pub struct Enum {
-    pub cls: ClassType,
-}
-
-impl Enum {
-    pub fn get_member(&self, name: &Name) -> Option<Lit> {
-        // TODO(stroxler, yangdanny) Enums can contain attributes that are not
-        // members, we eventually need to implement enough checks to know the
-        // difference.
-        //
-        // Instance-only attributes are one case of this and are correctly handled
-        // upstream, but there are other cases as well.
-
-        // Names starting but not ending with __ are private
-        // Names starting and ending with _ are reserved by the enum
-        if name.starts_with("__") && !name.ends_with("__")
-            || name.starts_with("_") && name.ends_with("_")
-        {
-            None
-        } else if self.cls.class_object().contains(name) {
-            Some(Lit::Enum(Box::new((self.cls.clone(), name.clone()))))
-        } else {
-            None
-        }
-    }
-
-    pub fn get_members(&self) -> SmallSet<Lit> {
-        self.cls
-            .class_object()
-            .fields()
-            .iter()
-            .filter_map(|f| self.get_member(f))
-            .collect()
     }
 }

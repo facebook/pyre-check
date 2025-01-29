@@ -12,11 +12,13 @@ use std::iter;
 use std::sync::Arc;
 
 use ruff_python_ast::name::Name;
+use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
 use crate::error::collector::ErrorCollector;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
+use crate::types::literal::Lit;
 use crate::types::qname::QName;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
@@ -29,7 +31,7 @@ pub struct ClassMetadata {
     keywords: Keywords,
     is_typed_dict: bool,
     is_named_tuple: bool,
-    is_enum: bool,
+    enum_metadata: Option<EnumMetadata>,
     is_protocol: bool,
 }
 
@@ -47,7 +49,7 @@ impl ClassMetadata {
         keywords: Vec<(Name, Type)>,
         is_typed_dict: bool,
         is_named_tuple: bool,
-        is_enum: bool,
+        enum_metadata: Option<EnumMetadata>,
         is_protocol: bool,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
@@ -57,7 +59,7 @@ impl ClassMetadata {
             keywords: Keywords(keywords),
             is_typed_dict,
             is_named_tuple,
-            is_enum,
+            enum_metadata,
             is_protocol,
         }
     }
@@ -69,7 +71,7 @@ impl ClassMetadata {
             keywords: Keywords::default(),
             is_typed_dict: false,
             is_named_tuple: false,
-            is_enum: false,
+            enum_metadata: None,
             is_protocol: false,
         }
     }
@@ -100,7 +102,7 @@ impl ClassMetadata {
     }
 
     pub fn is_enum(&self) -> bool {
-        self.is_enum
+        self.enum_metadata.is_some()
     }
 
     pub fn is_protocol(&self) -> bool {
@@ -153,6 +155,43 @@ impl Display for Keywords {
             "[{}]",
             commas_iter(|| self.0.iter().map(|(n, ty)| format!("{n}: {ty}")))
         )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EnumMetadata {
+    pub cls: ClassType,
+}
+
+impl EnumMetadata {
+    pub fn get_member(&self, name: &Name) -> Option<Lit> {
+        // TODO(stroxler, yangdanny) Enums can contain attributes that are not
+        // members, we eventually need to implement enough checks to know the
+        // difference.
+        //
+        // Instance-only attributes are one case of this and are correctly handled
+        // upstream, but there are other cases as well.
+
+        // Names starting but not ending with __ are private
+        // Names starting and ending with _ are reserved by the enum
+        if name.starts_with("__") && !name.ends_with("__")
+            || name.starts_with("_") && name.ends_with("_")
+        {
+            None
+        } else if self.cls.class_object().contains(name) {
+            Some(Lit::Enum(Box::new((self.cls.clone(), name.clone()))))
+        } else {
+            None
+        }
+    }
+
+    pub fn get_members(&self) -> SmallSet<Lit> {
+        self.cls
+            .class_object()
+            .fields()
+            .iter()
+            .filter_map(|f| self.get_member(f))
+            .collect()
     }
 }
 
