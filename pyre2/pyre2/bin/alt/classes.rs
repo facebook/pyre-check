@@ -599,17 +599,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn typed_dict(&self, cls: &Class, targs: TArgs) -> Type {
+        let fields = self.get_typed_dict_fields(cls, &targs);
+        Type::TypedDict(TypedDict::new(cls.dupe(), targs, fields))
+    }
+
     /// Given a class or typed dictionary and some (explicit) type arguments, construct a `Type`
     /// that represents the type of an instance of the class or typed dictionary with those `targs`.
     pub fn specialize(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> Type {
         let targs = self.check_and_create_targs(cls, targs, range);
         let metadata = self.get_metadata_for_class(cls);
         if metadata.is_typed_dict() {
-            Type::TypedDict(TypedDict::new(
-                cls.dupe(),
-                targs.clone(),
-                self.get_typed_dict_fields(cls, &targs),
-            ))
+            self.typed_dict(cls, targs)
         } else {
             Type::ClassType(ClassType::new(cls.dupe(), targs))
         }
@@ -627,11 +628,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let metadata = self.get_metadata_for_class(cls);
         let targs = self.create_default_targs(cls, Some(range));
         if metadata.is_typed_dict() {
-            Type::TypedDict(TypedDict::new(
-                cls.dupe(),
-                targs.clone(),
-                self.get_typed_dict_fields(cls, &targs),
-            ))
+            self.typed_dict(cls, targs)
         } else {
             Type::ClassType(ClassType::new(cls.dupe(), targs))
         }
@@ -643,11 +640,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let metadata = self.get_metadata_for_class(cls);
         let targs = self.create_default_targs(cls, None);
         if metadata.is_typed_dict() {
-            Type::TypedDict(TypedDict::new(
-                cls.dupe(),
-                targs.clone(),
-                self.get_typed_dict_fields(cls, &targs),
-            ))
+            self.typed_dict(cls, targs)
         } else {
             Type::ClassType(ClassType::new(cls.dupe(), targs))
         }
@@ -667,11 +660,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let qs = cls.tparams().quantified().collect::<Vec<_>>();
         let targs = TArgs::new(qs.map(|q| Type::Quantified(*q)));
         let promoted_cls = if metadata.is_typed_dict() {
-            Type::type_form(Type::TypedDict(TypedDict::new(
-                cls.dupe(),
-                targs.clone(),
-                self.get_typed_dict_fields(cls, &targs),
-            )))
+            Type::type_form(self.typed_dict(cls, targs))
         } else {
             Type::type_form(Type::ClassType(ClassType::new(cls.dupe(), targs)))
         };
