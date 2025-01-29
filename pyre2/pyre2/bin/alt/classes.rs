@@ -605,21 +605,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn typed_dict(&self, cls: &Class, targs: TArgs) -> Type {
-        let fields = self.get_typed_dict_fields(cls, &targs);
-        Type::TypedDict(TypedDict::new(cls.dupe(), targs, fields))
+    fn type_of_instance(&self, cls: &Class, targs: TArgs) -> Type {
+        let metadata = self.get_metadata_for_class(cls);
+        if metadata.is_typed_dict() {
+            let fields = self.get_typed_dict_fields(cls, &targs);
+            Type::TypedDict(TypedDict::new(cls.dupe(), targs, fields))
+        } else {
+            Type::ClassType(ClassType::new(cls.dupe(), targs))
+        }
     }
 
     /// Given a class or typed dictionary and some (explicit) type arguments, construct a `Type`
     /// that represents the type of an instance of the class or typed dictionary with those `targs`.
     pub fn specialize(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> Type {
         let targs = self.check_and_create_targs(cls, targs, range);
-        let metadata = self.get_metadata_for_class(cls);
-        if metadata.is_typed_dict() {
-            self.typed_dict(cls, targs)
-        } else {
-            Type::ClassType(ClassType::new(cls.dupe(), targs))
-        }
+        self.type_of_instance(cls, targs)
     }
 
     /// Given a class or typed dictionary, create a `Type` that represents to an instance annotated
@@ -631,25 +631,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// We require a range because depending on the configuration we may raise
     /// a type error when a generic class or typed dictionary is promoted using gradual types.
     pub fn promote(&self, cls: &Class, range: TextRange) -> Type {
-        let metadata = self.get_metadata_for_class(cls);
         let targs = self.create_default_targs(cls, Some(range));
-        if metadata.is_typed_dict() {
-            self.typed_dict(cls, targs)
-        } else {
-            Type::ClassType(ClassType::new(cls.dupe(), targs))
-        }
+        self.type_of_instance(cls, targs)
     }
 
     /// Private version of `promote` that does not potentially
     /// raise strict mode errors. Should only be used for unusual scenarios.
     fn promote_silently(&self, cls: &Class) -> Type {
-        let metadata = self.get_metadata_for_class(cls);
         let targs = self.create_default_targs(cls, None);
-        if metadata.is_typed_dict() {
-            self.typed_dict(cls, targs)
-        } else {
-            Type::ClassType(ClassType::new(cls.dupe(), targs))
-        }
+        self.type_of_instance(cls, targs)
     }
 
     pub fn unwrap_class_object_silently(&self, ty: &Type) -> Option<Type> {
@@ -662,14 +652,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Creates a type from the class with fresh variables for its type parameters.
     pub fn instantiate_fresh(&self, cls: &Class) -> Type {
-        let metadata = self.get_metadata_for_class(cls);
         let qs = cls.tparams().quantified().collect::<Vec<_>>();
         let targs = TArgs::new(qs.map(|q| Type::Quantified(*q)));
-        let promoted_cls = if metadata.is_typed_dict() {
-            Type::type_form(self.typed_dict(cls, targs))
-        } else {
-            Type::type_form(Type::ClassType(ClassType::new(cls.dupe(), targs)))
-        };
+        let promoted_cls = Type::type_form(self.type_of_instance(cls, targs));
         self.solver()
             .fresh_quantified(qs.as_slice(), promoted_cls, self.uniques)
             .1

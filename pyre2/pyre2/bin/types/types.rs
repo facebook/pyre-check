@@ -426,6 +426,10 @@ pub enum Type {
     /// Instances of classes have this type, and a term of the form `C[arg1, arg2]`
     /// would have the form `Type::Type(box Type::ClassType(C, [arg1, arg2]))`.
     ClassType(ClassType),
+    /// Instances of TypedDicts have this type, and a term of the form `TD[arg1, arg2]`
+    /// would have the form `Type::Type(box Type::TypedDict(TD, [arg1, arg2]))`. Note
+    /// that TypedDict class definitions are still represented as `ClassDef(TD)`, just
+    /// like regular classes.
     TypedDict(TypedDict),
     Tuple(Tuple),
     Module(Module),
