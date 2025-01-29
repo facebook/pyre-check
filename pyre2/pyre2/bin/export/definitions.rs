@@ -414,6 +414,34 @@ r[p] = 1
     }
 
     #[test]
+    fn test_overload() {
+        let defs = check(
+            r#"
+from typing import overload
+
+@overload
+def foo(x: int) -> int: ...
+@overload
+def foo(x: str) -> str: ...
+def foo(x: str | int) -> str | int:
+    return x
+
+def bar(x: int) -> int: ...
+def bar(x: str) -> str: ...
+            "#,
+            &[],
+            &["overload", "foo", "bar"],
+        );
+        let foo = defs.definitions.get(&Name::new("foo")).unwrap();
+        assert_eq!(foo.style, DefinitionStyle::Local);
+        assert_eq!(foo.count, 3);
+
+        let bar = defs.definitions.get(&Name::new("bar")).unwrap();
+        assert_eq!(bar.style, DefinitionStyle::Local);
+        assert_eq!(bar.count, 2);
+    }
+
+    #[test]
     fn test_all() {
         let defs = check(
             r#"
