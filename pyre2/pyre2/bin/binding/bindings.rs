@@ -52,6 +52,7 @@ use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
+use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::ContextManagerKind;
@@ -60,6 +61,7 @@ use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
+use crate::binding::binding::KeyExpect;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::Keyed;
@@ -949,8 +951,8 @@ impl<'a> BindingsBuilder<'a> {
             SizeExpectation::Eq(elts.len())
         };
         self.table.insert(
-            Key::Expect(range),
-            Binding::UnpackedLength(Box::new(make_binding(None)), range, expect),
+            KeyExpect(range),
+            BindingExpect::UnpackedLength(Box::new(make_binding(None)), range, expect),
         );
     }
 
@@ -1030,15 +1032,18 @@ impl<'a> BindingsBuilder<'a> {
                     // If this is not an unpacked assignment, we can use contextual typing on the
                     // expression itself.
                     self.table.insert(
-                        Key::Anon(x.range),
-                        Binding::CheckAssignExprToAttribute(Box::new((x.clone(), value.clone()))),
+                        KeyExpect(x.range),
+                        BindingExpect::CheckAssignExprToAttribute(Box::new((
+                            x.clone(),
+                            value.clone(),
+                        ))),
                     );
                 } else {
                     // Handle an unpacked assignment, where we don't have easy access to the expression.
                     // Note that contextual typing will not be used in this case.
                     self.table.insert(
-                        Key::Anon(x.range),
-                        Binding::CheckAssignTypeToAttribute(Box::new((
+                        KeyExpect(x.range),
+                        BindingExpect::CheckAssignTypeToAttribute(Box::new((
                             x.clone(),
                             value_binding.clone(),
                         ))),
@@ -1695,8 +1700,8 @@ impl<'a> BindingsBuilder<'a> {
                     SizeExpectation::Eq(num_patterns)
                 };
                 self.table.insert(
-                    Key::Expect(x.range),
-                    Binding::UnpackedLength(Box::new(Binding::Forward(key)), x.range, expect),
+                    KeyExpect(x.range),
+                    BindingExpect::UnpackedLength(Box::new(Binding::Forward(key)), x.range, expect),
                 );
                 narrow_ops
             }
@@ -1968,8 +1973,8 @@ impl<'a> BindingsBuilder<'a> {
                     if let Some(box v) = x.value {
                         self.ensure_expr(&v);
                         self.table.insert(
-                            Key::Anon(v.range()),
-                            Binding::CheckAssignExprToAttribute(Box::new((attr, v))),
+                            KeyExpect(v.range()),
+                            BindingExpect::CheckAssignExprToAttribute(Box::new((attr, v))),
                         );
                     }
                 }
@@ -2130,8 +2135,10 @@ impl<'a> BindingsBuilder<'a> {
                     } else {
                         RaisedException::WithoutCause(*exc)
                     };
-                    self.table
-                        .insert(Key::Expect(x.range), Binding::CheckRaisedException(raised));
+                    self.table.insert(
+                        KeyExpect(x.range),
+                        BindingExpect::CheckRaisedException(raised),
+                    );
                 } else {
                     // If there's no exception raised, don't bother checking the cause.
                 }
@@ -2405,8 +2412,8 @@ impl<'a> BindingsBuilder<'a> {
                     // But we only want to consider it when we join up `if` statements.
                     if !is_loop {
                         self.table.insert(
-                            Key::Expect(other_ann.1),
-                            Binding::Eq(other_ann.0, ann.0, name.clone()),
+                            KeyExpect(other_ann.1),
+                            BindingExpect::Eq(other_ann.0, ann.0, name.clone()),
                         );
                     }
                 }

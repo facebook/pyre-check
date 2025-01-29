@@ -25,6 +25,7 @@ macro_rules! table {
         #[$($derive)*]
         pub struct $name {
             $($vis)* types: $t<Key>,
+            $($vis)* expectations: $t<KeyExpect>,
             $($vis)* exports: $t<KeyExport>,
             $($vis)* class_fields: $t<KeyClassField>,
             $($vis)* annotations: $t<KeyAnnotation>,
@@ -36,6 +37,12 @@ macro_rules! table {
             type Value = $t<Key>;
             fn get(&self) -> &Self::Value { &self.types }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.types }
+        }
+
+        impl $crate::binding::table::TableKeyed<KeyExpect> for $name {
+            type Value = $t<KeyExpect>;
+            fn get(&self) -> &Self::Value { &self.expectations }
+            fn get_mut(&mut self) -> &mut Self::Value { &mut self.expectations }
         }
 
         impl $crate::binding::table::TableKeyed<KeyExport> for $name {
@@ -93,6 +100,7 @@ macro_rules! table {
 macro_rules! table_for_each(
     ($e:expr, $f:expr) => {
         $f(&($e).types);
+        $f(&($e).expectations);
         $f(&($e).exports);
         $f(&($e).class_fields);
         $f(&($e).annotations);
@@ -105,6 +113,7 @@ macro_rules! table_for_each(
 macro_rules! table_mut_for_each(
     ($e:expr, $f:expr) => {
         $f(&mut ($e).types);
+        $f(&mut ($e).expectations);
         $f(&mut ($e).exports);
         $f(&mut ($e).class_fields);
         $f(&mut ($e).annotations);
@@ -117,6 +126,7 @@ macro_rules! table_mut_for_each(
 macro_rules! table_try_for_each(
     ($e:expr, $f:expr) => {
         $f(&($e).types)?;
+        $f(&($e).expectations)?;
         $f(&($e).exports)?;
         $f(&($e).class_fields)?;
         $f(&($e).annotations)?;

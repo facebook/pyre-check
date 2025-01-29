@@ -29,13 +29,16 @@ use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
+use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::ContextManagerKind;
+use crate::binding::binding::EmptyAnswer;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
+use crate::binding::binding::KeyExpect;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::Keyed;
@@ -216,6 +219,13 @@ impl SolveRecursive for Key {
         f(v);
     }
 }
+impl SolveRecursive for KeyExpect {
+    type Recursive = ();
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        EmptyAnswer
+    }
+    fn visit_type_mut(_: &mut Self::Answer, _: &mut dyn FnMut(&mut Type)) {}
+}
 impl SolveRecursive for KeyExport {
     type Recursive = Var;
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {
@@ -292,6 +302,14 @@ impl<Ans: LookupAnswer> Solve<Ans> for Key {
     ) {
         answers.record_recursive(key.range(), answer, recursive);
     }
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyExpect {
+    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingExpect) -> Arc<EmptyAnswer> {
+        answers.solve_expectation(binding)
+    }
+
+    fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}
 }
 
 impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
@@ -990,6 +1008,102 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
+    fn solve_expectation(&self, binding: &BindingExpect) -> Arc<EmptyAnswer> {
+        match binding {
+            BindingExpect::UnpackedLength(b, range, expect) => {
+                let iterable_ty = self.solve_binding_inner(b);
+                let iterables = self.iterate(&iterable_ty, *range);
+                for iterable in iterables {
+                    match iterable {
+                        Iterable::OfType(_) => {}
+                        Iterable::FixedLen(ts) => {
+                            let error = match expect {
+                                SizeExpectation::Eq(n) => {
+                                    if ts.len() == *n {
+                                        None
+                                    } else {
+                                        match n {
+                                            1 => Some(format!("{n} value")),
+                                            _ => Some(format!("{n} values")),
+                                        }
+                                    }
+                                }
+                                SizeExpectation::Ge(n) => {
+                                    if ts.len() >= *n {
+                                        None
+                                    } else {
+                                        Some(format!("{n}+ values"))
+                                    }
+                                }
+                            };
+                            match error {
+                                Some(expectation) => {
+                                    self.error(
+                                        *range,
+                                        format!(
+                                            "Cannot unpack {} (of size {}) into {}",
+                                            iterable_ty,
+                                            ts.len(),
+                                            expectation,
+                                        ),
+                                    );
+                                }
+                                None => {}
+                            }
+                        }
+                    }
+                }
+            }
+            BindingExpect::CheckRaisedException(RaisedException::WithoutCause(exc)) => {
+                self.check_is_exception(exc, exc.range(), false);
+            }
+            BindingExpect::CheckRaisedException(RaisedException::WithCause(box (exc, cause))) => {
+                self.check_is_exception(exc, exc.range(), false);
+                self.check_is_exception(cause, cause.range(), true);
+            }
+            BindingExpect::Eq(k1, k2, name) => {
+                let ann1 = self.get_idx(*k1);
+                let ann2 = self.get_idx(*k2);
+                if let Some(t1) = &ann1.ty
+                    && let Some(t2) = &ann2.ty
+                    && *t1 != *t2
+                {
+                    self.error(
+                        self.bindings().idx_to_key(*k1).range(),
+                        format!(
+                            "Inconsistent type annotations for {}: {}, {}",
+                            name,
+                            t1.clone().deterministic_printing(),
+                            t2.clone().deterministic_printing(),
+                        ),
+                    );
+                }
+            }
+            BindingExpect::CheckAssignTypeToAttribute(box (attr, got)) => {
+                let base = self.expr(&attr.value, None);
+                let got = self.solve_binding(got);
+                self.check_attr_set_with_type(
+                    base,
+                    &attr.attr.id,
+                    &got,
+                    attr.range,
+                    "Answers::solve_binding_inner::CheckAssignTypeToAttribute",
+                );
+            }
+            BindingExpect::CheckAssignExprToAttribute(box (attr, value)) => {
+                let base = self.expr(&attr.value, None);
+                self.check_attr_set_with_expr(
+                    base,
+                    &attr.attr.id,
+                    value,
+                    attr.range,
+                    "Answers::solve_binding_inner::CheckAssignExprToAttribute",
+                );
+            }
+        }
+        Arc::new(EmptyAnswer)
+    }
+
     fn solve_class_field(&self, field: &BindingClassField) -> Arc<ClassField> {
         let value_ty = self.solve_binding(&field.value);
         let annotation = field.annotation.map(|a| self.get_idx(a));
@@ -1283,51 +1397,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(&values)
             }
-            Binding::UnpackedLength(b, range, expect) => {
-                let iterable_ty = self.solve_binding_inner(b);
-                let iterables = self.iterate(&iterable_ty, *range);
-                for iterable in iterables {
-                    match iterable {
-                        Iterable::OfType(_) => {}
-                        Iterable::FixedLen(ts) => {
-                            let error = match expect {
-                                SizeExpectation::Eq(n) => {
-                                    if ts.len() == *n {
-                                        None
-                                    } else {
-                                        match n {
-                                            1 => Some(format!("{n} value")),
-                                            _ => Some(format!("{n} values")),
-                                        }
-                                    }
-                                }
-                                SizeExpectation::Ge(n) => {
-                                    if ts.len() >= *n {
-                                        None
-                                    } else {
-                                        Some(format!("{n}+ values"))
-                                    }
-                                }
-                            };
-                            match error {
-                                Some(expectation) => {
-                                    self.error(
-                                        *range,
-                                        format!(
-                                            "Cannot unpack {} (of size {}) into {}",
-                                            iterable_ty,
-                                            ts.len(),
-                                            expectation,
-                                        ),
-                                    );
-                                }
-                                None => {}
-                            }
-                        }
-                    }
-                }
-                Type::None // Unused
-            }
             Binding::Function(x, kind, decorators, legacy_tparam_keys) => {
                 let check_default = |default: &Option<Box<Expr>>, ty: &Type| {
                     let mut required = Required::Required;
@@ -1433,15 +1502,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Binding::Narrow(k, op) => self.narrow(&self.get_idx(*k), op),
-            Binding::CheckRaisedException(RaisedException::WithoutCause(exc)) => {
-                self.check_is_exception(exc, exc.range(), false);
-                Type::None // Unused
-            }
-            Binding::CheckRaisedException(RaisedException::WithCause(box (exc, cause))) => {
-                self.check_is_exception(exc, exc.range(), false);
-                self.check_is_exception(cause, cause.range(), true);
-                Type::None // Unused
-            }
             Binding::AnnotatedType(ann, val) => match &self.get_idx(*ann).ty {
                 Some(ty) => ty.clone(),
                 None => self.solve_binding_inner(val),
@@ -1486,48 +1546,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     LegacyTypeParameterLookup::NotParameter(ty) => ty.clone(),
                 }
-            }
-            Binding::Eq(k1, k2, name) => {
-                let ann1 = self.get_idx(*k1);
-                let ann2 = self.get_idx(*k2);
-                if let Some(t1) = &ann1.ty
-                    && let Some(t2) = &ann2.ty
-                    && *t1 != *t2
-                {
-                    self.error(
-                        self.bindings().idx_to_key(*k1).range(),
-                        format!(
-                            "Inconsistent type annotations for {}: {}, {}",
-                            name,
-                            t1.clone().deterministic_printing(),
-                            t2.clone().deterministic_printing(),
-                        ),
-                    );
-                }
-                Type::None // Unused
-            }
-            Binding::CheckAssignTypeToAttribute(box (attr, got)) => {
-                let base = self.expr(&attr.value, None);
-                let got = self.solve_binding(got);
-                self.check_attr_set_with_type(
-                    base,
-                    &attr.attr.id,
-                    &got,
-                    attr.range,
-                    "Answers::solve_binding_inner::CheckAssignTypeToAttribute",
-                );
-                Type::None // Unused
-            }
-            Binding::CheckAssignExprToAttribute(box (attr, value)) => {
-                let base = self.expr(&attr.value, None);
-                self.check_attr_set_with_expr(
-                    base,
-                    &attr.attr.id,
-                    value,
-                    attr.range,
-                    "Answers::solve_binding_inner::CheckAssignExprToAttribute",
-                );
-                Type::None // Unused
             }
             Binding::NameAssign(name, annot_key, expr) => {
                 let annot = annot_key.map(|k| self.get_idx(k));
