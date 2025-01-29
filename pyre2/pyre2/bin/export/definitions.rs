@@ -7,6 +7,7 @@
 
 use std::cmp;
 
+use itertools::Itertools;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::ExceptHandler;
 use ruff_python_ast::Expr;
@@ -158,9 +159,12 @@ impl Definitions {
 
 impl<'a> DefinitionsBuilder<'a> {
     fn stmts(&mut self, x: &[Stmt]) {
-        for x in x {
-            self.stmt(x);
-        }
+        x.iter()
+            .dedup_by(|x, y| match (x, y) {
+                (Stmt::FunctionDef(x), Stmt::FunctionDef(y)) => x.name.id == y.name.id,
+                _ => false,
+            })
+            .for_each(|x| self.stmt(x));
     }
 
     fn add_name(&mut self, x: &Name, range: TextRange, style: DefinitionStyle) {
@@ -434,11 +438,11 @@ def bar(x: str) -> str: ...
         );
         let foo = defs.definitions.get(&Name::new("foo")).unwrap();
         assert_eq!(foo.style, DefinitionStyle::Local);
-        assert_eq!(foo.count, 3);
+        assert_eq!(foo.count, 1);
 
         let bar = defs.definitions.get(&Name::new("bar")).unwrap();
         assert_eq!(bar.style, DefinitionStyle::Local);
-        assert_eq!(bar.count, 2);
+        assert_eq!(bar.count, 1);
     }
 
     #[test]
