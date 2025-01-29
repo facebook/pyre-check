@@ -553,47 +553,30 @@ impl BindingTable {
 }
 
 impl<'a> BindingsBuilder<'a> {
-    fn stmts_iter<I>(&mut self, mut xs: I)
-    where
-        I: Iterator<Item = Stmt>,
-    {
-        while let Some(x) = xs.next() {
-            match x {
-                Stmt::FunctionDef(x) => {
-                    let defs = Vec1::new(self.function_def(x));
-                    return self.stmts_iter1(xs, defs);
-                }
-                _ => self.stmt_not_function(x),
-            }
-        }
-    }
-
-    fn stmts_iter1<I>(&mut self, mut xs: I, mut defs: Vec1<FunctionBinding>)
-    where
-        I: Iterator<Item = Stmt>,
-    {
-        while let Some(x) = xs.next() {
-            match x {
-                Stmt::FunctionDef(x) => {
-                    if defs.first().def.name.id == x.name.id {
-                        defs.push(self.function_def(x))
+    fn stmts(&mut self, xs: Vec<Stmt>) {
+        let mut iter = xs.into_iter();
+        'outer: while let Some(x) = iter.next() {
+            if let Stmt::FunctionDef(x) = x {
+                let mut defs = Vec1::new(self.function_def(x));
+                for x in iter.by_ref() {
+                    if let Stmt::FunctionDef(x) = x {
+                        if defs.first().def.name.id == x.name.id {
+                            defs.push(self.function_def(x))
+                        } else {
+                            self.bind_function_defs(defs);
+                            defs = Vec1::new(self.function_def(x));
+                        }
                     } else {
                         self.bind_function_defs(defs);
-                        defs = Vec1::new(self.function_def(x))
+                        self.stmt_not_function(x);
+                        continue 'outer;
                     }
                 }
-                _ => {
-                    self.bind_function_defs(defs);
-                    self.stmt_not_function(x);
-                    return self.stmts_iter(xs);
-                }
+                self.bind_function_defs(defs);
+            } else {
+                self.stmt_not_function(x)
             }
         }
-        self.bind_function_defs(defs)
-    }
-
-    fn stmts(&mut self, x: Vec<Stmt>) {
-        self.stmts_iter(x.into_iter())
     }
 
     fn inject_builtins(&mut self) {
