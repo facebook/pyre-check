@@ -19,6 +19,12 @@ pub struct Callable {
     pub ret: Type,
 }
 
+impl Display for Callable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.fmt_with_type(f, &|t| t)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ParamList(Vec<Param>);
 
