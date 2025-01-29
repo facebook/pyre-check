@@ -560,35 +560,36 @@ impl<'a> BindingsBuilder<'a> {
         while let Some(x) = xs.next() {
             match x {
                 Stmt::FunctionDef(x) => {
-                    return self.stmts_iter1(xs, Vec1::new(x));
+                    let defs = Vec1::new(self.function_def(x));
+                    return self.stmts_iter1(xs, defs);
                 }
                 _ => self.stmt_not_function(x),
             }
         }
     }
 
-    fn stmts_iter1<I>(&mut self, mut xs: I, mut defs: Vec1<StmtFunctionDef>)
+    fn stmts_iter1<I>(&mut self, mut xs: I, mut defs: Vec1<FunctionBinding>)
     where
         I: Iterator<Item = Stmt>,
     {
         while let Some(x) = xs.next() {
             match x {
                 Stmt::FunctionDef(x) => {
-                    if defs.first().name.id == x.name.id {
-                        defs.push(x)
+                    if defs.first().def.name.id == x.name.id {
+                        defs.push(self.function_def(x))
                     } else {
-                        self.function_defs(defs);
-                        defs = Vec1::new(x)
+                        self.bind_function_defs(defs);
+                        defs = Vec1::new(self.function_def(x))
                     }
                 }
                 _ => {
-                    self.function_defs(defs);
+                    self.bind_function_defs(defs);
                     self.stmt_not_function(x);
                     return self.stmts_iter(xs);
                 }
             }
         }
-        self.function_defs(defs)
+        self.bind_function_defs(defs)
     }
 
     fn stmts(&mut self, x: Vec<Stmt>) {
@@ -944,6 +945,11 @@ impl<'a> BindingsBuilder<'a> {
         idx
     }
 
+    fn bind_function_defs(&mut self, defs: Vec1<FunctionBinding>) {
+        let name = defs.last().def.name.clone();
+        self.bind_definition(&name, Binding::Function(defs), None);
+    }
+
     fn bind_unpacking(
         &mut self,
         elts: &[Expr],
@@ -1215,13 +1221,6 @@ impl<'a> BindingsBuilder<'a> {
         {
             method.self_name = self_name;
         }
-    }
-
-    // Create a single binding for a sequence of functions with the same name.
-    fn function_defs(&mut self, x: Vec1<StmtFunctionDef>) {
-        let name = x.last().name.clone();
-        let bindings = x.mapped(|x| self.function_def(x));
-        self.bind_definition(&name, Binding::Function(bindings), None);
     }
 
     fn function_def(&mut self, mut x: StmtFunctionDef) -> FunctionBinding {
