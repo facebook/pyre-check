@@ -92,6 +92,14 @@ impl ClassField {
             a.visit_type_mut(&mut f);
         }
     }
+
+    fn instantiate_for(&self, cls: &ClassType) -> Self {
+        Self {
+            ty: cls.instantiate_member(self.ty.clone()),
+            annotation: self.annotation.clone(),
+            initialization: self.initialization,
+        }
+    }
 }
 
 impl Display for ClassField {
@@ -756,9 +764,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .ancestors(self.stdlib)
                 .filter_map(|ancestor| {
                     self.get_class_field(ancestor.class_object(), name)
-                        .map(|mut field| {
-                            field.ty = ancestor.instantiate_member(field.ty);
-                            (field, ancestor.class_object().dupe())
+                        .map(|field| {
+                            (
+                                field.instantiate_for(ancestor),
+                                ancestor.class_object().dupe(),
+                            )
                         })
                 })
                 .next()
@@ -776,9 +786,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for ancestor in self.get_metadata_for_class(cls).ancestors(self.stdlib) {
             for name in ancestor.class_object().fields() {
                 if !members.contains_key(name) {
-                    if let Some(mut field) = self.get_class_field(ancestor.class_object(), name) {
-                        field.ty = ancestor.instantiate_member(field.ty);
-                        members.insert(name.clone(), (field, ancestor.class_object().dupe()));
+                    if let Some(field) = self.get_class_field(ancestor.class_object(), name) {
+                        members.insert(
+                            name.clone(),
+                            (
+                                field.instantiate_for(ancestor),
+                                ancestor.class_object().dupe(),
+                            ),
+                        );
                     }
                 }
             }
@@ -799,13 +814,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         name: &Name,
     ) -> Option<WithDefiningClass<Type>> {
         self.get_class_member(cls.class_object(), name)
-            .map(|(member, defining_class)| {
-                let instantiated_ty = cls.instantiate_member(member.ty);
+            .map(|(field, defining_class)| {
+                let member = field.instantiate_for(cls);
                 let ty = match member.initialization {
-                    ClassFieldInitialization::Class => {
-                        bind_attribute(cls.self_type(), instantiated_ty)
-                    }
-                    ClassFieldInitialization::Instance => instantiated_ty,
+                    ClassFieldInitialization::Class => bind_attribute(cls.self_type(), member.ty),
+                    ClassFieldInitialization::Instance => member.ty,
                 };
                 WithDefiningClass {
                     value: ty,
@@ -861,9 +874,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_dunder_new(&self, cls: &ClassType) -> Option<Type> {
         let new_attr = self
             .get_class_member(cls.class_object(), &dunder::NEW)
-            .map(|(member, defining_class)| WithDefiningClass {
-                value: cls.instantiate_member(member.ty),
-                defining_class,
+            .map(|(member, defining_class)| {
+                let member = member.instantiate_for(cls);
+                WithDefiningClass {
+                    value: member.ty,
+                    defining_class,
+                }
             })?;
         if new_attr.defined_on(self.stdlib.object_class_type().class_object()) {
             // The default behavior of `object.__new__` is already baked into our implementation of
