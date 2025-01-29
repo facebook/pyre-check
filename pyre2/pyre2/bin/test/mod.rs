@@ -17,6 +17,7 @@ mod constructors;
 mod contextual;
 mod dataclasses;
 mod decorators;
+mod descriptors;
 mod enums;
 mod flow;
 mod imports;
