@@ -1457,31 +1457,24 @@
     "Line 39: Unexpected errors ['TypedDict item `method3` may not be initialized.']"
   ],
   "typeddicts_final.py": [
-    "Line 19: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie]']",
     "Line 26: Unexpected errors [\"Invalid key for TypedDict `Movie`, got `Literal['name', 'year']`\"]"
   ],
   "typeddicts_inheritance.py": [
     "Line 65: Expected 1 errors",
     "Lines 54, 55: Expected error (tag 'Y1')",
-    "Line 22: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[BookBasedMovie]']",
     "Line 36: Unexpected errors ['Expected a callable, got type[XYZ]']"
   ],
   "typeddicts_operations.py": [
-    "Line 18: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie]']",
     "Line 41: Unexpected errors [\"Missing argument 'default'\"]",
-    "Line 58: Unexpected errors ['EXPECTED dict[@_, @_] <: TypedDict[MovieOptional]']",
     "Line 60: Unexpected errors ['assert_type(object | Any, str | None) failed', \"Missing argument 'default'\"]",
     "Line 64: Unexpected errors ['TODO: StmtDelete - Bindings::stmt']"
   ],
   "typeddicts_readonly.py": [
     "Line 36: Expected 1 errors",
     "Line 61: Expected 1 errors",
-    "Line 21: Unexpected errors ['EXPECTED dict[str, list[@_] | str] <: TypedDict[Band]']",
     "Line 31: Unexpected errors ['Expected a callable, got type[TypedDict]', 'TODO: Answers::apply_special_form cannot handle `ReadOnly[list[str]]`']",
     "Line 37: Unexpected errors ['Object of class `str` has no attribute `append`']",
-    "Line 49: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie1]']",
-    "Line 56: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `NotRequired[ReadOnly[int]]`']",
-    "Line 59: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie2]']"
+    "Line 56: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `NotRequired[ReadOnly[int]]`']"
   ],
   "typeddicts_readonly_consistency.py": [
     "Line 38: Expected 1 errors",
@@ -1494,17 +1487,12 @@
     "Line 98: Expected 1 errors",
     "Line 106: Expected 1 errors",
     "Line 119: Expected 1 errors",
-    "Line 132: Expected 1 errors",
-    "Line 23: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Album1]']",
-    "Line 35: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Album2]']",
-    "Line 80: Unexpected errors ['EXPECTED dict[str, str] <: TypedDict[User]']"
+    "Line 132: Expected 1 errors"
   ],
   "typeddicts_readonly_kwargs.py": [
     "Line 36: Unexpected errors ['EXPECTED (**Unpack[TypedDict[ReadOnlyArgs]]) -> None <: Function']"
   ],
   "typeddicts_readonly_update.py": [
-    "Line 21: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[A]']",
-    "Line 22: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[A]']",
     "Line 34: Unexpected errors ['Object of class `Mapping` has no attribute `update`']"
   ],
   "typeddicts_required.py": [
@@ -1512,9 +1500,6 @@
     "Line 19: Expected 1 errors",
     "Line 62: Expected 1 errors",
     "Line 63: Expected 1 errors",
-    "Line 47: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[TD3]']",
-    "Line 48: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[TD4]']",
-    "Line 49: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[TD5]']",
     "Line 68: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[int]`']",
     "Line 70: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[Annotated[int, \"\"]]`']",
     "Line 73: Unexpected errors ['Expected a callable, got type[TypedDict]']",
@@ -1522,24 +1507,17 @@
   ],
   "typeddicts_type_consistency.py": [
     "Line 21: Expected 1 errors",
-    "Line 18: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[B1]']",
-    "Line 37: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[B2]']",
-    "Line 61: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[B3]']",
-    "Line 64: Unexpected errors ['EXPECTED dict[str, int] <: TypedDict[A3]']",
     "Line 88: Unexpected errors ['Expected a callable, got type[TypedDict]']",
     "Line 91: Unexpected errors ['EXPECTED int | str | str <: str']",
     "Line 92: Unexpected errors ['EXPECTED int | str | int <: int']",
     "Line 94: Unexpected errors ['Expected a callable, got type[TypedDict]']",
     "Line 97: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED int | str | @_ <: str | None']",
     "Line 103: Unexpected errors ['EXPECTED int | str | int <: int']",
-    "Line 122: Unexpected errors ['EXPECTED dict[str, dict[str, dict[str, str]]] <: TypedDict[Outer1]']",
-    "Line 151: Unexpected errors ['EXPECTED dict[str, dict[str, int] | str] <: TypedDict[Outer2]']"
+    "Line 151: Unexpected errors [\"EXPECTED dict[str, int] <: Literal[''] | TypedDict[Inner3]\"]"
   ],
   "typeddicts_usage.py": [
     "Line 35: Expected 1 errors",
     "Line 40: Expected 1 errors",
-    "Line 13: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie]']",
-    "Line 20: Unexpected errors ['EXPECTED dict[str, int | str] <: TypedDict[Movie]']",
     "Line 30: Unexpected errors ['Expected a callable, got type[Movie]']"
   ]
 }

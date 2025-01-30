@@ -668,8 +668,53 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Dict(x) => {
-                let hint = hint.and_then(|ty| self.decompose_dict(ty));
-                if let Some(hint) = hint {
+                let unwrapped_hint = hint.and_then(|ty| self.decompose_dict(ty));
+                if let Some(hint @ Type::TypedDict(typed_dict)) = hint {
+                    let fields = typed_dict.fields();
+                    let mut keys: SmallSet<Name> = SmallSet::new();
+                    x.items.iter().for_each(|x| match &x.key {
+                        Some(key) => {
+                            let key_type = self.expr(key, None);
+                            if let Type::Literal(Lit::String(name)) = key_type {
+                                let key_name = Name::new(name.clone());
+                                if let Some(field) = fields.get(&key_name) {
+                                    self.expr(&x.value, Some(&field.ty));
+                                } else {
+                                    self.error(
+                                        key.range(),
+                                        format!(
+                                            "Key `{}` is not defined in TypedDict `{}`",
+                                            name,
+                                            typed_dict.name()
+                                        ),
+                                    );
+                                }
+                                keys.insert(key_name);
+                            } else {
+                                self.error(
+                                    key.range(),
+                                    format!("Expected string literal key, got `{}`", key_type),
+                                );
+                            }
+                        }
+                        None => {
+                            self.todo("Answers::expr_infer expansion in dict literal", x);
+                        }
+                    });
+                    fields.iter().for_each(|(key, field)| {
+                        if field.required && !keys.contains(key) {
+                            self.error(
+                                x.range,
+                                format!(
+                                    "Missing required key `{}` for TypedDict `{}`",
+                                    key,
+                                    typed_dict.name()
+                                ),
+                            );
+                        }
+                    });
+                    hint.clone()
+                } else if let Some(hint) = unwrapped_hint {
                     x.items.iter().for_each(|x| match &x.key {
                         Some(key) => {
                             self.expr(key, Some(&hint.key));

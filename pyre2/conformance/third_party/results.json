@@ -3,7 +3,7 @@
   "pass": 10,
   "fail": 123,
   "pass_rate": 0.08,
-  "differences": 1286,
+  "differences": 1264,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -129,17 +129,17 @@
     "tuples_unpacked.py": 14,
     "typeddicts_alt_syntax.py": 3,
     "typeddicts_class_syntax.py": 4,
-    "typeddicts_final.py": 2,
-    "typeddicts_inheritance.py": 4,
-    "typeddicts_operations.py": 5,
-    "typeddicts_readonly.py": 8,
+    "typeddicts_final.py": 1,
+    "typeddicts_inheritance.py": 3,
+    "typeddicts_operations.py": 3,
+    "typeddicts_readonly.py": 5,
     "typeddicts_readonly_consistency.py": 3,
-    "typeddicts_readonly_inheritance.py": 9,
+    "typeddicts_readonly_inheritance.py": 6,
     "typeddicts_readonly_kwargs.py": 1,
-    "typeddicts_readonly_update.py": 3,
-    "typeddicts_required.py": 11,
-    "typeddicts_type_consistency.py": 13,
-    "typeddicts_usage.py": 5
+    "typeddicts_readonly_update.py": 1,
+    "typeddicts_required.py": 8,
+    "typeddicts_type_consistency.py": 8,
+    "typeddicts_usage.py": 3
   },
   "comment": "@generated"
 }

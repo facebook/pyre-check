@@ -985,6 +985,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_all_members(cls)
             .iter()
             .filter_map(|(name, (field, cls))| {
+                let metadata = self.get_metadata_for_class(cls);
+                if !metadata.is_typed_dict() {
+                    return None;
+                }
                 if let ClassField(ClassFieldInner::Simple {
                     annotation:
                         Some(Annotation {
@@ -994,8 +998,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ..
                 }) = field
                 {
-                    let is_total = self
-                        .get_metadata_for_class(cls)
+                    let is_total = metadata
                         .get_keyword(&Name::new("total"))
                         .map_or(true, |ty| match ty {
                             Type::Literal(Lit::Bool(b)) => b,

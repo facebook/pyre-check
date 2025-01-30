@@ -18550,16 +18550,6 @@
   "typeddicts_final.py": [
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
       "column": 18,
       "concise_description": "Invalid key for TypedDict `Movie`, got `Literal['name', 'year']`",
       "description": "Invalid key for TypedDict `Movie`, got `Literal['name', 'year']`",
@@ -18570,16 +18560,6 @@
     }
   ],
   "typeddicts_inheritance.py": [
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[BookBasedMovie]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[BookBasedMovie]",
-      "line": 22,
-      "name": "PyreError",
-      "stop_column": 88,
-      "stop_line": 22
-    },
     {
       "code": -2,
       "column": 6,
@@ -18602,16 +18582,6 @@
     }
   ],
   "typeddicts_operations.py": [
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "line": 18,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 18
-    },
     {
       "code": -2,
       "column": 1,
@@ -18665,8 +18635,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "EXPECTED dict[str, str] <: TypedDict[Movie]",
-      "description": "EXPECTED dict[str, str] <: TypedDict[Movie]",
+      "concise_description": "Missing required key `year` for TypedDict `Movie`",
+      "description": "Missing required key `year` for TypedDict `Movie`",
       "line": 28,
       "name": "PyreError",
       "stop_column": 33,
@@ -18674,32 +18644,42 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED dict[str, float | str] <: TypedDict[Movie]",
-      "description": "EXPECTED dict[str, float | str] <: TypedDict[Movie]",
+      "column": 42,
+      "concise_description": "EXPECTED float <: int",
+      "description": "EXPECTED float <: int",
       "line": 29,
       "name": "PyreError",
-      "stop_column": 49,
+      "stop_column": 48,
       "stop_line": 29
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
+      "column": 36,
+      "concise_description": "Key `other` is not defined in TypedDict `Movie`",
+      "description": "Key `other` is not defined in TypedDict `Movie`",
       "line": 32,
       "name": "PyreError",
-      "stop_column": 47,
+      "stop_column": 43,
       "stop_line": 32
     },
     {
       "code": -2,
       "column": 20,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
+      "concise_description": "Missing required key `name` for TypedDict `Movie`",
+      "description": "Missing required key `name` for TypedDict `Movie`",
       "line": 37,
       "name": "PyreError",
       "stop_column": 52,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "Expected string literal key, got `str`",
+      "description": "Expected string literal key, got `str`",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 33,
       "stop_line": 37
     },
     {
@@ -18741,16 +18721,6 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 33,
-      "concise_description": "EXPECTED dict[@_, @_] <: TypedDict[MovieOptional]",
-      "description": "EXPECTED dict[@_, @_] <: TypedDict[MovieOptional]",
-      "line": 58,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 58
     },
     {
       "code": -2,
@@ -18796,16 +18766,6 @@
   "typeddicts_readonly.py": [
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED dict[str, list[@_] | str] <: TypedDict[Band]",
-      "description": "EXPECTED dict[str, list[@_] | str] <: TypedDict[Band]",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
       "column": 4,
       "concise_description": "Key `members` in TypedDict `Band` is read-only",
       "description": "Key `members` in TypedDict `Band` is read-only",
@@ -18846,16 +18806,6 @@
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Movie1]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Movie1]",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
       "column": 4,
       "concise_description": "Key `title` in TypedDict `Movie1` is read-only",
       "description": "Key `title` in TypedDict `Movie1` is read-only",
@@ -18883,16 +18833,6 @@
       "name": "PyreError",
       "stop_column": 47,
       "stop_line": 56
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Movie2]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Movie2]",
-      "line": 59,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 59
     },
     {
       "code": -2,
@@ -18970,26 +18910,6 @@
   "typeddicts_readonly_inheritance.py": [
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Album1]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Album1]",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 45,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Album2]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Album2]",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 45,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
       "column": 4,
       "concise_description": "Key `name` in TypedDict `Album2` is read-only",
       "description": "Key `name` in TypedDict `Album2` is read-only",
@@ -19001,22 +18921,12 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "EXPECTED dict[@_, @_] <: TypedDict[RequiredName]",
-      "description": "EXPECTED dict[@_, @_] <: TypedDict[RequiredName]",
+      "concise_description": "Missing required key `name` for TypedDict `RequiredName`",
+      "description": "Missing required key `name` for TypedDict `RequiredName`",
       "line": 65,
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 65
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED dict[str, str] <: TypedDict[User]",
-      "description": "EXPECTED dict[str, str] <: TypedDict[User]",
-      "line": 80,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 80
     },
     {
       "code": -2,
@@ -19030,19 +18940,19 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[User]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[User]",
+      "column": 15,
+      "concise_description": "EXPECTED Literal[3] <: str",
+      "description": "EXPECTED Literal[3] <: str",
       "line": 83,
       "name": "PyreError",
-      "stop_column": 17,
+      "stop_column": 16,
       "stop_line": 83
     },
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED dict[@_, @_] <: TypedDict[User]",
-      "description": "EXPECTED dict[@_, @_] <: TypedDict[User]",
+      "concise_description": "Missing required key `ident` for TypedDict `User`",
+      "description": "Missing required key `ident` for TypedDict `User`",
       "line": 84,
       "name": "PyreError",
       "stop_column": 7,
@@ -19074,26 +18984,6 @@
   "typeddicts_readonly_update.py": [
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[A]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[A]",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[A]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[A]",
-      "line": 22,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 22
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Object of class `Mapping` has no attribute `update`",
       "description": "Object of class `Mapping` has no attribute `update`",
@@ -19114,36 +19004,6 @@
     }
   ],
   "typeddicts_required.py": [
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[TD3]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[TD3]",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[TD4]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[TD4]",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[TD5]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[TD5]",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 49
-    },
     {
       "code": -2,
       "column": 18,
@@ -19199,52 +19059,12 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[B1]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[B1]",
-      "line": 18,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 18
-    },
-    {
-      "code": -2,
-      "column": 10,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[B2]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[B2]",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 10,
       "concise_description": "EXPECTED TypedDict[B2] <: TypedDict[A2]",
       "description": "EXPECTED TypedDict[B2] <: TypedDict[A2]",
       "line": 38,
       "name": "PyreError",
       "stop_column": 12,
       "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 10,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[B3]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[B3]",
-      "line": 61,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[A3]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[A3]",
-      "line": 64,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 64
     },
     {
       "code": -2,
@@ -19258,12 +19078,12 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED dict[str, int] <: TypedDict[A3]",
-      "description": "EXPECTED dict[str, int] <: TypedDict[A3]",
+      "column": 21,
+      "concise_description": "Key `y` is not defined in TypedDict `A3`",
+      "description": "Key `y` is not defined in TypedDict `A3`",
       "line": 69,
       "name": "PyreError",
-      "stop_column": 28,
+      "stop_column": 24,
       "stop_line": 69
     },
     {
@@ -19408,56 +19228,26 @@
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED dict[str, dict[str, dict[str, str]]] <: TypedDict[Outer1]",
-      "description": "EXPECTED dict[str, dict[str, dict[str, str]]] <: TypedDict[Outer1]",
-      "line": 122,
-      "name": "PyreError",
-      "stop_column": 63,
-      "stop_line": 122
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED dict[str, dict[str, dict[str, int]]] <: TypedDict[Outer1]",
-      "description": "EXPECTED dict[str, dict[str, dict[str, int]]] <: TypedDict[Outer1]",
+      "column": 56,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
       "line": 126,
       "name": "PyreError",
-      "stop_column": 60,
+      "stop_column": 57,
       "stop_line": 126
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED dict[str, dict[str, int] | str] <: TypedDict[Outer2]",
-      "description": "EXPECTED dict[str, dict[str, int] | str] <: TypedDict[Outer2]",
+      "column": 29,
+      "concise_description": "EXPECTED dict[str, int] <: Literal[''] | TypedDict[Inner3]",
+      "description": "EXPECTED dict[str, int] <: Literal[''] | TypedDict[Inner3]",
       "line": 151,
       "name": "PyreError",
-      "stop_column": 38,
+      "stop_column": 37,
       "stop_line": 151
     }
   ],
   "typeddicts_usage.py": [
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "line": 13,
-      "name": "PyreError",
-      "stop_column": 54,
-      "stop_line": 13
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 52,
-      "stop_line": 20
-    },
     {
       "code": -2,
       "column": 7,
@@ -19481,11 +19271,21 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
-      "description": "EXPECTED dict[str, int | str] <: TypedDict[Movie]",
+      "concise_description": "Missing required key `name` for TypedDict `Movie`",
+      "description": "Missing required key `name` for TypedDict `Movie`",
       "line": 28,
       "name": "PyreError",
       "stop_column": 56,
+      "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "Key `title` is not defined in TypedDict `Movie`",
+      "description": "Key `title` is not defined in TypedDict `Movie`",
+      "line": 28,
+      "name": "PyreError",
+      "stop_column": 25,
       "stop_line": 28
     },
     {
