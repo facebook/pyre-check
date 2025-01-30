@@ -14,6 +14,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
+use crate::types::class_metadata::EnumMetadata;
 use crate::types::module::Module;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
@@ -197,16 +198,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    // TODO(stroxler) Revisit the use case of checking `_value`; we probably should enforce that it
-    // has a "raw" type (and complain if it is a descriptor of any kind) but the
-    // API for that doesn't exist yet and it's a non-urgent edge case.
-    //
-    /// Compute the get (i.e. read) type of an attribute if it is gettable. If it is not found or
-    /// access is denied, return `None`; never produce a type error. Used for internal special cases
-    /// like checking enum values.
-    pub fn type_of_attr_get_if_gettable(&self, base: Type, attr_name: &Name) -> Option<Type> {
-        match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attr) => self.resolve_get_access(attr).ok(),
+    /// Look up the `_value_` attribute of an enum class. This field has to be a plain instance
+    /// attribute annotated in the class body; it is used to validate enum member values, which are
+    /// supposed to all share this type.
+    pub fn type_of_enum_value(&self, enum_: EnumMetadata) -> Option<Type> {
+        let base = Type::ClassType(enum_.cls);
+        match self.lookup_attr(base, &Name::new_static("_value_")) {
+            LookupResult::Found(attr) => match attr.0 {
+                AttributeInner::ReadWrite(ty) => Some(ty),
+                AttributeInner::NoAccess(_) => None,
+            },
             _ => None,
         }
     }

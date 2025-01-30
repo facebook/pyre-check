@@ -865,10 +865,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
             }
 
-            if let Some(enum_value_ty) = self.type_of_attr_get_if_gettable(
-                Type::ClassType(enum_.cls),
-                &Name::new_static("_value_"),
-            ) {
+            if let Some(enum_value_ty) = self.type_of_enum_value(enum_) {
                 if !matches!(value_ty, Type::Tuple(_))
                     && !self
                         .solver()
