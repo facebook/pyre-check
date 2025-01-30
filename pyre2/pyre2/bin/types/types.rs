@@ -21,6 +21,8 @@ use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
+use crate::types::callable::Params;
+use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassKind;
 use crate::types::class::ClassType;
@@ -371,6 +373,28 @@ impl TypedDict {
 
     pub fn targs(&self) -> &TArgs {
         &self.0.1
+    }
+
+    pub fn as_callable(&self) -> Callable {
+        let params = self
+            .fields()
+            .iter()
+            .map(|(name, field)| {
+                Param::KwOnly(
+                    name.clone(),
+                    field.ty.clone(),
+                    if field.required {
+                        Required::Required
+                    } else {
+                        Required::Optional
+                    },
+                )
+            })
+            .collect();
+        Callable {
+            params: Params::List(ParamList::new(params)),
+            ret: Type::TypedDict(self.clone()),
+        }
     }
 }
 

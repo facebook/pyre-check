@@ -167,6 +167,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .get_instance_attribute(&cls, &dunder::CALL)
                 .and_then(|attr| attr.get_type())
                 .and_then(|ty| self.as_call_target(ty)),
+            Type::Type(box Type::TypedDict(typed_dict)) => {
+                Some((Vec::new(), CallTarget::Callable(typed_dict.as_callable())))
+            }
             _ => None,
         }
     }

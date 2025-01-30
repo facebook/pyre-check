@@ -3,7 +3,7 @@
   "pass": 10,
   "fail": 123,
   "pass_rate": 0.08,
-  "differences": 1264,
+  "differences": 1261,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -29,7 +29,7 @@
     "annotations_methods.py": 9,
     "annotations_typeexpr.py": 5,
     "callables_annotation.py": 20,
-    "callables_kwargs.py": 17,
+    "callables_kwargs.py": 16,
     "callables_protocol.py": 25,
     "callables_subtyping.py": 37,
     "classes_classvar.py": 11,
@@ -130,7 +130,7 @@
     "typeddicts_alt_syntax.py": 3,
     "typeddicts_class_syntax.py": 4,
     "typeddicts_final.py": 1,
-    "typeddicts_inheritance.py": 3,
+    "typeddicts_inheritance.py": 2,
     "typeddicts_operations.py": 3,
     "typeddicts_readonly.py": 5,
     "typeddicts_readonly_consistency.py": 3,
@@ -139,7 +139,7 @@
     "typeddicts_readonly_update.py": 1,
     "typeddicts_required.py": 8,
     "typeddicts_type_consistency.py": 8,
-    "typeddicts_usage.py": 3
+    "typeddicts_usage.py": 2
   },
   "comment": "@generated"
 }

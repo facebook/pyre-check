@@ -2578,19 +2578,9 @@
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "Expected a callable, got type[TD2]",
-      "description": "Expected a callable, got type[TD2]",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
       "column": 13,
-      "concise_description": "Expected argument after ** to be a mapping, got: Error",
-      "description": "Expected argument after ** to be a mapping, got: Error",
+      "concise_description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
+      "description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
       "line": 50,
       "name": "PyreError",
       "stop_column": 16,
@@ -2679,8 +2669,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Expected argument after ** to be a mapping, got: Error",
-      "description": "Expected argument after ** to be a mapping, got: Error",
+      "concise_description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
+      "description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
       "line": 62,
       "name": "PyreError",
       "stop_column": 16,
@@ -2699,8 +2689,8 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "Expected argument after ** to be a mapping, got: Error",
-      "description": "Expected argument after ** to be a mapping, got: Error",
+      "concise_description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
+      "description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
       "line": 63,
       "name": "PyreError",
       "stop_column": 22,
@@ -2719,8 +2709,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected argument after ** to be a mapping, got: Error",
-      "description": "Expected argument after ** to be a mapping, got: Error",
+      "concise_description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
+      "description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
       "line": 64,
       "name": "PyreError",
       "stop_column": 19,
@@ -2749,8 +2739,8 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "Expected argument after ** to be a mapping, got: Error",
-      "description": "Expected argument after ** to be a mapping, got: Error",
+      "concise_description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
+      "description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
       "line": 65,
       "name": "PyreError",
       "stop_column": 22,
@@ -18562,16 +18552,6 @@
   "typeddicts_inheritance.py": [
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Expected a callable, got type[XYZ]",
-      "description": "Expected a callable, got type[XYZ]",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 9,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
       "column": 7,
       "concise_description": "`NonTypedDict` is not a typed dictionary. Typed dictionary definitions may only extend other typed dictionaries.",
       "description": "`NonTypedDict` is not a typed dictionary. Typed dictionary definitions may only extend other typed dictionaries.",
@@ -19287,16 +19267,6 @@
       "name": "PyreError",
       "stop_column": 25,
       "stop_line": 28
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected a callable, got type[Movie]",
-      "description": "Expected a callable, got type[Movie]",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 30
     }
   ]
 }

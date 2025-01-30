@@ -51,6 +51,18 @@ foo({"x": 1, "y": 2})
 );
 
 testcase!(
+    test_typed_dict_callable,
+    r#"
+from typing import TypedDict
+
+class Movie(TypedDict):
+    name: str
+    year: int
+m = Movie(name='Blade Runner', year=1982)
+    "#,
+);
+
+testcase!(
     test_typed_dict_readonly,
     r#"
 from typing import TypedDict, ReadOnly
