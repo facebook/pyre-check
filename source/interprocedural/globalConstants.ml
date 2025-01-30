@@ -129,7 +129,7 @@ module SharedMemory = struct
       ~policy:scheduler_policy
       ~initial:handle
       ~map:(fun qualifiers -> add_heap handle (Heap.from_qualifiers ~pyre_api ~qualifiers))
-      ~reduce:(fun smaller larger -> merge_same_handle ~smaller ~larger)
+      ~reduce:(fun smaller larger -> merge_same_handle_disjoint_keys ~smaller ~larger)
       ~inputs:qualifiers
       ()
 end

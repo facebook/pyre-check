@@ -89,8 +89,8 @@ end
 (* Support storing / loading key-value pairs into / from the shared memory. *)
 module MakeKeyValue (Key : Hack_parallel.Std.SharedMemory.KeyType) (Value : KeyValueValueType) =
 struct
-  module FirstClass =
-    Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
+  module T =
+    Hack_parallel.Std.SharedMemory.MakeFirstClassWithKeys
       (Key)
       (struct
         type t = Value.t
@@ -100,65 +100,10 @@ struct
         let description = Value.description
       end)
 
-  (* The table handle and the keys, whose combination locates all entries in the shared memory that
-     belong to this table. *)
-  module Handle = struct
-    type t = {
-      first_class_handle: FirstClass.t;
-      keys: Key.t List.t;
-    }
-  end
-
-  module KeySet = FirstClass.KeySet
-
-  type t = Handle.t
-
-  let create () = { Handle.first_class_handle = FirstClass.create (); keys = [] }
-
-  let add { Handle.first_class_handle; keys } key value =
-    let keys = List.cons key keys in
-    let () = FirstClass.add first_class_handle key value in
-    { Handle.first_class_handle; keys }
-
-
-  (* Partially invalidate the shared memory. *)
-  let cleanup { Handle.first_class_handle; keys } =
-    keys |> FirstClass.KeySet.of_list |> FirstClass.remove_batch first_class_handle
-
-
-  let of_alist list =
-    let save_entry ~first_class_handle (key, value) = FirstClass.add first_class_handle key value in
-    let first_class_handle = FirstClass.create () in
-    List.iter list ~f:(save_entry ~first_class_handle);
-    { Handle.first_class_handle; keys = list |> List.map ~f:fst }
-
-
-  let to_alist { Handle.first_class_handle; keys } =
-    keys
-    |> KeySet.of_list
-    |> FirstClass.get_batch first_class_handle
-    |> FirstClass.KeyMap.elements
-    |> List.filter_map ~f:(fun (key, value) ->
-           match value with
-           | Some value -> Some (key, value)
-           | None -> None)
-
-
-  let merge_same_handle
-      ~smaller:{ Handle.first_class_handle = smaller_first_class_handle; keys = smaller_keys }
-      ~larger:{ Handle.first_class_handle = larger_first_class_handle; keys = larger_keys }
-    =
-    if not (FirstClass.equal smaller_first_class_handle larger_first_class_handle) then
-      failwith "Cannot merge with different handles"
-    else
-      {
-        Handle.first_class_handle = smaller_first_class_handle;
-        keys = List.append smaller_keys larger_keys;
-      }
-
+  include T
 
   module HandleSharedMemory = MakeSingleValue (struct
-    type t = Handle.t
+    type t = T.t
 
     let prefix = Value.handle_prefix
 
@@ -168,14 +113,4 @@ struct
   let save_to_cache = HandleSharedMemory.save_to_cache
 
   let load_from_cache = HandleSharedMemory.load_from_cache
-
-  module ReadOnly = struct
-    type t = FirstClass.t
-
-    let get = FirstClass.get
-
-    let mem = FirstClass.mem
-  end
-
-  let read_only { Handle.first_class_handle; _ } = first_class_handle
 end

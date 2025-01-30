@@ -1129,3 +1129,76 @@ module FirstClass = struct
   end
 
 end
+
+(*****************************************************************************)
+(* A first class hash table in shared memory, where keys are also stored in the
+ * ocaml heap. This allows performing whole-table operations such as updating
+ * all key-value pairs or deleting the table from shared memory entirely (see
+ * `cleanup`).
+ *)
+(*****************************************************************************)
+module MakeFirstClassWithKeys (Key: KeyType) (Value : ValueType) = struct
+  module FirstClass = FirstClass.WithCache.Make (Key) (Value)
+
+  module Handle = struct
+    type t = {
+      first_class_handle: FirstClass.t;
+      keys: Key.t list;
+    }
+  end
+
+  type t = Handle.t
+
+  let create () = { Handle.first_class_handle = FirstClass.create (); keys = [] }
+
+  (* Add a new key-value pair in the table. The key must not be already present. *)
+  let add { Handle.first_class_handle; keys } key value =
+    let () = FirstClass.add first_class_handle key value in
+    { Handle.first_class_handle; keys = key :: keys }
+
+  (* Remove the table from shared memory *)
+  let cleanup { Handle.first_class_handle; keys } =
+    keys |> FirstClass.KeySet.of_list |> FirstClass.remove_batch first_class_handle
+
+  let of_alist list =
+    let first_class_handle = FirstClass.create () in
+    List.iter list ~f:(fun (key, value) -> FirstClass.add first_class_handle key value);
+    { Handle.first_class_handle; keys = List.map ~f:fst list }
+
+
+  let to_alist { Handle.first_class_handle; keys } =
+    keys
+    |> FirstClass.KeySet.of_list
+    |> FirstClass.get_batch first_class_handle
+    |> FirstClass.KeyMap.elements
+    |> List.filter_map ~f:(fun (key, value) ->
+           match value with
+           | Some value -> Some (key, value)
+           | None -> None)
+
+  (* Merge tables with the same handle but disjoint keys.
+   * This is commonly used in the `reduce` part of a map-reduce. *)
+  let merge_same_handle_disjoint_keys
+      ~smaller:{ Handle.first_class_handle = smaller_first_class_handle; keys = smaller_keys }
+      ~larger:{ Handle.first_class_handle = larger_first_class_handle; keys = larger_keys }
+    =
+    if not (FirstClass.equal smaller_first_class_handle larger_first_class_handle) then
+      failwith "Cannot merge shared memory tables with different handles"
+    else
+      {
+        Handle.first_class_handle = smaller_first_class_handle;
+        keys = List.append smaller_keys larger_keys;
+      }
+
+  (* A handle that is cheap to serialize.
+   * This is often used with map-reduce when whole-table operations are not required. *)
+  module ReadOnly = struct
+    type t = FirstClass.t
+
+    let get = FirstClass.get
+
+    let mem = FirstClass.mem
+  end
+
+  let read_only { Handle.first_class_handle; _ } = first_class_handle
+end

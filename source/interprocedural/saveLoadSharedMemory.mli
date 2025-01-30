@@ -51,8 +51,6 @@ end
 
 (* Support storing / loading key-value pairs into / from the shared memory. *)
 module MakeKeyValue (Key : Hack_parallel.Std.SharedMemory.KeyType) (Value : KeyValueValueType) : sig
-  module KeySet : Set.S with type t = Set.Make(Key).t and type elt = Key.t
-
   type t
 
   val create : unit -> t
@@ -63,7 +61,7 @@ module MakeKeyValue (Key : Hack_parallel.Std.SharedMemory.KeyType) (Value : KeyV
 
   val to_alist : t -> (Key.t * Value.t) list
 
-  val merge_same_handle : smaller:t -> larger:t -> t
+  val merge_same_handle_disjoint_keys : smaller:t -> larger:t -> t
 
   val cleanup : t -> unit
 

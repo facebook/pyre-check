@@ -4637,7 +4637,7 @@ module SharedMemory = struct
 
   let create = T.create
 
-  let merge_same_handle = T.merge_same_handle
+  let merge_same_handle_disjoint_callables = T.merge_same_handle_disjoint_keys
 
   module ReadOnly = struct
     type t = T.ReadOnly.t
@@ -4733,7 +4733,9 @@ module SharedMemory = struct
          * fail the analysis. But we don't perform such check due to performance reasons.
          * Additionally, since this `reduce` is used in `Scheduler.map_reduce`, the right parameter
          * is accumulated, so we must select left as smaller and right as larger for O(n) merging. *)
-        ( merge_same_handle ~smaller:left_define_call_graphs ~larger:right_define_call_graphs,
+        ( merge_same_handle_disjoint_callables
+            ~smaller:left_define_call_graphs
+            ~larger:right_define_call_graphs,
           WholeProgramCallGraph.merge_disjoint
             left_whole_program_call_graph
             right_whole_program_call_graph )

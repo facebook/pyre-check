@@ -330,3 +330,29 @@ module FirstClass : sig
 
   end
 end
+
+module MakeFirstClassWithKeys (Key : KeyType) (Value : ValueType) : sig
+  type t
+
+  val create : unit -> t
+
+  val add : t -> Key.t -> Value.t -> t
+
+  val of_alist : (Key.t * Value.t) list -> t
+
+  val to_alist : t -> (Key.t * Value.t) list
+
+  val merge_same_handle_disjoint_keys: smaller:t -> larger:t -> t
+
+  val cleanup : t -> unit
+
+  module ReadOnly : sig
+    type t
+
+    val get : t -> Key.t -> Value.t option
+
+    val mem : t -> Key.t -> bool
+  end
+
+  val read_only : t -> ReadOnly.t
+end
