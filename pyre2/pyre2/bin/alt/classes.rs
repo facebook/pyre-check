@@ -136,6 +136,31 @@ impl ClassField {
             ClassFieldInner::Simple { ty, .. } => ty,
         }
     }
+
+    fn as_raw_special_method_type(self, cls: &ClassType) -> Option<Type> {
+        match self.instantiate_for(cls).0 {
+            ClassFieldInner::Simple { ty, .. } => match self.initialization() {
+                ClassFieldInitialization::Class => Some(ty),
+                ClassFieldInitialization::Instance => None,
+            },
+        }
+    }
+
+    fn as_special_method_type(self, cls: &ClassType) -> Option<Type> {
+        self.as_raw_special_method_type(cls)
+            .map(|ty| bind_attribute(cls.self_type(), ty))
+    }
+
+    fn as_instance_attribute(self, cls: &ClassType) -> Attribute {
+        match self.instantiate_for(cls).0 {
+            ClassFieldInner::Simple { ty, .. } => match self.initialization() {
+                ClassFieldInitialization::Class => {
+                    Attribute::access_allowed(bind_attribute(cls.self_type(), ty))
+                }
+                ClassFieldInitialization::Instance => Attribute::access_allowed(ty),
+            },
+        }
+    }
 }
 
 impl Display for ClassField {
@@ -864,29 +889,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .collect::<SmallSet<_>>()
     }
 
-    fn get_instance_attribute_with_defining_class(
-        &self,
-        cls: &ClassType,
-        name: &Name,
-    ) -> Option<WithDefiningClass<Type>> {
-        self.get_class_member(cls.class_object(), name)
-            .map(|member| {
-                let defining_class = member.defining_class;
-                let member = member.value.instantiate_for(cls);
-                let ty = match member.initialization() {
-                    ClassFieldInitialization::Class => bind_attribute(cls.self_type(), member.ty()),
-                    ClassFieldInitialization::Instance => member.ty(),
-                };
-                WithDefiningClass {
-                    value: ty,
-                    defining_class,
-                }
-            })
-    }
-
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
-        self.get_instance_attribute_with_defining_class(cls, name)
-            .map(|attr| Attribute::access_allowed(attr.value))
+        self.get_class_member(cls.class_object(), name)
+            .map(|member| member.value.as_instance_attribute(cls))
     }
 
     /// Gets an attribute from a class definition.
@@ -921,23 +926,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     /// Get the class's `__new__` method.
+    ///
+    /// This lookup skips normal method binding logic (it behaves like a cross
+    /// between a classmethod and a constructor; downstream code handles this
+    /// using the raw callable type).
     pub fn get_dunder_new(&self, cls: &ClassType) -> Option<Type> {
-        let new_attr = self
-            .get_class_member(cls.class_object(), &dunder::NEW)
-            .map(|member| {
-                let defining_class = member.defining_class;
-                let member = member.value.instantiate_for(cls);
-                WithDefiningClass {
-                    value: member.ty(),
-                    defining_class,
-                }
-            })?;
-        if new_attr.defined_on(self.stdlib.object_class_type().class_object()) {
+        let new_member = self.get_class_member(cls.class_object(), &dunder::NEW)?;
+        if new_member.defined_on(self.stdlib.object_class_type().class_object()) {
             // The default behavior of `object.__new__` is already baked into our implementation of
             // class construction; we only care about `__new__` if it is overridden.
-            return None;
+            None
+        } else {
+            new_member.value.as_raw_special_method_type(cls)
         }
-        Some(new_attr.value)
     }
 
     /// Get the class's `__init__` method, if we should analyze it
@@ -946,11 +947,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// (2) the class overrides `object.__new__` but not `object.__init__`, in wich case the
     ///     `__init__` call always succeeds at runtime.
     pub fn get_dunder_init(&self, cls: &ClassType, overrides_new: bool) -> Option<Type> {
-        let init_method = self.get_instance_attribute_with_defining_class(cls, &dunder::INIT)?;
+        let init_method = self.get_class_member(cls.class_object(), &dunder::INIT)?;
         if !(overrides_new
             && init_method.defined_on(self.stdlib.object_class_type().class_object()))
         {
-            Some(init_method.value)
+            init_method.value.as_special_method_type(cls)
         } else {
             None
         }
@@ -960,13 +961,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_metaclass_dunder_call(&self, cls: &ClassType) -> Option<Type> {
         let metadata = self.get_metadata_for_class(cls.class_object());
         let metaclass = metadata.metaclass()?;
-        let attr = self.get_instance_attribute_with_defining_class(metaclass, &dunder::CALL)?;
+        let attr = self.get_class_member(metaclass.class_object(), &dunder::CALL)?;
         if attr.defined_on(self.stdlib.builtins_type().class_object()) {
             // The behavior of `type.__call__` is already baked into our implementation of constructors,
             // so we can skip analyzing it at the type level.
             None
         } else {
-            Some(attr.value)
+            attr.value.as_special_method_type(metaclass)
         }
     }
 
