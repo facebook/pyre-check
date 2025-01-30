@@ -28,6 +28,7 @@ mod named_tuple;
 mod narrow;
 mod operators;
 mod overload;
+mod paramspec;
 mod perf;
 mod protocol;
 mod simple;
