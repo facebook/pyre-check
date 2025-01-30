@@ -6655,16 +6655,6 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 27
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Expected `__call__` to be a callable, got (cls: EnumMeta, value: str, names: Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, *, module: str | None, qualname: str | None, type: type | None, start: int, boundary: FlagBoundary | None) -> type[Enum] | Forall[_EnumMemberT, (cls: type[_EnumMemberT], value: Any, names: None) -> _EnumMemberT] | Forall[_EnumMemberT, (cls: type[_EnumMemberT], value: Any, *Any) -> _EnumMemberT]",
-      "description": "Expected `__call__` to be a callable, got (cls: EnumMeta, value: str, names: Iterable[Iterable[str | Any]] | Iterable[str] | Mapping[str, Any] | str, *, module: str | None, qualname: str | None, type: type | None, start: int, boundary: FlagBoundary | None) -> type[Enum] | Forall[_EnumMemberT, (cls: type[_EnumMemberT], value: Any, names: None) -> _EnumMemberT] | Forall[_EnumMemberT, (cls: type[_EnumMemberT], value: Any, *Any) -> _EnumMemberT]",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 27
     }
   ],
   "enums_definition.py": [

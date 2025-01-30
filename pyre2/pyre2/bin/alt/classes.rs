@@ -151,16 +151,19 @@ impl ClassField {
     }
 
     fn as_special_method_type(self, cls: &ClassType) -> Option<Type> {
-        self.as_raw_special_method_type(cls)
-            .map(|ty| bind_instance_attribute(cls, ty))
+        self.as_raw_special_method_type(cls).and_then(|ty| {
+            if is_unbound_function(&ty) {
+                Some(make_bound_method(cls.self_type(), ty))
+            } else {
+                None
+            }
+        })
     }
 
     fn as_instance_attribute(self, cls: &ClassType) -> Attribute {
         match self.instantiate_for(cls).0 {
             ClassFieldInner::Simple { ty, .. } => match self.initialization() {
-                ClassFieldInitialization::Class => {
-                    Attribute::read_write(bind_instance_attribute(cls, ty))
-                }
+                ClassFieldInitialization::Class => bind_instance_attribute(cls, ty),
                 ClassFieldInitialization::Instance => Attribute::read_write(ty),
             },
         }
@@ -180,7 +183,7 @@ impl ClassField {
                 if self.depends_on_class_type_parameter(cls) {
                     Attribute::no_access(NoAccessReason::ClassAttributeIsGeneric(cls.clone()))
                 } else {
-                    Attribute::read_write(bind_class_attribute(cls, ty.clone()))
+                    bind_class_attribute(cls, ty.clone())
                 }
             }
         }
@@ -195,29 +198,27 @@ fn is_unbound_function(ty: &Type) -> bool {
     }
 }
 
-fn bind_class_attribute(cls: &Class, attr: Type) -> Type {
+fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
     match attr {
-        Type::Decoration(Decoration::StaticMethod(box attr)) => attr,
+        Type::Decoration(Decoration::StaticMethod(box attr)) => Attribute::read_write(attr),
         Type::Decoration(Decoration::ClassMethod(box attr)) => {
-            make_bound_method(Type::ClassDef(cls.dupe()), attr)
+            Attribute::read_write(make_bound_method(Type::ClassDef(cls.dupe()), attr))
         }
-        attr => attr,
+        attr => Attribute::read_write(attr),
     }
 }
 
-fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Type {
+fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
     match attr {
-        Type::Decoration(Decoration::StaticMethod(box attr)) => attr,
-        Type::Decoration(Decoration::ClassMethod(box attr)) => {
-            make_bound_method(Type::ClassDef(cls.class_object().dupe()), attr)
-        }
-        attr => {
-            if is_unbound_function(&attr) {
-                make_bound_method(cls.self_type(), attr)
-            } else {
-                attr
-            }
-        }
+        Type::Decoration(Decoration::StaticMethod(box attr)) => Attribute::read_write(attr),
+        Type::Decoration(Decoration::ClassMethod(box attr)) => Attribute::read_write(
+            make_bound_method(Type::ClassDef(cls.class_object().dupe()), attr),
+        ),
+        attr => Attribute::read_write(if is_unbound_function(&attr) {
+            make_bound_method(cls.self_type(), attr)
+        } else {
+            attr
+        }),
     }
 }
 
