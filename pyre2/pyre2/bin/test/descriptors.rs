@@ -14,12 +14,12 @@ testcase_with_bug!(
     r#"
 from typing import reveal_type
 class C:
-    @staticmethod  # E: Expected 0 positional arguments, got 1
+    @staticmethod
     def foo() -> int:
         return 42
 def f(c: C):
-    reveal_type(C.foo)  # E: revealed type: staticmethod
-    reveal_type(c.foo)  # E: revealed type: staticmethod
+    reveal_type(C.foo)  # E: revealed type: staticmethod[() -> int]
+    reveal_type(c.foo)  # E: revealed type: staticmethod[() -> int]
     "#,
 );
 

@@ -416,6 +416,8 @@ assert_eq_size!(Type, [usize; 4]);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Decoration {
+    // The result of applying the `@staticmethod` decorator.
+    StaticMethod(Box<Type>),
     // The result of applying the `@classmethod` decorator.
     ClassMethod(Box<Type>),
 }
@@ -423,11 +425,13 @@ pub enum Decoration {
 impl Decoration {
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match self {
+            Self::StaticMethod(ty) => f(ty),
             Self::ClassMethod(ty) => f(ty),
         }
     }
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
+            Self::StaticMethod(ty) => f(ty),
             Self::ClassMethod(ty) => f(ty),
         }
     }

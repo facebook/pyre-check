@@ -516,6 +516,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         let ty_decorator = self.expr(&decorator.expression, None);
         match ty_decorator.callee_kind() {
+            Some(CalleeKind::Class(ClassKind::StaticMethod)) => {
+                return Type::Decoration(Decoration::StaticMethod(Box::new(decoratee)));
+            }
             Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
                 return Type::Decoration(Decoration::ClassMethod(Box::new(decoratee)));
             }

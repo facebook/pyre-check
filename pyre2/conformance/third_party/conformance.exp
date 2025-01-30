@@ -597,6 +597,16 @@
   "aliases_newtype.py": [
     {
       "code": -2,
+      "column": 1,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 11,
+      "name": "PyreError",
+      "stop_column": 7,
+      "stop_line": 11
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "untype, got NewType",
       "description": "untype, got NewType",
@@ -617,12 +627,32 @@
     },
     {
       "code": -2,
+      "column": 14,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 13,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 13
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 15,
       "name": "PyreError",
       "stop_column": 32,
+      "stop_line": 15
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 15,
+      "name": "PyreError",
+      "stop_column": 19,
       "stop_line": 15
     },
     {
@@ -1802,16 +1832,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED Forall[T, (val: type[T]) -> T] <: (ParamSpec(@_)) -> @_",
-      "description": "EXPECTED Forall[T, (val: type[T]) -> T] <: (ParamSpec(@_)) -> @_",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "Expected a callable, got type[?_]",
       "description": "Expected a callable, got type[?_]",
@@ -1882,12 +1902,32 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]",
+      "description": "Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]",
+      "line": 48,
+      "name": "PyreError",
+      "stop_column": 28,
+      "stop_line": 48
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, B) failed",
       "description": "assert_type(Any, B) failed",
       "line": 49,
       "name": "PyreError",
       "stop_column": 35,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]",
+      "description": "Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 28,
       "stop_line": 49
     },
     {
@@ -1902,12 +1942,32 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]",
+      "description": "Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]",
+      "line": 50,
+      "name": "PyreError",
+      "stop_column": 28,
+      "stop_line": 50
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, A) failed",
       "description": "assert_type(Any, A) failed",
       "line": 51,
       "name": "PyreError",
       "stop_column": 35,
+      "stop_line": 51
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]",
+      "description": "Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]",
+      "line": 51,
+      "name": "PyreError",
+      "stop_column": 28,
       "stop_line": 51
     }
   ],
@@ -9834,11 +9894,31 @@
     {
       "code": -2,
       "column": 34,
-      "concise_description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
-      "description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Error, Error] <: tuple[Error]",
+      "description": "EXPECTED tuple[Error, Error] <: tuple[Error]",
       "line": 36,
       "name": "PyreError",
       "stop_column": 55,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 35,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 41,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 46,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 51,
       "stop_line": 36
     },
     {
@@ -9884,11 +9964,41 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown] <: tuple[Error]",
-      "description": "EXPECTED tuple[Unknown, Unknown, Unknown] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Error, Error, Error] <: tuple[Error]",
+      "description": "EXPECTED tuple[Error, Error, Error] <: tuple[Error]",
       "line": 37,
       "name": "PyreError",
       "stop_column": 72,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 42,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 47,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 52,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 58,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 63,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 68,
       "stop_line": 37
     },
     {
@@ -9944,11 +10054,51 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
-      "description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Error, Error, Error, Error] <: tuple[Error]",
+      "description": "EXPECTED tuple[Error, Error, Error, Error] <: tuple[Error]",
       "line": 39,
       "name": "PyreError",
       "stop_column": 45,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 6,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 25,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 36,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 41,
       "stop_line": 39
     },
     {
@@ -9979,6 +10129,16 @@
       "line": 42,
       "name": "PyreError",
       "stop_column": 24,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 34,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 40,
       "stop_line": 42
     },
     {
@@ -10024,11 +10184,31 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
-      "description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Error, Error] <: tuple[Error]",
+      "description": "EXPECTED tuple[Error, Error] <: tuple[Error]",
       "line": 43,
       "name": "PyreError",
       "stop_column": 61,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 42,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 47,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 52,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 57,
       "stop_line": 43
     },
     {
@@ -10084,11 +10264,51 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
-      "description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Error, Error, Error, Error] <: tuple[Error]",
+      "description": "EXPECTED tuple[Error, Error, Error, Error] <: tuple[Error]",
       "line": 45,
       "name": "PyreError",
       "stop_column": 45,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 6,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 25,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 30,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 35,
+      "concise_description": "Expected a callable, got NewType",
+      "description": "Expected a callable, got NewType",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 41,
       "stop_line": 45
     },
     {
@@ -14268,6 +14488,16 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got staticmethod[(val: object) -> TypeGuard[int]]",
+      "description": "Expected a callable, got staticmethod[(val: object) -> TypeGuard[int]]",
+      "line": 80,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 80
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
@@ -14275,6 +14505,16 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 81
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got staticmethod[(val: object) -> TypeGuard[int]]",
+      "description": "Expected a callable, got staticmethod[(val: object) -> TypeGuard[int]]",
+      "line": 84,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 84
     },
     {
       "code": -2,
@@ -14570,6 +14810,16 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got staticmethod[(val: object) -> TypeIs[int]]",
+      "description": "Expected a callable, got staticmethod[(val: object) -> TypeIs[int]]",
+      "line": 83,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 83
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
@@ -14577,6 +14827,16 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 84
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Expected a callable, got staticmethod[(val: object) -> TypeIs[int]]",
+      "description": "Expected a callable, got staticmethod[(val: object) -> TypeIs[int]]",
+      "line": 87,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 87
     },
     {
       "code": -2,
