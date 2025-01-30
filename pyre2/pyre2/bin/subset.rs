@@ -136,6 +136,20 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                                 }
                             }
                         }
+                        (Params::List(ls), Params::ParamSpec(args, Type::Quantified(q))) => {
+                            // Must be: ls = args + [Args[q], KWargs[q]]
+                            let args = ParamList::new_types(args);
+                            let args = args
+                                .items()
+                                .iter()
+                                .cloned()
+                                .chain(vec![
+                                    Param::VarArg(Type::Args(*q)),
+                                    Param::Kwargs(Type::Kwargs(*q)),
+                                ])
+                                .collect::<Vec<_>>();
+                            self.is_subset_param_list(ls.items(), &args)
+                        }
                         (Params::ParamSpec(_, _), _) | (_, Params::ParamSpec(_, _)) => {
                             // TODO: need instantiation for param spec
                             false

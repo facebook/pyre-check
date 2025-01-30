@@ -8154,26 +8154,6 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
-      "description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
-      "line": 53,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 53
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED (s: str, *Args[?_], **Kwargs[?_]) -> None <: (str, ParamSpec(?_)) -> None",
-      "description": "EXPECTED (s: str, *Args[?_], **Kwargs[?_]) -> None <: (str, ParamSpec(?_)) -> None",
-      "line": 63,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 63
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Unexpected ParamSpec type",
       "description": "Unexpected ParamSpec type",
@@ -8201,16 +8181,6 @@
       "name": "PyreError",
       "stop_column": 10,
       "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
-      "description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
-      "line": 74,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 74
     },
     {
       "code": -2,
@@ -8271,16 +8241,6 @@
       "name": "PyreError",
       "stop_column": 33,
       "stop_line": 83
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
-      "description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
-      "line": 85,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 85
     },
     {
       "code": -2,

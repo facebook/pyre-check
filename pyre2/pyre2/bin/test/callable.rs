@@ -351,7 +351,7 @@ P = ParamSpec("P")
 def test(f: Callable[P, None]) -> Callable[P, None]:
     def inner(*args: P.args, **kwargs: P.kwargs) -> None:
         f(*args, **kwargs) # E: Unexpected ParamSpec type
-    return inner # E: EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None
+    return inner
 "#,
 );
 
