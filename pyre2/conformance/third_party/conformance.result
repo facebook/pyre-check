@@ -699,11 +699,7 @@
     "Line 38: Expected 1 errors",
     "Line 41: Expected 1 errors",
     "Line 60: Expected 1 errors",
-    "Line 47: Unexpected errors ['Unexpected ParamSpec type']",
-    "Line 68: Unexpected errors ['Unexpected ParamSpec type']",
-    "Line 79: Unexpected errors ['Unexpected ParamSpec type']",
     "Line 82: Unexpected errors ['`Args[?_]` is not iterable', 'Expected argument after ** to be a mapping, got: Kwargs[?_]']",
-    "Line 89: Unexpected errors ['Unexpected ParamSpec type', 'Unexpected ParamSpec type']",
     "Line 96: Unexpected errors ['EXPECTED Literal[1] <: Args[?_]', \"EXPECTED Literal['A'] <: Args[?_]\"]",
     "Line 97: Unexpected errors [\"EXPECTED Literal['A'] <: Kwargs[?_]\", 'EXPECTED Literal[1] <: Kwargs[?_]']"
   ],

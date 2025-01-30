@@ -8124,19 +8124,9 @@
   "generics_paramspec_components.py": [
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
       "column": 9,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
+      "description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
       "line": 49,
       "name": "PyreError",
       "stop_column": 10,
@@ -8144,29 +8134,19 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "column": 11,
+      "concise_description": "Expected 0 positional arguments, got 1",
+      "description": "Expected 0 positional arguments, got 1",
       "line": 51,
       "name": "PyreError",
-      "stop_column": 10,
+      "stop_column": 12,
       "stop_line": 51
     },
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
-      "line": 68,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 68
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
+      "description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
       "line": 70,
       "name": "PyreError",
       "stop_column": 10,
@@ -8175,22 +8155,12 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 72,
       "name": "PyreError",
       "stop_column": 10,
       "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 79
     },
     {
       "code": -2,
@@ -8241,26 +8211,6 @@
       "name": "PyreError",
       "stop_column": 33,
       "stop_line": 83
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
-      "line": 89,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 89
-    },
-    {
-      "code": -2,
-      "column": 33,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
-      "line": 89,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 89
     },
     {
       "code": -2,

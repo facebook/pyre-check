@@ -21,6 +21,7 @@ use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
+use crate::types::types::Quantified;
 use crate::types::types::Type;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
@@ -154,6 +155,17 @@ impl CallArgPreEval<'_> {
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
+    fn is_param_spec_args(&self, x: &CallArg, q: Quantified) -> bool {
+        match x {
+            CallArg::Star(x, _) => self.expr_infer(x) == Type::Args(q),
+            _ => false,
+        }
+    }
+
+    fn is_param_spec_kwargs(&self, x: &Keyword, q: Quantified) -> bool {
+        self.expr_infer(&x.value) == Type::Kwargs(q)
+    }
+
     fn callable_infer_params(
         &self,
         params: &ParamList,
@@ -358,8 +370,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         keywords,
                         range,
                     ),
+                    Type::Quantified(q) => {
+                        if !args.last().is_some_and(|x| self.is_param_spec_args(x, q))
+                            || !keywords
+                                .last()
+                                .is_some_and(|x| self.is_param_spec_kwargs(x, q))
+                        {
+                            self.error(
+                                range,
+                                "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)".to_owned(),
+                            );
+                        } else {
+                            self.callable_infer_params(
+                                &ParamList::new_types(&concatenate),
+                                self_arg,
+                                &args[0..args.len() - 1],
+                                &keywords[0..keywords.len() - 1],
+                                range,
+                            );
+                        }
+                    }
                     _ => {
-                        // This could well be our error, but not really sure (if you call something quantified)
+                        // This could well be our error, but not really sure
                         self.error(range, "Unexpected ParamSpec type".to_owned());
                     }
                 }

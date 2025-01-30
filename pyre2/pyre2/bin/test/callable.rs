@@ -342,15 +342,14 @@ def test_sync() -> Callable[[int], int]:
 "#,
 );
 
-testcase_with_bug!(
-    "TODO",
+testcase!(
     test_callable_param_spec,
     r#"
 from typing import Callable, ParamSpec
 P = ParamSpec("P")
 def test(f: Callable[P, None]) -> Callable[P, None]:
     def inner(*args: P.args, **kwargs: P.kwargs) -> None:
-        f(*args, **kwargs) # E: Unexpected ParamSpec type
+        f(*args, **kwargs)
     return inner
 "#,
 );
