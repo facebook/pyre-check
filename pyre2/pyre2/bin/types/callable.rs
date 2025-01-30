@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Display;
 
@@ -13,6 +14,7 @@ use ruff_python_ast::name::Name;
 use crate::module::module_name::ModuleName;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
+use crate::util::prelude::SliceExt;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Callable {
@@ -26,12 +28,31 @@ impl Display for Callable {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ParamList(Vec<Param>);
 
 impl ParamList {
     pub fn new(xs: Vec<Param>) -> Self {
         Self(xs)
+    }
+
+    /// Create a new ParamList from a list of types, as required position-only parameters.
+    pub fn new_types(xs: &[Type]) -> Self {
+        Self(xs.map(|t| Param::PosOnly(t.clone(), Required::Required)))
+    }
+
+    /// Prepend some required position-only parameters.
+    pub fn prepend_types(&self, pre: &[Type]) -> Cow<ParamList> {
+        if pre.is_empty() {
+            Cow::Borrowed(self)
+        } else {
+            Cow::Owned(ParamList(
+                pre.iter()
+                    .map(|t| Param::PosOnly(t.clone(), Required::Required))
+                    .chain(self.0.iter().cloned())
+                    .collect(),
+            ))
+        }
     }
 
     pub fn fmt_with_type<'a, D: Display + 'a>(

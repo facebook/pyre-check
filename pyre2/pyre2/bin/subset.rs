@@ -21,7 +21,6 @@ use crate::types::tuple::Tuple;
 use crate::types::type_var::Variance;
 use crate::types::types::TParams;
 use crate::types::types::Type;
-use crate::util::prelude::SliceExt;
 
 impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
     pub fn is_subset_param_list(&mut self, l_args: &[Param], u_args: &[Param]) -> bool {
@@ -106,22 +105,21 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                             self.is_subset_param_list(l_args.items(), u_args.items())
                         }
                         (Params::List(ls), Params::ParamSpec(args, Type::Var(v))) => {
-                            let mut args =
-                                args.map(|x| Param::PosOnly(x.clone(), Required::Required));
                             match self.lookup_param_spec_var(*v) {
                                 Some(v) => match v {
-                                    Type::ParamSpecValue(value) => {
-                                        args.extend(value.items().iter().cloned());
-                                        self.is_subset_param_list(ls.items(), &args)
-                                    }
+                                    Type::ParamSpecValue(value) => self.is_subset_param_list(
+                                        ls.items(),
+                                        value.prepend_types(args).items(),
+                                    ),
                                     _ => false,
                                 },
                                 None => {
+                                    let args = ParamList::new_types(args);
                                     if ls.len() < args.len() {
                                         return false;
                                     }
                                     let (pre, post) = ls.items().split_at(args.len());
-                                    if !self.is_subset_param_list(pre, &args) {
+                                    if !self.is_subset_param_list(pre, args.items()) {
                                         return false;
                                     }
                                     self.set_param_spec_var(*v, ParamList::new(post.to_vec()));
