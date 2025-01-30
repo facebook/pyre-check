@@ -47,6 +47,7 @@ use crate::types::class_metadata::EnumMetadata;
 use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
 use crate::types::type_var::Variance;
+use crate::types::types::Decoration;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -142,14 +143,14 @@ impl ClassField {
 
     fn as_special_method_type(self, cls: &ClassType) -> Option<Type> {
         self.as_raw_special_method_type(cls)
-            .map(|ty| bind_instance_attribute(cls.self_type(), ty))
+            .map(|ty| bind_instance_attribute(cls, ty))
     }
 
     fn as_instance_attribute(self, cls: &ClassType) -> Attribute {
         match self.instantiate_for(cls).0 {
             ClassFieldInner::Simple { ty, .. } => match self.initialization() {
                 ClassFieldInitialization::Class => {
-                    Attribute::access_allowed(bind_instance_attribute(cls.self_type(), ty))
+                    Attribute::access_allowed(bind_instance_attribute(cls, ty))
                 }
                 ClassFieldInitialization::Instance => Attribute::access_allowed(ty),
             },
@@ -174,7 +175,7 @@ impl ClassField {
                         cls.clone(),
                     ))
                 } else {
-                    Attribute::access_allowed(ty.clone())
+                    Attribute::access_allowed(bind_class_attribute(cls, ty.clone()))
                 }
             }
         }
@@ -189,15 +190,34 @@ fn is_unbound_function(ty: &Type) -> bool {
     }
 }
 
-fn bind_instance_attribute(obj: Type, attr: Type) -> Type {
-    if is_unbound_function(&attr) {
-        make_bound_method(obj, attr)
-    } else {
-        attr
+fn bind_class_attribute(cls: &Class, attr: Type) -> Type {
+    match attr {
+        Type::Decoration(Decoration::ClassMethod(box attr)) => {
+            make_bound_method(Type::ClassDef(cls.dupe()), attr)
+        }
+        attr => attr,
+    }
+}
+
+fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Type {
+    match attr {
+        Type::Decoration(Decoration::ClassMethod(box attr)) => {
+            make_bound_method(Type::ClassDef(cls.class_object().dupe()), attr)
+        }
+        attr => {
+            if is_unbound_function(&attr) {
+                make_bound_method(cls.self_type(), attr)
+            } else {
+                attr
+            }
+        }
     }
 }
 
 fn make_bound_method(obj: Type, attr: Type) -> Type {
+    // TODO(stroxler): Think about what happens if `attr` is not callable. This
+    // can happen with the current logic if a decorator spits out a non-callable
+    // type that gets wrapped in `@classmethod`.
     Type::BoundMethod(Box::new(obj), Box::new(attr))
 }
 
