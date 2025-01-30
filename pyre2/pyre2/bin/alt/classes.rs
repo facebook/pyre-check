@@ -811,19 +811,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn get_class_member(&self, cls: &Class, name: &Name) -> Option<(ClassField, Class)> {
+    fn get_class_member(&self, cls: &Class, name: &Name) -> Option<WithDefiningClass<ClassField>> {
         if let Some(field) = self.get_class_field(cls, name) {
-            Some((field, cls.dupe()))
+            Some(WithDefiningClass {
+                value: field,
+                defining_class: cls.dupe(),
+            })
         } else {
             self.get_metadata_for_class(cls)
                 .ancestors(self.stdlib)
                 .filter_map(|ancestor| {
                     self.get_class_field(ancestor.class_object(), name)
-                        .map(|field| {
-                            (
-                                field.instantiate_for(ancestor),
-                                ancestor.class_object().dupe(),
-                            )
+                        .map(|field| WithDefiningClass {
+                            value: field.instantiate_for(ancestor),
+                            defining_class: ancestor.class_object().dupe(),
                         })
                 })
                 .next()
@@ -869,8 +870,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         name: &Name,
     ) -> Option<WithDefiningClass<Type>> {
         self.get_class_member(cls.class_object(), name)
-            .map(|(field, defining_class)| {
-                let member = field.instantiate_for(cls);
+            .map(|member| {
+                let defining_class = member.defining_class;
+                let member = member.value.instantiate_for(cls);
                 let ty = match member.initialization() {
                     ClassFieldInitialization::Class => bind_attribute(cls.self_type(), member.ty()),
                     ClassFieldInitialization::Instance => member.ty(),
@@ -895,7 +897,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Access is disallowed for instance-only attributes and for attributes whose
     /// type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
     pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<Attribute> {
-        let (member, _) = self.get_class_member(cls, name)?;
+        let member = self.get_class_member(cls, name)?.value;
         if member.depends_on_class_type_parameter(cls) {
             Some(Attribute::access_not_allowed(
                 NoAccessReason::ClassAttributeIsGeneric(cls.clone()),
@@ -922,8 +924,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_dunder_new(&self, cls: &ClassType) -> Option<Type> {
         let new_attr = self
             .get_class_member(cls.class_object(), &dunder::NEW)
-            .map(|(member, defining_class)| {
-                let member = member.instantiate_for(cls);
+            .map(|member| {
+                let defining_class = member.defining_class;
+                let member = member.value.instantiate_for(cls);
                 WithDefiningClass {
                     value: member.ty(),
                     defining_class,
