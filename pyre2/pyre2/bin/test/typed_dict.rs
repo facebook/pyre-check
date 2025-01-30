@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_typed_dict,
@@ -247,5 +248,30 @@ f4(**x)  # E: Expected key 'y' to be optional
 f5(**x)  # E: Expected key 'z' to be required
 f6(**x)  # E: EXPECTED int <: str
 f1(1, **x)  # E: Multiple values for argument 'x'
+    "#,
+);
+
+testcase!(
+    test_inheritance,
+    r#"
+from typing import TypedDict
+class A(TypedDict):
+    x: int
+class B(A):
+    y: str
+B(x=0, y='1')  # OK
+B(x=0, y=1)  # E: EXPECTED Literal[1] <: str
+    "#,
+);
+
+testcase_with_bug!(
+    "There should not be any errors",
+    test_generic_instantiation,
+    r#"
+from typing import TypedDict, assert_type
+class C[T](TypedDict):
+     x: T
+assert_type(C(x=0), C[int])  # E: EXPECTED Literal[0] <: ?_  # E: assert_type
+assert_type(C[str](x=""), C[str])  # E: assert_type(TypedDict[C], TypedDict[C]) failed
     "#,
 );
