@@ -11,6 +11,7 @@ use ruff_python_ast::Arguments;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Decorator;
+use ruff_python_ast::DictItem;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprNoneLiteral;
@@ -533,6 +534,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.call_infer(call_target, &[arg], &[], decorator.range)
     }
 
+    fn flatten_dict_items(x: &[DictItem]) -> Vec<DictItem> {
+        x.iter()
+            .flat_map(|item| {
+                if item.key.is_none()
+                    && let Expr::Dict(dict) = &item.value
+                {
+                    Self::flatten_dict_items(&dict.items)
+                } else {
+                    vec![item.clone()]
+                }
+            })
+            .collect()
+    }
+
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>) -> Type {
         match x {
             Expr::BoolOp(x) => self.boolop(&x.values, x.op),
@@ -672,10 +687,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Dict(x) => {
                 let unwrapped_hint = hint.and_then(|ty| self.decompose_dict(ty));
+                let flattened_items = Self::flatten_dict_items(&x.items);
                 if let Some(hint @ Type::TypedDict(typed_dict)) = hint {
                     let fields = typed_dict.fields();
+                    let mut has_expansion = false;
                     let mut keys: SmallSet<Name> = SmallSet::new();
-                    x.items.iter().for_each(|x| match &x.key {
+                    flattened_items.iter().for_each(|x| match &x.key {
                         Some(key) => {
                             let key_type = self.expr(key, None);
                             if let Type::Literal(Lit::String(name)) = key_type {
@@ -701,30 +718,41 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         }
                         None => {
-                            self.todo("Answers::expr_infer expansion in dict literal", x);
+                            has_expansion = true;
+                            self.expr(&x.value, Some(hint));
                         }
                     });
-                    fields.iter().for_each(|(key, field)| {
-                        if field.required && !keys.contains(key) {
-                            self.error(
-                                x.range,
-                                format!(
-                                    "Missing required key `{}` for TypedDict `{}`",
-                                    key,
-                                    typed_dict.name()
-                                ),
-                            );
-                        }
-                    });
+                    if !has_expansion {
+                        fields.iter().for_each(|(key, field)| {
+                            if field.required && !keys.contains(key) {
+                                self.error(
+                                    x.range,
+                                    format!(
+                                        "Missing required key `{}` for TypedDict `{}`",
+                                        key,
+                                        typed_dict.name()
+                                    ),
+                                );
+                            }
+                        });
+                    }
                     hint.clone()
                 } else if let Some(hint) = unwrapped_hint {
-                    x.items.iter().for_each(|x| match &x.key {
+                    flattened_items.iter().for_each(|x| match &x.key {
                         Some(key) => {
                             self.expr(key, Some(&hint.key));
                             self.expr(&x.value, Some(&hint.value));
                         }
                         None => {
-                            self.todo("Answers::expr_infer expansion in dict literal", x);
+                            self.expr(
+                                &x.value,
+                                Some(
+                                    &self
+                                        .stdlib
+                                        .dict(hint.key.clone(), hint.value.clone())
+                                        .to_type(),
+                                ),
+                            );
                         }
                     });
                     hint.to_type(self.stdlib)
@@ -735,7 +763,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     let mut key_tys = Vec::new();
                     let mut value_tys = Vec::new();
-                    x.items.iter().for_each(|x| match &x.key {
+                    flattened_items.iter().for_each(|x| match &x.key {
                         Some(key) => {
                             let key_t = self.expr_infer(key).promote_literals(self.stdlib);
                             let value_t = self.expr_infer(&x.value).promote_literals(self.stdlib);
@@ -743,7 +771,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             value_tys.push(value_t);
                         }
                         None => {
-                            self.todo("Answers::expr_infer expansion in dict literal", x);
+                            let value_t = self.expr(&x.value, None);
+                            if let Some(unwrapped) = self.decompose_dict(&value_t) {
+                                key_tys.push(unwrapped.key);
+                                value_tys.push(unwrapped.value);
+                            } else {
+                                self.error(
+                                    x.value.range(),
+                                    format!("Expected a dict, got {}", value_t),
+                                );
+                            }
                         }
                     });
                     let key_ty = self.unions(&key_tys);

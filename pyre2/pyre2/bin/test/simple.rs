@@ -595,6 +595,17 @@ def f(x: list[int], y: dict[str, bool]) -> None:
 );
 
 testcase!(
+    test_dict_unpack,
+    r#"
+from typing import assert_type
+x1: dict[str, int] = {"foo": 1, **{"bar": 2}}
+x2: dict[str, int] = {"foo": 1, **{"bar": "bar"}}  # E: EXPECTED Literal['bar'] <: int
+assert_type({"foo": 1, **{"bar": "bar"}}, dict[str, int | str])
+{"foo": 1, **1}  # E: Expected a dict, got Literal[1]
+"#,
+);
+
+testcase!(
     test_iterable,
     r#"
 from typing import Iterable, assert_type

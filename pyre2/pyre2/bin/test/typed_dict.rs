@@ -43,6 +43,9 @@ c2: Coord = {"x": 1, "y": 2, "z": 3}
 c3: Coord = {"x": 1, "y": 2, "a": 4}  # E: Key `a` is not defined in TypedDict `Coord`
 c4: Coord = {"x": 1, "y": "foo"}  # E: EXPECTED Literal['foo'] <: int
 c5: Coord = {"x": 1}  # E: Missing required key `y` for TypedDict `Coord`
+c6: Coord = {"x": 1, **{"y": 2, **{"z": 3}}}
+d: dict[str, int] = {}
+c7: Coord = {"x": 1, **d}  # E: EXPECTED dict[str, int] <: TypedDict[Coord]
 
 def foo(c: Coord) -> None:
     pass
