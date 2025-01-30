@@ -9,6 +9,7 @@
 
 use std::cmp::Ordering;
 use std::fmt;
+use std::fmt::Debug;
 use std::fmt::Display;
 
 use ruff_python_ast::name::Name;
@@ -20,10 +21,22 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 
 /// A name, plus where it is defined.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct QName {
     pub name: Identifier,
     pub module: ModuleInfo,
+}
+
+impl Debug for QName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("QName")
+            .field("name", &self.name)
+            // The full details of ModuleInfo are pretty boring in most cases,
+            // and we only cache it so we can defer expanding the range.
+            // Therefore, shorten the Debug output, as ModuleInfo is pretty big.
+            .field("module", &self.module.name())
+            .finish()
+    }
 }
 
 impl PartialEq for QName {
