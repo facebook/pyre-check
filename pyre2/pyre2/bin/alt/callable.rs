@@ -25,7 +25,7 @@ use crate::types::types::Type;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum CallArg<'a> {
     /// Bundles a `Type` with a `TextRange`, allowing us to typecheck function calls
     /// when we only know the types of the arguments but not the original expressions.
@@ -96,6 +96,7 @@ impl CallArg<'_> {
 
 // Pre-evaluated args are iterable. Type/Expr/Star variants iterate once (tracked via bool field),
 // Fixed variant iterates over the the vec (tracked via usize field).
+#[derive(Clone, Debug)]
 enum CallArgPreEval<'a> {
     Type(&'a Type, bool),
     Expr(&'a Expr, bool),
