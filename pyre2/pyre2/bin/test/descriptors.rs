@@ -92,13 +92,14 @@ def f(c: C):
 testcase!(
     test_property,
     r#"
-from typing import reveal_type
+from typing import assert_type, reveal_type
 class C:
     @property
     def foo(self) -> int:
         return 42
 def f(c: C):
+    assert_type(c.foo, int)
+    c.foo = 42  # E: Attribute `foo` of class `C` is a read-only property and cannot be set
     reveal_type(C.foo)  # E: revealed type: property[(self: C) -> int]
-    reveal_type(c.foo)  # E: revealed type: property[(self: C) -> int]
     "#,
 );

@@ -49,7 +49,6 @@ enum AttributeInner {
     ReadWrite(Type),
     /// A property is a special attribute were regular access invokes a getter.
     /// TODO(stroxler) We eventually need to support properties with setters as well.
-    #[expect(dead_code)]
     Property(Type, Class),
 }
 
@@ -83,6 +82,10 @@ impl Attribute {
 
     pub fn read_write(ty: Type) -> Self {
         Attribute(AttributeInner::ReadWrite(ty))
+    }
+
+    pub fn property(method: Type, cls: Class) -> Self {
+        Attribute(AttributeInner::Property(method, cls))
     }
 }
 

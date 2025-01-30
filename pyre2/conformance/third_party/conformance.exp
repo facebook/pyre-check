@@ -8373,18 +8373,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(property[(self: ParentA) -> ParentA], ParentA) failed",
-      "description": "assert_type(property[(self: ParentA) -> ParentA], ParentA) failed",
-      "line": 18,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 18
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(property[(self: ParentA) -> ParentA], ChildA) failed",
-      "description": "assert_type(property[(self: ParentA) -> ParentA], ChildA) failed",
+      "concise_description": "assert_type(ParentA, ChildA) failed",
+      "description": "assert_type(ParentA, ChildA) failed",
       "line": 19,
       "name": "PyreError",
       "stop_column": 36,
@@ -16067,16 +16057,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
-      "description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
-      "line": 98,
-      "name": "PyreError",
-      "stop_column": 45,
-      "stop_line": 98
-    },
-    {
-      "code": -2,
       "column": 17,
       "concise_description": "Object of class `type` has no attribute `unknown`",
       "description": "Object of class `type` has no attribute `unknown`",
@@ -16098,8 +16078,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
-      "description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
+      "concise_description": "assert_type(Any, tuple[type, ...]) failed",
+      "description": "assert_type(Any, tuple[type, ...]) failed",
       "line": 102,
       "name": "PyreError",
       "stop_column": 45,
@@ -16148,8 +16128,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
-      "description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
+      "concise_description": "assert_type(Any, tuple[type, ...]) failed",
+      "description": "assert_type(Any, tuple[type, ...]) failed",
       "line": 110,
       "name": "PyreError",
       "stop_column": 45,

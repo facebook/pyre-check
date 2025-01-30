@@ -204,6 +204,9 @@ fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
         Type::Decoration(Decoration::ClassMethod(box attr)) => {
             Attribute::read_write(make_bound_method(Type::ClassDef(cls.dupe()), attr))
         }
+        // Accessing a property descriptor on the class gives the property itself,
+        // with no magic access rules at runtime.
+        p @ Type::Decoration(Decoration::Property(_)) => Attribute::read_write(p),
         attr => Attribute::read_write(attr),
     }
 }
@@ -213,6 +216,10 @@ fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
         Type::Decoration(Decoration::StaticMethod(box attr)) => Attribute::read_write(attr),
         Type::Decoration(Decoration::ClassMethod(box attr)) => Attribute::read_write(
             make_bound_method(Type::ClassDef(cls.class_object().dupe()), attr),
+        ),
+        Type::Decoration(Decoration::Property(box method)) => Attribute::property(
+            make_bound_method(Type::ClassType(cls.clone()), method),
+            cls.class_object().dupe(),
         ),
         attr => Attribute::read_write(if is_unbound_function(&attr) {
             make_bound_method(cls.self_type(), attr)
