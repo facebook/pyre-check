@@ -8617,6 +8617,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "assert_type(Y[int, *Any, **Any], Y[int, Any]) failed",
+      "description": "assert_type(Y[int, *Any, **Any], Y[int, Any]) failed",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 35,
+      "stop_line": 82
+    },
+    {
+      "code": -2,
       "column": 28,
       "concise_description": "untype, got list[type[int]]",
       "description": "untype, got list[type[int]]",
@@ -8628,8 +8638,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type((ParamSpec(Any)) -> str, (int) -> str) failed",
-      "description": "assert_type((ParamSpec(Any)) -> str, (int) -> str) failed",
+      "concise_description": "assert_type((*Any, **Any) -> str, (int) -> str) failed",
+      "description": "assert_type((*Any, **Any) -> str, (int) -> str) failed",
       "line": 84,
       "name": "PyreError",
       "stop_column": 42,

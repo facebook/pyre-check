@@ -144,8 +144,16 @@ impl Solver {
         match lock.entry(v) {
             Entry::Occupied(ref e) if let Variable::Answer(t) = e.get() => t.clone(),
             e => {
-                *e.or_default() = Variable::Answer(Type::any_implicit());
-                Type::any_implicit()
+                let quantified_kind = if let Entry::Occupied(e) = &e
+                    && let Variable::Quantified(q) = e.get()
+                {
+                    *q
+                } else {
+                    QuantifiedKind::TypeVar
+                };
+                let res = quantified_kind.empty_value();
+                *e.or_default() = Variable::Answer(res.clone());
+                res
             }
         }
     }

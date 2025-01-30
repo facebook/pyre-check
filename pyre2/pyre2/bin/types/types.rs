@@ -81,6 +81,16 @@ pub enum QuantifiedKind {
     TypeVarTuple,
 }
 
+impl QuantifiedKind {
+    pub fn empty_value(self) -> Type {
+        match self {
+            QuantifiedKind::TypeVar => Type::any_implicit(),
+            QuantifiedKind::ParamSpec => Type::ParamSpecValue(ParamList::everything()),
+            QuantifiedKind::TypeVarTuple => Type::any_implicit(), // TODO
+        }
+    }
+}
+
 impl Display for Quantified {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "?_")
@@ -471,7 +481,6 @@ pub enum Type {
     TypeVarTuple(TypeVarTuple),
     SpecialForm(SpecialForm),
     Concatenate(Box<[Type]>, Box<Type>),
-    #[expect(dead_code)]
     ParamSpecValue(ParamList),
     /// Used to represent `P.args`. The spec describes it as an annotation,
     /// but it's easier to think of it as a type that can't occur in nested positions.

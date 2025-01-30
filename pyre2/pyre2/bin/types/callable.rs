@@ -72,6 +72,14 @@ impl ParamList {
     pub fn tail(&self) -> ParamList {
         Self(self.0[1..].to_vec())
     }
+
+    /// Type signature that permits everything, namely `*args, **kwargs`.
+    pub fn everything() -> ParamList {
+        ParamList(vec![
+            Param::VarArg(Type::any_implicit()),
+            Param::Kwargs(Type::any_implicit()),
+        ])
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
