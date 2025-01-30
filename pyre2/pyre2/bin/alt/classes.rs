@@ -142,14 +142,14 @@ impl ClassField {
 
     fn as_special_method_type(self, cls: &ClassType) -> Option<Type> {
         self.as_raw_special_method_type(cls)
-            .map(|ty| bind_attribute(cls.self_type(), ty))
+            .map(|ty| bind_instance_attribute(cls.self_type(), ty))
     }
 
     fn as_instance_attribute(self, cls: &ClassType) -> Attribute {
         match self.instantiate_for(cls).0 {
             ClassFieldInner::Simple { ty, .. } => match self.initialization() {
                 ClassFieldInitialization::Class => {
-                    Attribute::access_allowed(bind_attribute(cls.self_type(), ty))
+                    Attribute::access_allowed(bind_instance_attribute(cls.self_type(), ty))
                 }
                 ClassFieldInitialization::Instance => Attribute::access_allowed(ty),
             },
@@ -179,6 +179,26 @@ impl ClassField {
             }
         }
     }
+}
+
+fn is_unbound_function(ty: &Type) -> bool {
+    match ty {
+        Type::Forall(_, t) => is_unbound_function(t),
+        Type::Callable(_, _) => true,
+        _ => false,
+    }
+}
+
+fn bind_instance_attribute(obj: Type, attr: Type) -> Type {
+    if is_unbound_function(&attr) {
+        make_bound_method(obj, attr)
+    } else {
+        attr
+    }
+}
+
+fn make_bound_method(obj: Type, attr: Type) -> Type {
+    Type::BoundMethod(Box::new(obj), Box::new(attr))
 }
 
 impl Display for ClassField {
@@ -238,23 +258,6 @@ impl BaseClass {
         }
     }
 }
-
-fn is_unbound_function(ty: &Type) -> bool {
-    match ty {
-        Type::Forall(_, t) => is_unbound_function(t),
-        Type::Callable(_, _) => true,
-        _ => false,
-    }
-}
-
-fn bind_attribute(obj: Type, attr: Type) -> Type {
-    if is_unbound_function(&attr) {
-        Type::BoundMethod(Box::new(obj), Box::new(attr))
-    } else {
-        attr
-    }
-}
-
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn class_definition(
         &self,
