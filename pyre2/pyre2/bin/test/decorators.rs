@@ -25,7 +25,7 @@ assert_type(decorated, int)
 testcase!(
     test_identity_function_decorator,
     r#"
-from typing import Any, Callable, Never
+from typing import Any, Callable, reveal_type
 
 def decorator[T](f: T) -> T: ...
 
@@ -33,8 +33,7 @@ def decorator[T](f: T) -> T: ...
 def decorated(x: int) -> str:
    return f"{x}"
 
-# Uses the error message to verify the type of `decorated`
-check: Never = decorated  # E: EXPECTED (x: int) -> str
+reveal_type(decorated)  # E: revealed type: (x: int) -> str
     "#,
 );
 
@@ -74,14 +73,13 @@ assert_type(decorated, Callable[[int], list[set[str]]])
 testcase!(
     test_callable_instance,
     r#"
-from typing import Callable, Never
+from typing import Callable, reveal_type
 class im_callable:
     def __call__[T](self, arg: T, /) -> T: ...
 @im_callable()
 def f(x: int) -> int:
     return x
-# Uses the error message to verify the type of `f`
-check: Never = f  # E: EXPECTED (x: int) -> int
+reveal_type(f)  # E: revealed type: (x: int) -> int
     "#,
 );
 
