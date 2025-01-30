@@ -131,12 +131,6 @@ impl ClassField {
         tparams.quantified().any(|q| qs.contains(&q))
     }
 
-    fn ty(self) -> Type {
-        match self.0 {
-            ClassFieldInner::Simple { ty, .. } => ty,
-        }
-    }
-
     fn as_raw_special_method_type(self, cls: &ClassType) -> Option<Type> {
         match self.instantiate_for(cls).0 {
             ClassFieldInner::Simple { ty, .. } => match self.initialization() {
@@ -159,6 +153,30 @@ impl ClassField {
                 }
                 ClassFieldInitialization::Instance => Attribute::access_allowed(ty),
             },
+        }
+    }
+
+    fn as_class_attribute(self, cls: &Class) -> Attribute {
+        match &self.0 {
+            ClassFieldInner::Simple {
+                initialization: ClassFieldInitialization::Instance,
+                ..
+            } => Attribute::access_not_allowed(NoAccessReason::ClassUseOfInstanceAttribute(
+                cls.clone(),
+            )),
+            ClassFieldInner::Simple {
+                initialization: ClassFieldInitialization::Class,
+                ty,
+                ..
+            } => {
+                if self.depends_on_class_type_parameter(cls) {
+                    Attribute::access_not_allowed(NoAccessReason::ClassAttributeIsGeneric(
+                        cls.clone(),
+                    ))
+                } else {
+                    Attribute::access_allowed(ty.clone())
+                }
+            }
         }
     }
 }
@@ -902,26 +920,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Access is disallowed for instance-only attributes and for attributes whose
     /// type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
     pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<Attribute> {
-        let member = self.get_class_member(cls, name)?.value;
-        if member.depends_on_class_type_parameter(cls) {
-            Some(Attribute::access_not_allowed(
-                NoAccessReason::ClassAttributeIsGeneric(cls.clone()),
-            ))
+        if let Some(e) = self.get_enum_from_class(cls)
+            && let Some(enum_member) = e.get_member(name)
+        {
+            Some(Attribute::access_allowed(Type::Literal(enum_member)))
         } else {
-            match member.initialization() {
-                ClassFieldInitialization::Instance => Some(Attribute::access_not_allowed(
-                    NoAccessReason::ClassUseOfInstanceAttribute(cls.clone()),
-                )),
-                ClassFieldInitialization::Class => {
-                    if let Some(e) = self.get_enum_from_class(cls)
-                        && let Some(member) = e.get_member(name)
-                    {
-                        Some(Attribute::access_allowed(Type::Literal(member)))
-                    } else {
-                        Some(Attribute::access_allowed(member.ty()))
-                    }
-                }
-            }
+            let member = self.get_class_member(cls, name)?.value;
+            Some(member.as_class_attribute(cls))
         }
     }
 

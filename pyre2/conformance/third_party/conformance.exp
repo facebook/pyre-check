@@ -7220,8 +7220,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
+      "concise_description": "assert_type(Literal[Pet.genus], str) failed",
+      "description": "assert_type(Literal[Pet.genus], str) failed",
       "line": 27,
       "name": "PyreError",
       "stop_column": 28,
@@ -7229,32 +7229,12 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Instance-only attribute `genus` of class `Pet` is not visible on the class",
-      "description": "Instance-only attribute `genus` of class `Pet` is not visible on the class",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 27
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
+      "concise_description": "assert_type(Literal[Pet.species], str) failed",
+      "description": "assert_type(Literal[Pet.species], str) failed",
       "line": 28,
       "name": "PyreError",
       "stop_column": 30,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Instance-only attribute `species` of class `Pet` is not visible on the class",
-      "description": "Instance-only attribute `species` of class `Pet` is not visible on the class",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 24,
       "stop_line": 28
     },
     {
@@ -8018,8 +7998,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Generic attribute `attr` of class `Foo7` is not visible on the class",
-      "description": "Generic attribute `attr` of class `Foo7` is not visible on the class",
+      "concise_description": "Instance-only attribute `attr` of class `Foo7` is not visible on the class",
+      "description": "Instance-only attribute `attr` of class `Foo7` is not visible on the class",
       "line": 167,
       "name": "PyreError",
       "stop_column": 22,
@@ -10131,8 +10111,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Generic attribute `label` of class `Node` is not visible on the class",
-      "description": "Generic attribute `label` of class `Node` is not visible on the class",
+      "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
+      "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "line": 42,
       "name": "PyreError",
       "stop_column": 16,
@@ -10141,8 +10121,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Generic attribute `label` of class `Node` is not visible on the class",
-      "description": "Generic attribute `label` of class `Node` is not visible on the class",
+      "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
+      "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "line": 43,
       "name": "PyreError",
       "stop_column": 16,
@@ -10151,8 +10131,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Generic attribute `label` of class `Node` is not visible on the class",
-      "description": "Generic attribute `label` of class `Node` is not visible on the class",
+      "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
+      "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "line": 44,
       "name": "PyreError",
       "stop_column": 11,
@@ -10161,8 +10141,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Generic attribute `label` of class `Node` is not visible on the class",
-      "description": "Generic attribute `label` of class `Node` is not visible on the class",
+      "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
+      "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "line": 45,
       "name": "PyreError",
       "stop_column": 11,

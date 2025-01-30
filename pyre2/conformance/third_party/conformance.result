@@ -608,8 +608,8 @@
     "Line 84: Expected 1 errors",
     "Line 85: Expected 1 errors",
     "Line 116: Expected 1 errors",
-    "Line 27: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `genus` of class `Pet` is not visible on the class']",
-    "Line 28: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `species` of class `Pet` is not visible on the class']",
+    "Line 27: Unexpected errors ['assert_type(Literal[Pet.genus], str) failed']",
+    "Line 28: Unexpected errors ['assert_type(Literal[Pet.species], str) failed']",
     "Line 33: Unexpected errors ['Could not find import of `_enums_members`, Could not find path for `_enums_members`']",
     "Line 35: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 36: Unexpected errors ['assert_type(Any, str) failed']",
@@ -662,7 +662,7 @@
     "Line 151: Unexpected errors ['Expected 1 type argument for class `Foo6`, got 2.', 'Expected 1 type argument for class `Foo6`, got 3.', 'untype, got list[type[bool] | type[float]]']",
     "Line 152: Unexpected errors ['Expected 1 type argument for class `Foo6`, got 3.', 'untype, got list[type[bytes]]', 'Expected 1 type argument for class `Foo6`, got 3.', 'untype, got list[type[bytes]]']",
     "Line 166: Unexpected errors ['assert_type(Any, (Foo7[int]) -> Foo7[int]) failed', 'Generic attribute `meth` of class `Foo7` is not visible on the class']",
-    "Line 167: Unexpected errors ['assert_type(Any, int) failed', 'Generic attribute `attr` of class `Foo7` is not visible on the class']"
+    "Line 167: Unexpected errors ['assert_type(Any, int) failed', 'Instance-only attribute `attr` of class `Foo7` is not visible on the class']"
   ],
   "generics_defaults_referential.py": [
     "Line 53: Expected 1 errors",
