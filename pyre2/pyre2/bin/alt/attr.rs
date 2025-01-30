@@ -77,13 +77,6 @@ impl Attribute {
     pub fn read_write(ty: Type) -> Self {
         Attribute(AttributeInner::ReadWrite(ty))
     }
-
-    fn set(self) -> Result<Type, NoAccessReason> {
-        match self.0 {
-            AttributeInner::NoAccess(reason) => Err(reason),
-            AttributeInner::ReadWrite(ty) => Ok(ty),
-        }
-    }
 }
 
 impl NoAccessReason {
@@ -233,7 +226,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         todo_ctx: &str,
     ) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attr) => match attr.set() {
+            LookupResult::Found(attr) => match self.resolve_set_access(attr) {
                 Ok(ty) => Some(ty),
                 Err(e) => {
                     self.error(range, e.to_error_msg(attr_name));
@@ -248,6 +241,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(range, e.to_error_msg(attr_name));
                 None
             }
+        }
+    }
+
+    fn resolve_set_access(&self, attr: Attribute) -> Result<Type, NoAccessReason> {
+        match attr.0 {
+            AttributeInner::NoAccess(reason) => Err(reason),
+            AttributeInner::ReadWrite(ty) => Ok(ty),
         }
     }
 
