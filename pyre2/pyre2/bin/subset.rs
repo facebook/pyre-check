@@ -59,6 +59,15 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     }
                 }
                 (Some(Param::Kwargs(_)), None) => return true,
+                (Some(Param::VarArg(l)), Some(Param::VarArg(u)))
+                | (Some(Param::Kwargs(l)), Some(Param::Kwargs(u))) => {
+                    if self.is_subset_eq(u, l) {
+                        l_arg = l_args_iter.next();
+                        u_arg = u_args_iter.next();
+                    } else {
+                        return false;
+                    }
+                }
                 _ => return false,
             }
         }
