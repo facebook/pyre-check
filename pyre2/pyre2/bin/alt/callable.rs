@@ -349,17 +349,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     // We are making a call, so if it hasn't been forced yet, do so now.
                     p = self.solver().force_var(v);
                 }
-                if let Type::ParamSpecValue(params) = p {
-                    self.callable_infer_params(
+                match p {
+                    Type::ParamSpecValue(params) => self.callable_infer_params(
                         &params.prepend_types(&concatenate),
                         self_arg,
                         args,
                         keywords,
                         range,
-                    );
-                } else {
-                    // This could well be our error, but not really sure (if you call something quantified)
-                    self.error(range, "Unexpected ParamSpec type".to_owned());
+                    ),
+                    _ => {
+                        // This could well be our error, but not really sure (if you call something quantified)
+                        self.error(range, "Unexpected ParamSpec type".to_owned());
+                    }
                 }
             }
         };
