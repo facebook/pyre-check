@@ -333,23 +333,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
-        let ret = match callable.params {
+        match callable.params {
             Params::List(params) => {
                 self.callable_infer_params(&params, self_arg, args, keywords, range);
-                callable.ret
             }
             Params::Ellipsis => {
                 // Deal with Callable[..., R]
                 for arg in self_arg.iter().chain(args.iter()) {
                     arg.pre_eval(self).post_infer(self)
                 }
-                callable.ret
             }
-            _ => self.error(
-                range,
-                "Answers::expr_infer wrong number of arguments to call".to_owned(),
-            ),
+            _ => {
+                self.error(
+                    range,
+                    "Answers::expr_infer wrong number of arguments to call".to_owned(),
+                );
+            }
         };
-        self.solver().expand(ret)
+        self.solver().expand(callable.ret)
     }
 }

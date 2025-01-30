@@ -8124,16 +8124,6 @@
   "generics_paramspec_components.py": [
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 45,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
       "column": 21,
       "concise_description": "Answers::expr_infer wrong number of arguments to call",
       "description": "Answers::expr_infer wrong number of arguments to call",
@@ -8397,16 +8387,6 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 1,
       "concise_description": "Answers::expr_infer wrong number of arguments to call",
       "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 26,
@@ -8436,16 +8416,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bool) failed",
-      "description": "assert_type(Any, bool) failed",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "Answers::expr_infer wrong number of arguments to call",
       "description": "Answers::expr_infer wrong number of arguments to call",
@@ -8453,16 +8423,6 @@
       "name": "PyreError",
       "stop_column": 15,
       "stop_line": 43
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bool) failed",
-      "description": "assert_type(Any, bool) failed",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 44
     },
     {
       "code": -2,
@@ -8526,16 +8486,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bool) failed",
-      "description": "assert_type(Any, bool) failed",
-      "line": 96,
-      "name": "PyreError",
-      "stop_column": 42,
-      "stop_line": 96
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "Answers::expr_infer wrong number of arguments to call",
       "description": "Answers::expr_infer wrong number of arguments to call",
@@ -8543,16 +8493,6 @@
       "name": "PyreError",
       "stop_column": 15,
       "stop_line": 96
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bool) failed",
-      "description": "assert_type(Any, bool) failed",
-      "line": 97,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 97
     },
     {
       "code": -2,
@@ -8576,16 +8516,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bool) failed",
-      "description": "assert_type(Any, bool) failed",
-      "line": 106,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 106
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "Answers::expr_infer wrong number of arguments to call",
       "description": "Answers::expr_infer wrong number of arguments to call",
@@ -8593,16 +8523,6 @@
       "name": "PyreError",
       "stop_column": 15,
       "stop_line": 106
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bool) failed",
-      "description": "assert_type(Any, bool) failed",
-      "line": 107,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 107
     },
     {
       "code": -2,
@@ -8626,16 +8546,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bool) failed",
-      "description": "assert_type(Any, bool) failed",
-      "line": 118,
-      "name": "PyreError",
-      "stop_column": 45,
-      "stop_line": 118
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "Answers::expr_infer wrong number of arguments to call",
       "description": "Answers::expr_infer wrong number of arguments to call",
@@ -8643,16 +8553,6 @@
       "name": "PyreError",
       "stop_column": 15,
       "stop_line": 118
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bool) failed",
-      "description": "assert_type(Any, bool) failed",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 119
     },
     {
       "code": -2,
