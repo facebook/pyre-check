@@ -41,7 +41,11 @@ pub struct Attribute(AttributeInner);
 /// and has a reason.
 #[derive(Clone)]
 enum AttributeInner {
-    Simple(Result<Type, NoAccessReason>),
+    /// A `NoAccess` attribute indicates that the attribute is well-defined, but does
+    /// not allow the access pattern (for example class access on an instance-only attribute)
+    NoAccess(NoAccessReason),
+    /// A read-write attribute with a closed form type for both get and set actions.
+    ReadWrite(Type),
 }
 
 enum NotFound {
@@ -66,16 +70,18 @@ enum InternalError {
 }
 
 impl Attribute {
-    pub fn access_allowed(ty: Type) -> Self {
-        Attribute(AttributeInner::Simple(Ok(ty)))
+    pub fn no_access(reason: NoAccessReason) -> Self {
+        Attribute(AttributeInner::NoAccess(reason))
     }
-    pub fn access_not_allowed(reason: NoAccessReason) -> Self {
-        Attribute(AttributeInner::Simple(Err(reason)))
+
+    pub fn read_write(ty: Type) -> Self {
+        Attribute(AttributeInner::ReadWrite(ty))
     }
 
     fn set(self) -> Result<Type, NoAccessReason> {
         match self.0 {
-            AttributeInner::Simple(access_result) => access_result,
+            AttributeInner::NoAccess(reason) => Err(reason),
+            AttributeInner::ReadWrite(ty) => Ok(ty),
         }
     }
 }
@@ -107,7 +113,7 @@ impl LookupResult {
     /// TODO(stroxler) The uses of this eventually need to be audited, but we
     /// need to prioiritize the class logic first.
     fn found_type(ty: Type) -> Self {
-        Self::Found(Attribute::access_allowed(ty))
+        Self::Found(Attribute::read_write(ty))
     }
 }
 
@@ -282,7 +288,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn resolve_get_access(&self, attr: Attribute) -> Result<Type, NoAccessReason> {
         match attr.0 {
-            AttributeInner::Simple(access_result) => access_result,
+            AttributeInner::NoAccess(reason) => Err(reason),
+            AttributeInner::ReadWrite(ty) => Ok(ty),
         }
     }
 

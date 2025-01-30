@@ -159,9 +159,9 @@ impl ClassField {
         match self.instantiate_for(cls).0 {
             ClassFieldInner::Simple { ty, .. } => match self.initialization() {
                 ClassFieldInitialization::Class => {
-                    Attribute::access_allowed(bind_instance_attribute(cls, ty))
+                    Attribute::read_write(bind_instance_attribute(cls, ty))
                 }
-                ClassFieldInitialization::Instance => Attribute::access_allowed(ty),
+                ClassFieldInitialization::Instance => Attribute::read_write(ty),
             },
         }
     }
@@ -171,20 +171,16 @@ impl ClassField {
             ClassFieldInner::Simple {
                 initialization: ClassFieldInitialization::Instance,
                 ..
-            } => Attribute::access_not_allowed(NoAccessReason::ClassUseOfInstanceAttribute(
-                cls.clone(),
-            )),
+            } => Attribute::no_access(NoAccessReason::ClassUseOfInstanceAttribute(cls.clone())),
             ClassFieldInner::Simple {
                 initialization: ClassFieldInitialization::Class,
                 ty,
                 ..
             } => {
                 if self.depends_on_class_type_parameter(cls) {
-                    Attribute::access_not_allowed(NoAccessReason::ClassAttributeIsGeneric(
-                        cls.clone(),
-                    ))
+                    Attribute::no_access(NoAccessReason::ClassAttributeIsGeneric(cls.clone()))
                 } else {
-                    Attribute::access_allowed(bind_class_attribute(cls, ty.clone()))
+                    Attribute::read_write(bind_class_attribute(cls, ty.clone()))
                 }
             }
         }
@@ -991,7 +987,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Some(e) = self.get_enum_from_class(cls)
             && let Some(enum_member) = e.get_member(name)
         {
-            Some(Attribute::access_allowed(Type::Literal(enum_member)))
+            Some(Attribute::read_write(Type::Literal(enum_member)))
         } else {
             let member = self.get_class_member(cls, name)?.value;
             Some(member.as_class_attribute(cls))
