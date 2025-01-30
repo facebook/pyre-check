@@ -82,6 +82,7 @@ def issubclass(cls: type, class_or_tuple: _ClassInfo, /) -> bool: ...
 
 class staticmethod: pass
 class classmethod: pass
+class property: pass
 "#;
 
 static TYPING: &str = r#"

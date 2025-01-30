@@ -88,3 +88,17 @@ def f(c: C):
     assert_type(c.foo(), int)  # E: EXPECTED type[C] <: C
     "#,
 );
+
+testcase!(
+    test_property,
+    r#"
+from typing import reveal_type
+class C:
+    @property  # E: Expected 0 positional arguments, got 1
+    def foo(self) -> int:
+        return 42
+def f(c: C):
+    reveal_type(C.foo)  # E: revealed type: property
+    reveal_type(c.foo)  # E: revealed type: property
+    "#,
+);

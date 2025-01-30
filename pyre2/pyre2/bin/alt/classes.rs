@@ -1112,8 +1112,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for (base, metadata) in bases_with_metadata.iter().rev() {
             if let Some(dataclass) = metadata.dataclass_metadata() {
                 for name in &dataclass.fields {
-                    if let Some((field, _)) = self.get_class_member(base.class_object(), name) {
-                        all_fields.insert(name.clone(), field.instantiate_for(base));
+                    if let Some(field) = self.get_class_member(base.class_object(), name) {
+                        all_fields.insert(name.clone(), field.value.instantiate_for(base));
                     }
                 }
             }
