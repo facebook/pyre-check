@@ -443,8 +443,9 @@ let run_analyze configuration_file =
                remote_logging;
                profiling_output;
                memory_profiling_output;
+               source_paths;
                _;
-             };
+             } as base;
            _;
          } as analyze_configuration) ->
         CommandStartup.setup_global_states
@@ -458,7 +459,18 @@ let run_analyze configuration_file =
           ();
         Lwt_main.run
           (Lwt.catch
-             (fun () -> run_analyze analyze_configuration)
+             (fun () ->
+               run_analyze
+                 (* TODO(S486183): Restore after SEV is mitigated. *)
+                 {
+                   analyze_configuration with
+                   base =
+                     {
+                       base with
+                       source_paths =
+                         Configuration.SourcePaths.set_kill_buck_after_build source_paths;
+                     };
+                 })
              (fun exn -> Lwt.return (on_exception exn)))
   in
   Statistics.flush ();

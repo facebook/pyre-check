@@ -155,6 +155,17 @@ module Eager = struct
         |> Raw.bxl ?mode ?isolation_prefix raw
 
 
+  let optionally_kill_buck
+      ~kill_buck_after_build
+      ~buck_options:{ BuckOptions.raw; mode; isolation_prefix; _ }
+    =
+    if kill_buck_after_build then
+      let () = Log.info "Killing Buck..." in
+      Raw.kill ?mode ?isolation_prefix raw []
+    else
+      Lwt.return (Raw.Command.Output.create "Did not kill Buck")
+
+
   let warn_on_conflict
       ~target
       {
@@ -184,7 +195,12 @@ module Eager = struct
            see https://fburl.com/pyre-target-conflict"
 
 
-  let construct_build_map_with_options ~bxl_builder ~buck_options target_patterns =
+  let construct_build_map_with_options
+      ~bxl_builder
+      ~buck_options
+      ~kill_buck_after_build
+      target_patterns
+    =
     let open Lwt.Infix in
     Log.info "Building Buck source databases...";
     run_bxl_for_targets ~bxl_builder ~buck_options target_patterns
@@ -192,15 +208,19 @@ module Eager = struct
     let { BuckBxlBuilderOutput.build_map; target_count; conflicts } = parse_bxl_output stdout in
     warn_on_conflicts conflicts;
     Log.info "Loaded source databases for %d targets" target_count;
-    Lwt.return (WithMetadata.create ?metadata:build_id build_map)
+    optionally_kill_buck ~kill_buck_after_build ~buck_options
+    >>= fun _ -> Lwt.return (WithMetadata.create ?metadata:build_id build_map)
 
 
-  let create ?mode ?isolation_prefix ?bxl_builder raw =
+  let create ?mode ?isolation_prefix ?bxl_builder ~kill_buck_after_build raw =
     let buck_options = { BuckOptions.mode; isolation_prefix; raw } in
     match bxl_builder with
     | None -> failwith "BXL path is not set but it is required when using Buck2"
     | Some bxl_builder ->
-        { construct_build_map = construct_build_map_with_options ~bxl_builder ~buck_options }
+        {
+          construct_build_map =
+            construct_build_map_with_options ~bxl_builder ~buck_options ~kill_buck_after_build;
+        }
 
 
   let construct_build_map { construct_build_map } target_patterns =

@@ -20,7 +20,6 @@ from ..backend_arguments import (
     find_watchman_root,
     get_checked_directory_allowlist,
     get_source_path,
-    get_source_path_for_server,
     RemoteLogging,
     SimpleSourcePath,
     WithUnwatchedDependencySourcePath,
@@ -103,6 +102,7 @@ class ArgumentsTest(testslide.TestCase):
                 "artifact_root": "/artifact",
                 "targets": ["//foo:bar", "//foo:baz"],
                 "use_buck2": True,
+                "kill_buck_after_build": False,
             },
         )
         self.assertDictEqual(
@@ -116,6 +116,7 @@ class ArgumentsTest(testslide.TestCase):
                 isolation_prefix=".lsp",
                 bxl_builder="//foo.bxl:build",
                 use_buck2=True,
+                kill_buck_after_build=True,
             ).serialize(),
             {
                 "kind": "buck",
@@ -127,6 +128,7 @@ class ArgumentsTest(testslide.TestCase):
                 "isolation_prefix": ".lsp",
                 "bxl_builder": "//foo.bxl:build",
                 "use_buck2": True,
+                "kill_buck_after_build": True,
             },
         )
 
@@ -303,6 +305,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    kill_buck_after_build=False,
                     watchman_root=None,
                 ),
                 SimpleSourcePath([raw_element.to_element()]),
@@ -324,6 +327,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    kill_buck_after_build=False,
                     watchman_root=None,
                 ),
                 SimpleSourcePath([]),
@@ -357,6 +361,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    kill_buck_after_build=False,
                     watchman_root=watched_root,
                 ),
                 WithUnwatchedDependencySourcePath(
@@ -391,6 +396,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    kill_buck_after_build=False,
                     watchman_root=watched_root,
                 ),
                 SimpleSourcePath(
@@ -425,6 +431,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    kill_buck_after_build=False,
                     watchman_root=None,
                 ),
                 SimpleSourcePath(
@@ -457,6 +464,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="artifact_root",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    kill_buck_after_build=False,
                     watchman_root=None,
                 ),
                 BuckSourcePath(
@@ -466,6 +474,7 @@ class ArgumentsTest(testslide.TestCase):
                     targets=["//ct:marle", "//ct:lucca"],
                     mode="opt",
                     isolation_prefix=".lsp",
+                    kill_buck_after_build=False,
                 ),
             )
 
@@ -493,6 +502,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="artifact_root",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    kill_buck_after_build=True,
                     watchman_root=None,
                 ),
                 BuckSourcePath(
@@ -502,6 +512,7 @@ class ArgumentsTest(testslide.TestCase):
                     targets=["//ct:lavos"],
                     bxl_builder="//ct:robo",
                     use_buck2=True,
+                    kill_buck_after_build=True,
                 ),
             )
 
@@ -536,6 +547,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="artifact_root/local",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    kill_buck_after_build=False,
                     watchman_root=None,
                 ),
                 BuckSourcePath(
@@ -546,6 +558,7 @@ class ArgumentsTest(testslide.TestCase):
                     mode="opt",
                     isolation_prefix=".lsp",
                     bxl_builder="//ct:robo",
+                    kill_buck_after_build=False,
                 ),
             )
 
@@ -566,6 +579,7 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
+                    kill_buck_after_build=False,
                     watchman_root=None,
                 )
 
@@ -582,6 +596,7 @@ class ArgumentsTest(testslide.TestCase):
                 ),
                 artifact_root_name="irrelevant",
                 flavor=identifiers.PyreFlavor.CLASSIC,
+                kill_buck_after_build=False,
                 watchman_root=None,
             )
 
@@ -598,6 +613,7 @@ class ArgumentsTest(testslide.TestCase):
                 ),
                 artifact_root_name="irrelevant",
                 flavor=identifiers.PyreFlavor.CLASSIC,
+                kill_buck_after_build=False,
                 watchman_root=None,
             )
 

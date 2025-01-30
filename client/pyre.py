@@ -595,6 +595,12 @@ def pyre(
     help="Path to a configuration file containing scheduler policies.",
     hidden=True,
 )
+@click.option(
+    "--kill-buck-after-build",
+    is_flag=True,
+    default=False,
+    help="Kill Buck after building the project.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -635,6 +641,7 @@ def analyze(
     compact_ocaml_heap: bool,
     compute_coverage: bool,
     scheduler_policies: Optional[str],
+    kill_buck_after_build: bool,
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -701,6 +708,7 @@ def analyze(
             scheduler_policies_path=(
                 Path(scheduler_policies) if scheduler_policies is not None else None
             ),
+            kill_buck_after_build=kill_buck_after_build,
         ),
     )
 

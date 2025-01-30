@@ -77,7 +77,9 @@ def create_check_arguments(
     nonexistent directories. It is idempotent though, since it does not alter
     any filesystem state.
     """
-    source_paths = backend_arguments.get_source_path_for_check(configuration)
+    source_paths = backend_arguments.get_source_path_for_check(
+        configuration, kill_buck_after_build=False
+    )
 
     logging_sections = check_arguments.logging_sections
     additional_logging_sections = (

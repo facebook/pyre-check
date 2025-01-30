@@ -376,7 +376,13 @@ module Interface : sig
     type t
 
     (** Create an instance of [t] from an instance of {!Raw.t} and some buck options. *)
-    val create : ?mode:string -> ?isolation_prefix:string -> ?bxl_builder:string -> Raw.t -> t
+    val create
+      :  ?mode:string ->
+      ?isolation_prefix:string ->
+      ?bxl_builder:string ->
+      kill_buck_after_build:bool ->
+      Raw.t ->
+      t
 
     (** Create an instance of [t] from custom [construct_build_map] behavior. Useful for unit
         testing. *)

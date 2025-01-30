@@ -290,6 +290,7 @@ def get_saved_state_action(
 def create_server_arguments(
     configuration: frontend_configuration.Base,
     start_arguments: command_arguments.StartArguments,
+    kill_buck_after_build: bool = False,
 ) -> Arguments:
     """
     Translate client configurations and command-line flags to server
@@ -308,7 +309,7 @@ def create_server_arguments(
     )
 
     source_paths = backend_arguments.get_source_path_for_server(
-        configuration, start_arguments.flavor, watchman_root
+        configuration, start_arguments.flavor, kill_buck_after_build, watchman_root
     )
 
     logging_sections = start_arguments.logging_sections

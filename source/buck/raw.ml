@@ -130,9 +130,10 @@ let on_completion ?build_id ~buck_command ~arguments ~log_buffer = function
           fail_with_error description)
 
 
-type t = { bxl: Command.t }
-
-let create_for_testing ~bxl () = { bxl }
+type t = {
+  bxl: Command.t;
+  kill: Command.t;
+}
 
 let isolation_prefix_to_buck_arguments = function
   | None
@@ -140,6 +141,30 @@ let isolation_prefix_to_buck_arguments = function
       []
   | Some isolation_prefix -> ["--isolation-dir"; isolation_prefix]
 
+
+let buck2_command = "buck2"
+
+let kill ?(additional_log_size = 0) ?mode:_ ?isolation_prefix arguments =
+  let open Lwt.Infix in
+  let log_buffer = BoundedQueue.create additional_log_size in
+  let actual_buck_arguments =
+    List.concat [isolation_prefix_to_buck_arguments isolation_prefix; ["kill"]; arguments]
+  in
+  Log.debug
+    "Running command: %s"
+    (Stdlib.Filename.quote_command buck2_command actual_buck_arguments);
+  let consume_stderr = consume_stderr ~log_buffer in
+  LwtSubprocess.run buck2_command ~arguments:actual_buck_arguments ~consume_stderr
+  >>= fun result ->
+  on_completion
+    ~buck_command:buck2_command
+    ~arguments:actual_buck_arguments
+    ~log_buffer
+    ?build_id:None
+    result
+
+
+let create_for_testing ~bxl () = { bxl; kill = kill ~additional_log_size:0 }
 
 let read_build_id_from filename =
   let open Lwt.Infix in
@@ -157,7 +182,6 @@ let read_build_id_from filename =
 
 
 let create ?(additional_log_size = 0) () =
-  let buck2 = "buck2" in
   let open Lwt.Infix in
   let invoke_buck ?mode ?isolation_prefix ~command user_supplied_arguments =
     (* Preserve the last several lines of Buck log for error reporting purpose. *)
@@ -173,7 +197,9 @@ let create ?(additional_log_size = 0) () =
         ]
     in
     let expanded_buck_arguments = List.append common_buck_arguments user_supplied_arguments in
-    Log.debug "Running command: %s" (Stdlib.Filename.quote_command "buck2" expanded_buck_arguments);
+    Log.debug
+      "Running command: %s"
+      (Stdlib.Filename.quote_command buck2_command expanded_buck_arguments);
     (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
        operating system. Pass all the user-supplied arguments via a temporary file instead. *)
     Lwt_io.with_temp_dir ~prefix:"pyre_buck" (fun directory_name ->
@@ -191,12 +217,12 @@ let create ?(additional_log_size = 0) () =
             ]
         in
         let consume_stderr = consume_stderr ~log_buffer in
-        LwtSubprocess.run buck2 ~arguments:actual_buck_arguments ~consume_stderr
+        LwtSubprocess.run buck2_command ~arguments:actual_buck_arguments ~consume_stderr
         >>= fun result ->
         read_build_id_from build_id_filename
         >>= fun build_id ->
         on_completion
-          ~buck_command:buck2
+          ~buck_command:buck2_command
           ~arguments:expanded_buck_arguments
           ~log_buffer
           ?build_id
@@ -205,7 +231,9 @@ let create ?(additional_log_size = 0) () =
   let bxl ?mode ?isolation_prefix arguments =
     invoke_buck ?mode ?isolation_prefix ~command:"bxl" arguments
   in
-  { bxl }
+  { bxl; kill = kill ~additional_log_size }
 
 
 let bxl { bxl; _ } = bxl
+
+let kill { kill; _ } = kill

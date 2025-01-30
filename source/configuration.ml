@@ -37,6 +37,7 @@ module Buck = struct
     (* This is the root of directory where built artifacts will be placed. *)
     artifact_root: PyrePath.t;
     targets_fallback_sources: SearchPath.t list option;
+    kill_buck_after_build: bool;
   }
   [@@deriving sexp, compare, hash]
 
@@ -56,6 +57,7 @@ module Buck = struct
           ~f:(fun json -> to_string json |> SearchPath.create)
           json
       in
+      let kill_buck_after_build = bool_member "kill_buck_after_build" ~default:false json in
       Result.Ok
         {
           mode;
@@ -65,6 +67,7 @@ module Buck = struct
           source_root;
           artifact_root;
           targets_fallback_sources;
+          kill_buck_after_build;
         }
     with
     | Yojson.Safe.Util.Type_error (message, _)
@@ -82,6 +85,7 @@ module Buck = struct
         source_root;
         artifact_root;
         targets_fallback_sources;
+        kill_buck_after_build;
       }
     =
     let result =
@@ -112,6 +116,7 @@ module Buck = struct
       | Some sources ->
           ( "targets_fallback_sources",
             [%to_yojson: string list] (List.map sources ~f:SearchPath.show) )
+          :: ("kill_buck_after_build", `Bool kill_buck_after_build)
           :: result
     in
     `Assoc result
@@ -252,6 +257,14 @@ module SourcePaths = struct
         sources
     | Buck { Buck.artifact_root; targets_fallback_sources; _ } ->
         SearchPath.Root artifact_root :: Option.value ~default:[] targets_fallback_sources
+
+
+  let set_kill_buck_after_build source_paths =
+    match source_paths with
+    | Simple _
+    | WithUnwatchedDependency _ ->
+        source_paths
+    | Buck buck -> Buck { buck with kill_buck_after_build = true }
 end
 
 module RemoteLogging = struct

@@ -115,6 +115,7 @@ class BuckSourcePath:
     isolation_prefix: Optional[str] = None
     bxl_builder: Optional[str] = None
     use_buck2: bool = True
+    kill_buck_after_build: bool = False
 
     def serialize(self) -> Dict[str, object]:
         mode = self.mode
@@ -144,6 +145,7 @@ class BuckSourcePath:
             "use_buck2": self.use_buck2,
             "source_root": str(self.source_root),
             "artifact_root": str(self.artifact_root),
+            "kill_buck_after_build": self.kill_buck_after_build,
         }
 
     def get_checked_directory_allowlist(self) -> Set[str]:
@@ -318,6 +320,7 @@ def get_source_path(
     configuration: frontend_configuration.Base,
     artifact_root_name: str,
     flavor: identifiers.PyreFlavor,
+    kill_buck_after_build: bool,
     watchman_root: Optional[Path],
 ) -> SourcePath:
     source_directories = configuration.is_source_directories_defined()
@@ -374,6 +377,7 @@ def get_source_path(
             isolation_prefix=configuration.get_buck_isolation_prefix(),
             bxl_builder=configuration.get_buck_bxl_builder(),
             use_buck2=use_buck2,
+            kill_buck_after_build=kill_buck_after_build,
         )
 
     raise configuration_module.InvalidConfiguration(
@@ -385,6 +389,7 @@ def get_source_path(
 def get_source_path_for_server(
     configuration: frontend_configuration.Base,
     flavor: identifiers.PyreFlavor,
+    kill_buck_after_build: bool,
     watchman_root: Optional[Path] = None,
 ) -> SourcePath:
     # We know that for each source root there could be at most one server alive.
@@ -395,11 +400,18 @@ def get_source_path_for_server(
         # Prevent artifact roots of different local projects from clashing with
         # each other.
         artifact_root_name = str(Path(artifact_root_name) / relative_local_root)
-    return get_source_path(configuration, artifact_root_name, flavor, watchman_root)
+    return get_source_path(
+        configuration,
+        artifact_root_name,
+        flavor,
+        kill_buck_after_build,
+        watchman_root,
+    )
 
 
 def get_source_path_for_check(
     configuration: frontend_configuration.Base,
+    kill_buck_after_build: bool,
 ) -> SourcePath:
     # Artifact for one-off check command should not be a fixed constant, to prevent
     # concurrent check commands overwriting each other's artifacts. Here we use process
@@ -408,6 +420,7 @@ def get_source_path_for_check(
         configuration,
         str(os.getpid()),
         identifiers.PyreFlavor.CLASSIC,
+        kill_buck_after_build,
         watchman_root=None,
     )
 

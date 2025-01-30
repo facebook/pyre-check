@@ -79,6 +79,7 @@ class Arguments:
     )
     compute_coverage: bool = False
     scheduler_policies: Optional[configuration_module.SchedulerPolicies] = None
+    kill_buck_after_build: bool = False
 
     def serialize(self) -> Dict[str, Any]:
         dump_call_graph = self.dump_call_graph
@@ -212,6 +213,7 @@ class Arguments:
                 if scheduler_policies is not None
                 else {}
             ),
+            "kill_buck_after_build": self.kill_buck_after_build,
         }
 
 
@@ -226,7 +228,9 @@ def create_analyze_arguments(
     nonexistent directories. It is idempotent though, since it does not alter
     any filesystem state.
     """
-    source_paths = backend_arguments.get_source_path_for_check(configuration)
+    source_paths = backend_arguments.get_source_path_for_check(
+        configuration, kill_buck_after_build=analyze_arguments.kill_buck_after_build
+    )
 
     log_directory = configuration.get_log_directory()
     profiling_output = (
@@ -327,6 +331,7 @@ def create_analyze_arguments(
             if scheduler_policies_path is not None
             else None
         ),
+        kill_buck_after_build=analyze_arguments.kill_buck_after_build,
     )
 
 

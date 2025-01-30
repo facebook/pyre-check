@@ -16,6 +16,7 @@ module Buck : sig
     (* This is the root of directory where built artifacts will be placed. *)
     artifact_root: PyrePath.t;
     targets_fallback_sources: SearchPath.t list option;
+    kill_buck_after_build: bool;
   }
   [@@deriving sexp, compare, hash, yojson]
 end
@@ -57,6 +58,8 @@ module SourcePaths : sig
   [@@deriving sexp, compare, hash, yojson]
 
   val to_search_paths : t -> SearchPath.t list
+
+  val set_kill_buck_after_build : t -> t
 end
 
 module RemoteLogging : sig

@@ -252,6 +252,7 @@ class InferArguments:
     print_only: bool = False
     read_stdin: bool = False
     sequential: bool = False
+    kill_buck_after_build: bool = False
 
 
 @dataclass(frozen=True)
@@ -340,6 +341,7 @@ class AnalyzeArguments:
     )
     compute_coverage: bool = False
     scheduler_policies_path: Optional[Path] = None
+    kill_buck_after_build: bool = False
 
 
 @dataclass(frozen=True)

@@ -506,10 +506,18 @@ let get_initializer source_paths =
         artifact_root;
         targets;
         targets_fallback_sources = _;
+        kill_buck_after_build;
       } ->
       let builder =
         let raw = Buck.Raw.create ~additional_log_size:30 () in
-        let interface = Buck.Interface.Eager.create ?mode ?isolation_prefix ?bxl_builder raw in
+        let interface =
+          Buck.Interface.Eager.create
+            ?mode
+            ?isolation_prefix
+            ?bxl_builder
+            ~kill_buck_after_build
+            raw
+        in
         EagerBuckBuilder.create ~source_root ~artifact_root interface
       in
       Initializer.buck ~builder ~artifact_root ~targets ()
