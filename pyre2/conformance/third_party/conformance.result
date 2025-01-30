@@ -213,8 +213,8 @@
     "Line 35: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 41: Unexpected errors ['assert_type(Unpack[TypedDict[TD1]], TypedDict[TD1]) failed']",
     "Line 47: Unexpected errors ['EXPECTED Literal[1] <: Unpack[TypedDict[TD2]]', \"EXPECTED Literal[''] <: Unpack[TypedDict[TD2]]\", \"EXPECTED Literal['5'] <: Unpack[TypedDict[TD2]]\"]",
-    "Line 50: Unexpected errors ['Expected argument after ** to be a mapping, got: TypedDict[TD2]']",
-    "Line 62: Unexpected errors [\"Missing argument 'v3'\", 'Expected argument after ** to be a mapping, got: TypedDict[TD2]']",
+    "Line 50: Unexpected errors ['EXPECTED int <: Unpack[TypedDict[TD2]]', 'EXPECTED str <: Unpack[TypedDict[TD2]]']",
+    "Line 62: Unexpected errors ['EXPECTED int <: Unpack[TypedDict[TD1]]', 'EXPECTED str <: Unpack[TypedDict[TD1]]']",
     "Line 99: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol1']",
     "Line 100: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol2']",
     "Line 104: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol6']"

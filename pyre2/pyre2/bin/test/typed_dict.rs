@@ -222,3 +222,30 @@ def foo(a: Coord, b: Coord2, c: Coord3, d: Coord4):
     coord4 = c
     "#,
 );
+
+testcase!(
+    test_typed_dict_kwargs_expansion,
+    r#"
+from typing import TypedDict, NotRequired
+class Coord(TypedDict):
+    x: int
+    y: int
+    z: NotRequired[int]
+
+def f1(x: int, y: int, z: int = 1): ...
+def f2(x: int, y: int, **kwargs: str): ...
+def f3(x: int, y: int): ...
+def f4(x: int, y: int = 2, z: int = 3): ...
+def f5(x: int, y: int, z: int): ...
+def f6(x: int, y: int, **kwargs: str): ...
+
+x: Coord = {"x": 1, "y": 2}
+f1(**x)
+f2(**x)  # E: EXPECTED int <: str
+f3(**x)  # E: Unexpected keyword argument 'z'
+f4(**x)  # E: Expected key 'y' to be optional
+f5(**x)  # E: Expected key 'z' to be required
+f6(**x)  # E: EXPECTED int <: str
+f1(1, **x)  # E: Multiple values for argument 'x'
+    "#,
+);

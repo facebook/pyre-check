@@ -249,8 +249,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
                 Param::VarArg(..) => {}
-                Param::Pos(name, _, _) | Param::KwOnly(name, _, _) => {
-                    kwparams.insert(name.clone(), p_idx);
+                Param::Pos(name, _, required) | Param::KwOnly(name, _, required) => {
+                    kwparams.insert(name.clone(), (p_idx, *required == Required::Required));
                 }
                 Param::Kwargs(ty) => {
                     kwargs = Some(ty);
@@ -272,36 +272,72 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             match &kw.arg {
                 None => {
                     let ty = self.expr_infer(&kw.value);
-                    // TODO: TypedDict, ParamSpec kwargs
-                    match self.decompose_dict(&ty) {
-                        Some(UnwrappedDict { key, value }) => {
-                            if self.solver().is_subset_eq(
-                                &key,
-                                &self.stdlib.str().to_type(),
-                                self.type_order(),
-                            ) {
-                                kwargs.iter().for_each(|want| {
-                                    self.check_type(want, &value, kw.range);
-                                });
-                                splat_kwargs.push((value, kw.range));
-                            } else {
+                    if let Type::TypedDict(typed_dict) = ty {
+                        typed_dict.fields().iter().for_each(|(name, field)| {
+                            let mut hint = kwargs;
+                            splat_kwargs.push((field.ty.clone(), kw.range));
+                            if let Some(&p_idx) = seen_names.get(name) {
                                 self.error(
+                                    kw.range,
+                                    format!("Multiple values for argument '{}'", name),
+                                );
+                                params.items()[p_idx].visit(|ty| hint = Some(ty));
+                            } else if let Some(&(p_idx, required)) = kwparams.get(name) {
+                                if field.required {
+                                    seen_names.insert(name.clone(), p_idx);
+                                }
+                                if field.required != required {
+                                    self.error(
+                                        kw.range,
+                                        format!(
+                                            "Expected key '{}' to be {}",
+                                            name,
+                                            if required { "required" } else { "optional" }
+                                        ),
+                                    );
+                                }
+                                params.items()[p_idx].visit(|ty| hint = Some(ty));
+                            } else if kwargs.is_none() {
+                                self.error(
+                                    kw.range,
+                                    format!("Unexpected keyword argument '{}'", name),
+                                );
+                            }
+                            hint.iter().for_each(|want| {
+                                self.check_type(want, &field.ty, kw.range);
+                            });
+                        })
+                    } else {
+                        match self.decompose_dict(&ty) {
+                            Some(UnwrappedDict { key, value }) => {
+                                if self.solver().is_subset_eq(
+                                    &key,
+                                    &self.stdlib.str().to_type(),
+                                    self.type_order(),
+                                ) {
+                                    kwargs.iter().for_each(|want| {
+                                        self.check_type(want, &value, kw.range);
+                                    });
+                                    splat_kwargs.push((value, kw.range));
+                                } else {
+                                    self.error(
                                     kw.value.range(),
                                     format!(
                                         "Expected argument after ** to have `str` keys, got: {}",
                                         key.deterministic_printing()
                                     ),
                                 );
+                                }
                             }
-                        }
-                        None => {
-                            self.error(
-                                kw.value.range(),
-                                format!(
-                                    "Expected argument after ** to be a mapping, got: {}",
-                                    ty.deterministic_printing()
-                                ),
-                            );
+                            None => {
+                                self.error(
+                                    kw.value.range(),
+                                    format!(
+                                        "Expected argument after ** to be a mapping, got: {}",
+                                        ty.deterministic_printing()
+                                    ),
+                                );
+                            }
                         }
                     }
                 }
@@ -313,7 +349,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             format!("Multiple values for argument '{}'", id.id),
                         );
                         params.items()[p_idx].visit(|ty| hint = Some(ty));
-                    } else if let Some(&p_idx) = kwparams.get(&id.id) {
+                    } else if let Some(&(p_idx, _)) = kwparams.get(&id.id) {
                         seen_names.insert(id.id.clone(), p_idx);
                         params.items()[p_idx].visit(|ty| hint = Some(ty));
                     } else if kwargs.is_none() {
@@ -323,7 +359,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
-        for (name, &p_idx) in kwparams.iter() {
+        for (name, &(p_idx, _)) in kwparams.iter() {
             if !seen_names.contains_key(name) {
                 let param = &params.items()[p_idx];
                 if splat_kwargs.is_empty() && param.is_required() {
