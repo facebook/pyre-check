@@ -142,8 +142,7 @@ foo(keyword_only_x, keyword_only_y) # Rejected # E: EXPECTED (*, y: int) -> int 
 "#,
 );
 
-testcase_with_bug!(
-    "The penultimate type should have brackets around (q: int)",
+testcase!(
     test_paramspec_constructor,
     r#"
 from typing import TypeVar, Generic, Callable, ParamSpec, reveal_type
@@ -161,7 +160,7 @@ class Y(Generic[U, P]):
 
 def a(q: int) -> str: ...
 
-reveal_type(Y(a, 1))   # E: revealed type: Y[int, q: int]
+reveal_type(Y(a, 1))   # E: revealed type: Y[int, (q: int)]
 reveal_type(Y(a, 1).f) # E: revealed type: (q: int) -> str
 "#,
 );

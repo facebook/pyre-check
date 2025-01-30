@@ -706,7 +706,7 @@
   "generics_paramspec_semantics.py": [
     "Line 22: Unexpected errors ['assert_type((str, bool) -> str, (str, bool) -> str) failed']",
     "Line 42: Unexpected errors ['EXPECTED (x: int, y: str) -> int <: (x: int, y: str) -> int']",
-    "Line 82: Unexpected errors ['assert_type(Y[int, int], Y[int, Any]) failed', 'untype, got list[type[int]]']",
+    "Line 82: Unexpected errors ['assert_type(Y[int, (int)], Y[int, Any]) failed', 'untype, got list[type[int]]']",
     "Line 84: Unexpected errors ['assert_type((int) -> str, (int) -> str) failed']"
   ],
   "generics_paramspec_specialization.py": [

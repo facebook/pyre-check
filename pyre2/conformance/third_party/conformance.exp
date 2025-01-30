@@ -8357,8 +8357,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Y[int, int], Y[int, Any]) failed",
-      "description": "assert_type(Y[int, int], Y[int, Any]) failed",
+      "concise_description": "assert_type(Y[int, (int)], Y[int, Any]) failed",
+      "description": "assert_type(Y[int, (int)], Y[int, Any]) failed",
       "line": 82,
       "name": "PyreError",
       "stop_column": 35,
