@@ -73,22 +73,9 @@ impl Attribute {
         Attribute(AttributeInner::Simple(Err(reason)))
     }
 
-    fn get(self) -> Result<Type, NoAccessReason> {
-        match self.0 {
-            AttributeInner::Simple(access_result) => access_result,
-        }
-    }
-
     fn set(self) -> Result<Type, NoAccessReason> {
         match self.0 {
             AttributeInner::Simple(access_result) => access_result,
-        }
-    }
-
-    pub fn get_type(self) -> Option<Type> {
-        match self.0 {
-            AttributeInner::Simple(Ok(ty)) => Some(ty),
-            AttributeInner::Simple(Err(_)) => None,
         }
     }
 }
@@ -121,23 +108,6 @@ impl LookupResult {
     /// need to prioiritize the class logic first.
     fn found_type(ty: Type) -> Self {
         Self::Found(Attribute::access_allowed(ty))
-    }
-
-    /// A convenience function for callers which do not need to distinguish
-    /// between NotFound and Error results.
-    pub fn get_type_or_conflated_error_msg(
-        self,
-        attr_name: &Name,
-        todo_ctx: &str,
-    ) -> Result<Type, String> {
-        match self {
-            LookupResult::Found(attr) => match &attr.get() {
-                Ok(ty) => Ok(ty.clone()),
-                Err(err) => Err(err.to_error_msg(attr_name)),
-            },
-            LookupResult::NotFound(err) => Err(err.to_error_msg(attr_name)),
-            LookupResult::InternalError(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
-        }
     }
 }
 
@@ -196,10 +166,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         todo_ctx: &str,
     ) -> Type {
-        match self
-            .lookup_attr(base, attr_name)
-            .get_type_or_conflated_error_msg(attr_name, todo_ctx)
-        {
+        match self.get_type_or_conflated_error_msg(
+            self.lookup_attr(base, attr_name),
+            attr_name,
+            todo_ctx,
+        ) {
             Ok(ty) => ty,
             Err(msg) => self.error(range, msg),
         }
@@ -216,7 +187,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         todo_ctx: &str,
     ) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attr) => match attr.get() {
+            LookupResult::Found(attr) => match self.resolve_get_access(attr) {
                 Ok(ty) => Some(ty),
                 Err(e) => Some(self.error(range, e.to_error_msg(attr_name))),
             },
@@ -236,7 +207,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// like checking enum values.
     pub fn type_of_attr_get_if_gettable(&self, base: Type, attr_name: &Name) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attr) => attr.get_type(),
+            LookupResult::Found(attr) => self.resolve_get_access(attr).ok(),
             _ => None,
         }
     }
@@ -309,6 +280,36 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn resolve_get_access(&self, attr: Attribute) -> Result<Type, NoAccessReason> {
+        match attr.0 {
+            AttributeInner::Simple(access_result) => access_result,
+        }
+    }
+
+    // A convenience function for callers who don't care about reasons a lookup failed, and just
+    // want the result if it is successful.
+    pub fn resolve_get_access_to_type(&self, attr: Attribute) -> Option<Type> {
+        self.resolve_get_access(attr).ok()
+    }
+
+    /// A convenience function for callers which want an error but do not need to distinguish
+    /// between NotFound and Error results.
+    fn get_type_or_conflated_error_msg(
+        &self,
+        lookup: LookupResult,
+        attr_name: &Name,
+        todo_ctx: &str,
+    ) -> Result<Type, String> {
+        match lookup {
+            LookupResult::Found(attr) => match self.resolve_get_access(attr) {
+                Ok(ty) => Ok(ty.clone()),
+                Err(err) => Err(err.to_error_msg(attr_name)),
+            },
+            LookupResult::NotFound(err) => Err(err.to_error_msg(attr_name)),
+            LookupResult::InternalError(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
+        }
+    }
+
     fn lookup_attr(&self, base: Type, attr_name: &Name) -> LookupResult {
         match self.as_attribute_base(base.clone(), self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
@@ -357,7 +358,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let builtins_type_classtype = self.stdlib.builtins_type();
                 LookupResult::found_type(
                     self.get_instance_attribute(&builtins_type_classtype, attr_name)
-                        .and_then(|attr| attr.get_type())
+                        .and_then(|attr| self.resolve_get_access_to_type(attr))
                         .map_or_else(|| style.propagate(), |ty| ty),
                 )
             }
