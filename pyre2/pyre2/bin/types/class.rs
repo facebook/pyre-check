@@ -40,6 +40,7 @@ struct ClassInner {
 pub enum ClassKind {
     StaticMethod,
     ClassMethod,
+    Property,
     Class,
 }
 
@@ -48,6 +49,7 @@ impl ClassKind {
         match (qname.module.name().as_str(), qname.name.id.as_str()) {
             ("builtins", "staticmethod") => Self::StaticMethod,
             ("builtins", "classmethod") => Self::ClassMethod,
+            ("builtins", "property") => Self::Property,
             _ => Self::Class,
         }
     }

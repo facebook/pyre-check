@@ -94,11 +94,11 @@ testcase!(
     r#"
 from typing import reveal_type
 class C:
-    @property  # E: Expected 0 positional arguments, got 1
+    @property
     def foo(self) -> int:
         return 42
 def f(c: C):
-    reveal_type(C.foo)  # E: revealed type: property
-    reveal_type(c.foo)  # E: revealed type: property
+    reveal_type(C.foo)  # E: revealed type: property[(self: C) -> int]
+    reveal_type(c.foo)  # E: revealed type: property[(self: C) -> int]
     "#,
 );

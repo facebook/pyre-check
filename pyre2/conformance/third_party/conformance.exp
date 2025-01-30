@@ -8383,8 +8383,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(property, ParentA) failed",
-      "description": "assert_type(property, ParentA) failed",
+      "concise_description": "assert_type(property[(self: ParentA) -> ParentA], ParentA) failed",
+      "description": "assert_type(property[(self: ParentA) -> ParentA], ParentA) failed",
       "line": 18,
       "name": "PyreError",
       "stop_column": 38,
@@ -8393,8 +8393,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(property, ChildA) failed",
-      "description": "assert_type(property, ChildA) failed",
+      "concise_description": "assert_type(property[(self: ParentA) -> ParentA], ChildA) failed",
+      "description": "assert_type(property[(self: ParentA) -> ParentA], ChildA) failed",
       "line": 19,
       "name": "PyreError",
       "stop_column": 36,
@@ -15137,26 +15137,6 @@
       "name": "PyreError",
       "stop_column": 24,
       "stop_line": 87
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED Forall[T, (self: T) -> T] <: (Any) -> Any | None",
-      "description": "EXPECTED Forall[T, (self: T) -> T] <: (Any) -> Any | None",
-      "line": 100,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 100
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED Forall[T, (self: T) -> T] <: (Any) -> Any | None",
-      "description": "EXPECTED Forall[T, (self: T) -> T] <: (Any) -> Any | None",
-      "line": 109,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 109
     }
   ],
   "protocols_merging.py": [
@@ -16098,8 +16078,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(property, tuple[type, ...]) failed",
-      "description": "assert_type(property, tuple[type, ...]) failed",
+      "concise_description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
+      "description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
       "line": 98,
       "name": "PyreError",
       "stop_column": 45,
@@ -16128,8 +16108,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(property, tuple[type, ...]) failed",
-      "description": "assert_type(property, tuple[type, ...]) failed",
+      "concise_description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
+      "description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
       "line": 102,
       "name": "PyreError",
       "stop_column": 45,
@@ -16178,8 +16158,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(property, tuple[type, ...]) failed",
-      "description": "assert_type(property, tuple[type, ...]) failed",
+      "concise_description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
+      "description": "assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed",
       "line": 110,
       "name": "PyreError",
       "stop_column": 45,

@@ -154,6 +154,9 @@ impl<'a> TypeDisplayContext<'a> {
             Decoration::ClassMethod(box ty) => {
                 write!(f, "classmethod[{}]", self.display(ty))
             }
+            Decoration::Property(box ty) => {
+                write!(f, "property[{}]", self.display(ty))
+            }
         }
     }
 

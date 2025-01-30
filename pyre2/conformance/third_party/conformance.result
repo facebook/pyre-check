@@ -716,8 +716,8 @@
     "Line 95: Expected 1 errors"
   ],
   "generics_self_advanced.py": [
-    "Line 18: Unexpected errors ['assert_type(property, ParentA) failed']",
-    "Line 19: Unexpected errors ['assert_type(property, ChildA) failed']",
+    "Line 18: Unexpected errors ['assert_type(property[(self: ParentA) -> ParentA], ParentA) failed']",
+    "Line 19: Unexpected errors ['assert_type(property[(self: ParentA) -> ParentA], ChildA) failed']",
     "Line 35: Unexpected errors ['assert_type(ChildB, Self) failed']",
     "Line 37: Unexpected errors ['assert_type(list[Self], Self) failed', 'EXPECTED Literal[0] <: slice[Error, Error, Error]']",
     "Line 38: Unexpected errors ['assert_type(ParentB, Self) failed', 'EXPECTED type[ChildB] <: ParentB']",
@@ -1192,9 +1192,7 @@
     "Line 147: Expected 1 errors",
     "Line 55: Unexpected errors ['EXPECTED Box[int] <: Box[float]']",
     "Line 65: Unexpected errors ['EXPECTED Sender[float] <: Sender[int]']",
-    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access get_parent)']",
-    "Line 100: Unexpected errors ['EXPECTED Forall[T, (self: T) -> T] <: (Any) -> Any | None']",
-    "Line 109: Unexpected errors ['EXPECTED Forall[T, (self: T) -> T] <: (Any) -> Any | None']"
+    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access get_parent)']"
   ],
   "protocols_merging.py": [
     "Line 82: Expected 1 errors"
@@ -1316,14 +1314,14 @@
     "Line 68: Unexpected errors ['EXPECTED type[User] <: type[@_]']",
     "Line 69: Unexpected errors ['EXPECTED type[tuple] <: type[@_]']",
     "Line 84: Unexpected errors ['assert_type(type, type[Any]) failed']",
-    "Line 98: Unexpected errors ['assert_type(property, tuple[type, ...]) failed']",
+    "Line 98: Unexpected errors ['assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed']",
     "Line 99: Unexpected errors ['Object of class `type` has no attribute `unknown`']",
     "Line 100: Unexpected errors ['Object of class `type` has no attribute `unknown`']",
-    "Line 102: Unexpected errors ['assert_type(property, tuple[type, ...]) failed']",
+    "Line 102: Unexpected errors ['assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed']",
     "Line 106: Unexpected errors ['assert_type(Any, tuple[type, ...]) failed', 'TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access __mro__)']",
     "Line 107: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access unknown)']",
     "Line 108: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access unknown)']",
-    "Line 110: Unexpected errors ['assert_type(property, tuple[type, ...]) failed']",
+    "Line 110: Unexpected errors ['assert_type(property[(self: type) -> tuple[type, ...]], tuple[type, ...]) failed']",
     "Line 137: Unexpected errors ['assert_type(Type, type[Any]) failed']",
     "Line 139: Unexpected errors ['assert_type(type, type[Any]) failed']",
     "Line 152: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TA7, type[type[TypeVar[T]]]]\"]",

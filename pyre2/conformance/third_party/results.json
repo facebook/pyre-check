@@ -3,7 +3,7 @@
   "pass": 10,
   "fail": 123,
   "pass_rate": 0.08,
-  "differences": 1207,
+  "differences": 1205,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -110,7 +110,7 @@
     "protocols_class_objects.py": 7,
     "protocols_definition.py": 38,
     "protocols_explicit.py": 6,
-    "protocols_generic.py": 8,
+    "protocols_generic.py": 6,
     "protocols_merging.py": 1,
     "protocols_modules.py": 4,
     "protocols_recursive.py": 1,
