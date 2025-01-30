@@ -232,7 +232,6 @@
     "Line 82: Unexpected errors ['EXPECTED (**str) -> None <: Proto3']",
     "Line 109: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: Proto5']",
     "Line 168: Unexpected errors ['EXPECTED (x: Any) -> Any <: Proto8']",
-    "Line 191: Unexpected errors ['EXPECTED (x: int) -> str <: (ParamSpec(@_)) -> str']",
     "Line 196: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 199: Unexpected errors ['EXPECTED Literal[3] <: Kwargs[?_]']",
     "Line 216: Unexpected errors ['EXPECTED () -> None <: Proto10']",
@@ -296,16 +295,14 @@
     "Line 67: Expected 1 errors",
     "Line 71: Expected 1 errors",
     "Line 105: Expected 1 errors",
-    "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']",
-    "Line 146: Unexpected errors ['EXPECTED () -> None <: (ParamSpec(@_)) -> None']"
+    "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']"
   ],
   "classes_override.py": [
     "Line 53: Expected 1 errors",
     "Line 79: Expected 1 errors",
     "Line 84: Expected 1 errors",
     "Line 89: Expected 1 errors",
-    "Lines 56, 65: Expected error (tag 'method4')",
-    "Line 77: Unexpected errors ['EXPECTED () -> int <: (ParamSpec(@_)) -> int']"
+    "Lines 56, 65: Expected error (tag 'method4')"
   ],
   "constructors_call_init.py": [
     "Line 42: Expected 1 errors",
@@ -615,7 +612,6 @@
     "Line 36: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 37: Unexpected errors ['Literal expression `Pet2` is not an enumeration']",
     "Line 38: Unexpected errors ['Literal expression `Pet2` is not an enumeration']",
-    "Line 68: Unexpected errors ['EXPECTED (x: int) -> int <: (ParamSpec(@_)) -> int']",
     "Line 75: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 100: Unexpected errors ['assert_type(Literal[TrafficLight.AMBER], Literal[TrafficLight.YELLOW]) failed']",
     "Line 128: Unexpected errors ['Could not find name `reveal_type`', 'revealed type: Literal[2]']"
@@ -712,30 +708,24 @@
     "Line 82: Unexpected errors ['`Args[?_]` is not iterable', 'Expected argument after ** to be a mapping, got: Kwargs[?_]']",
     "Line 85: Unexpected errors ['EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None']",
     "Line 89: Unexpected errors ['Answers::expr_infer wrong number of arguments to call', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 96: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int', 'EXPECTED Literal[1] <: Args[?_]', \"EXPECTED Literal['A'] <: Args[?_]\"]",
-    "Line 97: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int', \"EXPECTED Literal['A'] <: Kwargs[?_]\", 'EXPECTED Literal[1] <: Kwargs[?_]']"
+    "Line 96: Unexpected errors ['EXPECTED Literal[1] <: Args[?_]', \"EXPECTED Literal['A'] <: Args[?_]\"]",
+    "Line 97: Unexpected errors [\"EXPECTED Literal['A'] <: Kwargs[?_]\", 'EXPECTED Literal[1] <: Kwargs[?_]']"
   ],
   "generics_paramspec_semantics.py": [
-    "Line 21: Unexpected errors ['EXPECTED (str, bool) -> int <: (ParamSpec(@_)) -> int']",
-    "Line 22: Unexpected errors ['assert_type((ParamSpec(Any)) -> str, (str, bool) -> str) failed']",
+    "Line 22: Unexpected errors ['assert_type((str, bool) -> str, (str, bool) -> str) failed']",
     "Line 24: Unexpected errors ['Answers::expr_infer wrong number of arguments to call']",
     "Line 25: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 42: Unexpected errors ['EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int', 'EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int']",
+    "Line 42: Unexpected errors ['EXPECTED (x: int, y: str) -> int <: (x: int, y: str) -> int']",
     "Line 43: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 44: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 81: Unexpected errors ['EXPECTED (int) -> str <: (ParamSpec(@_)) -> str']",
-    "Line 82: Unexpected errors ['assert_type(Y[int, *Any, **Any], Y[int, Any]) failed', 'untype, got list[type[int]]']",
-    "Line 84: Unexpected errors ['assert_type((*Any, **Any) -> str, (int) -> str) failed']",
-    "Line 95: Unexpected errors ['EXPECTED (x: int, *bool) -> int <: (ParamSpec(@_)) -> int']",
+    "Line 82: Unexpected errors ['assert_type(Y[int, int], Y[int, Any]) failed', 'untype, got list[type[int]]']",
+    "Line 84: Unexpected errors ['assert_type((int) -> str, (int) -> str) failed']",
     "Line 96: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 97: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 105: Unexpected errors ['EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int']",
     "Line 106: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
     "Line 107: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 117: Unexpected errors ['EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int']",
     "Line 118: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 119: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']",
-    "Line 142: Unexpected errors ['EXPECTED (*int) -> int <: (int, ParamSpec(@_)) -> int']"
+    "Line 119: Unexpected errors ['assert_type(Any, bool) failed', 'Answers::expr_infer wrong number of arguments to call']"
   ],
   "generics_paramspec_specialization.py": [
     "Line 44: Expected 1 errors",
@@ -804,9 +794,7 @@
     "Line 59: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 60: Unexpected errors [\"Missing argument 'flush'\", 'TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)']",
     "Line 63: Unexpected errors ['EXPECTED HasNestedFunction <: Self']",
-    "Line 93: Unexpected errors ['Object of class `Foo3` has no attribute `child_value`']",
-    "Line 109: Unexpected errors ['EXPECTED () -> Base <: (ParamSpec(@_)) -> Base']",
-    "Line 114: Unexpected errors ['EXPECTED (foo: Base) -> Base <: (ParamSpec(@_)) -> Base']"
+    "Line 93: Unexpected errors ['Object of class `Foo3` has no attribute `child_value`']"
   ],
   "generics_syntax_compatibility.py": [],
   "generics_syntax_declarations.py": [
@@ -1123,7 +1111,6 @@
     "Line 17: Unexpected errors ['assert_type(tuple[?_, ?_], tuple[str, str]) failed']",
     "Line 31: Unexpected errors ['EXPECTED type[int] <: type[@_]']",
     "Line 32: Unexpected errors ['assert_type(set[?_], set[int]) failed']",
-    "Line 47: Unexpected errors ['EXPECTED (val: object) -> TypeGuard[int] <: (ParamSpec(@_)) -> TypeGuard[int]']",
     "Line 52: Unexpected errors ['EXPECTED type[type] <: type[TypeVar[Self]]', 'Expected 2 more positional arguments', 'EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]', 'EXPECTED A <: str']",
     "Line 55: Unexpected errors ['EXPECTED type[type] <: type[TypeVar[Self]]', 'Expected 2 more positional arguments', 'EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]', 'EXPECTED ?_ <: str']",
     "Line 72: Unexpected errors ['Expected a callable, got classmethod[(cls: A, val: object) -> TypeGuard[int]]']",
@@ -1150,7 +1137,6 @@
     "Line 38: Unexpected errors ['assert_type(Awaitable[int] | int, int) failed']",
     "Line 45: Unexpected errors ['EXPECTED bool <: TypeIs[int]']",
     "Line 49: Unexpected errors ['EXPECTED bool <: TypeIs[int]']",
-    "Line 51: Unexpected errors ['EXPECTED (val: object) -> TypeIs[int] <: (ParamSpec(@_)) -> TypeIs[int]']",
     "Line 53: Unexpected errors ['EXPECTED bool <: TypeIs[int]']",
     "Line 56: Unexpected errors ['EXPECTED bool <: TypeIs[A]', 'EXPECTED type[type] <: type[TypeVar[Self]]', 'Expected 2 more positional arguments', 'EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]', 'EXPECTED A <: str']",
     "Line 59: Unexpected errors ['EXPECTED bool <: TypeIs[?_]', 'EXPECTED type[type] <: type[TypeVar[Self]]', 'Expected 2 more positional arguments', 'EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]', 'EXPECTED ?_ <: str']",
@@ -1208,7 +1194,6 @@
     "Line 341: Expected 1 errors",
     "Line 27: Unexpected errors [\"Missing argument 'mode'\"]",
     "Line 39: Unexpected errors ['EXPECTED None <: int']",
-    "Line 43: Unexpected errors ['EXPECTED () -> int <: (ParamSpec(@_)) -> int']",
     "Line 102: Unexpected errors ['EXPECTED Literal[2] <: float']",
     "Line 148: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 172: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1218,11 +1203,9 @@
     "Line 199: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 216: Unexpected errors ['Expected 1 more positional argument']",
     "Line 245: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 249: Unexpected errors ['EXPECTED (a: int, b: int) -> float <: (ParamSpec(@_)) -> float']",
     "Line 251: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 266: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 271: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 275: Unexpected errors ['EXPECTED (self: Concrete5_Bad5, a: int, b: int) -> float <: (ParamSpec(@_)) -> float']",
     "Line 277: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 297: Unexpected errors ['Could not find name `val1`']",
     "Line 305: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1328,13 +1311,13 @@
     "Line 56: Expected 1 errors",
     "Line 118: Expected 1 errors",
     "Lines 59, 60: Expected error (tag 'method2')",
+    "Lines 63, 64: Expected error (tag 'method3')",
     "Lines 67, 75: Expected error (tag 'method4')",
     "Lines 80, 89: Expected error (tag 'Derived3')",
     "Lines 84, 85, 86: Expected error (tag 'Derived3-2')",
     "Lines 94, 102: Expected error (tag 'Derived4')",
     "Lines 125, 126: Expected error (tag 'func')",
-    "Line 8: Unexpected errors ['Could not find import of `_qualifiers_final_decorator`, Could not find path for `_qualifiers_final_decorator`']",
-    "Line 36: Unexpected errors ['EXPECTED () -> None <: (ParamSpec(@_)) -> None']"
+    "Line 8: Unexpected errors ['Could not find import of `_qualifiers_final_decorator`, Could not find path for `_qualifiers_final_decorator`']"
   ],
   "specialtypes_any.py": [
     "Line 62: Unexpected errors ['assert_type(tuple[Any], tuple[Any, ...]) failed']",
@@ -1451,6 +1434,7 @@
   ],
   "typeddicts_class_syntax.py": [
     "Line 33: Expected 1 errors",
+    "Line 38: Expected 1 errors",
     "Line 49: Expected 1 errors",
     "Line 34: Unexpected errors ['TypedDict item `method2` may not be initialized.']",
     "Line 39: Unexpected errors ['TypedDict item `method3` may not be initialized.']"

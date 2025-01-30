@@ -376,3 +376,25 @@ def f(t: Callable[Concatenate[int, P], int]):
     pass
 "#,
 );
+
+testcase!(
+    test_simple_paramspec,
+    r#"
+from typing import Callable, ParamSpec, assert_type, reveal_type
+
+P = ParamSpec("P")
+
+def changes_return_type_to_str(x: Callable[P, int]) -> Callable[P, str]: ...
+
+def returns_int(a: str, b: bool) -> int: ...
+
+f = changes_return_type_to_str(returns_int)
+reveal_type(f)  # E: revealed type: (a: str, b: bool) -> str
+
+## To do next
+# f("A", True)
+# f(a="A", b=True)
+# f("A", "A")  # Bad
+# assert_type(f("A", True), str)
+"#,
+);

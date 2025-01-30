@@ -20,6 +20,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
 use crate::type_order::TypeOrder;
+use crate::types::callable::ParamList;
 use crate::types::display::TypeDisplayContext;
 use crate::types::module::Module;
 use crate::types::simplify::unions;
@@ -413,6 +414,19 @@ pub struct Subset<'a, Ans: LookupAnswer> {
 }
 
 impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
+    pub fn lookup_param_spec_var(&self, v: Var) -> Option<Type> {
+        let lock = self.solver.variables.read().unwrap();
+        match lock.get(&v) {
+            Some(Variable::Answer(t)) => Some(t.clone()),
+            _ => None,
+        }
+    }
+
+    pub fn set_param_spec_var(&self, v: Var, t: ParamList) {
+        let mut lock = self.solver.variables.write().unwrap();
+        lock.insert(v, Variable::Answer(Type::ParamSpecValue(t)));
+    }
+
     pub fn is_equal(&mut self, got: &Type, want: &Type) -> bool {
         self.is_subset_eq(got, want) && self.is_subset_eq(want, got)
     }

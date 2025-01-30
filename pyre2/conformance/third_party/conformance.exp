@@ -3001,16 +3001,6 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "EXPECTED (x: int) -> str <: (ParamSpec(@_)) -> str",
-      "description": "EXPECTED (x: int) -> str <: (ParamSpec(@_)) -> str",
-      "line": 191,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 191
-    },
-    {
-      "code": -2,
-      "column": 1,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
       "line": 196,
@@ -3381,30 +3371,9 @@
       "name": "PyreError",
       "stop_column": 25,
       "stop_line": 134
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
-      "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
-      "line": 146,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 146
     }
   ],
-  "classes_override.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED () -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED () -> int <: (ParamSpec(@_)) -> int",
-      "line": 77,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 77
-    }
-  ],
+  "classes_override.py": [],
   "constructors_call_init.py": [
     {
       "code": -2,
@@ -7299,16 +7268,6 @@
     },
     {
       "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED (x: int) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (x: int) -> int <: (ParamSpec(@_)) -> int",
-      "line": 68,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 68
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
@@ -8355,16 +8314,6 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
-      "line": 96,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 96
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "EXPECTED Literal[1] <: Args[?_]",
       "description": "EXPECTED Literal[1] <: Args[?_]",
@@ -8385,16 +8334,6 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
-      "line": 97,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 97
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "EXPECTED Literal['A'] <: Kwargs[?_]",
       "description": "EXPECTED Literal['A'] <: Kwargs[?_]",
@@ -8412,16 +8351,6 @@
       "name": "PyreError",
       "stop_column": 30,
       "stop_line": 97
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
-      "line": 98,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 98
     },
     {
       "code": -2,
@@ -8447,19 +8376,9 @@
   "generics_paramspec_semantics.py": [
     {
       "code": -2,
-      "column": 33,
-      "concise_description": "EXPECTED (str, bool) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (str, bool) -> int <: (ParamSpec(@_)) -> int",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 44,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type((ParamSpec(Any)) -> str, (str, bool) -> str) failed",
-      "description": "assert_type((ParamSpec(Any)) -> str, (str, bool) -> str) failed",
+      "concise_description": "assert_type((str, bool) -> str, (str, bool) -> str) failed",
+      "description": "assert_type((str, bool) -> str, (str, bool) -> str) failed",
       "line": 22,
       "name": "PyreError",
       "stop_column": 44,
@@ -8507,19 +8426,9 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
       "column": 17,
-      "concise_description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
+      "concise_description": "EXPECTED (x: int, y: str) -> int <: (x: int, y: str) -> int",
+      "description": "EXPECTED (x: int, y: str) -> int <: (x: int, y: str) -> int",
       "line": 42,
       "name": "PyreError",
       "stop_column": 20,
@@ -8567,19 +8476,9 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
-      "line": 46,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 46
-    },
-    {
-      "code": -2,
       "column": 17,
-      "concise_description": "EXPECTED (y: int, x: str) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (y: int, x: str) -> int <: (ParamSpec(@_)) -> int",
+      "concise_description": "EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int",
+      "description": "EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int",
       "line": 46,
       "name": "PyreError",
       "stop_column": 20,
@@ -8587,19 +8486,9 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED (*, x: int) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (*, x: int) -> int <: (ParamSpec(@_)) -> int",
-      "line": 61,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 61
-    },
-    {
-      "code": -2,
       "column": 23,
-      "concise_description": "EXPECTED (*, y: int) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (*, y: int) -> int <: (ParamSpec(@_)) -> int",
+      "concise_description": "EXPECTED (*, y: int) -> int <: (*, x: int) -> int",
+      "description": "EXPECTED (*, y: int) -> int <: (*, x: int) -> int",
       "line": 61,
       "name": "PyreError",
       "stop_column": 37,
@@ -8607,19 +8496,9 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED (int) -> str <: (ParamSpec(@_)) -> str",
-      "description": "EXPECTED (int) -> str <: (ParamSpec(@_)) -> str",
-      "line": 81,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 81
-    },
-    {
-      "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Y[int, *Any, **Any], Y[int, Any]) failed",
-      "description": "assert_type(Y[int, *Any, **Any], Y[int, Any]) failed",
+      "concise_description": "assert_type(Y[int, int], Y[int, Any]) failed",
+      "description": "assert_type(Y[int, int], Y[int, Any]) failed",
       "line": 82,
       "name": "PyreError",
       "stop_column": 35,
@@ -8638,22 +8517,12 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type((*Any, **Any) -> str, (int) -> str) failed",
-      "description": "assert_type((*Any, **Any) -> str, (int) -> str) failed",
+      "concise_description": "assert_type((int) -> str, (int) -> str) failed",
+      "description": "assert_type((int) -> str, (int) -> str) failed",
       "line": 84,
       "name": "PyreError",
       "stop_column": 42,
       "stop_line": 84
-    },
-    {
-      "code": -2,
-      "column": 10,
-      "concise_description": "EXPECTED (x: int, *bool) -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED (x: int, *bool) -> int <: (ParamSpec(@_)) -> int",
-      "line": 95,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 95
     },
     {
       "code": -2,
@@ -8707,16 +8576,6 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
-      "description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
-      "line": 105,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 105
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, bool) failed",
       "description": "assert_type(Any, bool) failed",
@@ -8764,16 +8623,6 @@
       "name": "PyreError",
       "stop_column": 3,
       "stop_line": 108
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
-      "description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
-      "line": 117,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 117
     },
     {
       "code": -2,
@@ -8854,16 +8703,6 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 137
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "EXPECTED (*int) -> int <: (int, ParamSpec(@_)) -> int",
-      "description": "EXPECTED (*int) -> int <: (int, ParamSpec(@_)) -> int",
-      "line": 142,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 142
     }
   ],
   "generics_paramspec_specialization.py": [
@@ -9437,26 +9276,6 @@
       "name": "PyreError",
       "stop_column": 22,
       "stop_line": 93
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED () -> Base <: (ParamSpec(@_)) -> Base",
-      "description": "EXPECTED () -> Base <: (ParamSpec(@_)) -> Base",
-      "line": 109,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 109
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (foo: Base) -> Base <: (ParamSpec(@_)) -> Base",
-      "description": "EXPECTED (foo: Base) -> Base <: (ParamSpec(@_)) -> Base",
-      "line": 114,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 114
     }
   ],
   "generics_syntax_compatibility.py": [
@@ -14929,16 +14748,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (val: object) -> TypeGuard[int] <: (ParamSpec(@_)) -> TypeGuard[int]",
-      "description": "EXPECTED (val: object) -> TypeGuard[int] <: (ParamSpec(@_)) -> TypeGuard[int]",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "EXPECTED type[type] <: type[TypeVar[Self]]",
       "description": "EXPECTED type[type] <: type[TypeVar[Self]]",
@@ -15218,16 +15027,6 @@
       "name": "PyreError",
       "stop_column": 36,
       "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (val: object) -> TypeIs[int] <: (ParamSpec(@_)) -> TypeIs[int]",
-      "description": "EXPECTED (val: object) -> TypeIs[int] <: (ParamSpec(@_)) -> TypeIs[int]",
-      "line": 51,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 51
     },
     {
       "code": -2,
@@ -15767,16 +15566,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED () -> int <: (ParamSpec(@_)) -> int",
-      "description": "EXPECTED () -> int <: (ParamSpec(@_)) -> int",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Object of class `Template` has no attribute `temp`",
       "description": "Object of class `Template` has no attribute `temp`",
@@ -15907,16 +15696,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (a: int, b: int) -> float <: (ParamSpec(@_)) -> float",
-      "description": "EXPECTED (a: int, b: int) -> float <: (ParamSpec(@_)) -> float",
-      "line": 249,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 249
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "EXPECTED Literal[0] <: float",
       "description": "EXPECTED Literal[0] <: float",
@@ -15944,16 +15723,6 @@
       "name": "PyreError",
       "stop_column": 17,
       "stop_line": 271
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED (self: Concrete5_Bad5, a: int, b: int) -> float <: (ParamSpec(@_)) -> float",
-      "description": "EXPECTED (self: Concrete5_Bad5, a: int, b: int) -> float <: (ParamSpec(@_)) -> float",
-      "line": 275,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 275
     },
     {
       "code": -2,
@@ -16705,26 +16474,6 @@
       "name": "PyreError",
       "stop_column": 53,
       "stop_line": 8
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
-      "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
-      "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
-      "line": 63,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 63
     }
   ],
   "specialtypes_any.py": [
@@ -18495,16 +18244,6 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 34
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
-      "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 38
     },
     {
       "code": -2,

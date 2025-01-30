@@ -12,6 +12,7 @@ use crate::solver::Subset;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
+use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
 use crate::types::class::TArgs;
@@ -20,6 +21,7 @@ use crate::types::tuple::Tuple;
 use crate::types::type_var::Variance;
 use crate::types::types::TParams;
 use crate::types::types::Type;
+use crate::util::prelude::SliceExt;
 
 impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
     pub fn is_subset_param_list(&mut self, l_args: &[Param], u_args: &[Param]) -> bool {
@@ -102,6 +104,30 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         (Params::Ellipsis, _) | (_, Params::Ellipsis) => true,
                         (Params::List(l_args), Params::List(u_args)) => {
                             self.is_subset_param_list(l_args.items(), u_args.items())
+                        }
+                        (Params::List(ls), Params::ParamSpec(args, Type::Var(v))) => {
+                            let mut args =
+                                args.map(|x| Param::PosOnly(x.clone(), Required::Required));
+                            match self.lookup_param_spec_var(*v) {
+                                Some(v) => match v {
+                                    Type::ParamSpecValue(value) => {
+                                        args.extend(value.items().iter().cloned());
+                                        self.is_subset_param_list(ls.items(), &args)
+                                    }
+                                    _ => false,
+                                },
+                                None => {
+                                    if ls.len() < args.len() {
+                                        return false;
+                                    }
+                                    let (pre, post) = ls.items().split_at(args.len());
+                                    if !self.is_subset_param_list(pre, &args) {
+                                        return false;
+                                    }
+                                    self.set_param_spec_var(*v, ParamList::new(post.to_vec()));
+                                    true
+                                }
+                            }
                         }
                         (Params::ParamSpec(_, _), _) | (_, Params::ParamSpec(_, _)) => {
                             // TODO: need instantiation for param spec
