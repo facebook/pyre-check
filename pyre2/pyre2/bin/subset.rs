@@ -161,6 +161,17 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                                 .collect::<Vec<_>>();
                             self.is_subset_param_list(ls.items(), &args)
                         }
+                        (Params::ParamSpec(ls, p1), Params::ParamSpec(us, p2)) if p1 == p2 => {
+                            if ls.len() != us.len() {
+                                return false;
+                            }
+                            for (l, u) in ls.iter().zip(us.iter()) {
+                                if !self.is_subset_eq(u, l) {
+                                    return false;
+                                }
+                            }
+                            true
+                        }
                         (Params::ParamSpec(_, _), _) | (_, Params::ParamSpec(_, _)) => {
                             // TODO: need instantiation for param spec
                             false
