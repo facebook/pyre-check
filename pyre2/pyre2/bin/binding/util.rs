@@ -14,7 +14,6 @@ use ruff_python_ast::Expr;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtExpr;
 
-use crate::ast::Ast;
 use crate::config::Config;
 
 /// Does this sequence of statements every potentially fall off the end.
@@ -31,14 +30,8 @@ pub fn is_never<'a>(x: &'a [Stmt], config: &Config) -> Option<Vec<&'a Stmt>> {
         Some(Stmt::Return(_)) => Some(Vec::new()),
         Some(Stmt::If(x)) => {
             let mut res = Vec::new();
-            for (test, body) in Ast::if_branches(x) {
-                let b = config.evaluate_bool_opt(test);
-                if b != Some(false) {
-                    res.extend(is_never(body, config)?);
-                }
-                if b == Some(true) {
-                    break;
-                }
+            for (_, body) in config.pruned_if_branches(x) {
+                res.extend(is_never(body, config)?);
             }
             Some(res)
         }
