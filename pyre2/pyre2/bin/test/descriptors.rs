@@ -90,7 +90,7 @@ def f(c: C):
 );
 
 testcase!(
-    test_property,
+    test_read_only_property,
     r#"
 from typing import assert_type, reveal_type
 class C:
@@ -101,5 +101,24 @@ def f(c: C):
     assert_type(c.foo, int)
     c.foo = 42  # E: Attribute `foo` of class `C` is a read-only property and cannot be set
     reveal_type(C.foo)  # E: revealed type: property[(self: C) -> int]
+    "#,
+);
+
+testcase_with_bug!(
+    "Property setters are not yet supported",
+    test_property_with_setter,
+    r#"
+from typing import assert_type, reveal_type
+class C:
+    @property
+    def foo(self) -> int:
+        return 42
+    @foo.setter  # E: Could not find name `foo`
+    def foo(self, value: str) -> None:
+        pass
+def f(c: C):
+    assert_type(c.foo, int)  # E: assert_type(Any, int)
+    c.foo = "42"  # (no error here because it is becoming Any)
+    reveal_type(C.foo)  # E: revealed type: Error
     "#,
 );
