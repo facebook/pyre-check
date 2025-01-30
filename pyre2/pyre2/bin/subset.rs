@@ -43,6 +43,17 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     }
                 }
                 (
+                    Some(Param::Pos(l_name, l, Required::Required)),
+                    Some(Param::Pos(u_name, u, Required::Required)),
+                ) if l_name == u_name => {
+                    if self.is_subset_eq(u, l) {
+                        l_arg = l_args_iter.next();
+                        u_arg = u_args_iter.next();
+                    } else {
+                        return false;
+                    }
+                }
+                (
                     Some(
                         Param::PosOnly(_, Required::Optional)
                         | Param::Pos(_, _, Required::Optional)

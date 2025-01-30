@@ -8327,16 +8327,6 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "EXPECTED (x: int, y: str) -> int <: (x: int, y: str) -> int",
-      "description": "EXPECTED (x: int, y: str) -> int <: (x: int, y: str) -> int",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 17,
       "concise_description": "EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int",
       "description": "EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int",
       "line": 46,

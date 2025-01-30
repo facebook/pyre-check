@@ -112,8 +112,7 @@ def f(x: Z[int, str, bool]) -> str: ...     # Equivalent  # E: Expected 1 type a
 "#,
 );
 
-testcase_with_bug!(
-    "Can't merge too callables to make the reveal_type, otherwise mostly correct",
+testcase!(
     test_paramspec_repeated,
     r#"
 from typing import Callable, ParamSpec, reveal_type
@@ -125,7 +124,7 @@ def foo(x: Callable[P, int], y: Callable[P, int]) -> Callable[P, bool]: ...
 def x_y(x: int, y: str) -> int: ...
 def y_x(y: int, x: str) -> int: ...
 
-reveal_type(foo(x_y, x_y)) # E: (x: int, y: str) -> int <: (x: int, y: str) -> int  # E: revealed type: (x: int, y: str) -> bool
+reveal_type(foo(x_y, x_y)) # E: revealed type: (x: int, y: str) -> bool
                # Should return (x: int, y: str) -> bool
                # (a callable with two positional-or-keyword parameters)
 
@@ -133,8 +132,8 @@ foo(x_y, y_x) # E: EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int
                # Could return (a: int, b: str, /) -> bool
                # (a callable with two positional-only parameters)
                # This works because both callables have types that are
-               # behavioral subtypes of Callable[[int, str], int]
-
+               # behavioral subtypes of Callable[[int, str], int].
+               # Could also fail, which is what we do.
 
 def keyword_only_x(*, x: int) -> int: ...
 def keyword_only_y(*, y: int) -> int: ...
