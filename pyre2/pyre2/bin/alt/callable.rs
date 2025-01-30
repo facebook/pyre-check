@@ -18,6 +18,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::unwrap::UnwrappedDict;
 use crate::types::callable::Callable;
 use crate::types::callable::Param;
+use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
 use crate::types::types::Type;
@@ -152,6 +153,178 @@ impl CallArgPreEval<'_> {
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
+    fn callable_infer_params(
+        &self,
+        params: &ParamList,
+        self_arg: Option<CallArg>,
+        args: &[CallArg],
+        keywords: &[Keyword],
+        range: TextRange,
+    ) {
+        let iargs = self_arg.iter().chain(args.iter());
+
+        let mut iparams = params.items().iter().enumerate().peekable();
+        let mut num_positional_params = 0;
+        let mut num_positional_args = 0;
+        let mut seen_names: SmallMap<Name, usize> = SmallMap::new();
+        let mut extra_arg_pos = None;
+        for arg in iargs {
+            let mut arg_pre = arg.pre_eval(self);
+            while arg_pre.step() {
+                num_positional_args += 1;
+                let param = if let Some((p_idx, p)) = iparams.peek() {
+                    match p {
+                        Param::PosOnly(ty, _required) => {
+                            num_positional_params += 1;
+                            iparams.next();
+                            Some((ty, false))
+                        }
+                        Param::Pos(name, ty, _required) => {
+                            num_positional_params += 1;
+                            seen_names.insert(name.clone(), *p_idx);
+                            iparams.next();
+                            Some((ty, false))
+                        }
+                        Param::VarArg(ty) => Some((ty, true)),
+                        Param::KwOnly(..) | Param::Kwargs(..) => None,
+                    }
+                } else {
+                    None
+                };
+                match param {
+                    Some((hint, vararg)) => arg_pre.post_check(self, hint, vararg, arg.range()),
+                    None => {
+                        arg_pre.post_infer(self);
+                        if arg_pre.is_star() {
+                            num_positional_args -= 1;
+                        }
+                        if extra_arg_pos.is_none() && !arg_pre.is_star() {
+                            extra_arg_pos = Some(arg.range());
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        if let Some(arg_range) = extra_arg_pos {
+            let (expected, actual) = if self_arg.is_none() {
+                (
+                    count(num_positional_params as usize, "positional argument"),
+                    num_positional_args.to_string(),
+                )
+            } else if num_positional_params < 1 {
+                (
+                    "0 positional arguments".to_owned(),
+                    format!("{} (including implicit `self`)", num_positional_args),
+                )
+            } else {
+                (
+                    count(num_positional_params as usize - 1, "positional argument"),
+                    (num_positional_args - 1).to_string(),
+                )
+            };
+            self.error(arg_range, format!("Expected {expected}, got {actual}"));
+        }
+        let mut need_positional = 0;
+        let mut kwparams = SmallMap::new();
+        let mut kwargs = None;
+        for (p_idx, p) in iparams {
+            match p {
+                Param::PosOnly(_, required) => {
+                    if *required == Required::Required {
+                        need_positional += 1;
+                    }
+                }
+                Param::VarArg(..) => {}
+                Param::Pos(name, _, _) | Param::KwOnly(name, _, _) => {
+                    kwparams.insert(name.clone(), p_idx);
+                }
+                Param::Kwargs(ty) => {
+                    kwargs = Some(ty);
+                }
+            }
+        }
+        if need_positional > 0 {
+            let range = keywords.first().map_or(range, |kw| kw.range);
+            self.error(
+                range,
+                format!(
+                    "Expected {}",
+                    count(need_positional, "more positional argument")
+                ),
+            );
+        }
+        let mut splat_kwargs = Vec::new();
+        for kw in keywords {
+            match &kw.arg {
+                None => {
+                    let ty = self.expr_infer(&kw.value);
+                    // TODO: TypedDict, ParamSpec kwargs
+                    match self.decompose_dict(&ty) {
+                        Some(UnwrappedDict { key, value }) => {
+                            if self.solver().is_subset_eq(
+                                &key,
+                                &self.stdlib.str().to_type(),
+                                self.type_order(),
+                            ) {
+                                kwargs.iter().for_each(|want| {
+                                    self.check_type(want, &value, kw.range);
+                                });
+                                splat_kwargs.push((value, kw.range));
+                            } else {
+                                self.error(
+                                    kw.value.range(),
+                                    format!(
+                                        "Expected argument after ** to have `str` keys, got: {}",
+                                        key.deterministic_printing()
+                                    ),
+                                );
+                            }
+                        }
+                        None => {
+                            self.error(
+                                kw.value.range(),
+                                format!(
+                                    "Expected argument after ** to be a mapping, got: {}",
+                                    ty.deterministic_printing()
+                                ),
+                            );
+                        }
+                    }
+                }
+                Some(id) => {
+                    let mut hint = kwargs;
+                    if let Some(&p_idx) = seen_names.get(&id.id) {
+                        self.error(
+                            kw.range,
+                            format!("Multiple values for argument '{}'", id.id),
+                        );
+                        params.items()[p_idx].visit(|ty| hint = Some(ty));
+                    } else if let Some(&p_idx) = kwparams.get(&id.id) {
+                        seen_names.insert(id.id.clone(), p_idx);
+                        params.items()[p_idx].visit(|ty| hint = Some(ty));
+                    } else if kwargs.is_none() {
+                        self.error(kw.range, format!("Unexpected keyword argument '{}'", id.id));
+                    }
+                    self.expr(&kw.value, hint);
+                }
+            }
+        }
+        for (name, &p_idx) in kwparams.iter() {
+            if !seen_names.contains_key(name) {
+                let param = &params.items()[p_idx];
+                if splat_kwargs.is_empty() && param.is_required() {
+                    self.error(range, format!("Missing argument '{}'", name));
+                }
+                for (ty, range) in &splat_kwargs {
+                    param.visit(|want| {
+                        self.check_type(want, ty, *range);
+                    });
+                }
+            }
+        }
+    }
+
     pub fn callable_infer(
         &self,
         callable: Callable,
@@ -160,176 +333,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
-        let iargs = self_arg.iter().chain(args.iter());
         let ret = match callable.params {
             Params::List(params) => {
-                let mut iparams = params.items().iter().enumerate().peekable();
-                let mut num_positional_params = 0;
-                let mut num_positional_args = 0;
-                let mut seen_names: SmallMap<Name, usize> = SmallMap::new();
-                let mut extra_arg_pos = None;
-                for arg in iargs {
-                    let mut arg_pre = arg.pre_eval(self);
-                    while arg_pre.step() {
-                        num_positional_args += 1;
-                        let param = if let Some((p_idx, p)) = iparams.peek() {
-                            match p {
-                                Param::PosOnly(ty, _required) => {
-                                    num_positional_params += 1;
-                                    iparams.next();
-                                    Some((ty, false))
-                                }
-                                Param::Pos(name, ty, _required) => {
-                                    num_positional_params += 1;
-                                    seen_names.insert(name.clone(), *p_idx);
-                                    iparams.next();
-                                    Some((ty, false))
-                                }
-                                Param::VarArg(ty) => Some((ty, true)),
-                                Param::KwOnly(..) | Param::Kwargs(..) => None,
-                            }
-                        } else {
-                            None
-                        };
-                        match param {
-                            Some((hint, vararg)) => {
-                                arg_pre.post_check(self, hint, vararg, arg.range())
-                            }
-                            None => {
-                                arg_pre.post_infer(self);
-                                if arg_pre.is_star() {
-                                    num_positional_args -= 1;
-                                }
-                                if extra_arg_pos.is_none() && !arg_pre.is_star() {
-                                    extra_arg_pos = Some(arg.range());
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-                if let Some(arg_range) = extra_arg_pos {
-                    let (expected, actual) = if self_arg.is_none() {
-                        (
-                            count(num_positional_params as usize, "positional argument"),
-                            num_positional_args.to_string(),
-                        )
-                    } else if num_positional_params < 1 {
-                        (
-                            "0 positional arguments".to_owned(),
-                            format!("{} (including implicit `self`)", num_positional_args),
-                        )
-                    } else {
-                        (
-                            count(num_positional_params as usize - 1, "positional argument"),
-                            (num_positional_args - 1).to_string(),
-                        )
-                    };
-                    self.error(arg_range, format!("Expected {expected}, got {actual}"));
-                }
-                let mut need_positional = 0;
-                let mut kwparams = SmallMap::new();
-                let mut kwargs = None;
-                for (p_idx, p) in iparams {
-                    match p {
-                        Param::PosOnly(_, required) => {
-                            if *required == Required::Required {
-                                need_positional += 1;
-                            }
-                        }
-                        Param::VarArg(..) => {}
-                        Param::Pos(name, _, _) | Param::KwOnly(name, _, _) => {
-                            kwparams.insert(name.clone(), p_idx);
-                        }
-                        Param::Kwargs(ty) => {
-                            kwargs = Some(ty);
-                        }
-                    }
-                }
-                if need_positional > 0 {
-                    let range = keywords.first().map_or(range, |kw| kw.range);
-                    self.error(
-                        range,
-                        format!(
-                            "Expected {}",
-                            count(need_positional, "more positional argument")
-                        ),
-                    );
-                }
-                let mut splat_kwargs = Vec::new();
-                for kw in keywords {
-                    match &kw.arg {
-                        None => {
-                            let ty = self.expr_infer(&kw.value);
-                            // TODO: TypedDict, ParamSpec kwargs
-                            match self.decompose_dict(&ty) {
-                                Some(UnwrappedDict { key, value }) => {
-                                    if self.solver().is_subset_eq(
-                                        &key,
-                                        &self.stdlib.str().to_type(),
-                                        self.type_order(),
-                                    ) {
-                                        kwargs.iter().for_each(|want| {
-                                            self.check_type(want, &value, kw.range);
-                                        });
-                                        splat_kwargs.push((value, kw.range));
-                                    } else {
-                                        self.error(
-                                            kw.value.range(),
-                                            format!("Expected argument after ** to have `str` keys, got: {}", key.deterministic_printing())
-                                        );
-                                    }
-                                }
-                                None => {
-                                    self.error(
-                                        kw.value.range(),
-                                        format!(
-                                            "Expected argument after ** to be a mapping, got: {}",
-                                            ty.deterministic_printing()
-                                        ),
-                                    );
-                                }
-                            }
-                        }
-                        Some(id) => {
-                            let mut hint = kwargs;
-                            if let Some(&p_idx) = seen_names.get(&id.id) {
-                                self.error(
-                                    kw.range,
-                                    format!("Multiple values for argument '{}'", id.id),
-                                );
-                                params.items()[p_idx].visit(|ty| hint = Some(ty));
-                            } else if let Some(&p_idx) = kwparams.get(&id.id) {
-                                seen_names.insert(id.id.clone(), p_idx);
-                                params.items()[p_idx].visit(|ty| hint = Some(ty));
-                            } else if kwargs.is_none() {
-                                self.error(
-                                    kw.range,
-                                    format!("Unexpected keyword argument '{}'", id.id),
-                                );
-                            }
-                            self.expr(&kw.value, hint);
-                        }
-                    }
-                }
-                for (name, &p_idx) in kwparams.iter() {
-                    if !seen_names.contains_key(name) {
-                        let param = &params.items()[p_idx];
-                        if splat_kwargs.is_empty() && param.is_required() {
-                            self.error(range, format!("Missing argument '{}'", name));
-                        }
-                        for (ty, range) in &splat_kwargs {
-                            param.visit(|want| {
-                                self.check_type(want, ty, *range);
-                            });
-                        }
-                    }
-                }
+                self.callable_infer_params(&params, self_arg, args, keywords, range);
                 callable.ret
             }
             Params::Ellipsis => {
                 // Deal with Callable[..., R]
-                for arg in iargs {
+                for arg in self_arg.iter().chain(args.iter()) {
                     arg.pre_eval(self).post_infer(self)
                 }
                 callable.ret
