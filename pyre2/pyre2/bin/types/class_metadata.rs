@@ -12,6 +12,7 @@ use std::iter;
 use std::sync::Arc;
 
 use ruff_python_ast::name::Name;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
@@ -113,7 +114,6 @@ impl ClassMetadata {
         self.is_protocol
     }
 
-    #[expect(dead_code)]
     pub fn dataclass_metadata(&self) -> Option<&DataclassMetadata> {
         self.dataclass_metadata.as_ref()
     }
@@ -205,7 +205,9 @@ impl EnumMetadata {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DataclassMetadata;
+pub struct DataclassMetadata {
+    pub synthesized_methods: SmallMap<Name, Type>,
+}
 
 /// A struct representing a class's ancestors, in method resolution order (MRO)
 /// and after dropping cycles and nonlinearizable inheritance.

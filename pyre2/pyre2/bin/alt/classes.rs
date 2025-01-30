@@ -23,6 +23,7 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
+use starlark_map::smallmap;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
@@ -39,7 +40,11 @@ use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
+use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
+use crate::types::callable::Param;
+use crate::types::callable::ParamList;
+use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::Substitution;
@@ -546,7 +551,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ty_decorator.callee_kind(),
                 Some(CalleeKind::Callable(CallableKind::Dataclass))
             ) {
-                dataclass_metadata = Some(DataclassMetadata);
+                let init = self.get_dataclass_init(cls);
+                dataclass_metadata = Some(DataclassMetadata {
+                    synthesized_methods: smallmap! { dunder::INIT => init },
+                });
             }
         }
         if is_typed_dict
@@ -884,7 +892,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
-        if cls.contains(name) {
+        let metadata = self.get_metadata_for_class(cls);
+        if let Some(dataclass) = metadata.dataclass_metadata()
+            && let Some(method) = dataclass.synthesized_methods.get(name)
+        {
+            Some(ClassField::new(
+                method.clone(),
+                None,
+                ClassFieldInitialization::Class,
+            ))
+        } else if cls.contains(name) {
             let field = self.get_from_class(
                 cls,
                 &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
@@ -1073,5 +1090,35 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             })
             .collect()
+    }
+
+    fn get_dataclass_init(&self, cls: &Class) -> Type {
+        let mut params = vec![Param::Pos(
+            Name::new("self"),
+            cls.self_type(),
+            Required::Required,
+        )];
+        for (name, (field, _defining_class)) in self.get_all_members(cls) {
+            if let ClassField(ClassFieldInner::Simple {
+                ty: _,
+                annotation:
+                    Some(Annotation {
+                        ty: Some(ty),
+                        qualifiers: _,
+                    }),
+                initialization,
+            }) = field
+            {
+                let required = match initialization {
+                    ClassFieldInitialization::Class => Required::Required,
+                    ClassFieldInitialization::Instance => Required::Optional,
+                };
+                params.push(Param::Pos(name, ty, required));
+            }
+        }
+        Type::Callable(
+            Box::new(Callable::list(ParamList::new(params), Type::None)),
+            CallableKind::Def,
+        )
     }
 }

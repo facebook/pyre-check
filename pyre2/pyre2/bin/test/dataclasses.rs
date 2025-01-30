@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_def,
@@ -46,11 +45,13 @@ class Data[T]:
     x: T
 def f(d: Data[int]):
     assert_type(d.x, int)
+assert_type(Data(x=0), Data[int])
+Data[int](x=0)  # OK
+Data[int](x="")  # E: EXPECTED Literal[''] <: int
     "#,
 );
 
-testcase_with_bug!(
-    "Need to support dataclass-generated __init__",
+testcase!(
     test_construction,
     r#"
 import dataclasses
@@ -58,7 +59,7 @@ import dataclasses
 class Data:
     x: int
     y: str
-Data(0, "1")  # Should be ok  # E: Expected 0 positional arguments
-Data(0, 1)  # Should be an arg type mismatch  # E: Expected 0 positional arguments
+Data(0, "1")  # OK
+Data(0, 1)  # E: EXPECTED Literal[1] <: str
     "#,
 );
