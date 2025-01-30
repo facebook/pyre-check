@@ -211,10 +211,10 @@ impl Config {
 
     /// Like `Ast::if_branches`, but skips branch that statically evaluate to `false`,
     /// and stops if any branch evalutes to `true`.
-    pub fn pruned_if_branches<'a>(
+    pub fn pruned_if_branches<'a, 'b: 'a>(
         &'a self,
-        x: &'a StmtIf,
-    ) -> impl Iterator<Item = (Option<&'a Expr>, &'a [Stmt])> {
+        x: &'b StmtIf,
+    ) -> impl Iterator<Item = (Option<&'b Expr>, &'b [Stmt])> + 'a {
         Ast::if_branches(x)
             .map(|(test, body)| {
                 let b = self.evaluate_bool_opt(test);
