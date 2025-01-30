@@ -192,6 +192,7 @@ fn is_unbound_function(ty: &Type) -> bool {
 
 fn bind_class_attribute(cls: &Class, attr: Type) -> Type {
     match attr {
+        Type::Decoration(Decoration::StaticMethod(box attr)) => attr,
         Type::Decoration(Decoration::ClassMethod(box attr)) => {
             make_bound_method(Type::ClassDef(cls.dupe()), attr)
         }
@@ -201,6 +202,7 @@ fn bind_class_attribute(cls: &Class, attr: Type) -> Type {
 
 fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Type {
     match attr {
+        Type::Decoration(Decoration::StaticMethod(box attr)) => attr,
         Type::Decoration(Decoration::ClassMethod(box attr)) => {
             make_bound_method(Type::ClassDef(cls.class_object().dupe()), attr)
         }

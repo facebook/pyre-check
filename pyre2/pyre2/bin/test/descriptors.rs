@@ -8,18 +8,41 @@
 use crate::testcase;
 use crate::testcase_with_bug;
 
-testcase_with_bug!(
-    "Support for staticmethod is not yet complete",
-    test_staticmethod,
+testcase!(
+    test_staticmethod_with_explicit_parameter_type,
     r#"
-from typing import reveal_type
+from typing import assert_type, reveal_type, Callable
 class C:
     @staticmethod
     def foo() -> int:
         return 42
+    @staticmethod
+    def bar(x: int) -> int:
+        return x
 def f(c: C):
-    reveal_type(C.foo)  # E: revealed type: staticmethod[() -> int]
-    reveal_type(c.foo)  # E: revealed type: staticmethod[() -> int]
+    assert_type(C.foo, Callable[[], int])
+    assert_type(c.foo, Callable[[], int])
+    reveal_type(C.bar)  # E: (x: int) -> int
+    reveal_type(c.bar)  # E: (x: int) -> int
+    assert_type(C.foo(), int)
+    assert_type(c.foo(), int)
+    assert_type(C.bar(42), int)
+    assert_type(c.bar(42), int)
+    "#,
+);
+
+testcase_with_bug!(
+    "We do not yet correctly bind the type of the first parameter of a staticmethod",
+    test_staticmethod_calls_with_implicit_parameter_type,
+    r#"
+from typing import assert_type, Callable, Any
+class C:
+    @staticmethod
+    def bar(x) -> int:
+        return 42
+def f(c: C):
+    assert_type(c.bar(42), int) # E: EXPECTED Literal[42] <: C
+    assert_type(c.bar(42), int) # E: EXPECTED Literal[42] <: C
     "#,
 );
 

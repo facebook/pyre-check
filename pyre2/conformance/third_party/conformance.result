@@ -46,6 +46,7 @@
     "Line 130: Unexpected errors ['Expected 1 more positional argument']"
   ],
   "aliases_newtype.py": [
+    "Line 11: Expected 1 errors",
     "Line 32: Expected 1 errors",
     "Line 44: Expected 1 errors",
     "Line 47: Expected 1 errors",
@@ -53,8 +54,7 @@
     "Line 51: Expected 1 errors",
     "Line 58: Expected 1 errors",
     "Line 62: Expected 1 errors",
-    "Line 13: Unexpected errors ['untype, got NewType', 'Expected a callable, got NewType']",
-    "Line 15: Unexpected errors ['assert_type(Any, int) failed', 'Expected a callable, got NewType']"
+    "Line 13: Unexpected errors ['untype, got NewType']"
   ],
   "aliases_recursive.py": [
     "Line 19: Expected 1 errors",
@@ -167,10 +167,10 @@
     "Line 23: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 31: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: type[@_]']",
     "Line 36: Unexpected errors ['assert_type(Any, B) failed', 'EXPECTED type[B] <: type[@_]']",
-    "Line 48: Unexpected errors ['assert_type(Any, A) failed', 'Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]']",
-    "Line 49: Unexpected errors ['assert_type(Any, B) failed', 'Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]']",
-    "Line 50: Unexpected errors ['assert_type(Any, B) failed', 'Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]']",
-    "Line 51: Unexpected errors ['assert_type(Any, A) failed', 'Expected a callable, got staticmethod[Forall[T, (val: type[T]) -> T]]']"
+    "Line 48: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: type[@_]']",
+    "Line 49: Unexpected errors ['assert_type(Any, B) failed', 'EXPECTED type[B] <: type[@_]']",
+    "Line 50: Unexpected errors ['assert_type(Any, B) failed', 'EXPECTED type[B] <: type[@_]']",
+    "Line 51: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: type[@_]']"
   ],
   "annotations_typeexpr.py": [
     "Line 93: Expected 1 errors",
@@ -846,10 +846,10 @@
     "Line 24: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 25: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 27: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 36: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'untype, got NewType', 'untype, got NewType', 'EXPECTED tuple[Error, Error] <: tuple[Error]', 'Expected a callable, got NewType', 'Expected a callable, got NewType']",
-    "Line 37: Unexpected errors ['Expected 1 type argument for class `Array`, got 3.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'EXPECTED tuple[Error, Error, Error] <: tuple[Error]', 'Expected a callable, got NewType', 'Expected a callable, got NewType', 'Expected a callable, got NewType']",
+    "Line 36: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'untype, got NewType', 'untype, got NewType', 'EXPECTED tuple[int, int] <: tuple[Error]']",
+    "Line 37: Unexpected errors ['Expected 1 type argument for class `Array`, got 3.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'EXPECTED tuple[int, int, int] <: tuple[Error]']",
     "Line 38: Unexpected errors ['Expected 1 type argument for class `Array`, got 4.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
-    "Line 39: Unexpected errors ['EXPECTED tuple[Error, Error, Error, Error] <: tuple[Error]', 'Expected a callable, got NewType', 'Expected a callable, got NewType', 'Expected a callable, got NewType', 'Expected a callable, got NewType']",
+    "Line 39: Unexpected errors ['EXPECTED tuple[int, int, int, int] <: tuple[Error]']",
     "Line 54: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 75: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 84: Unexpected errors ['assert_type(tuple[Any], tuple[int]) failed']",
@@ -1093,10 +1093,6 @@
     "Line 55: Unexpected errors ['EXPECTED type[type] <: type[TypeVar[Self]]', 'Expected 2 more positional arguments', 'EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]', 'EXPECTED ?_ <: str']",
     "Line 72: Unexpected errors ['EXPECTED type[A] <: A']",
     "Line 76: Unexpected errors ['EXPECTED type[A] <: A']",
-    "Line 80: Unexpected errors ['Expected a callable, got staticmethod[(val: object) -> TypeGuard[int]]']",
-    "Line 81: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 84: Unexpected errors ['Expected a callable, got staticmethod[(val: object) -> TypeGuard[int]]']",
-    "Line 85: Unexpected errors ['assert_type(object, int) failed']",
     "Line 89: Unexpected errors ['assert_type(A, B) failed']",
     "Line 93: Unexpected errors ['assert_type(A, B) failed']",
     "Line 147: Unexpected errors ['EXPECTED (val: object) -> TypeGuard[int] <: CallableBoolProto']"
@@ -1121,9 +1117,7 @@
     "Line 76: Unexpected errors ['assert_type(object, int) failed']",
     "Line 79: Unexpected errors ['EXPECTED type[A] <: A']",
     "Line 80: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 83: Unexpected errors ['Expected a callable, got staticmethod[(val: object) -> TypeIs[int]]']",
     "Line 84: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 87: Unexpected errors ['Expected a callable, got staticmethod[(val: object) -> TypeIs[int]]']",
     "Line 88: Unexpected errors ['assert_type(object, int) failed']",
     "Line 92: Unexpected errors ['assert_type(object, B) failed']",
     "Line 96: Unexpected errors ['assert_type(object, B) failed']",
