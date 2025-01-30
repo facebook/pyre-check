@@ -206,6 +206,7 @@ impl EnumMetadata {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataclassMetadata {
+    pub fields: Vec<Name>,
     pub synthesized_methods: SmallMap<Name, Type>,
 }
 

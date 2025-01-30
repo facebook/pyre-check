@@ -461,7 +461,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut dataclass_metadata = None;
         let bases: Vec<BaseClass> = bases.iter().map(|x| self.base_class_of(x)).collect();
         let is_protocol = bases.iter().any(|x| matches!(x, BaseClass::Protocol(_)));
-        let bases_with_metadata: Vec<_> = bases
+        let bases_with_metadata = bases
             .iter()
             .filter_map(|x| match x {
                 BaseClass::Expr(x) => match self.expr_untype(x) {
@@ -481,6 +481,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 x.range(),
                                 "If `Protocol` is included as a base class, all other bases must be protocols.".to_owned(),
                             );
+                        }
+                        if dataclass_metadata.is_none() && let Some(base_dataclass) = class_metadata.dataclass_metadata() {
+                            // If we inherit from a dataclass, copy its fields. Note that if this class is
+                            // itself decorated with @dataclass, we'll recompute the fields and overwrite this.
+                            dataclass_metadata = Some(DataclassMetadata {
+                                fields: base_dataclass.fields.clone(),
+                                synthesized_methods: SmallMap::new(),
+                            });
                         }
                         Some((c, class_metadata))
                     }
@@ -504,7 +512,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 _ => None,
             })
-            .collect();
+            .collect::<Vec<_>>();
         if is_named_tuple && bases_with_metadata.len() > 1 {
             self.error(
                 cls.name().range,
@@ -517,10 +525,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 _ => Either::Right((n.clone(), self.expr(x, None))),
             });
 
-        let base_metaclasses: Vec<_> = bases_with_metadata
+        let base_metaclasses = bases_with_metadata
             .iter()
             .filter_map(|(b, metadata)| metadata.metaclass().map(|m| (&b.name().id, m)))
-            .collect();
+            .collect::<Vec<_>>();
         let metaclass =
             self.calculate_metaclass(cls, metaclasses.into_iter().next(), &base_metaclasses);
         if let Some(metaclass) = &metaclass {
@@ -551,8 +559,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ty_decorator.callee_kind(),
                 Some(CalleeKind::Callable(CallableKind::Dataclass))
             ) {
-                let init = self.get_dataclass_init(cls);
+                let fields = self.get_dataclass_fields(cls, &bases_with_metadata);
+                let init = self.get_dataclass_init(cls, &fields);
                 dataclass_metadata = Some(DataclassMetadata {
+                    fields: fields.into_keys().collect(),
                     synthesized_methods: smallmap! { dunder::INIT => init },
                 });
             }
@@ -1092,29 +1102,59 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .collect()
     }
 
-    fn get_dataclass_init(&self, cls: &Class) -> Type {
+    /// Gets dataclass fields for an `@dataclass`-decorated class.
+    fn get_dataclass_fields(
+        &self,
+        cls: &Class,
+        bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
+    ) -> SmallMap<Name, ClassField> {
+        let mut all_fields = SmallMap::new();
+        for (base, metadata) in bases_with_metadata.iter().rev() {
+            if let Some(dataclass) = metadata.dataclass_metadata() {
+                for name in &dataclass.fields {
+                    if let Some((field, _)) = self.get_class_member(base.class_object(), name) {
+                        all_fields.insert(name.clone(), field.instantiate_for(base));
+                    }
+                }
+            }
+        }
+        for name in cls.fields() {
+            if let Some(
+                field @ ClassField(ClassFieldInner::Simple {
+                    annotation: Some(Annotation { ty: Some(_), .. }),
+                    ..
+                }),
+            ) = self.get_class_field(cls, name)
+            {
+                all_fields.insert(name.clone(), field);
+            }
+        }
+        all_fields
+    }
+
+    /// Gets a dataclass field as a function param.
+    fn get_dataclass_param(&self, name: &Name, field: &ClassField) -> Param {
+        let ClassField(ClassFieldInner::Simple {
+            ty,
+            annotation: _,
+            initialization,
+        }) = field;
+        let required = match initialization {
+            ClassFieldInitialization::Class => Required::Required,
+            ClassFieldInitialization::Instance => Required::Optional,
+        };
+        Param::Pos(name.clone(), ty.clone(), required)
+    }
+
+    /// Gets __init__ method for an `@dataclass`-decorated class.
+    fn get_dataclass_init(&self, cls: &Class, fields: &SmallMap<Name, ClassField>) -> Type {
         let mut params = vec![Param::Pos(
             Name::new("self"),
             cls.self_type(),
             Required::Required,
         )];
-        for (name, (field, _defining_class)) in self.get_all_members(cls) {
-            if let ClassField(ClassFieldInner::Simple {
-                ty: _,
-                annotation:
-                    Some(Annotation {
-                        ty: Some(ty),
-                        qualifiers: _,
-                    }),
-                initialization,
-            }) = field
-            {
-                let required = match initialization {
-                    ClassFieldInitialization::Class => Required::Required,
-                    ClassFieldInitialization::Instance => Required::Optional,
-                };
-                params.push(Param::Pos(name, ty, required));
-            }
+        for (name, field) in fields {
+            params.push(self.get_dataclass_param(name, field));
         }
         Type::Callable(
             Box::new(Callable::list(ParamList::new(params), Type::None)),

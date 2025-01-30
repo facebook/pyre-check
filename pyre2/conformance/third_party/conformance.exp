@@ -597,6 +597,16 @@
   "aliases_newtype.py": [
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "EXPECTED Literal['user'] <: Args[?_]",
+      "description": "EXPECTED Literal['user'] <: Args[?_]",
+      "line": 11,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 11
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "untype, got NewType",
       "description": "untype, got NewType",
@@ -614,6 +624,36 @@
       "name": "PyreError",
       "stop_column": 11,
       "stop_line": 13
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "EXPECTED Literal[42] <: Args[?_]",
+      "description": "EXPECTED Literal[42] <: Args[?_]",
+      "line": 13,
+      "name": "PyreError",
+      "stop_column": 23,
+      "stop_line": 13
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, int) failed",
+      "description": "assert_type(Any, int) failed",
+      "line": 15,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 15
+    },
+    {
+      "code": -2,
+      "column": 20,
+      "concise_description": "EXPECTED Literal[5] <: Args[?_]",
+      "description": "EXPECTED Literal[5] <: Args[?_]",
+      "line": 15,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 15
     },
     {
       "code": -2,
@@ -1792,6 +1832,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED Forall[T, (val: type[T]) -> T] <: (ParamSpec(@_)) -> @_",
+      "description": "EXPECTED Forall[T, (val: type[T]) -> T] <: (ParamSpec(@_)) -> @_",
+      "line": 21,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 21
+    },
+    {
+      "code": -2,
       "column": 16,
       "concise_description": "Expected a callable, got type[?_]",
       "description": "Expected a callable, got type[?_]",
@@ -1813,8 +1863,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED type[A] <: type[@_]",
-      "description": "EXPECTED type[A] <: type[@_]",
+      "concise_description": "Expected a callable, got classmethod[Forall[T, (cls: type[T]) -> T]]",
+      "description": "Expected a callable, got classmethod[Forall[T, (cls: type[T]) -> T]]",
       "line": 31,
       "name": "PyreError",
       "stop_column": 22,
@@ -1833,8 +1883,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED type[B] <: type[@_]",
-      "description": "EXPECTED type[B] <: type[@_]",
+      "concise_description": "Expected a callable, got classmethod[Forall[T, (cls: type[T]) -> T]]",
+      "description": "Expected a callable, got classmethod[Forall[T, (cls: type[T]) -> T]]",
       "line": 36,
       "name": "PyreError",
       "stop_column": 22,
@@ -1863,8 +1913,8 @@
     {
       "code": -2,
       "column": 29,
-      "concise_description": "EXPECTED type[A] <: type[@_]",
-      "description": "EXPECTED type[A] <: type[@_]",
+      "concise_description": "EXPECTED type[A] <: Args[?_]",
+      "description": "EXPECTED type[A] <: Args[?_]",
       "line": 48,
       "name": "PyreError",
       "stop_column": 30,
@@ -1883,8 +1933,8 @@
     {
       "code": -2,
       "column": 29,
-      "concise_description": "EXPECTED type[B] <: type[@_]",
-      "description": "EXPECTED type[B] <: type[@_]",
+      "concise_description": "EXPECTED type[B] <: Args[?_]",
+      "description": "EXPECTED type[B] <: Args[?_]",
       "line": 49,
       "name": "PyreError",
       "stop_column": 30,
@@ -1903,8 +1953,8 @@
     {
       "code": -2,
       "column": 29,
-      "concise_description": "EXPECTED type[B] <: type[@_]",
-      "description": "EXPECTED type[B] <: type[@_]",
+      "concise_description": "EXPECTED type[B] <: Args[?_]",
+      "description": "EXPECTED type[B] <: Args[?_]",
       "line": 50,
       "name": "PyreError",
       "stop_column": 30,
@@ -1923,8 +1973,8 @@
     {
       "code": -2,
       "column": 29,
-      "concise_description": "EXPECTED type[A] <: type[@_]",
-      "description": "EXPECTED type[A] <: type[@_]",
+      "concise_description": "EXPECTED type[A] <: Args[?_]",
+      "description": "EXPECTED type[A] <: Args[?_]",
       "line": 51,
       "name": "PyreError",
       "stop_column": 30,
@@ -2528,19 +2578,9 @@
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED int <: Unpack[TypedDict[TD2]]",
-      "description": "EXPECTED int <: Unpack[TypedDict[TD2]]",
-      "line": 50,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 50
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED str <: Unpack[TypedDict[TD2]]",
-      "description": "EXPECTED str <: Unpack[TypedDict[TD2]]",
+      "column": 13,
+      "concise_description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
+      "description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
       "line": 50,
       "name": "PyreError",
       "stop_column": 16,
@@ -2618,19 +2658,19 @@
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
-      "description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
+      "column": 5,
+      "concise_description": "Missing argument 'v3'",
+      "description": "Missing argument 'v3'",
       "line": 62,
       "name": "PyreError",
-      "stop_column": 16,
+      "stop_column": 10,
       "stop_line": 62
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED str <: Unpack[TypedDict[TD1]]",
-      "description": "EXPECTED str <: Unpack[TypedDict[TD1]]",
+      "column": 13,
+      "concise_description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
+      "description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
       "line": 62,
       "name": "PyreError",
       "stop_column": 16,
@@ -2648,19 +2688,9 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED int <: Unpack[TypedDict[TD2]]",
-      "description": "EXPECTED int <: Unpack[TypedDict[TD2]]",
-      "line": 63,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 63
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED str <: Unpack[TypedDict[TD2]]",
-      "description": "EXPECTED str <: Unpack[TypedDict[TD2]]",
+      "column": 19,
+      "concise_description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
+      "description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
       "line": 63,
       "name": "PyreError",
       "stop_column": 22,
@@ -2678,9 +2708,9 @@
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
-      "description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
+      "column": 16,
+      "concise_description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
+      "description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
       "line": 64,
       "name": "PyreError",
       "stop_column": 19,
@@ -2688,23 +2718,13 @@
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED str <: Unpack[TypedDict[TD1]]",
-      "description": "EXPECTED str <: Unpack[TypedDict[TD1]]",
-      "line": 64,
+      "column": 5,
+      "concise_description": "Missing argument 'v3'",
+      "description": "Missing argument 'v3'",
+      "line": 65,
       "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 64
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "Multiple values for argument 'v3'",
-      "description": "Multiple values for argument 'v3'",
-      "line": 64,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 64
+      "stop_column": 10,
+      "stop_line": 65
     },
     {
       "code": -2,
@@ -2718,19 +2738,9 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
-      "description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
-      "line": 65,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 65
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED str <: Unpack[TypedDict[TD1]]",
-      "description": "EXPECTED str <: Unpack[TypedDict[TD1]]",
+      "column": 19,
+      "concise_description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
+      "description": "Expected argument after ** to be a mapping, got: TypedDict[TD2]",
       "line": 65,
       "name": "PyreError",
       "stop_column": 22,
@@ -2991,6 +3001,16 @@
     {
       "code": -2,
       "column": 1,
+      "concise_description": "EXPECTED (x: int) -> str <: (ParamSpec(@_)) -> str",
+      "description": "EXPECTED (x: int) -> str <: (ParamSpec(@_)) -> str",
+      "line": 191,
+      "name": "PyreError",
+      "stop_column": 12,
+      "stop_line": 191
+    },
+    {
+      "code": -2,
+      "column": 1,
       "concise_description": "Missing argument 'flush'",
       "description": "Missing argument 'flush'",
       "line": 196,
@@ -3017,6 +3037,16 @@
       "name": "PyreError",
       "stop_column": 32,
       "stop_line": 197
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED Literal[3] <: Kwargs[?_]",
+      "description": "EXPECTED Literal[3] <: Kwargs[?_]",
+      "line": 199,
+      "name": "PyreError",
+      "stop_column": 13,
+      "stop_line": 199
     },
     {
       "code": -2,
@@ -3351,9 +3381,30 @@
       "name": "PyreError",
       "stop_column": 25,
       "stop_line": 134
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
+      "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
+      "line": 146,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 146
     }
   ],
-  "classes_override.py": [],
+  "classes_override.py": [
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED () -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED () -> int <: (ParamSpec(@_)) -> int",
+      "line": 77,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 77
+    }
+  ],
   "constructors_call_init.py": [
     {
       "code": -2,
@@ -3996,8 +4047,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 37,
       "name": "PyreError",
       "stop_column": 15,
@@ -4006,8 +4057,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 38,
       "name": "PyreError",
       "stop_column": 3,
@@ -4016,8 +4067,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 39,
       "name": "PyreError",
       "stop_column": 3,
@@ -4056,8 +4107,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 50,
       "name": "PyreError",
       "stop_column": 15,
@@ -4066,8 +4117,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 51,
       "name": "PyreError",
       "stop_column": 3,
@@ -4106,8 +4157,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 64,
       "name": "PyreError",
       "stop_column": 15,
@@ -4116,8 +4167,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 65,
       "name": "PyreError",
       "stop_column": 3,
@@ -4126,8 +4177,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 66,
       "name": "PyreError",
       "stop_column": 3,
@@ -4136,8 +4187,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 67,
       "name": "PyreError",
       "stop_column": 3,
@@ -4176,8 +4227,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 78,
       "name": "PyreError",
       "stop_column": 15,
@@ -4186,8 +4237,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 79,
       "name": "PyreError",
       "stop_column": 3,
@@ -4196,8 +4247,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 80,
       "name": "PyreError",
       "stop_column": 3,
@@ -4266,8 +4317,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 100,
       "name": "PyreError",
       "stop_column": 19,
@@ -4286,8 +4337,8 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 105,
       "name": "PyreError",
       "stop_column": 19,
@@ -4326,8 +4377,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 126,
       "name": "PyreError",
       "stop_column": 15,
@@ -4336,8 +4387,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 127,
       "name": "PyreError",
       "stop_column": 3,
@@ -4376,8 +4427,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 143,
       "name": "PyreError",
       "stop_column": 19,
@@ -4386,8 +4437,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 144,
       "name": "PyreError",
       "stop_column": 7,
@@ -4426,8 +4477,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 164,
       "name": "PyreError",
       "stop_column": 15,
@@ -4446,8 +4497,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 165,
       "name": "PyreError",
       "stop_column": 15,
@@ -4506,8 +4557,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 183,
       "name": "PyreError",
       "stop_column": 15,
@@ -4516,8 +4567,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 184,
       "name": "PyreError",
       "stop_column": 3,
@@ -4556,8 +4607,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 194,
       "name": "PyreError",
       "stop_column": 15,
@@ -4566,8 +4617,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 195,
       "name": "PyreError",
       "stop_column": 3,
@@ -7079,8 +7130,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Literal[Pet.genus], str) failed",
-      "description": "assert_type(Literal[Pet.genus], str) failed",
+      "concise_description": "assert_type(Any, str) failed",
+      "description": "assert_type(Any, str) failed",
       "line": 27,
       "name": "PyreError",
       "stop_column": 28,
@@ -7088,12 +7139,32 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "Instance-only attribute `genus` of class `Pet` is not visible on the class",
+      "description": "Instance-only attribute `genus` of class `Pet` is not visible on the class",
+      "line": 27,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 27
+    },
+    {
+      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Literal[Pet.species], str) failed",
-      "description": "assert_type(Literal[Pet.species], str) failed",
+      "concise_description": "assert_type(Any, str) failed",
+      "description": "assert_type(Any, str) failed",
       "line": 28,
       "name": "PyreError",
       "stop_column": 30,
+      "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Instance-only attribute `species` of class `Pet` is not visible on the class",
+      "description": "Instance-only attribute `species` of class `Pet` is not visible on the class",
+      "line": 28,
+      "name": "PyreError",
+      "stop_column": 24,
       "stop_line": 28
     },
     {
@@ -7155,6 +7226,16 @@
       "name": "PyreError",
       "stop_column": 8,
       "stop_line": 50
+    },
+    {
+      "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED (x: int) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (x: int) -> int <: (ParamSpec(@_)) -> int",
+      "line": 68,
+      "name": "PyreError",
+      "stop_column": 38,
+      "stop_line": 68
     },
     {
       "code": -2,
@@ -7847,8 +7928,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Instance-only attribute `attr` of class `Foo7` is not visible on the class",
-      "description": "Instance-only attribute `attr` of class `Foo7` is not visible on the class",
+      "concise_description": "Generic attribute `attr` of class `Foo7` is not visible on the class",
+      "description": "Generic attribute `attr` of class `Foo7` is not visible on the class",
       "line": 167,
       "name": "PyreError",
       "stop_column": 22,
@@ -8015,8 +8096,28 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
-      "description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
+      "concise_description": "assert_type(Any, int) failed",
+      "description": "assert_type(Any, int) failed",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 45,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 49,
       "name": "PyreError",
       "stop_column": 10,
@@ -8024,19 +8125,49 @@
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "column": 9,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 51,
       "name": "PyreError",
-      "stop_column": 12,
+      "stop_column": 10,
       "stop_line": 51
     },
     {
       "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
+      "description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
+      "line": 53,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 53
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED (s: str, *Args[?_], **Kwargs[?_]) -> None <: (str, ParamSpec(?_)) -> None",
+      "description": "EXPECTED (s: str, *Args[?_], **Kwargs[?_]) -> None <: (str, ParamSpec(?_)) -> None",
+      "line": 63,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 63
+    },
+    {
+      "code": -2,
       "column": 9,
-      "concise_description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
-      "description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 68,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 68
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 70,
       "name": "PyreError",
       "stop_column": 10,
@@ -8045,8 +8176,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 72,
       "name": "PyreError",
       "stop_column": 10,
@@ -8054,9 +8185,49 @@
     },
     {
       "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
+      "description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
+      "line": 74,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 74
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 79,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 79
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "`Args[?_]` is not iterable",
+      "description": "`Args[?_]` is not iterable",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 82
+    },
+    {
+      "code": -2,
+      "column": 25,
+      "concise_description": "Expected argument after ** to be a mapping, got: Kwargs[?_]",
+      "description": "Expected argument after ** to be a mapping, got: Kwargs[?_]",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 82
+    },
+    {
+      "code": -2,
       "column": 13,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
+      "concise_description": "Multiple values for argument 'x'",
+      "description": "Multiple values for argument 'x'",
       "line": 83,
       "name": "PyreError",
       "stop_column": 16,
@@ -8064,19 +8235,59 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Unexpected keyword argument 'x'",
-      "description": "Unexpected keyword argument 'x'",
+      "column": 18,
+      "concise_description": "`Args[?_]` is not iterable",
+      "description": "`Args[?_]` is not iterable",
       "line": 83,
       "name": "PyreError",
-      "stop_column": 16,
+      "stop_column": 23,
       "stop_line": 83
+    },
+    {
+      "code": -2,
+      "column": 27,
+      "concise_description": "Expected argument after ** to be a mapping, got: Kwargs[?_]",
+      "description": "Expected argument after ** to be a mapping, got: Kwargs[?_]",
+      "line": 83,
+      "name": "PyreError",
+      "stop_column": 33,
+      "stop_line": 83
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
+      "description": "EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 85
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 89,
+      "name": "PyreError",
+      "stop_column": 13,
+      "stop_line": 89
+    },
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 89,
+      "name": "PyreError",
+      "stop_column": 34,
+      "stop_line": 89
     },
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
-      "description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
+      "concise_description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
       "line": 96,
       "name": "PyreError",
       "stop_column": 18,
@@ -8084,9 +8295,29 @@
     },
     {
       "code": -2,
+      "column": 20,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 96,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 96
+    },
+    {
+      "code": -2,
+      "column": 23,
+      "concise_description": "EXPECTED Literal['A'] <: Args[?_]",
+      "description": "EXPECTED Literal['A'] <: Args[?_]",
+      "line": 96,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 96
+    },
+    {
+      "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
-      "description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
+      "concise_description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
       "line": 97,
       "name": "PyreError",
       "stop_column": 18,
@@ -8094,21 +8325,71 @@
     },
     {
       "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED Literal['A'] <: Kwargs[?_]",
+      "description": "EXPECTED Literal['A'] <: Kwargs[?_]",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
+      "column": 29,
+      "concise_description": "EXPECTED Literal[1] <: Kwargs[?_]",
+      "description": "EXPECTED Literal[1] <: Kwargs[?_]",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 30,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
-      "description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
+      "concise_description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (a: int, b: str) -> int <: (ParamSpec(@_)) -> int",
       "line": 98,
       "name": "PyreError",
       "stop_column": 18,
+      "stop_line": 98
+    },
+    {
+      "code": -2,
+      "column": 20,
+      "concise_description": "EXPECTED Literal['A'] <: Args[?_]",
+      "description": "EXPECTED Literal['A'] <: Args[?_]",
+      "line": 98,
+      "name": "PyreError",
+      "stop_column": 23,
+      "stop_line": 98
+    },
+    {
+      "code": -2,
+      "column": 25,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 98,
+      "name": "PyreError",
+      "stop_column": 26,
       "stop_line": 98
     }
   ],
   "generics_paramspec_semantics.py": [
     {
       "code": -2,
+      "column": 33,
+      "concise_description": "EXPECTED (str, bool) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (str, bool) -> int <: (ParamSpec(@_)) -> int",
+      "line": 21,
+      "name": "PyreError",
+      "stop_column": 44,
+      "stop_line": 21
+    },
+    {
+      "code": -2,
       "column": 1,
-      "concise_description": "assert_type((str, bool) -> str, (str, bool) -> str) failed",
-      "description": "assert_type((str, bool) -> str, (str, bool) -> str) failed",
+      "concise_description": "assert_type((ParamSpec(Any)) -> str, (str, bool) -> str) failed",
+      "description": "assert_type((ParamSpec(Any)) -> str, (str, bool) -> str) failed",
       "line": 22,
       "name": "PyreError",
       "stop_column": 44,
@@ -8116,49 +8397,119 @@
     },
     {
       "code": -2,
-      "column": 4,
-      "concise_description": "Expected 2 more positional arguments",
-      "description": "Expected 2 more positional arguments",
+      "column": 6,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 24,
+      "name": "PyreError",
+      "stop_column": 8,
+      "stop_line": 24
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, str) failed",
+      "description": "assert_type(Any, str) failed",
+      "line": 25,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 25
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 26,
       "name": "PyreError",
-      "stop_column": 9,
+      "stop_column": 3,
       "stop_line": 26
     },
     {
       "code": -2,
-      "column": 4,
-      "concise_description": "Unexpected keyword argument 'a'",
-      "description": "Unexpected keyword argument 'a'",
-      "line": 26,
-      "name": "PyreError",
-      "stop_column": 9,
-      "stop_line": 26
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "Unexpected keyword argument 'b'",
-      "description": "Unexpected keyword argument 'b'",
-      "line": 26,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 26
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED Literal['A'] <: bool",
-      "description": "EXPECTED Literal['A'] <: bool",
+      "column": 1,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 27,
       "name": "PyreError",
-      "stop_column": 12,
+      "stop_column": 3,
       "stop_line": 27
     },
     {
       "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
       "column": 17,
-      "concise_description": "EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int",
-      "description": "EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int",
+      "concise_description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, bool) failed",
+      "description": "assert_type(Any, bool) failed",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, bool) failed",
+      "description": "assert_type(Any, bool) failed",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 33,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (x: int, y: str) -> int <: (ParamSpec(@_)) -> int",
+      "line": 46,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 46
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "EXPECTED (y: int, x: str) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (y: int, x: str) -> int <: (ParamSpec(@_)) -> int",
       "line": 46,
       "name": "PyreError",
       "stop_column": 20,
@@ -8166,9 +8517,19 @@
     },
     {
       "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (*, x: int) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (*, x: int) -> int <: (ParamSpec(@_)) -> int",
+      "line": 61,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 61
+    },
+    {
+      "code": -2,
       "column": 23,
-      "concise_description": "EXPECTED (*, y: int) -> int <: (*, x: int) -> int",
-      "description": "EXPECTED (*, y: int) -> int <: (*, x: int) -> int",
+      "concise_description": "EXPECTED (*, y: int) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (*, y: int) -> int <: (ParamSpec(@_)) -> int",
       "line": 61,
       "name": "PyreError",
       "stop_column": 37,
@@ -8176,13 +8537,13 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Y[int, (int)], Y[int, Any]) failed",
-      "description": "assert_type(Y[int, (int)], Y[int, Any]) failed",
-      "line": 82,
+      "column": 12,
+      "concise_description": "EXPECTED (int) -> str <: (ParamSpec(@_)) -> str",
+      "description": "EXPECTED (int) -> str <: (ParamSpec(@_)) -> str",
+      "line": 81,
       "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 82
+      "stop_column": 22,
+      "stop_line": 81
     },
     {
       "code": -2,
@@ -8197,8 +8558,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type((int) -> str, (int) -> str) failed",
-      "description": "assert_type((int) -> str, (int) -> str) failed",
+      "concise_description": "assert_type((ParamSpec(Any)) -> str, (int) -> str) failed",
+      "description": "assert_type((ParamSpec(Any)) -> str, (int) -> str) failed",
       "line": 84,
       "name": "PyreError",
       "stop_column": 42,
@@ -8206,32 +8567,182 @@
     },
     {
       "code": -2,
-      "column": 4,
-      "concise_description": "EXPECTED Literal[1] <: str",
-      "description": "EXPECTED Literal[1] <: str",
+      "column": 10,
+      "concise_description": "EXPECTED (x: int, *bool) -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED (x: int, *bool) -> int <: (ParamSpec(@_)) -> int",
+      "line": 95,
+      "name": "PyreError",
+      "stop_column": 13,
+      "stop_line": 95
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, bool) failed",
+      "description": "assert_type(Any, bool) failed",
+      "line": 96,
+      "name": "PyreError",
+      "stop_column": 42,
+      "stop_line": 96
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 96,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 96
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, bool) failed",
+      "description": "assert_type(Any, bool) failed",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 98,
       "name": "PyreError",
-      "stop_column": 5,
+      "stop_column": 3,
       "stop_line": 98
     },
     {
       "code": -2,
-      "column": 4,
-      "concise_description": "EXPECTED Literal[1] <: bool",
-      "description": "EXPECTED Literal[1] <: bool",
+      "column": 13,
+      "concise_description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
+      "description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
+      "line": 105,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 105
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, bool) failed",
+      "description": "assert_type(Any, bool) failed",
+      "line": 106,
+      "name": "PyreError",
+      "stop_column": 41,
+      "stop_line": 106
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 106,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 106
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, bool) failed",
+      "description": "assert_type(Any, bool) failed",
+      "line": 107,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 107
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 107,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 107
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 108,
       "name": "PyreError",
-      "stop_column": 5,
+      "stop_column": 3,
       "stop_line": 108
     },
     {
       "code": -2,
-      "column": 4,
-      "concise_description": "EXPECTED Literal[1] <: str",
-      "description": "EXPECTED Literal[1] <: str",
+      "column": 16,
+      "concise_description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
+      "description": "EXPECTED (x: int, *bool) -> int <: (int, ParamSpec(@_)) -> int",
+      "line": 117,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 117
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, bool) failed",
+      "description": "assert_type(Any, bool) failed",
+      "line": 118,
+      "name": "PyreError",
+      "stop_column": 45,
+      "stop_line": 118
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 118,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 118
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, bool) failed",
+      "description": "assert_type(Any, bool) failed",
+      "line": 119,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
+      "line": 119,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 119
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 120,
       "name": "PyreError",
-      "stop_column": 5,
+      "stop_column": 3,
       "stop_line": 120
     },
     {
@@ -8263,6 +8774,16 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 137
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "EXPECTED (*int) -> int <: (int, ParamSpec(@_)) -> int",
+      "description": "EXPECTED (*int) -> int <: (int, ParamSpec(@_)) -> int",
+      "line": 142,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 142
     }
   ],
   "generics_paramspec_specialization.py": [
@@ -8309,8 +8830,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 53,
       "name": "PyreError",
       "stop_column": 8,
@@ -8319,8 +8840,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 54,
       "name": "PyreError",
       "stop_column": 8,
@@ -8329,8 +8850,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 55,
       "name": "PyreError",
       "stop_column": 8,
@@ -8349,8 +8870,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 59,
       "name": "PyreError",
       "stop_column": 8,
@@ -8359,8 +8880,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 60,
       "name": "PyreError",
       "stop_column": 8,
@@ -8369,8 +8890,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "Answers::expr_infer wrong number of arguments to call",
+      "description": "Answers::expr_infer wrong number of arguments to call",
       "line": 61,
       "name": "PyreError",
       "stop_column": 8,
@@ -8463,8 +8984,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(ParentB, Self) failed",
-      "description": "assert_type(ParentB, Self) failed",
+      "concise_description": "assert_type(Any, Self) failed",
+      "description": "assert_type(Any, Self) failed",
       "line": 38,
       "name": "PyreError",
       "stop_column": 42,
@@ -8473,8 +8994,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "EXPECTED type[ChildB] <: ParentB",
-      "description": "EXPECTED type[ChildB] <: ParentB",
+      "concise_description": "Expected a callable, got classmethod[(cls: ParentB) -> ParentB]",
+      "description": "Expected a callable, got classmethod[(cls: ParentB) -> ParentB]",
       "line": 38,
       "name": "PyreError",
       "stop_column": 33,
@@ -8513,8 +9034,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(ParentB, Self) failed",
-      "description": "assert_type(ParentB, Self) failed",
+      "concise_description": "assert_type(Any, Self) failed",
+      "description": "assert_type(Any, Self) failed",
       "line": 45,
       "name": "PyreError",
       "stop_column": 41,
@@ -8523,8 +9044,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "EXPECTED type[ChildB] <: ParentB",
-      "description": "EXPECTED type[ChildB] <: ParentB",
+      "concise_description": "Expected a callable, got classmethod[(cls: ParentB) -> ParentB]",
+      "description": "Expected a callable, got classmethod[(cls: ParentB) -> ParentB]",
       "line": 45,
       "name": "PyreError",
       "stop_column": 32,
@@ -8686,9 +9207,19 @@
     },
     {
       "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, Shape) failed",
+      "description": "assert_type(Any, Shape) failed",
+      "line": 54,
+      "name": "PyreError",
+      "stop_column": 42,
+      "stop_line": 54
+    },
+    {
+      "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED type[Shape] <: Shape",
-      "description": "EXPECTED type[Shape] <: Shape",
+      "concise_description": "Expected a callable, got classmethod[(cls: Shape, config: dict[str, float]) -> Shape]",
+      "description": "Expected a callable, got classmethod[(cls: Shape, config: dict[str, float]) -> Shape]",
       "line": 54,
       "name": "PyreError",
       "stop_column": 30,
@@ -8697,8 +9228,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Shape, Circle) failed",
-      "description": "assert_type(Shape, Circle) failed",
+      "concise_description": "assert_type(Any, Circle) failed",
+      "description": "assert_type(Any, Circle) failed",
       "line": 55,
       "name": "PyreError",
       "stop_column": 44,
@@ -8707,8 +9238,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED type[Circle] <: Shape",
-      "description": "EXPECTED type[Circle] <: Shape",
+      "concise_description": "Expected a callable, got classmethod[(cls: Shape, config: dict[str, float]) -> Shape]",
+      "description": "Expected a callable, got classmethod[(cls: Shape, config: dict[str, float]) -> Shape]",
       "line": 55,
       "name": "PyreError",
       "stop_column": 31,
@@ -8806,6 +9337,26 @@
       "name": "PyreError",
       "stop_column": 22,
       "stop_line": 93
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED () -> Base <: (ParamSpec(@_)) -> Base",
+      "description": "EXPECTED () -> Base <: (ParamSpec(@_)) -> Base",
+      "line": 109,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 109
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (foo: Base) -> Base <: (ParamSpec(@_)) -> Base",
+      "description": "EXPECTED (foo: Base) -> Base <: (ParamSpec(@_)) -> Base",
+      "line": 114,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 114
     }
   ],
   "generics_syntax_compatibility.py": [
@@ -9460,8 +10011,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
-      "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
+      "concise_description": "Generic attribute `label` of class `Node` is not visible on the class",
+      "description": "Generic attribute `label` of class `Node` is not visible on the class",
       "line": 42,
       "name": "PyreError",
       "stop_column": 16,
@@ -9470,8 +10021,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
-      "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
+      "concise_description": "Generic attribute `label` of class `Node` is not visible on the class",
+      "description": "Generic attribute `label` of class `Node` is not visible on the class",
       "line": 43,
       "name": "PyreError",
       "stop_column": 16,
@@ -9480,8 +10031,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
-      "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
+      "concise_description": "Generic attribute `label` of class `Node` is not visible on the class",
+      "description": "Generic attribute `label` of class `Node` is not visible on the class",
       "line": 44,
       "name": "PyreError",
       "stop_column": 11,
@@ -9490,8 +10041,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
-      "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
+      "concise_description": "Generic attribute `label` of class `Node` is not visible on the class",
+      "description": "Generic attribute `label` of class `Node` is not visible on the class",
       "line": 45,
       "name": "PyreError",
       "stop_column": 11,
@@ -9774,11 +10325,31 @@
     {
       "code": -2,
       "column": 34,
-      "concise_description": "EXPECTED tuple[int, int] <: tuple[Error]",
-      "description": "EXPECTED tuple[int, int] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
+      "description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
       "line": 36,
       "name": "PyreError",
       "stop_column": 55,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 42,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 43,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 52,
+      "concise_description": "EXPECTED Literal[2] <: Args[?_]",
+      "description": "EXPECTED Literal[2] <: Args[?_]",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 53,
       "stop_line": 36
     },
     {
@@ -9824,11 +10395,41 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED tuple[int, int, int] <: tuple[Error]",
-      "description": "EXPECTED tuple[int, int, int] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown] <: tuple[Error]",
+      "description": "EXPECTED tuple[Unknown, Unknown, Unknown] <: tuple[Error]",
       "line": 37,
       "name": "PyreError",
       "stop_column": 72,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 48,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 49,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 59,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 60,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 69,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 70,
       "stop_line": 37
     },
     {
@@ -9884,11 +10485,51 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED tuple[int, int, int, int] <: tuple[Error]",
-      "description": "EXPECTED tuple[int, int, int, int] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
+      "description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
       "line": 39,
       "name": "PyreError",
       "stop_column": 45,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 12,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 33,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 42,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 43,
       "stop_line": 39
     },
     {
@@ -9923,12 +10564,12 @@
     },
     {
       "code": -2,
-      "column": 34,
-      "concise_description": "EXPECTED int <: tuple[Error]",
-      "description": "EXPECTED int <: tuple[Error]",
+      "column": 41,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
       "line": 42,
       "name": "PyreError",
-      "stop_column": 43,
+      "stop_column": 42,
       "stop_line": 42
     },
     {
@@ -9974,11 +10615,31 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED tuple[int, int] <: tuple[Error]",
-      "description": "EXPECTED tuple[int, int] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
+      "description": "EXPECTED tuple[Unknown, Unknown] <: tuple[Error]",
       "line": 43,
       "name": "PyreError",
       "stop_column": 61,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 48,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 49,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 58,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 59,
       "stop_line": 43
     },
     {
@@ -10034,11 +10695,51 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED tuple[int, int, int, int] <: tuple[Error]",
-      "description": "EXPECTED tuple[int, int, int, int] <: tuple[Error]",
+      "concise_description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
+      "description": "EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]",
       "line": 45,
       "name": "PyreError",
       "stop_column": 45,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 12,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 31,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 42,
+      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
+      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 43,
       "stop_line": 45
     },
     {
@@ -14108,6 +14809,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (val: object) -> TypeGuard[int] <: (ParamSpec(@_)) -> TypeGuard[int]",
+      "description": "EXPECTED (val: object) -> TypeGuard[int] <: (ParamSpec(@_)) -> TypeGuard[int]",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
       "column": 32,
       "concise_description": "EXPECTED type[type] <: type[TypeVar[Self]]",
       "description": "EXPECTED type[type] <: type[TypeVar[Self]]",
@@ -14189,8 +14900,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "EXPECTED type[A] <: A",
-      "description": "EXPECTED type[A] <: A",
+      "concise_description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeGuard[int]]",
+      "description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeGuard[int]]",
       "line": 72,
       "name": "PyreError",
       "stop_column": 16,
@@ -14198,13 +14909,73 @@
     },
     {
       "code": -2,
+      "column": 9,
+      "concise_description": "assert_type(object, int) failed",
+      "description": "assert_type(object, int) failed",
+      "line": 73,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 73
+    },
+    {
+      "code": -2,
       "column": 8,
-      "concise_description": "EXPECTED type[A] <: A",
-      "description": "EXPECTED type[A] <: A",
+      "concise_description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeGuard[int]]",
+      "description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeGuard[int]]",
       "line": 76,
       "name": "PyreError",
       "stop_column": 14,
       "stop_line": 76
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "assert_type(object, int) failed",
+      "description": "assert_type(object, int) failed",
+      "line": 77,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 77
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "EXPECTED object <: Args[?_]",
+      "description": "EXPECTED object <: Args[?_]",
+      "line": 80,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 80
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "assert_type(object, int) failed",
+      "description": "assert_type(object, int) failed",
+      "line": 81,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 81
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "EXPECTED object <: Args[?_]",
+      "description": "EXPECTED object <: Args[?_]",
+      "line": 84,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 84
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "assert_type(object, int) failed",
+      "description": "assert_type(object, int) failed",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 85
     },
     {
       "code": -2,
@@ -14330,6 +15101,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (val: object) -> TypeIs[int] <: (ParamSpec(@_)) -> TypeIs[int]",
+      "description": "EXPECTED (val: object) -> TypeIs[int] <: (ParamSpec(@_)) -> TypeIs[int]",
+      "line": 51,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 51
+    },
+    {
+      "code": -2,
       "column": 16,
       "concise_description": "EXPECTED bool <: TypeIs[int]",
       "description": "EXPECTED bool <: TypeIs[int]",
@@ -14451,8 +15232,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "EXPECTED type[A] <: A",
-      "description": "EXPECTED type[A] <: A",
+      "concise_description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeIs[int]]",
+      "description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeIs[int]]",
       "line": 75,
       "name": "PyreError",
       "stop_column": 16,
@@ -14471,8 +15252,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "EXPECTED type[A] <: A",
-      "description": "EXPECTED type[A] <: A",
+      "concise_description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeIs[int]]",
+      "description": "Expected a callable, got classmethod[(cls: A, val: object) -> TypeIs[int]]",
       "line": 79,
       "name": "PyreError",
       "stop_column": 14,
@@ -14490,6 +15271,16 @@
     },
     {
       "code": -2,
+      "column": 17,
+      "concise_description": "EXPECTED object <: Args[?_]",
+      "description": "EXPECTED object <: Args[?_]",
+      "line": 83,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 83
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
@@ -14497,6 +15288,16 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 84
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "EXPECTED object <: Args[?_]",
+      "description": "EXPECTED object <: Args[?_]",
+      "line": 87,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 87
     },
     {
       "code": -2,
@@ -14846,6 +15647,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED () -> int <: (ParamSpec(@_)) -> int",
+      "description": "EXPECTED () -> int <: (ParamSpec(@_)) -> int",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "Object of class `Template` has no attribute `temp`",
       "description": "Object of class `Template` has no attribute `temp`",
@@ -14976,6 +15787,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (a: int, b: int) -> float <: (ParamSpec(@_)) -> float",
+      "description": "EXPECTED (a: int, b: int) -> float <: (ParamSpec(@_)) -> float",
+      "line": 249,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 249
+    },
+    {
+      "code": -2,
       "column": 16,
       "concise_description": "EXPECTED Literal[0] <: float",
       "description": "EXPECTED Literal[0] <: float",
@@ -15003,6 +15824,16 @@
       "name": "PyreError",
       "stop_column": 17,
       "stop_line": 271
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (self: Concrete5_Bad5, a: int, b: int) -> float <: (ParamSpec(@_)) -> float",
+      "description": "EXPECTED (self: Concrete5_Bad5, a: int, b: int) -> float <: (ParamSpec(@_)) -> float",
+      "line": 275,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 275
     },
     {
       "code": -2,
@@ -15754,6 +16585,26 @@
       "name": "PyreError",
       "stop_column": 53,
       "stop_line": 8
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
+      "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
+      "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
+      "line": 63,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 63
     }
   ],
   "specialtypes_any.py": [
@@ -17524,6 +18375,16 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 34
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
+      "description": "EXPECTED () -> None <: (ParamSpec(@_)) -> None",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 38
     },
     {
       "code": -2,
