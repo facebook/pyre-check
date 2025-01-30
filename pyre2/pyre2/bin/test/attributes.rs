@@ -57,6 +57,15 @@ class A:
 );
 
 testcase!(
+    test_use_of_class_body_scope_in_class_body_statement,
+    r#"
+class A:
+    x: int = 5
+    y: int = x
+    "#,
+);
+
+testcase!(
     test_annotating_non_self_attributes,
     r#"
 class A:
