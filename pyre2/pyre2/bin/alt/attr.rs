@@ -47,6 +47,10 @@ enum AttributeInner {
     NoAccess(NoAccessReason),
     /// A read-write attribute with a closed form type for both get and set actions.
     ReadWrite(Type),
+    /// A property is a special attribute were regular access invokes a getter.
+    /// TODO(stroxler) We eventually need to support properties with setters as well.
+    #[expect(dead_code)]
+    Property(Type, Class),
 }
 
 enum NotFound {
@@ -63,6 +67,8 @@ pub enum NoAccessReason {
     /// A generic class attribute exists, but has an invalid definition.
     /// Callers should treat the attribute as `Any`.
     ClassAttributeIsGeneric(Class),
+    /// A set operation on a read-only property is an access error.
+    SettingReadOnlyProperty(Class),
 }
 
 enum InternalError {
@@ -93,6 +99,12 @@ impl NoAccessReason {
                 let class_name = class.name();
                 format!(
                     "Generic attribute `{attr_name}` of class `{class_name}` is not visible on the class"
+                )
+            }
+            NoAccessReason::SettingReadOnlyProperty(class) => {
+                let class_name = class.name();
+                format!(
+                    "Attribute `{attr_name}` of class `{class_name}` is a read-only property and cannot be set"
                 )
             }
         }
@@ -169,6 +181,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.get_type_or_conflated_error_msg(
             self.lookup_attr(base, attr_name),
             attr_name,
+            range,
             todo_ctx,
         ) {
             Ok(ty) => ty,
@@ -187,7 +200,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         todo_ctx: &str,
     ) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attr) => match self.resolve_get_access(attr) {
+            LookupResult::Found(attr) => match self.resolve_get_access(attr, range) {
                 Ok(ty) => Some(ty),
                 Err(e) => Some(self.error(range, e.to_error_msg(attr_name))),
             },
@@ -206,7 +219,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.lookup_attr(base, &Name::new_static("_value_")) {
             LookupResult::Found(attr) => match attr.0 {
                 AttributeInner::ReadWrite(ty) => Some(ty),
-                AttributeInner::NoAccess(_) => None,
+                AttributeInner::NoAccess(_) | AttributeInner::Property(_, _) => None,
             },
             _ => None,
         }
@@ -227,7 +240,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         todo_ctx: &str,
     ) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attr) => match self.resolve_set_access(attr) {
+            LookupResult::Found(attr) => match self.resolve_set_access(attr, range) {
                 Ok(ty) => Some(ty),
                 Err(e) => {
                     self.error(range, e.to_error_msg(attr_name));
@@ -245,10 +258,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn resolve_set_access(&self, attr: Attribute) -> Result<Type, NoAccessReason> {
+    fn resolve_set_access(
+        &self,
+        attr: Attribute,
+        // TODO(stroxler): this will be needed as soon as we have setter support, add it now for consistency with `get`
+        _range: TextRange,
+    ) -> Result<Type, NoAccessReason> {
         match attr.0 {
             AttributeInner::NoAccess(reason) => Err(reason),
             AttributeInner::ReadWrite(ty) => Ok(ty),
+            AttributeInner::Property(_, cls) => Err(NoAccessReason::SettingReadOnlyProperty(cls)),
         }
     }
 
@@ -287,17 +306,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn resolve_get_access(&self, attr: Attribute) -> Result<Type, NoAccessReason> {
+    fn resolve_get_access(
+        &self,
+        attr: Attribute,
+        range: TextRange,
+    ) -> Result<Type, NoAccessReason> {
         match attr.0 {
             AttributeInner::NoAccess(reason) => Err(reason),
             AttributeInner::ReadWrite(ty) => Ok(ty),
+            AttributeInner::Property(method, _) => Ok(self.call_property_getter(method, range)),
         }
     }
 
-    // A convenience function for callers who don't care about reasons a lookup failed, and just
-    // want the result if it is successful.
-    pub fn resolve_get_access_to_type(&self, attr: Attribute) -> Option<Type> {
-        self.resolve_get_access(attr).ok()
+    /// A convenience function for callers who don't care about reasons a lookup failed and are
+    /// only interested in simple, read-write attributes (in particular, this covers instance access to
+    /// regular methods, and is useful for edge cases where we handle cases like `__call__` and `__new__`).
+    pub fn resolve_as_instance_method(&self, attr: Attribute) -> Option<Type> {
+        match attr.0 {
+            AttributeInner::ReadWrite(ty) => Some(ty),
+            AttributeInner::NoAccess(_) => None,
+            AttributeInner::Property(_, _) => None,
+        }
     }
 
     /// A convenience function for callers which want an error but do not need to distinguish
@@ -306,10 +335,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         lookup: LookupResult,
         attr_name: &Name,
+        range: TextRange,
         todo_ctx: &str,
     ) -> Result<Type, String> {
         match lookup {
-            LookupResult::Found(attr) => match self.resolve_get_access(attr) {
+            LookupResult::Found(attr) => match self.resolve_get_access(attr, range) {
                 Ok(ty) => Ok(ty.clone()),
                 Err(err) => Err(err.to_error_msg(attr_name)),
             },
@@ -366,7 +396,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let builtins_type_classtype = self.stdlib.builtins_type();
                 LookupResult::found_type(
                     self.get_instance_attribute(&builtins_type_classtype, attr_name)
-                        .and_then(|attr| self.resolve_get_access_to_type(attr))
+                        .and_then(|attr| self.resolve_as_instance_method(attr))
                         .map_or_else(|| style.propagate(), |ty| ty),
                 )
             }

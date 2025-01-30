@@ -166,7 +166,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::TypeAlias(ta) => self.as_call_target(ta.as_value(self.stdlib)),
             Type::ClassType(cls) => self
                 .get_instance_attribute(&cls, &dunder::CALL)
-                .and_then(|attr| self.resolve_get_access_to_type(attr))
+                .and_then(|attr| self.resolve_as_instance_method(attr))
                 .and_then(|ty| self.as_call_target(ty)),
             Type::Type(box Type::TypedDict(typed_dict)) => {
                 Some((Vec::new(), CallTarget::Callable(typed_dict.as_callable())))
@@ -538,6 +538,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             { self.as_call_target_or_error(ty_decorator, CallStyle::FreeForm, decorator.range) };
         let arg = CallArg::Type(&decoratee, decorator.range);
         self.call_infer(call_target, &[arg], &[], decorator.range)
+    }
+
+    /// Helper function hide details of call synthesis from the attribute resolution code.
+    pub fn call_property_getter(&self, property_method: Type, range: TextRange) -> Type {
+        let call_target = self.as_call_target_or_error(property_method, CallStyle::FreeForm, range);
+        self.call_infer(call_target, &[], &[], range)
     }
 
     fn flatten_dict_items(x: &[DictItem]) -> Vec<DictItem> {
