@@ -28,7 +28,7 @@ impl UnwrappedDict {
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    fn fresh_var(&self) -> Var {
+    pub fn fresh_var(&self) -> Var {
         self.solver().fresh_unwrap(self.uniques)
     }
 
@@ -59,6 +59,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn is_subset_eq(&self, got: &Type, want: &Type) -> bool {
         self.solver().is_subset_eq(got, want, self.type_order())
+    }
+
+    pub fn is_async_generator(&self, ty: &Type) -> bool {
+        let yield_ty = self.fresh_var();
+        let send_ty = self.fresh_var();
+
+        let async_generator_ty = self
+            .stdlib
+            .async_generator(yield_ty.to_type(), send_ty.to_type())
+            .to_type();
+        self.solver()
+            .is_subset_eq(&async_generator_ty, ty, self.type_order())
     }
 
     pub fn unwrap_awaitable(&self, ty: &Type) -> Option<Type> {

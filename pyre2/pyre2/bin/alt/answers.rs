@@ -1198,6 +1198,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 _ => unreachable!("yield or yield from expression expected"),
             },
+            Binding::AsyncReturnType(x) => {
+                let expr_type = self.expr(&x.0, None);
+                let return_type = self.solve_binding_inner(&x.1);
+
+                if self.is_async_generator(&return_type) && !expr_type.is_none() {
+                    self.error(
+                        x.0.range(),
+                        format!("Return statement with type `{expr_type}` is not allowed in async generator "),
+                    )
+                } else {
+                    return_type
+                }
+            }
 
             Binding::ReturnExpr(ann, e, has_yields) => {
                 let ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));

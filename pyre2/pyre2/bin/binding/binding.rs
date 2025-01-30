@@ -112,6 +112,8 @@ pub enum Key {
     SendTypeOfYieldAnnotation(TextRange),
     /// The return type of a yield expression.
     ReturnTypeOfYieldAnnotation(TextRange),
+    /// The return type of an async function.
+    AsyncReturnType(TextRange),
     /// The return type of a yield expression.
     YieldTypeOfYieldAnnotation(TextRange),
     /// The type at a specific return point.
@@ -150,6 +152,7 @@ impl Ranged for Key {
             Self::Definition(x) => x.range(),
             Self::SelfType(x) => x.range(),
             Self::TypeOfYieldAnnotation(x) => x.range(),
+            Self::AsyncReturnType(x) => x.range(),
             Self::SendTypeOfYieldAnnotation(x) => x.range(),
             Self::ReturnTypeOfYieldAnnotation(x) => x.range(),
             Self::YieldTypeOfYieldAnnotation(x) => x.range(),
@@ -188,6 +191,14 @@ impl DisplayWith<ModuleInfo> for Key {
             }
             Self::ReturnTypeOfYieldAnnotation(x) => {
                 write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
+            }
+            Self::AsyncReturnType(x) => {
+                write!(
+                    f,
+                    "async generator return type {} {:?}",
+                    ctx.display(x),
+                    x.range()
+                )
             }
             Self::Usage(x) => write!(f, "use {} {:?}", ctx.display(x), x.range()),
             Self::Anon(r) => write!(f, "anon {r:?}"),
@@ -472,6 +483,8 @@ pub enum Binding {
     /// Yield type of yield annotation
     YieldTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
     /// A grouping of both the yield expression types and the return type.
+    /// Yield type of yield annotation
+    AsyncReturnType(Box<(Expr, Binding)>),
     Generator(Box<Binding>, Box<Binding>),
     /// Yield expression type from an async generator
     AsyncGenerator(Box<Binding>),
@@ -576,6 +589,14 @@ impl DisplayWith<Bindings> for Binding {
                     "Generator(Yield: {}, Return: {})",
                     target.display_with(ctx),
                     iterable.display_with(ctx)
+                )
+            }
+            Self::AsyncReturnType(x) => {
+                write!(
+                    f,
+                    "AsyncReturn(return expr {}, return annotation {})",
+                    m.display(&x.0),
+                    x.1.display_with(ctx)
                 )
             }
             Self::AsyncGenerator(box target) => {

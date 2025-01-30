@@ -1317,7 +1317,7 @@ impl<'a> BindingsBuilder<'a> {
             )
         });
         let mut return_expr_keys = SmallSet::with_capacity(return_exprs.len());
-        for x in return_exprs {
+        for x in return_exprs.clone() {
             let key = self.table.insert(
                 Key::ReturnExpression(ShortIdentifier::new(&func_name), x.range),
                 Binding::ReturnExpr(return_ann, return_expr(x), !yield_exprs.is_empty()),
@@ -1370,9 +1370,16 @@ impl<'a> BindingsBuilder<'a> {
             );
             if is_async {
                 // combine the original (syntactic) return type and the yield type to analyze later and obtain the final return type.
-                // for async, we should not be returning anything.
-                // Zeina TODO: i think the range here should be every return expression.
                 return_type = Binding::AsyncGenerator(Box::new(yield_type));
+
+                // if our function is async, then record the overall return type and bind it to each return type
+                // this way, we can later check if the return expr gives a value and raise an error if so
+                for x in return_exprs {
+                    self.table.insert(
+                        Key::AsyncReturnType(return_expr(x.clone()).range()),
+                        Binding::AsyncReturnType(Box::new((return_expr(x), return_type.clone()))),
+                    );
+                }
             } else {
                 // combine the original (syntactic) return type and the yield type to analyze later and obtain the final return type.
                 return_type = Binding::Generator(Box::new(yield_type), Box::new(return_type));

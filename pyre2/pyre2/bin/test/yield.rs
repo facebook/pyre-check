@@ -183,6 +183,7 @@ from typing import assert_type, Generator, Coroutine, Any, Literal, AsyncGenerat
 
 async def async_count_up_to(): 
     yield 2
+    return 4 # E:  Return statement with type `Literal[4]` is not allowed in async generator 
 assert_type(async_count_up_to(), Coroutine[Any, Any, AsyncGenerator[Literal[2], Any]])
 
 "#,
