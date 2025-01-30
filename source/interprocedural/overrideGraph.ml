@@ -214,7 +214,7 @@ module SharedMemory = struct
   let create = T.create
 
   (** Records a heap override graph in shared memory. *)
-  let from_heap overrides = overrides |> Target.Map.Tree.to_alist |> T.of_alist
+  let from_heap overrides = overrides |> Target.Map.Tree.to_alist |> T.of_alist_sequential
 
   let to_heap handle = handle |> T.to_alist |> Target.Map.Tree.of_alist_exn
 

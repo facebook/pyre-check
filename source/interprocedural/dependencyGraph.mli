@@ -10,6 +10,8 @@ type t
 
 val empty : t
 
+val is_empty : t -> bool
+
 val merge : t -> t -> t
 
 val add : callee:Target.t -> caller:Target.t -> t -> t

@@ -608,10 +608,8 @@ let initialize
     Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory
   in
 
-  let global_constants_shared_memory = GlobalConstants.SharedMemory.create () in
   let global_constants =
-    GlobalConstants.Heap.from_source ~qualifier source
-    |> GlobalConstants.SharedMemory.add_heap global_constants_shared_memory
+    GlobalConstants.Heap.from_source ~qualifier source |> GlobalConstants.SharedMemory.from_heap
   in
 
   (* Initialize models *)
@@ -825,6 +823,11 @@ let end_to_end_integration_test path context =
         ~call_graph:whole_program_call_graph
         ~overrides:override_graph_heap
     in
+    let initial_models =
+      initial_models
+      |> TaintFixpoint.Registry.to_alist
+      |> TaintFixpoint.SharedModels.of_alist_sequential
+    in
     let shared_models =
       TaintFixpoint.record_initial_models
         ~scheduler:(Test.mock_scheduler ())
@@ -881,7 +884,7 @@ let end_to_end_integration_test path context =
       [create_call_graph_files whole_program_call_graph; create_overrides_files override_graph_heap]
     in
     let serialized_models =
-      List.rev_append (Registry.targets initial_models) callables_to_analyze
+      List.rev_append (TaintFixpoint.SharedModels.targets initial_models) callables_to_analyze
       |> Target.Set.of_list
       |> Target.Set.elements
       |> List.map ~f:serialize_model

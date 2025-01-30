@@ -20,6 +20,8 @@ type t = Target.t list Target.Map.Tree.t
 
 let empty = Target.Map.Tree.empty
 
+let is_empty = Target.Map.Tree.is_empty
+
 let dependencies dependency_graph target =
   Target.Map.Tree.find dependency_graph target |> Option.value ~default:[]
 

@@ -593,7 +593,7 @@ module HashsetSharedMemory = struct
 
   let cleanup = T.cleanup
 
-  let from_heap targets = targets |> List.map ~f:(fun target -> target, ()) |> T.of_alist
+  let from_heap targets = targets |> List.map ~f:(fun target -> target, ()) |> T.of_alist_sequential
 
   module ReadOnly = T.ReadOnly
 

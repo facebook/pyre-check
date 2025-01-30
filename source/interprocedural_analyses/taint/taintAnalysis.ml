@@ -685,7 +685,6 @@ let run_taint_analysis
   let global_constants, cache =
     Cache.global_constants cache (fun () ->
         Interprocedural.GlobalConstants.SharedMemory.from_qualifiers
-          ~handle:(Interprocedural.GlobalConstants.SharedMemory.create ())
           ~scheduler
           ~scheduler_policies
           ~pyre_api
@@ -806,6 +805,11 @@ let run_taint_analysis
            (List.length callables_kept))
       ~end_message:"Analysis fixpoint complete"
   in
+  let initial_models =
+    initial_models
+    |> TaintFixpoint.Registry.to_alist
+    |> TaintFixpoint.SharedModels.of_alist_parallel ~scheduler
+  in
   let shared_models =
     TaintFixpoint.record_initial_models
       ~scheduler
@@ -836,7 +840,9 @@ let run_taint_analysis
       ~shared_models
   in
 
-  let all_callables = List.rev_append (Registry.targets initial_models) callables_to_analyze in
+  let all_callables =
+    List.rev_append (TaintFixpoint.SharedModels.targets initial_models) callables_to_analyze
+  in
 
   let file_coverage, rule_coverage =
     if not compute_coverage_flag then

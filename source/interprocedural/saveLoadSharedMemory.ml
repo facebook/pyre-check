@@ -90,7 +90,7 @@ end
 module MakeKeyValue (Key : Hack_parallel.Std.SharedMemory.KeyType) (Value : KeyValueValueType) =
 struct
   module T =
-    Hack_parallel.Std.SharedMemory.MakeFirstClassWithKeys
+    Hack_parallel.Std.SharedMemory.FirstClassWithKeys.Make
       (Key)
       (struct
         type t = Value.t
@@ -101,6 +101,8 @@ struct
       end)
 
   include T
+
+  let cleanup = T.cleanup ~clean_old:false
 
   module HandleSharedMemory = MakeSingleValue (struct
     type t = T.t

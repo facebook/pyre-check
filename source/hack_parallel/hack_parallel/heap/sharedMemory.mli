@@ -194,6 +194,7 @@ module NoCache : sig
     val get_exn          : key -> value
     val mem              : key -> bool
     val get_batch        : KeySet.t -> value option KeyMap.t
+    val remove           : key -> unit
     val remove_batch     : KeySet.t -> unit
 
     (* Api to read and remove old data from the table, which lives in a separate
@@ -259,8 +260,6 @@ module LocalCache :
 
 
 module FirstClass : sig
-
-
   module NoCache : sig
     module type S = sig
       type t
@@ -286,6 +285,7 @@ module FirstClass : sig
       val mem : t -> key -> bool
       val get : t -> key -> value option
       val get_batch : t -> KeySet.t -> value option KeyMap.t
+      val remove : t -> key -> unit
       val remove_batch : t -> KeySet.t -> unit
 
       (* Api to read and remove old data from the table, which lives in a separate
@@ -331,28 +331,84 @@ module FirstClass : sig
   end
 end
 
-module MakeFirstClassWithKeys (Key : KeyType) (Value : ValueType) : sig
-  type t
-
-  val create : unit -> t
-
-  val add : t -> Key.t -> Value.t -> t
-
-  val of_alist : (Key.t * Value.t) list -> t
-
-  val to_alist : t -> (Key.t * Value.t) list
-
-  val merge_same_handle_disjoint_keys: smaller:t -> larger:t -> t
-
-  val cleanup : t -> unit
-
-  module ReadOnly : sig
+module FirstClassWithKeys : sig
+  module type S = sig
     type t
 
-    val get : t -> Key.t -> Value.t option
+    type key
 
-    val mem : t -> Key.t -> bool
+    type value
+
+    module KeySet : Set.S with type elt = key
+
+    val create : unit -> t
+
+    val of_alist_sequential : (key * value) list -> t
+
+    val of_alist_parallel
+      :  map_reduce:
+           (map:((key * value) list -> unit) ->
+           inputs:(key * value) list ->
+           unit ->
+           unit) ->
+      (key * value) list ->
+      t
+
+    val to_alist : t -> (key * value) list
+
+    val keys : t -> key list
+
+    val cleanup : clean_old:bool -> t -> unit
+
+    val oldify_batch : t -> KeySet.t -> t
+
+    val remove_old_batch : t -> KeySet.t -> t
+
+    module ReadOnly : sig
+      type t
+
+      val get : t -> key -> value option
+
+      val get_old : t -> key -> value option
+
+      val mem : t -> key -> bool
+    end
+
+    val read_only : t -> ReadOnly.t
+
+    module AddOnly : sig
+      type t
+
+      val add : t -> key -> value -> t
+
+      val merge_same_handle_disjoint_keys: smaller:t -> larger:t -> t
+
+      val create_empty : t -> t
+    end
+
+    val add_only : t -> AddOnly.t
+
+    val from_add_only : AddOnly.t -> t
+
+    module PreserveKeyOnly : sig
+      type t
+
+      val get : t -> key -> value option
+
+      val get_old : t -> key -> value option
+
+      val set : t -> key -> value -> t
+
+      val set_new : t -> key -> value -> t
+    end
+
+    val preserve_key_only : t -> PreserveKeyOnly.t
   end
 
-  val read_only : t -> ReadOnly.t
+  module Make :
+    functor (KeyType : KeyType) ->
+    functor (Value : ValueType) ->
+      S with type value = Value.t
+              and type key = KeyType.t
+              and module KeySet = Set.Make (KeyType)
 end

@@ -146,19 +146,39 @@ let compute
   let definitions =
     initial_callables |> FetchCallables.get_definitions |> List.rev_append decorated_callables
   in
-  let initial_call_graph callable =
-    define_call_graphs
-    |> CallGraph.SharedMemory.read_only
-    |> CallGraph.SharedMemory.ReadOnly.get ~callable
-    |> Option.value ~default:CallGraph.DefineCallGraph.empty
-  in
   let initial_models =
-    definitions
-    |> List.map ~f:(fun callable ->
-           ( callable,
-             { CallGraph.HigherOrderCallGraph.empty with call_graph = initial_call_graph callable }
-           ))
-    |> Fixpoint.Registry.of_alist ~join:CallGraph.HigherOrderCallGraph.merge
+    let policy =
+      Scheduler.Policy.fixed_chunk_size
+        ~minimum_chunks_per_worker:1
+        ~minimum_chunk_size:1
+        ~preferred_chunk_size:1000
+        ()
+    in
+    let initial_models = Fixpoint.SharedModels.create () |> Fixpoint.SharedModels.add_only in
+    let empty_initial_models = Fixpoint.SharedModels.AddOnly.create_empty initial_models in
+    let initial_call_graph callable =
+      define_call_graphs
+      |> CallGraph.SharedMemory.read_only
+      |> CallGraph.SharedMemory.ReadOnly.get ~callable
+      |> Option.value ~default:CallGraph.DefineCallGraph.empty
+    in
+    let map =
+      List.fold ~init:empty_initial_models ~f:(fun initial_models callable ->
+          Fixpoint.SharedModels.AddOnly.add
+            initial_models
+            callable
+            { CallGraph.HigherOrderCallGraph.empty with call_graph = initial_call_graph callable })
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy
+      ~initial:initial_models
+      ~map
+      ~reduce:(fun left right ->
+        Fixpoint.SharedModels.AddOnly.merge_same_handle_disjoint_keys ~smaller:left ~larger:right)
+      ~inputs:definitions
+      ()
+    |> Fixpoint.SharedModels.from_add_only
   in
   let shared_models =
     Fixpoint.record_initial_models

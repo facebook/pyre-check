@@ -170,8 +170,18 @@ module Make (Analysis : ANALYSIS) : sig
     val object_targets : t -> Target.Set.t
 
     val fold : init:'a -> f:(target:Target.t -> model:Analysis.Model.t -> 'a -> 'a) -> t -> 'a
+  end
 
-    (* val get_targets_with_mode : mode:Analysis.Model.Mode.t -> t -> Target.t list *)
+  (** Represents a mapping from target to models, living in shared memory. *)
+  module SharedModels : sig
+    include
+      Hack_parallel.Std.SharedMemory.FirstClassWithKeys.S
+        with type key = Target.t
+         and type value = Analysis.Model.t
+
+    val targets : t -> Target.t list
+
+    val of_alist_parallel : scheduler:Scheduler.t -> (Target.t * Analysis.Model.t) list -> t
   end
 
   module Epoch : sig
@@ -184,15 +194,13 @@ module Make (Analysis : ANALYSIS) : sig
 
   type t
 
-  type shared_models
-
   val record_initial_models
     :  scheduler:Scheduler.t ->
-    initial_models:Registry.t ->
+    initial_models:SharedModels.t ->
     initial_callables:Target.t list ->
     stubs:Target.t list ->
     override_targets:Target.t list ->
-    shared_models
+    SharedModels.t
 
   val compute
     :  scheduler:Scheduler.t ->
@@ -204,7 +212,7 @@ module Make (Analysis : ANALYSIS) : sig
     max_iterations:int ->
     error_on_max_iterations:bool ->
     epoch:Epoch.t ->
-    shared_models:shared_models ->
+    shared_models:SharedModels.t ->
     t
 
   val get_result : t -> Target.t -> Analysis.Result.t

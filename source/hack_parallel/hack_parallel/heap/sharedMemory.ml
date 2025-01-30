@@ -553,6 +553,7 @@ module NoCache = struct
     val get_exn          : key -> value
     val mem              : key -> bool
     val get_batch        : KeySet.t -> value option KeyMap.t
+    val remove           : key -> unit
     val remove_batch     : KeySet.t -> unit
 
     (* Api to read and remove old data from the table, which lives in a separate
@@ -592,11 +593,12 @@ module NoCache = struct
         KeyMap.add str_key (Old.get key) acc
       end xs KeyMap.empty
 
+    let remove key =
+      let key = Key.make Value.prefix key in
+      New.remove key
+
     let remove_batch xs =
-      KeySet.iter begin fun str_key ->
-        let key = Key.make Value.prefix str_key in
-        New.remove key
-      end xs
+      KeySet.iter remove xs
 
     let oldify_batch xs =
       KeySet.iter begin fun str_key ->
@@ -939,6 +941,10 @@ module WithCache = struct
       Direct.revive_batch keys;
       KeySet.iter Cache.remove keys
 
+    let remove key =
+      Direct.remove key;
+      Cache.remove key
+
     let remove_batch xs =
       Direct.remove_batch xs;
       KeySet.iter Cache.remove xs
@@ -1022,6 +1028,7 @@ module FirstClass = struct
       val mem : t -> key -> bool
       val get : t -> key -> value option
       val get_batch : t -> KeySet.t -> value option KeyMap.t
+      val remove : t -> key -> unit
       val remove_batch : t -> KeySet.t -> unit
 
       (* Api to read and remove old data from the table, which lives in a separate
@@ -1077,6 +1084,8 @@ module FirstClass = struct
 
       let mem = with_convert_key Global.mem
 
+      let remove = with_convert_key Global.remove
+
       let get = with_convert_key Global.get
 
       let get_batch id keys = with_convert_keyset Global.get_batch id keys |> convert_keymap
@@ -1131,74 +1140,253 @@ module FirstClass = struct
 end
 
 (*****************************************************************************)
-(* A first class hash table in shared memory, where keys are also stored in the
+(* A first class hash table in shared memory, where keys are also tracked in the
  * ocaml heap. This allows performing whole-table operations such as updating
  * all key-value pairs or deleting the table from shared memory entirely (see
  * `cleanup`).
+ *
+ * Most map operations should be made in one of the modes: ReadOnly, AddOnly,
+ * PreserveKeyOnly. It is unsafe to interleave operations from different modes.
  *)
 (*****************************************************************************)
-module MakeFirstClassWithKeys (Key: KeyType) (Value : ValueType) = struct
-  module FirstClass = FirstClass.WithCache.Make (Key) (Value)
+module FirstClassWithKeys = struct
+  module type S = sig
+    type t
 
-  module Handle = struct
-    type t = {
-      first_class_handle: FirstClass.t;
-      keys: Key.t list;
-    }
+    type key
+
+    type value
+
+    module KeySet : Set.S with type elt = key
+
+    val create : unit -> t
+
+    val of_alist_sequential : (key * value) list -> t
+
+    val of_alist_parallel
+      :  map_reduce:
+           (map:((key * value) list -> unit) ->
+           inputs:(key * value) list ->
+           unit ->
+           unit) ->
+      (key * value) list ->
+      t
+
+    val to_alist : t -> (key * value) list
+
+    val keys : t -> key list
+
+    val cleanup : clean_old:bool -> t -> unit
+
+    val oldify_batch : t -> KeySet.t -> t
+
+    val remove_old_batch : t -> KeySet.t -> t
+
+    module ReadOnly : sig
+      type t
+
+      val get : t -> key -> value option
+
+      val get_old : t -> key -> value option
+
+      val mem : t -> key -> bool
+    end
+
+    val read_only : t -> ReadOnly.t
+
+    module AddOnly : sig
+      type t
+
+      val add : t -> key -> value -> t
+
+      val merge_same_handle_disjoint_keys: smaller:t -> larger:t -> t
+
+      val create_empty : t -> t
+    end
+
+    val add_only : t -> AddOnly.t
+
+    val from_add_only : AddOnly.t -> t
+
+    module PreserveKeyOnly : sig
+      type t
+
+      val get : t -> key -> value option
+
+      val get_old : t -> key -> value option
+
+      val set : t -> key -> value -> t
+
+      val set_new : t -> key -> value -> t
+    end
+
+    val preserve_key_only : t -> PreserveKeyOnly.t
   end
 
-  type t = Handle.t
+  module Make (Key: KeyType) (Value : ValueType) = struct
+    module FirstClass = FirstClass.WithCache.Make (Key) (Value)
 
-  let create () = { Handle.first_class_handle = FirstClass.create (); keys = [] }
+    module KeySet = FirstClass.KeySet
 
-  (* Add a new key-value pair in the table. The key must not be already present. *)
-  let add { Handle.first_class_handle; keys } key value =
-    let () = FirstClass.add first_class_handle key value in
-    { Handle.first_class_handle; keys = key :: keys }
-
-  (* Remove the table from shared memory *)
-  let cleanup { Handle.first_class_handle; keys } =
-    keys |> FirstClass.KeySet.of_list |> FirstClass.remove_batch first_class_handle
-
-  let of_alist list =
-    let first_class_handle = FirstClass.create () in
-    List.iter list ~f:(fun (key, value) -> FirstClass.add first_class_handle key value);
-    { Handle.first_class_handle; keys = List.map ~f:fst list }
-
-
-  let to_alist { Handle.first_class_handle; keys } =
-    keys
-    |> FirstClass.KeySet.of_list
-    |> FirstClass.get_batch first_class_handle
-    |> FirstClass.KeyMap.elements
-    |> List.filter_map ~f:(fun (key, value) ->
-           match value with
-           | Some value -> Some (key, value)
-           | None -> None)
-
-  (* Merge tables with the same handle but disjoint keys.
-   * This is commonly used in the `reduce` part of a map-reduce. *)
-  let merge_same_handle_disjoint_keys
-      ~smaller:{ Handle.first_class_handle = smaller_first_class_handle; keys = smaller_keys }
-      ~larger:{ Handle.first_class_handle = larger_first_class_handle; keys = larger_keys }
-    =
-    if not (FirstClass.equal smaller_first_class_handle larger_first_class_handle) then
-      failwith "Cannot merge shared memory tables with different handles"
-    else
-      {
-        Handle.first_class_handle = smaller_first_class_handle;
-        keys = List.append smaller_keys larger_keys;
+    module Handle = struct
+      type t = {
+        first_class_handle: FirstClass.t;
+        keys: Key.t list; (* list of keys, without duplicates *)
       }
+    end
 
-  (* A handle that is cheap to serialize.
-   * This is often used with map-reduce when whole-table operations are not required. *)
-  module ReadOnly = struct
-    type t = FirstClass.t
+    type t = Handle.t
 
-    let get = FirstClass.get
+    type key = Key.t
 
-    let mem = FirstClass.mem
+    type value = Value.t
+
+    let create () = { Handle.first_class_handle = FirstClass.create (); keys = [] }
+
+    (* Remove the table from shared memory *)
+    let cleanup ~clean_old { Handle.first_class_handle; keys } =
+      let key_set = FirstClass.KeySet.of_list keys in
+      let () = if clean_old then FirstClass.remove_old_batch first_class_handle key_set in
+      let () = FirstClass.remove_batch first_class_handle key_set in
+      ()
+
+    let of_alist_sequential list =
+      let first_class_handle =
+        let first_class_handle = FirstClass.create () in
+        let () = List.iter list ~f:(fun (key, value) -> FirstClass.add first_class_handle key value) in
+        first_class_handle
+      in
+      let keys =
+        let keys = list |> List.map ~f:fst in
+        let () =
+          (* Sanity check *)
+          if not (Int.equal (keys |> FirstClass.KeySet.of_list |> FirstClass.KeySet.cardinal) (List.length keys)) then
+            failwith "of_alist_sequential: duplicate key"
+        in
+        keys
+      in
+      { Handle.first_class_handle; keys }
+
+    let of_alist_parallel ~map_reduce list =
+      let first_class_handle =
+        let first_class_handle = FirstClass.create () in
+        let map = List.iter ~f:(fun (key, value) -> FirstClass.add first_class_handle key value) in
+        let () = map_reduce ~map ~inputs:list () in
+        first_class_handle
+      in
+      let keys =
+        let keys = list |> List.map ~f:fst in
+        let () =
+          (* Sanity check *)
+          if not (Int.equal (keys |> FirstClass.KeySet.of_list |> FirstClass.KeySet.cardinal) (List.length keys)) then
+            failwith "of_alist_sequential: duplicate key"
+        in
+        keys
+      in
+      { Handle.first_class_handle; keys }
+
+    let to_alist { Handle.first_class_handle; keys } =
+      keys
+      |> FirstClass.KeySet.of_list
+      |> FirstClass.get_batch first_class_handle
+      |> FirstClass.KeyMap.elements
+      |> List.filter_map ~f:(fun (key, value) ->
+             match value with
+             | Some value -> Some (key, value)
+             | None -> None)
+
+
+    let keys { Handle.keys; _} = keys
+
+    let oldify_batch ({ Handle.first_class_handle; _} as handle) batch =
+      let () = FirstClass.oldify_batch first_class_handle batch in
+      handle
+
+    let remove_old_batch ({ Handle.first_class_handle; _} as handle) batch =
+      let () = FirstClass.remove_old_batch first_class_handle batch in
+      handle
+
+    (* A handle that is cheap to serialize.
+     * This is usually used in a map-reduce when whole-table operations are not needed. *)
+    module ReadOnly = struct
+      type t = FirstClass.t
+
+      let get = FirstClass.get
+
+      let get_old = FirstClass.get_old
+
+      let mem = FirstClass.mem
+    end
+
+    let read_only { Handle.first_class_handle; _ } = first_class_handle
+
+    (* A handle that only allows adding new keys.
+     * This is usually used in a map-reduce when whole-table operations are not needed. *)
+    module AddOnly = struct
+      type nonrec t = t
+
+      (* Add a new key-value pair in the table. The key must not be already present. *)
+      let add { Handle.first_class_handle; keys } key value =
+        let () = FirstClass.add first_class_handle key value in
+        { Handle.first_class_handle; keys = key :: keys }
+
+      (* Merge tables with the same handle but disjoint keys.
+       * This is commonly used in the `reduce` part of a map-reduce. *)
+      let merge_same_handle_disjoint_keys
+          ~smaller:{ Handle.first_class_handle = smaller_first_class_handle; keys = smaller_keys }
+          ~larger:{ Handle.first_class_handle = larger_first_class_handle; keys = larger_keys }
+        =
+        (* We should only perform cheap sanity checks here, since this is used in
+         * the reduce operation of a map reduce. *)
+        if not (FirstClass.equal smaller_first_class_handle larger_first_class_handle) then
+          failwith "Cannot merge shared memory tables with different handles"
+        else
+          {
+            Handle.first_class_handle = smaller_first_class_handle;
+            keys = List.append smaller_keys larger_keys;
+          }
+
+      (* Create a table with no keys but using the same handle, so we can accumulate
+       * key-value pairs. This is usually used for map-reduce operations. *)
+      let create_empty { Handle.first_class_handle; _} = { Handle.first_class_handle; keys = [] }
+    end
+
+    let add_only = Core.Fn.id
+
+    let from_add_only ({ Handle.keys; _} as handle) =
+      let () =
+        (* Perform a sanity check here, since this is usually called after a map-reduce *)
+        if not (Int.equal (keys |> FirstClass.KeySet.of_list |> FirstClass.KeySet.cardinal) (List.length keys)) then
+          failwith "invariant error: duplicate keys"
+      in
+      handle
+
+    (* A handle that only allows operations that preserve the set of current keys.
+     * This is usually used in a map-reduce when whole-table operations are not needed. *)
+    module PreserveKeyOnly = struct
+      type t = FirstClass.t
+
+      let get = FirstClass.get
+
+      let get_old  = FirstClass.get_old
+
+      (* Update the value for an existing key *)
+      let set handle key value =
+        let () =
+          (* Sanity check *)
+          if not (FirstClass.mem handle key) then
+            failwith "invariant failure: key not present in shared memory"
+        in
+        let () = FirstClass.remove handle key in
+        let () = FirstClass.add handle key value in
+        handle
+
+      (* Set a 'new' value for a key that was oldified. *)
+      let set_new handle key value =
+        let () = FirstClass.add handle key value in
+        handle
+    end
+
+    let preserve_key_only { Handle.first_class_handle; _} = first_class_handle
   end
-
-  let read_only { Handle.first_class_handle; _ } = first_class_handle
 end

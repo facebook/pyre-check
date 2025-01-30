@@ -4626,18 +4626,12 @@ module SharedMemory = struct
         let description = "call graphs of defines"
       end)
 
-  type t = T.t
+  include T
 
   type call_graphs = {
     whole_program_call_graph: WholeProgramCallGraph.t;
     define_call_graphs: T.t;
   }
-
-  let add handle ~callable ~call_graph = T.add handle callable call_graph
-
-  let create = T.create
-
-  let merge_same_handle_disjoint_callables = T.merge_same_handle_disjoint_keys
 
   module ReadOnly = struct
     type t = T.ReadOnly.t
@@ -4654,11 +4648,13 @@ module SharedMemory = struct
   let load_from_cache = T.load_from_cache
 
   let register_decorator_defines ~decorator_resolution define_call_graphs =
-    Target.Map.fold
-      (fun callable { DecoratorDefine.call_graph; _ } define_call_graphs ->
-        add define_call_graphs ~callable ~call_graph)
-      decorator_resolution
-      define_call_graphs
+    define_call_graphs
+    |> T.add_only
+    |> Target.Map.fold
+         (fun callable { DecoratorDefine.call_graph; _ } define_call_graphs ->
+           T.AddOnly.add define_call_graphs callable call_graph)
+         decorator_resolution
+    |> T.from_add_only
 
 
   (** Build the whole call graph of the program.
@@ -4710,7 +4706,7 @@ module SharedMemory = struct
           in
           let define_call_graphs =
             if store_shared_memory then
-              add define_call_graphs ~callable ~call_graph:callable_call_graph
+              T.AddOnly.add define_call_graphs callable callable_call_graph
             else
               define_call_graphs
           in
@@ -4733,14 +4729,15 @@ module SharedMemory = struct
          * fail the analysis. But we don't perform such check due to performance reasons.
          * Additionally, since this `reduce` is used in `Scheduler.map_reduce`, the right parameter
          * is accumulated, so we must select left as smaller and right as larger for O(n) merging. *)
-        ( merge_same_handle_disjoint_callables
+        ( T.AddOnly.merge_same_handle_disjoint_keys
             ~smaller:left_define_call_graphs
             ~larger:right_define_call_graphs,
           WholeProgramCallGraph.merge_disjoint
             left_whole_program_call_graph
             right_whole_program_call_graph )
       in
-      let define_call_graphs = create () in
+      let define_call_graphs = T.create () |> T.add_only in
+      let empty_define_call_graphs = T.AddOnly.create_empty define_call_graphs in
       let scheduler_policy =
         Scheduler.Policy.from_configuration_or_default
           scheduler_policies
@@ -4759,13 +4756,14 @@ module SharedMemory = struct
         ~map:(fun definitions ->
           List.fold
             definitions
-            ~init:(define_call_graphs, WholeProgramCallGraph.empty)
+            ~init:(empty_define_call_graphs, WholeProgramCallGraph.empty)
             ~f:build_call_graph)
         ~reduce
         ~inputs:definitions
         ()
     in
-    let define_call_graphs_read_only = read_only define_call_graphs in
+    let define_call_graphs = T.from_add_only define_call_graphs in
+    let define_call_graphs_read_only = T.read_only define_call_graphs in
     let call_graph_to_json callable =
       match ReadOnly.get define_call_graphs_read_only ~callable with
       | Some call_graph when not (DefineCallGraph.is_empty call_graph) ->

@@ -95,7 +95,7 @@ module Heap = struct
 end
 
 module SharedMemory = struct
-  include
+  module T =
     SaveLoadSharedMemory.MakeKeyValue
       (PyrePysaLogic.SharedMemoryKeys.ReferenceKey)
       (struct
@@ -108,11 +108,11 @@ module SharedMemory = struct
         let description = "Mapping from fully qualified global name to expression"
       end)
 
-  let add_heap handle heap =
-    Map.fold heap ~init:handle ~f:(fun ~key ~data handle -> add handle key data)
+  include T
 
+  let from_heap heap = heap |> Map.to_alist |> T.of_alist_sequential
 
-  let from_qualifiers ~handle ~scheduler ~scheduler_policies ~pyre_api ~qualifiers =
+  let from_qualifiers ~scheduler ~scheduler_policies ~pyre_api ~qualifiers =
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default
         scheduler_policies
@@ -124,12 +124,18 @@ module SharedMemory = struct
              ~preferred_chunks_per_worker:1
              ())
     in
+    let handle = T.create () |> T.add_only in
+    let empty_handle = T.AddOnly.create_empty handle in
+    let add_heap handle heap =
+      Map.fold heap ~init:handle ~f:(fun ~key ~data handle -> T.AddOnly.add handle key data)
+    in
     Scheduler.map_reduce
       scheduler
       ~policy:scheduler_policy
       ~initial:handle
-      ~map:(fun qualifiers -> add_heap handle (Heap.from_qualifiers ~pyre_api ~qualifiers))
-      ~reduce:(fun smaller larger -> merge_same_handle_disjoint_keys ~smaller ~larger)
+      ~map:(fun qualifiers -> add_heap empty_handle (Heap.from_qualifiers ~pyre_api ~qualifiers))
+      ~reduce:(fun smaller larger -> T.AddOnly.merge_same_handle_disjoint_keys ~smaller ~larger)
       ~inputs:qualifiers
       ()
+    |> T.from_add_only
 end

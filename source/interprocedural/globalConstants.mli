@@ -26,11 +26,10 @@ module SharedMemory : sig
 
   val create : unit -> t
 
-  val add_heap : t -> Heap.t -> t
+  val from_heap : Heap.t -> t
 
   val from_qualifiers
-    :  handle:t ->
-    scheduler:Scheduler.t ->
+    :  scheduler:Scheduler.t ->
     scheduler_policies:Configuration.SchedulerPolicies.t ->
     pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     qualifiers:Reference.t list ->
