@@ -15,6 +15,7 @@ use itertools::Either;
 use itertools::EitherOrBoth;
 use itertools::Itertools;
 use ruff_python_ast::name::Name;
+use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtClassDef;
@@ -38,15 +39,18 @@ use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
+use crate::types::callable::CallableKind;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::Substitution;
 use crate::types::class::TArgs;
 use crate::types::class_metadata::ClassMetadata;
+use crate::types::class_metadata::DataclassMetadata;
 use crate::types::class_metadata::EnumMetadata;
 use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
 use crate::types::type_var::Variance;
+use crate::types::types::CalleeKind;
 use crate::types::types::Decoration;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
@@ -444,10 +448,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         cls: &Class,
         bases: &[Expr],
         keywords: &[(Name, Expr)],
+        decorators: &[Decorator],
     ) -> ClassMetadata {
         let mut is_typed_dict = false;
         let mut is_named_tuple = false;
         let mut enum_metadata = None;
+        let mut dataclass_metadata = None;
         let bases: Vec<BaseClass> = bases.iter().map(|x| self.base_class_of(x)).collect();
         let is_protocol = bases.iter().any(|x| matches!(x, BaseClass::Protocol(_)));
         let bases_with_metadata: Vec<_> = bases
@@ -534,6 +540,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
             }
         }
+        for decorator in decorators {
+            let ty_decorator = self.expr(&decorator.expression, None);
+            if matches!(
+                ty_decorator.callee_kind(),
+                Some(CalleeKind::Callable(CallableKind::Dataclass))
+            ) {
+                dataclass_metadata = Some(DataclassMetadata);
+            }
+        }
         if is_typed_dict
             && let Some(bad) = bases_with_metadata.iter().find(|x| !x.1.is_typed_dict())
         {
@@ -551,6 +566,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             is_named_tuple,
             enum_metadata,
             is_protocol,
+            dataclass_metadata,
             self.errors(),
         )
     }

@@ -627,10 +627,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn solve_mro(&self, binding: &BindingClassMetadata) -> Arc<ClassMetadata> {
         match binding {
-            BindingClassMetadata(k, bases, keywords) => {
+            BindingClassMetadata(k, bases, keywords, decorators) => {
                 let self_ty = self.get_idx(*k);
                 match &*self_ty {
-                    Type::ClassDef(cls) => Arc::new(self.class_metadata_of(cls, bases, keywords)),
+                    Type::ClassDef(cls) => {
+                        Arc::new(self.class_metadata_of(cls, bases, keywords, decorators))
+                    }
                     _ => {
                         unreachable!("The key inside an Mro binding must be a class type")
                     }

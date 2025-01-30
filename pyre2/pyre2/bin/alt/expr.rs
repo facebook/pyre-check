@@ -522,9 +522,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
                 return Type::Decoration(Decoration::ClassMethod(Box::new(decoratee)));
             }
-            Some(CalleeKind::Callable(CallableKind::Dataclass)) => {
-                // TODO: Implement dataclass functionality
-            }
             _ => {}
         }
         if matches!(&decoratee, Type::ClassDef(_)) {

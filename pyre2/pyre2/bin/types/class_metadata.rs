@@ -33,6 +33,7 @@ pub struct ClassMetadata {
     is_named_tuple: bool,
     enum_metadata: Option<EnumMetadata>,
     is_protocol: bool,
+    dataclass_metadata: Option<DataclassMetadata>,
 }
 
 impl Display for ClassMetadata {
@@ -51,6 +52,7 @@ impl ClassMetadata {
         is_named_tuple: bool,
         enum_metadata: Option<EnumMetadata>,
         is_protocol: bool,
+        dataclass_metadata: Option<DataclassMetadata>,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         ClassMetadata {
@@ -61,6 +63,7 @@ impl ClassMetadata {
             is_named_tuple,
             enum_metadata,
             is_protocol,
+            dataclass_metadata,
         }
     }
 
@@ -73,6 +76,7 @@ impl ClassMetadata {
             is_named_tuple: false,
             enum_metadata: None,
             is_protocol: false,
+            dataclass_metadata: None,
         }
     }
 
@@ -107,6 +111,11 @@ impl ClassMetadata {
 
     pub fn is_protocol(&self) -> bool {
         self.is_protocol
+    }
+
+    #[expect(dead_code)]
+    pub fn dataclass_metadata(&self) -> Option<&DataclassMetadata> {
+        self.dataclass_metadata.as_ref()
     }
 
     pub fn ancestors<'a>(&'a self, stdlib: &'a Stdlib) -> impl Iterator<Item = &'a ClassType> {
@@ -194,6 +203,9 @@ impl EnumMetadata {
             .collect()
     }
 }
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DataclassMetadata;
 
 /// A struct representing a class's ancestors, in method resolution order (MRO)
 /// and after dropping cycles and nonlinearizable inheritance.

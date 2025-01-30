@@ -1458,7 +1458,7 @@ impl<'a> BindingsBuilder<'a> {
 
         self.table.insert(
             KeyClassMetadata(ShortIdentifier::new(&x.name)),
-            BindingClassMetadata(definition_key, bases.clone(), keywords),
+            BindingClassMetadata(definition_key, bases.clone(), keywords, decorators.clone()),
         );
 
         let legacy_tparam_builder = legacy.unwrap();
@@ -1576,7 +1576,7 @@ impl<'a> BindingsBuilder<'a> {
             .insert(Key::Definition(ShortIdentifier::new(&class_name)));
         self.table.insert(
             KeyClassMetadata(ShortIdentifier::new(&class_name)),
-            BindingClassMetadata(definition_key, vec![Expr::Name(base_name)], vec![]),
+            BindingClassMetadata(definition_key, vec![Expr::Name(base_name)], vec![], vec![]),
         );
         let mut fields = SmallSet::new();
         match members {

@@ -53,7 +53,7 @@ assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
 assert_eq_size!(Binding, [usize; 9]);
 assert_eq_size!(BindingExpect, [usize; 8]);
 assert_eq_size!(BindingAnnotation, [usize; 9]);
-assert_eq_size!(BindingClassMetadata, [usize; 7]);
+assert_eq_size!(BindingClassMetadata, [usize; 10]);
 assert_eq_size!(BindingClassField, [usize; 15]);
 assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
 
@@ -810,7 +810,12 @@ impl DisplayWith<Bindings> for BindingClassField {
 /// The `Vec<Expr>` contains the base classes from the class header.
 /// The `Vec<(Name, Expr)>` contains the class keywords from the class header.
 #[derive(Clone, Debug)]
-pub struct BindingClassMetadata(pub Idx<Key>, pub Vec<Expr>, pub Vec<(Name, Expr)>);
+pub struct BindingClassMetadata(
+    pub Idx<Key>,
+    pub Vec<Expr>,
+    pub Vec<(Name, Expr)>,
+    pub Vec<Decorator>,
+);
 
 impl DisplayWith<Bindings> for BindingClassMetadata {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
