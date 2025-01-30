@@ -46,6 +46,7 @@
     "Line 130: Unexpected errors ['Expected 1 more positional argument']"
   ],
   "aliases_newtype.py": [
+    "Line 11: Expected 1 errors",
     "Line 32: Expected 1 errors",
     "Line 44: Expected 1 errors",
     "Line 47: Expected 1 errors",
@@ -53,8 +54,8 @@
     "Line 51: Expected 1 errors",
     "Line 58: Expected 1 errors",
     "Line 62: Expected 1 errors",
-    "Line 13: Unexpected errors ['untype, got NewType', 'EXPECTED Literal[42] <: Args[?_]']",
-    "Line 15: Unexpected errors ['assert_type(Any, int) failed', 'EXPECTED Literal[5] <: Args[?_]']"
+    "Line 13: Unexpected errors ['untype, got NewType']",
+    "Line 15: Unexpected errors ['assert_type(Any, int) failed']"
   ],
   "aliases_recursive.py": [
     "Line 19: Expected 1 errors",
@@ -168,10 +169,10 @@
     "Line 23: Unexpected errors ['Expected a callable, got type[?_]']",
     "Line 31: Unexpected errors ['assert_type(Any, A) failed', 'Expected a callable, got classmethod[Forall[T, (cls: type[T]) -> T]]']",
     "Line 36: Unexpected errors ['assert_type(Any, B) failed', 'Expected a callable, got classmethod[Forall[T, (cls: type[T]) -> T]]']",
-    "Line 48: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: Args[?_]']",
-    "Line 49: Unexpected errors ['assert_type(Any, B) failed', 'EXPECTED type[B] <: Args[?_]']",
-    "Line 50: Unexpected errors ['assert_type(Any, B) failed', 'EXPECTED type[B] <: Args[?_]']",
-    "Line 51: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: Args[?_]']"
+    "Line 48: Unexpected errors ['assert_type(Any, A) failed']",
+    "Line 49: Unexpected errors ['assert_type(Any, B) failed']",
+    "Line 50: Unexpected errors ['assert_type(Any, B) failed']",
+    "Line 51: Unexpected errors ['assert_type(Any, A) failed']"
   ],
   "annotations_typeexpr.py": [
     "Line 93: Expected 1 errors",
@@ -233,7 +234,6 @@
     "Line 109: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: Proto5']",
     "Line 168: Unexpected errors ['EXPECTED (x: Any) -> Any <: Proto8']",
     "Line 196: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 199: Unexpected errors ['EXPECTED Literal[3] <: Kwargs[?_]']",
     "Line 216: Unexpected errors ['EXPECTED () -> None <: Proto10']",
     "Line 236: Unexpected errors ['EXPECTED (int, y: str, z: None) -> Any <: Proto11']",
     "Line 237: Unexpected errors ['EXPECTED (x: int, y: str, z: None) -> Any <: Proto11']",
@@ -699,9 +699,8 @@
     "Line 38: Expected 1 errors",
     "Line 41: Expected 1 errors",
     "Line 60: Expected 1 errors",
-    "Line 82: Unexpected errors ['`Args[?_]` is not iterable', 'Expected argument after ** to be a mapping, got: Kwargs[?_]']",
-    "Line 96: Unexpected errors ['EXPECTED Literal[1] <: Args[?_]', \"EXPECTED Literal['A'] <: Args[?_]\"]",
-    "Line 97: Unexpected errors [\"EXPECTED Literal['A'] <: Kwargs[?_]\", 'EXPECTED Literal[1] <: Kwargs[?_]']"
+    "Line 96: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int']",
+    "Line 97: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int']"
   ],
   "generics_paramspec_semantics.py": [
     "Line 22: Unexpected errors ['assert_type((str, bool) -> str, (str, bool) -> str) failed']",
@@ -849,10 +848,10 @@
     "Line 24: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 25: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 27: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 36: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'untype, got NewType', 'untype, got NewType', 'EXPECTED tuple[Unknown, Unknown] <: tuple[Error]', 'EXPECTED Literal[1] <: Args[?_]', 'EXPECTED Literal[2] <: Args[?_]']",
-    "Line 37: Unexpected errors ['Expected 1 type argument for class `Array`, got 3.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'EXPECTED tuple[Unknown, Unknown, Unknown] <: tuple[Error]', 'EXPECTED Literal[1] <: Args[?_]', 'EXPECTED Literal[1] <: Args[?_]', 'EXPECTED Literal[1] <: Args[?_]']",
+    "Line 36: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'untype, got NewType', 'untype, got NewType', 'EXPECTED tuple[Unknown, Unknown] <: tuple[Error]']",
+    "Line 37: Unexpected errors ['Expected 1 type argument for class `Array`, got 3.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'EXPECTED tuple[Unknown, Unknown, Unknown] <: tuple[Error]']",
     "Line 38: Unexpected errors ['Expected 1 type argument for class `Array`, got 4.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
-    "Line 39: Unexpected errors ['EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]', 'EXPECTED Literal[1] <: Args[?_]', 'EXPECTED Literal[1] <: Args[?_]', 'EXPECTED Literal[1] <: Args[?_]', 'EXPECTED Literal[1] <: Args[?_]']",
+    "Line 39: Unexpected errors ['EXPECTED tuple[Unknown, Unknown, Unknown, Unknown] <: tuple[Error]']",
     "Line 54: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 75: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 84: Unexpected errors ['assert_type(tuple[Any], tuple[int]) failed']",
@@ -1098,9 +1097,7 @@
     "Line 73: Unexpected errors ['assert_type(object, int) failed']",
     "Line 76: Unexpected errors ['Expected a callable, got classmethod[(cls: A, val: object) -> TypeGuard[int]]']",
     "Line 77: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 80: Unexpected errors ['EXPECTED object <: Args[?_]']",
     "Line 81: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 84: Unexpected errors ['EXPECTED object <: Args[?_]']",
     "Line 85: Unexpected errors ['assert_type(object, int) failed']",
     "Line 89: Unexpected errors ['assert_type(A, B) failed']",
     "Line 93: Unexpected errors ['assert_type(A, B) failed']",
@@ -1126,9 +1123,7 @@
     "Line 76: Unexpected errors ['assert_type(object, int) failed']",
     "Line 79: Unexpected errors ['Expected a callable, got classmethod[(cls: A, val: object) -> TypeIs[int]]']",
     "Line 80: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 83: Unexpected errors ['EXPECTED object <: Args[?_]']",
     "Line 84: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 87: Unexpected errors ['EXPECTED object <: Args[?_]']",
     "Line 88: Unexpected errors ['assert_type(object, int) failed']",
     "Line 92: Unexpected errors ['assert_type(object, B) failed']",
     "Line 96: Unexpected errors ['assert_type(object, B) failed']",

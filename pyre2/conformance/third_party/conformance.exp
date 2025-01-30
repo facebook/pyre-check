@@ -597,16 +597,6 @@
   "aliases_newtype.py": [
     {
       "code": -2,
-      "column": 8,
-      "concise_description": "EXPECTED Literal['user'] <: Args[?_]",
-      "description": "EXPECTED Literal['user'] <: Args[?_]",
-      "line": 11,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 11
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "untype, got NewType",
       "description": "untype, got NewType",
@@ -627,32 +617,12 @@
     },
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED Literal[42] <: Args[?_]",
-      "description": "EXPECTED Literal[42] <: Args[?_]",
-      "line": 13,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 13
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 15,
       "name": "PyreError",
       "stop_column": 32,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED Literal[5] <: Args[?_]",
-      "description": "EXPECTED Literal[5] <: Args[?_]",
-      "line": 15,
-      "name": "PyreError",
-      "stop_column": 21,
       "stop_line": 15
     },
     {
@@ -1912,16 +1882,6 @@
     },
     {
       "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED type[A] <: Args[?_]",
-      "description": "EXPECTED type[A] <: Args[?_]",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, B) failed",
       "description": "assert_type(Any, B) failed",
@@ -1932,32 +1892,12 @@
     },
     {
       "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED type[B] <: Args[?_]",
-      "description": "EXPECTED type[B] <: Args[?_]",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, B) failed",
       "description": "assert_type(Any, B) failed",
       "line": 50,
       "name": "PyreError",
       "stop_column": 35,
-      "stop_line": 50
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED type[B] <: Args[?_]",
-      "description": "EXPECTED type[B] <: Args[?_]",
-      "line": 50,
-      "name": "PyreError",
-      "stop_column": 30,
       "stop_line": 50
     },
     {
@@ -1968,16 +1908,6 @@
       "line": 51,
       "name": "PyreError",
       "stop_column": 35,
-      "stop_line": 51
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED type[A] <: Args[?_]",
-      "description": "EXPECTED type[A] <: Args[?_]",
-      "line": 51,
-      "name": "PyreError",
-      "stop_column": 30,
       "stop_line": 51
     }
   ],
@@ -3027,16 +2957,6 @@
       "name": "PyreError",
       "stop_column": 32,
       "stop_line": 197
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED Literal[3] <: Kwargs[?_]",
-      "description": "EXPECTED Literal[3] <: Kwargs[?_]",
-      "line": 199,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 199
     },
     {
       "code": -2,
@@ -8164,29 +8084,9 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "`Args[?_]` is not iterable",
-      "description": "`Args[?_]` is not iterable",
-      "line": 82,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 82
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "Expected argument after ** to be a mapping, got: Kwargs[?_]",
-      "description": "Expected argument after ** to be a mapping, got: Kwargs[?_]",
-      "line": 82,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 82
-    },
-    {
-      "code": -2,
       "column": 13,
-      "concise_description": "Multiple values for argument 'x'",
-      "description": "Multiple values for argument 'x'",
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
       "line": 83,
       "name": "PyreError",
       "stop_column": 16,
@@ -8194,82 +8094,42 @@
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "`Args[?_]` is not iterable",
-      "description": "`Args[?_]` is not iterable",
+      "column": 13,
+      "concise_description": "Unexpected keyword argument 'x'",
+      "description": "Unexpected keyword argument 'x'",
       "line": 83,
       "name": "PyreError",
-      "stop_column": 23,
+      "stop_column": 16,
       "stop_line": 83
     },
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "Expected argument after ** to be a mapping, got: Kwargs[?_]",
-      "description": "Expected argument after ** to be a mapping, got: Kwargs[?_]",
-      "line": 83,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 83
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
+      "column": 7,
+      "concise_description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
+      "description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
       "line": 96,
       "name": "PyreError",
-      "stop_column": 21,
+      "stop_column": 18,
       "stop_line": 96
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Literal['A'] <: Args[?_]",
-      "description": "EXPECTED Literal['A'] <: Args[?_]",
-      "line": 96,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 96
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Literal['A'] <: Kwargs[?_]",
-      "description": "EXPECTED Literal['A'] <: Kwargs[?_]",
+      "column": 7,
+      "concise_description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
+      "description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
       "line": 97,
       "name": "PyreError",
-      "stop_column": 25,
+      "stop_column": 18,
       "stop_line": 97
     },
     {
       "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED Literal[1] <: Kwargs[?_]",
-      "description": "EXPECTED Literal[1] <: Kwargs[?_]",
-      "line": 97,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 97
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED Literal['A'] <: Args[?_]",
-      "description": "EXPECTED Literal['A'] <: Args[?_]",
+      "column": 7,
+      "concise_description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
+      "description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
       "line": 98,
       "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 98
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 98,
-      "name": "PyreError",
-      "stop_column": 26,
+      "stop_column": 18,
       "stop_line": 98
     }
   ],
@@ -9993,26 +9853,6 @@
     },
     {
       "code": -2,
-      "column": 42,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 52,
-      "concise_description": "EXPECTED Literal[2] <: Args[?_]",
-      "description": "EXPECTED Literal[2] <: Args[?_]",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 53,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "Expected 1 type argument for class `Array`, got 3.",
       "description": "Expected 1 type argument for class `Array`, got 3.",
@@ -10059,36 +9899,6 @@
       "line": 37,
       "name": "PyreError",
       "stop_column": 72,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 48,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 49,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 59,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 60,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 69,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 70,
       "stop_line": 37
     },
     {
@@ -10153,46 +9963,6 @@
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 39
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 39
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 39
-    },
-    {
-      "code": -2,
-      "column": 42,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 39
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "Expected 1 type argument for class `Array`, got 2.",
       "description": "Expected 1 type argument for class `Array`, got 2.",
@@ -10219,16 +9989,6 @@
       "line": 42,
       "name": "PyreError",
       "stop_column": 24,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 42,
       "stop_line": 42
     },
     {
@@ -10283,26 +10043,6 @@
     },
     {
       "code": -2,
-      "column": 48,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 49,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
-      "column": 58,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 59,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "Expected 1 type argument for class `Array`, got 4.",
       "description": "Expected 1 type argument for class `Array`, got 4.",
@@ -10359,46 +10099,6 @@
       "line": 45,
       "name": "PyreError",
       "stop_column": 45,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 31,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 42,
-      "concise_description": "EXPECTED Literal[1] <: Args[?_]",
-      "description": "EXPECTED Literal[1] <: Args[?_]",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 43,
       "stop_line": 45
     },
     {
@@ -14598,16 +14298,6 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED object <: Args[?_]",
-      "description": "EXPECTED object <: Args[?_]",
-      "line": 80,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 80
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
@@ -14615,16 +14305,6 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 81
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "EXPECTED object <: Args[?_]",
-      "description": "EXPECTED object <: Args[?_]",
-      "line": 84,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 84
     },
     {
       "code": -2,
@@ -14920,16 +14600,6 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED object <: Args[?_]",
-      "description": "EXPECTED object <: Args[?_]",
-      "line": 83,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 83
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
@@ -14937,16 +14607,6 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 84
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "EXPECTED object <: Args[?_]",
-      "description": "EXPECTED object <: Args[?_]",
-      "line": 87,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 87
     },
     {
       "code": -2,

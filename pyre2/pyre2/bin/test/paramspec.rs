@@ -257,8 +257,7 @@ def decorator(f: Callable[P, int]) -> Callable[P, None]:
 "#,
 );
 
-testcase_with_bug!(
-    "One accepted is rejected, rejected has too many error messages",
+testcase!(
     test_paramspec_named_arguments_concatenate,
     r#"
 from typing import Callable, ParamSpec
@@ -270,8 +269,8 @@ def outer(f: Callable[P, None]) -> Callable[P, None]:
     f(*args, **kwargs)
 
   def bar(*args: P.args, **kwargs: P.kwargs) -> None:
-    foo(1, *args, **kwargs)   # Accepted  # E: `Args[?_]` is not iterable # E: Expected argument after ** to be a mapping, got: Kwargs[?_]
-    foo(x=1, *args, **kwargs) # Rejected # E: `Args[?_]` is not iterable # E: Multiple values for argument 'x' # E: Expected argument after ** to be a mapping, got: Kwargs[?_]
+    foo(1, *args, **kwargs)   # Accepted
+    foo(x=1, *args, **kwargs) # Rejected # E: Expected 1 more positional argument # E: Unexpected keyword argument 'x'
 
   return bar
 "#,
@@ -291,10 +290,10 @@ def twice(f: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int:
 def a_int_b_str(a: int, b: str) -> int:
   return a
 
-twice(a_int_b_str, 1, "A")       # Accepted # E: EXPECTED Literal[1] <: Args[?_] # E: EXPECTED Literal['A'] <: Args[?_]
+twice(a_int_b_str, 1, "A")       # Accepted # E: (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int
 
-twice(a_int_b_str, b="A", a=1)   # Accepted # E: EXPECTED Literal['A'] <: Kwargs[?_] # E: EXPECTED Literal[1] <: Kwargs[?_]
+twice(a_int_b_str, b="A", a=1)   # Accepted # E: (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int
 
-twice(a_int_b_str, "A", 1)       # Rejected # E: EXPECTED Literal['A'] <: Args[?_] # E: EXPECTED Literal[1] <: Args[?_]
+twice(a_int_b_str, "A", 1)       # Rejected # E: (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int
 "#,
 );
