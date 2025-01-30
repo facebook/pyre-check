@@ -343,11 +343,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     arg.pre_eval(self).post_infer(self)
                 }
             }
-            _ => {
-                self.error(
-                    range,
-                    "Answers::expr_infer wrong number of arguments to call".to_owned(),
-                );
+            Params::ParamSpec(concatenate, p) => {
+                let mut p = self.solver().expand(p);
+                if let Type::Var(v) = p {
+                    // We are making a call, so if it hasn't been forced yet, do so now.
+                    p = self.solver().force_var(v);
+                }
+                if let Type::ParamSpecValue(params) = p {
+                    self.callable_infer_params(
+                        &params.prepend_types(&concatenate),
+                        self_arg,
+                        args,
+                        keywords,
+                        range,
+                    );
+                } else {
+                    // This could well be our error, but not really sure (if you call something quantified)
+                    self.error(range, "Unexpected ParamSpec type".to_owned());
+                }
             }
         };
         self.solver().expand(callable.ret)

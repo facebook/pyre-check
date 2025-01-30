@@ -350,7 +350,7 @@ from typing import Callable, ParamSpec
 P = ParamSpec("P")
 def test(f: Callable[P, None]) -> Callable[P, None]:
     def inner(*args: P.args, **kwargs: P.kwargs) -> None:
-        f(*args, **kwargs) # E: Answers::expr_infer wrong number of arguments to call
+        f(*args, **kwargs) # E: Unexpected ParamSpec type
     return inner # E: EXPECTED (*Args[?_], **Kwargs[?_]) -> None <: (ParamSpec(?_)) -> None
 "#,
 );
@@ -391,10 +391,9 @@ def returns_int(a: str, b: bool) -> int: ...
 f = changes_return_type_to_str(returns_int)
 reveal_type(f)  # E: revealed type: (a: str, b: bool) -> str
 
-## To do next
-# f("A", True)
-# f(a="A", b=True)
-# f("A", "A")  # Bad
-# assert_type(f("A", True), str)
+f("A", True)
+f(a="A", b=True)
+f("A", "A")  # E: Literal['A'] <: bool
+assert_type(f("A", True), str)
 "#,
 );
