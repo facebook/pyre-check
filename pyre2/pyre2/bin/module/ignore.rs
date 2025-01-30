@@ -28,7 +28,7 @@ impl Ignore {
         Self { ignores }
     }
 
-    pub fn is_ignored(&self, range: SourceRange, msg: &str) -> bool {
+    pub fn is_ignored(&self, range: &SourceRange, msg: &str) -> bool {
         // for now, we ignore the msg
         let _unused = msg;
         // We allow an ignore the line before the range, or on any line within the range.

@@ -56,6 +56,6 @@ impl Error {
     }
 
     pub fn is_ignored(&self) -> bool {
-        self.info.is_ignored(self.source_range(), &self.msg)
+        self.info.is_ignored(&self.source_range(), &self.msg)
     }
 }

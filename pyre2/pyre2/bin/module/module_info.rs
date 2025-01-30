@@ -161,7 +161,7 @@ impl ModuleInfo {
         )
     }
 
-    pub fn is_ignored(&self, source_range: SourceRange, msg: &str) -> bool {
+    pub fn is_ignored(&self, source_range: &SourceRange, msg: &str) -> bool {
         self.0.ignore.is_ignored(source_range, msg)
     }
 }
