@@ -8,6 +8,21 @@
 use crate::testcase;
 use crate::testcase_with_bug;
 
+testcase_with_bug!(
+    "Support for staticmethod is not yet complete",
+    test_staticmethod,
+    r#"
+from typing import reveal_type
+class C:
+    @staticmethod  # E: Expected 0 positional arguments, got 1
+    def foo() -> int:
+        return 42
+def f(c: C):
+    reveal_type(C.foo)  # E: revealed type: staticmethod
+    reveal_type(c.foo)  # E: revealed type: staticmethod
+    "#,
+);
+
 testcase!(
     test_classmethod_access,
     r#"
