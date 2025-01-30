@@ -31,6 +31,7 @@ mod overload;
 mod paramspec;
 mod perf;
 mod protocol;
+mod returns;
 mod simple;
 mod stdlib;
 mod tuple;
