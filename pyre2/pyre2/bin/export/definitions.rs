@@ -7,7 +7,6 @@
 
 use std::cmp;
 
-use itertools::Itertools;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::ExceptHandler;
 use ruff_python_ast::Expr;
@@ -158,13 +157,30 @@ impl Definitions {
 }
 
 impl<'a> DefinitionsBuilder<'a> {
-    fn stmts(&mut self, x: &[Stmt]) {
-        x.iter()
-            .dedup_by(|x, y| match (x, y) {
-                (Stmt::FunctionDef(x), Stmt::FunctionDef(y)) => x.name.id == y.name.id,
-                _ => false,
-            })
-            .for_each(|x| self.stmt(x));
+    fn stmts(&mut self, xs: &[Stmt]) {
+        let mut iter = xs.iter();
+        'outer: while let Some(x) = iter.next() {
+            if let Stmt::FunctionDef(f) = x {
+                let mut last = x;
+                let mut last_f = f;
+                for x in iter.by_ref() {
+                    if let Stmt::FunctionDef(g) = x {
+                        if last_f.name.id != g.name.id {
+                            self.stmt(last);
+                            last_f = g;
+                        }
+                        last = x;
+                    } else {
+                        self.stmt(last);
+                        self.stmt(x);
+                        continue 'outer;
+                    }
+                }
+                self.stmt(last);
+            } else {
+                self.stmt(x);
+            }
+        }
     }
 
     fn add_name(&mut self, x: &Name, range: TextRange, style: DefinitionStyle) {
