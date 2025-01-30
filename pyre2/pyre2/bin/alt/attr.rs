@@ -459,7 +459,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::BoundMethod(_, _) => Some(AttributeBase::ClassInstance(stdlib.method_type())),
             Type::Ellipsis => Some(AttributeBase::ClassInstance(stdlib.ellipsis_type())),
             Type::Forall(_, box base) => self.as_attribute_base(base, stdlib),
-            Type::Var(v) => self.as_attribute_base(self.solver().force_var(v), stdlib),
+            Type::Var(v) => {
+                if let Some(_guard) = self.recurser.recurse(v) {
+                    self.as_attribute_base(self.solver().force_var(v), stdlib)
+                } else {
+                    None
+                }
+            }
             // TODO(stroxler) This case will have to at least sometimes return non-None for property setters.
             Type::Decoration(_) => None,
             // TODO: check to see which ones should have class representations
