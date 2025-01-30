@@ -25,7 +25,6 @@ use crate::types::types::Decoration;
 use crate::types::types::NeverStyle;
 use crate::types::types::Quantified;
 use crate::types::types::Type;
-use crate::types::types::TypeAliasStyle;
 use crate::util::display::append;
 use crate::util::display::commas_iter;
 use crate::util::display::Fmt;
@@ -271,12 +270,13 @@ impl<'a> TypeDisplayContext<'a> {
                 AnyStyle::Error => write!(f, "Error"),
             },
             Type::TypeAlias(ta) => {
-                let desc = match ta.style {
-                    TypeAliasStyle::Scoped => "ScopedTypeAlias",
-                    TypeAliasStyle::LegacyExplicit => "LegacyExplicitTypeAlias",
-                    TypeAliasStyle::LegacyImplicit => "LegacyImplicitTypeAlias",
-                };
-                write!(f, "{}[{}, {}]", desc, ta.name, self.display(&ta.as_type()))
+                write!(
+                    f,
+                    "{}[{}, {}]",
+                    ta.style,
+                    ta.name,
+                    self.display(&ta.as_type())
+                )
             }
             Type::Decoration(d) => self.fmt_decoration(d, f),
             Type::None => write!(f, "None"),
