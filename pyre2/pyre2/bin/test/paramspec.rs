@@ -164,8 +164,8 @@ reveal_type(Y(a, 1).f) # E: revealed type: (q: int) -> str
 "#,
 );
 
-testcase_with_bug!(
-    "Types are right, but slightly different formatting. Thoughts?",
+// We have different formatting to what the spec suggests, but the same answers.
+testcase!(
     test_simple_concatenate,
     r#"
 from typing import Callable, Concatenate, ParamSpec, reveal_type
