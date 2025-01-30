@@ -26,7 +26,7 @@ use crate::error::collector::ErrorCollector;
 use crate::module::ignore::Ignore;
 use crate::module::module_name::ModuleName;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Ord, PartialOrd, PartialEq, Eq, Hash, Default)]
 pub struct SourceRange {
     pub start: SourceLocation,
     pub end: SourceLocation,
