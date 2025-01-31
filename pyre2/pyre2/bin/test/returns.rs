@@ -108,3 +108,15 @@ def f(b: bool) -> None:
         return None
 "#,
 );
+
+testcase!(
+    test_return_then_dead_code,
+    r#"
+def f(b: bool) -> int:
+    return 1
+    # This code is unreachable. A linter should spot this.
+    # But for now, it's perfectly reasonble to say the `pass`
+    # has the wrong type, and a `return` should be here.
+    pass # E: EXPECTED None <: int
+"#,
+);
