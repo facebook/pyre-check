@@ -285,7 +285,7 @@ impl<'a> Server<'a> {
                 .entry(e.path().to_owned())
                 .or_default()
                 .push(Diagnostic {
-                    range: source_range_to_range(e.source_range()),
+                    range: source_range_to_range(&e.source_range()),
                     severity: Some(lsp_types::DiagnosticSeverity::ERROR),
                     message: e.msg().to_owned(),
                     ..Default::default()
@@ -339,7 +339,7 @@ impl<'a> Server<'a> {
         let path = std::fs::canonicalize(&path).unwrap_or(path);
         Some(GotoDefinitionResponse::Scalar(Location {
             uri: Url::from_file_path(path).unwrap(),
-            range: source_range_to_range(info.source_range(range)),
+            range: source_range_to_range(&info.source_range(range)),
         }))
     }
 
@@ -390,14 +390,14 @@ impl<'a> Server<'a> {
     }
 }
 
-fn source_range_to_range(x: SourceRange) -> lsp_types::Range {
+fn source_range_to_range(x: &SourceRange) -> lsp_types::Range {
     lsp_types::Range::new(
-        source_location_to_position(x.start),
-        source_location_to_position(x.end),
+        source_location_to_position(&x.start),
+        source_location_to_position(&x.end),
     )
 }
 
-fn source_location_to_position(x: SourceLocation) -> lsp_types::Position {
+fn source_location_to_position(x: &SourceLocation) -> lsp_types::Position {
     lsp_types::Position {
         line: x.row.to_zero_indexed() as u32,
         character: x.column.to_zero_indexed() as u32,
@@ -405,7 +405,7 @@ fn source_location_to_position(x: SourceLocation) -> lsp_types::Position {
 }
 
 fn text_size_to_position(info: &ModuleInfo, x: TextSize) -> lsp_types::Position {
-    source_location_to_position(info.source_location(x))
+    source_location_to_position(&info.source_location(x))
 }
 
 fn position_to_text_size(info: &ModuleInfo, position: lsp_types::Position) -> TextSize {
