@@ -71,6 +71,8 @@ enum CallStyle<'a> {
 enum CallTarget {
     /// A thing whose type is a Callable, usually a function.
     Callable(Callable),
+    /// The dataclasses.dataclass function.
+    Dataclass(Callable),
     /// Method of a class. The `Type` is the self/cls argument.
     BoundMethod(Type, Callable),
     /// A class object.
@@ -130,6 +132,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Return a pair of the quantified variables I had to instantiate, and the resulting call target.
     fn as_call_target(&self, ty: Type) -> Option<(Vec<Var>, CallTarget)> {
         match ty {
+            Type::Callable(c, CallableKind::Dataclass) => {
+                Some((Vec::new(), CallTarget::Dataclass(*c)))
+            }
             Type::Callable(c, _) => Some((Vec::new(), CallTarget::Callable(*c))),
             Type::BoundMethod(obj, func) => match self.as_call_target(*func.clone()) {
                 Some((gs, CallTarget::Callable(c))) => Some((gs, CallTarget::BoundMethod(*obj, c))),
@@ -343,18 +348,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
+        let is_dataclass = matches!(call_target.1, CallTarget::Dataclass(_));
         let res = match call_target.1 {
             CallTarget::Class(cls) => self.construct(cls, args, keywords, range),
             CallTarget::BoundMethod(obj, c) => {
                 let first_arg = CallArg::Type(&obj, range);
                 self.callable_infer(c, Some(first_arg), args, keywords, range)
             }
-            CallTarget::Callable(callable) => {
+            CallTarget::Callable(callable) | CallTarget::Dataclass(callable) => {
                 self.callable_infer(callable, None, args, keywords, range)
             }
         };
         self.solver().finish_quantified(&call_target.0);
-        res
+        if is_dataclass && let Type::Callable(c, _) = res {
+            Type::Callable(c, CallableKind::Dataclass)
+        } else {
+            res
+        }
     }
 
     pub fn attr_infer(&self, obj: &Type, attr_name: &Name, range: TextRange) -> Type {

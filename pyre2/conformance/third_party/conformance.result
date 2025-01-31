@@ -392,15 +392,11 @@
     "Line 17: Expected 1 errors",
     "Lines 22, 23: Expected error (tag 'DC2')",
     "Lines 32, 33: Expected error (tag 'DC4')",
-    "Line 14: Unexpected errors ['Expected 0 positional arguments, got 2']"
+    "Line 14: Unexpected errors ['EXPECTED Literal[1] <: float']"
   ],
   "dataclasses_hash.py": [
     "Line 15: Expected 1 errors",
-    "Line 23: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 40: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 48: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 59: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 70: Unexpected errors ['Expected 0 positional arguments, got 1']"
+    "Line 32: Expected 1 errors"
   ],
   "dataclasses_inheritance.py": [
     "Line 60: Expected 1 errors",
@@ -409,24 +405,19 @@
     "Line 37: Unexpected errors ['EXPECTED Literal[15] <: float']"
   ],
   "dataclasses_kwonly.py": [
+    "Line 53: Expected 1 errors",
     "Line 17: Unexpected errors [\"Missing argument 'b'\"]",
     "Line 18: Unexpected errors [\"Missing argument 'b'\"]",
     "Line 28: Unexpected errors ['EXPECTED Literal[3] <: _MISSING_TYPE']",
     "Line 32: Unexpected errors [\"EXPECTED Literal['hi'] <: int\"]",
     "Line 33: Unexpected errors [\"Missing argument 'b'\"]",
     "Line 35: Unexpected errors [\"EXPECTED Literal['hi'] <: int\", \"Multiple values for argument 'b'\"]",
-    "Line 47: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 48: Unexpected errors [\"Unexpected keyword argument 'a'\"]",
-    "Line 49: Unexpected errors [\"Unexpected keyword argument 'a'\", \"Unexpected keyword argument 'b'\"]",
-    "Line 50: Unexpected errors ['Expected 0 positional arguments, got 1', \"Unexpected keyword argument 'b'\"]",
-    "Line 61: Unexpected errors [\"EXPECTED Literal[''] <: float\", 'Expected 1 positional argument, got 2', \"Unexpected keyword argument 'b'\"]",
-    "Line 62: Unexpected errors [\"Unexpected keyword argument 'a'\", \"Unexpected keyword argument 'b'\"]"
+    "Line 47: Unexpected errors [\"Missing argument 'b'\"]",
+    "Line 48: Unexpected errors [\"Missing argument 'b'\"]",
+    "Line 61: Unexpected errors ['EXPECTED float <: int', \"Multiple values for argument 'b'\"]"
   ],
   "dataclasses_order.py": [
-    "Line 50: Expected 1 errors",
-    "Line 19: Unexpected errors ['Expected 0 positional arguments, got 2']",
-    "Line 20: Unexpected errors ['Expected 0 positional arguments, got 2']",
-    "Line 46: Unexpected errors ['Expected 0 positional arguments, got 2']"
+    "Line 50: Expected 1 errors"
   ],
   "dataclasses_postinit.py": [
     "Line 19: Expected 1 errors",
@@ -438,7 +429,7 @@
     "Line 38: Expected 1 errors",
     "Lines 10, 11: Expected error (tag 'DC1')",
     "Line 56: Unexpected errors ['Class `DC5` has no class attribute `__slots__`']",
-    "Line 57: Unexpected errors ['Object of class `DC5` has no attribute `__slots__`', 'Expected 0 positional arguments, got 1']"
+    "Line 57: Unexpected errors ['Object of class `DC5` has no attribute `__slots__`']"
   ],
   "dataclasses_transform_class.py": [
     "Line 51: Expected 1 errors",
@@ -494,12 +485,13 @@
   ],
   "dataclasses_usage.py": [
     "Line 83: Expected 1 errors",
+    "Line 179: Expected 1 errors",
     "Lines 58, 61: Expected error (tag 'DC1')",
     "Lines 64, 67: Expected error (tag 'DC2')",
     "Lines 70, 73: Expected error (tag 'DC3')",
     "Line 22: Unexpected errors ['EXPECTED int <: float']",
-    "Line 25: Unexpected errors ['Expected 0 positional arguments, got 2']",
-    "Line 35: Unexpected errors ['EXPECTED BoundMethod[InventoryItem, (self: object) -> None] <: InventoryItemInitProto']",
+    "Line 25: Unexpected errors [\"Missing argument 'quantity_on_hand'\"]",
+    "Line 35: Unexpected errors ['EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto']",
     "Line 38: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 39: Unexpected errors [\"Missing argument 'flush'\"]",
     "Line 40: Unexpected errors [\"Missing argument 'flush'\"]",
@@ -512,6 +504,7 @@
     "Line 92: Unexpected errors [\"Missing argument 'base'\"]",
     "Line 102: Unexpected errors [\"Missing argument 'c'\", \"EXPECTED Literal[''] <: int\"]",
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed']",
+    "Line 124: Unexpected errors ['EXPECTED DC7 <: int']",
     "Line 135: Unexpected errors [\"EXPECTED Literal['s'] <: _MISSING_TYPE\"]",
     "Line 185: Unexpected errors [\"EXPECTED Literal['hello'] <: _MISSING_TYPE\"]",
     "Line 186: Unexpected errors [\"EXPECTED () -> Literal['hello'] <: _MISSING_TYPE\"]",
@@ -767,7 +760,7 @@
     "Line 28: Unexpected errors ['EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]']",
     "Line 36: Unexpected errors ['EXPECTED ShouldBeCovariant2[int] <: ShouldBeCovariant2[float]']",
     "Line 45: Unexpected errors ['EXPECTED ShouldBeCovariant3[int] <: ShouldBeCovariant3[float]']",
-    "Line 54: Unexpected errors ['EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]', 'Expected 0 positional arguments, got 1']",
+    "Line 54: Unexpected errors ['EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]']",
     "Line 67: Unexpected errors ['EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]']",
     "Line 78: Unexpected errors ['EXPECTED ShouldBeCovariant6[int] <: ShouldBeCovariant6[float]']",
     "Line 90: Unexpected errors ['Could not find name `value`']",
@@ -952,7 +945,7 @@
     "Line 40: Unexpected errors ['EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]']",
     "Line 48: Unexpected errors ['EXPECTED ShouldBeCovariant2[int] <: ShouldBeCovariant2[float]']",
     "Line 57: Unexpected errors ['EXPECTED ShouldBeCovariant3[int] <: ShouldBeCovariant3[float]']",
-    "Line 66: Unexpected errors ['EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]', 'Expected 0 positional arguments, got 1']",
+    "Line 66: Unexpected errors ['EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]']",
     "Line 79: Unexpected errors ['EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]']",
     "Line 91: Unexpected errors ['Could not find name `value`']",
     "Line 150: Unexpected errors ['EXPECTED ShouldBeContravariant1[float] <: ShouldBeContravariant1[int]']",
@@ -1140,7 +1133,6 @@
     "Line 288: Expected 1 errors",
     "Line 289: Expected 1 errors",
     "Line 339: Expected 1 errors",
-    "Line 341: Expected 1 errors",
     "Line 27: Unexpected errors [\"Missing argument 'mode'\"]",
     "Line 102: Unexpected errors ['EXPECTED Literal[2] <: float']",
     "Line 148: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1150,6 +1142,7 @@
     "Line 194: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 199: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 216: Unexpected errors ['Expected 1 more positional argument']",
+    "Line 217: Unexpected errors [\"Missing argument 'val1'\"]",
     "Line 245: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 251: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 266: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1162,7 +1155,8 @@
     "Line 318: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 324: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 328: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 333: Unexpected errors ['EXPECTED Literal[0] <: float']"
+    "Line 333: Unexpected errors ['EXPECTED Literal[0] <: float']",
+    "Line 338: Unexpected errors [\"Missing argument 'val1'\"]"
   ],
   "protocols_explicit.py": [
     "Line 56: Expected 1 errors",

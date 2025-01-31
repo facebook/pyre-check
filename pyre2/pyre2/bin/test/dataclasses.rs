@@ -145,3 +145,15 @@ B(x=0, y="1")  # OK
 B(x="0", y="1")  # E: EXPECTED Literal['0'] <: int
     "#,
 );
+
+testcase!(
+    test_decorate_with_call_return,
+    r#"
+from dataclasses import dataclass
+@dataclass()
+class C:
+    x: int
+C(x=0)  # OK
+C(x='0')  # E: EXPECTED Literal['0'] <: int
+    "#,
+);
