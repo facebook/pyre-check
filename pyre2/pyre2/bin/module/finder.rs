@@ -15,6 +15,7 @@ use tracing::debug;
 use zstd::stream::read::Decoder;
 
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModulePath;
 
 const BUNDLED_TYPESHED_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/typeshed.tar.zst"));
 
@@ -75,11 +76,12 @@ impl BundledTypeshed {
         Ok(Self { index })
     }
 
-    pub fn find(&self, name: ModuleName) -> Option<(PathBuf, String)> {
+    pub fn find(&self, name: ModuleName) -> Option<(ModulePath, String)> {
         let entry = self.index.get(&name)?;
         // TODO(grievejia): Properly model paths for in-memory sources
-        let fake_path =
-            PathBuf::from("bundled /pyre2/third_party/typeshed").join(&entry.relative_path);
+        let fake_path = ModulePath::filesystem(
+            PathBuf::from("bundled /pyre2/third_party/typeshed").join(&entry.relative_path),
+        );
         Some((fake_path, entry.content.clone()))
     }
 }

@@ -25,8 +25,8 @@ use starlark_map::small_map::SmallMap;
 use crate::ast::Ast;
 use crate::config::Config;
 use crate::dunder;
-use crate::module::module_info::ModuleStyle;
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModuleStyle;
 use crate::visitors::Visitors;
 
 /// How a name is defined.

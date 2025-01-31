@@ -5,11 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::ffi::OsStr;
 use std::fmt;
 use std::fmt::Display;
-use std::path::Path;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use dupe::Dupe;
@@ -21,10 +18,10 @@ use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
 use crate::ast::Ast;
-use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::module::ignore::Ignore;
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModulePath;
 
 #[derive(Debug, Clone, Ord, PartialOrd, PartialEq, Eq, Hash, Default)]
 pub struct SourceRange {
@@ -61,23 +58,15 @@ pub struct ModuleInfo(Arc<ModuleInfoInner>);
 #[derive(Debug, Clone)]
 struct ModuleInfoInner {
     name: ModuleName,
-    path: PathBuf,
+    path: ModulePath,
     index: LineIndex,
     ignore: Ignore,
     contents: String,
 }
 
-#[derive(Debug, Clone, Dupe, Copy, PartialEq, Eq, Hash)]
-pub enum ModuleStyle {
-    /// .py - executable code.
-    Executable,
-    /// .pyi - just types that form an interface.
-    Interface,
-}
-
 impl ModuleInfo {
     /// Create a new ModuleInfo. Will NOT read the `path`, but use the value from `contents` instead.
-    pub fn new(name: ModuleName, path: PathBuf, contents: String) -> Self {
+    pub fn new(name: ModuleName, path: ModulePath, contents: String) -> Self {
         let index = LineIndex::from_source_text(&contents);
         let ignore = Ignore::new(&contents);
         Self(Arc::new(ModuleInfoInner {
@@ -116,20 +105,7 @@ impl ModuleInfo {
         &self.0.contents[range]
     }
 
-    /// Whether things imported by this module are reexported.
-    pub fn style(&self) -> ModuleStyle {
-        if self.0.path.extension() == Some(OsStr::new("pyi")) {
-            ModuleStyle::Interface
-        } else {
-            ModuleStyle::Executable
-        }
-    }
-
-    pub fn is_interface(&self) -> bool {
-        self.style() == ModuleStyle::Interface
-    }
-
-    pub fn path(&self) -> &Path {
+    pub fn path(&self) -> &ModulePath {
         &self.0.path
     }
 
@@ -143,10 +119,6 @@ impl ModuleInfo {
             errors.add(self, err.location, format!("Parse error: {err}"));
         }
         module
-    }
-
-    pub fn is_init(&self) -> bool {
-        self.0.path.file_stem() == Some(OsStr::new(dunder::INIT.as_str()))
     }
 
     pub fn name(&self) -> ModuleName {

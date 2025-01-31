@@ -55,8 +55,8 @@ impl Display for Exports {
 impl Exports {
     pub fn new(x: &[Stmt], module_info: &ModuleInfo, config: &Config) -> Self {
         let mut definitions =
-            Definitions::new(x, module_info.name(), module_info.is_init(), config);
-        definitions.ensure_dunder_all(module_info.style());
+            Definitions::new(x, module_info.name(), module_info.path().is_init(), config);
+        definitions.ensure_dunder_all(module_info.path().style());
         Self(Arc::new(ExportsInner {
             definitions,
             wildcard: Calculation::new(),
@@ -117,7 +117,8 @@ mod tests {
 
     use super::*;
     use crate::ast::Ast;
-    use crate::module::module_info::ModuleStyle;
+    use crate::module::module_path::ModulePath;
+    use crate::module::module_path::ModuleStyle;
 
     impl LookupExport for SmallMap<ModuleName, Exports> {
         fn get(&self, module: ModuleName) -> Result<Exports, Arc<String>> {
@@ -130,11 +131,11 @@ mod tests {
 
     fn mk_exports(contents: &str, style: ModuleStyle) -> Exports {
         let ast = Ast::parse(contents).0;
-        let path = PathBuf::from(if style == ModuleStyle::Interface {
+        let path = ModulePath::filesystem(PathBuf::from(if style == ModuleStyle::Interface {
             "foo.pyi"
         } else {
             "foo.py"
-        });
+        }));
         let module_info = ModuleInfo::new(ModuleName::from_str("foo"), path, contents.to_owned());
         Exports::new(&ast.body, &module_info, &Config::default())
     }

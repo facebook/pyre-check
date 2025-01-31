@@ -35,7 +35,7 @@ impl LegacyError {
             column: error_range.start.column.get(),
             stop_line: error_range.end.row.get(),
             stop_column: error_range.end.column.get(),
-            path: error.path().to_string_lossy().into_owned(),
+            path: error.path().display(),
             // -2 is chosen because it's an unused error code in Pyre1
             code: -2,                     // TODO: replace this dummy value
             name: "PyreError".to_owned(), // TODO: add error name

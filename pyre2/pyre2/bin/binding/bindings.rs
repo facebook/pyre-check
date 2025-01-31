@@ -193,7 +193,7 @@ impl Static {
         lookup: &dyn LookupExport,
         config: &Config,
     ) {
-        let mut d = Definitions::new(x, module_info.name(), module_info.is_init(), config);
+        let mut d = Definitions::new(x, module_info.name(), module_info.path().is_init(), config);
         if top_level && module_info.name() != ModuleName::builtins() {
             d.inject_builtins();
         }
@@ -1955,7 +1955,7 @@ impl<'a> BindingsBuilder<'a> {
 
                     let (value, is_initialized) = if let Some(value) = x.value {
                         // Treat a name as initialized, but skip actually checking the value, if we are assigning `...` in a stub.
-                        if self.module_info.is_interface()
+                        if self.module_info.path().is_interface()
                             && matches!(&*value, Expr::EllipsisLiteral(_))
                         {
                             (None, true)
@@ -2278,7 +2278,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             Stmt::ImportFrom(x) => {
                 if let Some(m) = self.module_info.name().new_maybe_relative(
-                    self.module_info.is_init(),
+                    self.module_info.path().is_init(),
                     x.level,
                     x.module.as_ref().map(|x| &x.id),
                 ) {

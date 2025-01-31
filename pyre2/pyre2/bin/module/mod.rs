@@ -10,5 +10,6 @@ pub mod finder;
 pub mod ignore;
 pub mod module_info;
 pub mod module_name;
+pub mod module_path;
 pub mod short_identifier;
 pub mod source_db;

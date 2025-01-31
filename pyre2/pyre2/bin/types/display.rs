@@ -312,6 +312,7 @@ mod tests {
 
     use super::*;
     use crate::module::module_info::ModuleInfo;
+    use crate::module::module_path::ModulePath;
     use crate::types::callable::Callable;
     use crate::types::callable::CallableKind;
     use crate::types::callable::Param;
@@ -333,7 +334,7 @@ mod tests {
     fn fake_class(name: &str, module: &str, range: u32, tparams: Vec<TParamInfo>) -> Class {
         let mi = ModuleInfo::new(
             ModuleName::from_str(module),
-            PathBuf::from(module),
+            ModulePath::filesystem(PathBuf::from(module)),
             "1234567890".to_owned(),
         );
         Class::new(
@@ -357,7 +358,7 @@ mod tests {
     fn fake_tyvar(name: &str, module: &str, range: u32) -> TypeVar {
         let mi = ModuleInfo::new(
             ModuleName::from_str(module),
-            PathBuf::from(module),
+            ModulePath::filesystem(PathBuf::from(module)),
             "1234567890".to_owned(),
         );
         TypeVar::new(

@@ -19,6 +19,7 @@ use crate::binding::binding::KeyExport;
 use crate::config::Config;
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModulePath;
 use crate::state::loader::LoadResult;
 use crate::state::loader::Loader;
 use crate::state::state::State;
@@ -113,11 +114,20 @@ impl Loader for TestEnv {
     fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
         let loaded = if let Some((path, contents)) = self.0.get(&name) {
             match contents {
-                Ok(contents) => LoadResult::Loaded(path.to_owned(), contents.to_owned()),
-                Err(err) => LoadResult::FailedToLoad(path.to_owned(), anyhow!(err.to_owned())),
+                Ok(contents) => {
+                    // TODO(grievejia): Properly model paths for in-memory sources
+                    LoadResult::Loaded(ModulePath::filesystem(path.to_owned()), contents.to_owned())
+                }
+                Err(err) => LoadResult::FailedToLoad(
+                    ModulePath::filesystem(path.to_owned()),
+                    anyhow!(err.to_owned()),
+                ),
             }
         } else if let Some(contents) = lookup_test_stdlib(name) {
-            LoadResult::Loaded(default_path(name), contents.to_owned())
+            LoadResult::Loaded(
+                ModulePath::filesystem(default_path(name)),
+                contents.to_owned(),
+            )
         } else {
             LoadResult::FailedToFind(anyhow!("Module not given in test suite"))
         };

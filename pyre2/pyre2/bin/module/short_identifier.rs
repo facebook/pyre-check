@@ -53,6 +53,7 @@ mod tests {
     use super::*;
     use crate::error::collector::ErrorCollector;
     use crate::module::module_name::ModuleName;
+    use crate::module::module_path::ModulePath;
 
     fn from_expr(x: &Expr) -> ShortIdentifier {
         match x {
@@ -65,7 +66,7 @@ mod tests {
     fn test_display_short_identifier() {
         let module_info = ModuleInfo::new(
             ModuleName::from_str("foo"),
-            Path::new("foo.py").to_owned(),
+            ModulePath::filesystem(Path::new("foo.py").to_owned()),
             "hello_world = Baz123.attribute".to_owned(),
         );
         let module = module_info.parse(&ErrorCollector::default());

@@ -66,6 +66,7 @@ use crate::module::finder::BundledTypeshed;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModulePath;
 use crate::state::loader::LoadResult;
 use crate::state::loader::Loader;
 use crate::state::state::State;
@@ -156,7 +157,8 @@ impl Loader for LspLoader {
     fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
         let loaded = if let Some(path) = self.open_modules.get(&name) {
             LoadResult::Loaded(
-                (*path).clone(),
+                // TODO(grievejia): Properly model paths for in-memory sources
+                ModulePath::filesystem((*path).clone()),
                 self.open_files.get(path).unwrap().1.clone(),
             )
         } else if let Some(path) = find_module(name, &self.search_roots) {
@@ -281,15 +283,14 @@ impl<'a> Server<'a> {
             diags.insert(x.as_path().to_owned(), Vec::new());
         }
         for e in self.state.collect_errors() {
-            diags
-                .entry(e.path().to_owned())
-                .or_default()
-                .push(Diagnostic {
+            if let Some(path) = e.path().as_filesystem_path() {
+                diags.entry(path.to_owned()).or_default().push(Diagnostic {
                     range: source_range_to_range(&e.source_range()),
                     severity: Some(lsp_types::DiagnosticSeverity::ERROR),
                     message: e.msg().to_owned(),
                     ..Default::default()
                 });
+            }
         }
         for (path, diags) in diags {
             let path = std::fs::canonicalize(&path).unwrap_or(path);

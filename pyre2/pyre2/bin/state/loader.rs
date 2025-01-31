@@ -9,6 +9,7 @@ use std::path::PathBuf;
 
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModulePath;
 use crate::util::fs_anyhow;
 
 /// A function that loads a module, given the `ModuleName`.
@@ -19,13 +20,13 @@ pub trait Loader: Sync {
 
 /// The result of trying to load a file.
 pub enum LoadResult {
-    Loaded(PathBuf, String),
-    FailedToLoad(PathBuf, anyhow::Error),
+    Loaded(ModulePath, String),
+    FailedToLoad(ModulePath, anyhow::Error),
     FailedToFind(anyhow::Error),
 }
 
 pub struct LoadResultComponents {
-    pub path: PathBuf,
+    pub path: ModulePath,
     pub code: String,
     /// Found the file but failed to open it, raise an error in this file.
     pub self_error: Option<anyhow::Error>,
@@ -44,8 +45,8 @@ fn fake_path(module_name: ModuleName) -> PathBuf {
 impl LoadResult {
     pub fn from_path(path: PathBuf) -> Self {
         match fs_anyhow::read_to_string(&path) {
-            Ok(code) => LoadResult::Loaded(path, code),
-            Err(err) => LoadResult::FailedToLoad(path, err),
+            Ok(code) => LoadResult::Loaded(ModulePath::filesystem(path), code),
+            Err(err) => LoadResult::FailedToLoad(ModulePath::filesystem(path), err),
         }
     }
 
@@ -64,7 +65,8 @@ impl LoadResult {
                 import_error: None,
             },
             LoadResult::FailedToFind(err) => LoadResultComponents {
-                path: fake_path(module_name),
+                // TODO(grievejia): Properly model nonexistent paths
+                path: ModulePath::filesystem(fake_path(module_name)),
                 code: FAKE_MODULE.to_owned(),
                 self_error: None,
                 import_error: Some(err),

@@ -8,12 +8,12 @@
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
-use std::path::Path;
 
 use ruff_text_size::TextRange;
 
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
+use crate::module::module_path::ModulePath;
 
 #[derive(Debug, Clone)]
 pub struct Error {
@@ -47,7 +47,7 @@ impl Error {
         self.info.source_range(self.range)
     }
 
-    pub fn path(&self) -> &Path {
+    pub fn path(&self) -> &ModulePath {
         self.info.path()
     }
 

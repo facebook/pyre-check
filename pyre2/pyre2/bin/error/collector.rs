@@ -196,13 +196,14 @@ mod tests {
 
     use super::*;
     use crate::module::module_name::ModuleName;
+    use crate::module::module_path::ModulePath;
 
     #[test]
     fn test_error_collector() {
         let errors = ErrorCollector::default();
         let mi = ModuleInfo::new(
             ModuleName::from_name(&Name::new("main")),
-            Path::new("main.py").to_owned(),
+            ModulePath::filesystem(Path::new("main.py").to_owned()),
             "contents".to_owned(),
         );
         errors.add(
