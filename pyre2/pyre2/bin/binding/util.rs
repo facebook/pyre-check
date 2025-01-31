@@ -17,17 +17,18 @@ use ruff_python_ast::StmtExpr;
 
 use crate::config::Config;
 
-/// Given the body of a function, what are the potential statements that
+/// Given the body of a function, what are the potential expressions that
 /// could be the last ones to be executed, where the function then falls off the end.
 ///
-/// * Return None to say we can't really figure it out (e.g. parse error, empty statements).
+/// * Return None to say there are branches that fall off the end always.
 /// * Return Some([]) to say that we can never reach the end (e.g. always return, raise)
-/// * Return Some(xs) to say this set might be the last statement.
-pub fn function_last_statements<'a>(x: &'a [Stmt], config: &Config) -> Option<Vec<&'a Stmt>> {
-    fn f<'a>(config: &Config, x: &'a [Stmt], res: &mut Vec<&'a Stmt>) -> Option<()> {
+/// * Return Some(xs) to say this set might be the last expression.
+pub fn function_last_expressions<'a>(x: &'a [Stmt], config: &Config) -> Option<Vec<&'a Expr>> {
+    fn f<'a>(config: &Config, x: &'a [Stmt], res: &mut Vec<&'a Expr>) -> Option<()> {
         match x.last()? {
+            Stmt::Expr(x) => res.push(&x.value),
             Stmt::Return(_) | Stmt::Raise(_) => {}
-            stmt @ Stmt::If(x) => {
+            Stmt::If(x) => {
                 let mut last_test = None;
                 for (test, body) in config.pruned_if_branches(x) {
                     last_test = test;
@@ -35,7 +36,7 @@ pub fn function_last_statements<'a>(x: &'a [Stmt], config: &Config) -> Option<Ve
                 }
                 if last_test.is_some() {
                     // The final `if` can fall through, so the `if` itself might be the last statement.
-                    res.push(stmt);
+                    return None;
                 }
             }
             Stmt::Try(x) => {
@@ -55,7 +56,7 @@ pub fn function_last_statements<'a>(x: &'a [Stmt], config: &Config) -> Option<Ve
                     // If we don't have a matching handler, we raise an exception, which is fine.
                 }
             }
-            x => res.push(x),
+            _ => return None,
         }
         Some(())
     }

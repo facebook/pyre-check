@@ -1480,6 +1480,16 @@
   "annotations_generators.py": [
     {
       "code": -2,
+      "column": 1,
+      "concise_description": "EXPECTED None <: C",
+      "description": "EXPECTED None <: C",
+      "line": 51,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 57
+    },
+    {
+      "code": -2,
       "column": 16,
       "concise_description": "EXPECTED Literal[False] <: C",
       "description": "EXPECTED Literal[False] <: C",
@@ -1487,16 +1497,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 54
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: C",
-      "description": "EXPECTED None <: C",
-      "line": 56,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 57
     },
     {
       "code": -2,

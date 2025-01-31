@@ -12,8 +12,8 @@ testcase!(
     test_missing_return,
     r#"
 
-def f() -> int:
-    pass  # E: EXPECTED None <: int
+def f() -> int:  # E: EXPECTED None <: int
+    pass
 "#,
 );
 
@@ -55,11 +55,11 @@ testcase!(
     r#"
 from typing import assert_type
 
-def f(b: bool) -> int:
+def f(b: bool) -> int:  # E: EXPECTED None <: int
     if b:
         return 1
     else:
-        pass  # E: EXPECTED None <: int
+        pass
 "#,
 );
 
@@ -94,8 +94,8 @@ def f(b: bool) -> int:
 testcase!(
     test_return_if_no_else_real,
     r#"
-def f(b: bool) -> int:
-    if b:  # E: EXPECTED None <: int
+def f(b: bool) -> int:  # E: EXPECTED None <: int
+    if b:
         return 1
 "#,
 );
@@ -112,11 +112,11 @@ def f(b: bool) -> None:
 testcase!(
     test_return_then_dead_code,
     r#"
-def f(b: bool) -> int:
+def f(b: bool) -> int:  # E: EXPECTED None <: int
     return 1
     # This code is unreachable. A linter should spot this.
     # But for now, it's perfectly reasonble to say the `pass`
     # has the wrong type, and a `return` should be here.
-    pass # E: EXPECTED None <: int
+    pass
 "#,
 );

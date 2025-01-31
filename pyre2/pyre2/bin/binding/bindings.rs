@@ -73,7 +73,7 @@ use crate::binding::narrow::NarrowOp;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::narrow::NarrowVal;
 use crate::binding::table::TableKeyed;
-use crate::binding::util::function_last_statements;
+use crate::binding::util::function_last_expressions;
 use crate::binding::util::is_ellipse;
 use crate::binding::util::is_valid_identifier;
 use crate::config::Config;
@@ -1218,7 +1218,7 @@ impl<'a> BindingsBuilder<'a> {
         let return_count = self.returns.len();
         let yield_count = self.yields.len();
 
-        let never = function_last_statements(&body, self.config);
+        let never = function_last_expressions(&body, self.config);
         if never != Some(Vec::new()) && kind == FunctionKind::Impl {
             // If we can reach the end, and the code is real (not just ellipse),
             // check None is an OK return type.
