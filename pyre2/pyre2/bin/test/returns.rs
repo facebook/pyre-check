@@ -90,3 +90,21 @@ def f(b: bool) -> int:
         fail() # E: EXPECTED None <: int
 "#,
 );
+
+testcase!(
+    test_return_if_no_else_real,
+    r#"
+def f(b: bool) -> int:
+    if b:  # E: EXPECTED None <: int
+        return 1
+"#,
+);
+
+testcase!(
+    test_return_if_no_else_none,
+    r#"
+def f(b: bool) -> None:
+    if b:
+        return None
+"#,
+);

@@ -1284,8 +1284,6 @@
     "Line 88: Unexpected errors ['Class `ClassA` has no class attribute `method3`']"
   ],
   "specialtypes_never.py": [
-    "Line 19: Expected 1 errors",
-    "Line 21: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 32: Unexpected errors [\"EXPECTED Literal['whatever works'] <: int\"]",
     "Line 77: Unexpected errors ['EXPECTED None <: Never']"
   ],

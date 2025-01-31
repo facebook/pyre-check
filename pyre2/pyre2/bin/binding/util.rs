@@ -27,9 +27,15 @@ pub fn function_last_statements<'a>(x: &'a [Stmt], config: &Config) -> Option<Ve
     fn f<'a>(config: &Config, x: &'a [Stmt], res: &mut Vec<&'a Stmt>) -> Option<()> {
         match x.last()? {
             Stmt::Return(_) | Stmt::Raise(_) => {}
-            Stmt::If(x) => {
-                for (_, body) in config.pruned_if_branches(x) {
+            stmt @ Stmt::If(x) => {
+                let mut last_test = None;
+                for (test, body) in config.pruned_if_branches(x) {
+                    last_test = test;
                     f(config, body, res)?;
+                }
+                if last_test.is_some() {
+                    // The final `if` can fall through, so the `if` itself might be the last statement.
+                    res.push(stmt);
                 }
             }
             Stmt::Try(x) => {

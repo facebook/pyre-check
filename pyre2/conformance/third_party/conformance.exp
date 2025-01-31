@@ -15691,10 +15691,10 @@
   "specialtypes_never.py": [
     {
       "code": -2,
-      "column": 9,
+      "column": 1,
       "concise_description": "EXPECTED None <: NoReturn",
       "description": "EXPECTED None <: NoReturn",
-      "line": 21,
+      "line": 19,
       "name": "PyreError",
       "stop_column": 20,
       "stop_line": 21
