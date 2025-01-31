@@ -23,18 +23,22 @@ use crate::config::Config;
 /// * Return Some([]) to say that we can never reach the end (e.g. always return, raise)
 /// * Return Some(xs) to say this set might be the last statement.
 pub fn function_last_statements<'a>(x: &'a [Stmt], config: &Config) -> Option<Vec<&'a Stmt>> {
-    match x.last() {
-        None => None,
-        Some(Stmt::Return(_)) => Some(Vec::new()),
-        Some(Stmt::If(x)) => {
-            let mut res = Vec::new();
-            for (_, body) in config.pruned_if_branches(x) {
-                res.extend(function_last_statements(body, config)?);
+    fn f<'a>(config: &Config, x: &'a [Stmt], res: &mut Vec<&'a Stmt>) -> Option<()> {
+        match x.last()? {
+            Stmt::Return(_) => {}
+            Stmt::If(x) => {
+                for (_, body) in config.pruned_if_branches(x) {
+                    f(config, body, res)?;
+                }
             }
-            Some(res)
+            x => res.push(x),
         }
-        Some(x) => Some(vec![x]),
+        Some(())
     }
+
+    let mut res = Vec::new();
+    f(config, x, &mut res)?;
+    Some(res)
 }
 
 pub fn is_ellipse(x: &[Stmt]) -> bool {
