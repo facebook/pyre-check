@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_missing_return,
@@ -59,5 +60,35 @@ def f(b: bool) -> int:
         return 1
     else:
         pass  # E: EXPECTED None <: int
+"#,
+);
+
+testcase_with_bug!(
+    "Should not require a return statement",
+    test_return_catch,
+    r#"
+
+def f(b: bool) -> int:
+    try:  # E: EXPECTED None <: int
+        return 1
+    except Exception:
+        return 2
+"#,
+);
+
+testcase_with_bug!(
+    "Should not require a return statement",
+    test_return_never,
+    r#"
+from typing import NoReturn
+
+def fail() -> NoReturn:
+    raise Exception() # E: EXPECTED None <: NoReturn
+
+def f(b: bool) -> int:
+    if b:
+        return 1
+    else:
+        fail() # E: EXPECTED None <: int
 "#,
 );
