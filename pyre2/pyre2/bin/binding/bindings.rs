@@ -1348,7 +1348,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.table.insert(
                             Key::YieldTypeOfYieldAnnotation(x.range()),
                             // collect the yield value of the yield expression.
-                            Binding::YieldTypeOfYieldAnnotation(return_ann, x.range()),
+                            Binding::YieldTypeOfYieldAnnotation(return_ann, x.range(), is_async),
                         );
                     }
 

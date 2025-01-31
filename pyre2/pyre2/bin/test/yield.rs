@@ -191,6 +191,22 @@ async def my_generator() -> AsyncGenerator[Yield, Send]:
 "#,
 );
 
+testcase!(
+    test_async_error,
+    r#"
+from typing import AsyncGenerator, assert_type
+
+class Yield: pass
+class Send: pass
+
+
+def my_generator() -> AsyncGenerator[Yield, Send]:
+    s = yield Yield() # E:  Return type of generator must be compatible with `AsyncGenerator[Yield, Send]`
+    assert_type(s, Send)
+
+"#,
+);
+
 testcase_with_bug!(
     "TODO zeina: The type here should be AsyncGenerator[Literal[2], Any]].",
     test_async_generator_basic_inference,

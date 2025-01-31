@@ -1160,18 +1160,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => Type::any_explicit(),
                 }
             }
-            Binding::YieldTypeOfYieldAnnotation(ann, range) => {
+            Binding::YieldTypeOfYieldAnnotation(ann, range, is_async) => {
                 let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
                 match gen_ann {
                     Some(gen_ann) => {
                         let gen_type = gen_ann.get_type();
-                        // todo zeina: add an extra field in YieldTypeOfYieldAnnotation to denote if a function is async and verify the types
                         if let Some((yield_type, _, _)) = self.decompose_generator(gen_type) {
-                            yield_type
+                            // check type annotation against async flag
+                            if *is_async {
+                                self.error(*range, format!("Return type of generator must be compatible with `{gen_type}`"))
+                            } else {
+                                yield_type
+                            }
                         } else if let Some((yield_type, _)) =
                             self.decompose_async_generator(gen_type)
                         {
-                            yield_type
+                            // check type annotation against async flag
+                            if !*is_async {
+                                self.error(*range, format!("Return type of generator must be compatible with `{gen_type}`"))
+                            } else {
+                                yield_type
+                            }
                         } else {
                             self.error(*range, format!("Yield expression found but the function has an incompatible annotation `{gen_type}`"))
                         }

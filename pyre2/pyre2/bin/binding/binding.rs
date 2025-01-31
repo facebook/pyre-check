@@ -481,7 +481,7 @@ pub enum Binding {
     /// Return type of yield
     ReturnTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
     /// Yield type of yield annotation
-    YieldTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
+    YieldTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange, bool),
     /// A grouping of both the yield expression types and the return type.
     /// Yield type of yield annotation
     AsyncReturnType(Box<(Expr, Binding)>),
@@ -618,10 +618,10 @@ impl DisplayWith<Bindings> for Binding {
             self::Binding::ReturnTypeOfYieldAnnotation(None, _) => {
                 write!(f, "no annotation so send type is Any")
             }
-            self::Binding::YieldTypeOfYieldAnnotation(Some(x), _) => {
+            self::Binding::YieldTypeOfYieldAnnotation(Some(x), _, _) => {
                 write!(f, "annotation containing yield type {}", ctx.display(*x))
             }
-            self::Binding::YieldTypeOfYieldAnnotation(None, _) => {
+            self::Binding::YieldTypeOfYieldAnnotation(None, _, _) => {
                 write!(f, "no annotation so yield type is Any")
             }
             Self::YieldTypeOfYield(x) => write!(f, "yield expr {}", m.display(x)),
