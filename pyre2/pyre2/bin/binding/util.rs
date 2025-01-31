@@ -16,22 +16,20 @@ use ruff_python_ast::StmtExpr;
 
 use crate::config::Config;
 
-/// Does this sequence of statements every potentially fall off the end.
-/// Assume there are not statements after a Never (which would be redundant).
-/// Assumes this is not inside a loop body.
+/// Given the body of a function, what are the potential statements that
+/// could be the last ones to be executed, where the function then falls off the end.
 ///
-/// * Return None to say this is not a never.
-/// * Return Some(xs) to say if all these statements are never, it is a never.
-///
-/// then it is a never if the sequence of collected statements is never.
-pub fn is_never<'a>(x: &'a [Stmt], config: &Config) -> Option<Vec<&'a Stmt>> {
+/// * Return None to say we can't really figure it out (e.g. parse error, empty statements).
+/// * Return Some([]) to say that we can never reach the end (e.g. always return, raise)
+/// * Return Some(xs) to say this set might be the last statement.
+pub fn function_last_statements<'a>(x: &'a [Stmt], config: &Config) -> Option<Vec<&'a Stmt>> {
     match x.last() {
         None => None,
         Some(Stmt::Return(_)) => Some(Vec::new()),
         Some(Stmt::If(x)) => {
             let mut res = Vec::new();
             for (_, body) in config.pruned_if_branches(x) {
-                res.extend(is_never(body, config)?);
+                res.extend(function_last_statements(body, config)?);
             }
             Some(res)
         }
