@@ -113,12 +113,17 @@ class C:
     @property
     def foo(self) -> int:
         return 42
-    @foo.setter  # E: Could not find name `foo`
+    # TODO(samgoldman) This is a workaround to avoid function def folding in
+    # bindings; once we are dealing with overloads in some other way we can
+    # remove it.
+    def _break_function_def_folding_in_bindings_(self) -> None:
+        ...
+    @foo.setter  # E: TODO: Expr::attr_infer attribute base undefined for type: property[(self: C) -> int] (trying to access setter)
     def foo(self, value: str) -> None:
         pass
 def f(c: C):
-    assert_type(c.foo, int)  # E: assert_type(Any, int)
+    assert_type(c.foo, int)  # E: assert_type(Any | property[(self: C) -> int], int)
     c.foo = "42"  # (no error here because it is becoming Any)
-    reveal_type(C.foo)  # E: revealed type: Error
+    reveal_type(C.foo)  # E: revealed type: Error | property[(self: C) -> int]
     "#,
 );
