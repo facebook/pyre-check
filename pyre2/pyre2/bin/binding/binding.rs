@@ -27,7 +27,7 @@ use starlark_map::small_set::SmallSet;
 use static_assertions::assert_eq_size;
 use vec1::Vec1;
 
-use crate::alt::classes::ClassField;
+use crate::alt::class::classdef::ClassField;
 use crate::binding::bindings::Bindings;
 use crate::binding::narrow::NarrowOp;
 use crate::graph::index::Idx;

@@ -23,7 +23,7 @@ use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 
 use crate::alt::callable::CallArg;
-use crate::alt::classes::ClassField;
+use crate::alt::class::classdef::ClassField;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
