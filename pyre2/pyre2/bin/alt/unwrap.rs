@@ -28,7 +28,7 @@ impl UnwrappedDict {
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    pub fn fresh_var(&self) -> Var {
+    fn fresh_var(&self) -> Var {
         self.solver().fresh_unwrap(self.uniques)
     }
 
