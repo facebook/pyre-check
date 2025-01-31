@@ -170,7 +170,7 @@ from typing import AsyncGenerator, assert_type, Coroutine, Any
 
 async def async_count_up_to() -> AsyncGenerator[int, None]:
     yield 2
-assert_type(async_count_up_to(), Coroutine[Any, Any, AsyncGenerator[int, None]])
+assert_type(async_count_up_to(), AsyncGenerator[int, None])
 "#,
 );
 
@@ -211,12 +211,12 @@ testcase_with_bug!(
     "TODO zeina: The type here should be AsyncGenerator[Literal[2], Any]].",
     test_async_generator_basic_inference,
     r#"
-from typing import assert_type, Generator, Coroutine, Any, Literal, AsyncGenerator
+from typing import assert_type, Any, Literal, AsyncGenerator
 
 async def async_count_up_to(): 
     yield 2
     return 4 # E:  Return statement with type `Literal[4]` is not allowed in async generator 
-assert_type(async_count_up_to(), Coroutine[Any, Any, AsyncGenerator[Literal[2], Any]])
+assert_type(async_count_up_to(), AsyncGenerator[Literal[2], Any])
 
 "#,
 );

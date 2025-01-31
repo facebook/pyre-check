@@ -480,7 +480,7 @@ pub enum Binding {
     SendTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
     /// Return type of yield
     ReturnTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
-    /// Yield type of yield annotation
+    /// Yield type of yield annotation with a flag to indicate if the surrounding function is async
     YieldTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange, bool),
     /// A grouping of both the yield expression types and the return type.
     /// Yield type of yield annotation

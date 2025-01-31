@@ -1690,43 +1690,13 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
-      "description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
-      "line": 167,
+      "column": 1,
+      "concise_description": "assert_type(() -> AsyncIterator[int], () -> Coroutine[Any, Any, AsyncIterator[int]]) failed",
+      "description": "assert_type(() -> AsyncIterator[int], () -> Coroutine[Any, Any, AsyncIterator[int]]) failed",
+      "line": 182,
       "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 167
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncGenerator[str, None]",
-      "description": "EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncGenerator[str, None]",
-      "line": 168,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 168
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
-      "description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
-      "line": 174,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 174
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncIterator[str]",
-      "description": "EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncIterator[str]",
-      "line": 175,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 175
+      "stop_column": 80,
+      "stop_line": 182
     },
     {
       "code": -2,
@@ -1737,16 +1707,6 @@
       "name": "PyreError",
       "stop_column": 10,
       "stop_line": 187
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(() -> Coroutine[Any, Any, AsyncIterator[int]], () -> AsyncIterator[int]) failed",
-      "description": "assert_type(() -> Coroutine[Any, Any, AsyncIterator[int]], () -> AsyncIterator[int]) failed",
-      "line": 190,
-      "name": "PyreError",
-      "stop_column": 59,
-      "stop_line": 190
     }
   ],
   "annotations_methods.py": [

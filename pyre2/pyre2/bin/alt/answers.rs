@@ -1684,13 +1684,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .get(&Key::ReturnType(ShortIdentifier::new(&x.def.name)))
             .arc_clone();
 
-        let ret = if x.def.is_async {
+        let ret = if x.def.is_async && !self.is_async_generator(&ret) {
             self.stdlib
                 .coroutine(Type::any_implicit(), Type::any_implicit(), ret)
                 .to_type()
         } else {
             ret
         };
+
         let mut tparams = self.scoped_type_params(x.def.type_params.as_deref());
         let legacy_tparams = x
             .legacy_tparams
