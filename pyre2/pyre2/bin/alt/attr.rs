@@ -13,6 +13,7 @@ use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::callable::CallArg;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class_metadata::EnumMetadata;
@@ -20,6 +21,7 @@ use crate::types::module::Module;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
 use crate::types::types::AnyStyle;
+use crate::types::types::Decoration;
 use crate::types::types::Quantified;
 use crate::types::types::Type;
 
@@ -49,8 +51,8 @@ enum AttributeInner {
     /// A read-write attribute with a closed form type for both get and set actions.
     ReadWrite(Type),
     /// A property is a special attribute were regular access invokes a getter.
-    /// TODO(stroxler) We eventually need to support properties with setters as well.
-    Property(Type, Class),
+    /// It optionally might have a setter method; if not, trying to set it is an access error
+    Property(Type, Option<Type>, Class),
 }
 
 enum NotFound {
@@ -85,8 +87,8 @@ impl Attribute {
         Attribute(AttributeInner::ReadWrite(ty))
     }
 
-    pub fn property(method: Type, cls: Class) -> Self {
-        Attribute(AttributeInner::Property(method, cls))
+    pub fn property(getter: Type, setter: Option<Type>, cls: Class) -> Self {
+        Attribute(AttributeInner::Property(getter, setter, cls))
     }
 }
 
@@ -170,6 +172,9 @@ enum AttributeBase {
     /// type[Any] is a special case where attribute lookups first check the
     /// builtin `type` class before falling back to `Any`.
     TypeAny(AnyStyle),
+    /// Properties are handled via a special case so that we can understand
+    /// setter decorators.
+    Property(Type),
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -223,7 +228,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.lookup_attr(base, &Name::new_static("_value_")) {
             LookupResult::Found(attr) => match attr.0 {
                 AttributeInner::ReadWrite(ty) => Some(ty),
-                AttributeInner::NoAccess(_) | AttributeInner::Property(_, _) => None,
+                AttributeInner::NoAccess(_) | AttributeInner::Property(..) => None,
             },
             _ => None,
         }
@@ -262,9 +267,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     }
                 },
-                AttributeInner::Property(_, cls) => {
+                AttributeInner::Property(_, None, cls) => {
                     let e = NoAccessReason::SettingReadOnlyProperty(cls);
                     self.error(range, e.to_error_msg(attr_name));
+                }
+                AttributeInner::Property(_, Some(setter), _) => {
+                    let got = match &got {
+                        Either::Left(got) => CallArg::Expr(got),
+                        Either::Right(got) => CallArg::Type(got, range),
+                    };
+                    self.call_property_setter(setter, got, range);
                 }
             },
             LookupResult::InternalError(e) => {
@@ -306,7 +318,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match attr.0 {
             AttributeInner::NoAccess(reason) => Err(reason),
             AttributeInner::ReadWrite(ty) => Ok(ty),
-            AttributeInner::Property(method, _) => Ok(self.call_property_getter(method, range)),
+            AttributeInner::Property(getter, ..) => Ok(self.call_property_getter(getter, range)),
         }
     }
 
@@ -317,7 +329,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match attr.0 {
             AttributeInner::ReadWrite(ty) => Some(ty),
             AttributeInner::NoAccess(_) => None,
-            AttributeInner::Property(_, _) => None,
+            AttributeInner::Property(..) => None,
         }
     }
 
@@ -394,6 +406,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Some(AttributeBase::Any(style)) => LookupResult::found_type(style.propagate()),
             Some(AttributeBase::Never) => LookupResult::found_type(Type::never()),
+            Some(AttributeBase::Property(getter)) => {
+                // TODO(stroxler): it is probably possible to synthesize a forall type here
+                // that uses a type var to propagate the setter instead of using a `Decoration`
+                // with hardcoded support in `apply_decorator`. Investigate this option later.
+                LookupResult::found_type(Type::Decoration(Decoration::PropertySetterDecorator(
+                    Box::new(getter),
+                )))
+            }
             None => LookupResult::InternalError(InternalError::AttributeBaseUndefined(base)),
         }
     }
@@ -455,7 +475,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None
                 }
             }
-            // TODO(stroxler) This case will have to at least sometimes return non-None for property setters.
+            Type::Decoration(Decoration::Property(box (getter, _))) => {
+                Some(AttributeBase::Property(getter))
+            }
             Type::Decoration(_) => None,
             // TODO: check to see which ones should have class representations
             Type::Union(_)

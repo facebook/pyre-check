@@ -523,10 +523,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 return Type::Decoration(Decoration::ClassMethod(Box::new(decoratee)));
             }
             Some(CalleeKind::Class(ClassKind::Property)) => {
-                return Type::Decoration(Decoration::Property(Box::new(decoratee)));
+                return Type::Decoration(Decoration::Property(Box::new((decoratee, None))));
             }
             Some(CalleeKind::Callable(CallableKind::Dataclass)) => {
                 // TODO: Implement dataclass functionality
+            }
+            _ => {}
+        }
+        match ty_decorator {
+            Type::Decoration(Decoration::PropertySetterDecorator(getter)) => {
+                return Type::Decoration(Decoration::Property(Box::new((
+                    *getter,
+                    Some(decoratee),
+                ))));
             }
             _ => {}
         }
@@ -541,9 +550,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     /// Helper function hide details of call synthesis from the attribute resolution code.
-    pub fn call_property_getter(&self, property_method: Type, range: TextRange) -> Type {
-        let call_target = self.as_call_target_or_error(property_method, CallStyle::FreeForm, range);
+    pub fn call_property_getter(&self, getter_method: Type, range: TextRange) -> Type {
+        let call_target = self.as_call_target_or_error(getter_method, CallStyle::FreeForm, range);
         self.call_infer(call_target, &[], &[], range)
+    }
+
+    /// Helper function hide details of call synthesis from the attribute resolution code.
+    pub fn call_property_setter(
+        &self,
+        setter_method: Type,
+        got: CallArg,
+        range: TextRange,
+    ) -> Type {
+        let call_target = self.as_call_target_or_error(setter_method, CallStyle::FreeForm, range);
+        self.call_infer(call_target, &[got], &[], range)
     }
 
     fn flatten_dict_items(x: &[DictItem]) -> Vec<DictItem> {

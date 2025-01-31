@@ -154,8 +154,19 @@ impl<'a> TypeDisplayContext<'a> {
             Decoration::ClassMethod(box ty) => {
                 write!(f, "classmethod[{}]", self.display(ty))
             }
-            Decoration::Property(box ty) => {
-                write!(f, "property[{}]", self.display(ty))
+            Decoration::Property(box (getter, None)) => {
+                write!(f, "property[{}]", self.display(getter))
+            }
+            Decoration::Property(box (getter, Some(setter))) => {
+                write!(
+                    f,
+                    "property_with_setter[{}, {}]",
+                    self.display(getter),
+                    self.display(setter)
+                )
+            }
+            Decoration::PropertySetterDecorator(box getter) => {
+                write!(f, "property_setter_decorator[{}]", self.display(getter),)
             }
         }
     }

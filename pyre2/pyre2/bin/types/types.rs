@@ -421,7 +421,10 @@ pub enum Decoration {
     // The result of applying the `@classmethod` decorator.
     ClassMethod(Box<Type>),
     // The result of applying the `@property` decorator.
-    Property(Box<Type>),
+    Property(Box<(Type, Option<Type>)>),
+    // The result of accessing `.setter` on a property (which produces a decorator
+    // that takes a value and makes it the property getter, returning the result)
+    PropertySetterDecorator(Box<Type>),
 }
 
 impl Decoration {
@@ -429,14 +432,22 @@ impl Decoration {
         match self {
             Self::StaticMethod(ty) => f(ty),
             Self::ClassMethod(ty) => f(ty),
-            Self::Property(ty) => f(ty),
+            Self::Property(box (getter, setter)) => {
+                f(getter);
+                setter.iter().for_each(&mut f)
+            }
+            Self::PropertySetterDecorator(ty) => f(ty),
         }
     }
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
             Self::StaticMethod(ty) => f(ty),
             Self::ClassMethod(ty) => f(ty),
-            Self::Property(ty) => f(ty),
+            Self::Property(box (getter, setter)) => {
+                f(getter);
+                setter.iter_mut().for_each(&mut f)
+            }
+            Self::PropertySetterDecorator(ty) => f(ty),
         }
     }
 }

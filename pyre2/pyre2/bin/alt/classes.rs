@@ -217,8 +217,9 @@ fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
         Type::Decoration(Decoration::ClassMethod(box attr)) => Attribute::read_write(
             make_bound_method(Type::ClassDef(cls.class_object().dupe()), attr),
         ),
-        Type::Decoration(Decoration::Property(box method)) => Attribute::property(
-            make_bound_method(Type::ClassType(cls.clone()), method),
+        Type::Decoration(Decoration::Property(box (getter, setter))) => Attribute::property(
+            make_bound_method(Type::ClassType(cls.clone()), getter),
+            setter.map(|setter| make_bound_method(Type::ClassType(cls.clone()), setter)),
             cls.class_object().dupe(),
         ),
         attr => Attribute::read_write(if is_unbound_function(&attr) {

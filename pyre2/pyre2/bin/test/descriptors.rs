@@ -104,8 +104,27 @@ def f(c: C):
     "#,
 );
 
+// TODO(stroxler): Remove this once `test_property_with_setter` passes.
+testcase!(
+    test_property_with_setter_with_control_flow_workarounds,
+    r#"
+from typing import assert_type, reveal_type
+class C:
+    @property
+    def foo(self) -> int:
+        return 42
+    @foo.setter
+    def settable_foo(self, value: str) -> None:
+        pass
+def f(c: C):
+    assert_type(c.settable_foo, int)
+    c.settable_foo = "42"
+    reveal_type(C.settable_foo)  # E: property_with_setter[(self: C) -> int, (self: C, value: str) -> None]
+    "#,
+);
+
 testcase_with_bug!(
-    "Property setters are not yet supported",
+    "Property setters are not yet supported fully due to flow handling in bindings.rs",
     test_property_with_setter,
     r#"
 from typing import assert_type, reveal_type
@@ -118,12 +137,12 @@ class C:
     # remove it.
     def _break_function_def_folding_in_bindings_(self) -> None:
         ...
-    @foo.setter  # E: TODO: Expr::attr_infer attribute base undefined for type: property[(self: C) -> int] (trying to access setter)
+    @foo.setter
     def foo(self, value: str) -> None:
         pass
 def f(c: C):
-    assert_type(c.foo, int)  # E: assert_type(Any | property[(self: C) -> int], int)
-    c.foo = "42"  # (no error here because it is becoming Any)
-    reveal_type(C.foo)  # E: revealed type: Error | property[(self: C) -> int]
+    assert_type(c.foo, int)  # E: assert_type(property[(self: C) -> int] | property_with_setter[(self: C) -> int, (self: C, value: str) -> None], int)
+    c.foo = "42"  # E: EXPECTED Literal['42'] <: property[(self: C) -> int] | property_with_setter[(self: C) -> int, (self: C, value: str) -> None]
+    reveal_type(C.foo)  # E: revealed type: property[(self: C) -> int] | property_with_setter[(self: C) -> int, (self: C, value: str) -> None]
     "#,
 );
