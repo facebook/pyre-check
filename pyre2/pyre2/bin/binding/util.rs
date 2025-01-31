@@ -10,6 +10,7 @@
 use std::sync::LazyLock;
 
 use regex::Regex;
+use ruff_python_ast::ExceptHandler;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtExpr;
@@ -29,6 +30,23 @@ pub fn function_last_statements<'a>(x: &'a [Stmt], config: &Config) -> Option<Ve
             Stmt::If(x) => {
                 for (_, body) in config.pruned_if_branches(x) {
                     f(config, body, res)?;
+                }
+            }
+            Stmt::Try(x) => {
+                if !x.finalbody.is_empty() {
+                    f(config, &x.finalbody, res)?;
+                } else {
+                    if x.orelse.is_empty() {
+                        f(config, &x.body, res)?;
+                    } else {
+                        f(config, &x.orelse, res)?;
+                    }
+                    for handler in &x.handlers {
+                        match handler {
+                            ExceptHandler::ExceptHandler(x) => f(config, &x.body, res)?,
+                        }
+                    }
+                    // If we don't have a matching handler, we raise an exception, which is fine.
                 }
             }
             x => res.push(x),

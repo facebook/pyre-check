@@ -63,13 +63,11 @@ def f(b: bool) -> int:
 "#,
 );
 
-testcase_with_bug!(
-    "Should not require a return statement",
+testcase!(
     test_return_catch,
     r#"
-
 def f(b: bool) -> int:
-    try:  # E: EXPECTED None <: int
+    try:
         return 1
     except Exception:
         return 2
