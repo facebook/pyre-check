@@ -6,6 +6,7 @@
  */
 
 use dupe::Dupe;
+use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_text_size::TextRange;
@@ -228,49 +229,50 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    // Note: no closed form for the set type is guaranteed to exist: asking
-    // whether a an attribute set is legal can require synthesizing a call (e.g.
-    // for preoperties with setters, descriptors, or `__setattr__` fallback).
-    //
-    // As a result, no function with this api can be relied upon for valldating
-    // attribute set actions in the general case, use the `check_attr_set.*`
-    // functions instead.
-    fn set_type_or_error(
+    /// Here `got` can be either an Expr or a Type so that we can support contextually
+    /// typing whenever the expression is available.
+    fn check_attr_set(
         &self,
         base: Type,
         attr_name: &Name,
+        got: Either<&Expr, &Type>,
         range: TextRange,
         todo_ctx: &str,
-    ) -> Option<Type> {
+    ) {
         match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attr) => match self.resolve_set_access(attr, range) {
-                Ok(ty) => Some(ty),
-                Err(e) => {
+            LookupResult::Found(attr) => match attr.0 {
+                AttributeInner::NoAccess(e) => {
                     self.error(range, e.to_error_msg(attr_name));
-                    None
+                }
+                AttributeInner::ReadWrite(want) => match got {
+                    Either::Left(got) => {
+                        self.expr(got, Some(&want));
+                    }
+                    Either::Right(got) => {
+                        if !self.solver().is_subset_eq(got, &want, self.type_order()) {
+                            self.error(
+                                range,
+                                format!(
+                                    "Could not assign type `{}` to attribute `{}` with type `{}`",
+                                    got.clone().deterministic_printing(),
+                                    attr_name,
+                                    want.deterministic_printing(),
+                                ),
+                            );
+                        }
+                    }
+                },
+                AttributeInner::Property(_, cls) => {
+                    let e = NoAccessReason::SettingReadOnlyProperty(cls);
+                    self.error(range, e.to_error_msg(attr_name));
                 }
             },
             LookupResult::InternalError(e) => {
                 self.error(range, e.to_error_msg(attr_name, todo_ctx));
-                None
             }
             LookupResult::NotFound(e) => {
                 self.error(range, e.to_error_msg(attr_name));
-                None
             }
-        }
-    }
-
-    fn resolve_set_access(
-        &self,
-        attr: Attribute,
-        // TODO(stroxler): this will be needed as soon as we have setter support, add it now for consistency with `get`
-        _range: TextRange,
-    ) -> Result<Type, NoAccessReason> {
-        match attr.0 {
-            AttributeInner::NoAccess(reason) => Err(reason),
-            AttributeInner::ReadWrite(ty) => Ok(ty),
-            AttributeInner::Property(_, cls) => Err(NoAccessReason::SettingReadOnlyProperty(cls)),
         }
     }
 
@@ -282,8 +284,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         todo_ctx: &str,
     ) {
-        let want = self.set_type_or_error(base, attr_name, range, todo_ctx);
-        self.expr(got, want.as_ref());
+        self.check_attr_set(base, attr_name, Either::Left(got), range, todo_ctx)
     }
 
     pub fn check_attr_set_with_type(
@@ -294,19 +295,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         todo_ctx: &str,
     ) {
-        if let Some(want) = self.set_type_or_error(base, attr_name, range, todo_ctx) {
-            if !self.solver().is_subset_eq(got, &want, self.type_order()) {
-                self.error(
-                    range,
-                    format!(
-                        "Could not assign type `{}` to attribute `{}` with type `{}`",
-                        got.clone().deterministic_printing(),
-                        attr_name,
-                        want.deterministic_printing(),
-                    ),
-                );
-            }
-        }
+        self.check_attr_set(base, attr_name, Either::Right(got), range, todo_ctx)
     }
 
     fn resolve_get_access(
