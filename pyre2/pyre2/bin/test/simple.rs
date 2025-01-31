@@ -367,6 +367,34 @@ assert_type(z, str)
 "#,
 );
 
+testcase_with_bug!(
+    "final annotations don't prevent writes on locals",
+    test_final_annotated_local,
+    r#"
+from typing import Final
+
+x: Final[int] = 0
+x = 1 # TODO: x can not be assigned
+
+y: Final = "foo"
+y = "bar" # TODO: y can not be assigned
+"#,
+);
+
+testcase_with_bug!(
+    "final annotations don't prevent overrides",
+    test_final_annotated_override,
+    r#"
+from typing import Final
+
+class Base:
+    p: Final = 0
+    
+class Derived(Base):
+    p = 1 # TODO: p can not be overridden
+"#,
+);
+
 testcase!(
     test_solver_variables,
     r#"
