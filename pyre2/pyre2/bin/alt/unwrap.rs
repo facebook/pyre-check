@@ -138,7 +138,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         }
     }
-
+    pub fn decompose_async_generator(&self, ty: &Type) -> Option<(Type, Type)> {
+        let yield_ty = self.fresh_var();
+        let send_ty = self.fresh_var();
+        let async_generator_ty = self
+            .stdlib
+            .async_generator(yield_ty.to_type(), send_ty.to_type())
+            .to_type();
+        if self.is_subset_eq(&async_generator_ty, ty) {
+            let yield_ty: Type = self.expand_var_opt(yield_ty)?;
+            let send_ty = self.expand_var_opt(send_ty).unwrap_or(Type::None);
+            Some((yield_ty, send_ty))
+        } else if ty.is_any() {
+            Some((Type::any_explicit(), Type::any_explicit()))
+        } else {
+            None
+        }
+    }
     pub fn decompose_tuple(&self, ty: &Type) -> Option<Type> {
         let elem = self.fresh_var();
         let tuple_type = self.stdlib.tuple(elem.to_type()).to_type();

@@ -1143,8 +1143,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 match gen_ann {
                     Some(gen_ann) => {
                         let gen_type = gen_ann.get_type();
-
+                        // try to interpret the annotation as a generator
                         if let Some((_, send_type, _)) = self.decompose_generator(gen_type) {
+                            send_type
+                        }
+                        // try to interpret the annotation as an async generator
+                        else if let Some((_, send_type)) =
+                            self.decompose_async_generator(gen_type)
+                        {
                             send_type
                         } else {
                             self.error(*range, format!("Yield expression found but the function has an incompatible annotation `{gen_type}`"))
