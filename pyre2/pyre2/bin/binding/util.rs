@@ -25,7 +25,7 @@ use crate::config::Config;
 pub fn function_last_statements<'a>(x: &'a [Stmt], config: &Config) -> Option<Vec<&'a Stmt>> {
     fn f<'a>(config: &Config, x: &'a [Stmt], res: &mut Vec<&'a Stmt>) -> Option<()> {
         match x.last()? {
-            Stmt::Return(_) => {}
+            Stmt::Return(_) | Stmt::Raise(_) => {}
             Stmt::If(x) => {
                 for (_, body) in config.pruned_if_branches(x) {
                     f(config, body, res)?;

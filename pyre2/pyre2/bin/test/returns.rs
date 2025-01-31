@@ -83,7 +83,7 @@ testcase_with_bug!(
 from typing import NoReturn
 
 def fail() -> NoReturn:
-    raise Exception() # E: EXPECTED None <: NoReturn
+    raise Exception()
 
 def f(b: bool) -> int:
     if b:

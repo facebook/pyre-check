@@ -1751,16 +1751,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED None <: AsyncIterator[int]",
-      "description": "EXPECTED None <: AsyncIterator[int]",
-      "line": 179,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 179
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "Yield expression found but the function has an incompatible annotation `AsyncIterator[int]`",
       "description": "Yield expression found but the function has an incompatible annotation `AsyncIterator[int]`",
       "line": 187,
@@ -3469,16 +3459,6 @@
   "constructors_call_metaclass.py": [
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED None <: NoReturn",
-      "description": "EXPECTED None <: NoReturn",
-      "line": 15,
-      "name": "PyreError",
-      "stop_column": 52,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "EXPECTED object <: Class1",
       "description": "EXPECTED object <: Class1",
@@ -3698,16 +3678,6 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 64
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED None <: NoReturn",
-      "description": "EXPECTED None <: NoReturn",
-      "line": 69,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 69
     },
     {
       "code": -2,
@@ -4202,16 +4172,6 @@
       "name": "PyreError",
       "stop_column": 3,
       "stop_line": 80
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED None <: NoReturn",
-      "description": "EXPECTED None <: NoReturn",
-      "line": 85,
-      "name": "PyreError",
-      "stop_column": 61,
-      "stop_line": 85
     },
     {
       "code": -2,
@@ -14757,16 +14717,6 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "EXPECTED None <: int",
-      "description": "EXPECTED None <: int",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 39
-    },
-    {
-      "code": -2,
-      "column": 9,
       "concise_description": "Object of class `Template` has no attribute `temp`",
       "description": "Object of class `Template` has no attribute `temp`",
       "line": 67,
@@ -15739,16 +15689,6 @@
     }
   ],
   "specialtypes_never.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: NoReturn",
-      "description": "EXPECTED None <: NoReturn",
-      "line": 16,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 16
-    },
     {
       "code": -2,
       "column": 9,

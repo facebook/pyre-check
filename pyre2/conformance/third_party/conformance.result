@@ -158,7 +158,6 @@
     "Line 168: Unexpected errors ['EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncGenerator[str, None]']",
     "Line 174: Unexpected errors ['assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed']",
     "Line 175: Unexpected errors ['EXPECTED Coroutine[Unknown, Unknown, AsyncGenerator[str, None]] <: AsyncIterator[str]']",
-    "Line 179: Unexpected errors ['EXPECTED None <: AsyncIterator[int]']",
     "Line 187: Unexpected errors ['Yield expression found but the function has an incompatible annotation `AsyncIterator[int]`']",
     "Line 190: Unexpected errors ['assert_type(() -> Coroutine[Any, Any, AsyncIterator[int]], () -> AsyncIterator[int]) failed']"
   ],
@@ -315,7 +314,6 @@
     "Line 100: Unexpected errors ['EXPECTED Class7[str, int] <: Class7[TypeVar[V2], TypeVar[V1]]']"
   ],
   "constructors_call_metaclass.py": [
-    "Line 15: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 20: Unexpected errors ['EXPECTED object <: Class1', 'Expected 0 positional arguments, got 1']",
     "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed', \"Missing argument 'x'\"]",
     "Line 33: Unexpected errors ['EXPECTED object <: Class2', 'Expected 0 positional arguments, got 1']",
@@ -329,7 +327,6 @@
     "Line 20: Unexpected errors ['EXPECTED Literal[1] <: float']",
     "Line 29: Unexpected errors ['EXPECTED object <: Class2[?_]', 'Expected 0 positional arguments, got 1']",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', \"Missing argument 'x'\"]",
-    "Line 69: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', \"Missing argument 'x'\"]",
     "Line 98: Unexpected errors ['Expected 0 positional arguments, got 1', 'Expected argument after ** to be a mapping, got: Unknown']",
     "Line 104: Unexpected errors ['assert_type(object, Class7) failed']"
@@ -355,7 +352,6 @@
     "Line 76: Unexpected errors ['EXPECTED type[Class4] <: (ParamSpec(@_)) -> @_']",
     "Line 77: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 78: Unexpected errors ['assert_type(Any, int) failed', 'Unexpected ParamSpec type']",
-    "Line 85: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 93: Unexpected errors ['EXPECTED object <: Class5', 'Expected 0 positional arguments, got 1']",
     "Line 96: Unexpected errors ['EXPECTED type[Class5] <: (ParamSpec(@_)) -> @_']",
     "Line 97: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
@@ -1154,7 +1150,6 @@
     "Line 339: Expected 1 errors",
     "Line 341: Expected 1 errors",
     "Line 27: Unexpected errors [\"Missing argument 'mode'\"]",
-    "Line 39: Unexpected errors ['EXPECTED None <: int']",
     "Line 102: Unexpected errors ['EXPECTED Literal[2] <: float']",
     "Line 148: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 172: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1290,7 +1285,6 @@
   ],
   "specialtypes_never.py": [
     "Line 19: Expected 1 errors",
-    "Line 16: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 21: Unexpected errors ['EXPECTED None <: NoReturn']",
     "Line 32: Unexpected errors [\"EXPECTED Literal['whatever works'] <: int\"]",
     "Line 77: Unexpected errors ['EXPECTED None <: Never']"
