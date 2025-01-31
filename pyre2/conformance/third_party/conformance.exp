@@ -1631,16 +1631,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Yield expression found but the function has an incompatible annotation `AsyncIterable[str]`",
-      "description": "Yield expression found but the function has an incompatible annotation `AsyncIterable[str]`",
-      "line": 145,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 145
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "EXPECTED list[int] <: Generator[int, None, None]",
       "description": "EXPECTED list[int] <: Generator[int, None, None]",
       "line": 149,
@@ -1700,16 +1690,6 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "Yield expression found but the function has an incompatible annotation `AsyncGenerator[str, None]`",
-      "description": "Yield expression found but the function has an incompatible annotation `AsyncGenerator[str, None]`",
-      "line": 161,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 161
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
       "description": "assert_type(Coroutine[Any, Any, AsyncGenerator[str, None]], AsyncGenerator[str, None]) failed",
@@ -1751,8 +1731,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Yield expression found but the function has an incompatible annotation `AsyncIterator[int]`",
-      "description": "Yield expression found but the function has an incompatible annotation `AsyncIterator[int]`",
+      "concise_description": "EXPECTED None <: int",
+      "description": "EXPECTED None <: int",
       "line": 187,
       "name": "PyreError",
       "stop_column": 10,

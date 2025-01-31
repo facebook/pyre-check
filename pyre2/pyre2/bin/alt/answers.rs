@@ -1165,8 +1165,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 match gen_ann {
                     Some(gen_ann) => {
                         let gen_type = gen_ann.get_type();
-
+                        // todo zeina: add an extra field in YieldTypeOfYieldAnnotation to denote if a function is async and verify the types
                         if let Some((yield_type, _, _)) = self.decompose_generator(gen_type) {
+                            yield_type
+                        } else if let Some((yield_type, _)) =
+                            self.decompose_async_generator(gen_type)
+                        {
                             yield_type
                         } else {
                             self.error(*range, format!("Yield expression found but the function has an incompatible annotation `{gen_type}`"))

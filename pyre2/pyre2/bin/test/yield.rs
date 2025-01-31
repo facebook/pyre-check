@@ -163,20 +163,18 @@ assert_type(f(3), Generator[int, None, None])
 "#,
 );
 
-testcase_with_bug!(
-    "TODO zeina: The type here should be AsyncGenerator[int, None] and we should not raise any errors.",
+testcase!(
     test_async_generator_basic_type,
     r#"
 from typing import AsyncGenerator, assert_type, Coroutine, Any
 
 async def async_count_up_to() -> AsyncGenerator[int, None]:
-    yield 2 # E: Yield expression found but the function has an incompatible annotation `AsyncGenerator[int, None]`
+    yield 2
 assert_type(async_count_up_to(), Coroutine[Any, Any, AsyncGenerator[int, None]])
 "#,
 );
 
-testcase_with_bug!(
-    "TODO zeina: we should not raise an error in this test case",
+testcase!(
     test_async_infer_send,
     r#"
 from typing import AsyncGenerator, assert_type
@@ -186,7 +184,7 @@ class Send: pass
 
 
 async def my_generator() -> AsyncGenerator[Yield, Send]:
-    s = yield Yield() # E: Yield expression found but the function has an incompatible annotation `AsyncGenerator[Yield, Send]`
+    s = yield Yield()
 
     assert_type(s, Send)
 
