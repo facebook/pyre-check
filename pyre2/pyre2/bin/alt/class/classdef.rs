@@ -42,11 +42,11 @@ use crate::types::class::ClassType;
 use crate::types::class::Substitution;
 use crate::types::class::TArgs;
 use crate::types::literal::Lit;
+use crate::types::typed_dict::TypedDict;
+use crate::types::typed_dict::TypedDictField;
 use crate::types::types::Decoration;
 use crate::types::types::TParams;
 use crate::types::types::Type;
-use crate::types::types::TypedDict;
-use crate::types::types::TypedDictField;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
 

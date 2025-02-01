@@ -20,4 +20,5 @@ pub mod stdlib;
 pub mod tuple;
 pub mod type_var;
 pub mod type_var_tuple;
+pub mod typed_dict;
 pub mod types;
