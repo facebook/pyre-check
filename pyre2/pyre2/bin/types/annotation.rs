@@ -70,7 +70,6 @@ pub enum Qualifier {
     InitVar,
     Annotated,
     TypeAlias,
-    #[expect(dead_code)] // Will be used in the future
     Unpack,
 }
 
