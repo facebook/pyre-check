@@ -448,64 +448,13 @@ pub enum Type {
     None,
 }
 
-#[allow(dead_code)] // Some of these utilities will come and go
 impl Type {
     pub fn arc_clone(self: Arc<Self>) -> Self {
         Arc::unwrap_or_clone(self)
     }
 
-    pub fn as_union(&self) -> &[Type] {
-        match self {
-            Type::Union(types) => types,
-            _ => std::slice::from_ref(self),
-        }
-    }
-
-    pub fn as_intersect(&self) -> &[Type] {
-        match self {
-            Type::Intersect(types) => types,
-            _ => std::slice::from_ref(self),
-        }
-    }
-
     pub fn never() -> Self {
         Type::Never(NeverStyle::Never)
-    }
-
-    pub fn is_never(&self) -> bool {
-        match self {
-            Type::Never(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_generator(&self) -> bool {
-        match self {
-            Type::ClassType(cls) => cls.class_object().has_qname("typing", "Generator"),
-            _ => false,
-        }
-    }
-
-    pub fn is_iterator(&self) -> bool {
-        match self {
-            Type::ClassType(cls) => cls.class_object().has_qname("typing", "Iterator"),
-            _ => false,
-        }
-    }
-
-    pub fn is_var(&self) -> bool {
-        matches!(self, Type::Var(_))
-    }
-
-    pub fn is_callable(&self) -> bool {
-        matches!(self, Type::Callable(_, _))
-    }
-
-    pub fn as_var(&self) -> Option<Var> {
-        match self {
-            Type::Var(v) => Some(*v),
-            _ => None,
-        }
     }
 
     pub fn as_module(&self) -> Option<&Module> {
@@ -555,10 +504,6 @@ impl Type {
 
     pub fn is_any(&self) -> bool {
         matches!(self, Type::Any(_))
-    }
-
-    pub fn is_forall(&self) -> bool {
-        matches!(self, Type::Forall(_, _))
     }
 
     pub fn as_tvar_declaration(&self) -> Option<&QName> {
@@ -629,6 +574,7 @@ impl Type {
         });
     }
 
+    #[expect(dead_code)] // Not used, but might be in future
     pub fn contains(&self, x: &Type) -> bool {
         fn f(ty: &Type, x: &Type, seen: &mut bool) {
             if *seen || ty == x {
