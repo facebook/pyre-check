@@ -185,7 +185,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let ty_decorator = self.expr(&decorator.expression, None);
             if matches!(
                 ty_decorator.callee_kind(),
-                Some(CalleeKind::Callable(CallableKind::Dataclass))
+                Some(CalleeKind::Callable(CallableKind::Dataclass(_)))
             ) {
                 let fields = self.get_dataclass_fields(cls, &bases_with_metadata);
                 let synthesized_methods = if cls.contains(&dunder::INIT) {

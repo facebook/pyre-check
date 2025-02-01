@@ -10,8 +10,10 @@ use std::fmt;
 use std::fmt::Display;
 
 use ruff_python_ast::name::Name;
+use ruff_python_ast::Identifier;
 
 use crate::module::module_name::ModuleName;
+use crate::types::literal::Lit;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
 use crate::util::prelude::SliceExt;
@@ -136,10 +138,49 @@ pub enum Required {
 pub enum CallableKind {
     IsInstance,
     IsSubclass,
-    Dataclass,
+    Dataclass(DataclassKeywords),
     ClassMethod,
     Def,
     Anon,
+}
+
+/// The subset of dataclass's keywords (https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)
+/// with typing effects.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct DataclassKeywords {
+    pub init: bool,
+    pub frozen: bool,
+    pub match_args: bool,
+    pub kw_only: bool,
+}
+
+impl Default for DataclassKeywords {
+    fn default() -> Self {
+        Self {
+            init: true,
+            frozen: false,
+            match_args: true,
+            kw_only: false,
+        }
+    }
+}
+
+impl DataclassKeywords {
+    pub fn set_keyword(&mut self, name: Option<&Identifier>, ty: Type) {
+        let value = match ty {
+            Type::Literal(Lit::Bool(b)) => b,
+            _ => {
+                return;
+            }
+        };
+        match name.map(|name| name.as_str()) {
+            Some("init") => self.init = value,
+            Some("frozen") => self.frozen = value,
+            Some("match_args") => self.match_args = value,
+            Some("kw_only") => self.kw_only = value,
+            _ => {}
+        }
+    }
 }
 
 impl Callable {
@@ -317,7 +358,7 @@ impl CallableKind {
             ("builtins", "isinstance") => Self::IsInstance,
             ("builtins", "issubclass") => Self::IsSubclass,
             ("builtins", "classmethod") => Self::ClassMethod,
-            ("dataclasses", "dataclass") => Self::Dataclass,
+            ("dataclasses", "dataclass") => Self::Dataclass(DataclassKeywords::default()),
             _ => Self::Def,
         }
     }

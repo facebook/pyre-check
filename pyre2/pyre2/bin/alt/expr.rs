@@ -36,6 +36,7 @@ use crate::dunder;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
+use crate::types::callable::DataclassKeywords;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
@@ -132,7 +133,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Return a pair of the quantified variables I had to instantiate, and the resulting call target.
     fn as_call_target(&self, ty: Type) -> Option<(Vec<Var>, CallTarget)> {
         match ty {
-            Type::Callable(c, CallableKind::Dataclass) => {
+            Type::Callable(c, CallableKind::Dataclass(_)) => {
                 Some((Vec::new(), CallTarget::Dataclass(*c)))
             }
             Type::Callable(c, _) => Some((Vec::new(), CallTarget::Callable(*c))),
@@ -361,7 +362,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         };
         self.solver().finish_quantified(&call_target.0);
         if is_dataclass && let Type::Callable(c, _) = res {
-            Type::Callable(c, CallableKind::Dataclass)
+            let mut kws = DataclassKeywords::default();
+            for kw in keywords {
+                kws.set_keyword(kw.arg.as_ref(), self.expr_infer(&kw.value));
+            }
+            Type::Callable(c, CallableKind::Dataclass(kws))
         } else {
             res
         }
@@ -534,9 +539,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Some(CalleeKind::Class(ClassKind::Property)) => {
                 return Type::Decoration(Decoration::Property(Box::new((decoratee, None))));
-            }
-            Some(CalleeKind::Callable(CallableKind::Dataclass)) => {
-                // TODO: Implement dataclass functionality
             }
             _ => {}
         }
