@@ -128,13 +128,13 @@ pub enum Param {
     Kwargs(Type),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Required {
     Required,
     Optional,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CallableKind {
     IsInstance,
     IsSubclass,
@@ -146,7 +146,7 @@ pub enum CallableKind {
 
 /// The subset of dataclass's keywords (https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass)
 /// with typing effects.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DataclassKeywords {
     pub init: bool,
     pub frozen: bool,

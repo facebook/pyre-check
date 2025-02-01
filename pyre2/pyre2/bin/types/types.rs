@@ -419,7 +419,7 @@ impl Type {
 
     pub fn callee_kind(&self) -> Option<CalleeKind> {
         match self {
-            Type::Callable(_, kind) => Some(CalleeKind::Callable(kind.clone())),
+            Type::Callable(_, kind) => Some(CalleeKind::Callable(*kind)),
             Type::ClassDef(c) => Some(CalleeKind::Class(c.kind())),
             Type::Forall(_, t) => t.callee_kind(),
             _ => None,
