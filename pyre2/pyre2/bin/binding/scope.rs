@@ -15,6 +15,7 @@ use ruff_python_ast::Identifier;
 use ruff_python_ast::Stmt;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
+use vec1::Vec1;
 
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
@@ -269,3 +270,6 @@ impl Scope {
         Self::new(false, ScopeKind::Module)
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct Scopes(pub Vec1<Scope>);
