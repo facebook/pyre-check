@@ -11,7 +11,6 @@ use ruff_python_ast::Arguments;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Decorator;
-use ruff_python_ast::DictItem;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprNoneLiteral;
@@ -578,25 +577,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.call_infer(call_target, &[got], &[], range)
     }
 
-    /// Pull all dictionary items up to the top level, so `{a: 1, **{b: 2}}`
-    /// has the same items as `{a: 1, b: 2}`.
-    fn flatten_dict_items<'b>(x: &'b [DictItem]) -> Vec<&'b DictItem> {
-        fn f<'b>(xs: &'b [DictItem], res: &mut Vec<&'b DictItem>) {
-            for x in xs {
-                if x.key.is_none()
-                    && let Expr::Dict(dict) = &x.value
-                {
-                    f(&dict.items, res);
-                } else {
-                    res.push(x);
-                }
-            }
-        }
-        let mut res = Vec::new();
-        f(x, &mut res);
-        res
-    }
-
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>) -> Type {
         match x {
             Expr::BoolOp(x) => self.boolop(&x.values, x.op),
@@ -736,7 +716,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Dict(x) => {
                 let unwrapped_hint = hint.and_then(|ty| self.decompose_dict(ty));
-                let flattened_items = Self::flatten_dict_items(&x.items);
+                let flattened_items = Ast::flatten_dict_items(&x.items);
                 if let Some(hint @ Type::TypedDict(typed_dict)) = hint {
                     let fields = typed_dict.fields();
                     let mut has_expansion = false;

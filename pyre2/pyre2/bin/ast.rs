@@ -7,6 +7,7 @@
 
 use std::slice;
 
+use ruff_python_ast::DictItem;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprStringLiteral;
@@ -230,5 +231,24 @@ impl Ast {
             _ => {}
         }
         Visitors::visit_pattern(x, |x| Ast::pattern_lvalue(x, f));
+    }
+
+    /// Pull all dictionary items up to the top level, so `{a: 1, **{b: 2}}`
+    /// has the same items as `{a: 1, b: 2}`.
+    pub fn flatten_dict_items<'b>(x: &'b [DictItem]) -> Vec<&'b DictItem> {
+        fn f<'b>(xs: &'b [DictItem], res: &mut Vec<&'b DictItem>) {
+            for x in xs {
+                if x.key.is_none()
+                    && let Expr::Dict(dict) = &x.value
+                {
+                    f(&dict.items, res);
+                } else {
+                    res.push(x);
+                }
+            }
+        }
+        let mut res = Vec::new();
+        f(x, &mut res);
+        res
     }
 }
