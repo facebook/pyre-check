@@ -19,7 +19,7 @@ use starlark_map::small_map::SmallMap;
 use crate::alt::answers::LookupAnswer;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
-use crate::type_order::TypeOrder;
+use crate::solver::type_order::TypeOrder;
 use crate::types::callable::ParamList;
 use crate::types::display::TypeDisplayContext;
 use crate::types::module::Module;

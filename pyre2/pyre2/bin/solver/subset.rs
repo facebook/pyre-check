@@ -8,7 +8,7 @@
 use itertools::izip;
 
 use crate::alt::answers::LookupAnswer;
-use crate::solver::Subset;
+use crate::solver::solver::Subset;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
