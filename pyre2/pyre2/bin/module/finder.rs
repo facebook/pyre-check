@@ -78,10 +78,7 @@ impl BundledTypeshed {
 
     pub fn find(&self, name: ModuleName) -> Option<(ModulePath, String)> {
         let entry = self.index.get(&name)?;
-        // TODO(grievejia): Properly model paths for in-memory sources
-        let fake_path = ModulePath::filesystem(
-            PathBuf::from("bundled /pyre2/third_party/typeshed").join(&entry.relative_path),
-        );
+        let fake_path = ModulePath::bundled_typeshed(entry.relative_path.clone());
         Some((fake_path, entry.content.clone()))
     }
 }

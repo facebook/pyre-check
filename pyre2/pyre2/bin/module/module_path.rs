@@ -27,29 +27,61 @@ pub enum ModuleStyle {
 pub struct ModulePath(Arc<ModulePathInner>);
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
-struct ModulePathInner {
-    path: PathBuf,
+enum ModulePathInner {
+    /// The module source comes from a file on disk.
+    FileSystem(PathBuf),
+    /// The module source comes from typeshed bundled with Pyre (which gets stored in-memory).
+    /// The path is relative to the root of the typeshed directory.
+    BundledTypeshed(PathBuf),
+}
+
+fn is_path_init(path: &Path) -> bool {
+    path.file_stem() == Some(OsStr::new(dunder::INIT.as_str()))
+}
+
+impl ModuleStyle {
+    fn of_path(path: &Path) -> Self {
+        if path.extension() == Some(OsStr::new("pyi")) {
+            ModuleStyle::Interface
+        } else {
+            ModuleStyle::Executable
+        }
+    }
 }
 
 impl ModulePath {
     pub fn filesystem(path: PathBuf) -> Self {
-        Self(Arc::new(ModulePathInner { path }))
+        Self(Arc::new(ModulePathInner::FileSystem(path)))
+    }
+
+    pub fn bundled_typeshed(relative_path: PathBuf) -> Self {
+        Self(Arc::new(ModulePathInner::BundledTypeshed(relative_path)))
     }
 
     pub fn display(&self) -> String {
-        self.0.path.to_string_lossy().into_owned()
+        match &*self.0 {
+            ModulePathInner::FileSystem(path) => path.display().to_string(),
+            ModulePathInner::BundledTypeshed(relative_path) => {
+                format!(
+                    "bundled /pyre2/third_party/typeshed/{}",
+                    relative_path.display()
+                )
+            }
+        }
     }
 
     pub fn is_init(&self) -> bool {
-        self.0.path.file_stem() == Some(OsStr::new(dunder::INIT.as_str()))
+        match &*self.0 {
+            ModulePathInner::FileSystem(path) => is_path_init(path),
+            ModulePathInner::BundledTypeshed(relative_path) => is_path_init(relative_path),
+        }
     }
 
     /// Whether things imported by this module are reexported.
     pub fn style(&self) -> ModuleStyle {
-        if self.0.path.extension() == Some(OsStr::new("pyi")) {
-            ModuleStyle::Interface
-        } else {
-            ModuleStyle::Executable
+        match &*self.0 {
+            ModulePathInner::FileSystem(path) => ModuleStyle::of_path(path),
+            ModulePathInner::BundledTypeshed(relative_path) => ModuleStyle::of_path(relative_path),
         }
     }
 
@@ -58,6 +90,9 @@ impl ModulePath {
     }
 
     pub fn as_filesystem_path(&self) -> Option<&Path> {
-        Some(&self.0.path)
+        match &*self.0 {
+            ModulePathInner::FileSystem(path) => Some(path),
+            ModulePathInner::BundledTypeshed(_) => None,
+        }
     }
 }
