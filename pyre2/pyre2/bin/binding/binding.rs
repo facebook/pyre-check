@@ -30,6 +30,7 @@ use static_assertions::assert_eq_size;
 use vec1::Vec1;
 
 use crate::alt::class::classdef::ClassField;
+use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::binding::bindings::Bindings;
 use crate::binding::narrow::NarrowOp;
 use crate::graph::index::Idx;
@@ -40,7 +41,6 @@ use crate::types::annotation::Annotation;
 use crate::types::class_metadata::ClassMetadata;
 use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
-use crate::types::types::LegacyTypeParameterLookup;
 use crate::types::types::Type;
 use crate::util::display::DisplayWith;
 
