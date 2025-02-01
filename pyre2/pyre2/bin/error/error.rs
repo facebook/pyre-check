@@ -9,46 +9,39 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 
-use ruff_text_size::TextRange;
-
-use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
 use crate::module::module_path::ModulePath;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Error {
-    pub info: ModuleInfo,
-    pub range: TextRange,
-    pub msg: String,
+    path: ModulePath,
+    range: SourceRange,
+    msg: String,
+    is_ignored: bool,
 }
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}:{}: {}",
-            self.info.path().display(),
-            self.source_range(),
-            self.msg
-        )
+        write!(f, "{}:{}: {}", self.path.display(), self.range, self.msg)
     }
 }
 
 impl Error {
-    pub fn new(info: ModuleInfo, range: TextRange, msg: String) -> Self {
-        let res = Self { info, range, msg };
-        // We calculate the source_range here, so that if it has out of bounds
-        // (e.g. our range/info combo is wrong) we'll get a crash at the right spot.
-        res.source_range();
-        res
+    pub fn new(path: ModulePath, range: SourceRange, msg: String, is_ignored: bool) -> Self {
+        Self {
+            path,
+            range,
+            msg,
+            is_ignored,
+        }
     }
 
-    pub fn source_range(&self) -> SourceRange {
-        self.info.source_range(self.range)
+    pub fn source_range(&self) -> &SourceRange {
+        &self.range
     }
 
     pub fn path(&self) -> &ModulePath {
-        self.info.path()
+        &self.path
     }
 
     pub fn msg(&self) -> &str {
@@ -56,6 +49,6 @@ impl Error {
     }
 
     pub fn is_ignored(&self) -> bool {
-        self.info.is_ignored(&self.source_range(), &self.msg)
+        self.is_ignored
     }
 }

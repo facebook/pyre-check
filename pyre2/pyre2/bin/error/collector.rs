@@ -5,19 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
-use std::hash::Hash;
-use std::hash::Hasher;
 use std::sync::Mutex;
 
 use dupe::Dupe;
-use parse_display::Display;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
-use ruff_text_size::TextSize;
 use starlark_map::small_map::SmallMap;
 use tracing::error;
 
@@ -25,52 +20,17 @@ use crate::error::error::Error;
 use crate::error::style::ErrorStyle;
 use crate::module::module_info::ModuleInfo;
 
-/// Wrapped to provide custom Ord/Eq etc.
-/// Do not use ModuleInfo in the comparisons.
-#[derive(Debug, Clone, Display)]
-struct OneError(Error);
-
-impl PartialEq for OneError {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.range == other.0.range && self.0.msg == other.0.msg
-    }
-}
-
-impl Eq for OneError {}
-
-impl Hash for OneError {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.range.hash(state);
-        self.0.msg.hash(state);
-    }
-}
-
-impl PartialOrd for OneError {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for OneError {
-    fn cmp(&self, other: &Self) -> Ordering {
-        fn f(x: &Error) -> (TextSize, TextSize, &str) {
-            (x.range.start(), x.range.end(), &x.msg)
-        }
-        f(&self.0).cmp(&f(&other.0))
-    }
-}
-
 #[derive(Debug, Default, Clone)]
 struct ModuleErrors {
     /// Set to `true` when we have no duplicates and are sorted.
     clean: bool,
-    items: Vec<OneError>,
+    items: Vec<Error>,
 }
 
 impl ModuleErrors {
     fn push(&mut self, err: Error) {
         self.clean = false;
-        self.items.push(OneError(err));
+        self.items.push(err);
     }
 
     fn cleanup(&mut self) {
@@ -87,7 +47,7 @@ impl ModuleErrors {
         self.items.len()
     }
 
-    fn iter(&mut self) -> impl Iterator<Item = &OneError> {
+    fn iter(&mut self) -> impl Iterator<Item = &Error> {
         self.cleanup();
         self.items.iter()
     }
@@ -132,7 +92,14 @@ impl ErrorCollector {
     }
 
     pub fn add(&self, module_info: &ModuleInfo, range: TextRange, msg: String) {
-        self.add_error(Error::new(module_info.dupe(), range, msg));
+        let source_range = module_info.source_range(range);
+        let is_ignored = module_info.is_ignored(&source_range, &msg);
+        self.add_error(Error::new(
+            module_info.path().dupe(),
+            source_range,
+            msg,
+            is_ignored,
+        ));
     }
 
     pub fn len(&self) -> usize {
@@ -140,12 +107,7 @@ impl ErrorCollector {
     }
 
     pub fn collect(&self) -> Vec<Error> {
-        self.errors
-            .lock()
-            .unwrap()
-            .iter()
-            .map(|x| x.0.clone())
-            .collect()
+        self.errors.lock().unwrap().iter().cloned().collect()
     }
 
     pub fn summarise<'a>(xs: impl Iterator<Item = &'a ErrorCollector>) -> Vec<(String, usize)> {
@@ -155,8 +117,7 @@ impl ErrorCollector {
                 // Lots of error messages have names in them, e.g. "Can't find module `foo`".
                 // We want to summarise those together, so replace bits of text inside `...` with `...`.
                 let clean_msg = err
-                    .0
-                    .msg
+                    .msg()
                     .split('`')
                     .enumerate()
                     .map(|(i, x)| if i % 2 == 0 { x } else { "..." })
@@ -193,6 +154,7 @@ mod tests {
     use std::path::Path;
 
     use ruff_python_ast::name::Name;
+    use ruff_text_size::TextSize;
 
     use super::*;
     use crate::module::module_name::ModuleName;
@@ -232,7 +194,7 @@ mod tests {
             "b".to_owned(),
         );
         assert_eq!(
-            errors.collect().iter().map(|x| &x.msg).collect::<Vec<_>>(),
+            errors.collect().iter().map(|x| x.msg()).collect::<Vec<_>>(),
             vec!["a", "b", "a"]
         );
     }

@@ -81,7 +81,7 @@ impl DebugInfo {
                     table_for_each!(solutions, |t| f(t, module_info, bindings, &mut res));
                     let errors = errors.collect().map(|e| Error {
                         location: e.source_range().to_string(),
-                        message: e.msg.clone(),
+                        message: e.msg().to_owned(),
                     });
                     (
                         module_info.name(),

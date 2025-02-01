@@ -285,7 +285,7 @@ impl<'a> Server<'a> {
         for e in self.state.collect_errors() {
             if let Some(path) = e.path().as_filesystem_path() {
                 diags.entry(path.to_owned()).or_default().push(Diagnostic {
-                    range: source_range_to_range(&e.source_range()),
+                    range: source_range_to_range(e.source_range()),
                     severity: Some(lsp_types::DiagnosticSeverity::ERROR),
                     message: e.msg().to_owned(),
                     ..Default::default()
