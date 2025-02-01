@@ -578,7 +578,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.call_infer(call_target, &[got], &[], range)
     }
 
-    fn flatten_dict_items(x: &[DictItem]) -> Vec<DictItem> {
+    fn flatten_dict_items<'b>(x: &'b [DictItem]) -> Vec<&'b DictItem> {
         x.iter()
             .flat_map(|item| {
                 if item.key.is_none()
@@ -586,7 +586,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 {
                     Self::flatten_dict_items(&dict.items)
                 } else {
-                    vec![item.clone()]
+                    vec![item]
                 }
             })
             .collect()
