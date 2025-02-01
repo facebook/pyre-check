@@ -13,8 +13,8 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::AnswersSolver;
-use crate::alt::answers::Iterable;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::solve::Iterable;
 use crate::alt::unwrap::UnwrappedDict;
 use crate::types::callable::Callable;
 use crate::types::callable::Param;

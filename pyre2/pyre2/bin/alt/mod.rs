@@ -11,6 +11,7 @@ pub mod callable;
 pub mod class;
 pub mod expr;
 pub mod narrow;
+pub mod solve;
 pub mod specials;
 pub mod types;
 pub mod unwrap;
