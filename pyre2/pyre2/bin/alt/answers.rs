@@ -24,6 +24,7 @@ use starlark_map::small_map::SmallMap;
 
 use crate::alt::callable::CallArg;
 use crate::alt::class::classdef::ClassField;
+use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
@@ -74,7 +75,6 @@ use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
-use crate::types::class_metadata::ClassMetadata;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::quantified::Quantified;

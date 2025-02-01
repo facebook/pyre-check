@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::alt::types::class_metadata::ClassMetadata;
 use crate::binding::binding::KeyClassMetadata;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
@@ -12,7 +13,6 @@ use crate::state::state::State;
 use crate::test::util::get_class;
 use crate::test::util::mk_state;
 use crate::testcase;
-use crate::types::class_metadata::ClassMetadata;
 
 pub fn get_class_metadata(name: &str, module_name: ModuleName, state: &State) -> ClassMetadata {
     let solutions = state.get_solutions(module_name).unwrap();

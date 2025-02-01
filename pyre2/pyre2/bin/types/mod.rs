@@ -8,7 +8,6 @@
 pub mod annotation;
 pub mod callable;
 pub mod class;
-pub mod class_metadata;
 pub mod display;
 pub mod literal;
 pub mod module;

@@ -27,11 +27,11 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use static_assertions::assert_eq_size;
 
+use crate::alt::types::class_metadata::EnumMetadata;
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
 use crate::types::class::ClassType;
-use crate::types::class_metadata::EnumMetadata;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 
