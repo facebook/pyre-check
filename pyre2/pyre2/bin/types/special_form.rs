@@ -76,6 +76,7 @@ impl SpecialForm {
             Self::ReadOnly => Some(Qualifier::ReadOnly),
             Self::Required => Some(Qualifier::Required),
             Self::TypeAlias => Some(Qualifier::TypeAlias),
+            Self::Unpack => Some(Qualifier::Unpack),
             _ => None,
         }
     }

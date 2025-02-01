@@ -1675,7 +1675,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         params.extend(x.def.parameters.kwarg.iter().map(|x| {
             let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(&x.name)));
             let ty = annot.get_type();
-            Param::Kwargs(ty.clone())
+            let is_unpack = annot.qualifiers.contains(&Qualifier::Unpack);
+            Param::Kwargs(if is_unpack {
+                Type::Unpack(Box::new(ty.clone()))
+            } else {
+                ty.clone()
+            })
         }));
         let ret = self
             .get(&Key::ReturnType(ShortIdentifier::new(&x.def.name)))

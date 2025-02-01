@@ -244,10 +244,54 @@ x: Coord = {"x": 1, "y": 2}
 f1(**x)
 f2(**x)  # E: EXPECTED int <: str
 f3(**x)  # E: Unexpected keyword argument 'z'
-f4(**x)  # E: Expected key 'y' to be optional
+f4(**x)
 f5(**x)  # E: Expected key 'z' to be required
 f6(**x)  # E: EXPECTED int <: str
 f1(1, **x)  # E: Multiple values for argument 'x'
+    "#,
+);
+
+testcase!(
+    test_typed_dict_kwargs_unpack,
+    r#"
+from typing import TypedDict, NotRequired, Unpack, assert_type
+class Coord(TypedDict):
+    x: int
+    y: int
+    z: NotRequired[int]
+
+class Coord2(TypedDict):
+    x: int
+    y: int
+
+class Coord3(TypedDict):
+    x: int
+    y: int
+    z: int
+
+class Coord4(TypedDict):
+    w: int
+    x: int
+    y: int
+    z: NotRequired[int]
+
+class Coord5(TypedDict):
+    y: int
+    z: NotRequired[int]
+
+def f(**kwargs: Unpack[Coord]):
+    assert_type(kwargs["x"], int)
+
+def g(x: Coord, x2: Coord2, x3: Coord3, x4: Coord4, x5: Coord5):
+    f(**x)
+    f(**x2)
+    f(**x3)
+    f(**x4)
+    f(**x5)  # E: Missing argument 'x'
+f(x=1, y=2)
+f(x=1, y=2, z=3)
+f(x=1, y=2, z=3, a=4)  # E: Unexpected keyword argument 'a'
+f(x="", y=2)  # E: EXPECTED Literal[''] <: int
     "#,
 );
 

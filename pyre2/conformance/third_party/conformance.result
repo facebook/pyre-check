@@ -193,19 +193,9 @@
     "Line 188: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithInt, type[(int, ParamSpec(ParamSpec[P])) -> str]]\"]"
   ],
   "callables_kwargs.py": [
-    "Line 46: Expected 1 errors",
     "Line 111: Expected 1 errors",
     "Line 122: Expected 1 errors",
-    "Line 23: Unexpected errors [\"Can't apply arguments to non-class, got Unpack[TypedDict[TD2]]\"]",
-    "Line 24: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 31: Unexpected errors [\"Can't apply arguments to non-class, got Unpack[TypedDict[TD2]]\"]",
-    "Line 32: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 34: Unexpected errors [\"Can't apply arguments to non-class, got Unpack[TypedDict[TD2]]\"]",
-    "Line 35: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 41: Unexpected errors ['assert_type(Unpack[TypedDict[TD1]], TypedDict[TD1]) failed']",
-    "Line 47: Unexpected errors ['EXPECTED Literal[1] <: Unpack[TypedDict[TD2]]', \"EXPECTED Literal[''] <: Unpack[TypedDict[TD2]]\", \"EXPECTED Literal['5'] <: Unpack[TypedDict[TD2]]\"]",
-    "Line 50: Unexpected errors ['EXPECTED int <: Unpack[TypedDict[TD2]]', 'EXPECTED str <: Unpack[TypedDict[TD2]]']",
-    "Line 62: Unexpected errors ['EXPECTED int <: Unpack[TypedDict[TD1]]', 'EXPECTED str <: Unpack[TypedDict[TD1]]']",
+    "Line 41: Unexpected errors ['assert_type(TypedDict[TD1], TypedDict[TD1]) failed']",
     "Line 99: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol1']",
     "Line 100: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol2']",
     "Line 104: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol6']"
