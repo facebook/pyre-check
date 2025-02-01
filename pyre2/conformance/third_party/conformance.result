@@ -504,7 +504,6 @@
     "Line 92: Unexpected errors [\"Missing argument 'base'\"]",
     "Line 102: Unexpected errors [\"Missing argument 'c'\", \"EXPECTED Literal[''] <: int\"]",
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed']",
-    "Line 124: Unexpected errors ['EXPECTED DC7 <: int']",
     "Line 135: Unexpected errors [\"EXPECTED Literal['s'] <: _MISSING_TYPE\"]",
     "Line 185: Unexpected errors [\"EXPECTED Literal['hello'] <: _MISSING_TYPE\"]",
     "Line 186: Unexpected errors [\"EXPECTED () -> Literal['hello'] <: _MISSING_TYPE\"]",

@@ -157,3 +157,17 @@ C(x=0)  # OK
 C(x='0')  # E: EXPECTED Literal['0'] <: int
     "#,
 );
+
+testcase!(
+    test_init_already_defined,
+    r#"
+from dataclasses import dataclass
+@dataclass
+class C:
+    x: int
+    def __init__(self):
+        self.x = 42
+C()  # OK
+C(x=0)  # E: Unexpected keyword argument
+    "#,
+);

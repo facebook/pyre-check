@@ -5865,16 +5865,6 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED DC7 <: int",
-      "description": "EXPECTED DC7 <: int",
-      "line": 124,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 124
-    },
-    {
-      "code": -2,
       "column": 8,
       "concise_description": "Expected 1 positional argument, got 2",
       "description": "Expected 1 positional argument, got 2",
@@ -5885,12 +5875,12 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED DC7 <: int",
-      "description": "EXPECTED DC7 <: int",
+      "column": 1,
+      "concise_description": "Missing argument 'y'",
+      "description": "Missing argument 'y'",
       "line": 130,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 4,
       "stop_line": 130
     },
     {

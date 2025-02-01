@@ -3,7 +3,7 @@
   "pass": 10,
   "fail": 123,
   "pass_rate": 0.08,
-  "differences": 1181,
+  "differences": 1180,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -54,7 +54,7 @@
     "dataclasses_transform_field.py": 2,
     "dataclasses_transform_func.py": 7,
     "dataclasses_transform_meta.py": 9,
-    "dataclasses_usage.py": 26,
+    "dataclasses_usage.py": 25,
     "directives_assert_type.py": 1,
     "directives_cast.py": 2,
     "directives_deprecated.py": 11,

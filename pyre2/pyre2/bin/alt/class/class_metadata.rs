@@ -188,10 +188,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(CalleeKind::Callable(CallableKind::Dataclass))
             ) {
                 let fields = self.get_dataclass_fields(cls, &bases_with_metadata);
-                let init = self.get_dataclass_init(cls, &fields);
+                let synthesized_methods = if cls.contains(&dunder::INIT) {
+                    // If a class already defines `__init__`, @dataclass doesn't overwrite it.
+                    SmallMap::new()
+                } else {
+                    smallmap! { dunder::INIT => self.get_dataclass_init(cls, &fields) }
+                };
                 dataclass_metadata = Some(DataclassMetadata {
                     fields: fields.into_keys().collect(),
-                    synthesized_methods: smallmap! { dunder::INIT => init },
+                    synthesized_methods,
                 });
             }
         }
