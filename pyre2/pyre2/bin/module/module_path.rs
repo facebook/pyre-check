@@ -13,6 +13,7 @@ use std::sync::Arc;
 use dupe::Dupe;
 
 use crate::dunder;
+use crate::module::module_name::ModuleName;
 
 #[derive(Debug, Clone, Dupe, Copy, PartialEq, Eq, Hash)]
 pub enum ModuleStyle {
@@ -33,6 +34,9 @@ enum ModulePathInner {
     /// The module source comes from typeshed bundled with Pyre (which gets stored in-memory).
     /// The path is relative to the root of the typeshed directory.
     BundledTypeshed(PathBuf),
+    /// Representing the possibility that a module source doesn't exist.
+    /// The module name indicates the module that is looked up but not found.
+    NotFound(ModuleName),
 }
 
 fn is_path_init(path: &Path) -> bool {
@@ -58,6 +62,10 @@ impl ModulePath {
         Self(Arc::new(ModulePathInner::BundledTypeshed(relative_path)))
     }
 
+    pub fn not_found(module_name: ModuleName) -> Self {
+        Self(Arc::new(ModulePathInner::NotFound(module_name)))
+    }
+
     pub fn display(&self) -> String {
         match &*self.0 {
             ModulePathInner::FileSystem(path) => path.display().to_string(),
@@ -67,6 +75,11 @@ impl ModulePath {
                     relative_path.display()
                 )
             }
+            ModulePathInner::NotFound(module_name) => {
+                // This branch is not expected to be reachable since nonexistent module shouldn't have an errors,
+                // but lets make it clear this is a fake path if it ever happens to leak into any output.
+                format!("empty {module_name}")
+            }
         }
     }
 
@@ -74,6 +87,7 @@ impl ModulePath {
         match &*self.0 {
             ModulePathInner::FileSystem(path) => is_path_init(path),
             ModulePathInner::BundledTypeshed(relative_path) => is_path_init(relative_path),
+            ModulePathInner::NotFound(_) => false,
         }
     }
 
@@ -82,6 +96,7 @@ impl ModulePath {
         match &*self.0 {
             ModulePathInner::FileSystem(path) => ModuleStyle::of_path(path),
             ModulePathInner::BundledTypeshed(relative_path) => ModuleStyle::of_path(relative_path),
+            ModulePathInner::NotFound(_) => ModuleStyle::Executable,
         }
     }
 
@@ -93,6 +108,7 @@ impl ModulePath {
         match &*self.0 {
             ModulePathInner::FileSystem(path) => Some(path),
             ModulePathInner::BundledTypeshed(_) => None,
+            ModulePathInner::NotFound(_) => None,
         }
     }
 }

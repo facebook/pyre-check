@@ -36,12 +36,6 @@ pub struct LoadResultComponents {
 
 static FAKE_MODULE: &str = "";
 
-fn fake_path(module_name: ModuleName) -> PathBuf {
-    // The generated fake module shouldn't have an errors, but lets make it clear
-    // this is a fake path if it ever happens to leak into any output.
-    PathBuf::from(format!("/fake/{module_name}.py"))
-}
-
 impl LoadResult {
     pub fn from_path(path: PathBuf) -> Self {
         match fs_anyhow::read_to_string(&path) {
@@ -65,8 +59,7 @@ impl LoadResult {
                 import_error: None,
             },
             LoadResult::FailedToFind(err) => LoadResultComponents {
-                // TODO(grievejia): Properly model nonexistent paths
-                path: ModulePath::filesystem(fake_path(module_name)),
+                path: ModulePath::not_found(module_name),
                 code: FAKE_MODULE.to_owned(),
                 self_error: None,
                 import_error: Some(err),
