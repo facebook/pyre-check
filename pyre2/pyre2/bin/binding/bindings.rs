@@ -14,7 +14,6 @@ use std::sync::Arc;
 use dupe::Dupe;
 use itertools::Either;
 use itertools::Itertools;
-use parse_display::Display;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::Comprehension;
@@ -74,6 +73,14 @@ use crate::binding::binding::UnpackedPosition;
 use crate::binding::narrow::NarrowOp;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::narrow::NarrowVal;
+use crate::binding::scope::Flow;
+use crate::binding::scope::FlowInfo;
+use crate::binding::scope::FlowStyle;
+use crate::binding::scope::InstanceAttribute;
+use crate::binding::scope::Loop;
+use crate::binding::scope::LoopExit;
+use crate::binding::scope::Scope;
+use crate::binding::scope::ScopeKind;
 use crate::binding::table::TableKeyed;
 use crate::binding::util::function_last_expressions;
 use crate::binding::util::is_ellipse;
@@ -81,8 +88,6 @@ use crate::binding::util::is_valid_identifier;
 use crate::config::Config;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
-use crate::export::definitions::DefinitionStyle;
-use crate::export::definitions::Definitions;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
 use crate::export::special::SpecialExport;
@@ -158,247 +163,6 @@ struct BindingsBuilder<'a> {
 struct FuncInfo {
     returns: Vec<StmtReturn>,
     yields: Vec<Either<ExprYield, ExprYieldFrom>>,
-}
-
-/// Many names may map to the same TextRange (e.g. from foo import *).
-/// But no other static will point at the same TextRange.
-#[derive(Default, Clone, Debug)]
-struct Static(SmallMap<Name, StaticInfo>);
-
-#[derive(Clone, Debug)]
-struct StaticInfo {
-    loc: TextRange,
-    /// How many times this will be redefined
-    count: usize,
-    /// True if this is going to appear as a `Key::Import``.
-    /// A little fiddly to keep syncronised with the other field.
-    uses_key_import: bool,
-}
-
-impl Static {
-    fn add_with_count(&mut self, name: Name, loc: TextRange, count: usize) -> &mut StaticInfo {
-        // Use whichever one we see first
-        let res = self.0.entry(name).or_insert(StaticInfo {
-            loc,
-            count: 0,
-            uses_key_import: false,
-        });
-        res.count += count;
-        res
-    }
-
-    fn add(&mut self, name: Name, range: TextRange) {
-        self.add_with_count(name, range, 1);
-    }
-
-    fn stmts(
-        &mut self,
-        x: &[Stmt],
-        module_info: &ModuleInfo,
-        top_level: bool,
-        lookup: &dyn LookupExport,
-        config: &Config,
-    ) {
-        let mut d = Definitions::new(x, module_info.name(), module_info.path().is_init(), config);
-        if top_level && module_info.name() != ModuleName::builtins() {
-            d.inject_builtins();
-        }
-        for (name, def) in d.definitions {
-            self.add_with_count(name, def.range, def.count)
-                .uses_key_import = def.style == DefinitionStyle::ImportModule;
-        }
-        for (m, range) in d.import_all {
-            if let Ok(exports) = lookup.get(m) {
-                for name in exports.wildcard(lookup).iter() {
-                    self.add_with_count(name.clone(), range, 1).uses_key_import = true;
-                }
-            }
-        }
-    }
-
-    fn expr_lvalue(&mut self, x: &Expr) {
-        let mut add = |name: &ExprName| self.add(name.id.clone(), name.range);
-        Ast::expr_lvalue(x, &mut add);
-    }
-}
-
-/// The current value of the name, plus optionally the current value of the annotation.
-#[derive(Default, Clone, Debug)]
-struct Flow {
-    info: SmallMap<Name, FlowInfo>,
-    // Should this flow be merged into the next? Flow merging occurs after constructs like branches and loops.
-    no_next: bool,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum FlowStyle {
-    /// The annotation associated with this key, if any.
-    /// If there is one, all subsequent bindings must obey this annotation.
-    /// Also store am I initialized, or am I the result of `x: int`?
-    Annotated {
-        ann: Idx<KeyAnnotation>,
-        is_initialized: bool,
-    },
-    /// Am I the result of an import (which needs merging).
-    /// E.g. `import foo.bar` and `import foo.baz` need merging.
-    /// The `ModuleName` will be the most recent entry.
-    MergeableImport(ModuleName),
-    /// Was I imported from somewhere (and if so, where)
-    /// E.g. `from foo import bar` would get `foo` here.
-    Import(ModuleName),
-    /// Am I an alias for a module import, `import foo.bar as baz`
-    /// would get `foo.bar` here.
-    ImportAs(ModuleName),
-}
-
-impl FlowStyle {
-    fn ann(&self) -> Option<Idx<KeyAnnotation>> {
-        match self {
-            FlowStyle::Annotated { ann, .. } => Some(*ann),
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-struct FlowInfo {
-    key: Idx<Key>,
-    style: Option<FlowStyle>,
-}
-
-impl FlowInfo {
-    fn new(key: Idx<Key>, style: Option<FlowStyle>) -> Self {
-        Self { key, style }
-    }
-
-    fn new_with_ann(key: Idx<Key>, ann: Option<Idx<KeyAnnotation>>) -> Self {
-        Self::new(
-            key,
-            ann.map(|x| FlowStyle::Annotated {
-                ann: x,
-                is_initialized: true,
-            }),
-        )
-    }
-
-    fn ann(&self) -> Option<Idx<KeyAnnotation>> {
-        self.style.as_ref()?.ann()
-    }
-
-    fn is_initialized(&self) -> bool {
-        match self.style.as_ref() {
-            Some(FlowStyle::Annotated { is_initialized, .. }) => *is_initialized,
-            _ => true,
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-struct ClassBodyInner {
-    name: Identifier,
-    instance_attributes_by_method: SmallMap<Name, SmallMap<Name, InstanceAttribute>>,
-}
-
-impl ClassBodyInner {
-    fn as_self_type_key(&self) -> Key {
-        Key::SelfType(ShortIdentifier::new(&self.name))
-    }
-}
-
-/// Information about an instance attribute coming from a `self` assignment
-/// in a method.
-#[derive(Clone, Debug)]
-struct InstanceAttribute(Binding, Option<Idx<KeyAnnotation>>, TextRange);
-
-#[derive(Clone, Debug)]
-struct MethodInner {
-    name: Identifier,
-    self_name: Option<Identifier>,
-    instance_attributes: SmallMap<Name, InstanceAttribute>,
-}
-
-#[derive(Clone, Debug)]
-enum ScopeKind {
-    Annotation,
-    ClassBody(ClassBodyInner),
-    Comprehension,
-    Function,
-    Method(MethodInner),
-    Module,
-}
-
-#[derive(Clone, Debug, Display)]
-enum LoopExit {
-    NeverRan,
-    #[display("break")]
-    Break,
-    #[display("continue")]
-    Continue,
-}
-
-/// Flow snapshots for all possible exitpoints from a loop.
-#[derive(Clone, Debug)]
-struct Loop(Vec<(LoopExit, Flow)>);
-
-#[derive(Clone, Debug)]
-struct Scope {
-    stat: Static,
-    flow: Flow,
-    /// Are Flow types above this unreachable.
-    /// Set when we enter something like a function, and can't guarantee what flow values are in scope.
-    barrier: bool,
-    kind: ScopeKind,
-    /// Stack of for/while loops we're in. Does not include comprehensions.
-    loops: Vec<Loop>,
-}
-
-impl Scope {
-    fn new(barrier: bool, kind: ScopeKind) -> Self {
-        Self {
-            stat: Default::default(),
-            flow: Default::default(),
-            barrier,
-            kind,
-            loops: Default::default(),
-        }
-    }
-
-    fn annotation() -> Self {
-        Self::new(false, ScopeKind::Annotation)
-    }
-
-    fn class_body(name: Identifier) -> Self {
-        Self::new(
-            false,
-            ScopeKind::ClassBody(ClassBodyInner {
-                name,
-                instance_attributes_by_method: SmallMap::new(),
-            }),
-        )
-    }
-
-    fn comprehension() -> Self {
-        Self::new(false, ScopeKind::Comprehension)
-    }
-
-    fn function() -> Self {
-        Self::new(true, ScopeKind::Function)
-    }
-
-    fn method(name: Identifier) -> Self {
-        Self::new(
-            true,
-            ScopeKind::Method(MethodInner {
-                name,
-                self_name: None,
-                instance_attributes: SmallMap::new(),
-            }),
-        )
-    }
-
-    fn module() -> Self {
-        Self::new(false, ScopeKind::Module)
-    }
 }
 
 impl Bindings {

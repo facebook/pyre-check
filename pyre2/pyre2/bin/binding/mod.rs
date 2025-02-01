@@ -8,5 +8,6 @@
 pub mod binding;
 pub mod bindings;
 pub mod narrow;
+pub mod scope;
 pub mod table;
 pub mod util;
