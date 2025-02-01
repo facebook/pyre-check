@@ -578,6 +578,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.call_infer(call_target, &[got], &[], range)
     }
 
+    /// Pull all dictionary items up to the top level, so `{a: 1, **{b: 2}}`
+    /// has the same items as `{a: 1, b: 2}`.
     fn flatten_dict_items<'b>(x: &'b [DictItem]) -> Vec<&'b DictItem> {
         fn f<'b>(xs: &'b [DictItem], res: &mut Vec<&'b DictItem>) {
             for x in xs {
