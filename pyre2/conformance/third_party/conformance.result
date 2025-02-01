@@ -485,7 +485,6 @@
   ],
   "dataclasses_usage.py": [
     "Line 83: Expected 1 errors",
-    "Line 179: Expected 1 errors",
     "Lines 58, 61: Expected error (tag 'DC1')",
     "Lines 64, 67: Expected error (tag 'DC2')",
     "Lines 70, 73: Expected error (tag 'DC3')",

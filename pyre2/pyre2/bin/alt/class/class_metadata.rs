@@ -183,12 +183,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         for decorator in decorators {
             let ty_decorator = self.expr(&decorator.expression, None);
-            if matches!(
-                ty_decorator.callee_kind(),
-                Some(CalleeKind::Callable(CallableKind::Dataclass(_)))
-            ) {
+            if let Some(CalleeKind::Callable(CallableKind::Dataclass(kws))) =
+                ty_decorator.callee_kind()
+            {
                 let fields = self.get_dataclass_fields(cls, &bases_with_metadata);
-                let synthesized_methods = if cls.contains(&dunder::INIT) {
+                let synthesized_methods = if cls.contains(&dunder::INIT) || !kws.init {
                     // If a class already defines `__init__`, @dataclass doesn't overwrite it.
                     SmallMap::new()
                 } else {

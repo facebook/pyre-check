@@ -171,3 +171,15 @@ C()  # OK
 C(x=0)  # E: Unexpected keyword argument
     "#,
 );
+
+testcase!(
+    test_init_false,
+    r#"
+from dataclasses import dataclass
+@dataclass(init=False)
+class C:
+    x: int = 0
+C()  # OK
+C(x=0)  # E: Unexpected keyword argument
+    "#,
+);

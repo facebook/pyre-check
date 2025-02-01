@@ -5895,6 +5895,16 @@
     },
     {
       "code": -2,
+      "column": 6,
+      "concise_description": "Expected 0 positional arguments, got 1",
+      "description": "Expected 0 positional arguments, got 1",
+      "line": 179,
+      "name": "PyreError",
+      "stop_column": 7,
+      "stop_line": 179
+    },
+    {
+      "code": -2,
       "column": 33,
       "concise_description": "EXPECTED Literal['hello'] <: _MISSING_TYPE",
       "description": "EXPECTED Literal['hello'] <: _MISSING_TYPE",
