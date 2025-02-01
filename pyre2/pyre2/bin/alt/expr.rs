@@ -579,17 +579,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn flatten_dict_items<'b>(x: &'b [DictItem]) -> Vec<&'b DictItem> {
-        x.iter()
-            .flat_map(|item| {
-                if item.key.is_none()
-                    && let Expr::Dict(dict) = &item.value
+        fn f<'b>(xs: &'b [DictItem], res: &mut Vec<&'b DictItem>) {
+            for x in xs {
+                if x.key.is_none()
+                    && let Expr::Dict(dict) = &x.value
                 {
-                    Self::flatten_dict_items(&dict.items)
+                    f(&dict.items, res);
                 } else {
-                    vec![item]
+                    res.push(x);
                 }
-            })
-            .collect()
+            }
+        }
+        let mut res = Vec::new();
+        f(x, &mut res);
+        res
     }
 
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>) -> Type {
