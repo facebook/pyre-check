@@ -1205,18 +1205,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => Type::any_explicit(),
                 }
             }
-            Binding::YieldTypeOfYield(x) => match x {
-                Expr::Yield(x) => match &x.value {
-                    Some(x) => self.expr(x, None),
-                    None => self.expr(&Expr::NoneLiteral(ExprNoneLiteral { range: x.range }), None),
-                },
-                Expr::YieldFrom(x) => {
-                    let gen_type = self.expr(&x.value, None);
-                    self.decompose_generator(&gen_type)
-                        .map_or(Type::any_implicit(), |(y, _, _)| y)
-                }
-                _ => unreachable!("yield or yield from expression expected"),
+            Binding::YieldTypeOfYield(x) => match &x.value {
+                Some(x) => self.expr(x, None),
+                None => self.expr(&Expr::NoneLiteral(ExprNoneLiteral { range: x.range }), None),
             },
+            Binding::YieldTypeOfYieldFrom(x) => {
+                let gen_type = self.expr(&x.value, None);
+                self.decompose_generator(&gen_type)
+                    .map_or(Type::any_implicit(), |(y, _, _)| y)
+            }
             Binding::AsyncReturnType(x) => {
                 let expr_type = self.expr(&x.0, None);
                 let return_type = self.solve_binding_inner(&x.1);

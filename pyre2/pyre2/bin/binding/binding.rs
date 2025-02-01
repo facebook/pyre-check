@@ -16,6 +16,8 @@ use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprSubscript;
+use ruff_python_ast::ExprYield;
+use ruff_python_ast::ExprYieldFrom;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtAugAssign;
 use ruff_python_ast::StmtClassDef;
@@ -489,7 +491,9 @@ pub enum Binding {
     /// Yield expression type from an async generator
     AsyncGenerator(Box<Binding>),
     /// Actual value of yield expression
-    YieldTypeOfYield(Expr),
+    YieldTypeOfYield(ExprYield),
+    /// Actual value of yield from expression
+    YieldTypeOfYieldFrom(ExprYieldFrom),
     /// A value in an iterable expression, e.g. IterableValue(\[1\]) represents 1.
     IterableValue(Option<Idx<KeyAnnotation>>, Expr),
     /// A value produced by entering a context manager.
@@ -625,6 +629,7 @@ impl DisplayWith<Bindings> for Binding {
                 write!(f, "no annotation so yield type is Any")
             }
             Self::YieldTypeOfYield(x) => write!(f, "yield expr {}", m.display(x)),
+            Self::YieldTypeOfYieldFrom(x) => write!(f, "yield expr from {}", m.display(x)),
             Self::IterableValue(None, x) => write!(f, "iter {}", m.display(x)),
             Self::IterableValue(Some(k), x) => {
                 write!(f, "iter {}: {}", ctx.display(*k), m.display(x))

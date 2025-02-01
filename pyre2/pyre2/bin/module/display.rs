@@ -9,6 +9,8 @@ use std::fmt;
 use std::fmt::Display;
 
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprYield;
+use ruff_python_ast::ExprYieldFrom;
 use ruff_python_ast::Stmt;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
@@ -34,6 +36,18 @@ impl DisplayWith<ModuleInfo> for Expr {
         } else {
             write!(f, "{}", m.code_at(self.range()))
         }
+    }
+}
+
+impl DisplayWith<ModuleInfo> for ExprYield {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, m: &ModuleInfo) -> fmt::Result {
+        write!(f, "{}", m.code_at(self.range()))
+    }
+}
+
+impl DisplayWith<ModuleInfo> for ExprYieldFrom {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, m: &ModuleInfo) -> fmt::Result {
+        write!(f, "{}", m.code_at(self.range()))
     }
 }
 

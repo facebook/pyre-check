@@ -27,6 +27,8 @@ use ruff_python_ast::ExprLambda;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprSubscript;
+use ruff_python_ast::ExprYield;
+use ruff_python_ast::ExprYieldFrom;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Parameters;
 use ruff_python_ast::Pattern;
@@ -155,7 +157,7 @@ struct BindingsBuilder<'a> {
 #[derive(Default, Clone, Debug)]
 struct FuncInfo {
     returns: Vec<StmtReturn>,
-    yields: Vec<Expr>,
+    yields: Vec<Either<ExprYield, ExprYieldFrom>>,
 }
 
 /// Many names may map to the same TextRange (e.g. from foo import *).
@@ -835,12 +837,18 @@ impl<'a> BindingsBuilder<'a> {
                 self.bind_lambda(x);
                 true
             }
-            Expr::Yield(_) => {
-                self.functions.last_mut().yields.push(x.clone());
+            Expr::Yield(x) => {
+                self.functions
+                    .last_mut()
+                    .yields
+                    .push(Either::Left(x.clone()));
                 false
             }
-            Expr::YieldFrom(_) => {
-                self.functions.last_mut().yields.push(x.clone());
+            Expr::YieldFrom(x) => {
+                self.functions
+                    .last_mut()
+                    .yields
+                    .push(Either::Right(x.clone()));
                 false
             }
             _ => false,
@@ -1323,38 +1331,43 @@ impl<'a> BindingsBuilder<'a> {
         if !accumulate.yields.is_empty() {
             let mut yield_expr_keys = SmallSet::with_capacity(accumulate.yields.len());
             for x in accumulate.yields.clone() {
-                let key = self.table.insert(
-                    Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range()),
-                    // collect the value of the yield expression.
-                    Binding::YieldTypeOfYield(x.clone()),
-                );
-                yield_expr_keys.insert(key);
-
                 // create the appropriate bindings depending on whether we see a yield or a yieldFrom
                 // not all bindings are needed for all exprs
                 match x {
-                    Expr::Yield(_) => {
-                        self.table.insert(
-                            Key::SendTypeOfYieldAnnotation(x.range()),
+                    Either::Left(x) => {
+                        let key = self.table.insert(
+                            Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range),
                             // collect the value of the yield expression.
-                            Binding::SendTypeOfYieldAnnotation(return_ann, x.range()),
+                            Binding::YieldTypeOfYield(x.clone()),
+                        );
+                        yield_expr_keys.insert(key);
+
+                        self.table.insert(
+                            Key::SendTypeOfYieldAnnotation(x.range),
+                            // collect the value of the yield expression.
+                            Binding::SendTypeOfYieldAnnotation(return_ann, x.range),
                         );
                         self.table.insert(
-                            Key::YieldTypeOfYieldAnnotation(x.range()),
+                            Key::YieldTypeOfYieldAnnotation(x.range),
                             // collect the yield value of the yield expression.
-                            Binding::YieldTypeOfYieldAnnotation(return_ann, x.range(), is_async),
+                            Binding::YieldTypeOfYieldAnnotation(return_ann, x.range, is_async),
                         );
                     }
 
-                    Expr::YieldFrom(_) => {
-                        self.table.insert(
-                            Key::ReturnTypeOfYieldAnnotation(x.range()),
+                    Either::Right(x) => {
+                        let key = self.table.insert(
+                            Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range),
                             // collect the value of the yield expression.
-                            Binding::ReturnTypeOfYieldAnnotation(return_ann, x.range()),
+                            Binding::YieldTypeOfYieldFrom(x.clone()),
+                        );
+                        yield_expr_keys.insert(key);
+
+                        self.table.insert(
+                            Key::ReturnTypeOfYieldAnnotation(x.range),
+                            // collect the value of the yield expression.
+                            Binding::ReturnTypeOfYieldAnnotation(return_ann, x.range),
                         );
                     }
-
-                    _ => unreachable!("Can only encounter a Yield or a YieldFrom here"),
                 }
             }
             let yield_type = Binding::phi(yield_expr_keys);
@@ -1388,8 +1401,10 @@ impl<'a> BindingsBuilder<'a> {
         );
 
         for x in accumulate.yields {
-            self.table
-                .insert(Key::TypeOfYieldAnnotation(x.range()), return_type.clone());
+            self.table.insert(
+                Key::TypeOfYieldAnnotation(x.either(|x| x.range, |x| x.range)),
+                return_type.clone(),
+            );
         }
 
         FunctionBinding {
