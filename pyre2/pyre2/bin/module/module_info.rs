@@ -94,7 +94,7 @@ impl ModuleInfo {
             offset.to_usize() <= self.len(),
             "Module {}({}): offset out of range, expected {} <= {}",
             self.0.name,
-            self.0.path.display(),
+            self.0.path,
             offset.to_usize(),
             self.len()
         );

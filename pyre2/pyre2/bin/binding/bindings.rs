@@ -441,7 +441,7 @@ impl Bindings {
             panic!(
                 "Internal error: key lacking binding, module={}, path={}, key={}, key-debug={key:?}",
                 self.module_info().name(),
-                self.module_info().path().display(),
+                self.module_info().path(),
                 self.module_info().display(key),
             )
         })

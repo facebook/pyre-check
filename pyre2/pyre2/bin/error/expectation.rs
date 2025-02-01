@@ -37,7 +37,7 @@ impl Expectation {
         if self.error.len() != errors.len() {
             Err(anyhow::anyhow!(
                 "Expectations failed for {}: expected {} errors, but got {}",
-                self.module.path().display(),
+                self.module.path(),
                 self.error.len(),
                 errors.len(),
             ))
@@ -49,7 +49,7 @@ impl Expectation {
                 {
                     return Err(anyhow::anyhow!(
                         "Expectations failed for {}: can't find error (line {line_no}): {msg}",
-                        self.module.path().display()
+                        self.module.path()
                     ));
                 }
             }

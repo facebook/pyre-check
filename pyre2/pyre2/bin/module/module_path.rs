@@ -6,6 +6,8 @@
  */
 
 use std::ffi::OsStr;
+use std::fmt;
+use std::fmt::Display;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -53,6 +55,26 @@ impl ModuleStyle {
     }
 }
 
+impl Display for ModulePath {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &*self.0 {
+            ModulePathInner::FileSystem(path) => write!(f, "{}", path.display()),
+            ModulePathInner::BundledTypeshed(relative_path) => {
+                write!(
+                    f,
+                    "bundled /pyre2/third_party/typeshed/{}",
+                    relative_path.display()
+                )
+            }
+            ModulePathInner::NotFound(module_name) => {
+                // This branch is not expected to be reachable since nonexistent module shouldn't have an errors,
+                // but lets make it clear this is a fake path if it ever happens to leak into any output.
+                write!(f, "empty {module_name}")
+            }
+        }
+    }
+}
+
 impl ModulePath {
     pub fn filesystem(path: PathBuf) -> Self {
         Self(Arc::new(ModulePathInner::FileSystem(path)))
@@ -64,23 +86,6 @@ impl ModulePath {
 
     pub fn not_found(module_name: ModuleName) -> Self {
         Self(Arc::new(ModulePathInner::NotFound(module_name)))
-    }
-
-    pub fn display(&self) -> String {
-        match &*self.0 {
-            ModulePathInner::FileSystem(path) => path.display().to_string(),
-            ModulePathInner::BundledTypeshed(relative_path) => {
-                format!(
-                    "bundled /pyre2/third_party/typeshed/{}",
-                    relative_path.display()
-                )
-            }
-            ModulePathInner::NotFound(module_name) => {
-                // This branch is not expected to be reachable since nonexistent module shouldn't have an errors,
-                // but lets make it clear this is a fake path if it ever happens to leak into any output.
-                format!("empty {module_name}")
-            }
-        }
     }
 
     pub fn is_init(&self) -> bool {

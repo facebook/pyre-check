@@ -158,7 +158,7 @@ impl Step {
                 format!(
                     "Failed to load {} from {}, got {err:#}",
                     ctx.name,
-                    module_info.path().display()
+                    module_info.path()
                 ),
             );
         }
