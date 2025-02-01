@@ -128,6 +128,7 @@ module Eager = struct
   let run_bxl_for_targets
       ~bxl_builder
       ~buck_options:{ BuckOptions.raw; mode; isolation_prefix; _ }
+      ~number_of_threads
       target_patterns
     =
     match target_patterns with
@@ -142,8 +143,14 @@ module Eager = struct
         |> Raw.Command.Output.create
         |> Lwt.return
     | _ ->
+        let number_of_threads =
+          match number_of_threads with
+          | Some number_of_threads -> ["--num-threads"; Int.to_string number_of_threads]
+          | None -> []
+        in
         List.concat
           [
+            number_of_threads;
             (* Location of the BXL builder. *)
             [bxl_builder];
             (* Force `buck` to opt-out fancy tui logging. *)
@@ -199,11 +206,12 @@ module Eager = struct
       ~bxl_builder
       ~buck_options
       ~kill_buck_after_build
+      ~number_of_threads
       target_patterns
     =
     let open Lwt.Infix in
     Log.info "Building Buck source databases...";
-    run_bxl_for_targets ~bxl_builder ~buck_options target_patterns
+    run_bxl_for_targets ~bxl_builder ~buck_options ~number_of_threads target_patterns
     >>= fun { Raw.Command.Output.stdout; build_id } ->
     let { BuckBxlBuilderOutput.build_map; target_count; conflicts } = parse_bxl_output stdout in
     warn_on_conflicts conflicts;
@@ -212,14 +220,18 @@ module Eager = struct
     >>= fun _ -> Lwt.return (WithMetadata.create ?metadata:build_id build_map)
 
 
-  let create ?mode ?isolation_prefix ?bxl_builder ~kill_buck_after_build raw =
+  let create ?mode ?isolation_prefix ?bxl_builder ~kill_buck_after_build ~number_of_threads raw =
     let buck_options = { BuckOptions.mode; isolation_prefix; raw } in
     match bxl_builder with
     | None -> failwith "BXL path is not set but it is required when using Buck2"
     | Some bxl_builder ->
         {
           construct_build_map =
-            construct_build_map_with_options ~bxl_builder ~buck_options ~kill_buck_after_build;
+            construct_build_map_with_options
+              ~bxl_builder
+              ~buck_options
+              ~kill_buck_after_build
+              ~number_of_threads;
         }
 
 

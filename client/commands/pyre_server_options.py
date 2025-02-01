@@ -93,6 +93,7 @@ class PyreServerOptions:
         start_arguments = start.create_server_arguments(
             configuration,
             start_command_argument,
+            False,  # kill_buck_after_build
         )
 
         return PyreServerOptions.create_from_start_arguments(

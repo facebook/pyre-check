@@ -306,6 +306,7 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
                     kill_buck_after_build=False,
+                    number_of_buck_threads=42,
                     watchman_root=None,
                 ),
                 SimpleSourcePath([raw_element.to_element()]),
@@ -328,6 +329,7 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
                     kill_buck_after_build=False,
+                    number_of_buck_threads=42,
                     watchman_root=None,
                 ),
                 SimpleSourcePath([]),
@@ -362,6 +364,7 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
                     kill_buck_after_build=False,
+                    number_of_buck_threads=None,
                     watchman_root=watched_root,
                 ),
                 WithUnwatchedDependencySourcePath(
@@ -397,6 +400,7 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
                     kill_buck_after_build=False,
+                    number_of_buck_threads=None,
                     watchman_root=watched_root,
                 ),
                 SimpleSourcePath(
@@ -432,6 +436,7 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
                     kill_buck_after_build=False,
+                    number_of_buck_threads=None,
                     watchman_root=None,
                 ),
                 SimpleSourcePath(
@@ -465,6 +470,7 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root_name="artifact_root",
                     flavor=identifiers.PyreFlavor.CLASSIC,
                     kill_buck_after_build=False,
+                    number_of_buck_threads=None,
                     watchman_root=None,
                 ),
                 BuckSourcePath(
@@ -503,6 +509,7 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root_name="artifact_root",
                     flavor=identifiers.PyreFlavor.CLASSIC,
                     kill_buck_after_build=True,
+                    number_of_buck_threads=42,
                     watchman_root=None,
                 ),
                 BuckSourcePath(
@@ -513,6 +520,7 @@ class ArgumentsTest(testslide.TestCase):
                     bxl_builder="//ct:robo",
                     use_buck2=True,
                     kill_buck_after_build=True,
+                    number_of_threads=42,
                 ),
             )
 
@@ -548,6 +556,7 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root_name="artifact_root/local",
                     flavor=identifiers.PyreFlavor.CLASSIC,
                     kill_buck_after_build=False,
+                    number_of_buck_threads=None,
                     watchman_root=None,
                 ),
                 BuckSourcePath(
@@ -559,6 +568,7 @@ class ArgumentsTest(testslide.TestCase):
                     isolation_prefix=".lsp",
                     bxl_builder="//ct:robo",
                     kill_buck_after_build=False,
+                    number_of_threads=None,
                 ),
             )
 
@@ -580,6 +590,7 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root_name="irrelevant",
                     flavor=identifiers.PyreFlavor.CLASSIC,
                     kill_buck_after_build=False,
+                    number_of_buck_threads=None,
                     watchman_root=None,
                 )
 
@@ -597,6 +608,7 @@ class ArgumentsTest(testslide.TestCase):
                 artifact_root_name="irrelevant",
                 flavor=identifiers.PyreFlavor.CLASSIC,
                 kill_buck_after_build=False,
+                number_of_buck_threads=None,
                 watchman_root=None,
             )
 
@@ -614,6 +626,7 @@ class ArgumentsTest(testslide.TestCase):
                 artifact_root_name="irrelevant",
                 flavor=identifiers.PyreFlavor.CLASSIC,
                 kill_buck_after_build=False,
+                number_of_buck_threads=None,
                 watchman_root=None,
             )
 

@@ -601,6 +601,11 @@ def pyre(
     default=False,
     help="Kill Buck after building the project.",
 )
+@click.option(
+    "--number-of-buck-threads",
+    type=int,
+    help="Limits the number of threads during Buck build.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -642,6 +647,7 @@ def analyze(
     compute_coverage: bool,
     scheduler_policies: Optional[str],
     kill_buck_after_build: bool,
+    number_of_buck_threads: Optional[int],
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -709,6 +715,7 @@ def analyze(
                 Path(scheduler_policies) if scheduler_policies is not None else None
             ),
             kill_buck_after_build=kill_buck_after_build,
+            number_of_buck_threads=number_of_buck_threads,
         ),
     )
 
@@ -839,6 +846,17 @@ def incremental(
         "in a principled way."
     ),
 )
+@click.option(
+    "--kill-buck-after-build",
+    is_flag=True,
+    default=False,
+    help="Kill Buck after building the project.",
+)
+@click.option(
+    "--number-of-buck-threads",
+    type=int,
+    help="Limits the number of threads during Buck build.",
+)
 @click.pass_context
 def infer(
     context: click.Context,
@@ -853,6 +871,8 @@ def infer(
     quote_annotations: bool,
     simple_annotations: bool,
     dequalify: bool,
+    kill_buck_after_build: bool,
+    number_of_buck_threads: Optional[int],
 ) -> int:
     """
     Run pyre infer.
@@ -891,6 +911,8 @@ def infer(
             print_only=print_only,
             read_stdin=read_stdin,
             sequential=command_argument.sequential,
+            kill_buck_after_build=kill_buck_after_build,
+            number_of_buck_threads=number_of_buck_threads,
         ),
     )
 
@@ -1327,6 +1349,11 @@ def servers_stop(context: click.Context) -> int:
         "This is used to disambiguate paths and log handling."
     ),
 )
+@click.option(
+    "--number-of-buck-threads",
+    type=int,
+    help="Limits the number of threads during Buck build.",
+)
 @click.pass_context
 def start(
     context: click.Context,
@@ -1338,6 +1365,7 @@ def start(
     use_lazy_module_tracking: bool,
     analyze_external_sources: bool,
     flavor: Optional[str],
+    number_of_buck_threads: Optional[int],
 ) -> int:
     """
     Starts a pyre server as a daemon_socket.
@@ -1360,6 +1388,7 @@ def start(
             skip_initial_type_check=skip_initial_type_check,
             use_lazy_module_tracking=use_lazy_module_tracking,
             analyze_external_sources=analyze_external_sources,
+            number_of_buck_threads=number_of_buck_threads,
         ),
     )
 

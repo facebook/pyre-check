@@ -150,9 +150,7 @@ let kill ?(additional_log_size = 0) ?mode:_ ?isolation_prefix arguments =
   let actual_buck_arguments =
     List.concat [isolation_prefix_to_buck_arguments isolation_prefix; ["kill"]; arguments]
   in
-  Log.debug
-    "Running command: %s"
-    (Stdlib.Filename.quote_command buck2_command actual_buck_arguments);
+  Log.info "Running command: %s" (Stdlib.Filename.quote_command buck2_command actual_buck_arguments);
   let consume_stderr = consume_stderr ~log_buffer in
   LwtSubprocess.run buck2_command ~arguments:actual_buck_arguments ~consume_stderr
   >>= fun result ->
@@ -197,7 +195,7 @@ let create ?(additional_log_size = 0) () =
         ]
     in
     let expanded_buck_arguments = List.append common_buck_arguments user_supplied_arguments in
-    Log.debug
+    Log.info
       "Running command: %s"
       (Stdlib.Filename.quote_command buck2_command expanded_buck_arguments);
     (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying

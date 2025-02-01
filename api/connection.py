@@ -73,6 +73,7 @@ class PyreConnection:
         skip_initial_type_check: bool = False,
         wait_on_initialization: bool = False,
         analyze_external_sources: bool = False,
+        number_of_buck_threads: Optional[int] = None,
     ) -> None:
         self.pyre_directory: Path = (
             pyre_directory if pyre_directory is not None else Path.cwd()
@@ -82,6 +83,7 @@ class PyreConnection:
         self.skip_initial_type_check = skip_initial_type_check
         self.wait_on_initialization = wait_on_initialization
         self.analyze_external_sources = analyze_external_sources
+        self.number_of_buck_threads = number_of_buck_threads
 
     def __enter__(self) -> "PyreConnection":
         self.start_server()
@@ -109,6 +111,10 @@ class PyreConnection:
                 arguments.append("--wait-on-initialization")
             if self.analyze_external_sources:
                 arguments.append("--analyze-external-sources")
+            if self.number_of_buck_threads:
+                arguments.append(
+                    f"--number-of-buck-threads={self.number_of_buck_threads}"
+                )
             result = self._run_pyre_command(arguments)
             self.server_initialized = True
             return PyreCheckResult(exit_code=result.returncode, errors=None)

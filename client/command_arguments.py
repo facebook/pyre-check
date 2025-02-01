@@ -146,6 +146,7 @@ class StartArguments:
     skip_initial_type_check: bool = False
     use_lazy_module_tracking: bool = False
     analyze_external_sources: bool = False
+    number_of_buck_threads: Optional[int] = None
 
     @staticmethod
     def create(
@@ -158,6 +159,7 @@ class StartArguments:
         skip_initial_type_check: bool = False,
         use_lazy_module_tracking: bool = False,
         analyze_external_sources: bool = False,
+        number_of_buck_threads: Optional[int] = None,
     ) -> StartArguments:
         return StartArguments(
             changed_files_path=command_argument.changed_files_path,
@@ -180,6 +182,7 @@ class StartArguments:
             skip_initial_type_check=skip_initial_type_check,
             use_lazy_module_tracking=use_lazy_module_tracking,
             analyze_external_sources=analyze_external_sources,
+            number_of_buck_threads=number_of_buck_threads,
         )
 
     def get_log_identifier(self) -> str:
@@ -253,6 +256,7 @@ class InferArguments:
     read_stdin: bool = False
     sequential: bool = False
     kill_buck_after_build: bool = False
+    number_of_buck_threads: Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -342,6 +346,7 @@ class AnalyzeArguments:
     compute_coverage: bool = False
     scheduler_policies_path: Optional[Path] = None
     kill_buck_after_build: bool = False
+    number_of_buck_threads: Optional[int] = None
 
 
 @dataclass(frozen=True)

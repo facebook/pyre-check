@@ -371,7 +371,9 @@ class StartTest(testslide.TestCase):
                         sequential=False,
                         show_error_traces=True,
                         store_type_check_resolution=True,
+                        number_of_buck_threads=21,
                     ),
+                    False,  # kill_buck_after_build
                 ),
                 start.Arguments(
                     base_arguments=backend_arguments.BaseArguments(
@@ -447,6 +449,7 @@ class StartTest(testslide.TestCase):
                 command_arguments.StartArguments(
                     no_watchman=False,
                 ),
+                False,  # kill_buck_after_build
             )
             self.assertIsNone(arguments.watchman_root)
 
@@ -468,6 +471,7 @@ class StartTest(testslide.TestCase):
                     )
                 ),
                 command_arguments.StartArguments(no_saved_state=True),
+                False,  # kill_buck_after_build
             )
             self.assertIsNone(arguments.saved_state_action)
 
@@ -491,6 +495,7 @@ class StartTest(testslide.TestCase):
                 command_arguments.StartArguments(
                     skip_initial_type_check=True,
                 ),
+                False,  # kill_buck_after_build
             )
             self.assertTrue(arguments.skip_initial_type_check)
 
@@ -521,6 +526,7 @@ class StartTest(testslide.TestCase):
                     enable_memory_profiling=True,
                     _log_identifier="derp",
                 ),
+                False,  # kill_buck_after_build
             )
             self.assertListEqual(
                 list(arguments.additional_logging_sections),

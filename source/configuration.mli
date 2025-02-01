@@ -17,6 +17,7 @@ module Buck : sig
     artifact_root: PyrePath.t;
     targets_fallback_sources: SearchPath.t list option;
     kill_buck_after_build: bool;
+    number_of_threads: int option;
   }
   [@@deriving sexp, compare, hash, yojson]
 end
@@ -60,6 +61,8 @@ module SourcePaths : sig
   val to_search_paths : t -> SearchPath.t list
 
   val set_kill_buck_after_build : t -> t
+
+  val set_number_of_threads : number_of_threads:int -> t -> t
 end
 
 module RemoteLogging : sig

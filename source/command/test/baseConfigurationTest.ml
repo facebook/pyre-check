@@ -113,7 +113,8 @@ let test_json_parsing context =
             "source_root": "/buck/root",
             "artifact_root": "/build/root",
             "targets_fallback_sources": ["/build/"],
-            "kill_buck_after_build": true
+            "kill_buck_after_build": true,
+            "number_of_threads": 10
         },
         "global_root": "/project"
       }
@@ -132,6 +133,7 @@ let test_json_parsing context =
               artifact_root = PyrePath.create_absolute "/build/root";
               targets_fallback_sources = Some [SearchPath.create "/build/"];
               kill_buck_after_build = true;
+              number_of_threads = Some 10;
             };
       };
   (* Test instagram source path *)

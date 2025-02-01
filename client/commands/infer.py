@@ -57,7 +57,6 @@ class Arguments:
 
     base_arguments: backend_arguments.BaseArguments
     paths_to_modify: Optional[Set[Path]] = None
-    kill_buck_after_build: bool = False
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -67,7 +66,6 @@ class Arguments:
                 if self.paths_to_modify is None
                 else {"paths_to_modify": [str(path) for path in self.paths_to_modify]}
             ),
-            "kill_buck_after_build": self.kill_buck_after_build,
         }
 
 
@@ -722,7 +720,9 @@ def create_infer_arguments(
     any filesystem state.
     """
     source_paths = backend_arguments.get_source_path_for_check(
-        configuration, kill_buck_after_build=infer_arguments.kill_buck_after_build
+        configuration,
+        kill_buck_after_build=infer_arguments.kill_buck_after_build,
+        number_of_buck_threads=infer_arguments.number_of_buck_threads,
     )
 
     log_directory = configuration.get_log_directory()
@@ -769,7 +769,6 @@ def create_infer_arguments(
             source_paths=source_paths,
         ),
         paths_to_modify=infer_arguments.paths_to_modify,
-        kill_buck_after_build=infer_arguments.kill_buck_after_build,
     )
 
 

@@ -457,6 +457,7 @@ let test_filter_creation context =
               artifact_root = PyrePath.create_absolute "/artifact";
               targets_fallback_sources = Some [];
               kill_buck_after_build = false;
+              number_of_threads = None;
             })
        ())
     ~expected:

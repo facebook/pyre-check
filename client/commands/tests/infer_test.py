@@ -46,14 +46,12 @@ class ArgumentTest(testslide.TestCase):
                     ),
                 ),
                 paths_to_modify={Path("/derp3.py")},
-                kill_buck_after_build=True,
             ),
             [
                 ("log_path", "/log"),
                 ("global_root", "/project"),
                 ("source_paths", {"kind": "simple", "paths": ["source"]}),
                 ("paths_to_modify", ["/derp3.py"]),
-                ("kill_buck_after_build", True),
             ],
         )
 
@@ -101,7 +99,6 @@ class InferTest(testslide.TestCase):
                         debug_infer=True,
                         sequential=False,
                         paths_to_modify={Path("path/to/module.py")},
-                        kill_buck_after_build=True,
                     ),
                 ),
                 infer.Arguments(
@@ -130,7 +127,6 @@ class InferTest(testslide.TestCase):
                         ),
                     ),
                     paths_to_modify={Path("path/to/module.py")},
-                    kill_buck_after_build=True,
                 ),
             )
 

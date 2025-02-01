@@ -507,6 +507,7 @@ let get_initializer source_paths =
         targets;
         targets_fallback_sources = _;
         kill_buck_after_build;
+        number_of_threads;
       } ->
       let builder =
         let raw = Buck.Raw.create ~additional_log_size:30 () in
@@ -516,6 +517,7 @@ let get_initializer source_paths =
             ?isolation_prefix
             ?bxl_builder
             ~kill_buck_after_build
+            ~number_of_threads
             raw
         in
         EagerBuckBuilder.create ~source_root ~artifact_root interface

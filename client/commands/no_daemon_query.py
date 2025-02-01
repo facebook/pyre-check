@@ -63,7 +63,9 @@ def _create_no_daemon_query_arguments(
     Translate client configurations to backend query configurations.
     """
     source_paths = backend_arguments.get_source_path_for_check(
-        configuration, kill_buck_after_build=False
+        configuration,
+        kill_buck_after_build=False,
+        number_of_buck_threads=None,
     )
 
     log_directory = configuration.get_log_directory()

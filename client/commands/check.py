@@ -78,7 +78,9 @@ def create_check_arguments(
     any filesystem state.
     """
     source_paths = backend_arguments.get_source_path_for_check(
-        configuration, kill_buck_after_build=False
+        configuration,
+        kill_buck_after_build=False,
+        number_of_buck_threads=None,
     )
 
     logging_sections = check_arguments.logging_sections

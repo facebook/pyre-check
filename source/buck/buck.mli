@@ -381,6 +381,7 @@ module Interface : sig
       ?isolation_prefix:string ->
       ?bxl_builder:string ->
       kill_buck_after_build:bool ->
+      number_of_threads:int option ->
       Raw.t ->
       t
 

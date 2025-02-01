@@ -81,7 +81,6 @@ class ArgumentTest(testslide.TestCase):
                     cache_critical_files=["*.py"],
                 ),
                 compute_coverage=True,
-                kill_buck_after_build=True,
             ),
             [
                 ("log_path", "/log"),
@@ -130,7 +129,6 @@ class ArgumentTest(testslide.TestCase):
                     },
                 ),
                 ("compute_coverage", True),
-                ("kill_buck_after_build", True),
             ],
         )
 
@@ -211,7 +209,6 @@ class ArgumentTest(testslide.TestCase):
                             cache_critical_files=["*.py"],
                         ),
                         compute_coverage=True,
-                        kill_buck_after_build=True,
                     ),
                 ),
                 analyze.Arguments(
@@ -281,6 +278,5 @@ class ArgumentTest(testslide.TestCase):
                         cache_critical_files=["*.py"],
                     ),
                     compute_coverage=True,
-                    kill_buck_after_build=True,
                 ),
             )

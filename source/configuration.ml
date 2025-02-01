@@ -38,6 +38,7 @@ module Buck = struct
     artifact_root: PyrePath.t;
     targets_fallback_sources: SearchPath.t list option;
     kill_buck_after_build: bool;
+    number_of_threads: int option;
   }
   [@@deriving sexp, compare, hash]
 
@@ -58,6 +59,7 @@ module Buck = struct
           json
       in
       let kill_buck_after_build = bool_member "kill_buck_after_build" ~default:false json in
+      let number_of_threads = optional_int_member "number_of_threads" json in
       Result.Ok
         {
           mode;
@@ -68,6 +70,7 @@ module Buck = struct
           artifact_root;
           targets_fallback_sources;
           kill_buck_after_build;
+          number_of_threads;
         }
     with
     | Yojson.Safe.Util.Type_error (message, _)
@@ -86,6 +89,7 @@ module Buck = struct
         artifact_root;
         targets_fallback_sources;
         kill_buck_after_build;
+        number_of_threads;
       }
     =
     let result =
@@ -109,6 +113,11 @@ module Buck = struct
       match bxl_builder with
       | None -> result
       | Some bxl_builder -> ("bxl_builder", `String bxl_builder) :: result
+    in
+    let result =
+      match number_of_threads with
+      | None -> result
+      | Some number_of_threads -> ("number_of_threads", `Int number_of_threads) :: result
     in
     let result =
       match targets_fallback_sources with
@@ -265,6 +274,14 @@ module SourcePaths = struct
     | WithUnwatchedDependency _ ->
         source_paths
     | Buck buck -> Buck { buck with kill_buck_after_build = true }
+
+
+  let set_number_of_threads ~number_of_threads source_paths =
+    match source_paths with
+    | Simple _
+    | WithUnwatchedDependency _ ->
+        source_paths
+    | Buck buck -> Buck { buck with number_of_threads = Some number_of_threads }
 end
 
 module RemoteLogging = struct

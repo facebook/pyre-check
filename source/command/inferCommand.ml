@@ -197,7 +197,9 @@ let run_infer configuration_file =
                      {
                        base with
                        source_paths =
-                         Configuration.SourcePaths.set_kill_buck_after_build source_paths;
+                         source_paths
+                         |> Configuration.SourcePaths.set_kill_buck_after_build
+                         |> Configuration.SourcePaths.set_number_of_threads ~number_of_threads:10;
                      };
                  })
              (fun exn -> Lwt.return (CheckCommand.on_exception exn)))

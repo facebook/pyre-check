@@ -326,7 +326,11 @@ def run(
         )
 
     project_identifier = configuration.get_project_identifier()
-    pyre_arguments = start.create_server_arguments(configuration, start_arguments)
+    pyre_arguments = start.create_server_arguments(
+        configuration,
+        start_arguments,
+        False,  # kill_buck_after_build
+    )
     if pyre_arguments.watchman_root is None:
         raise commands.ClientException(
             (
