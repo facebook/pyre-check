@@ -18,11 +18,11 @@ use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class_metadata::EnumMetadata;
 use crate::types::module::Module;
+use crate::types::quantified::Quantified;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::Decoration;
-use crate::types::types::Quantified;
 use crate::types::types::Type;
 
 enum LookupResult {

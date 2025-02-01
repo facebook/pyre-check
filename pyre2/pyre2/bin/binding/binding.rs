@@ -38,9 +38,9 @@ use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
 use crate::types::class_metadata::ClassMetadata;
+use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
 use crate::types::types::LegacyTypeParameterLookup;
-use crate::types::types::Quantified;
 use crate::types::types::Type;
 use crate::util::display::DisplayWith;
 

@@ -14,6 +14,7 @@ pub mod literal;
 pub mod module;
 pub mod param_spec;
 pub mod qname;
+pub mod quantified;
 pub mod simplify;
 pub mod special_form;
 pub mod stdlib;

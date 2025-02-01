@@ -20,7 +20,7 @@ use starlark_map::small_set::SmallSet;
 
 use crate::module::module_info::ModuleInfo;
 use crate::types::qname::QName;
-use crate::types::types::Quantified;
+use crate::types::quantified::Quantified;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;

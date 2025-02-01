@@ -31,6 +31,7 @@ use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
 use crate::types::qname::QName;
+use crate::types::quantified::Quantified;
 use crate::types::special_form::SpecialForm;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
@@ -64,77 +65,6 @@ impl Var {
 
     fn zero(&mut self) {
         self.0 = Unique::zero();
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Quantified {
-    /// Unique identifier
-    unique: Unique,
-    kind: QuantifiedKind,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-pub enum QuantifiedKind {
-    TypeVar,
-    ParamSpec,
-    TypeVarTuple,
-}
-
-impl QuantifiedKind {
-    pub fn empty_value(self) -> Type {
-        match self {
-            QuantifiedKind::TypeVar => Type::any_implicit(),
-            QuantifiedKind::ParamSpec => Type::ParamSpecValue(ParamList::everything()),
-            QuantifiedKind::TypeVarTuple => Type::any_implicit(), // TODO
-        }
-    }
-}
-
-impl Display for Quantified {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "?_")
-    }
-}
-
-impl Quantified {
-    pub fn new(uniques: &UniqueFactory, kind: QuantifiedKind) -> Self {
-        Quantified {
-            unique: uniques.fresh(),
-            kind,
-        }
-    }
-
-    pub fn type_var(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques, QuantifiedKind::TypeVar)
-    }
-
-    pub fn param_spec(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques, QuantifiedKind::ParamSpec)
-    }
-
-    pub fn type_var_tuple(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques, QuantifiedKind::TypeVarTuple)
-    }
-
-    pub fn to_type(self) -> Type {
-        Type::Quantified(self)
-    }
-
-    pub fn as_value(&self, stdlib: &Stdlib) -> ClassType {
-        match self.kind {
-            QuantifiedKind::TypeVar => stdlib.type_var(),
-            QuantifiedKind::ParamSpec => stdlib.param_spec(),
-            QuantifiedKind::TypeVarTuple => stdlib.type_var_tuple(),
-        }
-    }
-
-    pub fn kind(&self) -> QuantifiedKind {
-        self.kind
-    }
-
-    pub fn is_param_spec(&self) -> bool {
-        matches!(self.kind, QuantifiedKind::ParamSpec)
     }
 }
 

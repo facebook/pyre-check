@@ -21,7 +21,7 @@ use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
-use crate::types::types::Quantified;
+use crate::types::quantified::Quantified;
 use crate::types::types::Type;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
