@@ -266,10 +266,46 @@ impl Scope {
         )
     }
 
-    pub fn module() -> Self {
+    fn module() -> Self {
         Self::new(false, ScopeKind::Module)
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct Scopes(pub Vec1<Scope>);
+pub struct Scopes(Vec1<Scope>);
+
+impl Scopes {
+    pub fn module() -> Self {
+        Self(Vec1::new(Scope::module()))
+    }
+
+    pub fn current(&self) -> &Scope {
+        self.0.last()
+    }
+
+    pub fn current_mut(&mut self) -> &mut Scope {
+        self.0.last_mut()
+    }
+
+    /// There is only one scope remaining, return it.
+    pub fn finish(self) -> Scope {
+        assert_eq!(self.0.len(), 1);
+        self.0.to_vec().pop().unwrap()
+    }
+
+    pub fn push(&mut self, scope: Scope) {
+        self.0.push(scope);
+    }
+
+    pub fn pop(&mut self) -> Scope {
+        self.0.pop().unwrap()
+    }
+
+    pub fn iter_rev(&self) -> impl Iterator<Item = &Scope> {
+        self.0.iter().rev()
+    }
+
+    pub fn iter_rev_mut(&mut self) -> impl Iterator<Item = &mut Scope> {
+        self.0.iter_mut().rev()
+    }
+}

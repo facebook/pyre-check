@@ -241,22 +241,20 @@ impl Bindings {
             config,
             errors,
             uniques,
-            scopes: Scopes(Vec1::new(Scope::module())),
+            scopes: Scopes::module(),
             functions: Vec1::new(FuncInfo::default()),
             table: Default::default(),
         };
         builder
             .scopes
-            .0
-            .last_mut()
+            .current_mut()
             .stat
             .stmts(&x, &module_info, true, lookup, config);
         if module_info.name() != ModuleName::builtins() {
             builder.inject_builtins();
         }
         builder.stmts(x);
-        assert_eq!(builder.scopes.0.len(), 1);
-        let last_scope = builder.scopes.0.to_vec().pop().unwrap();
+        let last_scope = builder.scopes.finish();
         for (k, static_info) in last_scope.stat.0 {
             let info = last_scope.flow.info.get(&k);
             let val = match info {
@@ -373,7 +371,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn get_flow_info(&self, name: &Name) -> Option<&FlowInfo> {
-        for scope in self.scopes.0.iter().rev() {
+        for scope in self.scopes.iter_rev() {
             if let Some(flow) = scope.flow.info.get(name) {
                 return Some(flow);
             }
@@ -441,7 +439,7 @@ impl<'a> BindingsBuilder<'a> {
 
     fn lookup_name(&mut self, name: &Name) -> Option<Idx<Key>> {
         let mut barrier = false;
-        for scope in self.scopes.0.iter().rev() {
+        for scope in self.scopes.iter_rev() {
             if !barrier && let Some(flow) = scope.flow.info.get(name) {
                 return Some(flow.key);
             } else if !matches!(scope.kind, ScopeKind::ClassBody(_))
@@ -496,16 +494,16 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn bind_comprehensions(&mut self, comprehensions: &[Comprehension]) {
-        self.scopes.0.push(Scope::comprehension());
+        self.scopes.push(Scope::comprehension());
         for comp in comprehensions.iter() {
-            self.scopes.0.last_mut().stat.expr_lvalue(&comp.target);
+            self.scopes.current_mut().stat.expr_lvalue(&comp.target);
             let make_binding = |k| Binding::IterableValue(k, comp.iter.clone());
             self.bind_target(&comp.target, &make_binding, None);
         }
     }
 
     fn bind_lambda(&mut self, lambda: &ExprLambda) {
-        self.scopes.0.push(Scope::function());
+        self.scopes.push(Scope::function());
         if let Some(parameters) = &lambda.parameters {
             for x in parameters.iter() {
                 let name = x.name();
@@ -514,8 +512,7 @@ impl<'a> BindingsBuilder<'a> {
                     Binding::AnyType(AnyStyle::Implicit),
                 );
                 self.scopes
-                    .0
-                    .last_mut()
+                    .current_mut()
                     .stat
                     .add(name.id.clone(), name.range);
                 self.bind_key(&name.id, bind_key, None);
@@ -533,12 +530,13 @@ impl<'a> BindingsBuilder<'a> {
         orelse: Option<&Expr>,
         range: TextRange,
     ) {
-        let if_branch = mem::take(&mut self.scopes.0.last_mut().flow);
-        self.scopes.0.last_mut().flow = base;
+        let if_branch = mem::take(&mut self.scopes.current_mut().flow);
+        self.scopes.current_mut().flow = base;
         self.bind_narrow_ops(&ops.negate(), range);
         self.ensure_expr_opt(orelse);
-        let else_branch = mem::take(&mut self.scopes.0.last_mut().flow);
-        self.scopes.0.last_mut().flow = self.merge_flow(vec![if_branch, else_branch], range, false);
+        let else_branch = mem::take(&mut self.scopes.current_mut().flow);
+        self.scopes.current_mut().flow =
+            self.merge_flow(vec![if_branch, else_branch], range, false);
     }
 
     /// Execute through the expr, ensuring every name has a binding.
@@ -546,7 +544,7 @@ impl<'a> BindingsBuilder<'a> {
         let new_scope = match x {
             Expr::If(x) => {
                 // Ternary operation. We treat it like an if/else statement.
-                let base = self.scopes.0.last().flow.clone();
+                let base = self.scopes.current().flow.clone();
                 self.ensure_expr(&x.test);
                 let narrow_ops = NarrowOps::from_expr(Some(&x.test));
                 self.bind_narrow_ops(&narrow_ops, x.body.range());
@@ -555,7 +553,7 @@ impl<'a> BindingsBuilder<'a> {
                 return;
             }
             Expr::BoolOp(ExprBoolOp { range, op, values }) => {
-                let base = self.scopes.0.last().flow.clone();
+                let base = self.scopes.current().flow.clone();
                 let mut narrow_ops = NarrowOps::new();
                 for value in values {
                     self.bind_narrow_ops(&narrow_ops, value.range());
@@ -582,7 +580,7 @@ impl<'a> BindingsBuilder<'a> {
                 false
             }
             Expr::Named(x) => {
-                self.scopes.0.last_mut().stat.expr_lvalue(&x.target);
+                self.scopes.current_mut().stat.expr_lvalue(&x.target);
                 let make_binding = |k| Binding::Expr(k, (*x.value).clone());
                 self.bind_target(&x.target, &make_binding, None);
                 false
@@ -625,7 +623,7 @@ impl<'a> BindingsBuilder<'a> {
         };
         Visitors::visit_expr(x, |x| self.ensure_expr(x));
         if new_scope {
-            self.scopes.0.pop().unwrap();
+            self.scopes.pop();
         }
     }
 
@@ -776,7 +774,7 @@ impl<'a> BindingsBuilder<'a> {
         binding: Binding,
         annotation: Option<Idx<KeyAnnotation>>,
     ) -> bool {
-        for scope in self.scopes.0.iter_mut().rev() {
+        for scope in self.scopes.iter_rev_mut() {
             if let ScopeKind::Method(method) = &mut scope.kind
                 && let Some(self_name) = &method.self_name
                 && matches!(&*x.value, Expr::Name(name) if name.id == self_name.id)
@@ -883,7 +881,7 @@ impl<'a> BindingsBuilder<'a> {
         key: Idx<Key>,
         style: Option<FlowStyle>,
     ) -> Option<Idx<KeyAnnotation>> {
-        match self.scopes.0.last_mut().flow.info.entry(name.clone()) {
+        match self.scopes.current_mut().flow.info.entry(name.clone()) {
             Entry::Occupied(mut e) => {
                 // if there was a previous annotation, reuse that
                 let style = style.or_else(|| {
@@ -907,11 +905,11 @@ impl<'a> BindingsBuilder<'a> {
         style: Option<FlowStyle>,
     ) -> Option<Idx<KeyAnnotation>> {
         let annotation = self.update_flow_info(name, key, style);
-        let info = self.scopes.0.last().stat.0.get(name).unwrap_or_else(|| {
+        let info = self.scopes.current().stat.0.get(name).unwrap_or_else(|| {
             let module = self.module_info.name();
             panic!("Name `{name}` not found in static scope of module `{module}`")
         });
-        if info.count > 1 || matches!(self.scopes.0.last().kind, ScopeKind::ClassBody(_)) {
+        if info.count > 1 || matches!(self.scopes.current().kind, ScopeKind::ClassBody(_)) {
             self.table
                 .insert_anywhere(name.clone(), info.loc)
                 .1
@@ -936,8 +934,7 @@ impl<'a> BindingsBuilder<'a> {
             qs.push(q);
             let name = x.name();
             self.scopes
-                .0
-                .last_mut()
+                .current_mut()
                 .stat
                 .add(name.id.clone(), name.range);
             self.bind_definition(name, Binding::TypeParameter(q), None);
@@ -973,8 +970,7 @@ impl<'a> BindingsBuilder<'a> {
                 Binding::AnnotatedType(ann_key, Box::new(Binding::AnyType(AnyStyle::Implicit))),
             );
             self.scopes
-                .0
-                .last_mut()
+                .current_mut()
                 .stat
                 .add(name.id.clone(), name.range);
             self.bind_key(
@@ -989,7 +985,7 @@ impl<'a> BindingsBuilder<'a> {
         if let Scope {
             kind: ScopeKind::Method(method),
             ..
-        } = self.scopes.0.last_mut()
+        } = self.scopes.current_mut()
         {
             method.self_name = self_name;
         }
@@ -1020,7 +1016,7 @@ impl<'a> BindingsBuilder<'a> {
             });
         }
         let func_name = x.name.clone();
-        let self_type = match &self.scopes.0.last().kind {
+        let self_type = match &self.scopes.current().kind {
             ScopeKind::ClassBody(body) => Some(self.table.types.0.insert(body.as_self_type_key())),
             _ => None,
         };
@@ -1029,7 +1025,7 @@ impl<'a> BindingsBuilder<'a> {
             self.ensure_expr(&x.expression);
         }
 
-        self.scopes.0.push(Scope::annotation());
+        self.scopes.push(Scope::annotation());
 
         let tparams = x
             .type_params
@@ -1052,9 +1048,9 @@ impl<'a> BindingsBuilder<'a> {
         legacy_tparam_builder.add_name_definitions(self);
 
         if self_type.is_none() {
-            self.scopes.0.push(Scope::function());
+            self.scopes.push(Scope::function());
         } else {
-            self.scopes.0.push(Scope::method(func_name.clone()));
+            self.scopes.push(Scope::method(func_name.clone()));
         }
 
         let legacy_tparams = legacy_tparam_builder.lookup_keys(self);
@@ -1069,7 +1065,7 @@ impl<'a> BindingsBuilder<'a> {
             },
         );
 
-        self.scopes.0.last_mut().stat.stmts(
+        self.scopes.current_mut().stat.stmts(
             &body,
             &self.module_info,
             false,
@@ -1077,11 +1073,11 @@ impl<'a> BindingsBuilder<'a> {
             self.config,
         );
         self.stmts(body);
-        let func_scope = self.scopes.0.pop().unwrap();
-        self.scopes.0.pop().unwrap();
+        let func_scope = self.scopes.pop();
+        self.scopes.pop();
 
         if let ScopeKind::Method(method) = func_scope.kind
-            && let ScopeKind::ClassBody(body) = &mut self.scopes.0.last_mut().kind
+            && let ScopeKind::ClassBody(body) = &mut self.scopes.current_mut().kind
         {
             body.instance_attributes_by_method
                 .insert(method.name.id, method.instance_attributes);
@@ -1201,7 +1197,7 @@ impl<'a> BindingsBuilder<'a> {
             self.ensure_expr(&x.expression);
         }
 
-        self.scopes.0.push(Scope::class_body(x.name.clone()));
+        self.scopes.push(Scope::class_body(x.name.clone()));
 
         let definition_key = self
             .table
@@ -1260,15 +1256,14 @@ impl<'a> BindingsBuilder<'a> {
 
         let non_field_names = self
             .scopes
-            .0
-            .last()
+            .current()
             .flow
             .info
             .keys()
             .cloned()
             .collect::<SmallSet<_>>();
 
-        self.scopes.0.last_mut().stat.stmts(
+        self.scopes.current_mut().stat.stmts(
             &body,
             &self.module_info,
             false,
@@ -1277,7 +1272,7 @@ impl<'a> BindingsBuilder<'a> {
         );
         self.stmts(body);
 
-        let last_scope = self.scopes.0.pop().unwrap();
+        let last_scope = self.scopes.pop();
         let mut fields = SmallSet::new();
         for (name, info) in last_scope.flow.info.iter() {
             if non_field_names.contains(name) {
@@ -1419,7 +1414,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn add_loop_exitpoint(&mut self, exit: LoopExit, range: TextRange) {
-        let scope = self.scopes.0.last_mut();
+        let scope = self.scopes.current_mut();
         let flow = scope.flow.clone();
         if let Some(innermost) = scope.loops.last_mut() {
             innermost.0.push((exit, flow));
@@ -1599,17 +1594,17 @@ impl<'a> BindingsBuilder<'a> {
                             "Only the last subpattern in MatchOr may be irrefutable".to_owned(),
                         )
                     }
-                    let mut base = self.scopes.0.last().flow.clone();
+                    let mut base = self.scopes.current().flow.clone();
                     let new_narrow_ops = self.bind_pattern(subject_name, pattern, key);
                     if let Some(ref mut ops) = narrow_ops {
                         ops.or_all(new_narrow_ops)
                     } else {
                         narrow_ops = Some(new_narrow_ops);
                     }
-                    mem::swap(&mut self.scopes.0.last_mut().flow, &mut base);
+                    mem::swap(&mut self.scopes.current_mut().flow, &mut base);
                     branches.push(base);
                 }
-                self.scopes.0.last_mut().flow = self.merge_flow(branches, range, false);
+                self.scopes.current_mut().flow = self.merge_flow(branches, range, false);
                 narrow_ops.unwrap_or_default()
             }
             Pattern::MatchStar(_) => NarrowOps::new(),
@@ -1651,7 +1646,7 @@ impl<'a> BindingsBuilder<'a> {
             Stmt::Return(x) => {
                 self.ensure_expr_opt(x.value.as_deref());
                 self.functions.last_mut().returns.push(x);
-                self.scopes.0.last_mut().flow.no_next = true;
+                self.scopes.current_mut().flow.no_next = true;
             }
             Stmt::Delete(x) => self.todo("Bindings::stmt", &x),
             Stmt::Assign(x) => {
@@ -1856,7 +1851,7 @@ impl<'a> BindingsBuilder<'a> {
                     if b == Some(false) {
                         continue; // We won't pick this branch
                     }
-                    let mut base = self.scopes.0.last().flow.clone();
+                    let mut base = self.scopes.current().flow.clone();
                     let new_narrow_ops = NarrowOps::from_expr(test.as_ref());
                     if let Some(e) = test {
                         self.ensure_expr(&e);
@@ -1870,7 +1865,7 @@ impl<'a> BindingsBuilder<'a> {
                     }
                     negated_prev_ops.and_all(new_narrow_ops.negate());
                     self.stmts(body);
-                    mem::swap(&mut self.scopes.0.last_mut().flow, &mut base);
+                    mem::swap(&mut self.scopes.current_mut().flow, &mut base);
                     branches.push(base);
                     if b == Some(true) {
                         exhaustive = true;
@@ -1878,9 +1873,9 @@ impl<'a> BindingsBuilder<'a> {
                     }
                 }
                 if !exhaustive {
-                    branches.push(mem::take(&mut self.scopes.0.last_mut().flow));
+                    branches.push(mem::take(&mut self.scopes.current_mut().flow));
                 }
-                self.scopes.0.last_mut().flow = self.merge_flow(branches, range, false);
+                self.scopes.current_mut().flow = self.merge_flow(branches, range, false);
             }
             Stmt::With(x) => {
                 let kind = if x.is_async {
@@ -1929,7 +1924,7 @@ impl<'a> BindingsBuilder<'a> {
                 // is carried over to the fallback case.
                 let mut negated_prev_ops = NarrowOps::new();
                 for case in x.cases {
-                    let mut base = self.scopes.0.last().flow.clone();
+                    let mut base = self.scopes.current().flow.clone();
                     if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
                         exhaustive = true;
                     }
@@ -1944,16 +1939,16 @@ impl<'a> BindingsBuilder<'a> {
                             .insert(Key::Anon(guard.range()), Binding::Expr(None, *guard));
                     }
                     self.stmts(case.body);
-                    mem::swap(&mut self.scopes.0.last_mut().flow, &mut base);
+                    mem::swap(&mut self.scopes.current_mut().flow, &mut base);
                     branches.push(base);
                     if exhaustive {
                         break;
                     }
                 }
                 if !exhaustive {
-                    branches.push(mem::take(&mut self.scopes.0.last_mut().flow));
+                    branches.push(mem::take(&mut self.scopes.current_mut().flow));
                 }
-                self.scopes.0.last_mut().flow = self.merge_flow(branches, range, false);
+                self.scopes.current_mut().flow = self.merge_flow(branches, range, false);
             }
             Stmt::Raise(x) => {
                 if let Some(exc) = x.exc {
@@ -1971,12 +1966,12 @@ impl<'a> BindingsBuilder<'a> {
                 } else {
                     // If there's no exception raised, don't bother checking the cause.
                 }
-                self.scopes.0.last_mut().flow.no_next = true;
+                self.scopes.current_mut().flow.no_next = true;
             }
             Stmt::Try(x) => {
                 let range = x.range;
                 let mut branches = Vec::new();
-                let mut base = self.scopes.0.last().flow.clone();
+                let mut base = self.scopes.current().flow.clone();
 
                 // We branch before the body, conservatively assuming that any statement can fail
                 // entry -> try -> else -> finally
@@ -1985,11 +1980,11 @@ impl<'a> BindingsBuilder<'a> {
 
                 self.stmts(x.body);
                 self.stmts(x.orelse);
-                mem::swap(&mut self.scopes.0.last_mut().flow, &mut base);
+                mem::swap(&mut self.scopes.current_mut().flow, &mut base);
                 branches.push(base);
 
                 for h in x.handlers {
-                    base = self.scopes.0.last().flow.clone();
+                    base = self.scopes.current().flow.clone();
                     let range = h.range();
                     let h = h.except_handler().unwrap(); // Only one variant for now
                     if let Some(name) = h.name
@@ -2009,11 +2004,11 @@ impl<'a> BindingsBuilder<'a> {
                         );
                     }
                     self.stmts(h.body);
-                    mem::swap(&mut self.scopes.0.last_mut().flow, &mut base);
+                    mem::swap(&mut self.scopes.current_mut().flow, &mut base);
                     branches.push(base);
                 }
 
-                self.scopes.0.last_mut().flow = self.merge_flow(branches, range, false);
+                self.scopes.current_mut().flow = self.merge_flow(branches, range, false);
                 self.stmts(x.finalbody);
             }
             Stmt::Assert(x) => {
@@ -2043,7 +2038,7 @@ impl<'a> BindingsBuilder<'a> {
                         }
                         None => {
                             let first = m.first_component();
-                            let flow_info = self.scopes.0.last().flow.info.get(&first);
+                            let flow_info = self.scopes.current().flow.info.get(&first);
                             let module_key = match flow_info {
                                 Some(flow_info)
                                     if matches!(
@@ -2174,20 +2169,19 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn setup_loop(&mut self, range: TextRange, narrow_ops: &NarrowOps) {
-        let base = mem::take(&mut self.scopes.0.last_mut().flow);
+        let base = mem::take(&mut self.scopes.current_mut().flow);
         // To account for possible assignments to existing names in a loop, we
         // speculatively insert phi keys upfront.
-        self.scopes.0.last_mut().flow = self.insert_phi_keys(base.clone(), range);
+        self.scopes.current_mut().flow = self.insert_phi_keys(base.clone(), range);
         self.bind_narrow_ops(narrow_ops, range);
         self.scopes
-            .0
-            .last_mut()
+            .current_mut()
             .loops
             .push(Loop(vec![(LoopExit::NeverRan, base)]));
     }
 
     fn teardown_loop(&mut self, range: TextRange, narrow_ops: &NarrowOps, orelse: Vec<Stmt>) {
-        let done = self.scopes.0.last_mut().loops.pop().unwrap();
+        let done = self.scopes.current_mut().loops.pop().unwrap();
         let (breaks, other_exits): (Vec<Flow>, Vec<Flow>) =
             done.0.into_iter().partition_map(|(exit, flow)| match exit {
                 LoopExit::Break => Either::Left(flow),
@@ -2292,8 +2286,8 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn merge_loop_into_current(&mut self, mut branches: Vec<Flow>, range: TextRange) {
-        branches.push(mem::take(&mut self.scopes.0.last_mut().flow));
-        self.scopes.0.last_mut().flow = self.merge_flow(branches, range, true);
+        branches.push(mem::take(&mut self.scopes.current_mut().flow));
+        self.scopes.current_mut().flow = self.merge_flow(branches, range, true);
     }
 }
 
@@ -2363,8 +2357,7 @@ impl LegacyTParamBuilder {
                 );
                 builder
                     .scopes
-                    .0
-                    .last_mut()
+                    .current_mut()
                     .stat
                     .add(identifier.id.clone(), identifier.range);
                 let key = builder
