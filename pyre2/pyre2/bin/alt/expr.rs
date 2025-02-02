@@ -53,6 +53,7 @@ use crate::types::types::CalleeKind;
 use crate::types::types::Decoration;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
+use crate::visitors::Visitors;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     // Helper method for inferring the type of a boolean operation over a sequence of values.
@@ -704,10 +705,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     })
                 }
             }
-            Expr::FString(x) => match Lit::from_fstring(x) {
-                Some(lit) => lit.to_type(),
-                _ => self.stdlib.str().to_type(),
-            },
+            Expr::FString(x) => {
+                // Ensure we detect type errors in f-string expressions.
+                Visitors::visit_fstring_expr(x, |x| {
+                    self.expr_infer(x);
+                });
+                match Lit::from_fstring(x) {
+                    Some(lit) => lit.to_type(),
+                    _ => self.stdlib.str().to_type(),
+                }
+            }
             Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
             Expr::BytesLiteral(x) => Lit::from_bytes_literal(x).to_type(),
             Expr::NumberLiteral(x) => match &x.value {

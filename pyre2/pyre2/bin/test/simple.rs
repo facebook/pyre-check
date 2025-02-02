@@ -436,7 +436,17 @@ assert_type(B.x, int)
 );
 
 testcase!(
-    test_fstring,
+    test_fstring_error,
+    r#"
+def f(x: str) -> str:
+    return x
+
+x = f"abc{f(1)}def"  # E: EXPECTED Literal[1] <: str
+"#,
+);
+
+testcase!(
+    test_fstring_literal,
     r#"
 from typing import assert_type, Literal
 x0 = f"abc"

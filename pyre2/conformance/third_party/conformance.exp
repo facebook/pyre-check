@@ -11982,6 +11982,16 @@
     },
     {
       "code": -2,
+      "column": 36,
+      "concise_description": "EXPECTED Literal[3] <: Buffer",
+      "description": "EXPECTED Literal[3] <: Buffer",
+      "line": 66,
+      "name": "PyreError",
+      "stop_column": 44,
+      "stop_line": 66
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "assert_type(Any, str) failed",
       "description": "assert_type(Any, str) failed",
