@@ -10,61 +10,9 @@
 use std::sync::LazyLock;
 
 use regex::Regex;
-use ruff_python_ast::ExceptHandler;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtExpr;
-
-use crate::config::Config;
-
-/// Given the body of a function, what are the potential expressions that
-/// could be the last ones to be executed, where the function then falls off the end.
-///
-/// * Return None to say there are branches that fall off the end always.
-/// * Return Some([]) to say that we can never reach the end (e.g. always return, raise)
-/// * Return Some(xs) to say this set might be the last expression.
-pub fn function_last_expressions<'a>(x: &'a [Stmt], config: &Config) -> Option<Vec<&'a Expr>> {
-    fn f<'a>(config: &Config, x: &'a [Stmt], res: &mut Vec<&'a Expr>) -> Option<()> {
-        match x.last()? {
-            Stmt::Expr(x) => res.push(&x.value),
-            Stmt::Return(_) | Stmt::Raise(_) => {}
-            Stmt::If(x) => {
-                let mut last_test = None;
-                for (test, body) in config.pruned_if_branches(x) {
-                    last_test = test;
-                    f(config, body, res)?;
-                }
-                if last_test.is_some() {
-                    // The final `if` can fall through, so the `if` itself might be the last statement.
-                    return None;
-                }
-            }
-            Stmt::Try(x) => {
-                if !x.finalbody.is_empty() {
-                    f(config, &x.finalbody, res)?;
-                } else {
-                    if x.orelse.is_empty() {
-                        f(config, &x.body, res)?;
-                    } else {
-                        f(config, &x.orelse, res)?;
-                    }
-                    for handler in &x.handlers {
-                        match handler {
-                            ExceptHandler::ExceptHandler(x) => f(config, &x.body, res)?,
-                        }
-                    }
-                    // If we don't have a matching handler, we raise an exception, which is fine.
-                }
-            }
-            _ => return None,
-        }
-        Some(())
-    }
-
-    let mut res = Vec::new();
-    f(config, x, &mut res)?;
-    Some(res)
-}
 
 pub fn is_ellipse(x: &[Stmt]) -> bool {
     match x {
