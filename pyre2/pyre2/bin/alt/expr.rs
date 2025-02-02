@@ -897,9 +897,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::YieldFrom(y) => {
                 let inferred_expr_type = &self.expr_infer(&y.value);
-
-                let final_generator_type =
-                    &self.get(&Key::TypeOfYieldAnnotation(x.range())).arc_clone();
+                let final_generator_type = &*self.get(&Key::TypeOfYieldAnnotation(x.range()));
 
                 self.check_type(final_generator_type, inferred_expr_type, x.range());
 
