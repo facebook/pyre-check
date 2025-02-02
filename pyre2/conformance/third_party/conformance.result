@@ -90,8 +90,8 @@
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
     "Line 9: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 21: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 22: Unexpected errors [\"Missing argument 'flush'\"]",
+    "Line 21: Unexpected errors ['Missing argument `flush`']",
+    "Line 22: Unexpected errors ['Missing argument `flush`']",
     "Line 82: Unexpected errors ['untype, got list[type[int] | type[str]]']"
   ],
   "aliases_typealiastype.py": [
@@ -113,8 +113,8 @@
     "Line 19: Unexpected errors ['EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]']",
     "Line 22: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 23: Unexpected errors ['EXPECTED tuple[type[TypeVar[S]], type[TypeVar[TStr]], type[ParamSpec[P]], type[TypeVarTuple[Ts]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]']",
-    "Line 30: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 31: Unexpected errors [\"Missing argument 'flush'\"]",
+    "Line 30: Unexpected errors ['Missing argument `flush`']",
+    "Line 31: Unexpected errors ['Missing argument `flush`']",
     "Line 35: Unexpected errors ['untype, got GenericAlias']",
     "Line 36: Unexpected errors ['untype, got GenericAlias']",
     "Line 37: Unexpected errors ['untype, got GenericAlias']",
@@ -148,8 +148,8 @@
     "Line 131: Unexpected errors ['EXPECTED int <: float']",
     "Line 149: Unexpected errors ['EXPECTED list[int] <: Generator[int, None, None]']",
     "Line 150: Unexpected errors ['EXPECTED list[int] <: Generator[int, None, None]']",
-    "Line 154: Unexpected errors [\"Missing argument 'result'\", 'EXPECTED Literal[1] <: float']",
-    "Line 160: Unexpected errors [\"Missing argument 'result'\", 'EXPECTED Literal[1] <: float']",
+    "Line 154: Unexpected errors ['Missing argument `result`', 'EXPECTED Literal[1] <: float']",
+    "Line 160: Unexpected errors ['Missing argument `result`', 'EXPECTED Literal[1] <: float']",
     "Line 182: Unexpected errors ['assert_type(() -> AsyncIterator[int], () -> Coroutine[Any, Any, AsyncIterator[int]]) failed']",
     "Line 187: Unexpected errors ['EXPECTED None <: int']"
   ],
@@ -212,7 +212,7 @@
     "Line 82: Unexpected errors ['EXPECTED (**str) -> None <: Proto3']",
     "Line 109: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: Proto5']",
     "Line 168: Unexpected errors ['EXPECTED (x: Any) -> Any <: Proto8']",
-    "Line 196: Unexpected errors [\"Missing argument 'flush'\"]",
+    "Line 196: Unexpected errors ['Missing argument `flush`']",
     "Line 216: Unexpected errors ['EXPECTED () -> None <: Proto10']",
     "Line 236: Unexpected errors ['EXPECTED (int, y: str, z: None) -> Any <: Proto11']",
     "Line 237: Unexpected errors ['EXPECTED (x: int, y: str, z: None) -> Any <: Proto11']",
@@ -297,7 +297,7 @@
   ],
   "constructors_call_metaclass.py": [
     "Line 20: Unexpected errors ['EXPECTED object <: Class1', 'Expected 0 positional arguments, got 1']",
-    "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed', \"Missing argument 'x'\"]",
+    "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed', 'Missing argument `x`']",
     "Line 33: Unexpected errors ['EXPECTED object <: Class2', 'Expected 0 positional arguments, got 1']",
     "Line 43: Unexpected errors ['Object of class `super` has no attribute `__call__`']",
     "Line 48: Unexpected errors ['EXPECTED object <: Class3', 'Expected 0 positional arguments, got 1']",
@@ -308,8 +308,8 @@
     "Line 16: Unexpected errors ['EXPECTED object <: Class1[?_]', 'Expected 0 positional arguments, got 1']",
     "Line 20: Unexpected errors ['EXPECTED Literal[1] <: float']",
     "Line 29: Unexpected errors ['EXPECTED object <: Class2[?_]', 'Expected 0 positional arguments, got 1']",
-    "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', \"Missing argument 'x'\"]",
-    "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', \"Missing argument 'x'\"]",
+    "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', 'Missing argument `x`']",
+    "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', 'Missing argument `x`']",
     "Line 98: Unexpected errors ['Expected 0 positional arguments, got 1', 'Expected argument after ** to be a mapping, got: Unknown']",
     "Line 104: Unexpected errors ['assert_type(object, Class7) failed']"
   ],
@@ -376,7 +376,7 @@
     "Line 35: Expected 1 errors",
     "Line 36: Expected 1 errors",
     "Line 38: Expected 1 errors",
-    "Line 30: Unexpected errors [\"Missing argument 'final_classvar'\"]"
+    "Line 30: Unexpected errors ['Missing argument `final_classvar`']"
   ],
   "dataclasses_frozen.py": [
     "Line 17: Expected 1 errors",
@@ -391,20 +391,20 @@
   "dataclasses_inheritance.py": [
     "Line 60: Expected 1 errors",
     "Line 64: Expected 1 errors",
-    "Line 25: Unexpected errors [\"Missing argument 'a'\", \"Missing argument 'b'\"]",
+    "Line 25: Unexpected errors ['Missing argument `a`', 'Missing argument `b`']",
     "Line 37: Unexpected errors ['EXPECTED Literal[15] <: float']"
   ],
   "dataclasses_kwonly.py": [
     "Line 53: Expected 1 errors",
-    "Line 17: Unexpected errors [\"Missing argument 'b'\"]",
-    "Line 18: Unexpected errors [\"Missing argument 'b'\"]",
+    "Line 17: Unexpected errors ['Missing argument `b`']",
+    "Line 18: Unexpected errors ['Missing argument `b`']",
     "Line 28: Unexpected errors ['EXPECTED Literal[3] <: _MISSING_TYPE']",
     "Line 32: Unexpected errors [\"EXPECTED Literal['hi'] <: int\"]",
-    "Line 33: Unexpected errors [\"Missing argument 'b'\"]",
-    "Line 35: Unexpected errors [\"EXPECTED Literal['hi'] <: int\", \"Multiple values for argument 'b'\"]",
-    "Line 47: Unexpected errors [\"Missing argument 'b'\"]",
-    "Line 48: Unexpected errors [\"Missing argument 'b'\"]",
-    "Line 61: Unexpected errors ['EXPECTED float <: int', \"Multiple values for argument 'b'\"]"
+    "Line 33: Unexpected errors ['Missing argument `b`']",
+    "Line 35: Unexpected errors [\"EXPECTED Literal['hi'] <: int\", 'Multiple values for argument `b`']",
+    "Line 47: Unexpected errors ['Missing argument `b`']",
+    "Line 48: Unexpected errors ['Missing argument `b`']",
+    "Line 61: Unexpected errors ['EXPECTED float <: int', 'Multiple values for argument `b`']"
   ],
   "dataclasses_order.py": [
     "Line 50: Expected 1 errors"
@@ -426,19 +426,19 @@
     "Line 63: Expected 1 errors",
     "Line 72: Expected 1 errors",
     "Line 122: Expected 1 errors",
-    "Line 60: Unexpected errors [\"Missing argument 'not_a_field'\", \"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\", \"Unexpected keyword argument 'other_name'\"]",
-    "Line 68: Unexpected errors [\"Missing argument 'not_a_field'\", \"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
-    "Line 74: Unexpected errors [\"Missing argument 'not_a_field'\", \"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
-    "Line 76: Unexpected errors [\"Missing argument 'not_a_field'\", \"Unexpected keyword argument 'id'\"]",
-    "Line 106: Unexpected errors [\"Unexpected keyword argument 'id'\"]",
-    "Line 119: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]"
+    "Line 60: Unexpected errors ['Missing argument `not_a_field`', 'Unexpected keyword argument `id`', 'Unexpected keyword argument `name`', 'Unexpected keyword argument `other_name`']",
+    "Line 68: Unexpected errors ['Missing argument `not_a_field`', 'Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
+    "Line 74: Unexpected errors ['Missing argument `not_a_field`', 'Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
+    "Line 76: Unexpected errors ['Missing argument `not_a_field`', 'Unexpected keyword argument `id`']",
+    "Line 106: Unexpected errors ['Unexpected keyword argument `id`']",
+    "Line 119: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']"
   ],
   "dataclasses_transform_converter.py": [
     "Line 118: Expected 1 errors",
     "Line 29: Unexpected errors ['EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]']",
-    "Line 60: Unexpected errors [\"Missing argument 'base'\"]",
-    "Line 64: Unexpected errors [\"Missing argument 'base'\"]",
-    "Line 68: Unexpected errors [\"Missing argument 'base'\"]",
+    "Line 60: Unexpected errors ['Missing argument `base`']",
+    "Line 64: Unexpected errors ['Missing argument `base`']",
+    "Line 68: Unexpected errors ['Missing argument `base`']",
     "Line 102: Unexpected errors ['EXPECTED type[ConverterClass] <: (@_) -> @_']",
     "Line 103: Unexpected errors ['EXPECTED int | str <: int']",
     "Line 104: Unexpected errors ['EXPECTED type[dict] <: (@_) -> @_']",
@@ -450,28 +450,28 @@
     "Line 132: Unexpected errors ['EXPECTED type[str] <: () -> str | None']"
   ],
   "dataclasses_transform_field.py": [
-    "Line 60: Unexpected errors [\"Unexpected keyword argument 'name'\"]",
-    "Line 77: Unexpected errors [\"Unexpected keyword argument 'name'\"]"
+    "Line 60: Unexpected errors ['Unexpected keyword argument `name`']",
+    "Line 77: Unexpected errors ['Unexpected keyword argument `name`']"
   ],
   "dataclasses_transform_func.py": [
     "Line 61: Expected 1 errors",
     "Line 97: Expected 1 errors",
     "Lines 89, 90: Expected error (tag 'Customer3Subclass')",
-    "Line 50: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
+    "Line 50: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
     "Line 53: Unexpected errors ['Expected 0 positional arguments, got 2']",
-    "Line 67: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
-    "Line 94: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]"
+    "Line 67: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
+    "Line 94: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']"
   ],
   "dataclasses_transform_meta.py": [
     "Line 51: Expected 1 errors",
     "Line 63: Expected 1 errors",
     "Line 73: Expected 1 errors",
     "Line 103: Expected 1 errors",
-    "Line 60: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\", \"Unexpected keyword argument 'other_name'\"]",
-    "Line 69: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
-    "Line 75: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]",
-    "Line 77: Unexpected errors [\"Unexpected keyword argument 'id'\"]",
-    "Line 100: Unexpected errors [\"Unexpected keyword argument 'id'\", \"Unexpected keyword argument 'name'\"]"
+    "Line 60: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`', 'Unexpected keyword argument `other_name`']",
+    "Line 69: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
+    "Line 75: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
+    "Line 77: Unexpected errors ['Unexpected keyword argument `id`']",
+    "Line 100: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']"
   ],
   "dataclasses_usage.py": [
     "Line 83: Expected 1 errors",
@@ -479,24 +479,24 @@
     "Lines 64, 67: Expected error (tag 'DC2')",
     "Lines 70, 73: Expected error (tag 'DC3')",
     "Line 22: Unexpected errors ['EXPECTED int <: float']",
-    "Line 25: Unexpected errors [\"Missing argument 'quantity_on_hand'\"]",
+    "Line 25: Unexpected errors ['Missing argument `quantity_on_hand`']",
     "Line 35: Unexpected errors ['EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto']",
-    "Line 38: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 39: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 40: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 41: Unexpected errors [\"Missing argument 'flush'\", 'Object of class `InventoryItem` has no attribute `__lt__`']",
-    "Line 42: Unexpected errors [\"Missing argument 'flush'\", 'Object of class `InventoryItem` has no attribute `__le__`']",
-    "Line 43: Unexpected errors [\"Missing argument 'flush'\", 'Object of class `InventoryItem` has no attribute `__gt__`']",
-    "Line 44: Unexpected errors [\"Missing argument 'flush'\", 'Object of class `InventoryItem` has no attribute `__ge__`']",
+    "Line 38: Unexpected errors ['Missing argument `flush`']",
+    "Line 39: Unexpected errors ['Missing argument `flush`']",
+    "Line 40: Unexpected errors ['Missing argument `flush`']",
+    "Line 41: Unexpected errors ['Missing argument `flush`', 'Object of class `InventoryItem` has no attribute `__lt__`']",
+    "Line 42: Unexpected errors ['Missing argument `flush`', 'Object of class `InventoryItem` has no attribute `__le__`']",
+    "Line 43: Unexpected errors ['Missing argument `flush`', 'Object of class `InventoryItem` has no attribute `__gt__`']",
+    "Line 44: Unexpected errors ['Missing argument `flush`', 'Object of class `InventoryItem` has no attribute `__ge__`']",
     "Line 66: Unexpected errors ['EXPECTED Literal[1] <: _MISSING_TYPE']",
     "Line 72: Unexpected errors ['EXPECTED Literal[0] <: InitVar[int]']",
-    "Line 92: Unexpected errors [\"Missing argument 'base'\"]",
-    "Line 102: Unexpected errors [\"Missing argument 'c'\", \"EXPECTED Literal[''] <: int\"]",
+    "Line 92: Unexpected errors ['Missing argument `base`']",
+    "Line 102: Unexpected errors ['Missing argument `c`', \"EXPECTED Literal[''] <: int\"]",
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed']",
     "Line 135: Unexpected errors [\"EXPECTED Literal['s'] <: _MISSING_TYPE\"]",
     "Line 185: Unexpected errors [\"EXPECTED Literal['hello'] <: _MISSING_TYPE\"]",
     "Line 186: Unexpected errors [\"EXPECTED () -> Literal['hello'] <: _MISSING_TYPE\"]",
-    "Line 194: Unexpected errors [\"Missing argument 'prop_1'\", \"Missing argument 'prop_3'\"]",
+    "Line 194: Unexpected errors ['Missing argument `prop_1`', 'Missing argument `prop_3`']",
     "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']"
   ],
   "directives_assert_type.py": [
@@ -547,10 +547,10 @@
   "enums_definition.py": [],
   "enums_expansion.py": [
     "Line 53: Expected 1 errors",
-    "Line 23: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 31: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 33: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 50: Unexpected errors [\"Missing argument 'flush'\"]",
+    "Line 23: Unexpected errors ['Missing argument `flush`']",
+    "Line 31: Unexpected errors ['Missing argument `flush`']",
+    "Line 33: Unexpected errors ['Missing argument `flush`']",
+    "Line 50: Unexpected errors ['Missing argument `flush`']",
     "Line 52: Unexpected errors ['assert_type(Literal[CustomFlags.FLAG3], CustomFlags) failed']",
     "Line 63: Unexpected errors ['assert_type(Never, CustomFlags) failed']"
   ],
@@ -571,7 +571,7 @@
     "Line 36: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 37: Unexpected errors ['Literal expression `Pet2` is not an enumeration']",
     "Line 38: Unexpected errors ['Literal expression `Pet2` is not an enumeration']",
-    "Line 75: Unexpected errors [\"Missing argument 'flush'\"]",
+    "Line 75: Unexpected errors ['Missing argument `flush`']",
     "Line 100: Unexpected errors ['assert_type(Literal[TrafficLight.AMBER], Literal[TrafficLight.YELLOW]) failed']",
     "Line 128: Unexpected errors ['Could not find name `reveal_type`', 'revealed type: Literal[2]']"
   ],
@@ -729,8 +729,8 @@
     "Line 15: Unexpected errors ['Expected a callable, got ReturnsSelf']",
     "Line 30: Unexpected errors ['EXPECTED ReturnsSelf <: type[ReturnsSelf]']",
     "Line 50: Unexpected errors ['EXPECTED (self: CallableAttribute) -> int <: (Self) -> int']",
-    "Line 59: Unexpected errors [\"Missing argument 'flush'\"]",
-    "Line 60: Unexpected errors [\"Missing argument 'flush'\", 'TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)']",
+    "Line 59: Unexpected errors ['Missing argument `flush`']",
+    "Line 60: Unexpected errors ['Missing argument `flush`', 'TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)']",
     "Line 63: Unexpected errors ['EXPECTED HasNestedFunction <: Self']",
     "Line 93: Unexpected errors ['Object of class `Foo3` has no attribute `child_value`']"
   ],
@@ -759,14 +759,14 @@
     "Line 92: Expected 1 errors",
     "Line 95: Expected 1 errors",
     "Line 98: Expected 1 errors",
-    "Line 52: Unexpected errors [\"Missing argument 'base'\", 'EXPECTED Literal[0] <: bytearray | bytes | str']",
+    "Line 52: Unexpected errors ['Missing argument `base`', 'EXPECTED Literal[0] <: bytearray | bytes | str']",
     "Line 61: Unexpected errors ['TODO: StmtNonlocal - Bindings::stmt']",
     "Line 66: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']",
     "Line 67: Unexpected errors ['assert_type(str, int) failed']",
-    "Line 85: Unexpected errors [\"Missing argument 'base'\", 'EXPECTED Literal[0] <: bytearray | bytes | str']",
-    "Line 90: Unexpected errors [\"Missing argument 'base'\", 'EXPECTED Literal[1] <: bytearray | bytes | str']",
-    "Line 102: Unexpected errors [\"Missing argument 'base'\", 'EXPECTED Literal[0] <: bytearray | bytes | str']",
-    "Line 106: Unexpected errors [\"Missing argument 'base'\", 'EXPECTED Literal[1] <: bytearray | bytes | str']",
+    "Line 85: Unexpected errors ['Missing argument `base`', 'EXPECTED Literal[0] <: bytearray | bytes | str']",
+    "Line 90: Unexpected errors ['Missing argument `base`', 'EXPECTED Literal[1] <: bytearray | bytes | str']",
+    "Line 102: Unexpected errors ['Missing argument `base`', 'EXPECTED Literal[0] <: bytearray | bytes | str']",
+    "Line 106: Unexpected errors ['Missing argument `base`', 'EXPECTED Literal[1] <: bytearray | bytes | str']",
     "Line 111: Unexpected errors [\"EXPECTED Literal[''] <: Buffer\"]",
     "Line 116: Unexpected errors ['assert_type(int, TypeVar) failed']"
   ],
@@ -1121,7 +1121,7 @@
     "Line 288: Expected 1 errors",
     "Line 289: Expected 1 errors",
     "Line 339: Expected 1 errors",
-    "Line 27: Unexpected errors [\"Missing argument 'mode'\"]",
+    "Line 27: Unexpected errors ['Missing argument `mode`']",
     "Line 102: Unexpected errors ['EXPECTED Literal[2] <: float']",
     "Line 148: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 172: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1130,7 +1130,7 @@
     "Line 194: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 199: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 216: Unexpected errors ['Expected 1 more positional argument']",
-    "Line 217: Unexpected errors [\"Missing argument 'val1'\"]",
+    "Line 217: Unexpected errors ['Missing argument `val1`']",
     "Line 245: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 251: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 266: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1144,7 +1144,7 @@
     "Line 324: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 328: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 333: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 338: Unexpected errors [\"Missing argument 'val1'\"]"
+    "Line 338: Unexpected errors ['Missing argument `val1`']"
   ],
   "protocols_explicit.py": [
     "Line 56: Expected 1 errors",
@@ -1344,7 +1344,7 @@
     "Line 19: Unexpected errors ['assert_type(tuple[int, Any, str], tuple[int, bool, Any]) failed', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 25: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 26: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
-    "Line 31: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer', \"Missing argument 'base'\", 'EXPECTED Literal[1] <: bytearray | bytes | str', \"Missing argument 'base'\", 'EXPECTED Literal[1] <: bytearray | bytes | str']",
+    "Line 31: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer', 'Missing argument `base`', 'EXPECTED Literal[1] <: bytearray | bytes | str', 'Missing argument `base`', 'EXPECTED Literal[1] <: bytearray | bytes | str']",
     "Line 33: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 38: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer', 'TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 39: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
@@ -1371,8 +1371,8 @@
     "Lines 54, 55: Expected error (tag 'Y1')"
   ],
   "typeddicts_operations.py": [
-    "Line 41: Unexpected errors [\"Missing argument 'default'\"]",
-    "Line 60: Unexpected errors ['assert_type(object | Any, str | None) failed', \"Missing argument 'default'\"]",
+    "Line 41: Unexpected errors ['Missing argument `default`']",
+    "Line 60: Unexpected errors ['assert_type(object | Any, str | None) failed', 'Missing argument `default`']",
     "Line 64: Unexpected errors ['TODO: StmtDelete - Bindings::stmt']"
   ],
   "typeddicts_readonly.py": [

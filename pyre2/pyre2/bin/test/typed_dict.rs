@@ -243,11 +243,11 @@ def f6(x: int, y: int, **kwargs: str): ...
 x: Coord = {"x": 1, "y": 2}
 f1(**x)
 f2(**x)  # E: EXPECTED int <: str
-f3(**x)  # E: Unexpected keyword argument 'z'
+f3(**x)  # E: Unexpected keyword argument `z`
 f4(**x)
-f5(**x)  # E: Expected key 'z' to be required
+f5(**x)  # E: Expected key `z` to be required
 f6(**x)  # E: EXPECTED int <: str
-f1(1, **x)  # E: Multiple values for argument 'x'
+f1(1, **x)  # E: Multiple values for argument `x`
     "#,
 );
 
@@ -287,10 +287,10 @@ def g(x: Coord, x2: Coord2, x3: Coord3, x4: Coord4, x5: Coord5):
     f(**x2)
     f(**x3)
     f(**x4)
-    f(**x5)  # E: Missing argument 'x'
+    f(**x5)  # E: Missing argument `x`
 f(x=1, y=2)
 f(x=1, y=2, z=3)
-f(x=1, y=2, z=3, a=4)  # E: Unexpected keyword argument 'a'
+f(x=1, y=2, z=3, a=4)  # E: Unexpected keyword argument `a`
 f(x="", y=2)  # E: EXPECTED Literal[''] <: int
     "#,
 );

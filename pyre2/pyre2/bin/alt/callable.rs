@@ -285,7 +285,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             if let Some(&p_idx) = seen_names.get(name) {
                                 self.error(
                                     kw.range,
-                                    format!("Multiple values for argument '{}'", name),
+                                    format!("Multiple values for argument `{}`", name),
                                 );
                                 params.items()[p_idx].visit(|ty| hint = Some(ty));
                             } else if let Some(&(p_idx, ty, required)) = kwparams.get(name) {
@@ -293,14 +293,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 if required && !field.required {
                                     self.error(
                                         kw.range,
-                                        format!("Expected key '{}' to be required", name),
+                                        format!("Expected key `{}` to be required", name),
                                     );
                                 }
                                 hint = Some(ty)
                             } else if kwargs.is_none() && !kwargs_is_unpack {
                                 self.error(
                                     kw.range,
-                                    format!("Unexpected keyword argument '{}'", name),
+                                    format!("Unexpected keyword argument `{}`", name),
                                 );
                             }
                             hint.iter().for_each(|want| {
@@ -346,14 +346,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     if let Some(&p_idx) = seen_names.get(&id.id) {
                         self.error(
                             kw.range,
-                            format!("Multiple values for argument '{}'", id.id),
+                            format!("Multiple values for argument `{}`", id.id),
                         );
                         params.items()[p_idx].visit(|ty| hint = Some(ty));
                     } else if let Some(&(p_idx, ty, _)) = kwparams.get(&id.id) {
                         seen_names.insert(id.id.clone(), p_idx);
                         hint = Some(ty)
                     } else if kwargs.is_none() {
-                        self.error(kw.range, format!("Unexpected keyword argument '{}'", id.id));
+                        self.error(kw.range, format!("Unexpected keyword argument `{}`", id.id));
                     }
                     self.expr(&kw.value, hint);
                 }
@@ -362,7 +362,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for (name, &(_, want, required)) in kwparams.iter() {
             if !seen_names.contains_key(name) {
                 if splat_kwargs.is_empty() && required {
-                    self.error(range, format!("Missing argument '{}'", name));
+                    self.error(range, format!("Missing argument `{}`", name));
                 }
                 for (ty, range) in &splat_kwargs {
                     self.check_type(want, ty, *range);

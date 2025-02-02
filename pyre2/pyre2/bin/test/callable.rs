@@ -72,8 +72,8 @@ testcase!(
 from typing import Callable
 def test(f: Callable[[], None]):
     f(
-      x=1, # E: Unexpected keyword argument 'x'
-      y="hello" # E: Unexpected keyword argument 'y'
+      x=1, # E: Unexpected keyword argument `x`
+      y="hello" # E: Unexpected keyword argument `y`
     )
 "#,
 );
@@ -135,8 +135,8 @@ test(1, "hello") # OK
 test(x=1, y="hello") # OK
 test(y="hello", x=1) # OK
 test(1, y="hello") # OK
-test(1) # E: Missing argument 'y'
-test(1, "hello", x=2) # E: Multiple values for argument 'x'
+test(1) # E: Missing argument `y`
+test(1, "hello", x=2) # E: Multiple values for argument `x`
 "#,
 );
 
@@ -146,7 +146,7 @@ testcase!(
 def test(x: int, y: str, /): ...
 test(1, "hello") # OK
 test(1) # E: Expected 1 more positional argument
-test(1, y="hello") # E: Expected 1 more positional argument # E: Unexpected keyword argument 'y'
+test(1, y="hello") # E: Expected 1 more positional argument # E: Unexpected keyword argument `y`
 test(1, "hello", 2) # E: Expected 2 positional arguments, got 3
 "#,
 );
@@ -156,9 +156,9 @@ testcase!(
     r#"
 def test(*, x: int, y: str): ...
 test(x=1, y="hello") # OK
-test(1, "hello") # E: Expected 0 positional arguments, got 2 # E: Missing argument 'x' # E: Missing argument 'y'
-test(x=1) # E: Missing argument 'y'
-test(y="hello") # E: Missing argument 'x'
+test(1, "hello") # E: Expected 0 positional arguments, got 2 # E: Missing argument `x` # E: Missing argument `y`
+test(x=1) # E: Missing argument `y`
+test(y="hello") # E: Missing argument `x`
 "#,
 );
 
@@ -182,7 +182,7 @@ testcase!(
     test_defaults,
     r#"
 def test(x: int, y: int = 0, z: str = ""): ...
-test() # E: Missing argument 'x'
+test() # E: Missing argument `x`
 test(0, 1) # OK
 test(0, 1, "foo") # OK
 test(0, 1, "foo", 2) # E: Expected 3 positional arguments
@@ -213,7 +213,7 @@ testcase!(
     r#"
 def test(x: int, y: int, z: int): ...
 test(*(1, 2, 3)) # OK
-test(*(1, 2)) # E: Missing argument 'z'
+test(*(1, 2)) # E: Missing argument `z`
 test(*(1, 2, 3, 4)) # E: Expected 3 positional arguments, got 4
 "#,
 );
@@ -242,7 +242,7 @@ def fixed_same_len_type_err(xs: tuple[int, int, int] | tuple[int, int, str]):
     test(*xs) # E: EXPECTED int | str <: int
 
 def fixed_same_len_too_few(xs: tuple[int, int] | tuple[int, int]):
-    test(*xs) # E: Missing argument 'z'
+    test(*xs) # E: Missing argument `z`
 
 def fixed_diff_len(xs: tuple[int, int] | tuple[int, int, int]):
     test(*xs) # OK (treated as Iterable[int])
@@ -263,7 +263,7 @@ testcase!(
     test_splat_keyword_first,
     r#"
 def test(x: str, y: int, z: int): ...
-test(x="", *(0, 1)) # E: EXPECTED Literal[0] <: str # E: Multiple values for argument 'x' # E: Missing argument 'z'
+test(x="", *(0, 1)) # E: EXPECTED Literal[0] <: str # E: Multiple values for argument `x` # E: Missing argument `z`
 "#,
 );
 
@@ -312,7 +312,7 @@ testcase!(
     r#"
 def f(x: int): ...
 def test(kwargs: dict[int, str]):
-    f(**kwargs) # E: Expected argument after ** to have `str` keys, got: int # E: Missing argument 'x'
+    f(**kwargs) # E: Expected argument after ** to have `str` keys, got: int # E: Missing argument `x`
 "#,
 );
 

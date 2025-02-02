@@ -270,7 +270,7 @@ def outer(f: Callable[P, None]) -> Callable[P, None]:
 
   def bar(*args: P.args, **kwargs: P.kwargs) -> None:
     foo(1, *args, **kwargs)   # Accepted
-    foo(x=1, *args, **kwargs) # Rejected # E: Expected 1 more positional argument # E: Unexpected keyword argument 'x'
+    foo(x=1, *args, **kwargs) # Rejected # E: Expected 1 more positional argument # E: Unexpected keyword argument `x`
 
   return bar
 "#,

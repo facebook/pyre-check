@@ -90,7 +90,7 @@ class C(metaclass=Meta):
     def __init__(self, *args, **kwargs):
         pass
 C(5)
-C()     # E: Missing argument 'x'
+C()     # E: Missing argument `x`
 C("5")  # E: EXPECTED Literal['5'] <: int
     "#,
 );
@@ -104,7 +104,7 @@ class Meta(type):
 class C(metaclass=Meta):
     pass
 # Both of these calls error at runtime.
-C()   # E: Missing argument 'x'
+C()   # E: Missing argument `x`
 C(0)  # E: Expected 0 positional arguments
     "#,
 );
@@ -129,7 +129,7 @@ testcase!(
 class C:
     def __new__[T](cls: type[T], x: int) -> T: ...
 C(5)
-C()     # E: Missing argument 'x'
+C()     # E: Missing argument `x`
 C("5")  # E: EXPECTED Literal['5'] <: int
     "#,
 );
@@ -142,7 +142,7 @@ class C:
     def __init__(self, x: int):
         pass
 C(5)
-C()     # E: Missing argument 'x'
+C()     # E: Missing argument `x`
 C("5")  # E: EXPECTED Literal['5'] <: int
     "#,
 );
@@ -162,9 +162,9 @@ class BadChild(Parent1):
     # Incompatible with inherited __init__
     def __new__[T](cls: type[T], x: int) -> T: ...
 GoodChild(0)
-GoodChild()  # E: Missing argument 'x'
+GoodChild()  # E: Missing argument `x`
 # Both of these calls error at runtime.
-BadChild()   # E: Missing argument 'x'
+BadChild()   # E: Missing argument `x`
 BadChild(0)  # E: Expected 0 positional arguments
     "#,
 );
