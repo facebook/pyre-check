@@ -12,6 +12,7 @@ use ruff_python_ast::ExceptHandler;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Parameters;
 use ruff_python_ast::Stmt;
+use ruff_python_ast::StmtExpr;
 use ruff_python_ast::StmtFunctionDef;
 use ruff_python_ast::StmtReturn;
 use ruff_text_size::Ranged;
@@ -30,7 +31,6 @@ use crate::binding::bindings::LegacyTParamBuilder;
 use crate::binding::scope::FlowStyle;
 use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
-use crate::binding::util::is_ellipse;
 use crate::config::Config;
 use crate::dunder;
 use crate::graph::index::Idx;
@@ -343,4 +343,16 @@ fn function_last_expressions<'a>(x: &'a [Stmt], config: &Config) -> Option<Vec<&
     let mut res = Vec::new();
     f(config, x, &mut res)?;
     Some(res)
+}
+
+fn is_ellipse(x: &[Stmt]) -> bool {
+    match x {
+        [
+            Stmt::Expr(StmtExpr {
+                value: box Expr::EllipsisLiteral(_),
+                ..
+            }),
+        ] => true,
+        _ => false,
+    }
 }
