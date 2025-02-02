@@ -7,6 +7,7 @@
 
 pub mod binding;
 pub mod bindings;
+pub mod expr;
 pub mod function;
 pub mod narrow;
 pub mod scope;
