@@ -115,7 +115,7 @@ pub struct BindingsBuilder<'a> {
     pub module_info: ModuleInfo,
     pub lookup: &'a dyn LookupExport,
     pub config: &'a Config,
-    pub errors: &'a ErrorCollector,
+    errors: &'a ErrorCollector,
     uniques: &'a UniqueFactory,
     pub scopes: Scopes,
     pub functions: Vec1<FuncInfo>,

@@ -202,8 +202,7 @@ impl<'a> BindingsBuilder<'a> {
                         None => Binding::AnyType(AnyStyle::Implicit),
                     };
                     if !self.bind_attr_if_self(&attr, value_binding, Some(ann_key)) {
-                        self.errors.add(
-                            &self.module_info,
+                        self.error(
                             x.range,
                             format!(
                                 "Type cannot be declared in assignment to non-self attribute `{}.{}`",
