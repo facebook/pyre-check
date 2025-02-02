@@ -11,7 +11,6 @@ use std::sync::Arc;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
-use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
@@ -695,7 +694,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::YieldTypeOfYield(x) => match &x.value {
                 Some(x) => self.expr(x, None),
-                None => self.expr(&Expr::NoneLiteral(ExprNoneLiteral { range: x.range }), None),
+                None => Type::None,
             },
             Binding::YieldTypeOfYieldFrom(x) => {
                 let gen_type = self.expr(&x.value, None);
