@@ -252,16 +252,18 @@ impl NarrowOps {
 }
 
 fn expr_to_names<'a>(expr: &'a Expr) -> Vec<&'a ExprName> {
-    match expr {
-        Expr::Name(name) => vec![name],
-        Expr::Named(ExprNamed {
-            range: _,
-            target,
-            value,
-        }) => expr_to_names(target)
-            .into_iter()
-            .chain(expr_to_names(value))
-            .collect(),
-        _ => Vec::new(),
+    fn f<'a>(expr: &'a Expr, res: &mut Vec<&'a ExprName>) {
+        match expr {
+            Expr::Name(name) => res.push(name),
+            Expr::Named(ExprNamed { target, value, .. }) => {
+                f(target, res);
+                f(value, res);
+            }
+            _ => {}
+        }
     }
+
+    let mut res = Vec::new();
+    f(expr, &mut res);
+    res
 }
