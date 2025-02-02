@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::borrow::Cow;
+
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Arguments;
@@ -511,10 +513,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.expr_infer_with_hint(x, None)
     }
 
-    fn yield_expr(&self, x: ExprYield) -> Expr {
-        match x.value {
-            Some(x) => *x,
-            None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range }),
+    fn yield_expr<'b>(&self, x: &'b ExprYield) -> Cow<'b, Expr> {
+        match &x.value {
+            Some(x) => Cow::Borrowed(&**x),
+            None => Cow::Owned(Expr::NoneLiteral(ExprNoneLiteral { range: x.range })),
         }
     }
 
@@ -884,7 +886,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let yield_expr_type = &self
                     .get(&Key::YieldTypeOfYieldAnnotation(x.range))
                     .arc_clone();
-                let yield_value = self.yield_expr(x.clone());
+                let yield_value = self.yield_expr(x);
                 let inferred_expr_type = &self.expr_infer(&yield_value);
 
                 self.check_type(yield_expr_type, inferred_expr_type, x.range);
