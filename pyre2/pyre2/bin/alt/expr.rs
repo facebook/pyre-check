@@ -885,12 +885,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Yield(_) => {
                 let yield_expr_type = &self
-                    .get(&Key::YieldTypeOfYieldAnnotation(x.clone().range()))
+                    .get(&Key::YieldTypeOfYieldAnnotation(x.range()))
                     .arc_clone();
                 let yield_value = self.yield_expr(x.clone());
                 let inferred_expr_type = &self.expr_infer(&yield_value);
 
-                self.check_type(yield_expr_type, inferred_expr_type, x.clone().range());
+                self.check_type(yield_expr_type, inferred_expr_type, x.range());
 
                 self.get(&Key::SendTypeOfYieldAnnotation(x.range()))
                     .arc_clone()
@@ -898,11 +898,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::YieldFrom(y) => {
                 let inferred_expr_type = &self.expr_infer(&y.value);
 
-                let final_generator_type = &self
-                    .get(&Key::TypeOfYieldAnnotation(x.clone().range()))
-                    .arc_clone();
+                let final_generator_type =
+                    &self.get(&Key::TypeOfYieldAnnotation(x.range())).arc_clone();
 
-                self.check_type(final_generator_type, inferred_expr_type, x.clone().range());
+                self.check_type(final_generator_type, inferred_expr_type, x.range());
 
                 self.get(&Key::ReturnTypeOfYieldAnnotation(x.range()))
                     .arc_clone()
