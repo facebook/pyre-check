@@ -370,29 +370,6 @@ impl<'a> BindingsBuilder<'a> {
         self.scopes.as_special_export(e, self.module_info.name())
     }
 
-    fn is_annotated(&self, e: &Expr) -> bool {
-        self.as_special_export(e) == Some(SpecialExport::Annotated)
-    }
-
-    fn is_type_var(&self, e: &Expr) -> bool {
-        self.as_special_export(e) == Some(SpecialExport::TypeVar)
-    }
-
-    fn is_type_alias(&self, e: &Expr) -> bool {
-        self.as_special_export(e) == Some(SpecialExport::TypeAlias)
-    }
-
-    fn is_literal(&self, e: &Expr) -> bool {
-        self.as_special_export(e) == Some(SpecialExport::Literal)
-    }
-
-    fn is_enum(&self, name: &Expr) -> bool {
-        match self.as_special_export(name) {
-            Some(SpecialExport::Enum | SpecialExport::IntEnum | SpecialExport::StrEnum) => true,
-            _ => false,
-        }
-    }
-
     fn error(&self, range: TextRange, msg: String) {
         self.errors.add(&self.module_info, range, msg);
     }
@@ -605,7 +582,9 @@ impl<'a> BindingsBuilder<'a> {
                 };
                 self.ensure_name(&name, binding);
             }
-            Expr::Subscript(ExprSubscript { value, .. }) if self.is_literal(value) => {
+            Expr::Subscript(ExprSubscript { value, .. })
+                if self.as_special_export(value) == Some(SpecialExport::Literal) =>
+            {
                 // Don't go inside a literal, since you might find strings which are really strings, not string-types
                 self.ensure_expr(x);
             }
@@ -613,7 +592,9 @@ impl<'a> BindingsBuilder<'a> {
                 value,
                 slice: box Expr::Tuple(tup),
                 ..
-            }) if self.is_annotated(value) && !tup.is_empty() => {
+            }) if self.as_special_export(value) == Some(SpecialExport::Annotated)
+                && !tup.is_empty() =>
+            {
                 // Only go inside the first argument to Annotated, the rest are non-type metadata.
                 self.ensure_type(&mut *value, tparams_builder);
                 self.ensure_type(&mut tup.elts[0], tparams_builder);
@@ -1604,7 +1585,9 @@ impl<'a> BindingsBuilder<'a> {
                         range: _,
                         func,
                         arguments,
-                    }) if self.is_type_var(func) && !arguments.is_empty() => {
+                    }) if self.as_special_export(func) == Some(SpecialExport::TypeVar)
+                        && !arguments.is_empty() =>
+                    {
                         self.ensure_expr(func);
                         // The constraints (i.e., any positional arguments after the first)
                         // and some keyword arguments are types.
@@ -1625,8 +1608,10 @@ impl<'a> BindingsBuilder<'a> {
                         range: _,
                         func: box ref func @ Expr::Name(ref base_name),
                         arguments,
-                    }) if self.is_enum(func)
-                        && arguments.keywords.is_empty()
+                    }) if matches!(
+                        self.as_special_export(func),
+                        Some(SpecialExport::Enum | SpecialExport::IntEnum | SpecialExport::StrEnum)
+                    ) && arguments.keywords.is_empty()
                         && let Some(name) = &name =>
                     {
                         self.ensure_expr(func);
@@ -1690,7 +1675,7 @@ impl<'a> BindingsBuilder<'a> {
 
                     let binding = if let Some(mut value) = value {
                         // Handle forward references in explicit type aliases.
-                        if self.is_type_alias(&x.annotation) {
+                        if self.as_special_export(&x.annotation) == Some(SpecialExport::TypeAlias) {
                             self.ensure_type(&mut value, &mut None);
                         } else {
                             self.ensure_expr(&value);
