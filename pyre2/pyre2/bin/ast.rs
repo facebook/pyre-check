@@ -10,6 +10,7 @@ use std::slice;
 
 use ruff_python_ast::DictItem;
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprBooleanLiteral;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprStringLiteral;
@@ -20,7 +21,9 @@ use ruff_python_ast::Parameter;
 use ruff_python_ast::ParameterWithDefault;
 use ruff_python_ast::Parameters;
 use ruff_python_ast::Pattern;
+use ruff_python_ast::PatternMatchSingleton;
 use ruff_python_ast::PySourceType;
+use ruff_python_ast::Singleton;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtIf;
 use ruff_python_ast::StmtReturn;
@@ -267,6 +270,16 @@ impl Ast {
         match &x.value {
             Some(x) => Cow::Borrowed(&**x),
             None => Cow::Owned(Expr::NoneLiteral(ExprNoneLiteral { range: x.range })),
+        }
+    }
+
+    pub fn pattern_match_singleton_to_expr(x: &PatternMatchSingleton) -> Expr {
+        match x.value {
+            Singleton::None => Expr::NoneLiteral(ExprNoneLiteral::default()),
+            Singleton::True | Singleton::False => Expr::BooleanLiteral(ExprBooleanLiteral {
+                range: TextRange::default(),
+                value: matches!(x.value, Singleton::True),
+            }),
         }
     }
 }

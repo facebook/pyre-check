@@ -20,11 +20,9 @@ use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprBoolOp;
-use ruff_python_ast::ExprBooleanLiteral;
 use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprLambda;
 use ruff_python_ast::ExprName;
-use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprSubscript;
 use ruff_python_ast::ExprYield;
 use ruff_python_ast::ExprYieldFrom;
@@ -32,7 +30,6 @@ use ruff_python_ast::Identifier;
 use ruff_python_ast::Parameters;
 use ruff_python_ast::Pattern;
 use ruff_python_ast::PatternKeyword;
-use ruff_python_ast::Singleton;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
@@ -1452,15 +1449,7 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Pattern::MatchSingleton(p) => {
-                let value = match p.value {
-                    Singleton::None => Expr::NoneLiteral(ExprNoneLiteral::default()),
-                    Singleton::True | Singleton::False => {
-                        Expr::BooleanLiteral(ExprBooleanLiteral {
-                            range: TextRange::default(),
-                            value: matches!(p.value, Singleton::True),
-                        })
-                    }
-                };
+                let value = Ast::pattern_match_singleton_to_expr(&p);
                 if let Some(subject_name) = subject_name {
                     NarrowOps(
                         smallmap! { subject_name.clone() => (NarrowOp::Is(NarrowVal::Expr(Box::new(value))), p.range()) },
