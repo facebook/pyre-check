@@ -229,6 +229,37 @@ module Make (Analysis : ANALYSIS) = struct
         Scheduler.map_reduce scheduler ~policy ~initial:() ~reduce:(fun () () -> ())
       in
       T.of_alist_parallel ~map_reduce list
+
+
+    let join_with_registry_sequential models ~model_join registry =
+      T.merge_with_alist_sequential models ~f:model_join (Registry.to_alist registry)
+
+
+    let fold_sequential models ~init ~f =
+      T.fold_sequential models ~init ~f:(fun ~key ~value accumulator ->
+          f ~target:key ~model:value accumulator)
+
+
+    let map_parallel_targets models ~scheduler ~f ~targets =
+      let policy =
+        Scheduler.Policy.fixed_chunk_size
+          ~minimum_chunks_per_worker:1
+          ~minimum_chunk_size:1
+          ~preferred_chunk_size:1000
+          ()
+      in
+      let map_reduce =
+        Scheduler.map_reduce scheduler ~policy ~initial:() ~reduce:(fun () () -> ())
+      in
+      T.map_parallel_keys
+        models
+        ~map_reduce
+        ~f:(fun ~key ~value -> f ~target:key ~model:value)
+        ~keys:targets
+
+
+    let map_parallel models ~scheduler ~f =
+      map_parallel_targets models ~scheduler ~f ~targets:(T.keys models)
   end
 
   module Epoch = struct
@@ -863,26 +894,11 @@ module Make (Analysis : ANALYSIS) = struct
 
   let cleanup { shared_models_handle; _ } = State.cleanup shared_models_handle
 
-  let update_models ~scheduler ~scheduler_policy ~update_model { shared_models_handle; _ } =
-    let targets = SharedModels.keys shared_models_handle in
-    let shared_models_handle = SharedModels.preserve_key_only shared_models_handle in
-    let update_model target =
-      match SharedModels.PreserveKeyOnly.get shared_models_handle target with
-      | None -> ()
-      | Some model ->
-          let _ =
-            SharedModels.PreserveKeyOnly.set shared_models_handle target (update_model model)
-          in
-          ()
+  let update_models ~scheduler ~update_model ({ shared_models_handle; _ } as result) =
+    let shared_models_handle =
+      SharedModels.map_parallel shared_models_handle ~scheduler ~f:update_model
     in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:scheduler_policy
-      ~initial:()
-      ~map:(List.iter ~f:update_model)
-      ~reduce:(fun () () -> ())
-      ~inputs:targets
-      ()
+    { result with shared_models_handle }
 end
 
 module WithoutLogging = struct

@@ -343,6 +343,10 @@ module FirstClassWithKeys : sig
 
     val create : unit -> t
 
+    val keys : t -> key list
+
+    val cleanup : clean_old:bool -> t -> unit
+
     val of_alist_sequential : (key * value) list -> t
 
     val of_alist_parallel
@@ -356,9 +360,22 @@ module FirstClassWithKeys : sig
 
     val to_alist : t -> (key * value) list
 
-    val keys : t -> key list
+    val merge_with_alist_sequential : t -> f:(value -> value -> value) -> (key * value) list -> t
 
-    val cleanup : clean_old:bool -> t -> unit
+    val fold_sequential : t -> init:'a -> f:(key:key -> value:value -> 'a -> 'a) -> 'a
+
+    val map_parallel_keys
+      :  t ->
+      map_reduce:(map:(key list -> unit) -> inputs:key list -> unit -> unit) ->
+      f:(key:key -> value:value -> value) ->
+      keys:key list ->
+      t
+
+    val map_parallel
+      :  t ->
+      map_reduce:(map:(key list -> unit) -> inputs:key list -> unit -> unit) ->
+      f:(key:key -> value:value -> value) ->
+      t
 
     val oldify_batch : t -> KeySet.t -> t
 
@@ -384,6 +401,8 @@ module FirstClassWithKeys : sig
       val merge_same_handle_disjoint_keys: smaller:t -> larger:t -> t
 
       val create_empty : t -> t
+
+      val keys : t -> key list
     end
 
     val add_only : t -> AddOnly.t

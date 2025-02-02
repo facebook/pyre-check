@@ -206,7 +206,10 @@ let compute
       ~epoch:Fixpoint.Epoch.initial
       ~shared_models
   in
-  let drop_decorated_targets ({ CallGraph.HigherOrderCallGraph.call_graph; _ } as model) =
+  let drop_decorated_targets
+      ~target:_
+      ~model:({ CallGraph.HigherOrderCallGraph.call_graph; _ } as model)
+    =
     {
       model with
       CallGraph.HigherOrderCallGraph.call_graph =
@@ -214,7 +217,7 @@ let compute
     }
   in
   let timer = Timer.start () in
-  Fixpoint.update_models ~scheduler ~scheduler_policy ~update_model:drop_decorated_targets fixpoint;
+  let fixpoint = Fixpoint.update_models fixpoint ~scheduler ~update_model:drop_decorated_targets in
   Log.info "Dropping decorated targets in models took %.2fs" (Timer.stop_in_sec timer);
   fixpoint
 

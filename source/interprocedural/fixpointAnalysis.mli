@@ -182,6 +182,31 @@ module Make (Analysis : ANALYSIS) : sig
     val targets : t -> Target.t list
 
     val of_alist_parallel : scheduler:Scheduler.t -> (Target.t * Analysis.Model.t) list -> t
+
+    val join_with_registry_sequential
+      :  t ->
+      model_join:(Analysis.Model.t -> Analysis.Model.t -> Analysis.Model.t) ->
+      Registry.t ->
+      t
+
+    val fold_sequential
+      :  t ->
+      init:'a ->
+      f:(target:Target.t -> model:Analysis.Model.t -> 'a -> 'a) ->
+      'a
+
+    val map_parallel_targets
+      :  t ->
+      scheduler:Scheduler.t ->
+      f:(target:Target.t -> model:Analysis.Model.t -> Analysis.Model.t) ->
+      targets:Target.t list ->
+      t
+
+    val map_parallel
+      :  t ->
+      scheduler:Scheduler.t ->
+      f:(target:Target.t -> model:Analysis.Model.t -> Analysis.Model.t) ->
+      t
   end
 
   module Epoch : sig
@@ -231,10 +256,9 @@ module Make (Analysis : ANALYSIS) : sig
 
   val update_models
     :  scheduler:Scheduler.t ->
-    scheduler_policy:Scheduler.Policy.t ->
-    update_model:(Analysis.Model.t -> Analysis.Model.t) ->
+    update_model:(target:Target.t -> model:Analysis.Model.t -> Analysis.Model.t) ->
     t ->
-    unit
+    t
 end
 
 module WithoutLogging : LOGGER

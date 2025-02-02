@@ -1161,6 +1161,10 @@ module FirstClassWithKeys = struct
 
     val create : unit -> t
 
+    val keys : t -> key list
+
+    val cleanup : clean_old:bool -> t -> unit
+
     val of_alist_sequential : (key * value) list -> t
 
     val of_alist_parallel
@@ -1174,9 +1178,22 @@ module FirstClassWithKeys = struct
 
     val to_alist : t -> (key * value) list
 
-    val keys : t -> key list
+    val merge_with_alist_sequential : t -> f:(value -> value -> value) -> (key * value) list -> t
 
-    val cleanup : clean_old:bool -> t -> unit
+    val fold_sequential : t -> init:'a -> f:(key:key -> value:value -> 'a -> 'a) -> 'a
+
+    val map_parallel_keys
+      :  t ->
+      map_reduce:(map:(key list -> unit) -> inputs:key list -> unit -> unit) ->
+      f:(key:key -> value:value -> value) ->
+      keys:key list ->
+      t
+
+    val map_parallel
+      :  t ->
+      map_reduce:(map:(key list -> unit) -> inputs:key list -> unit -> unit) ->
+      f:(key:key -> value:value -> value) ->
+      t
 
     val oldify_batch : t -> KeySet.t -> t
 
@@ -1202,6 +1219,8 @@ module FirstClassWithKeys = struct
       val merge_same_handle_disjoint_keys: smaller:t -> larger:t -> t
 
       val create_empty : t -> t
+
+      val keys : t -> key list
     end
 
     val add_only : t -> AddOnly.t
@@ -1242,6 +1261,8 @@ module FirstClassWithKeys = struct
     type value = Value.t
 
     let create () = { Handle.first_class_handle = FirstClass.create (); keys = [] }
+
+    let keys { Handle.keys; _} = keys
 
     (* Remove the table from shared memory *)
     let cleanup ~clean_old { Handle.first_class_handle; keys } =
@@ -1295,8 +1316,57 @@ module FirstClassWithKeys = struct
              | Some value -> Some (key, value)
              | None -> None)
 
+    let merge_with_alist_sequential { Handle.first_class_handle; keys = existing_keys } ~f list =
+      let first_class_handle =
+        let () =
+          List.iter
+            ~f:(fun (key, new_value) ->
+              let value =
+                match FirstClass.get first_class_handle key with
+                | Some existing_value ->
+                    let value = f existing_value new_value in
+                    let () = FirstClass.remove first_class_handle key in
+                    value
+                | None -> new_value
+              in
+              FirstClass.add first_class_handle key value)
+            list
+        in
+        first_class_handle
+      in
+      let keys =
+        let new_keys = list |> List.map ~f:fst |> FirstClass.KeySet.of_list in
+        let () =
+          (* Sanity check *)
+          if not (Int.equal (FirstClass.KeySet.cardinal new_keys) (List.length list)) then
+            failwith "merge_with_alist_sequential: duplicate key"
+        in
+        FirstClass.KeySet.union (FirstClass.KeySet.of_list existing_keys) new_keys
+        |> FirstClass.KeySet.elements
+      in
+      { Handle.first_class_handle; keys }
 
-    let keys { Handle.keys; _} = keys
+    let fold_sequential { Handle.first_class_handle; keys } ~init ~f =
+      List.fold ~init ~f:(fun accumulator key ->
+          match FirstClass.get first_class_handle key with
+          | Some value -> f ~key ~value accumulator
+          | None -> accumulator) keys
+
+    let map_parallel_keys ({ Handle.first_class_handle; _ } as handle) ~map_reduce ~f ~keys =
+      let map key =
+        match FirstClass.get first_class_handle key with
+        | Some value ->
+            let value = f ~key ~value in
+            let () = FirstClass.remove first_class_handle key in
+            let () = FirstClass.add first_class_handle key value in
+            ()
+        | None -> ()
+      in
+      let () = map_reduce ~map:(List.iter ~f:map) ~inputs:keys () in
+      handle
+
+    let map_parallel ({ Handle.keys; _} as handle) ~map_reduce ~f =
+      map_parallel_keys handle ~map_reduce ~f ~keys
 
     let oldify_batch ({ Handle.first_class_handle; _} as handle) batch =
       let () = FirstClass.oldify_batch first_class_handle batch in
@@ -1349,6 +1419,8 @@ module FirstClassWithKeys = struct
       (* Create a table with no keys but using the same handle, so we can accumulate
        * key-value pairs. This is usually used for map-reduce operations. *)
       let create_empty { Handle.first_class_handle; _} = { Handle.first_class_handle; keys = [] }
+
+      let keys { Handle.keys; _} = keys
     end
 
     let add_only = Core.Fn.id
