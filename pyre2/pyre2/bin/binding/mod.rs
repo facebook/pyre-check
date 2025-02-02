@@ -13,4 +13,5 @@ pub mod function;
 pub mod narrow;
 pub mod pattern;
 pub mod scope;
+pub mod stmt;
 pub mod table;
