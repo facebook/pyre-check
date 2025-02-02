@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::test::util::TestEnv;
 use crate::testcase;
 
 testcase!(
@@ -259,5 +260,54 @@ def f(c: C[int]):
     assert_type(x, list[int])
 bad1: C.X  # E: Generic attribute `X` of class `C` is not visible on the class
 bad2: C[int].X  # E: Generic attribute `X` of class `C` is not visible on the class
+    "#,
+);
+
+testcase!(
+    test_union_alias,
+    r#"
+from typing import TypeAlias
+StringOrInt: TypeAlias = str | int
+x: StringOrInt = 1
+"#,
+);
+
+testcase!(
+    test_alias_import,
+    TestEnv::one(
+        "foo",
+        "from typing import TypeAlias\nStringOrInt: TypeAlias = str | int"
+    ),
+    r#"
+from foo import StringOrInt
+x: StringOrInt = 1
+"#,
+);
+
+testcase!(
+    test_union_none,
+    r#"
+from typing import TypeAlias
+NoneOrInt: TypeAlias = None | int
+IntOrNone: TypeAlias = int | None
+NoneOrStr = None | str
+StrOrNone = str | None
+
+a: NoneOrInt = None
+b: IntOrNone = 1
+c: NoneOrStr = "test"
+d: StrOrNone = None
+e: NoneOrInt = "test"  # E: Literal['test'] <: int | None
+"#,
+);
+
+testcase!(
+    test_type_alias_full_name,
+    r#"
+import typing
+from typing import assert_type
+X: typing.TypeAlias = int
+def f(x: X | str):
+    assert_type(x, int | str)
     "#,
 );

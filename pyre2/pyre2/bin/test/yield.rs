@@ -235,3 +235,49 @@ def generator2(x: int):
 assert_type(generator2(1), Generator[int, Any, Generator[int, None, None]])
 "#,
 );
+
+testcase!(
+    test_await_simple,
+    r#"
+from typing import Any, Awaitable, assert_type
+class Foo(Awaitable[int]):
+    pass
+async def bar() -> str: ...
+
+async def test() -> None:
+    assert_type(await Foo(), int)
+    assert_type(await bar(), str)
+"#,
+);
+
+testcase!(
+    test_await_literal,
+    r#"
+from typing import Awaitable, Literal
+class Foo(Awaitable[Literal[42]]):
+    pass
+async def test() -> Literal[42]:
+    return await Foo()
+"#,
+);
+
+testcase!(
+    test_await_non_awaitable,
+    r#"
+async def test() -> None:
+    await 42  # E: Expression is not awaitable
+"#,
+);
+
+testcase_with_bug!(
+    "TODO(yangdanny) Protocol checking",
+    test_await_wrong_await_return_type,
+    r#"
+class Foo:
+    def __await__(self) -> int:
+        ...
+
+async def test() -> None:
+    await Foo()  # this should be an error because the return type of __await__ doesn't match the protocol
+"#,
+);

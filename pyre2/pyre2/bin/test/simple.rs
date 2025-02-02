@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::test::util::TestEnv;
 use crate::testcase;
 use crate::testcase_with_bug;
 
@@ -199,27 +198,6 @@ assert_type(foo(), C)
 );
 
 testcase!(
-    test_union_alias,
-    r#"
-from typing import TypeAlias
-StringOrInt: TypeAlias = str | int
-x: StringOrInt = 1
-"#,
-);
-
-testcase!(
-    test_alias_import,
-    TestEnv::one(
-        "foo",
-        "from typing import TypeAlias\nStringOrInt: TypeAlias = str | int"
-    ),
-    r#"
-from foo import StringOrInt
-x: StringOrInt = 1
-"#,
-);
-
-testcase!(
     test_type_as_string,
     r#"
 class Foo: ...
@@ -235,23 +213,6 @@ testcase!(
 from typing import assert_type
 assert_type(__file__, str)
 assert_type(__name__, str)
-"#,
-);
-
-testcase!(
-    test_union_none,
-    r#"
-from typing import TypeAlias
-NoneOrInt: TypeAlias = None | int
-IntOrNone: TypeAlias = int | None
-NoneOrStr = None | str
-StrOrNone = str | None
-
-a: NoneOrInt = None
-b: IntOrNone = 1
-c: NoneOrStr = "test"
-d: StrOrNone = None
-e: NoneOrInt = "test"  # E: Literal['test'] <: int | None
 "#,
 );
 
@@ -510,17 +471,6 @@ assert_type(0 if True else 1, Literal[0])
 assert_type(0 if False else 1, Literal[1])
 assert_type(0 if derp() else 1, Literal[0] | Literal[1])
 "#,
-);
-
-testcase!(
-    test_type_alias_full_name,
-    r#"
-import typing
-from typing import assert_type
-X: typing.TypeAlias = int
-def f(x: X | str):
-    assert_type(x, int | str)
-    "#,
 );
 
 testcase!(
@@ -890,20 +840,6 @@ def foo(x: int):
 );
 
 testcase!(
-    test_await_simple,
-    r#"
-from typing import Any, Awaitable, assert_type
-class Foo(Awaitable[int]):
-    pass
-async def bar() -> str: ...
-
-async def test() -> None:
-    assert_type(await Foo(), int)
-    assert_type(await bar(), str)
-"#,
-);
-
-testcase!(
     test_generic_create_literal,
     r#"
 from typing import assert_type, Literal
@@ -926,38 +862,6 @@ class Foo[T]:
 
 def test(x: Foo[Literal[42]]) -> None:
     assert_type(x.get(), Literal[42])
-"#,
-);
-
-testcase!(
-    test_await_literal,
-    r#"
-from typing import Awaitable, Literal
-class Foo(Awaitable[Literal[42]]):
-    pass
-async def test() -> Literal[42]:
-    return await Foo()
-"#,
-);
-
-testcase!(
-    test_await_non_awaitable,
-    r#"
-async def test() -> None:
-    await 42  # E: Expression is not awaitable
-"#,
-);
-
-testcase_with_bug!(
-    "TODO(yangdanny) Protocol checking",
-    test_await_wrong_await_return_type,
-    r#"
-class Foo:
-    def __await__(self) -> int:
-        ...
-
-async def test() -> None:
-    await Foo()  # this should be an error because the return type of __await__ doesn't match the protocol
 "#,
 );
 
