@@ -39,7 +39,6 @@ use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
-use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use starlark_map::smallmap;
@@ -367,44 +366,8 @@ impl<'a> BindingsBuilder<'a> {
         self.errors.todo(&self.module_info, msg, x);
     }
 
-    fn get_flow_info(&self, name: &Name) -> Option<&FlowInfo> {
-        for scope in self.scopes.iter_rev() {
-            if let Some(flow) = scope.flow.info.get(name) {
-                return Some(flow);
-            }
-        }
-        None
-    }
-
     fn as_special_export(&self, e: &Expr) -> Option<SpecialExport> {
-        // Only works for things with `Foo` or `source.Foo`.
-        // Does not work for things with nested modules - but no SpecialExport's have that.
-        match e {
-            Expr::Name(name) => {
-                let name = &name.id;
-                let special = SpecialExport::new(name)?;
-                let flow = self.get_flow_info(name)?;
-                match flow.style {
-                    Some(FlowStyle::Import(m)) if special.defined_in(m) => Some(special),
-                    _ if special.defined_in(self.module_info.name()) => Some(special),
-                    _ => None,
-                }
-            }
-            Expr::Attribute(ExprAttribute {
-                value: box Expr::Name(module),
-                attr: name,
-                ..
-            }) => {
-                let special = SpecialExport::new(&name.id)?;
-                let flow = self.get_flow_info(&module.id)?;
-                match flow.style {
-                    Some(FlowStyle::MergeableImport(m)) if special.defined_in(m) => Some(special),
-                    Some(FlowStyle::ImportAs(m)) if special.defined_in(m) => Some(special),
-                    _ => None,
-                }
-            }
-            _ => None,
-        }
+        self.scopes.as_special_export(e, self.module_info.name())
     }
 
     fn is_annotated(&self, e: &Expr) -> bool {
@@ -872,28 +835,6 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn update_flow_info(
-        &mut self,
-        name: &Name,
-        key: Idx<Key>,
-        style: Option<FlowStyle>,
-    ) -> Option<Idx<KeyAnnotation>> {
-        match self.scopes.current_mut().flow.info.entry(name.clone()) {
-            Entry::Occupied(mut e) => {
-                // if there was a previous annotation, reuse that
-                let style = style.or_else(|| {
-                    e.get().ann().map(|ann| FlowStyle::Annotated {
-                        ann,
-                        is_initialized: true,
-                    })
-                });
-                *e.get_mut() = FlowInfo { key, style };
-                e.get().ann()
-            }
-            Entry::Vacant(e) => e.insert(FlowInfo { key, style }).ann(),
-        }
-    }
-
     /// Return the annotation that should be used at the moment, if one was provided.
     fn bind_key(
         &mut self,
@@ -901,7 +842,7 @@ impl<'a> BindingsBuilder<'a> {
         key: Idx<Key>,
         style: Option<FlowStyle>,
     ) -> Option<Idx<KeyAnnotation>> {
-        let annotation = self.update_flow_info(name, key, style);
+        let annotation = self.scopes.update_flow_info(name, key, style);
         let info = self.scopes.current().stat.0.get(name).unwrap_or_else(|| {
             let module = self.module_info.name();
             panic!("Name `{name}` not found in static scope of module `{module}`")
@@ -1626,7 +1567,7 @@ impl<'a> BindingsBuilder<'a> {
                     Key::Narrow(name.clone(), *op_range, use_range),
                     Binding::Narrow(name_key, op.clone()),
                 );
-                self.update_flow_info(name, binding_key, None);
+                self.scopes.update_flow_info(name, binding_key, None);
             }
         }
     }

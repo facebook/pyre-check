@@ -10,10 +10,12 @@ use std::fmt::Debug;
 use parse_display::Display;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Stmt;
 use ruff_text_size::TextRange;
+use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use vec1::Vec1;
 
@@ -25,6 +27,7 @@ use crate::config::Config;
 use crate::export::definitions::DefinitionStyle;
 use crate::export::definitions::Definitions;
 use crate::export::exports::LookupExport;
+use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
@@ -307,5 +310,67 @@ impl Scopes {
 
     pub fn iter_rev_mut(&mut self) -> impl Iterator<Item = &mut Scope> {
         self.0.iter_mut().rev()
+    }
+
+    pub fn update_flow_info(
+        &mut self,
+        name: &Name,
+        key: Idx<Key>,
+        style: Option<FlowStyle>,
+    ) -> Option<Idx<KeyAnnotation>> {
+        match self.current_mut().flow.info.entry(name.clone()) {
+            Entry::Occupied(mut e) => {
+                // if there was a previous annotation, reuse that
+                let style = style.or_else(|| {
+                    e.get().ann().map(|ann| FlowStyle::Annotated {
+                        ann,
+                        is_initialized: true,
+                    })
+                });
+                *e.get_mut() = FlowInfo { key, style };
+                e.get().ann()
+            }
+            Entry::Vacant(e) => e.insert(FlowInfo { key, style }).ann(),
+        }
+    }
+
+    fn get_flow_info(&self, name: &Name) -> Option<&FlowInfo> {
+        for scope in self.iter_rev() {
+            if let Some(flow) = scope.flow.info.get(name) {
+                return Some(flow);
+            }
+        }
+        None
+    }
+
+    pub fn as_special_export(&self, e: &Expr, current_module: ModuleName) -> Option<SpecialExport> {
+        // Only works for things with `Foo` or `source.Foo`.
+        // Does not work for things with nested modules - but no SpecialExport's have that.
+        match e {
+            Expr::Name(name) => {
+                let name = &name.id;
+                let special = SpecialExport::new(name)?;
+                let flow = self.get_flow_info(name)?;
+                match flow.style {
+                    Some(FlowStyle::Import(m)) if special.defined_in(m) => Some(special),
+                    _ if special.defined_in(current_module) => Some(special),
+                    _ => None,
+                }
+            }
+            Expr::Attribute(ExprAttribute {
+                value: box Expr::Name(module),
+                attr: name,
+                ..
+            }) => {
+                let special = SpecialExport::new(&name.id)?;
+                let flow = self.get_flow_info(&module.id)?;
+                match flow.style {
+                    Some(FlowStyle::MergeableImport(m)) if special.defined_in(m) => Some(special),
+                    Some(FlowStyle::ImportAs(m)) if special.defined_in(m) => Some(special),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
     }
 }
