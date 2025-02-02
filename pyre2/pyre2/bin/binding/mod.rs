@@ -11,4 +11,3 @@ pub mod function;
 pub mod narrow;
 pub mod scope;
 pub mod table;
-pub mod util;

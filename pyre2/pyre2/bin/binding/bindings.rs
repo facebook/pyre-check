@@ -10,10 +10,12 @@ use std::fmt::Debug;
 use std::fmt::Display;
 use std::mem;
 use std::sync::Arc;
+use std::sync::LazyLock;
 
 use dupe::Dupe;
 use itertools::Either;
 use itertools::Itertools;
+use regex::Regex;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::Comprehension;
@@ -76,7 +78,6 @@ use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
 use crate::binding::scope::Scopes;
 use crate::binding::table::TableKeyed;
-use crate::binding::util::is_valid_identifier;
 use crate::config::Config;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
@@ -2058,4 +2059,11 @@ impl LegacyTParamBuilder {
             })
             .collect()
     }
+}
+
+static IDENTIFIER_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new("^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap());
+
+pub fn is_valid_identifier(name: &str) -> bool {
+    IDENTIFIER_REGEX.is_match(name)
 }
