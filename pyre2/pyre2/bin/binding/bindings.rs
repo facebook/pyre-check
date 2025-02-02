@@ -1002,19 +1002,6 @@ impl<'a> BindingsBuilder<'a> {
         let mut return_annotation = mem::take(&mut x.returns);
         self.functions.push(FuncInfo::default());
 
-        let never = function_last_expressions(&body, self.config);
-        if never != Some(Vec::new()) && kind == FunctionKind::Impl {
-            // If we can reach the end, and the code is real (not just ellipse),
-            // check None is an OK return type.
-            // Note that we special case ellipse even in non-interface, as that is what Pyright does.
-            self.functions.last_mut().returns.push(StmtReturn {
-                range: match never.as_deref() {
-                    Some([x]) => x.range(), // Try and narrow the range
-                    _ => x.range,
-                },
-                value: None,
-            });
-        }
         let func_name = x.name.clone();
         let self_type = match &self.scopes.current().kind {
             ScopeKind::ClassBody(body) => Some(self.table.types.0.insert(body.as_self_type_key())),
@@ -1043,6 +1030,27 @@ impl<'a> BindingsBuilder<'a> {
             }
         }
         self.ensure_type_opt(return_annotation.as_deref_mut(), &mut legacy);
+
+        let return_ann = return_annotation.clone().map(|x| {
+            self.table.insert(
+                KeyAnnotation::ReturnAnnotation(ShortIdentifier::new(&func_name)),
+                BindingAnnotation::AnnotateExpr(*x, self_type),
+            )
+        });
+
+        let never = function_last_expressions(&body, self.config);
+        if never != Some(Vec::new()) && kind == FunctionKind::Impl {
+            // If we can reach the end, and the code is real (not just ellipse),
+            // check None is an OK return type.
+            // Note that we special case ellipse even in non-interface, as that is what Pyright does.
+            self.functions.last_mut().returns.push(StmtReturn {
+                range: match never.as_deref() {
+                    Some([x]) => x.range(), // Try and narrow the range
+                    _ => x.range,
+                },
+                value: None,
+            });
+        }
 
         let legacy_tparam_builder = legacy.unwrap();
         legacy_tparam_builder.add_name_definitions(self);
@@ -1086,12 +1094,6 @@ impl<'a> BindingsBuilder<'a> {
 
         let accumulate = self.functions.pop().unwrap();
 
-        let return_ann = return_annotation.map(|x| {
-            self.table.insert(
-                KeyAnnotation::ReturnAnnotation(ShortIdentifier::new(&func_name)),
-                BindingAnnotation::AnnotateExpr(*x, self_type),
-            )
-        });
         let mut return_expr_keys = SmallSet::with_capacity(accumulate.returns.len());
         for x in accumulate.returns.clone() {
             let key = self.table.insert(
