@@ -1159,7 +1159,7 @@ impl<'a> BindingsBuilder<'a> {
                 // this way, we can later check if the return expr gives a value and raise an error if so
                 for x in accumulate.returns {
                     self.table.insert(
-                        Key::AsyncReturnType(return_expr(x.clone()).range()),
+                        Key::AsyncReturnType(x.range),
                         Binding::AsyncReturnType(Box::new((return_expr(x), return_type.clone()))),
                     );
                 }
