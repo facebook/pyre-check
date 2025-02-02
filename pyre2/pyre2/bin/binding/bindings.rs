@@ -25,6 +25,7 @@ use ruff_python_ast::Pattern;
 use ruff_python_ast::PatternKeyword;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtImportFrom;
+use ruff_python_ast::StmtMatch;
 use ruff_python_ast::StmtReturn;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
@@ -802,6 +803,56 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    fn stmt_match(&mut self, x: StmtMatch) {
+        self.ensure_expr(&x.subject);
+        let subject_name = if let Expr::Name(name) = &*x.subject {
+            Some(name.id.clone())
+        } else {
+            None
+        };
+        let key = self.table.insert(
+            Key::Anon(x.subject.range()),
+            Binding::Expr(None, *x.subject),
+        );
+        let mut exhaustive = false;
+        let range = x.range;
+        let mut branches = Vec::new();
+        // Type narrowing operations that are carried over from one case to the next. For example, in:
+        //   match x:
+        //     case None:
+        //       pass
+        //     case _:
+        //       pass
+        // x is bound to Narrow(x, Eq(None)) in the first case, and the negation, Narrow(x, NotEq(None)),
+        // is carried over to the fallback case.
+        let mut negated_prev_ops = NarrowOps::new();
+        for case in x.cases {
+            let mut base = self.scopes.current().flow.clone();
+            if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
+                exhaustive = true;
+            }
+            let new_narrow_ops = self.bind_pattern(subject_name.as_ref(), case.pattern, key);
+            self.bind_narrow_ops(&negated_prev_ops, case.range);
+            self.bind_narrow_ops(&new_narrow_ops, case.range);
+            negated_prev_ops.and_all(new_narrow_ops.negate());
+            if let Some(guard) = case.guard {
+                self.ensure_expr(&guard);
+                self.table
+                    .insert(Key::Anon(guard.range()), Binding::Expr(None, *guard));
+            }
+            self.stmts(case.body);
+            mem::swap(&mut self.scopes.current_mut().flow, &mut base);
+            branches.push(base);
+            if exhaustive {
+                break;
+            }
+        }
+        if !exhaustive {
+            branches.push(mem::take(&mut self.scopes.current_mut().flow));
+        }
+        self.scopes.current_mut().flow = self.merge_flow(branches, range, false);
+    }
+
     fn bind_unimportable_names(&mut self, x: &StmtImportFrom) {
         for x in &x.names {
             if &x.name != "*" {
@@ -1096,54 +1147,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.stmts(x.body);
             }
             Stmt::Match(x) => {
-                self.ensure_expr(&x.subject);
-                let subject_name = if let Expr::Name(name) = &*x.subject {
-                    Some(name.id.clone())
-                } else {
-                    None
-                };
-                let key = self.table.insert(
-                    Key::Anon(x.subject.range()),
-                    Binding::Expr(None, *x.subject),
-                );
-                let mut exhaustive = false;
-                let range = x.range;
-                let mut branches = Vec::new();
-                // Type narrowing operations that are carried over from one case to the next. For example, in:
-                //   match x:
-                //     case None:
-                //       pass
-                //     case _:
-                //       pass
-                // x is bound to Narrow(x, Eq(None)) in the first case, and the negation, Narrow(x, NotEq(None)),
-                // is carried over to the fallback case.
-                let mut negated_prev_ops = NarrowOps::new();
-                for case in x.cases {
-                    let mut base = self.scopes.current().flow.clone();
-                    if case.pattern.is_wildcard() || case.pattern.is_irrefutable() {
-                        exhaustive = true;
-                    }
-                    let new_narrow_ops =
-                        self.bind_pattern(subject_name.as_ref(), case.pattern, key);
-                    self.bind_narrow_ops(&negated_prev_ops, case.range);
-                    self.bind_narrow_ops(&new_narrow_ops, case.range);
-                    negated_prev_ops.and_all(new_narrow_ops.negate());
-                    if let Some(guard) = case.guard {
-                        self.ensure_expr(&guard);
-                        self.table
-                            .insert(Key::Anon(guard.range()), Binding::Expr(None, *guard));
-                    }
-                    self.stmts(case.body);
-                    mem::swap(&mut self.scopes.current_mut().flow, &mut base);
-                    branches.push(base);
-                    if exhaustive {
-                        break;
-                    }
-                }
-                if !exhaustive {
-                    branches.push(mem::take(&mut self.scopes.current_mut().flow));
-                }
-                self.scopes.current_mut().flow = self.merge_flow(branches, range, false);
+                self.stmt_match(x);
             }
             Stmt::Raise(x) => {
                 if let Some(exc) = x.exc {
