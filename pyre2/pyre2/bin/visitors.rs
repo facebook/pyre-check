@@ -9,6 +9,7 @@ use ruff_python_ast::visitor::source_order::walk_stmt;
 use ruff_python_ast::visitor::source_order::SourceOrderVisitor;
 use ruff_python_ast::ExceptHandler;
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprFString;
 use ruff_python_ast::FStringElement;
 use ruff_python_ast::FStringPart;
 use ruff_python_ast::ModModule;
@@ -61,6 +62,16 @@ impl Visitors {
             }
             _ => {}
         }
+    }
+
+    pub fn visit_fstring_expr<'a>(x: &'a ExprFString, mut f: impl FnMut(&'a Expr)) {
+        x.value.iter().for_each(|x| match x {
+            FStringPart::FString(x) => x.elements.iter().for_each(|x| match x {
+                FStringElement::Literal(_) => {}
+                FStringElement::Expression(x) => f(&x.expression),
+            }),
+            _ => {}
+        });
     }
 
     pub fn visit_stmt_expr<'a>(x: &'a Stmt, f: impl FnMut(&'a Expr)) {
@@ -144,13 +155,7 @@ impl Visitors {
                 x.arguments.keywords.iter().for_each(|x| f(&x.value));
             }
             Expr::FString(x) => {
-                x.value.iter().for_each(|x| match x {
-                    FStringPart::FString(x) => x.elements.iter().for_each(|x| match x {
-                        FStringElement::Literal(_) => {}
-                        FStringElement::Expression(x) => f(&x.expression),
-                    }),
-                    _ => {}
-                });
+                Visitors::visit_fstring_expr(x, f);
             }
             Expr::StringLiteral(_)
             | Expr::BytesLiteral(_)
