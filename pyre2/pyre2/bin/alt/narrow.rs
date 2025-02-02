@@ -26,7 +26,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn subtract_enum_member(&self, cls: &ClassType, name: &Name) -> Type {
         let e = self.get_enum_from_class_type(cls).unwrap();
         self.unions(
-            &e.get_members()
+            e.get_members()
                 .into_iter()
                 .filter_map(|f| {
                     if let Lit::Enum(box (_, member_name)) = &f
@@ -252,7 +252,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ty.clone()
                 }
             }
-            NarrowOp::Or(ops) => self.unions(&ops.map(|op| self.narrow(ty, op))),
+            NarrowOp::Or(ops) => self.unions(ops.map(|op| self.narrow(ty, op))),
             NarrowOp::Call(func, args) | NarrowOp::NotCall(func, args) => {
                 if let Some(resolved_op) = self.resolve_narrowing_call(func, args) {
                     if matches!(op, NarrowOp::Call(..)) {

@@ -562,17 +562,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn distribute_over_union(&self, ty: &Type, mut f: impl FnMut(&Type) -> Type) -> Type {
         match ty {
-            Type::Union(tys) => self.unions(&tys.map(f)),
+            Type::Union(tys) => self.unions(tys.map(f)),
             _ => f(ty),
         }
     }
 
-    pub fn unions(&self, xs: &[Type]) -> Type {
-        self.solver().unions(xs.to_owned(), self.type_order())
+    pub fn unions(&self, xs: Vec<Type>) -> Type {
+        self.solver().unions(xs, self.type_order())
     }
 
-    pub fn union(&self, x: &Type, y: &Type) -> Type {
-        self.unions(&[x.clone(), y.clone()])
+    pub fn union(&self, x: Type, y: Type) -> Type {
+        self.unions(vec![x, y])
     }
 
     pub fn todo(&self, msg: &str, x: impl Ranged + Debug) -> Type {

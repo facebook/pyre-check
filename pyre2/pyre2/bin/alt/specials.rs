@@ -73,7 +73,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                     literals.push(lit);
                 }
-                Type::type_form(self.unions(&literals))
+                Type::type_form(self.unions(literals))
             }
             SpecialForm::Concatenate => {
                 if arguments.len() < 2 {

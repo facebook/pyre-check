@@ -440,7 +440,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(AttributeBase::ClassInstance(stdlib.tuple(element)))
             }
             Type::Tuple(Tuple::Concrete(elements)) => Some(AttributeBase::ClassInstance(
-                stdlib.tuple(self.unions(&elements)),
+                stdlib.tuple(self.unions(elements)),
             )),
             Type::LiteralString => Some(AttributeBase::ClassInstance(stdlib.str())),
             Type::Literal(lit) => {

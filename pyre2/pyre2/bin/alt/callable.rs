@@ -24,7 +24,7 @@ use crate::types::callable::Required;
 use crate::types::quantified::Quantified;
 use crate::types::types::Type;
 use crate::util::display::count;
-use crate::util::prelude::SliceExt;
+use crate::util::prelude::VecExt;
 
 #[derive(Clone, Debug)]
 pub enum CallArg<'a> {
@@ -77,7 +77,7 @@ impl CallArg<'_> {
                             }
                         }
                     }
-                    let tys = fixed_tys.map(|tys| solver.unions(tys));
+                    let tys = fixed_tys.into_map(|tys| solver.unions(tys));
                     CallArgPreEval::Fixed(tys, 0)
                 } else {
                     let mut star_tys = Vec::new();
@@ -87,7 +87,7 @@ impl CallArg<'_> {
                             Iterable::FixedLen(tys) => star_tys.extend(tys),
                         }
                     }
-                    let ty = solver.unions(&star_tys);
+                    let ty = solver.unions(star_tys);
                     CallArgPreEval::Star(ty, false)
                 }
             }

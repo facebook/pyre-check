@@ -491,7 +491,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // v = @1 | int, @1 = int.
         Arc::new(
             match self.solver().expand(self.solve_binding_inner(binding)) {
-                Type::Union(ts) => self.unions(&ts),
+                Type::Union(ts) => self.unions(ts),
                 t => t,
             },
         )
@@ -788,10 +788,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 if *is_star {
                     self.stdlib
-                        .exception_group(self.unions(&exceptions))
+                        .exception_group(self.unions(exceptions))
                         .to_type()
                 } else {
-                    self.unions(&exceptions)
+                    self.unions(exceptions)
                 }
             }
             Binding::AugAssign(x) => {
@@ -816,7 +816,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Iterable::FixedLen(ts) => values.extend(ts),
                     }
                 }
-                self.unions(&values)
+                self.unions(values)
             }
             Binding::ContextValue(ann, e, kind) => {
                 let context_manager = self.expr(e, None);
@@ -908,7 +908,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     let start = *i;
                                     let end = ts.len() - *j;
                                     if start <= ts.len() && end >= start {
-                                        let elem_ty = self.unions(&ts[start..end]);
+                                        let elem_ty = self.unions(ts[start..end].to_vec());
                                         self.stdlib.list(elem_ty).to_type()
                                     } else {
                                         // We'll report this error when solving for Binding::UnpackedLength.
@@ -919,7 +919,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     })
                 }
-                self.unions(&values)
+                self.unions(values)
             }
             Binding::Function(x) => {
                 // Check every define, but only return the type of the last one.
@@ -954,7 +954,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.get_idx(*ks.first().unwrap()).arc_clone()
                 } else {
                     self.unions(
-                        &ks.iter()
+                        ks.iter()
                             .map(|k| self.get_idx(*k).arc_clone())
                             .collect::<Vec<_>>(),
                     )
@@ -1220,7 +1220,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let t = self.untype_opt(x, range)?;
                     ts.push(t);
                 }
-                Some(self.unions(&ts))
+                Some(self.unions(ts))
             }
             Type::Var(v) if let Some(_guard) = self.recurser.recurse(v) => {
                 self.untype_opt(self.solver().force_var(v), range)

@@ -88,7 +88,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 _ => types.push(t),
             }
         }
-        self.unions(&types)
+        self.unions(types)
     }
 
     pub fn expr(&self, x: &Expr, check: Option<&Type>) -> Type {
@@ -133,7 +133,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             && let Some(l) = self.untype_opt(lhs.clone(), x.left.range())
             && let Some(r) = self.untype_opt(rhs.clone(), x.right.range())
         {
-            return Type::type_form(self.union(&l, &r));
+            return Type::type_form(self.union(l, r));
         }
         self.distribute_over_union(&lhs, |lhs| binop_call(x.op, lhs, rhs.clone(), x.range))
     }
@@ -388,7 +388,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     match condition_type.as_bool() {
                         Some(true) => body_type,
                         Some(false) => orelse_type,
-                        None => self.union(&body_type, &orelse_type),
+                        None => self.union(body_type, orelse_type),
                     }
                 }
             }
@@ -423,7 +423,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let tys = x
                         .elts
                         .map(|x| self.expr_infer(x).promote_literals(self.stdlib));
-                    self.stdlib.list(self.unions(&tys)).to_type()
+                    self.stdlib.list(self.unions(tys)).to_type()
                 }
             }
             Expr::Dict(x) => {
@@ -524,8 +524,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         }
                     });
-                    let key_ty = self.unions(&key_tys);
-                    let value_ty = self.unions(&value_tys);
+                    let key_ty = self.unions(key_tys);
+                    let value_ty = self.unions(value_tys);
                     self.stdlib.dict(key_ty, value_ty).to_type()
                 }
             }
@@ -543,7 +543,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let tys = x
                         .elts
                         .map(|x| self.expr_infer(x).promote_literals(self.stdlib));
-                    self.stdlib.set(self.unions(&tys)).to_type()
+                    self.stdlib.set(self.unions(tys)).to_type()
                 }
             }
             Expr::ListComp(x) => {
