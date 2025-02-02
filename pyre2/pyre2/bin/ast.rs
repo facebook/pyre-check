@@ -275,10 +275,10 @@ impl Ast {
 
     pub fn pattern_match_singleton_to_expr(x: &PatternMatchSingleton) -> Expr {
         match x.value {
-            Singleton::None => Expr::NoneLiteral(ExprNoneLiteral::default()),
+            Singleton::None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range }),
             Singleton::True | Singleton::False => Expr::BooleanLiteral(ExprBooleanLiteral {
-                range: TextRange::default(),
-                value: matches!(x.value, Singleton::True),
+                range: x.range,
+                value: x.value == Singleton::True,
             }),
         }
     }
