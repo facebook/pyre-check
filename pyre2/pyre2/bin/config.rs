@@ -267,8 +267,8 @@ mod tests {
     #[test]
     fn test_tuple_lexicographical_compare() {
         fn assert_compare(op: CmpOp, x: &[i64], y: &[i64]) {
-            let lhs = Value::Tuple(x.iter().map(|x| Value::Int(*x)).collect());
-            let rhs = Value::Tuple(y.iter().map(|x| Value::Int(*x)).collect());
+            let lhs = Value::Tuple(x.map(|x| Value::Int(*x)));
+            let rhs = Value::Tuple(y.map(|x| Value::Int(*x)));
             assert_eq!(lhs.compare(op, &rhs), Some(true));
         }
 

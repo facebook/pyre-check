@@ -57,6 +57,7 @@ use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::display::DisplayWith;
+use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
 
@@ -561,7 +562,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn distribute_over_union(&self, ty: &Type, mut f: impl FnMut(&Type) -> Type) -> Type {
         match ty {
-            Type::Union(tys) => self.unions(&tys.iter().map(f).collect::<Vec<_>>()),
+            Type::Union(tys) => self.unions(&tys.map(f)),
             _ => f(ty),
         }
     }

@@ -87,7 +87,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut is_named_tuple = false;
         let mut enum_metadata = None;
         let mut dataclass_metadata = None;
-        let bases: Vec<BaseClass> = bases.iter().map(|x| self.base_class_of(x)).collect();
+        let bases: Vec<BaseClass> = bases.map(|x| self.base_class_of(x));
         let is_protocol = bases.iter().any(|x| matches!(x, BaseClass::Protocol(_)));
         let bases_with_metadata = bases
             .iter()

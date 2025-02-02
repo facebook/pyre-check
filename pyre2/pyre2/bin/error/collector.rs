@@ -159,6 +159,7 @@ mod tests {
     use super::*;
     use crate::module::module_name::ModuleName;
     use crate::module::module_path::ModulePath;
+    use crate::util::prelude::SliceExt;
 
     #[test]
     fn test_error_collector() {
@@ -193,9 +194,6 @@ mod tests {
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "b".to_owned(),
         );
-        assert_eq!(
-            errors.collect().iter().map(|x| x.msg()).collect::<Vec<_>>(),
-            vec!["a", "b", "a"]
-        );
+        assert_eq!(errors.collect().map(|x| x.msg()), vec!["a", "b", "a"]);
     }
 }
