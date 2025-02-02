@@ -15,6 +15,7 @@ use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprSlice;
+use ruff_python_ast::ExprYield;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Keyword;
 use ruff_python_ast::Number;
@@ -510,14 +511,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.expr_infer_with_hint(x, None)
     }
 
-    fn yield_expr(&self, x: Expr) -> Expr {
-        match x {
-            Expr::Yield(x) => match x.value {
-                Some(x) => *x,
-                None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range() }),
-            },
-            // This case should be unreachable.
-            _ => unreachable!("yield or yield from expression expected"),
+    fn yield_expr(&self, x: ExprYield) -> Expr {
+        match x.value {
+            Some(x) => *x,
+            None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range }),
         }
     }
 
@@ -883,14 +880,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => self.error(x.range, "Expression is not awaitable".to_owned()),
                 }
             }
-            Expr::Yield(_) => {
+            Expr::Yield(x) => {
                 let yield_expr_type = &self
-                    .get(&Key::YieldTypeOfYieldAnnotation(x.range()))
+                    .get(&Key::YieldTypeOfYieldAnnotation(x.range))
                     .arc_clone();
                 let yield_value = self.yield_expr(x.clone());
                 let inferred_expr_type = &self.expr_infer(&yield_value);
 
-                self.check_type(yield_expr_type, inferred_expr_type, x.range());
+                self.check_type(yield_expr_type, inferred_expr_type, x.range);
 
                 self.get(&Key::SendTypeOfYieldAnnotation(x.range()))
                     .arc_clone()
