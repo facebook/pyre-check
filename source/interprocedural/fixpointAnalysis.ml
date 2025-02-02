@@ -217,6 +217,8 @@ module Make (Analysis : ANALYSIS) = struct
 
     let targets = T.keys
 
+    let size handle = handle |> T.keys |> List.length
+
     let of_alist_parallel ~scheduler list =
       let policy =
         Scheduler.Policy.fixed_chunk_size

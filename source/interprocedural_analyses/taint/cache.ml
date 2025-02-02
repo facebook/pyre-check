@@ -70,6 +70,7 @@ module AnalysisSetup = struct
     skip_overrides_targets: Ast.Reference.SerializableSet.t;
     skipped_overrides: Interprocedural.OverrideGraph.skipped_overrides;
     initial_callables: FetchCallables.t;
+    initial_models: SharedModels.t option;
     whole_program_call_graph: Interprocedural.CallGraph.WholeProgramCallGraph.t;
   }
 end
@@ -388,6 +389,25 @@ let try_load
               | Ok status -> status
               | Error status -> status
             in
+            (* Remove initial models from shared memory. *)
+            let status =
+              match status with
+              | Loaded
+                  {
+                    previous_analysis_setup =
+                      { initial_models = Some initial_models; _ } as previous_analysis_setup;
+                    entry_status;
+                  } ->
+                  let () = SharedModels.cleanup ~clean_old:false initial_models in
+                  SharedMemoryStatus.Loaded
+                    {
+                      previous_analysis_setup =
+                        { previous_analysis_setup with initial_models = None };
+                      entry_status;
+                    }
+              | _ -> status
+            in
+
             let () =
               match status with
               | Loaded _ -> ()
@@ -515,6 +535,7 @@ let save
     ~skipped_overrides
     ~override_graph_shared_memory
     ~initial_callables
+    ~initial_models
     ~call_graph_shared_memory
     ~whole_program_call_graph
     ~global_constants
@@ -537,6 +558,7 @@ let save
           skip_overrides_targets;
           skipped_overrides;
           initial_callables;
+          initial_models = Some initial_models;
           whole_program_call_graph;
         }
     in

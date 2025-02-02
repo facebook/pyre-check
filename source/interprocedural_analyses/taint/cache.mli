@@ -33,6 +33,7 @@ val save
   skipped_overrides:Interprocedural.OverrideGraph.skipped_overrides ->
   override_graph_shared_memory:Interprocedural.OverrideGraph.SharedMemory.t ->
   initial_callables:FetchCallables.t ->
+  initial_models:SharedModels.t ->
   call_graph_shared_memory:Interprocedural.CallGraph.SharedMemory.t ->
   whole_program_call_graph:Interprocedural.CallGraph.WholeProgramCallGraph.t ->
   global_constants:Interprocedural.GlobalConstants.SharedMemory.t ->

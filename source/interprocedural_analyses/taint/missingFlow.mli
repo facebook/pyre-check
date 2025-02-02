@@ -15,15 +15,16 @@ val unknown_callee_model : Target.t -> Model.t
 
 (* Return the initial set of models, updated for the missing-flows=obscure analysis. *)
 val add_obscure_models
-  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  :  scheduler:Scheduler.t ->
+  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
   stubs:Target.HashSet.t ->
-  initial_models:Registry.t ->
-  Registry.t
+  initial_models:SharedModels.t ->
+  SharedModels.t
 
 (* Return the initial set of models, updated for the missing-flows=type analysis. *)
 val add_unknown_callee_models
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   call_graph:CallGraph.WholeProgramCallGraph.t ->
-  initial_models:Registry.t ->
-  Registry.t
+  initial_models:SharedModels.t ->
+  SharedModels.t

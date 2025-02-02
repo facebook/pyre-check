@@ -181,6 +181,8 @@ module Make (Analysis : ANALYSIS) : sig
 
     val targets : t -> Target.t list
 
+    val size : t -> int
+
     val of_alist_parallel : scheduler:Scheduler.t -> (Target.t * Analysis.Model.t) list -> t
 
     val join_with_registry_sequential

@@ -68,26 +68,48 @@ let unknown_callee_model _ =
 
 (* Return the initial set of models, updated for the missing-flows=obscure analysis. *)
 let add_obscure_models
+    ~scheduler
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
     ~pyre_api
     ~stubs
     ~initial_models
   =
-  let remove_sinks models = Registry.map models ~f:Model.remove_sinks in
+  let stubs = Hash_set.to_list stubs in
+  let remove_sinks models =
+    SharedModels.map_parallel
+      ~scheduler
+      ~f:(fun ~target:_ ~model -> Model.remove_sinks model)
+      models
+  in
   let add_obscure_sinks models =
-    let add_obscure_sink models callable =
-      let model =
-        Registry.get models callable
-        |> Option.value ~default:Model.empty_model
-        |> Model.add_obscure_sink ~pyre_api ~call_target:callable
-        |> Model.remove_obscureness
-      in
-      Registry.set models ~target:callable ~model
+    (* Update existing models *)
+    let models =
+      SharedModels.map_parallel_targets
+        models
+        ~scheduler
+        ~f:(fun ~target ~model ->
+          if Model.is_obscure model then
+            model
+            |> Model.add_obscure_sink ~pyre_api ~call_target:target
+            |> Model.remove_obscureness
+          else
+            model)
+        ~targets:stubs
     in
-    stubs
-    |> Hash_set.filter ~f:(fun callable ->
-           Registry.get models callable >>| Model.is_obscure |> Option.value ~default:true)
-    |> Hash_set.fold ~f:add_obscure_sink ~init:models
+    (* Add new models when necessary *)
+    let targets_with_model = initial_models |> SharedModels.targets |> Target.Set.of_list in
+    let stubs_without_model =
+      List.filter ~f:(fun callable -> not (Target.Set.mem callable targets_with_model)) stubs
+    in
+    List.fold
+      ~init:(SharedModels.add_only models)
+      ~f:(fun models target ->
+        Model.empty_model
+        |> Model.add_obscure_sink ~pyre_api ~call_target:target
+        |> Model.remove_obscureness
+        |> SharedModels.AddOnly.add models target)
+      stubs_without_model
+    |> SharedModels.from_add_only
   in
   match find_missing_flows with
   | Some Obscure -> initial_models |> remove_sinks |> add_obscure_sinks
@@ -121,7 +143,10 @@ let add_unknown_callee_models
           call_graph
       in
       let add_model target models =
-        Registry.set models ~target ~model:(unknown_callee_model target)
+        SharedModels.AddOnly.add models target (unknown_callee_model target)
       in
-      Target.Set.fold add_model unknown_callees initial_models
+      initial_models
+      |> SharedModels.add_only
+      |> Target.Set.fold add_model unknown_callees
+      |> SharedModels.from_add_only
   | _ -> initial_models

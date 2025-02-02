@@ -445,8 +445,8 @@ module TestEnvironment = struct
     override_graph_shared_memory: OverrideGraph.SharedMemory.t;
     initial_callables: FetchCallables.t;
     stubs: Target.t list;
-    initial_models: Registry.t;
-    model_query_results: ModelQueryExecution.ModelQueryRegistryMap.t;
+    initial_models: TaintFixpoint.SharedModels.t;
+    model_query_results: ModelQueryExecution.ExecutionResult.t;
     pyre_api: PyrePysaEnvironment.ReadOnly.t;
     class_interval_graph: ClassIntervalSetGraph.Heap.t;
     class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
@@ -518,6 +518,7 @@ let initialize
   let configuration, pyre_api =
     initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_source
   in
+  let scheduler = Test.mock_scheduler () in
   let taint_configuration_shared_memory =
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
@@ -540,11 +541,11 @@ let initialize
       | models_source, _ -> models_source
     in
     match models_source with
-    | None -> Registry.empty, ModelQueryExecution.ModelQueryRegistryMap.empty
+    | None -> SharedModels.create (), ModelQueryExecution.ExecutionResult.create_empty ()
     | Some source ->
         let stubs_shared_memory = Target.HashsetSharedMemory.from_heap stubs in
         PyrePysaEnvironment.ModelQueries.invalidate_cache ();
-        let { ModelParseResult.models; errors; queries } =
+        let { ModelParseResult.models = regular_models; errors; queries } =
           ModelParser.parse
             ~pyre_api
             ?path:model_path
@@ -563,10 +564,10 @@ let initialize
              source)
           (List.is_empty errors);
 
-        let { ModelQueryExecution.ExecutionResult.models = model_query_results; errors } =
+        let model_query_results =
           ModelQueryExecution.generate_models_from_queries
             ~pyre_api
-            ~scheduler:(Test.mock_scheduler ())
+            ~scheduler
             ~scheduler_policies:Configuration.SchedulerPolicies.empty
             ~class_hierarchy_graph
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
@@ -577,15 +578,20 @@ let initialize
             ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory_handle)
             queries
         in
+        let errors = ModelQueryExecution.ExecutionResult.get_errors model_query_results in
         ModelVerificationError.verify_models_and_dsl ~raise_exception:true errors;
+        let models_from_queries =
+          ModelQueryExecution.ExecutionResult.get_models model_query_results
+        in
         let models =
-          model_query_results
-          |> ModelQueryExecution.ModelQueryRegistryMap.get_registry
-               ~model_join:Model.join_user_models
-          |> Registry.merge ~join:Model.join_user_models models
+          SharedModels.join_with_registry_sequential
+            models_from_queries
+            ~model_join:Model.join_user_models
+            regular_models
         in
         let models =
           MissingFlow.add_obscure_models
+            ~scheduler
             ~static_analysis_configuration
             ~pyre_api
             ~stubs:(Target.HashSet.of_list stubs)
@@ -593,14 +599,18 @@ let initialize
         in
         models, model_query_results
   in
-  let inferred_models = ClassModels.infer ~pyre_api ~user_models in
-  let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
+  let initial_models =
+    ClassModels.infer ~pyre_api ~user_models:(SharedModels.read_only user_models)
+    |> SharedModels.join_with_registry_sequential user_models ~model_join:Model.join_user_models
+  in
   (* Overrides must be done first, as they influence the call targets. *)
   let { OverrideGraph.Heap.overrides = override_graph_heap; _ } =
     OverrideGraph.Heap.from_source ~pyre_api ~source
-    |> OverrideGraph.Heap.skip_overrides ~to_skip:(Registry.skip_overrides user_models)
+    |> OverrideGraph.Heap.skip_overrides
+         ~to_skip:(SharedModels.skip_overrides ~scheduler initial_models)
     |> OverrideGraph.Heap.cap_overrides
-         ~analyze_all_overrides_targets:(Registry.analyze_all_overrides initial_models)
+         ~analyze_all_overrides_targets:
+           (SharedModels.analyze_all_overrides ~scheduler initial_models)
          ~maximum_overrides:(TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
   in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
@@ -623,7 +633,7 @@ let initialize
       ~resolve_module_path:None
       ~override_graph:(Some override_graph_shared_memory_read_only)
       ~store_shared_memory:true
-      ~attribute_targets:(Registry.object_targets initial_models)
+      ~attribute_targets:(SharedModels.object_targets initial_models)
       ~decorators:Interprocedural.CallGraph.CallableToDecoratorsMap.empty
       ~skip_analysis_targets:Target.Set.empty
       ~definitions
@@ -650,9 +660,9 @@ let initialize
     override_graph_heap;
     override_graph_shared_memory;
     initial_callables;
+    model_query_results;
     stubs;
     initial_models;
-    model_query_results;
     pyre_api;
     class_interval_graph;
     class_interval_graph_shared_memory;
@@ -783,8 +793,8 @@ let end_to_end_integration_test path context =
       override_graph_heap;
       override_graph_shared_memory;
       initial_models;
-      model_query_results = _;
       initial_callables;
+      model_query_results = _;
       stubs;
       class_interval_graph;
       class_interval_graph_shared_memory;
@@ -809,7 +819,7 @@ let end_to_end_integration_test path context =
               Printf.printf "%s\n" (ModelVerificationError.display error));
           raise exn
     in
-    let entrypoints = Registry.entrypoints initial_models in
+    let entrypoints = SharedModels.entrypoints ~scheduler:(Test.mock_scheduler ()) initial_models in
     let prune_method =
       match entrypoints with
       | [] -> Interprocedural.DependencyGraph.PruneMethod.Internals
@@ -822,11 +832,6 @@ let end_to_end_integration_test path context =
         ~initial_callables
         ~call_graph:whole_program_call_graph
         ~overrides:override_graph_heap
-    in
-    let initial_models =
-      initial_models
-      |> TaintFixpoint.Registry.to_alist
-      |> TaintFixpoint.SharedModels.of_alist_sequential
     in
     let shared_models =
       TaintFixpoint.record_initial_models

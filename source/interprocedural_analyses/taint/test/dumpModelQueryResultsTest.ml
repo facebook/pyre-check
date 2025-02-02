@@ -13,7 +13,7 @@ let assert_model_query_results ?model_path ~context ~models_source ~source ~expe
   let { TestEnvironment.model_query_results; _ } =
     initialize ?model_path ~models_source ~context source
   in
-  let actual = ModelQueryExecution.DumpModelQueryResults.dump_to_string ~model_query_results in
+  let actual = ModelQueryExecution.ExecutionResult.dump_to_string model_query_results in
   let dumped_models_equal left right =
     let left, right = Yojson.Safe.from_string left, Yojson.Safe.from_string right in
     Yojson.Safe.equal left right
@@ -79,7 +79,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
-        "model_generators": [ "get_bar" ],
+        "model_generators": [ "get_bar", "get_foo", "get_fooo" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -96,7 +96,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
-        "model_generators": [ "get_foo" ],
+        "model_generators": [ "get_bar", "get_foo", "get_fooo" ],
         "modes": [ "Obscure" ]
       },
       {
@@ -139,7 +139,7 @@ let test_dump_model_query_results context =
             ]
           }
         ],
-        "model_generators": [ "get_fooo" ],
+        "model_generators": [ "get_bar", "get_foo", "get_fooo" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -201,6 +201,10 @@ let test_dump_model_query_results context =
 ]|}
     ();
   (* Test correct ModelQuery<->sources for same callable *)
+  (* TODO(T213691068): Since we write models to shared memory during model generation,
+   * we join models from different queries. Therefore, when dumping models, we are dumping
+   * the joined model, which includes results from multiple queries. We should improve that,
+   * but this is challenging to do efficiently. *)
   assert_model_query_results
     ~context
     ~models_source:
@@ -231,11 +235,14 @@ let test_dump_model_query_results context =
           {
             "port": "result",
             "taint": [
-              { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              {
+                "kinds": [ { "kind": "Test" }, { "kind": "UserControlled" } ],
+                "declaration": null
+              }
             ]
           }
         ],
-        "model_generators": [ "ModelQueryA" ],
+        "model_generators": [ "ModelQueryA", "ModelQueryB" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -249,13 +256,13 @@ let test_dump_model_query_results context =
             "port": "result",
             "taint": [
               {
-                "kinds": [ { "kind": "UserControlled" } ],
+                "kinds": [ { "kind": "Test" }, { "kind": "UserControlled" } ],
                 "declaration": null
               }
             ]
           }
         ],
-        "model_generators": [ "ModelQueryB" ],
+        "model_generators": [ "ModelQueryA", "ModelQueryB" ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -480,7 +487,9 @@ let test_dump_model_query_results context =
             ]
           }
         ],
-        "model_generators": [ "/a/b.pysa/get_bar" ],
+        "model_generators": [
+          "/a/b.pysa/get_bar", "/a/b.pysa/get_foo", "/a/b.pysa/get_fooo"
+        ],
         "modes": [ "Obscure" ]
       }
     ]
@@ -497,7 +506,9 @@ let test_dump_model_query_results context =
             ]
           }
         ],
-        "model_generators": [ "/a/b.pysa/get_foo" ],
+        "model_generators": [
+          "/a/b.pysa/get_bar", "/a/b.pysa/get_foo", "/a/b.pysa/get_fooo"
+        ],
         "modes": [ "Obscure" ]
       },
       {
@@ -540,7 +551,9 @@ let test_dump_model_query_results context =
             ]
           }
         ],
-        "model_generators": [ "/a/b.pysa/get_fooo" ],
+        "model_generators": [
+          "/a/b.pysa/get_bar", "/a/b.pysa/get_foo", "/a/b.pysa/get_fooo"
+        ],
         "modes": [ "Obscure" ]
       }
     ]

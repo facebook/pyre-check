@@ -92,7 +92,7 @@ let infer ~pyre_api ~user_models =
   let get_attribute_model class_name attribute =
     Reference.create ~prefix:(Reference.create class_name) attribute
     |> Target.create_object
-    |> Registry.get user_models
+    |> SharedModels.ReadOnly.get user_models
   in
   let get_attribute_tito_features class_name attribute root =
     match get_attribute_model class_name attribute with

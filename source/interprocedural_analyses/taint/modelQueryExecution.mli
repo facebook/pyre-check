@@ -7,57 +7,20 @@
 
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
-module ModelQueryRegistryMap : sig
+module ExecutionResult : sig
   type t
 
-  val empty : t
+  val get_models : t -> TaintFixpoint.SharedModels.t
 
-  val add : t -> model_query_identifier:string -> registry:Registry.t -> t
+  val get_errors : t -> ModelVerificationError.t list
 
-  val get : t -> string -> Registry.t option
+  val create_empty : unit -> t
 
-  val merge : model_join:(Model.t -> Model.t -> Model.t) -> t -> t -> t
+  val dump_to_string : t -> string
 
-  val to_alist : t -> (string * Registry.t) list
+  val dump_to_file : t -> path:PyrePath.t -> unit
 
-  val mapi : t -> f:(model_query_identifier:string -> models:Registry.t -> Registry.t) -> t
-
-  val get_model_query_identifiers : t -> string list
-
-  val get_models : t -> Registry.t list
-
-  val get_registry : model_join:(Model.t -> Model.t -> Model.t) -> t -> Registry.t
-end
-
-module DumpModelQueryResults : sig
-  val dump_to_string : model_query_results:ModelQueryRegistryMap.t -> string
-
-  val dump_to_file : model_query_results:ModelQueryRegistryMap.t -> path:PyrePath.t -> unit
-
-  val dump_to_file_and_string
-    :  model_query_results:ModelQueryRegistryMap.t ->
-    path:PyrePath.t ->
-    string
-end
-
-module ExecutionResult : sig
-  type t = {
-    models: ModelQueryRegistryMap.t;
-    errors: ModelVerificationError.t list;
-  }
-
-  val empty : t
-
-  val merge : model_join:(Model.t -> Model.t -> Model.t) -> t -> t -> t
-
-  val add_error : t -> ModelVerificationError.t -> t
-
-  val add_model
-    :  t ->
-    model_query_identifier:string ->
-    target:Interprocedural.Target.t ->
-    model:Model.t ->
-    t
+  val dump_to_file_and_string : t -> path:PyrePath.t -> string
 end
 
 module PartitionCacheQueries : sig

@@ -1009,12 +1009,12 @@ let rec process_request_exn
                        (PyrePath.show path)
                        (List.map ~f:show_query_location queries |> String.concat ~sep:"\n"))
               | { Taint.ModelParseResult.queries = [query]; _ } ->
-                  let {
-                    Taint.ModelQueryExecution.ExecutionResult.models = models_and_names;
-                    errors;
-                  }
-                    =
-                    setup_and_execute_model_queries [query]
+                  let model_query_results = setup_and_execute_model_queries [query] in
+                  let models =
+                    Taint.ModelQueryExecution.ExecutionResult.get_models model_query_results
+                  in
+                  let errors =
+                    Taint.ModelQueryExecution.ExecutionResult.get_errors model_query_results
                   in
                   let to_taint_model (callable, model) =
                     {
@@ -1030,13 +1030,7 @@ let rec process_request_exn
                           model;
                     }
                   in
-                  let models =
-                    models_and_names
-                    |> Taint.ModelQueryExecution.ModelQueryRegistryMap.get_registry
-                         ~model_join:Taint.Model.join_user_models
-                    |> Taint.Registry.to_alist
-                    |> List.map ~f:to_taint_model
-                  in
+                  let models = Taint.SharedModels.to_alist models |> List.map ~f:to_taint_model in
                   if List.is_empty models then
                     Error
                       (Format.sprintf
@@ -1225,7 +1219,7 @@ let rec process_request_exn
         let model_query_errors =
           if verify_dsl then
             setup_and_execute_model_queries model_queries
-            |> fun { Taint.ModelQueryExecution.ExecutionResult.errors; _ } -> errors
+            |> Taint.ModelQueryExecution.ExecutionResult.get_errors
           else
             []
         in

@@ -59,11 +59,6 @@ let assert_fixpoint
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
   in
-  let initial_models =
-    initial_models
-    |> TaintFixpoint.Registry.to_alist
-    |> TaintFixpoint.SharedModels.of_alist_sequential
-  in
   let shared_models =
     TaintFixpoint.record_initial_models
       ~scheduler:(Test.mock_scheduler ())

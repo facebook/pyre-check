@@ -20,47 +20,142 @@ open ModelParseResult
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
-(* Represents the result of generating models from queries. *)
-module ModelQueryRegistryMap = struct
+(* Represents results from model queries, stored in the ocaml heap. *)
+module ModelQueryResultMap = struct
   type t = Registry.t String.Map.t
 
-  let empty = String.Map.empty
+  let empty = (String.Map.empty : t)
 
-  let add model_query_map ~model_query_identifier ~registry =
+  let add_registry model_query_results ~model_join ~query registry =
     if not (Registry.is_empty registry) then
-      Map.update model_query_map model_query_identifier ~f:(function
+      Map.update model_query_results (ModelQuery.unique_identifier query) ~f:(function
           | None -> registry
-          | Some existing -> Registry.merge ~join:Model.join_user_models existing registry)
+          | Some existing -> Registry.merge ~join:model_join existing registry)
     else
-      model_query_map
+      model_query_results
 
 
-  let get = Map.find
-
-  let merge ~model_join left right =
-    Map.merge_skewed left right ~combine:(fun ~key:_ left_models right_models ->
-        Registry.merge ~join:model_join left_models right_models)
-
-
-  let to_alist = Map.to_alist ~key_order:`Increasing
-
-  let mapi model_query_map ~f =
-    Map.mapi ~f:(fun ~key ~data -> f ~model_query_identifier:key ~models:data) model_query_map
+  let add_model model_query_results ~model_join ~query ~target ~model =
+    Map.update model_query_results (ModelQuery.unique_identifier query) ~f:(function
+        | None -> Registry.singleton ~target ~model
+        | Some existing -> Registry.add ~join:model_join existing ~target ~model)
 
 
-  let get_model_query_identifiers = Map.keys
+  let get_targets model_query_results =
+    model_query_results
+    |> Map.fold ~init:Target.Set.empty ~f:(fun ~key:_ ~data:registry targets ->
+           Target.Set.union targets (registry |> Registry.targets |> Target.Set.of_list))
 
-  let get_models = Map.data
+
+  let number_models model_query_results = model_query_results |> get_targets |> Target.Set.cardinal
 
   let merge_all_registries ~model_join registries =
     Algorithms.fold_balanced registries ~init:Registry.empty ~f:(Registry.merge ~join:model_join)
 
 
   let get_registry ~model_join model_query_map =
-    merge_all_registries ~model_join (get_models model_query_map)
+    merge_all_registries ~model_join (Map.data model_query_map)
+end
+
+(* Represents results from a model query, but only what is necessary to check `expected_models` and
+   `unexpected_models` clauses. *)
+module ModelQueryExpectedResults = struct
+  type t = {
+    (* Only store models for targets present in `expected_models` and `unexpected_models`. *)
+    models_for_expected: Registry.t;
+    (* Number of models generated from the query (regardless of `expected_models`). *)
+    number_models: int;
+  }
+
+  let empty = { models_for_expected = Registry.empty; number_models = 0 }
+
+  let number_models { number_models; _ } = number_models
+
+  let merge_disjoint
+      { models_for_expected = left_models; number_models = left_number_models }
+      { models_for_expected = right_models; number_models = right_number_models }
+    =
+    {
+      models_for_expected =
+        Registry.merge
+          ~join:(fun _ _ -> failwith "merge_disjoint: non-disjoint")
+          left_models
+          right_models;
+      number_models = left_number_models + right_number_models;
+    }
 
 
-  let check_expected_and_unexpected_model_errors ~model_query_results ~queries =
+  let add_model_for_new_target
+      { models_for_expected; number_models }
+      ~target
+      ~query:
+        {
+          ModelQuery.expected_models = query_expected_models;
+          unexpected_models = query_unexpected_models;
+          _;
+        }
+      ~model
+    =
+    let is_expected =
+      List.exists
+        query_expected_models
+        ~f:(fun { ModelQuery.ExpectedModel.target = expected_target; _ } ->
+          Target.equal target expected_target)
+      || List.exists
+           query_unexpected_models
+           ~f:(fun { ModelQuery.ExpectedModel.target = expected_target; _ } ->
+             Target.equal target expected_target)
+    in
+    let models_for_expected =
+      if is_expected then
+        Registry.add ~join:(fun _ _ -> failwith "non-disjoint") models_for_expected ~target ~model
+      else
+        models_for_expected
+    in
+    let number_models = number_models + 1 in
+    { models_for_expected; number_models }
+end
+
+(* Same as `ModelQueryExpectedResults`, but for multiple model queries *)
+module ModelQueriesExpectedResults = struct
+  type t = ModelQueryExpectedResults.t String.Map.t
+
+  let empty = String.Map.empty
+
+  let get model_query_results query =
+    Map.find model_query_results (ModelQuery.unique_identifier query)
+
+
+  let add_model_for_new_target model_query_results ~target ~query ~model =
+    Map.update model_query_results (ModelQuery.unique_identifier query) ~f:(fun existing ->
+        ModelQueryExpectedResults.add_model_for_new_target
+          (Option.value existing ~default:ModelQueryExpectedResults.empty)
+          ~target
+          ~query
+          ~model)
+
+
+  let merge_disjoint left right =
+    Map.merge_skewed left right ~combine:(fun ~key:_ left_models right_models ->
+        ModelQueryExpectedResults.merge_disjoint left_models right_models)
+
+
+  let add_models_for_new_queries model_query_results ~queries:_ other =
+    (* For now, only merge model counts. In the future, we should preserve models for queries with
+       `expected_models` clauses. *)
+    let other =
+      Map.map
+        ~f:(fun registry ->
+          {
+            ModelQueryExpectedResults.models_for_expected = Registry.empty;
+            number_models = Registry.size registry;
+          })
+        other
+    in
+    Map.merge_skewed ~combine:(fun ~key:_ _ _ -> failwith "non-disjoint") model_query_results other
+
+
+  let check_expected_and_unexpected_model_errors model_query_results ~queries =
     let find_expected_and_unexpected_model_errors
         ~expect
         ~actual_models
@@ -117,9 +212,14 @@ module ModelQueryRegistryMap = struct
     let expected_and_unexpected_model_errors =
       queries
       |> List.map
-           ~f:(fun { ModelQuery.name; path; location; expected_models; unexpected_models; _ } ->
-             let actual_models =
-               Option.value (get model_query_results name) ~default:Registry.empty
+           ~f:(fun
+                ({ ModelQuery.name; path; location; expected_models; unexpected_models; _ } as
+                model_query)
+              ->
+             let { ModelQueryExpectedResults.models_for_expected = actual_models; _ } =
+               Option.value
+                 (get model_query_results model_query)
+                 ~default:ModelQueryExpectedResults.empty
              in
              let expected_model_errors =
                match expected_models with
@@ -144,7 +244,7 @@ module ModelQueryRegistryMap = struct
     expected_and_unexpected_model_errors
 
 
-  let errors_for_queries_without_output ~model_query_results ~queries =
+  let errors_for_queries_without_output model_query_results ~queries =
     let module LoggingGroup = struct
       type t = {
         models_count: int;
@@ -161,18 +261,17 @@ module ModelQueryRegistryMap = struct
         (logging_group_map, errors)
         ({ ModelQuery.name; logging_group_name; location; path; _ } as query)
       =
-      let model_query_identifier = ModelQuery.unique_identifier query in
       let models_count =
-        get model_query_results model_query_identifier
-        |> Option.value ~default:Registry.empty
-        |> Registry.size
+        get model_query_results query
+        |> Option.value ~default:ModelQueryExpectedResults.empty
+        |> ModelQueryExpectedResults.number_models
       in
       match logging_group_name with
       | None ->
           let () =
             Statistics.log_model_query_outputs
               ~is_group:false
-              ~model_query_name:model_query_identifier
+              ~model_query_name:(ModelQuery.unique_identifier query)
               ~generated_models_count:models_count
               ()
           in
@@ -229,9 +328,142 @@ module ModelQueryRegistryMap = struct
     errors
 end
 
-(* Helper functions to dump generated models into a string or file. *)
-module DumpModelQueryResults = struct
-  let dump_to_string ~model_query_results =
+module ExecutionResult = struct
+  type t = {
+    shared_models: SharedModels.AddOnly.t;
+    errors: ModelVerificationError.t list;
+    (* Actual results for expected and unexpected models *)
+    models_for_expected: ModelQueriesExpectedResults.t;
+  }
+
+  let create_empty () =
+    {
+      shared_models = SharedModels.create () |> SharedModels.add_only;
+      errors = [];
+      models_for_expected = ModelQueriesExpectedResults.empty;
+    }
+
+
+  let create_accumulator { shared_models; _ } =
+    {
+      shared_models = SharedModels.AddOnly.create_empty shared_models;
+      errors = [];
+      models_for_expected = ModelQueriesExpectedResults.empty;
+    }
+
+
+  let get_models { shared_models; _ } = SharedModels.from_add_only shared_models
+
+  let get_errors { errors; _ } = errors
+
+  let merge_disjoint
+      ~smaller:
+        {
+          shared_models = smaller_shared_models;
+          errors = smaller_errors;
+          models_for_expected = smaller_models_for_expected;
+        }
+      ~larger:
+        {
+          shared_models = larger_shared_models;
+          errors = larger_errors;
+          models_for_expected = larger_models_for_expected;
+        }
+    =
+    {
+      shared_models =
+        SharedModels.AddOnly.merge_same_handle_disjoint_keys
+          ~smaller:smaller_shared_models
+          ~larger:larger_shared_models;
+      errors = List.append smaller_errors larger_errors;
+      models_for_expected =
+        ModelQueriesExpectedResults.merge_disjoint
+          smaller_models_for_expected
+          larger_models_for_expected;
+    }
+
+
+  let add_errors { shared_models; errors; models_for_expected } new_errors =
+    { shared_models; errors = List.append errors new_errors; models_for_expected }
+
+
+  let get_number_models { shared_models; _ } =
+    shared_models |> SharedModels.AddOnly.keys |> List.length
+
+
+  let add_models_for_new_target
+      { shared_models; errors; models_for_expected }
+      ~target
+      ~queries
+      ~models
+    =
+    let models = Map.filter_map models ~f:(fun registry -> Registry.get registry target) in
+    let model =
+      Map.fold
+        ~init:None
+        ~f:(fun ~key:_ ~data sofar -> Option.merge sofar (Some data) ~f:Model.join_user_models)
+        models
+    in
+    match model with
+    | None -> { shared_models; errors; models_for_expected }
+    | Some model ->
+        let shared_models = SharedModels.AddOnly.add shared_models target model in
+        let models_for_expected =
+          List.fold queries ~init:models_for_expected ~f:(fun models_for_expected query ->
+              match Map.find models (ModelQuery.unique_identifier query) with
+              | Some model ->
+                  ModelQueriesExpectedResults.add_model_for_new_target
+                    models_for_expected
+                    ~target
+                    ~query
+                    ~model
+              | None -> models_for_expected)
+        in
+        { shared_models; errors; models_for_expected }
+
+
+  let add_models_for_new_queries
+      { shared_models; errors; models_for_expected }
+      ~queries
+      model_query_results
+    =
+    let shared_models =
+      model_query_results
+      |> ModelQueryResultMap.get_registry ~model_join:Model.join_user_models
+      |> SharedModels.join_with_registry_sequential
+           (SharedModels.from_add_only shared_models)
+           ~model_join:Model.join_user_models
+      |> SharedModels.add_only
+    in
+    let models_for_expected =
+      ModelQueriesExpectedResults.add_models_for_new_queries
+        models_for_expected
+        ~queries
+        model_query_results
+    in
+    { shared_models; errors; models_for_expected }
+
+
+  let check_expected_and_unexpected_model_errors
+      ~queries
+      { shared_models; errors; models_for_expected }
+    =
+    let new_errors =
+      ModelQueriesExpectedResults.check_expected_and_unexpected_model_errors
+        models_for_expected
+        ~queries
+    in
+    { shared_models; errors = List.append errors new_errors; models_for_expected }
+
+
+  let errors_for_queries_without_output ~queries { shared_models; errors; models_for_expected } =
+    let new_errors =
+      ModelQueriesExpectedResults.errors_for_queries_without_output models_for_expected ~queries
+    in
+    { shared_models; errors = List.append errors new_errors; models_for_expected }
+
+
+  let dump_to_string { shared_models; _ } =
     let model_to_json (callable, model) =
       Model.to_json
         ~expand_overrides:None
@@ -249,53 +481,34 @@ module DumpModelQueryResults = struct
       |> fun models ->
       `List models |> fun models_json -> `Assoc [model_query_identifier, models_json]
     in
-    `List (Map.data (Map.mapi model_query_results ~f:to_json)) |> Yojson.Safe.pretty_to_string
+    let build_query_to_registry_map ~target ~model:({ Model.model_generators; _ } as model) map =
+      model_generators
+      |> Model.ModelGeneratorSet.elements
+      |> List.fold ~init:map ~f:(fun map model_query_identifier ->
+             Map.update map model_query_identifier ~f:(function
+                 | None -> Registry.singleton ~target ~model
+                 | Some existing ->
+                     Registry.add ~join:(fun _ _ -> failwith "non-disjoint") existing ~target ~model))
+    in
+    let map =
+      SharedModels.fold_sequential
+        (SharedModels.from_add_only shared_models)
+        ~init:String.Map.empty
+        ~f:build_query_to_registry_map
+    in
+    `List (Map.data (Map.mapi map ~f:to_json)) |> Yojson.Safe.pretty_to_string
 
 
-  let dump_to_file ~model_query_results ~path =
+  let dump_to_file model_query_results ~path =
     Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
-    path |> File.create ~content:(dump_to_string ~model_query_results) |> File.write
+    path |> File.create ~content:(dump_to_string model_query_results) |> File.write
 
 
-  let dump_to_file_and_string ~model_query_results ~path =
+  let dump_to_file_and_string model_query_results ~path =
     Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
-    let content = dump_to_string ~model_query_results in
+    let content = dump_to_string model_query_results in
     path |> File.create ~content |> File.write;
     content
-end
-
-module ExecutionResult = struct
-  type t = {
-    models: ModelQueryRegistryMap.t;
-    errors: ModelVerificationError.t list;
-  }
-
-  let empty = { models = ModelQueryRegistryMap.empty; errors = [] }
-
-  let merge
-      ~model_join
-      { models = left_models; errors = left_errors }
-      { models = right_models; errors = right_errors }
-    =
-    {
-      models = ModelQueryRegistryMap.merge ~model_join left_models right_models;
-      errors = List.append left_errors right_errors;
-    }
-
-
-  let add_error { models; errors } error = { models; errors = error :: errors }
-
-  let add_errors { models; errors } new_errors = { models; errors = List.append errors new_errors }
-
-  let add_model { models; errors } ~model_query_identifier ~target ~model =
-    {
-      models =
-        ModelQueryRegistryMap.add
-          models
-          ~model_query_identifier
-          ~registry:(Registry.singleton ~target ~model);
-      errors;
-    }
 end
 
 let sanitized_location_insensitive_compare left right =
@@ -1110,7 +1323,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       target
     =
     let modelable = QueryKind.make_modelable ~pyre_api target in
-    let fold results query =
+    let fold (current_models, current_errors) query =
       match
         generate_model_from_query_on_target
           ~verbose
@@ -1123,15 +1336,19 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           query
       with
       | Ok (Some model) ->
-          ExecutionResult.add_model
-            results
-            ~model_query_identifier:(ModelQuery.unique_identifier query)
-            ~target
-            ~model
-      | Ok None -> results
-      | Error error -> ExecutionResult.add_error results error
+          let current_models =
+            ModelQueryResultMap.add_model
+              current_models
+              ~model_join:(fun _ _ -> failwith "non-disjoint")
+              ~query
+              ~target
+              ~model
+          in
+          current_models, current_errors
+      | Ok None -> current_models, current_errors
+      | Error error -> current_models, error :: current_errors
     in
-    List.fold queries ~init:ExecutionResult.empty ~f:fold
+    List.fold queries ~init:(ModelQueryResultMap.empty, []) ~f:fold
 
 
   let generate_models_from_queries_on_targets
@@ -1141,21 +1358,28 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~source_sink_filter
       ~stubs
       ~targets
-      queries
+      ~queries
+      accumulator
     =
-    targets
-    |> List.map ~f:(fun target ->
-           generate_models_from_queries_on_target
-             ~verbose
-             ~pyre_api
-             ~class_hierarchy_graph
-             ~source_sink_filter
-             ~stubs
-             ~queries
-             target)
-    |> Algorithms.fold_balanced
-         ~f:(ExecutionResult.merge ~model_join:Model.join_user_models)
-         ~init:ExecutionResult.empty
+    List.fold
+      ~init:accumulator
+      ~f:(fun accumulator target ->
+        let models, errors =
+          generate_models_from_queries_on_target
+            ~verbose
+            ~pyre_api
+            ~class_hierarchy_graph
+            ~source_sink_filter
+            ~stubs
+            ~queries
+            target
+        in
+        let accumulator =
+          ExecutionResult.add_models_for_new_target accumulator ~target ~queries ~models
+        in
+        let accumulator = ExecutionResult.add_errors accumulator errors in
+        accumulator)
+      targets
 
 
   let generate_cache_from_query_on_target
@@ -1265,7 +1489,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       read_from_cache_queries
     =
     let fold
-        { ExecutionResult.models; errors }
+        (current_models, current_errors)
         ({ ModelQuery.name = model_query_name; where; _ } as query)
       =
       match CandidateTargetsFromCache.from_constraint cache (AllOf where) with
@@ -1278,7 +1502,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             model_query_name
           |> failwith
       | Set candidates ->
-          let registry, new_errors =
+          let new_models, new_errors =
             generate_models_from_query_on_targets
               ~verbose
               ~pyre_api
@@ -1288,16 +1512,14 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
               ~targets:(Target.Set.elements candidates)
               query
           in
-          {
-            ExecutionResult.models =
-              ModelQueryRegistryMap.add
-                models
-                ~model_query_identifier:(ModelQuery.unique_identifier query)
-                ~registry;
-            errors = List.rev_append new_errors errors;
-          }
+          ( ModelQueryResultMap.add_registry
+              current_models
+              ~model_join:Model.join_user_models
+              ~query
+              new_models,
+            List.rev_append new_errors current_errors )
     in
-    List.fold read_from_cache_queries ~init:ExecutionResult.empty ~f:fold
+    List.fold read_from_cache_queries ~init:(ModelQueryResultMap.empty, []) ~f:fold
 
 
   (* Generate models from non-cache queries. *)
@@ -1310,9 +1532,11 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~source_sink_filter
       ~stubs
       ~targets
+      accumulator
     = function
-    | [] -> ExecutionResult.empty
+    | [] -> accumulator
     | regular_queries ->
+        let empty_accumulator = ExecutionResult.create_accumulator accumulator in
         let map targets =
           generate_models_from_queries_on_targets
             ~verbose
@@ -1321,7 +1545,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             ~source_sink_filter
             ~stubs
             ~targets
-            regular_queries
+            ~queries:regular_queries
+            empty_accumulator
         in
         let scheduler_policy =
           Scheduler.Policy.from_configuration_or_default
@@ -1337,9 +1562,9 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         Scheduler.map_reduce
           scheduler
           ~policy:scheduler_policy
-          ~initial:ExecutionResult.empty
+          ~initial:accumulator
           ~map
-          ~reduce:(ExecutionResult.merge ~model_join:Model.join_user_models)
+          ~reduce:(fun left right -> ExecutionResult.merge_disjoint ~smaller:left ~larger:right)
           ~inputs:targets
           ()
 
@@ -1353,7 +1578,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~source_sink_filter
       ~stubs
       ~targets
-      queries
+      ~queries
+      execution_result
     =
     let {
       PartitionCacheQueries.write_to_cache = write_to_cache_queries;
@@ -1364,7 +1590,37 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       PartitionCacheQueries.partition queries
     in
 
-    let model_query_results_cache_queries =
+    let execution_result =
+      let () =
+        Log.info
+          "Generating models from %d regular %s model queries..."
+          (List.length regular_queries)
+          QueryKind.query_kind_name
+      in
+      let previous_size = ExecutionResult.get_number_models execution_result in
+      let execution_result =
+        generate_models_from_regular_queries_on_targets_with_multiprocessing
+          ~verbose
+          ~pyre_api
+          ~scheduler
+          ~scheduler_policies
+          ~class_hierarchy_graph
+          ~source_sink_filter
+          ~stubs
+          ~targets
+          execution_result
+          regular_queries
+      in
+      let () =
+        Log.info
+          "Generated %d models from regular %s model queries."
+          (ExecutionResult.get_number_models execution_result - previous_size)
+          QueryKind.query_kind_name
+      in
+      execution_result
+    in
+
+    let execution_result =
       let () =
         Log.info
           "Building cache for %d %s model queries..."
@@ -1387,7 +1643,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           (List.length read_from_cache_queries)
           QueryKind.query_kind_name
       in
-      let ({ ExecutionResult.models; _ } as results) =
+      let models, errors =
         generate_models_from_read_cache_queries_on_targets
           ~verbose
           ~pyre_api
@@ -1400,44 +1656,20 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       let () =
         Log.info
           "Generated %d models from cached %s model queries."
-          (List.length (ModelQueryRegistryMap.get_models models))
+          (ModelQueryResultMap.number_models models)
           QueryKind.query_kind_name
       in
-      results
+      let execution_result = ExecutionResult.add_errors execution_result errors in
+      let execution_result =
+        ExecutionResult.add_models_for_new_queries
+          execution_result
+          ~queries:read_from_cache_queries
+          models
+      in
+      execution_result
     in
 
-    let model_query_results_regular_queries =
-      let () =
-        Log.info
-          "Generating models from %d regular %s model queries..."
-          (List.length regular_queries)
-          QueryKind.query_kind_name
-      in
-      let ({ ExecutionResult.models; _ } as results) =
-        generate_models_from_regular_queries_on_targets_with_multiprocessing
-          ~verbose
-          ~pyre_api
-          ~scheduler
-          ~scheduler_policies
-          ~class_hierarchy_graph
-          ~source_sink_filter
-          ~stubs
-          ~targets
-          regular_queries
-      in
-      let () =
-        Log.info
-          "Generated %d models from regular %s model queries."
-          (List.length (ModelQueryRegistryMap.get_models models))
-          QueryKind.query_kind_name
-      in
-      results
-    in
-
-    ExecutionResult.merge
-      ~model_join:Model.join_user_models
-      model_query_results_regular_queries
-      model_query_results_cache_queries
+    execution_result
 end
 
 module CallableQueryExecutor = MakeQueryExecutor (struct
@@ -1958,6 +2190,8 @@ let generate_models_from_queries
     PartitionTargetQueries.partition queries
   in
 
+  let execution_result = ExecutionResult.create_empty () in
+
   (* Generate models for functions and methods. *)
   let execution_result =
     if not (List.is_empty callable_queries) then
@@ -1970,9 +2204,10 @@ let generate_models_from_queries
         ~source_sink_filter
         ~stubs
         ~targets:definitions_and_stubs
-        callable_queries
+        ~queries:callable_queries
+        execution_result
     else
-      ExecutionResult.empty
+      execution_result
   in
 
   (* Generate models for attributes. *)
@@ -1988,8 +2223,8 @@ let generate_models_from_queries
         ~source_sink_filter
         ~stubs
         ~targets:attributes
-        attribute_queries
-      |> ExecutionResult.merge ~model_join:Model.join_user_models execution_result
+        ~queries:attribute_queries
+        execution_result
     else
       execution_result
   in
@@ -2007,26 +2242,21 @@ let generate_models_from_queries
         ~source_sink_filter
         ~stubs
         ~targets:globals
-        global_queries
-      |> ExecutionResult.merge ~model_join:Model.join_user_models execution_result
+        ~queries:global_queries
+        execution_result
     else
       execution_result
   in
 
-  let { ExecutionResult.models; _ } = execution_result in
   let execution_result =
     if error_on_unexpected_models then
-      ModelQueryRegistryMap.check_expected_and_unexpected_model_errors
-        ~model_query_results:models
-        ~queries
-      |> ExecutionResult.add_errors execution_result
+      ExecutionResult.check_expected_and_unexpected_model_errors ~queries execution_result
     else
       execution_result
   in
   let execution_result =
     if error_on_empty_result then
-      ModelQueryRegistryMap.errors_for_queries_without_output ~model_query_results:models ~queries
-      |> ExecutionResult.add_errors execution_result
+      ExecutionResult.errors_for_queries_without_output ~queries execution_result
     else
       execution_result
   in

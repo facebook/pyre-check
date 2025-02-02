@@ -317,6 +317,13 @@ let parse_models_and_queries_from_configuration
   parse_result
 
 
+module ModelGenerationResult = struct
+  type t = {
+    models: SharedModels.t;
+    errors: ModelVerificationError.t list;
+  }
+end
+
 let initialize_models
     ~scheduler
     ~pyre_api
@@ -337,7 +344,7 @@ let initialize_models
   let stubs_list = Interprocedural.FetchCallables.get_stubs initial_callables in
   let stubs_hashset = Target.HashSet.of_list stubs_list in
   let stubs_shared_memory = Interprocedural.Target.HashsetSharedMemory.from_heap stubs_list in
-  let { ModelParseResult.models; queries; errors } =
+  let { ModelParseResult.models = regular_models; queries; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
       ~pyre_api
@@ -349,13 +356,13 @@ let initialize_models
   in
   let () =
     StepLogger.finish
-      ~integers:["models", Registry.size models; "queries", List.length queries]
+      ~integers:["models", Registry.size regular_models; "queries", List.length queries]
       step_logger
   in
 
-  let models, errors =
+  let models_from_queries, errors =
     match queries with
-    | [] -> models, errors
+    | [] -> SharedModels.create (), errors
     | _ ->
         let step_logger =
           StepLogger.start
@@ -363,11 +370,7 @@ let initialize_models
             ~end_message:"Generated models from model queries"
         in
         let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
-        let {
-          ModelQueryExecution.ExecutionResult.models = model_query_results;
-          errors = model_query_errors;
-        }
-          =
+        let model_query_results =
           ModelQueryExecution.generate_models_from_queries
             ~pyre_api
             ~scheduler
@@ -384,9 +387,11 @@ let initialize_models
         in
         let () =
           match taint_configuration.dump_model_query_results_path with
-          | Some path ->
-              ModelQueryExecution.DumpModelQueryResults.dump_to_file ~model_query_results ~path
+          | Some path -> ModelQueryExecution.ExecutionResult.dump_to_file model_query_results ~path
           | None -> ()
+        in
+        let model_query_errors =
+          ModelQueryExecution.ExecutionResult.get_errors model_query_results
         in
         let () =
           ModelVerificationError.verify_models_and_dsl
@@ -394,23 +399,26 @@ let initialize_models
             model_query_errors
         in
         let errors = List.append errors model_query_errors in
-        let models =
-          model_query_results
-          |> ModelQueryExecution.ModelQueryRegistryMap.get_registry
-               ~model_join:Model.join_user_models
-          |> Registry.merge ~join:Model.join_user_models models
-        in
-        let () = StepLogger.finish ~integers:["models", Registry.size models] step_logger in
+        let models = ModelQueryExecution.ExecutionResult.get_models model_query_results in
+        let () = StepLogger.finish ~integers:["models", SharedModels.size models] step_logger in
         models, errors
   in
 
   let models =
-    ClassModels.infer ~pyre_api ~user_models:models
-    |> Registry.merge ~join:Model.join_user_models models
+    SharedModels.join_with_registry_sequential
+      models_from_queries
+      ~model_join:Model.join_user_models
+      regular_models
+  in
+
+  let models =
+    ClassModels.infer ~pyre_api ~user_models:(SharedModels.read_only models)
+    |> SharedModels.join_with_registry_sequential models ~model_join:Model.join_user_models
   in
 
   let models =
     MissingFlow.add_obscure_models
+      ~scheduler
       ~static_analysis_configuration
       ~pyre_api
       ~stubs:stubs_hashset
@@ -419,7 +427,7 @@ let initialize_models
 
   let () = Interprocedural.Target.HashsetSharedMemory.cleanup stubs_shared_memory in
 
-  { ModelParseResult.models; queries = []; errors }
+  { ModelGenerationResult.models; errors }
 
 
 let compact_ocaml_heap ~name =
@@ -633,7 +641,7 @@ let run_taint_analysis
         initial_callables)
   in
 
-  let { ModelParseResult.models = initial_models; errors = model_verification_errors; _ } =
+  let { ModelGenerationResult.models = initial_models; errors = model_verification_errors; _ } =
     initialize_models
       ~scheduler
       ~pyre_api
@@ -648,8 +656,10 @@ let run_taint_analysis
     StepLogger.start ~start_message:"Computing overrides" ~end_message:"Overrides computed"
   in
   let maximum_overrides = TaintConfiguration.maximum_overrides_to_analyze taint_configuration in
-  let skip_overrides_targets = Registry.skip_overrides initial_models in
-  let analyze_all_overrides_targets = Registry.analyze_all_overrides initial_models in
+  let skip_overrides_targets = SharedModels.skip_overrides ~scheduler initial_models in
+  let analyze_all_overrides_targets =
+    SharedModels.analyze_all_overrides ~scheduler initial_models
+  in
   let ( {
           Interprocedural.OverrideGraph.override_graph_heap;
           override_graph_shared_memory;
@@ -704,8 +714,8 @@ let run_taint_analysis
     StepLogger.start ~start_message:"Building call graph" ~end_message:"Call graph built"
   in
   let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
-  let attribute_targets = Registry.object_targets initial_models in
-  let skip_analysis_targets = Registry.skip_analysis initial_models in
+  let attribute_targets = SharedModels.object_targets initial_models in
+  let skip_analysis_targets = SharedModels.skip_analysis ~scheduler initial_models in
   let decorator_resolution = Interprocedural.CallGraph.DecoratorResolution.Results.empty in
   let { Interprocedural.CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs }, cache
     =
@@ -732,7 +742,7 @@ let run_taint_analysis
 
   let prune_method =
     if limit_entrypoints then
-      let entrypoint_references = Registry.entrypoints initial_models in
+      let entrypoint_references = SharedModels.entrypoints ~scheduler initial_models in
       let () =
         Log.info
           "Pruning call graph by the following entrypoints: %s"
@@ -773,6 +783,7 @@ let run_taint_analysis
       ~skipped_overrides
       ~override_graph_shared_memory
       ~initial_callables
+      ~initial_models
       ~call_graph_shared_memory:define_call_graphs
       ~whole_program_call_graph
       ~global_constants
@@ -805,11 +816,6 @@ let run_taint_analysis
            (List.length callables_kept))
       ~end_message:"Analysis fixpoint complete"
   in
-  let initial_models =
-    initial_models
-    |> TaintFixpoint.Registry.to_alist
-    |> TaintFixpoint.SharedModels.of_alist_parallel ~scheduler
-  in
   let shared_models =
     TaintFixpoint.record_initial_models
       ~scheduler
@@ -840,9 +846,7 @@ let run_taint_analysis
       ~shared_models
   in
 
-  let all_callables =
-    List.rev_append (TaintFixpoint.SharedModels.targets initial_models) callables_to_analyze
-  in
+  let all_callables = List.rev_append (SharedModels.targets initial_models) callables_to_analyze in
 
   let file_coverage, rule_coverage =
     if not compute_coverage_flag then

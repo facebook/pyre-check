@@ -5,10 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* Registry: represents a mapping from targets to their model. *)
+(* Registry: represents a mapping from targets to their model, stored in the ocaml heap. *)
 
 open Core
-open Ast
 open Interprocedural
 include TaintFixpoint.Registry
 
@@ -26,15 +25,4 @@ let skip_overrides models =
   targets_with_mode models ~mode:Model.Mode.SkipOverrides
   |> List.filter ~f:Target.is_function_or_method
   |> List.map ~f:Target.define_name_exn
-  |> Reference.SerializableSet.of_list
-
-
-let analyze_all_overrides models =
-  targets_with_mode models ~mode:Model.Mode.AnalyzeAllOverrides |> Target.Set.of_list
-
-
-let skip_analysis models =
-  targets_with_mode models ~mode:Model.Mode.SkipAnalysis |> Target.Set.of_list
-
-
-let entrypoints models = targets_with_mode models ~mode:Model.Mode.Entrypoint
+  |> Ast.Reference.SerializableSet.of_list
