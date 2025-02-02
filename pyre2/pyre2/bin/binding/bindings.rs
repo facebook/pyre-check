@@ -1098,7 +1098,11 @@ impl<'a> BindingsBuilder<'a> {
         for x in accumulate.returns.clone() {
             let key = self.table.insert(
                 Key::ReturnExpression(ShortIdentifier::new(&func_name), x.range),
-                Binding::ReturnExpr(return_ann, return_expr(x), !accumulate.yields.is_empty()),
+                Binding::ReturnExpr(
+                    return_ann,
+                    Ast::return_or_none_owned(x),
+                    !accumulate.yields.is_empty(),
+                ),
             );
             return_expr_keys.insert(key);
         }
@@ -1160,7 +1164,10 @@ impl<'a> BindingsBuilder<'a> {
                 for x in accumulate.returns {
                     self.table.insert(
                         Key::AsyncReturnType(x.range),
-                        Binding::AsyncReturnType(Box::new((return_expr(x), return_type.clone()))),
+                        Binding::AsyncReturnType(Box::new((
+                            Ast::return_or_none_owned(x),
+                            return_type.clone(),
+                        ))),
                     );
                 }
             } else {
@@ -2397,12 +2404,5 @@ impl LegacyTParamBuilder {
                     .insert(KeyLegacyTypeParam(ShortIdentifier::new(id)))
             })
             .collect()
-    }
-}
-
-fn return_expr(x: StmtReturn) -> Expr {
-    match x.value {
-        Some(x) => *x,
-        None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range }),
     }
 }

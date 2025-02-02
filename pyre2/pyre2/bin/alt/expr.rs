@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::borrow::Cow;
-
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Arguments;
@@ -15,9 +13,7 @@ use ruff_python_ast::Comprehension;
 use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBinOp;
-use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprSlice;
-use ruff_python_ast::ExprYield;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Keyword;
 use ruff_python_ast::Number;
@@ -513,13 +509,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.expr_infer_with_hint(x, None)
     }
 
-    fn yield_expr<'b>(&self, x: &'b ExprYield) -> Cow<'b, Expr> {
-        match &x.value {
-            Some(x) => Cow::Borrowed(&**x),
-            None => Cow::Owned(Expr::NoneLiteral(ExprNoneLiteral { range: x.range })),
-        }
-    }
-
     /// Apply a decorator. This effectively synthesizes a function call.
     pub fn apply_decorator(&self, decorator: &Decorator, decoratee: Type) -> Type {
         if matches!(&decoratee, Type::ClassDef(cls) if cls.has_qname("typing", "TypeVar")) {
@@ -886,7 +875,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let yield_expr_type = &self
                     .get(&Key::YieldTypeOfYieldAnnotation(x.range))
                     .arc_clone();
-                let yield_value = self.yield_expr(x);
+                let yield_value = Ast::yield_or_none(x);
                 let inferred_expr_type = &self.expr_infer(&yield_value);
 
                 self.check_type(yield_expr_type, inferred_expr_type, x.range);
