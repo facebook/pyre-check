@@ -26,7 +26,6 @@ use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_set::SmallSet;
-use static_assertions::assert_eq_size;
 use vec1::Vec1;
 
 use crate::alt::class::classdef::ClassField;
@@ -44,20 +43,27 @@ use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 use crate::util::display::DisplayWith;
 
-assert_eq_size!(Key, [usize; 5]);
-assert_eq_size!(KeyExpect, [usize; 1]);
-assert_eq_size!(KeyExport, [usize; 3]);
-assert_eq_size!(KeyClassField, [usize; 4]);
-assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
-assert_eq_size!(KeyClassMetadata, [usize; 1]);
-assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
+#[cfg(target_pointer_width = "64")]
+mod check_size {
+    use static_assertions::assert_eq_size;
 
-assert_eq_size!(Binding, [usize; 9]);
-assert_eq_size!(BindingExpect, [usize; 8]);
-assert_eq_size!(BindingAnnotation, [usize; 9]);
-assert_eq_size!(BindingClassMetadata, [usize; 10]);
-assert_eq_size!(BindingClassField, [usize; 15]);
-assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
+    use super::*;
+
+    assert_eq_size!(Key, [usize; 5]);
+    assert_eq_size!(KeyExpect, [usize; 1]);
+    assert_eq_size!(KeyExport, [usize; 3]);
+    assert_eq_size!(KeyClassField, [usize; 4]);
+    assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
+    assert_eq_size!(KeyClassMetadata, [usize; 1]);
+    assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
+
+    assert_eq_size!(Binding, [usize; 9]);
+    assert_eq_size!(BindingExpect, [usize; 8]);
+    assert_eq_size!(BindingAnnotation, [usize; 9]);
+    assert_eq_size!(BindingClassMetadata, [usize; 10]);
+    assert_eq_size!(BindingClassField, [usize; 15]);
+    assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
+}
 
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
     const EXPORTED: bool = false;

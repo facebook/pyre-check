@@ -25,7 +25,6 @@ use ruff_python_ast::Number;
 use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
-use static_assertions::assert_eq_size;
 
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::ast::Ast;
@@ -35,7 +34,8 @@ use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 
-assert_eq_size!(Lit, [usize; 3]);
+#[cfg(target_pointer_width = "64")]
+static_assertions::assert_eq_size!(Lit, [usize; 3]);
 
 /// A literal value.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

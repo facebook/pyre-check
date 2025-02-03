@@ -14,7 +14,6 @@ use parse_display::Display;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
-use static_assertions::assert_eq_size;
 
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
@@ -226,7 +225,8 @@ impl TypeAlias {
 }
 
 // We have a lot of types, want to make sure they stay a reasonable size
-assert_eq_size!(Type, [usize; 4]);
+#[cfg(target_pointer_width = "64")]
+static_assertions::assert_eq_size!(Type, [usize; 4]);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Decoration {
