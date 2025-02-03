@@ -734,6 +734,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     (Type::Literal(Lit::Enum(box (_, member))), "_name_" | "name") => {
                         Type::Literal(Lit::String(member.as_str().into()))
                     }
+                    (Type::Literal(Lit::Enum(box (_, member))), "_value_" | "value") => {
+                        self.attr_infer(&obj, member, x.range)
+                    }
                     _ => self.attr_infer(&obj, &x.attr.id, x.range),
                 }
             }

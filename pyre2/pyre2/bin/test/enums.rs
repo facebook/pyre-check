@@ -45,6 +45,10 @@ class MyEnum(Enum):
 
 assert_type(MyEnum.X, Literal[MyEnum.X])
 assert_type(MyEnum.__PRIVATE, Literal[3])
+assert_type(MyEnum.X.name, Literal["X"])
+assert_type(MyEnum.X._name_, Literal["X"])
+assert_type(MyEnum.X.value, Literal[1])
+assert_type(MyEnum.X._value_, Literal[1])
 "#,
 );
 
