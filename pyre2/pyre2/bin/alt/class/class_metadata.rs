@@ -187,7 +187,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ty_decorator.callee_kind()
             {
                 let fields = self.get_dataclass_fields(cls, &bases_with_metadata);
-                let synthesized_methods = if cls.contains(&dunder::INIT) || !kws.init {
+                let synthesized_methods = if !kws.init || cls.contains(&dunder::INIT) {
                     // If a class already defines `__init__`, @dataclass doesn't overwrite it.
                     SmallMap::new()
                 } else {
