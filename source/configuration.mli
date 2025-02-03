@@ -59,10 +59,6 @@ module SourcePaths : sig
   [@@deriving sexp, compare, hash, yojson]
 
   val to_search_paths : t -> SearchPath.t list
-
-  val set_kill_buck_after_build : t -> t
-
-  val set_number_of_threads : number_of_threads:int -> t -> t
 end
 
 module RemoteLogging : sig

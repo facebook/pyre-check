@@ -266,22 +266,6 @@ module SourcePaths = struct
         sources
     | Buck { Buck.artifact_root; targets_fallback_sources; _ } ->
         SearchPath.Root artifact_root :: Option.value ~default:[] targets_fallback_sources
-
-
-  let set_kill_buck_after_build source_paths =
-    match source_paths with
-    | Simple _
-    | WithUnwatchedDependency _ ->
-        source_paths
-    | Buck buck -> Buck { buck with kill_buck_after_build = true }
-
-
-  let set_number_of_threads ~number_of_threads source_paths =
-    match source_paths with
-    | Simple _
-    | WithUnwatchedDependency _ ->
-        source_paths
-    | Buck buck -> Buck { buck with number_of_threads = Some number_of_threads }
 end
 
 module RemoteLogging = struct

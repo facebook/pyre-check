@@ -172,9 +172,8 @@ let run_infer configuration_file =
                remote_logging;
                profiling_output;
                memory_profiling_output;
-               source_paths;
                _;
-             } as base;
+             };
            _;
          } as infer_configuration) ->
         CommandStartup.setup_global_states
@@ -189,19 +188,7 @@ let run_infer configuration_file =
 
         Lwt_main.run
           (Lwt.catch
-             (fun () ->
-               run_infer (* TODO(S486183): Restore after SEV is mitigated. *)
-                 {
-                   infer_configuration with
-                   base =
-                     {
-                       base with
-                       source_paths =
-                         source_paths
-                         |> Configuration.SourcePaths.set_kill_buck_after_build
-                         |> Configuration.SourcePaths.set_number_of_threads ~number_of_threads:10;
-                     };
-                 })
+             (fun () -> run_infer infer_configuration)
              (fun exn -> Lwt.return (CheckCommand.on_exception exn)))
   in
   Statistics.flush ();
