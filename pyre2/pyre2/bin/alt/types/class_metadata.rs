@@ -211,6 +211,8 @@ pub struct DataclassMetadata {
     pub synthesized_fields: SmallSet<Name>,
     /// @dataclass(frozen=...).
     pub frozen: bool,
+    /// @dataclass(kw_only=...).
+    pub kw_only: bool,
 }
 
 impl DataclassMetadata {
@@ -226,6 +228,7 @@ impl DataclassMetadata {
             // The remaining metadata are irrelevant when there are no fields to synthesize, so
             // just set them to some sensible-seeming value.
             frozen: self.frozen,
+            kw_only: self.kw_only,
         }
     }
 }

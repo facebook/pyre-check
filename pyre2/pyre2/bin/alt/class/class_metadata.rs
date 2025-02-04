@@ -203,6 +203,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     fields: dataclass_fields,
                     synthesized_fields,
                     frozen: kws.frozen,
+                    kw_only: kws.kw_only,
                 });
             }
         }
@@ -483,7 +484,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     /// Gets a dataclass field as a function param.
-    fn get_dataclass_param(&self, name: &Name, field: ClassField) -> Param {
+    fn get_dataclass_param(&self, name: &Name, field: ClassField, kw_only: bool) -> Param {
         let ClassField(ClassFieldInner::Simple {
             ty,
             annotation: _,
@@ -494,7 +495,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ClassFieldInitialization::Class => Required::Required,
             ClassFieldInitialization::Instance => Required::Optional,
         };
-        Param::Pos(name.clone(), ty, required)
+        if kw_only {
+            Param::KwOnly(name.clone(), ty, required)
+        } else {
+            Param::Pos(name.clone(), ty, required)
+        }
     }
 
     fn get_dataclass_synthesized_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
@@ -505,7 +510,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             return None;
         }
         if *name == dunder::INIT {
-            Some(self.get_dataclass_init(cls, &dataclass.fields))
+            Some(self.get_dataclass_init(cls, &dataclass.fields, dataclass.kw_only))
         } else if *name == dunder::MATCH_ARGS {
             Some(self.get_dataclass_match_args(&dataclass.fields))
         } else {
@@ -514,7 +519,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     /// Gets __init__ method for an `@dataclass`-decorated class.
-    fn get_dataclass_init(&self, cls: &Class, fields: &SmallSet<Name>) -> ClassField {
+    fn get_dataclass_init(
+        &self,
+        cls: &Class,
+        fields: &SmallSet<Name>,
+        kw_only: bool,
+    ) -> ClassField {
         let mut params = vec![Param::Pos(
             Name::new("self"),
             cls.self_type(),
@@ -522,7 +532,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )];
         for name in fields {
             let field = self.get_class_member(cls, name).unwrap().value;
-            params.push(self.get_dataclass_param(name, field));
+            params.push(self.get_dataclass_param(name, field, kw_only));
         }
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), Type::None)),

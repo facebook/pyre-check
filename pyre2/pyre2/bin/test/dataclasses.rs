@@ -237,3 +237,15 @@ assert_type(C_has_match_args_explicit.__match_args__, tuple[Literal['x']])
 C_no_match_args.__match_args__ # E: no class attribute `__match_args__`
     "#,
 );
+
+testcase!(
+    test_kw_only,
+    r#"
+from dataclasses import dataclass
+@dataclass(kw_only=True)
+class C:
+    x: int
+C(x=0)  # OK
+C(0)  # E: Expected 0 positional arguments
+    "#,
+);

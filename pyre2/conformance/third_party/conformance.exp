@@ -4639,11 +4639,31 @@
     {
       "code": -2,
       "column": 1,
+      "concise_description": "Missing argument `a`",
+      "description": "Missing argument `a`",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 4,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 1,
       "concise_description": "Missing argument `b`",
       "description": "Missing argument `b`",
       "line": 47,
       "name": "PyreError",
       "stop_column": 4,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Expected 0 positional arguments, got 1",
+      "description": "Expected 0 positional arguments, got 1",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 9,
       "stop_line": 47
     },
     {
@@ -4655,6 +4675,56 @@
       "name": "PyreError",
       "stop_column": 4,
       "stop_line": 48
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Missing argument `a`",
+      "description": "Missing argument `a`",
+      "line": 50,
+      "name": "PyreError",
+      "stop_column": 4,
+      "stop_line": 50
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Expected 0 positional arguments, got 1",
+      "description": "Expected 0 positional arguments, got 1",
+      "line": 50,
+      "name": "PyreError",
+      "stop_column": 9,
+      "stop_line": 50
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Missing argument `a`",
+      "description": "Missing argument `a`",
+      "line": 53,
+      "name": "PyreError",
+      "stop_column": 4,
+      "stop_line": 53
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Missing argument `b`",
+      "description": "Missing argument `b`",
+      "line": 53,
+      "name": "PyreError",
+      "stop_column": 4,
+      "stop_line": 53
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Expected 0 positional arguments, got 2",
+      "description": "Expected 0 positional arguments, got 2",
+      "line": 53,
+      "name": "PyreError",
+      "stop_column": 9,
+      "stop_line": 53
     },
     {
       "code": -2,

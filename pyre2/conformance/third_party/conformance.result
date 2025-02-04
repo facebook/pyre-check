@@ -394,15 +394,15 @@
     "Line 37: Unexpected errors ['EXPECTED Literal[15] <: float']"
   ],
   "dataclasses_kwonly.py": [
-    "Line 53: Expected 1 errors",
     "Line 17: Unexpected errors ['Missing argument `b`']",
     "Line 18: Unexpected errors ['Missing argument `b`']",
     "Line 28: Unexpected errors ['EXPECTED Literal[3] <: _MISSING_TYPE']",
     "Line 32: Unexpected errors [\"EXPECTED Literal['hi'] <: int\"]",
     "Line 33: Unexpected errors ['Missing argument `b`']",
     "Line 35: Unexpected errors [\"EXPECTED Literal['hi'] <: int\", 'Multiple values for argument `b`']",
-    "Line 47: Unexpected errors ['Missing argument `b`']",
+    "Line 47: Unexpected errors ['Missing argument `a`', 'Missing argument `b`', 'Expected 0 positional arguments, got 1']",
     "Line 48: Unexpected errors ['Missing argument `b`']",
+    "Line 50: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 1']",
     "Line 61: Unexpected errors ['EXPECTED float <: int', 'Multiple values for argument `b`']"
   ],
   "dataclasses_order.py": [
