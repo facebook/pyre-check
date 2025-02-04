@@ -51,9 +51,23 @@ macro_rules! testcase {
 
 #[macro_export]
 macro_rules! testcase_with_bug {
-    ( $explanatation:expr, $($t:tt)*) =>  {
-        $crate::testcase!($($t)*);
-    }
+    ($explanatation:expr, $name:ident, $imports:expr, $contents:expr,) => {
+        #[test]
+        fn $name() -> anyhow::Result<()> {
+            $crate::test::util::testcase_for_macro($imports, $contents, file!(), line!() + 1)
+        }
+    };
+    ($explanatation:expr, $name:ident, $contents:expr,) => {
+        #[test]
+        fn $name() -> anyhow::Result<()> {
+            $crate::test::util::testcase_for_macro(
+                $crate::test::util::TestEnv::new(),
+                $contents,
+                file!(),
+                line!() + 1,
+            )
+        }
+    };
 }
 
 fn default_path(name: ModuleName) -> PathBuf {
