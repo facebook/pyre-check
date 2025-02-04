@@ -36,13 +36,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
     ) -> SmallSet<Name> {
         let mut all_fields = SmallSet::new();
-        for (base, metadata) in bases_with_metadata.iter().rev() {
+        for (_, metadata) in bases_with_metadata.iter().rev() {
             if let Some(dataclass) = metadata.dataclass_metadata() {
-                for name in &dataclass.fields {
-                    if self.get_class_member(base.class_object(), name).is_some() {
-                        all_fields.insert(name.clone());
-                    }
-                }
+                all_fields.extend(dataclass.fields.clone());
             }
         }
         for name in cls.fields() {
