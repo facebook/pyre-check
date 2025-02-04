@@ -129,12 +129,6 @@ impl<'a> BindingsBuilder<'a> {
             }
             // A name with flow info but not static info is a reference to something that's not a class field.
             if let Some(stat_info) = last_scope.stat.0.get(name) {
-                let flow_type = Binding::Forward(
-                    self.table
-                        .types
-                        .0
-                        .insert(Key::Anywhere(name.clone(), stat_info.loc)),
-                );
                 let initialization = if info.is_initialized() {
                     ClassFieldInitialization::Class
                 } else {
@@ -143,7 +137,7 @@ impl<'a> BindingsBuilder<'a> {
                 let binding = BindingClassField {
                     class: definition_key,
                     name: name.clone(),
-                    value: flow_type,
+                    value: Binding::Forward(info.key),
                     annotation: info.ann(),
                     range: stat_info.loc,
                     initialization,

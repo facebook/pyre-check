@@ -124,7 +124,7 @@ def f(c: C):
 );
 
 testcase_with_bug!(
-    "Property setters are not yet supported fully due to flow handling in bindings.rs",
+    "Hack to break def folding is required",
     test_property_with_setter,
     r#"
 from typing import assert_type, reveal_type
@@ -141,8 +141,8 @@ class C:
     def foo(self, value: str) -> None:
         pass
 def f(c: C):
-    assert_type(c.foo, int)  # E: assert_type(property[(self: C) -> int] | property_with_setter[(self: C) -> int, (self: C, value: str) -> None], int)
-    c.foo = "42"  # E: EXPECTED Literal['42'] <: property[(self: C) -> int] | property_with_setter[(self: C) -> int, (self: C, value: str) -> None]
-    reveal_type(C.foo)  # E: revealed type: property[(self: C) -> int] | property_with_setter[(self: C) -> int, (self: C, value: str) -> None]
+    assert_type(c.foo, int)
+    c.foo = "42"
+    reveal_type(C.foo)  # E: revealed type: property_with_setter[(self: C) -> int, (self: C, value: str) -> None]
     "#,
 );
