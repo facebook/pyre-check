@@ -206,7 +206,7 @@ impl EnumMetadata {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataclassMetadata {
     pub fields: SmallSet<Name>,
-    pub synthesized_methods: SmallSet<Name>,
+    pub synthesized_fields: SmallSet<Name>,
     pub frozen: bool,
 }
 

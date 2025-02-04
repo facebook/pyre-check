@@ -17,7 +17,6 @@ use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
-use starlark_map::smallset;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
@@ -40,7 +39,9 @@ use crate::types::callable::ParamList;
 use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
+use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
+use crate::types::tuple::Tuple;
 use crate::types::type_var::Variance;
 use crate::types::types::CalleeKind;
 use crate::types::types::TParamInfo;
@@ -114,7 +115,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             // itself decorated with @dataclass, we'll recompute the fields and overwrite this.
                             dataclass_metadata = Some(DataclassMetadata {
                                 fields: base_dataclass.fields.clone(),
-                                synthesized_methods: SmallSet::new(),
+                                synthesized_fields: SmallSet::new(),
                                 frozen: base_dataclass.frozen,
                             });
                         }
@@ -193,16 +194,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             if let Some(CalleeKind::Callable(CallableKind::Dataclass(kws))) =
                 ty_decorator.callee_kind()
             {
-                let fields = self.get_dataclass_fields(cls, &bases_with_metadata);
-                let synthesized_methods = if !kws.init || cls.contains(&dunder::INIT) {
+                let dataclass_fields = self.get_dataclass_fields(cls, &bases_with_metadata);
+                let mut synthesized_fields = SmallSet::new();
+                if kws.init && !cls.contains(&dunder::INIT) {
                     // If a class already defines `__init__`, @dataclass doesn't overwrite it.
-                    SmallSet::new()
-                } else {
-                    smallset! { dunder::INIT }
-                };
+                    synthesized_fields.insert(dunder::INIT);
+                }
+                if kws.match_args {
+                    synthesized_fields.insert(dunder::MATCH_ARGS);
+                }
                 dataclass_metadata = Some(DataclassMetadata {
-                    fields,
-                    synthesized_methods,
+                    fields: dataclass_fields,
+                    synthesized_fields,
                     frozen: kws.frozen,
                 });
             }
@@ -229,8 +232,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
-    pub fn get_synthesized_method(&self, cls: &Class, name: &Name) -> Option<ClassField> {
-        self.get_dataclass_synthesized_method(cls, name)
+    pub fn get_synthesized_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
+        self.get_dataclass_synthesized_field(cls, name)
     }
 
     /// This helper deals with special cases where we want to intercept an `Expr`
@@ -498,15 +501,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Param::Pos(name.clone(), ty, required)
     }
 
-    fn get_dataclass_synthesized_method(&self, cls: &Class, name: &Name) -> Option<ClassField> {
+    fn get_dataclass_synthesized_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
         let metadata = self.get_metadata_for_class(cls);
         let dataclass = metadata.dataclass_metadata()?;
         // TODO(rechen): use a series of boolean flags to get rid of the unreachable!(...).
-        if !dataclass.synthesized_methods.contains(name) {
+        if !dataclass.synthesized_fields.contains(name) {
             return None;
         }
         if *name == dunder::INIT {
             Some(self.get_dataclass_init(cls, &dataclass.fields))
+        } else if *name == dunder::MATCH_ARGS {
+            Some(self.get_dataclass_match_args(&dataclass.fields))
         } else {
             unreachable!("No implementation found for dataclass-synthesized method: {name}");
         }
@@ -527,6 +532,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Box::new(Callable::list(ParamList::new(params), Type::None)),
             CallableKind::Def,
         );
+        ClassField(ClassFieldInner::Simple {
+            ty,
+            annotation: None,
+            initialization: ClassFieldInitialization::Class,
+            readonly: false,
+        })
+    }
+
+    fn get_dataclass_match_args(&self, fields: &SmallSet<Name>) -> ClassField {
+        let ts = fields
+            .iter()
+            .map(|name| Type::Literal(Lit::String(name.as_str().into())));
+        let ty = Type::Tuple(Tuple::Concrete(ts.collect()));
         ClassField(ClassFieldInner::Simple {
             ty,
             annotation: None,

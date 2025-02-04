@@ -217,3 +217,23 @@ def f(c: C, d: D):
     d.x = 0  # E: Could not assign to read-only field `x`
     "#,
 );
+
+testcase!(
+    test_match_args,
+    r#"
+from typing import assert_type, Literal
+from dataclasses import dataclass
+@dataclass
+class C_has_match_args_default:
+    x: int
+@dataclass(match_args=True)
+class C_has_match_args_explicit:
+    x: int
+@dataclass(match_args=False)
+class C_no_match_args:
+    x: int
+assert_type(C_has_match_args_default.__match_args__, tuple[Literal['x']])
+assert_type(C_has_match_args_explicit.__match_args__, tuple[Literal['x']])
+C_no_match_args.__match_args__ # E: no class attribute `__match_args__`
+    "#,
+);
