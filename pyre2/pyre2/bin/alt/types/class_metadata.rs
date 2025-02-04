@@ -199,7 +199,6 @@ impl EnumMetadata {
         self.cls
             .class_object()
             .fields()
-            .iter()
             .filter_map(|f| self.get_member(f))
             .collect()
     }

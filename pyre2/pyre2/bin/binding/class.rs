@@ -15,6 +15,7 @@ use ruff_python_ast::ExprName;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtClassDef;
 use ruff_text_size::Ranged;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::binding::binding::Binding;
@@ -31,6 +32,7 @@ use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
 use crate::dunder;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::types::class::ClassFieldProperties;
 use crate::types::types::AnyStyle;
 use crate::util::prelude::SliceExt;
 
@@ -119,7 +121,7 @@ impl<'a> BindingsBuilder<'a> {
         self.stmts(body);
 
         let last_scope = self.scopes.pop();
-        let mut fields = SmallSet::new();
+        let mut fields = SmallMap::new();
         for (name, info) in last_scope.flow.info.iter() {
             if non_field_names.contains(name) {
                 // TODO: this incorrectly filters out fields that reuse already-in-scope names.
@@ -146,7 +148,12 @@ impl<'a> BindingsBuilder<'a> {
                     range: stat_info.loc,
                     initialization,
                 };
-                fields.insert(name.clone());
+                fields.insert(
+                    name.clone(),
+                    ClassFieldProperties {
+                        is_annotated: info.ann().is_some(),
+                    },
+                );
                 self.table.insert(
                     KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
                     binding,
@@ -157,8 +164,13 @@ impl<'a> BindingsBuilder<'a> {
             for (method_name, instance_attributes) in body.instance_attributes_by_method {
                 if method_name == dunder::INIT {
                     for (name, InstanceAttribute(value, annotation, range)) in instance_attributes {
-                        if !fields.contains(&name) {
-                            fields.insert(name.clone());
+                        if !fields.contains_key(&name) {
+                            fields.insert(
+                                name.clone(),
+                                ClassFieldProperties {
+                                    is_annotated: annotation.is_some(),
+                                },
+                            );
                             self.table.insert(
                                 KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
                                 BindingClassField {
@@ -214,7 +226,7 @@ impl<'a> BindingsBuilder<'a> {
             KeyClassMetadata(ShortIdentifier::new(&class_name)),
             BindingClassMetadata(definition_key, vec![Expr::Name(base_name)], vec![], vec![]),
         );
-        let mut fields = SmallSet::new();
+        let mut fields = SmallMap::new();
         match members {
             // Enum('Color5', 'RED, GREEN, BLUE')
             // Enum('Color6', 'RED GREEN BLUE')
@@ -228,7 +240,12 @@ impl<'a> BindingsBuilder<'a> {
                 for member in parts {
                     if is_valid_identifier(member) {
                         let member_name = Name::new(member);
-                        fields.insert(member_name.clone());
+                        fields.insert(
+                            member_name.clone(),
+                            ClassFieldProperties {
+                                is_annotated: false,
+                            },
+                        );
                         self.table.insert(
                             KeyClassField(ShortIdentifier::new(&class_name), member_name.clone()),
                             BindingClassField {

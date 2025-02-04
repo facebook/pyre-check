@@ -38,6 +38,7 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
 use crate::types::class::Class;
+use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassType;
 use crate::types::class::Substitution;
 use crate::types::class::TArgs;
@@ -258,7 +259,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn class_definition(
         &self,
         x: &StmtClassDef,
-        fields: SmallSet<Name>,
+        fields: SmallMap<Name, ClassFieldProperties>,
         bases: &[Expr],
         legacy_tparams: &[Idx<KeyLegacyTypeParam>],
     ) -> Class {
@@ -281,7 +282,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn functional_class_definition(&self, name: &Identifier, fields: &SmallSet<Name>) -> Class {
+    pub fn functional_class_definition(
+        &self,
+        name: &Identifier,
+        fields: &SmallMap<Name, ClassFieldProperties>,
+    ) -> Class {
         Class::new(
             name.clone(),
             self.module_info().dupe(),

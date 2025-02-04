@@ -16,7 +16,6 @@ use parse_display::Display;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
 use starlark_map::small_map::SmallMap;
-use starlark_map::small_set::SmallSet;
 
 use crate::module::module_info::ModuleInfo;
 use crate::types::qname::QName;
@@ -30,11 +29,18 @@ use crate::util::display::commas_iter;
 #[derive(Debug, Clone, Display, Dupe, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub struct Class(ArcId<ClassInner>);
 
+/// Simple properties of class fields that can be attached to the class definition. Note that this
+/// does not include the type of a field, which needs to be computed lazily to avoid a recursive loop.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClassFieldProperties {
+    pub is_annotated: bool,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct ClassInner {
     qname: QName,
     tparams: TParams,
-    fields: SmallSet<Name>,
+    fields: SmallMap<Name, ClassFieldProperties>,
 }
 
 pub enum ClassKind {
@@ -89,7 +95,7 @@ impl Class {
         name: Identifier,
         module_info: ModuleInfo,
         tparams: TParams,
-        fields: SmallSet<Name>,
+        fields: SmallMap<Name, ClassFieldProperties>,
     ) -> Self {
         Self(ArcId::new(ClassInner {
             qname: QName::new(name, module_info),
@@ -99,7 +105,7 @@ impl Class {
     }
 
     pub fn contains(&self, name: &Name) -> bool {
-        self.0.fields.contains(name)
+        self.0.fields.contains_key(name)
     }
 
     pub fn name(&self) -> &Identifier {
@@ -128,8 +134,8 @@ impl Class {
         &self.0.qname.module
     }
 
-    pub fn fields(&self) -> &SmallSet<Name> {
-        &self.0.fields
+    pub fn fields(&self) -> impl Iterator<Item = &Name> {
+        self.0.fields.keys()
     }
 
     pub fn has_qname(&self, module: &str, name: &str) -> bool {

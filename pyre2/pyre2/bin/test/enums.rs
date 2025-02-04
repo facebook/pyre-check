@@ -25,7 +25,6 @@ class E(enum.Enum):
     let cls = get_class("E", module, &state).unwrap();
     let fields = cls
         .fields()
-        .iter()
         .map(|f| f.as_str())
         .sorted()
         .collect::<Vec<_>>();

@@ -25,6 +25,7 @@ use ruff_python_ast::StmtFunctionDef;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
@@ -38,6 +39,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
+use crate::types::class::ClassFieldProperties;
 use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
@@ -534,12 +536,12 @@ pub enum Binding {
     /// The `Vec<Expr>` contains the base classes from the class header.
     /// The `Vec<Idx<KeyLegacyTypeParam>>` contains binding information for possible legacy type params.
     ClassDef(
-        Box<(StmtClassDef, SmallSet<Name>)>,
+        Box<(StmtClassDef, SmallMap<Name, ClassFieldProperties>)>,
         Box<[Expr]>,
         Box<[Decorator]>,
         Box<[Idx<KeyLegacyTypeParam>]>,
     ),
-    FunctionalClassDef(Identifier, SmallSet<Name>),
+    FunctionalClassDef(Identifier, SmallMap<Name, ClassFieldProperties>),
     /// The Self type for a class, must point at a class.
     SelfType(Idx<Key>),
     /// A forward reference to another binding.

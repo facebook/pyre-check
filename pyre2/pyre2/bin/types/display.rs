@@ -319,7 +319,6 @@ mod tests {
 
     use ruff_python_ast::Identifier;
     use ruff_text_size::TextSize;
-    use starlark_map::small_set::SmallSet;
 
     use super::*;
     use crate::module::module_info::ModuleInfo;
@@ -352,7 +351,7 @@ mod tests {
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
             mi,
             TParams::new(tparams).unwrap(),
-            SmallSet::new(),
+            SmallMap::new(),
         )
     }
 
