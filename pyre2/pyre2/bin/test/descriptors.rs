@@ -104,27 +104,7 @@ def f(c: C):
     "#,
 );
 
-// TODO(stroxler): Remove this once `test_property_with_setter` passes.
 testcase!(
-    test_property_with_setter_with_control_flow_workarounds,
-    r#"
-from typing import assert_type, reveal_type
-class C:
-    @property
-    def foo(self) -> int:
-        return 42
-    @foo.setter
-    def settable_foo(self, value: str) -> None:
-        pass
-def f(c: C):
-    assert_type(c.settable_foo, int)
-    c.settable_foo = "42"
-    reveal_type(C.settable_foo)  # E: property_with_setter[(self: C) -> int, (self: C, value: str) -> None]
-    "#,
-);
-
-testcase_with_bug!(
-    "Hack to break def folding is required",
     test_property_with_setter,
     r#"
 from typing import assert_type, reveal_type
@@ -132,11 +112,6 @@ class C:
     @property
     def foo(self) -> int:
         return 42
-    # TODO(samgoldman) This is a workaround to avoid function def folding in
-    # bindings; once we are dealing with overloads in some other way we can
-    # remove it.
-    def _break_function_def_folding_in_bindings_(self) -> None:
-        ...
     @foo.setter
     def foo(self, value: str) -> None:
         pass
