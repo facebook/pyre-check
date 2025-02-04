@@ -273,6 +273,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
+    pub fn get_idx_class_def(&self, idx: Idx<Key>) -> Option<Class> {
+        let ty = self.get_idx(idx);
+        match &*ty {
+            Type::ClassDef(cls) => Some(cls.dupe()),
+            _ => None,
+        }
+    }
+
     pub fn functional_class_definition(&self, name: &Identifier, fields: &SmallSet<Name>) -> Class {
         Class::new(
             name.clone(),
@@ -307,10 +315,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // TODO(stroxler): Eventually, we should raise type errors on generic Enum because
         // this doesn't make semantic sense. But in the meantime we need to be robust against
         // this possibility.
-        match self.get_idx(key).deref() {
-            Type::ClassDef(class) => self.get_enum_from_class(class),
-            _ => None,
-        }
+        self.get_idx_class_def(key)
+            .and_then(|cls| self.get_enum_from_class(&cls))
     }
 
     fn check_and_create_targs(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> TArgs {
