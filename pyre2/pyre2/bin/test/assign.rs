@@ -290,6 +290,19 @@ def f(cond: bool):
 );
 
 testcase!(
+    test_annot_flow_assign,
+    r#"
+from typing import Literal
+x: int = 0
+lit0: Literal[0] = x
+x = 1
+lit1: Literal[1] = x
+x = "oops"  # E: Literal['oops'] <: int
+lit2: Literal["oops"] = x  # E: int <: Literal['oops']
+    "#,
+);
+
+testcase!(
     test_type_alias_simple,
     r#"
 from typing import assert_type
