@@ -22,11 +22,11 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::DataclassMetadata;
+use crate::alt::types::class_metadata::DataclassSynthesizedFields;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyLegacyTypeParam;
-use crate::dunder;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::CallableKind;
@@ -182,13 +182,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ty_decorator.callee_kind()
             {
                 let dataclass_fields = self.get_dataclass_fields(cls, &bases_with_metadata);
-                let mut synthesized_fields = SmallSet::new();
-                if kws.init {
-                    synthesized_fields.insert(dunder::INIT);
-                }
-                if kws.match_args {
-                    synthesized_fields.insert(dunder::MATCH_ARGS);
-                }
+                let synthesized_fields = DataclassSynthesizedFields {
+                    init: kws.init,
+                    match_args: kws.match_args,
+                };
                 dataclass_metadata = Some(DataclassMetadata {
                     fields: dataclass_fields,
                     synthesized_fields,

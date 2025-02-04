@@ -204,11 +204,26 @@ impl EnumMetadata {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DataclassSynthesizedFields {
+    pub init: bool,
+    pub match_args: bool,
+}
+
+impl DataclassSynthesizedFields {
+    fn none() -> Self {
+        Self {
+            init: false,
+            match_args: false,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataclassMetadata {
     /// The dataclass fields, e.g., `{'x'}` for `@dataclass class C: x: int`.
     pub fields: SmallSet<Name>,
     /// Synthesized fields of the dataclass, like the generated `__init__` method.
-    pub synthesized_fields: SmallSet<Name>,
+    pub synthesized_fields: DataclassSynthesizedFields,
     /// @dataclass(frozen=...).
     pub frozen: bool,
     /// @dataclass(kw_only=...).
@@ -224,7 +239,7 @@ impl DataclassMetadata {
             fields: self.fields.clone(),
             // Synthesized fields like `__init__` should not be inherited, as doing so would
             // incorrectly suggest that they are directly defined on the inheriting class.
-            synthesized_fields: SmallSet::new(),
+            synthesized_fields: DataclassSynthesizedFields::none(),
             // The remaining metadata are irrelevant when there are no fields to synthesize, so
             // just set them to some sensible-seeming value.
             frozen: self.frozen,

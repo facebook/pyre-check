@@ -56,16 +56,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Option<ClassField> {
         let metadata = self.get_metadata_for_class(cls);
         let dataclass = metadata.dataclass_metadata()?;
-        // TODO(rechen): use a series of boolean flags to get rid of the unreachable!(...).
-        if !dataclass.synthesized_fields.contains(name) {
-            return None;
-        }
-        if *name == dunder::INIT {
+        if *name == dunder::INIT && dataclass.synthesized_fields.init {
             Some(self.get_dataclass_init(cls, &dataclass.fields, dataclass.kw_only))
-        } else if *name == dunder::MATCH_ARGS {
+        } else if *name == dunder::MATCH_ARGS && dataclass.synthesized_fields.match_args {
             Some(self.get_dataclass_match_args(&dataclass.fields))
         } else {
-            unreachable!("No implementation found for dataclass-synthesized method: {name}");
+            None
         }
     }
 
