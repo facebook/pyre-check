@@ -546,13 +546,10 @@
   ],
   "enums_definition.py": [],
   "enums_expansion.py": [
-    "Line 53: Expected 1 errors",
     "Line 23: Unexpected errors ['Missing argument `flush`']",
     "Line 31: Unexpected errors ['Missing argument `flush`']",
     "Line 33: Unexpected errors ['Missing argument `flush`']",
-    "Line 50: Unexpected errors ['Missing argument `flush`']",
-    "Line 52: Unexpected errors ['assert_type(Literal[CustomFlags.FLAG3], CustomFlags) failed']",
-    "Line 63: Unexpected errors ['assert_type(Never, CustomFlags) failed']"
+    "Line 50: Unexpected errors ['Missing argument `flush`']"
   ],
   "enums_member_names.py": [],
   "enums_member_values.py": [

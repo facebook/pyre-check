@@ -6451,22 +6451,12 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(Literal[CustomFlags.FLAG3], CustomFlags) failed",
-      "description": "assert_type(Literal[CustomFlags.FLAG3], CustomFlags) failed",
-      "line": 52,
+      "concise_description": "assert_type(CustomFlags, Literal[CustomFlags.FLAG3]) failed",
+      "description": "assert_type(CustomFlags, Literal[CustomFlags.FLAG3]) failed",
+      "line": 53,
       "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "assert_type(Never, CustomFlags) failed",
-      "description": "assert_type(Never, CustomFlags) failed",
-      "line": 63,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 63
+      "stop_column": 51,
+      "stop_line": 53
     }
   ],
   "enums_member_names.py": [

@@ -25,6 +25,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     // Get the union of all members of an enum, minus the specified member
     fn subtract_enum_member(&self, cls: &ClassType, name: &Name) -> Type {
         let e = self.get_enum_from_class_type(cls).unwrap();
+        // Enums derived from enum.Flag cannot be treated as a union of their members
+        if e.is_flag {
+            return Type::ClassType(cls.clone());
+        }
         self.unions(
             e.get_members()
                 .into_iter()

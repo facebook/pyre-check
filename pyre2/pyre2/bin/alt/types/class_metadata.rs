@@ -170,6 +170,7 @@ impl Display for Keywords {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EnumMetadata {
     pub cls: ClassType,
+    pub is_flag: bool,
 }
 
 impl EnumMetadata {

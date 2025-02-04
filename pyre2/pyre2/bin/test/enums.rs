@@ -133,6 +133,24 @@ class MyEnum(Enum):
 );
 
 testcase!(
+    test_flag,
+    r#"
+from enum import Flag
+from typing import assert_type
+
+class MyFlag(Flag):
+    X = 1
+    Y = 2
+
+def foo(f: MyFlag) -> None:
+    if f == MyFlag.X:
+        pass
+    else:
+        assert_type(f, MyFlag)
+"#,
+);
+
+testcase!(
     test_generic_enum,
     r#"
 from typing import assert_type, Literal

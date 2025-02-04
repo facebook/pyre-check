@@ -172,6 +172,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 enum_metadata = Some(EnumMetadata {
                     // A generic enum is an error, but we create Any type args anyway to handle it gracefully.
                     cls: ClassType::new(cls.clone(), self.create_default_targs(cls, None)),
+                    is_flag: bases_with_metadata.iter().any(|(base, _)| {
+                        self.solver().is_subset_eq(
+                            &Type::ClassType(base.clone()),
+                            &Type::ClassType(self.stdlib.enum_flag()),
+                            self.type_order(),
+                        )
+                    }),
                 })
             }
             if is_typed_dict {
