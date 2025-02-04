@@ -616,11 +616,7 @@ z: int = "3"  # E: Literal['3'] <: int
 );
 
 testcase_with_bug!(
-    r#"
-This test is a placeholder, we've commented out the check for missing
-type arguments because until we have configurable errors it causes
-too many problems.
-    "#,
+    "This test is a placeholder, we've commented out the check for missing type arguments because until we have configurable errors it causes too many problems.",
     test_untype_with_missing_targs,
     r#"
 class C[T]: pass

@@ -137,11 +137,7 @@ class C(B[str]):
 );
 
 testcase_with_bug!(
-    r#"
-The TODO here is because we implemented but have temporarily disabled a check
-for the use of a generic class without type arguments as a type annotation;
-this check needs to be configurable and we don't have the plumbing yet.
-    "#,
+    "The TODO here is because we implemented but have temporarily disabled a check for the use of a generic class without type arguments as a type annotation; this check needs to be configurable and we don't have the plumbing yet.",
     test_legacy_generic_syntax_implicit_targs,
     r#"
 from typing import Any, Generic, TypeVar, assert_type

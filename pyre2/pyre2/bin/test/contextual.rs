@@ -198,8 +198,7 @@ ys: list[A] = takes_int("") if False else [B()] # E: EXPECTED Literal[''] <: int
 );
 
 testcase_with_bug!(
-    "TODO: We do not currently validate assignments in multi-target assigns.
-    Depending how we fix it, contextual typing may not work",
+    "TODO: We do not currently validate assignments in multi-target assigns. Depending how we fix it, contextual typing may not work",
     test_context_assign_unpacked_tuple,
     r#"
 class A: ...

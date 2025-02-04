@@ -324,10 +324,7 @@ foo.bar.x # E: No attribute `bar` in module `foo`
 );
 
 testcase_with_bug!(
-    r#"
-TODO: `foo.x` should be an error
-The assert_type(foo.x) call should fail, but the error message is not great
-    "#,
+    "TODO: `foo.x` should be an error. The assert_type(foo.x) call should fail, but the error message is not great",
     test_import_dunder_init_submodule_only,
     env_dunder_init_with_submodule(),
     r#"
@@ -363,10 +360,7 @@ foo.bar.x # TODO # E: Object of class `str` has no attribute `x`
 );
 
 testcase_with_bug!(
-    r#"
-TODO: Surprisingly (to Sam), importing __init__ after the submodule does not
-overwrite foo.bar with the global from __init__.py.
-    "#,
+    "TODO: Surprisingly (to Sam), importing __init__ after the submodule does not overwrite foo.bar with the global from __init__.py.",
     test_import_dunder_init_overlap_submodule_first,
     env_dunder_init_overlap_submodule(),
     r#"
