@@ -7,3 +7,4 @@
 
 pub mod class_metadata;
 pub mod classdef;
+pub mod dataclass;

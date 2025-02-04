@@ -6,7 +6,6 @@
  */
 
 use std::ops::Deref;
-use std::sync::Arc;
 
 use itertools::Either;
 use itertools::Itertools;
@@ -21,27 +20,19 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::class::classdef::ClassField;
-use crate::alt::class::classdef::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::DataclassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::ast::Ast;
-use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::dunder;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
-use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
-use crate::types::callable::Param;
-use crate::types::callable::ParamList;
-use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
-use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
-use crate::types::tuple::Tuple;
 use crate::types::type_var::Variance;
 use crate::types::types::CalleeKind;
 use crate::types::types::TParamInfo;
@@ -457,105 +448,5 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 None
             }
         }
-    }
-
-    /// Gets dataclass fields for an `@dataclass`-decorated class.
-    fn get_dataclass_fields(
-        &self,
-        cls: &Class,
-        bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
-    ) -> SmallSet<Name> {
-        let mut all_fields = SmallSet::new();
-        for (base, metadata) in bases_with_metadata.iter().rev() {
-            if let Some(dataclass) = metadata.dataclass_metadata() {
-                for name in &dataclass.fields {
-                    if self.get_class_member(base.class_object(), name).is_some() {
-                        all_fields.insert(name.clone());
-                    }
-                }
-            }
-        }
-        for name in cls.fields() {
-            if cls.is_field_annotated(name) {
-                all_fields.insert(name.clone());
-            }
-        }
-        all_fields
-    }
-
-    /// Gets a dataclass field as a function param.
-    fn get_dataclass_param(&self, name: &Name, field: ClassField, kw_only: bool) -> Param {
-        let ClassField(ClassFieldInner::Simple {
-            ty,
-            annotation: _,
-            initialization,
-            readonly: _,
-        }) = field;
-        let required = match initialization {
-            ClassFieldInitialization::Class => Required::Required,
-            ClassFieldInitialization::Instance => Required::Optional,
-        };
-        if kw_only {
-            Param::KwOnly(name.clone(), ty, required)
-        } else {
-            Param::Pos(name.clone(), ty, required)
-        }
-    }
-
-    fn get_dataclass_synthesized_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
-        let metadata = self.get_metadata_for_class(cls);
-        let dataclass = metadata.dataclass_metadata()?;
-        // TODO(rechen): use a series of boolean flags to get rid of the unreachable!(...).
-        if !dataclass.synthesized_fields.contains(name) {
-            return None;
-        }
-        if *name == dunder::INIT {
-            Some(self.get_dataclass_init(cls, &dataclass.fields, dataclass.kw_only))
-        } else if *name == dunder::MATCH_ARGS {
-            Some(self.get_dataclass_match_args(&dataclass.fields))
-        } else {
-            unreachable!("No implementation found for dataclass-synthesized method: {name}");
-        }
-    }
-
-    /// Gets __init__ method for an `@dataclass`-decorated class.
-    fn get_dataclass_init(
-        &self,
-        cls: &Class,
-        fields: &SmallSet<Name>,
-        kw_only: bool,
-    ) -> ClassField {
-        let mut params = vec![Param::Pos(
-            Name::new("self"),
-            cls.self_type(),
-            Required::Required,
-        )];
-        for name in fields {
-            let field = self.get_class_member(cls, name).unwrap().value;
-            params.push(self.get_dataclass_param(name, field, kw_only));
-        }
-        let ty = Type::Callable(
-            Box::new(Callable::list(ParamList::new(params), Type::None)),
-            CallableKind::Def,
-        );
-        ClassField(ClassFieldInner::Simple {
-            ty,
-            annotation: None,
-            initialization: ClassFieldInitialization::Class,
-            readonly: false,
-        })
-    }
-
-    fn get_dataclass_match_args(&self, fields: &SmallSet<Name>) -> ClassField {
-        let ts = fields
-            .iter()
-            .map(|name| Type::Literal(Lit::String(name.as_str().into())));
-        let ty = Type::Tuple(Tuple::Concrete(ts.collect()));
-        ClassField(ClassFieldInner::Simple {
-            ty,
-            annotation: None,
-            initialization: ClassFieldInitialization::Class,
-            readonly: false,
-        })
     }
 }
