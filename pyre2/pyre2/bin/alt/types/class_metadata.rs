@@ -12,7 +12,6 @@ use std::iter;
 use std::sync::Arc;
 
 use ruff_python_ast::name::Name;
-use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
@@ -206,8 +205,8 @@ impl EnumMetadata {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataclassMetadata {
-    pub fields: Vec<Name>,
-    pub synthesized_methods: SmallMap<Name, Type>,
+    pub fields: SmallSet<Name>,
+    pub synthesized_methods: SmallSet<Name>,
 }
 
 /// A struct representing a class's ancestors, in method resolution order (MRO)

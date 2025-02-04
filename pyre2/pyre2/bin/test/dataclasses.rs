@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_def,
@@ -181,5 +182,20 @@ class C:
     x: int = 0
 C()  # OK
 C(x=0)  # E: Unexpected keyword argument
+    "#,
+);
+
+testcase_with_bug!(
+    "TODO: consider erroring on unannotated attributes",
+    test_unannotated_attribute,
+    r#"
+import dataclasses
+@dataclasses.dataclass
+class C:
+    # Not annotating a field with value dataclasses.field(...) is a runtime error, so we should
+    # probably error on this.
+    x = dataclasses.field()
+    # This is confusing and likely indicative of a programming error; consider erroring on this, too.
+    y = 3
     "#,
 );

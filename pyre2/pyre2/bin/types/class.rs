@@ -138,6 +138,13 @@ impl Class {
         self.0.fields.keys()
     }
 
+    pub fn is_field_annotated(&self, name: &Name) -> bool {
+        self.0
+            .fields
+            .get(name)
+            .map_or(false, |prop| prop.is_annotated)
+    }
+
     pub fn has_qname(&self, module: &str, name: &str) -> bool {
         self.0.qname.module.name().as_str() == module && self.0.qname.name.id == name
     }

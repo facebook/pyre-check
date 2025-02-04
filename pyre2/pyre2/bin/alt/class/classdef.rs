@@ -508,15 +508,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub(super) fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
-        let metadata = self.get_metadata_for_class(cls);
-        if let Some(dataclass) = metadata.dataclass_metadata()
-            && let Some(method) = dataclass.synthesized_methods.get(name)
-        {
-            Some(ClassField::new(
-                method.clone(),
-                None,
-                ClassFieldInitialization::Class,
-            ))
+        // TODO(rechen): this lookup logic is a bit convoluted. It looks like synthesized
+        // fields take precedence, but we actually check when synthesizing a field that
+        // we're not overwriting a regular field. We should clean this up.
+        if let Some(method) = self.get_synthesized_method(cls, name) {
+            Some(method)
         } else if cls.contains(name) {
             let field = self.get_from_class(
                 cls,

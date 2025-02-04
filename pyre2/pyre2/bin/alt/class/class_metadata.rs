@@ -17,7 +17,7 @@ use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
-use starlark_map::smallmap;
+use starlark_map::smallset;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
@@ -33,7 +33,6 @@ use crate::binding::binding::KeyLegacyTypeParam;
 use crate::dunder;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
-use crate::types::annotation::Annotation;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
@@ -115,7 +114,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             // itself decorated with @dataclass, we'll recompute the fields and overwrite this.
                             dataclass_metadata = Some(DataclassMetadata {
                                 fields: base_dataclass.fields.clone(),
-                                synthesized_methods: SmallMap::new(),
+                                synthesized_methods: SmallSet::new(),
                             });
                         }
                         Some((c, class_metadata))
@@ -196,12 +195,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let fields = self.get_dataclass_fields(cls, &bases_with_metadata);
                 let synthesized_methods = if !kws.init || cls.contains(&dunder::INIT) {
                     // If a class already defines `__init__`, @dataclass doesn't overwrite it.
-                    SmallMap::new()
+                    SmallSet::new()
                 } else {
-                    smallmap! { dunder::INIT => self.get_dataclass_init(cls, &fields) }
+                    smallset! { dunder::INIT }
                 };
                 dataclass_metadata = Some(DataclassMetadata {
-                    fields: fields.into_keys().collect(),
+                    fields,
                     synthesized_methods,
                 });
             }
@@ -226,6 +225,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             dataclass_metadata,
             self.errors(),
         )
+    }
+
+    pub fn get_synthesized_method(&self, cls: &Class, name: &Name) -> Option<ClassField> {
+        self.get_dataclass_synthesized_method(cls, name)
     }
 
     /// This helper deals with special cases where we want to intercept an `Expr`
@@ -459,33 +462,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         cls: &Class,
         bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
-    ) -> SmallMap<Name, ClassField> {
-        let mut all_fields = SmallMap::new();
+    ) -> SmallSet<Name> {
+        let mut all_fields = SmallSet::new();
         for (base, metadata) in bases_with_metadata.iter().rev() {
             if let Some(dataclass) = metadata.dataclass_metadata() {
                 for name in &dataclass.fields {
-                    if let Some(field) = self.get_class_member(base.class_object(), name) {
-                        all_fields.insert(name.clone(), field.value.instantiate_for(base));
+                    if self.get_class_member(base.class_object(), name).is_some() {
+                        all_fields.insert(name.clone());
                     }
                 }
             }
         }
         for name in cls.fields() {
-            if let Some(
-                field @ ClassField(ClassFieldInner::Simple {
-                    annotation: Some(Annotation { ty: Some(_), .. }),
-                    ..
-                }),
-            ) = self.get_class_field(cls, name)
-            {
-                all_fields.insert(name.clone(), field);
+            if cls.is_field_annotated(name) {
+                all_fields.insert(name.clone());
             }
         }
         all_fields
     }
 
     /// Gets a dataclass field as a function param.
-    fn get_dataclass_param(&self, name: &Name, field: &ClassField) -> Param {
+    fn get_dataclass_param(&self, name: &Name, field: ClassField) -> Param {
         let ClassField(ClassFieldInner::Simple {
             ty,
             annotation: _,
@@ -495,22 +492,42 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ClassFieldInitialization::Class => Required::Required,
             ClassFieldInitialization::Instance => Required::Optional,
         };
-        Param::Pos(name.clone(), ty.clone(), required)
+        Param::Pos(name.clone(), ty, required)
+    }
+
+    fn get_dataclass_synthesized_method(&self, cls: &Class, name: &Name) -> Option<ClassField> {
+        let metadata = self.get_metadata_for_class(cls);
+        let dataclass = metadata.dataclass_metadata()?;
+        // TODO(rechen): use a series of boolean flags to get rid of the unreachable!(...).
+        if !dataclass.synthesized_methods.contains(name) {
+            return None;
+        }
+        if *name == dunder::INIT {
+            Some(self.get_dataclass_init(cls, &dataclass.fields))
+        } else {
+            unreachable!("No implementation found for dataclass-synthesized method: {name}");
+        }
     }
 
     /// Gets __init__ method for an `@dataclass`-decorated class.
-    fn get_dataclass_init(&self, cls: &Class, fields: &SmallMap<Name, ClassField>) -> Type {
+    fn get_dataclass_init(&self, cls: &Class, fields: &SmallSet<Name>) -> ClassField {
         let mut params = vec![Param::Pos(
             Name::new("self"),
             cls.self_type(),
             Required::Required,
         )];
-        for (name, field) in fields {
+        for name in fields {
+            let field = self.get_class_member(cls, name).unwrap().value;
             params.push(self.get_dataclass_param(name, field));
         }
-        Type::Callable(
+        let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), Type::None)),
             CallableKind::Def,
-        )
+        );
+        ClassField(ClassFieldInner::Simple {
+            ty,
+            annotation: None,
+            initialization: ClassFieldInitialization::Class,
+        })
     }
 }

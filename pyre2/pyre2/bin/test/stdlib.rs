@@ -203,7 +203,7 @@ class MethodType:
 "#;
 
 static DATACLASSES: &str = r#"
-from typing import overload, Callable, TypeVar
+from typing import overload, Any, Callable, TypeVar
 
 _T = TypeVar('_T')
 
@@ -224,6 +224,8 @@ def dataclass(
     slots: bool = False,
     weakref_slot: bool = False,
 ) -> Callable[[type[_T]], type[_T]]: ...
+
+def field(*args, **kwargs) -> Any: ...
 "#;
 
 pub fn lookup_test_stdlib(module: ModuleName) -> Option<&'static str> {
