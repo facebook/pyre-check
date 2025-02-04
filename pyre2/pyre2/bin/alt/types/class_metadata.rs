@@ -205,9 +205,29 @@ impl EnumMetadata {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataclassMetadata {
+    /// The dataclass fields, e.g., `{'x'}` for `@dataclass class C: x: int`.
     pub fields: SmallSet<Name>,
+    /// Synthesized fields of the dataclass, like the generated `__init__` method.
     pub synthesized_fields: SmallSet<Name>,
+    /// @dataclass(frozen=...).
     pub frozen: bool,
+}
+
+impl DataclassMetadata {
+    /// Gets the DataclassMetadata that should be inherited by a class that is a dataclass via
+    /// inheritance but is not itself decorated with `@dataclass`.
+    pub fn inherit(&self) -> Self {
+        Self {
+            // Dataclass fields are inherited.
+            fields: self.fields.clone(),
+            // Synthesized fields like `__init__` should not be inherited, as doing so would
+            // incorrectly suggest that they are directly defined on the inheriting class.
+            synthesized_fields: SmallSet::new(),
+            // The remaining metadata are irrelevant when there are no fields to synthesize, so
+            // just set them to some sensible-seeming value.
+            frozen: self.frozen,
+        }
+    }
 }
 
 /// A struct representing a class's ancestors, in method resolution order (MRO)

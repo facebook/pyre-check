@@ -111,13 +111,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             );
                         }
                         if dataclass_metadata.is_none() && let Some(base_dataclass) = class_metadata.dataclass_metadata() {
-                            // If we inherit from a dataclass, copy its fields. Note that if this class is
-                            // itself decorated with @dataclass, we'll recompute the fields and overwrite this.
-                            dataclass_metadata = Some(DataclassMetadata {
-                                fields: base_dataclass.fields.clone(),
-                                synthesized_fields: SmallSet::new(),
-                                frozen: base_dataclass.frozen,
-                            });
+                            // If we inherit from a dataclass, inherit its metadata. Note that if this class is
+                            // itself decorated with @dataclass, we'll compute new metadata and overwrite this.
+                            dataclass_metadata = Some(base_dataclass.inherit());
                         }
                         Some((c, class_metadata))
                     }
