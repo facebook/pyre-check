@@ -30,7 +30,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             return Type::ClassType(cls.clone());
         }
         self.unions(
-            e.get_members()
+            self.get_enum_members(&e)
                 .into_iter()
                 .filter_map(|f| {
                     if let Lit::Enum(box (_, member_name)) = &f

@@ -150,6 +150,23 @@ def foo(f: MyFlag) -> None:
 );
 
 testcase!(
+    test_enum_member,
+    r#"
+from typing import reveal_type
+from enum import Enum
+
+class MyEnum(Enum):
+    X = 1
+    Y: int
+    def Z(self) -> None: ...
+
+reveal_type(MyEnum.X)  # E: revealed type: Literal[MyEnum.X]
+MyEnum.Y  # E: Instance-only attribute `Y` of class `MyEnum` is not visible on the class
+reveal_type(MyEnum.Z)  # E: revealed type: (self: MyEnum) -> None
+"#,
+);
+
+testcase!(
     test_generic_enum,
     r#"
 from typing import assert_type, Literal

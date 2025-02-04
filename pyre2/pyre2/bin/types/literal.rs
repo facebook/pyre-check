@@ -26,7 +26,6 @@ use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
-use crate::alt::types::class_metadata::EnumMetadata;
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
@@ -78,7 +77,7 @@ impl Lit {
     pub fn from_expr(
         x: &Expr,
         module_info: &ModuleInfo,
-        get_enum_from_name: &dyn Fn(Identifier) -> Option<EnumMetadata>,
+        get_enum_member: &dyn Fn(Identifier, &Name) -> Option<Lit>,
         errors: &ErrorCollector,
     ) -> Type {
         let int = |i| match i {
@@ -113,28 +112,18 @@ impl Lit {
                 value: box Expr::Name(maybe_enum_name),
                 attr: member_name,
                 ctx: _,
-            }) => match get_enum_from_name(Ast::expr_name_identifier(maybe_enum_name.clone())) {
-                Some(e) => match e.get_member(&member_name.id) {
-                    Some(lit) => lit.to_type(),
-                    None => {
-                        errors.add(
-                            module_info,
-                            *range,
-                            format!(
-                                "Enumeration `{}` does not have member `{}`",
-                                maybe_enum_name.id, member_name.id
-                            ),
-                        );
-                        Type::any_error()
-                    }
-                },
+            }) => match get_enum_member(
+                Ast::expr_name_identifier(maybe_enum_name.clone()),
+                &member_name.id,
+            ) {
+                Some(lit) => lit.to_type(),
                 None => {
                     errors.add(
                         module_info,
                         *range,
                         format!(
-                            "Literal expression `{}` is not an enumeration",
-                            maybe_enum_name.id
+                            "`{}.{}` is not a valid enum member",
+                            maybe_enum_name.id, member_name.id
                         ),
                     );
                     Type::any_error()

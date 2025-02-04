@@ -555,18 +555,15 @@
     "Line 90: Unexpected errors ['Could not find import of `_enums_member_values`, Could not find path for `_enums_member_values`']"
   ],
   "enums_members.py": [
-    "Line 82: Expected 1 errors",
     "Line 83: Expected 1 errors",
-    "Line 84: Expected 1 errors",
-    "Line 85: Expected 1 errors",
     "Line 116: Expected 1 errors",
-    "Line 27: Unexpected errors ['assert_type(Literal[Pet.genus], str) failed']",
-    "Line 28: Unexpected errors ['assert_type(Literal[Pet.species], str) failed']",
+    "Line 27: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `genus` of class `Pet` is not visible on the class']",
+    "Line 28: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `species` of class `Pet` is not visible on the class']",
     "Line 33: Unexpected errors ['Could not find import of `_enums_members`, Could not find path for `_enums_members`']",
     "Line 35: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 36: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 37: Unexpected errors ['Literal expression `Pet2` is not an enumeration']",
-    "Line 38: Unexpected errors ['Literal expression `Pet2` is not an enumeration']",
+    "Line 37: Unexpected errors ['`Pet2.CAT` is not a valid enum member']",
+    "Line 38: Unexpected errors ['`Pet2.DOG` is not a valid enum member']",
     "Line 75: Unexpected errors ['Missing argument `flush`']",
     "Line 100: Unexpected errors ['assert_type(Literal[TrafficLight.AMBER], Literal[TrafficLight.YELLOW]) failed']",
     "Line 128: Unexpected errors ['Could not find name `reveal_type`', 'revealed type: Literal[2]']"

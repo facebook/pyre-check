@@ -68,10 +68,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Gets a dataclass field as a function param.
     fn get_dataclass_param(&self, name: &Name, field: ClassField, kw_only: bool) -> Param {
         let ClassField(ClassFieldInner::Simple {
-            ty,
-            annotation: _,
-            initialization,
-            readonly: _,
+            ty, initialization, ..
         }) = field;
         let required = match initialization {
             ClassFieldInitialization::Class => Required::Required,
@@ -109,6 +106,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             annotation: None,
             initialization: ClassFieldInitialization::Class,
             readonly: false,
+            is_enum_member: false,
         })
     }
 
@@ -122,6 +120,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             annotation: None,
             initialization: ClassFieldInitialization::Class,
             readonly: false,
+            is_enum_member: false,
         })
     }
 }

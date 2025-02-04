@@ -6379,8 +6379,8 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "Enumeration `Color2` does not have member `RED`",
-      "description": "Enumeration `Color2` does not have member `RED`",
+      "concise_description": "`Color2.RED` is not a valid enum member",
+      "description": "`Color2.RED` is not a valid enum member",
       "line": 33,
       "name": "PyreError",
       "stop_column": 43,
@@ -6399,8 +6399,8 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "Enumeration `Color3` does not have member `RED`",
-      "description": "Enumeration `Color3` does not have member `RED`",
+      "concise_description": "`Color3.RED` is not a valid enum member",
+      "description": "`Color3.RED` is not a valid enum member",
       "line": 34,
       "name": "PyreError",
       "stop_column": 43,
@@ -6419,8 +6419,8 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "Enumeration `Color4` does not have member `RED`",
-      "description": "Enumeration `Color4` does not have member `RED`",
+      "concise_description": "`Color4.RED` is not a valid enum member",
+      "description": "`Color4.RED` is not a valid enum member",
       "line": 35,
       "name": "PyreError",
       "stop_column": 43,
@@ -6439,8 +6439,8 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "Enumeration `Color7` does not have member `RED`",
-      "description": "Enumeration `Color7` does not have member `RED`",
+      "concise_description": "`Color7.RED` is not a valid enum member",
+      "description": "`Color7.RED` is not a valid enum member",
       "line": 38,
       "name": "PyreError",
       "stop_column": 43,
@@ -6459,8 +6459,8 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "Enumeration `Color8` does not have member `RED`",
-      "description": "Enumeration `Color8` does not have member `RED`",
+      "concise_description": "`Color8.RED` is not a valid enum member",
+      "description": "`Color8.RED` is not a valid enum member",
       "line": 39,
       "name": "PyreError",
       "stop_column": 43,
@@ -6479,8 +6479,8 @@
     {
       "code": -2,
       "column": 33,
-      "concise_description": "Enumeration `Color9` does not have member `RED`",
-      "description": "Enumeration `Color9` does not have member `RED`",
+      "concise_description": "`Color9.RED` is not a valid enum member",
+      "description": "`Color9.RED` is not a valid enum member",
       "line": 40,
       "name": "PyreError",
       "stop_column": 43,
@@ -6647,8 +6647,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Literal[Pet.genus], str) failed",
-      "description": "assert_type(Literal[Pet.genus], str) failed",
+      "concise_description": "assert_type(Any, str) failed",
+      "description": "assert_type(Any, str) failed",
       "line": 27,
       "name": "PyreError",
       "stop_column": 28,
@@ -6656,12 +6656,32 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "Instance-only attribute `genus` of class `Pet` is not visible on the class",
+      "description": "Instance-only attribute `genus` of class `Pet` is not visible on the class",
+      "line": 27,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 27
+    },
+    {
+      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Literal[Pet.species], str) failed",
-      "description": "assert_type(Literal[Pet.species], str) failed",
+      "concise_description": "assert_type(Any, str) failed",
+      "description": "assert_type(Any, str) failed",
       "line": 28,
       "name": "PyreError",
       "stop_column": 30,
+      "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Instance-only attribute `species` of class `Pet` is not visible on the class",
+      "description": "Instance-only attribute `species` of class `Pet` is not visible on the class",
+      "line": 28,
+      "name": "PyreError",
+      "stop_column": 24,
       "stop_line": 28
     },
     {
@@ -6697,8 +6717,8 @@
     {
       "code": -2,
       "column": 31,
-      "concise_description": "Literal expression `Pet2` is not an enumeration",
-      "description": "Literal expression `Pet2` is not an enumeration",
+      "concise_description": "`Pet2.CAT` is not a valid enum member",
+      "description": "`Pet2.CAT` is not a valid enum member",
       "line": 37,
       "name": "PyreError",
       "stop_column": 39,
@@ -6707,8 +6727,8 @@
     {
       "code": -2,
       "column": 31,
-      "concise_description": "Literal expression `Pet2` is not an enumeration",
-      "description": "Literal expression `Pet2` is not an enumeration",
+      "concise_description": "`Pet2.DOG` is not a valid enum member",
+      "description": "`Pet2.DOG` is not a valid enum member",
       "line": 38,
       "name": "PyreError",
       "stop_column": 39,
@@ -6733,6 +6753,66 @@
       "name": "PyreError",
       "stop_column": 14,
       "stop_line": 75
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type((x: Any) -> str, Any) failed",
+      "description": "assert_type((x: Any) -> str, Any) failed",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 53,
+      "stop_line": 82
+    },
+    {
+      "code": -2,
+      "column": 37,
+      "concise_description": "`Pet4.converter` is not a valid enum member",
+      "description": "`Pet4.converter` is not a valid enum member",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 51,
+      "stop_line": 82
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(property[(self: Pet4) -> str], Any) failed",
+      "description": "assert_type(property[(self: Pet4) -> str], Any) failed",
+      "line": 84,
+      "name": "PyreError",
+      "stop_column": 49,
+      "stop_line": 84
+    },
+    {
+      "code": -2,
+      "column": 35,
+      "concise_description": "`Pet4.species` is not a valid enum member",
+      "description": "`Pet4.species` is not a valid enum member",
+      "line": 84,
+      "name": "PyreError",
+      "stop_column": 47,
+      "stop_line": 84
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type((self: Pet4) -> None, Any) failed",
+      "description": "assert_type((self: Pet4) -> None, Any) failed",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 45,
+      "stop_line": 85
+    },
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "`Pet4.speak` is not a valid enum member",
+      "description": "`Pet4.speak` is not a valid enum member",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 43,
+      "stop_line": 85
     },
     {
       "code": -2,
@@ -6777,8 +6857,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "Enumeration `Example2` does not have member `__B`",
-      "description": "Enumeration `Example2` does not have member `__B`",
+      "concise_description": "`Example2.__B` is not a valid enum member",
+      "description": "`Example2.__B` is not a valid enum member",
       "line": 129,
       "name": "PyreError",
       "stop_column": 55,
