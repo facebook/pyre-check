@@ -239,6 +239,19 @@ C_no_match_args.__match_args__ # E: no class attribute `__match_args__`
 );
 
 testcase!(
+    test_match_args_no_overwrite,
+    r#"
+from typing import assert_type
+from dataclasses import dataclass
+@dataclass(match_args=True)
+class C:
+    __match_args__ = ()
+    x: int
+assert_type(C.__match_args__, tuple[()])
+    "#,
+);
+
+testcase!(
     test_kw_only,
     r#"
 from dataclasses import dataclass

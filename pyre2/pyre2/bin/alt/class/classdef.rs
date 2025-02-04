@@ -509,19 +509,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub(super) fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
-        // TODO(rechen): this lookup logic is a bit convoluted. It looks like synthesized
-        // fields take precedence, but we actually check when synthesizing a field that
-        // we're not overwriting a regular field. We should clean this up.
-        if let Some(field) = self.get_synthesized_field(cls, name) {
-            Some(field)
-        } else if cls.contains(name) {
+        if cls.contains(name) {
             let field = self.get_from_class(
                 cls,
                 &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
             );
             Some((*field).clone())
         } else {
-            None
+            self.get_synthesized_field(cls, name)
         }
     }
 

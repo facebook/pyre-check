@@ -183,8 +183,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             {
                 let dataclass_fields = self.get_dataclass_fields(cls, &bases_with_metadata);
                 let mut synthesized_fields = SmallSet::new();
-                if kws.init && !cls.contains(&dunder::INIT) {
-                    // If a class already defines `__init__`, @dataclass doesn't overwrite it.
+                if kws.init {
                     synthesized_fields.insert(dunder::INIT);
                 }
                 if kws.match_args {
