@@ -115,6 +115,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             dataclass_metadata = Some(DataclassMetadata {
                                 fields: base_dataclass.fields.clone(),
                                 synthesized_methods: SmallSet::new(),
+                                frozen: base_dataclass.frozen,
                             });
                         }
                         Some((c, class_metadata))
@@ -202,6 +203,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 dataclass_metadata = Some(DataclassMetadata {
                     fields,
                     synthesized_methods,
+                    frozen: kws.frozen,
                 });
             }
         }
@@ -487,6 +489,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ty,
             annotation: _,
             initialization,
+            readonly: _,
         }) = field;
         let required = match initialization {
             ClassFieldInitialization::Class => Required::Required,
@@ -528,6 +531,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ty,
             annotation: None,
             initialization: ClassFieldInitialization::Class,
+            readonly: false,
         })
     }
 }

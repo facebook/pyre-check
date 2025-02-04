@@ -3,7 +3,7 @@
   "pass": 10,
   "fail": 123,
   "pass_rate": 0.08,
-  "differences": 1166,
+  "differences": 1165,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -42,7 +42,7 @@
     "constructors_consistency.py": 1,
     "dataclasses_descriptors.py": 8,
     "dataclasses_final.py": 5,
-    "dataclasses_frozen.py": 4,
+    "dataclasses_frozen.py": 3,
     "dataclasses_hash.py": 2,
     "dataclasses_inheritance.py": 4,
     "dataclasses_kwonly.py": 10,

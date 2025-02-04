@@ -207,6 +207,7 @@ impl EnumMetadata {
 pub struct DataclassMetadata {
     pub fields: SmallSet<Name>,
     pub synthesized_methods: SmallSet<Name>,
+    pub frozen: bool,
 }
 
 /// A struct representing a class's ancestors, in method resolution order (MRO)

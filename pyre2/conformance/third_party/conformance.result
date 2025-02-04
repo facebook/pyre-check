@@ -379,7 +379,6 @@
     "Line 30: Unexpected errors ['Missing argument `final_classvar`']"
   ],
   "dataclasses_frozen.py": [
-    "Line 17: Expected 1 errors",
     "Lines 22, 23: Expected error (tag 'DC2')",
     "Lines 32, 33: Expected error (tag 'DC4')",
     "Line 14: Unexpected errors ['EXPECTED Literal[1] <: float']"

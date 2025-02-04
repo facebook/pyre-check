@@ -62,6 +62,7 @@ pub enum ClassFieldInner {
         ty: Type,
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
+        readonly: bool,
     },
 }
 
@@ -70,11 +71,13 @@ impl ClassField {
         ty: Type,
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
+        readonly: bool,
     ) -> Self {
         Self(ClassFieldInner::Simple {
             ty,
             annotation,
             initialization,
+            readonly,
         })
     }
 
@@ -83,6 +86,7 @@ impl ClassField {
             ty: Type::any_implicit(),
             annotation: None,
             initialization: ClassFieldInitialization::Class,
+            readonly: false,
         })
     }
 
@@ -109,10 +113,12 @@ impl ClassField {
                 ty,
                 annotation,
                 initialization,
+                readonly,
             } => Self(ClassFieldInner::Simple {
                 ty: cls.instantiate_member(ty.clone()),
                 annotation: annotation.clone(),
                 initialization: *initialization,
+                readonly: *readonly,
             }),
         }
     }
@@ -147,8 +153,9 @@ impl ClassField {
 
     fn as_instance_attribute(self, cls: &ClassType) -> Attribute {
         match self.instantiate_for(cls).0 {
-            ClassFieldInner::Simple { ty, .. } => match self.initialization() {
+            ClassFieldInner::Simple { ty, readonly, .. } => match self.initialization() {
                 ClassFieldInitialization::Class => bind_instance_attribute(cls, ty),
+                ClassFieldInitialization::Instance if readonly => Attribute::read_only(ty),
                 ClassFieldInitialization::Instance => Attribute::read_write(ty),
             },
         }
@@ -495,7 +502,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             (value_ty, None)
         };
-        ClassField::new(ty.clone(), ann.cloned(), initialization)
+        let readonly = metadata
+            .dataclass_metadata()
+            .map_or(false, |dataclass| dataclass.frozen);
+        ClassField::new(ty.clone(), ann.cloned(), initialization, readonly)
     }
 
     pub(super) fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {

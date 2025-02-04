@@ -199,3 +199,21 @@ class C:
     y = 3
     "#,
 );
+
+testcase!(
+    test_frozen,
+    r#"
+from dataclasses import dataclass
+@dataclass
+class C:
+    x: int
+
+@dataclass(frozen=True)
+class D:
+    x: int
+
+def f(c: C, d: D):
+    c.x = 0
+    d.x = 0  # E: Could not assign to read-only field `x`
+    "#,
+);

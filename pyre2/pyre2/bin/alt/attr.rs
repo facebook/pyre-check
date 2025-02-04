@@ -50,6 +50,8 @@ enum AttributeInner {
     NoAccess(NoAccessReason),
     /// A read-write attribute with a closed form type for both get and set actions.
     ReadWrite(Type),
+    /// A read-only attribute.
+    ReadOnly(Type),
     /// A property is a special attribute were regular access invokes a getter.
     /// It optionally might have a setter method; if not, trying to set it is an access error
     Property(Type, Option<Type>, Class),
@@ -85,6 +87,10 @@ impl Attribute {
 
     pub fn read_write(ty: Type) -> Self {
         Attribute(AttributeInner::ReadWrite(ty))
+    }
+
+    pub fn read_only(ty: Type) -> Self {
+        Attribute(AttributeInner::ReadOnly(ty))
     }
 
     pub fn property(getter: Type, setter: Option<Type>, cls: Class) -> Self {
@@ -228,7 +234,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.lookup_attr(base, &Name::new_static("_value_")) {
             LookupResult::Found(attr) => match attr.0 {
                 AttributeInner::ReadWrite(ty) => Some(ty),
-                AttributeInner::NoAccess(_) | AttributeInner::Property(..) => None,
+                AttributeInner::ReadOnly(_)
+                | AttributeInner::NoAccess(_)
+                | AttributeInner::Property(..) => None,
             },
             _ => None,
         }
@@ -267,6 +275,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     }
                 },
+                AttributeInner::ReadOnly(_) => {
+                    self.error(
+                        range,
+                        format!("Could not assign to read-only field `{attr_name}`"),
+                    );
+                }
                 AttributeInner::Property(_, None, cls) => {
                     let e = NoAccessReason::SettingReadOnlyProperty(cls);
                     self.error(range, e.to_error_msg(attr_name));
@@ -317,7 +331,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Result<Type, NoAccessReason> {
         match attr.0 {
             AttributeInner::NoAccess(reason) => Err(reason),
-            AttributeInner::ReadWrite(ty) => Ok(ty),
+            AttributeInner::ReadWrite(ty) | AttributeInner::ReadOnly(ty) => Ok(ty),
             AttributeInner::Property(getter, ..) => Ok(self.call_property_getter(getter, range)),
         }
     }
@@ -328,8 +342,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn resolve_as_instance_method(&self, attr: Attribute) -> Option<Type> {
         match attr.0 {
             AttributeInner::ReadWrite(ty) => Some(ty),
-            AttributeInner::NoAccess(_) => None,
-            AttributeInner::Property(..) => None,
+            AttributeInner::ReadOnly(_)
+            | AttributeInner::NoAccess(_)
+            | AttributeInner::Property(..) => None,
         }
     }
 

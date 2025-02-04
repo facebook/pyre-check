@@ -4473,13 +4473,23 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "EXPECTED Literal[1] <: float",
-      "description": "EXPECTED Literal[1] <: float",
+      "column": 1,
+      "concise_description": "Could not assign to read-only field `a`",
+      "description": "Could not assign to read-only field `a`",
       "line": 16,
       "name": "PyreError",
-      "stop_column": 10,
+      "stop_column": 6,
       "stop_line": 16
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Could not assign to read-only field `b`",
+      "description": "Could not assign to read-only field `b`",
+      "line": 17,
+      "name": "PyreError",
+      "stop_column": 6,
+      "stop_line": 17
     }
   ],
   "dataclasses_hash.py": [],
