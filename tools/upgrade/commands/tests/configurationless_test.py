@@ -101,7 +101,7 @@ class TestConfigurationless(TestCase):
 
         self.assertEqual(
             options.default_global_mode,
-            LocalMode.STRICT,
+            LocalMode.UNSAFE,
         )
 
     def test_get_default_global_mode_strict_configuration(self) -> None:

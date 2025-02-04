@@ -65,7 +65,7 @@ class ConfigurationlessOptions:
         global_is_strict = (
             self.global_configuration.strict
             if self.global_configuration.strict is not None
-            else True  # set default configuration strictness to STRICT
+            else False  # set default configuration strictness to UNSAFE
         )
         return (
             filesystem.LocalMode.STRICT
