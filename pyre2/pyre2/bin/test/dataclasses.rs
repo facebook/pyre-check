@@ -254,12 +254,14 @@ assert_type(C.__match_args__, tuple[()])
 testcase!(
     test_kw_only_arg,
     r#"
+from typing import assert_type
 from dataclasses import dataclass
 @dataclass(kw_only=True)
 class C:
     x: int
 C(x=0)  # OK
 C(0)  # E: Expected 0 positional arguments
+assert_type(C.__match_args__, tuple[()])
     "#,
 );
 

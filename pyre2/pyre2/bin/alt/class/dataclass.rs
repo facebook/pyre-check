@@ -59,7 +59,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if *name == dunder::INIT && dataclass.synthesized_fields.init {
             Some(self.get_dataclass_init(cls, &dataclass.fields, dataclass.kw_only))
         } else if *name == dunder::MATCH_ARGS && dataclass.synthesized_fields.match_args {
-            Some(self.get_dataclass_match_args(cls, &dataclass.fields))
+            Some(self.get_dataclass_match_args(cls, &dataclass.fields, dataclass.kw_only))
         } else {
             None
         }
@@ -124,17 +124,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    fn get_dataclass_match_args(&self, cls: &Class, fields: &SmallSet<Name>) -> ClassField {
-        let filtered_fields = self.iter_fields(cls, fields);
-        let ts = filtered_fields.iter().filter_map(|(name, _, kw_only)| {
-            if *kw_only {
-                // Keyword-only fields do not appear in __match_args__.
-                None
-            } else {
-                Some(Type::Literal(Lit::String(name.as_str().into())))
-            }
-        });
-        let ty = Type::Tuple(Tuple::Concrete(ts.collect()));
+    fn get_dataclass_match_args(
+        &self,
+        cls: &Class,
+        fields: &SmallSet<Name>,
+        kw_only: bool,
+    ) -> ClassField {
+        // Keyword-only fields do not appear in __match_args__.
+        let ts = if kw_only {
+            Vec::new()
+        } else {
+            let filtered_fields = self.iter_fields(cls, fields);
+            filtered_fields
+                .iter()
+                .filter_map(|(name, _, field_kw_only)| {
+                    if *field_kw_only {
+                        None
+                    } else {
+                        Some(Type::Literal(Lit::String(name.as_str().into())))
+                    }
+                })
+                .collect()
+        };
+        let ty = Type::Tuple(Tuple::Concrete(ts));
         ClassField(ClassFieldInner::Simple {
             ty,
             annotation: None,
