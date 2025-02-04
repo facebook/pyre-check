@@ -239,6 +239,7 @@ pub enum Decoration {
     // The result of accessing `.setter` on a property (which produces a decorator
     // that takes a value and makes it the property getter, returning the result)
     PropertySetterDecorator(Box<Type>),
+    EnumMember(Box<Type>),
 }
 
 impl Decoration {
@@ -251,6 +252,7 @@ impl Decoration {
                 setter.iter().for_each(&mut f)
             }
             Self::PropertySetterDecorator(ty) => f(ty),
+            Self::EnumMember(ty) => f(ty),
         }
     }
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
@@ -262,6 +264,7 @@ impl Decoration {
                 setter.iter_mut().for_each(&mut f)
             }
             Self::PropertySetterDecorator(ty) => f(ty),
+            Self::EnumMember(ty) => f(ty),
         }
     }
 }

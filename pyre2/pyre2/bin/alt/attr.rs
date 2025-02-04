@@ -493,6 +493,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Decoration(Decoration::Property(box (getter, _))) => {
                 Some(AttributeBase::Property(getter))
             }
+            Type::Decoration(Decoration::EnumMember(box ty)) => self.as_attribute_base(ty, stdlib),
             Type::Decoration(_) => None,
             // TODO: check to see which ones should have class representations
             Type::Union(_)

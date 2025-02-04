@@ -122,6 +122,26 @@ class MyEnum(Enum):
 );
 
 testcase!(
+    test_enum_member,
+    r#"
+from enum import Enum, nonmember, member
+from typing import reveal_type
+
+class MyEnum(Enum):
+    A = 1
+    B = nonmember(2)
+    @member
+    def C(self) -> None: pass
+    def D(self) -> None: pass
+
+reveal_type(MyEnum.A)  # E: revealed type: Literal[MyEnum.A]
+reveal_type(MyEnum.B)  # E: revealed type: nonmember[int]
+reveal_type(MyEnum.C)  # E: revealed type: Literal[MyEnum.C]
+reveal_type(MyEnum.D)  # E: revealed type: (self: MyEnum) -> None
+"#,
+);
+
+testcase!(
     test_member_annotation,
     r#"
 from enum import Enum
@@ -150,19 +170,15 @@ def foo(f: MyFlag) -> None:
 );
 
 testcase!(
-    test_enum_member,
+    test_enum_instance_only_attr,
     r#"
 from typing import reveal_type
 from enum import Enum
 
 class MyEnum(Enum):
-    X = 1
     Y: int
-    def Z(self) -> None: ...
 
-reveal_type(MyEnum.X)  # E: revealed type: Literal[MyEnum.X]
 MyEnum.Y  # E: Instance-only attribute `Y` of class `MyEnum` is not visible on the class
-reveal_type(MyEnum.Z)  # E: revealed type: (self: MyEnum) -> None
 "#,
 );
 

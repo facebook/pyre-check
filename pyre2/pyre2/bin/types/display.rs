@@ -168,6 +168,9 @@ impl<'a> TypeDisplayContext<'a> {
             Decoration::PropertySetterDecorator(box getter) => {
                 write!(f, "property_setter_decorator[{}]", self.display(getter),)
             }
+            Decoration::EnumMember(box ty) => {
+                write!(f, "enum_member[{}]", self.display(ty))
+            }
         }
     }
 

@@ -48,6 +48,7 @@ pub enum ClassKind {
     ClassMethod,
     Property,
     Class,
+    EnumMember,
 }
 
 impl ClassKind {
@@ -56,6 +57,7 @@ impl ClassKind {
             ("builtins", "staticmethod") => Self::StaticMethod,
             ("builtins", "classmethod") => Self::ClassMethod,
             ("builtins", "property") => Self::Property,
+            ("enum", "member") => Self::EnumMember,
             _ => Self::Class,
         }
     }

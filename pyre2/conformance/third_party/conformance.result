@@ -555,8 +555,6 @@
     "Line 90: Unexpected errors ['Could not find import of `_enums_member_values`, Could not find path for `_enums_member_values`']"
   ],
   "enums_members.py": [
-    "Line 83: Expected 1 errors",
-    "Line 116: Expected 1 errors",
     "Line 27: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `genus` of class `Pet` is not visible on the class']",
     "Line 28: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `species` of class `Pet` is not visible on the class']",
     "Line 33: Unexpected errors ['Could not find import of `_enums_members`, Could not find path for `_enums_members`']",

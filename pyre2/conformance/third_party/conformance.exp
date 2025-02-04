@@ -6777,6 +6777,26 @@
     {
       "code": -2,
       "column": 1,
+      "concise_description": "assert_type(staticmethod[(x: int), int], Any) failed",
+      "description": "assert_type(staticmethod[(x: int), int], Any) failed",
+      "line": 83,
+      "name": "PyreError",
+      "stop_column": 53,
+      "stop_line": 83
+    },
+    {
+      "code": -2,
+      "column": 37,
+      "concise_description": "`Pet4.transform` is not a valid enum member",
+      "description": "`Pet4.transform` is not a valid enum member",
+      "line": 83,
+      "name": "PyreError",
+      "stop_column": 51,
+      "stop_line": 83
+    },
+    {
+      "code": -2,
+      "column": 1,
       "concise_description": "assert_type(property[(self: Pet4) -> str], Any) failed",
       "description": "assert_type(property[(self: Pet4) -> str], Any) failed",
       "line": 84,
@@ -6823,6 +6843,26 @@
       "name": "PyreError",
       "stop_column": 62,
       "stop_line": 100
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(nonmember[int], Any) failed",
+      "description": "assert_type(nonmember[int], Any) failed",
+      "line": 116,
+      "name": "PyreError",
+      "stop_column": 43,
+      "stop_line": 116
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "`Example.b` is not a valid enum member",
+      "description": "`Example.b` is not a valid enum member",
+      "line": 116,
+      "name": "PyreError",
+      "stop_column": 41,
+      "stop_line": 116
     },
     {
       "code": -2,

@@ -268,6 +268,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(CalleeKind::Class(ClassKind::Property)) => {
                 return Type::Decoration(Decoration::Property(Box::new((decoratee, None))));
             }
+            Some(CalleeKind::Class(ClassKind::EnumMember)) => {
+                return Type::Decoration(Decoration::EnumMember(Box::new(decoratee)));
+            }
             _ => {}
         }
         match ty_decorator {
