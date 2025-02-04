@@ -59,10 +59,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if *name == dunder::INIT && dataclass.synthesized_fields.init {
             Some(self.get_dataclass_init(cls, &dataclass.fields, dataclass.kw_only))
         } else if *name == dunder::MATCH_ARGS && dataclass.synthesized_fields.match_args {
-            Some(self.get_dataclass_match_args(&dataclass.fields))
+            Some(self.get_dataclass_match_args(cls, &dataclass.fields))
         } else {
             None
         }
+    }
+
+    fn iter_fields(&self, cls: &Class, fields: &SmallSet<Name>) -> Vec<(Name, ClassField, bool)> {
+        let mut kw_only = false;
+        fields.iter().filter_map(|name| {
+            let field @ ClassField(ClassFieldInner::Simple { ty, .. }) = &self.get_class_member(cls, name).unwrap().value;
+            // A field with type KW_ONLY is a sentinel value that indicates that the remaining
+            // fields should be keyword-only params in the generated `__init__`.
+            if matches!(ty, Type::ClassType(cls) if cls.class_object().has_qname("dataclasses", "KW_ONLY")) {
+                kw_only = true;
+                None
+            } else {
+                Some((name.clone(), field.clone(), kw_only))
+            }
+        }).collect()
     }
 
     /// Gets a dataclass field as a function param.
@@ -93,9 +108,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             cls.self_type(),
             Required::Required,
         )];
-        for name in fields {
-            let field = self.get_class_member(cls, name).unwrap().value;
-            params.push(self.get_dataclass_param(name, field, kw_only));
+        for (name, field, field_kw_only) in self.iter_fields(cls, fields) {
+            params.push(self.get_dataclass_param(&name, field, kw_only || field_kw_only));
         }
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), Type::None)),
@@ -110,10 +124,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    fn get_dataclass_match_args(&self, fields: &SmallSet<Name>) -> ClassField {
-        let ts = fields
-            .iter()
-            .map(|name| Type::Literal(Lit::String(name.as_str().into())));
+    fn get_dataclass_match_args(&self, cls: &Class, fields: &SmallSet<Name>) -> ClassField {
+        let filtered_fields = self.iter_fields(cls, fields);
+        let ts = filtered_fields.iter().filter_map(|(name, _, kw_only)| {
+            if *kw_only {
+                // Keyword-only fields do not appear in __match_args__.
+                None
+            } else {
+                Some(Type::Literal(Lit::String(name.as_str().into())))
+            }
+        });
         let ty = Type::Tuple(Tuple::Concrete(ts.collect()));
         ClassField(ClassFieldInner::Simple {
             ty,

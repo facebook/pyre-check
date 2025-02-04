@@ -4559,8 +4559,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "EXPECTED Literal[1] <: KW_ONLY",
-      "description": "EXPECTED Literal[1] <: KW_ONLY",
+      "concise_description": "Expected 1 positional argument, got 2",
+      "description": "Expected 1 positional argument, got 2",
       "line": 23,
       "name": "PyreError",
       "stop_column": 12,
