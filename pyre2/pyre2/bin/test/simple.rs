@@ -888,6 +888,18 @@ x = "test"
 );
 
 testcase!(
+    test_anywhere_class,
+    r#"
+from typing import assert_type
+class C:
+    def p(self) -> int: ...
+    def p(self) -> str: ...
+
+assert_type(C().p(), str)
+"#,
+);
+
+testcase!(
     test_identity_applied_to_list,
     r#"
 from typing import assert_type
