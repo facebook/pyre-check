@@ -289,6 +289,15 @@ def f(cond: bool):
     "#,
 );
 
+testcase_with_bug!(
+    "We ensure annots are consistent only when merging flow envs, missing trivial cases like this",
+    test_multiple_annotations_without_merge,
+    r#"
+x: int = 0
+x: str = ""  # TODO: Inconsistent type annotations for x
+    "#,
+);
+
 testcase!(
     test_annot_flow_assign,
     r#"
