@@ -88,7 +88,7 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    pub fn function_def(&mut self, mut x: StmtFunctionDef) -> FunctionBinding {
+    pub fn function_def(&mut self, mut x: StmtFunctionDef) {
         let body = mem::take(&mut x.body);
         let decorators = mem::take(&mut x.decorator_list);
         let kind = if is_ellipse(&body) {
@@ -287,12 +287,16 @@ impl<'a> BindingsBuilder<'a> {
             );
         }
 
-        FunctionBinding {
-            def: x,
-            kind,
-            decorators: decorators.into_boxed_slice(),
-            legacy_tparams: legacy_tparams.into_boxed_slice(),
-        }
+        self.bind_definition(
+            &func_name,
+            Binding::Function(Box::new(FunctionBinding {
+                def: x,
+                kind,
+                decorators: decorators.into_boxed_slice(),
+                legacy_tparams: legacy_tparams.into_boxed_slice(),
+            })),
+            None,
+        );
     }
 }
 

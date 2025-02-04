@@ -26,7 +26,7 @@ def f(x):
 assert_type(f(1), int)  # E: assert_type
 
 def anywhere():
-    assert_type(f(1), int)  # E: assert_type    
+    assert_type(f(1), int)  # E: assert_type # E: EXPECTED Literal[1] <: str
     "#,
 );
 

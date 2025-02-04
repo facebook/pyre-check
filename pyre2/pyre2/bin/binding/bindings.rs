@@ -33,7 +33,6 @@ use vec1::Vec1;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
-use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClassField;
@@ -284,28 +283,8 @@ impl BindingTable {
 
 impl<'a> BindingsBuilder<'a> {
     pub fn stmts(&mut self, xs: Vec<Stmt>) {
-        let mut iter = xs.into_iter();
-        'outer: while let Some(x) = iter.next() {
-            if let Stmt::FunctionDef(x) = x {
-                let mut defs = Vec1::new(self.function_def(x));
-                for x in iter.by_ref() {
-                    if let Stmt::FunctionDef(x) = x {
-                        if defs.first().def.name.id == x.name.id {
-                            defs.push(self.function_def(x))
-                        } else {
-                            self.bind_function_defs(defs);
-                            defs = Vec1::new(self.function_def(x));
-                        }
-                    } else {
-                        self.bind_function_defs(defs);
-                        self.stmt_not_function(x);
-                        continue 'outer;
-                    }
-                }
-                self.bind_function_defs(defs);
-            } else {
-                self.stmt_not_function(x)
-            }
+        for x in xs {
+            self.stmt(x);
         }
     }
 
@@ -383,11 +362,6 @@ impl<'a> BindingsBuilder<'a> {
             .insert(Key::Definition(ShortIdentifier::new(name)), binding);
         self.bind_key(&name.id, idx, style);
         idx
-    }
-
-    fn bind_function_defs(&mut self, defs: Vec1<FunctionBinding>) {
-        let name = defs.last().def.name.clone();
-        self.bind_definition(&name, Binding::Function(defs), None);
     }
 
     /// In methods, we track assignments to `self` attribute targets so that we can

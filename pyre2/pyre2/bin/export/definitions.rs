@@ -158,28 +158,8 @@ impl Definitions {
 
 impl<'a> DefinitionsBuilder<'a> {
     fn stmts(&mut self, xs: &[Stmt]) {
-        let mut iter = xs.iter();
-        'outer: while let Some(x) = iter.next() {
-            if let Stmt::FunctionDef(f) = x {
-                let mut last = x;
-                let mut last_f = f;
-                for x in iter.by_ref() {
-                    if let Stmt::FunctionDef(g) = x {
-                        if last_f.name.id != g.name.id {
-                            self.stmt(last);
-                            last_f = g;
-                        }
-                        last = x;
-                    } else {
-                        self.stmt(last);
-                        self.stmt(x);
-                        continue 'outer;
-                    }
-                }
-                self.stmt(last);
-            } else {
-                self.stmt(x);
-            }
+        for x in xs {
+            self.stmt(x);
         }
     }
 
@@ -454,11 +434,11 @@ def bar(x: str) -> str: ...
         );
         let foo = defs.definitions.get(&Name::new("foo")).unwrap();
         assert_eq!(foo.style, DefinitionStyle::Local);
-        assert_eq!(foo.count, 1);
+        assert_eq!(foo.count, 3);
 
         let bar = defs.definitions.get(&Name::new("bar")).unwrap();
         assert_eq!(bar.style, DefinitionStyle::Local);
-        assert_eq!(bar.count, 1);
+        assert_eq!(bar.count, 2);
     }
 
     #[test]

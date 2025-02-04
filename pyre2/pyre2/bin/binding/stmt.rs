@@ -49,12 +49,10 @@ impl<'a> BindingsBuilder<'a> {
 
     /// Evaluate the statements and update the bindings.
     /// Every statement should end up in the bindings, perhaps with a location that is never used.
-    /// Functions are coalesced into potential overloads in `fn stmts` and should not be passed in.
-    pub fn stmt_not_function(&mut self, x: Stmt) {
+    pub fn stmt(&mut self, x: Stmt) {
         match x {
-            Stmt::FunctionDef(_) => {
-                // We handle 1+ functions at a time in function_defs for overloads. See `fn stmts`
-                unreachable!("unexpected function definition")
+            Stmt::FunctionDef(x) => {
+                self.function_def(x);
             }
             Stmt::ClassDef(x) => self.class_def(x),
             Stmt::Return(x) => {

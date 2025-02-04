@@ -8753,16 +8753,6 @@
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Could not find name `value`",
-      "description": "Could not find name `value`",
-      "line": 90,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 90
-    },
-    {
-      "code": -2,
       "column": 38,
       "concise_description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
       "description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
@@ -11747,16 +11737,6 @@
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Could not find name `value`",
-      "description": "Could not find name `value`",
-      "line": 91,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 91
-    },
-    {
-      "code": -2,
       "column": 38,
       "concise_description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
       "description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
@@ -14644,16 +14624,6 @@
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Could not find name `val1`",
-      "description": "Could not find name `val1`",
-      "line": 297,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 297
-    },
-    {
-      "code": -2,
       "column": 17,
       "concise_description": "EXPECTED Literal[0] <: float",
       "description": "EXPECTED Literal[0] <: float",
@@ -14661,16 +14631,6 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 305
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "Could not find name `val1`",
-      "description": "Could not find name `val1`",
-      "line": 307,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 307
     },
     {
       "code": -2,
@@ -15568,6 +15528,16 @@
       "name": "PyreError",
       "stop_column": 23,
       "stop_line": 27
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED type[object] <: type[None]",
+      "description": "EXPECTED type[object] <: type[None]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 39
     },
     {
       "code": -2,

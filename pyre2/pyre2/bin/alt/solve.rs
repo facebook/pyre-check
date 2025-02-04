@@ -914,15 +914,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(values)
             }
-            Binding::Function(x) => {
-                // Check every define, but only return the type of the last one.
-                // TODO: Combine the types of @overload-decorated defines.
-                let mut ty = Type::any_error();
-                for x in x {
-                    ty = self.function_def(x);
-                }
-                ty
-            }
+            Binding::Function(x) => self.function_def(x),
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExport(name.clone()))
                 .arc_clone(),
