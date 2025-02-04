@@ -594,7 +594,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             value_ty.as_ref(),
             annotation.as_deref(),
             field.initialization,
-            field.class,
+            &self.get_idx_class_def(field.class).unwrap(),
             field.range,
         ))
     }

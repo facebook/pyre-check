@@ -7,7 +7,6 @@
 
 use std::fmt;
 use std::fmt::Display;
-use std::ops::Deref;
 use std::sync::Arc;
 
 use dupe::Dupe;
@@ -310,16 +309,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Given an identifier, see whether it is bound to an enum class. If so,
     /// return the enum, otherwise return `None`.
     pub fn get_enum_from_name(&self, name: Identifier) -> Option<EnumMetadata> {
-        self.get_enum_from_key(
-            self.bindings()
-                .key_to_idx(&Key::Usage(ShortIdentifier::new(&name))),
-        )
-    }
-
-    pub fn get_enum_from_key(&self, key: Idx<Key>) -> Option<EnumMetadata> {
-        // TODO(stroxler): Eventually, we should raise type errors on generic Enum because
-        // this doesn't make semantic sense. But in the meantime we need to be robust against
-        // this possibility.
+        let key = self
+            .bindings()
+            .key_to_idx(&Key::Usage(ShortIdentifier::new(&name)));
         self.get_idx_class_def(key)
             .and_then(|cls| self.get_enum_from_class(&cls))
     }
@@ -467,10 +459,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         value_ty: &Type,
         annotation: Option<&Annotation>,
         initialization: ClassFieldInitialization,
-        class_key: Idx<Key>,
+        class: &Class,
         range: TextRange,
     ) -> ClassField {
-        if let Some(enum_) = self.get_enum_from_key(class_key)
+        let metadata = self.get_metadata_for_class(class);
+        if let Some(enum_) = self.get_enum_from_class(class)
             && enum_.get_member(name).is_some()
             && matches!(initialization, ClassFieldInitialization::Class)
         {
@@ -488,9 +481,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
-        if self.is_key_typed_dict(class_key)
-            && matches!(initialization, ClassFieldInitialization::Class)
-        {
+        if metadata.is_typed_dict() && matches!(initialization, ClassFieldInitialization::Class) {
             self.error(
                 range,
                 format!("TypedDict item `{}` may not be initialized.", name),
@@ -647,13 +638,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         } else {
             attr.value.as_special_method_type(metaclass)
-        }
-    }
-
-    fn is_key_typed_dict(&self, key: Idx<Key>) -> bool {
-        match self.get_idx(key).deref() {
-            Type::ClassDef(cls) => self.get_metadata_for_class(cls).is_typed_dict(),
-            _ => false,
         }
     }
 
