@@ -27,10 +27,10 @@ pub enum ModuleStyle {
 
 /// Store information about where a module is sourced from.
 #[derive(Debug, Clone, Dupe, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub struct ModulePath(Arc<ModulePathInner>);
+pub struct ModulePath(Arc<ModulePathDetails>);
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
-enum ModulePathInner {
+enum ModulePathDetails {
     /// The module source comes from a file on disk.
     FileSystem(PathBuf),
     /// The module source comes from typeshed bundled with Pyre (which gets stored in-memory).
@@ -58,15 +58,15 @@ impl ModuleStyle {
 impl Display for ModulePath {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self.0 {
-            ModulePathInner::FileSystem(path) => write!(f, "{}", path.display()),
-            ModulePathInner::BundledTypeshed(relative_path) => {
+            ModulePathDetails::FileSystem(path) => write!(f, "{}", path.display()),
+            ModulePathDetails::BundledTypeshed(relative_path) => {
                 write!(
                     f,
                     "bundled /pyre2/third_party/typeshed/{}",
                     relative_path.display()
                 )
             }
-            ModulePathInner::NotFound(module_name) => {
+            ModulePathDetails::NotFound(module_name) => {
                 // This branch is not expected to be reachable since nonexistent module shouldn't have an errors,
                 // but lets make it clear this is a fake path if it ever happens to leak into any output.
                 write!(f, "empty {module_name}")
@@ -77,31 +77,33 @@ impl Display for ModulePath {
 
 impl ModulePath {
     pub fn filesystem(path: PathBuf) -> Self {
-        Self(Arc::new(ModulePathInner::FileSystem(path)))
+        Self(Arc::new(ModulePathDetails::FileSystem(path)))
     }
 
     pub fn bundled_typeshed(relative_path: PathBuf) -> Self {
-        Self(Arc::new(ModulePathInner::BundledTypeshed(relative_path)))
+        Self(Arc::new(ModulePathDetails::BundledTypeshed(relative_path)))
     }
 
     pub fn not_found(module_name: ModuleName) -> Self {
-        Self(Arc::new(ModulePathInner::NotFound(module_name)))
+        Self(Arc::new(ModulePathDetails::NotFound(module_name)))
     }
 
     pub fn is_init(&self) -> bool {
         match &*self.0 {
-            ModulePathInner::FileSystem(path) => is_path_init(path),
-            ModulePathInner::BundledTypeshed(relative_path) => is_path_init(relative_path),
-            ModulePathInner::NotFound(_) => false,
+            ModulePathDetails::FileSystem(path) => is_path_init(path),
+            ModulePathDetails::BundledTypeshed(relative_path) => is_path_init(relative_path),
+            ModulePathDetails::NotFound(_) => false,
         }
     }
 
     /// Whether things imported by this module are reexported.
     pub fn style(&self) -> ModuleStyle {
         match &*self.0 {
-            ModulePathInner::FileSystem(path) => ModuleStyle::of_path(path),
-            ModulePathInner::BundledTypeshed(relative_path) => ModuleStyle::of_path(relative_path),
-            ModulePathInner::NotFound(_) => ModuleStyle::Executable,
+            ModulePathDetails::FileSystem(path) => ModuleStyle::of_path(path),
+            ModulePathDetails::BundledTypeshed(relative_path) => {
+                ModuleStyle::of_path(relative_path)
+            }
+            ModulePathDetails::NotFound(_) => ModuleStyle::Executable,
         }
     }
 
@@ -111,9 +113,9 @@ impl ModulePath {
 
     pub fn as_filesystem_path(&self) -> Option<&Path> {
         match &*self.0 {
-            ModulePathInner::FileSystem(path) => Some(path),
-            ModulePathInner::BundledTypeshed(_) => None,
-            ModulePathInner::NotFound(_) => None,
+            ModulePathDetails::FileSystem(path) => Some(path),
+            ModulePathDetails::BundledTypeshed(_) => None,
+            ModulePathDetails::NotFound(_) => None,
         }
     }
 }
