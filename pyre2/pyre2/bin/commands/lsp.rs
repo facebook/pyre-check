@@ -6,9 +6,11 @@
  */
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use anyhow::anyhow;
 use clap::Parser;
+use dupe::Dupe;
 use lsp_server::Connection;
 use lsp_server::Message;
 use lsp_server::Notification;
@@ -85,7 +87,7 @@ struct Server<'a> {
     include: Vec<PathBuf>,
     typeshed: BundledTypeshed,
     state: State,
-    open_files: SmallMap<PathBuf, (i32, String)>,
+    open_files: SmallMap<PathBuf, (i32, Arc<String>)>,
 }
 
 impl Args {
@@ -148,7 +150,7 @@ impl Loader for DummyLoader {
 
 struct LspLoader {
     open_modules: SmallMap<ModuleName, PathBuf>,
-    open_files: SmallMap<PathBuf, (i32, String)>,
+    open_files: SmallMap<PathBuf, (i32, Arc<String>)>,
     typeshed: BundledTypeshed,
     search_roots: Vec<PathBuf>,
 }
@@ -159,7 +161,7 @@ impl Loader for LspLoader {
             LoadResult::Loaded(
                 // TODO(grievejia): Properly model paths for in-memory sources
                 ModulePath::filesystem((*path).clone()),
-                self.open_files.get(path).unwrap().1.clone(),
+                self.open_files.get(path).unwrap().1.dupe(),
             )
         } else if let Some(path) = find_module(name, &self.search_roots) {
             LoadResult::from_path(path)
@@ -305,7 +307,10 @@ impl<'a> Server<'a> {
     fn did_open(&mut self, params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
         self.open_files.insert(
             params.text_document.uri.to_file_path().unwrap(),
-            (params.text_document.version, params.text_document.text),
+            (
+                params.text_document.version,
+                Arc::new(params.text_document.text),
+            ),
         );
         self.validate()
     }
@@ -315,7 +320,7 @@ impl<'a> Server<'a> {
         let change = params.content_changes.into_iter().next().unwrap();
         self.open_files.insert(
             params.text_document.uri.to_file_path().unwrap(),
-            (params.text_document.version, change.text),
+            (params.text_document.version, Arc::new(change.text)),
         );
         self.validate()
     }

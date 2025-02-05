@@ -6,6 +6,7 @@
  */
 
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::Once;
 use std::thread::sleep;
 use std::time::Duration;
@@ -130,7 +131,10 @@ impl Loader for TestEnv {
             match contents {
                 Ok(contents) => {
                     // TODO(grievejia): Properly model paths for in-memory sources
-                    LoadResult::Loaded(ModulePath::filesystem(path.to_owned()), contents.to_owned())
+                    LoadResult::Loaded(
+                        ModulePath::filesystem(path.to_owned()),
+                        Arc::new(contents.to_owned()),
+                    )
                 }
                 Err(err) => LoadResult::FailedToLoad(
                     ModulePath::filesystem(path.to_owned()),
@@ -140,7 +144,7 @@ impl Loader for TestEnv {
         } else if let Some(contents) = lookup_test_stdlib(name) {
             LoadResult::Loaded(
                 ModulePath::filesystem(default_path(name)),
-                contents.to_owned(),
+                Arc::new(contents.to_owned()),
             )
         } else {
             LoadResult::FailedToFind(anyhow!("Module not given in test suite"))

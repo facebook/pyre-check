@@ -45,6 +45,7 @@ impl DisplayWith<ModuleInfo> for ShortIdentifier {
 #[cfg(test)]
 mod tests {
     use std::path::Path;
+    use std::sync::Arc;
 
     use ruff_python_ast::Expr;
     use ruff_python_ast::Stmt;
@@ -67,7 +68,7 @@ mod tests {
         let module_info = ModuleInfo::new(
             ModuleName::from_str("foo"),
             ModulePath::filesystem(Path::new("foo.py").to_owned()),
-            "hello_world = Baz123.attribute".to_owned(),
+            Arc::new("hello_world = Baz123.attribute".to_owned()),
         );
         let module = module_info.parse(&ErrorCollector::default());
         let show = |x: &ShortIdentifier| module_info.display(x).to_string();

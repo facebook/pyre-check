@@ -319,6 +319,7 @@ impl Display for Type {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
+    use std::sync::Arc;
 
     use ruff_python_ast::Identifier;
     use ruff_text_size::TextSize;
@@ -348,7 +349,7 @@ mod tests {
         let mi = ModuleInfo::new(
             ModuleName::from_str(module),
             ModulePath::filesystem(PathBuf::from(module)),
-            "1234567890".to_owned(),
+            Arc::new("1234567890".to_owned()),
         );
         Class::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
@@ -372,7 +373,7 @@ mod tests {
         let mi = ModuleInfo::new(
             ModuleName::from_str(module),
             ModulePath::filesystem(PathBuf::from(module)),
-            "1234567890".to_owned(),
+            Arc::new("1234567890".to_owned()),
         );
         TypeVar::new(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),

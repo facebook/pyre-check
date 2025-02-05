@@ -7,8 +7,10 @@
 
 use std::io::Read;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use anyhow::Context as _;
+use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
 use tar::Archive;
 use tracing::debug;
@@ -22,8 +24,9 @@ const BUNDLED_TYPESHED_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/
 #[derive(Debug, Clone)]
 struct BundledTypeshedEntry {
     relative_path: PathBuf,
-    content: String,
+    content: Arc<String>,
 }
+
 #[derive(Debug, Clone)]
 pub struct BundledTypeshed {
     index: SmallMap<ModuleName, BundledTypeshedEntry>,
@@ -69,17 +72,17 @@ impl BundledTypeshed {
                 module_name,
                 BundledTypeshedEntry {
                     relative_path,
-                    content,
+                    content: Arc::new(content),
                 },
             );
         }
         Ok(Self { index })
     }
 
-    pub fn find(&self, name: ModuleName) -> Option<(ModulePath, String)> {
+    pub fn find(&self, name: ModuleName) -> Option<(ModulePath, Arc<String>)> {
         let entry = self.index.get(&name)?;
         let fake_path = ModulePath::bundled_typeshed(entry.relative_path.clone());
-        Some((fake_path, entry.content.clone()))
+        Some((fake_path, entry.content.dupe()))
     }
 }
 

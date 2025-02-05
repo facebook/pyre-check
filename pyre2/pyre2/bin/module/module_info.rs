@@ -61,12 +61,12 @@ struct ModuleInfoInner {
     path: ModulePath,
     index: LineIndex,
     ignore: Ignore,
-    contents: String,
+    contents: Arc<String>,
 }
 
 impl ModuleInfo {
     /// Create a new ModuleInfo. Will NOT read the `path`, but use the value from `contents` instead.
-    pub fn new(name: ModuleName, path: ModulePath, contents: String) -> Self {
+    pub fn new(name: ModuleName, path: ModulePath, contents: Arc<String>) -> Self {
         let index = LineIndex::from_source_text(&contents);
         let ignore = Ignore::new(&contents);
         Self(Arc::new(ModuleInfoInner {

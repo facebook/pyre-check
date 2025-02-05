@@ -152,6 +152,7 @@ impl ErrorCollector {
 #[cfg(test)]
 mod tests {
     use std::path::Path;
+    use std::sync::Arc;
 
     use ruff_python_ast::name::Name;
     use ruff_text_size::TextSize;
@@ -167,7 +168,7 @@ mod tests {
         let mi = ModuleInfo::new(
             ModuleName::from_name(&Name::new("main")),
             ModulePath::filesystem(Path::new("main.py").to_owned()),
-            "contents".to_owned(),
+            Arc::new("contents".to_owned()),
         );
         errors.add(
             &mi,

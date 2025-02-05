@@ -6,6 +6,7 @@
  */
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
@@ -20,14 +21,14 @@ pub trait Loader: Sync {
 
 /// The result of trying to load a file.
 pub enum LoadResult {
-    Loaded(ModulePath, String),
+    Loaded(ModulePath, Arc<String>),
     FailedToLoad(ModulePath, anyhow::Error),
     FailedToFind(anyhow::Error),
 }
 
 pub struct LoadResultComponents {
     pub path: ModulePath,
-    pub code: String,
+    pub code: Arc<String>,
     /// Found the file but failed to open it, raise an error in this file.
     pub self_error: Option<anyhow::Error>,
     /// File not found, raise an error in everyone who imports me.
@@ -39,7 +40,7 @@ static FAKE_MODULE: &str = "";
 impl LoadResult {
     pub fn from_path(path: PathBuf) -> Self {
         match fs_anyhow::read_to_string(&path) {
-            Ok(code) => LoadResult::Loaded(ModulePath::filesystem(path), code),
+            Ok(code) => LoadResult::Loaded(ModulePath::filesystem(path), Arc::new(code)),
             Err(err) => LoadResult::FailedToLoad(ModulePath::filesystem(path), err),
         }
     }
@@ -54,13 +55,13 @@ impl LoadResult {
             },
             LoadResult::FailedToLoad(path, err) => LoadResultComponents {
                 path,
-                code: FAKE_MODULE.to_owned(),
+                code: Arc::new(FAKE_MODULE.to_owned()),
                 self_error: Some(err),
                 import_error: None,
             },
             LoadResult::FailedToFind(err) => LoadResultComponents {
                 path: ModulePath::not_found(module_name),
-                code: FAKE_MODULE.to_owned(),
+                code: Arc::new(FAKE_MODULE.to_owned()),
                 self_error: None,
                 import_error: Some(err),
             },
