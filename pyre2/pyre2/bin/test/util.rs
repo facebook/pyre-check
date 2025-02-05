@@ -123,7 +123,7 @@ impl TestEnv {
         Config::default()
     }
 
-    pub fn to_state(self) -> State {
+    pub fn to_state(self) -> (State, impl Fn(&str) -> Handle) {
         let config = Self::config();
         let handles = self
             .0
@@ -132,11 +132,9 @@ impl TestEnv {
             .collect::<Vec<_>>();
         let mut state = State::new(LoaderId::new(self), true);
         state.run(handles);
-        state
-    }
-
-    pub fn handle(&self, module: &str) -> Handle {
-        Handle::new(ModuleName::from_str(module), Self::config())
+        (state, |module| {
+            Handle::new(ModuleName::from_str(module), Self::config())
+        })
     }
 }
 
@@ -199,7 +197,7 @@ pub fn testcase_for_macro(
     let limit = 10;
     for _ in 0..3 {
         let start = Instant::now();
-        env.clone().to_state().check_against_expectations()?;
+        env.clone().to_state().0.check_against_expectations()?;
         if start.elapsed().as_secs() <= limit {
             return Ok(());
         }
@@ -210,9 +208,8 @@ pub fn testcase_for_macro(
 }
 
 pub fn mk_state(code: &str) -> (Handle, State) {
-    let test_env = TestEnv::one("main", code);
-    let handle = test_env.handle("main");
-    (handle, test_env.to_state())
+    let (state, handle) = TestEnv::one("main", code).to_state();
+    (handle("main"), state)
 }
 
 pub fn get_class(name: &str, handle: &Handle, state: &State) -> Option<Class> {

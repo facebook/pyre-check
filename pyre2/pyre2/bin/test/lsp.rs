@@ -39,10 +39,9 @@ fn mk_state() -> (Handle, State) {
         })
         .join("\n");
     let test_env = TestEnv::one("main", &code);
-    let handle = test_env.handle("main");
-    let state = test_env.to_state();
+    let (state, handle) = test_env.to_state();
     assert_eq!(state.count_errors(), 0);
-    (handle, state)
+    (handle("main"), state)
 }
 
 /// Find the TextRange of the given needle on the line, but must occur
