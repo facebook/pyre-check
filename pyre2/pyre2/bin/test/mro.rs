@@ -9,13 +9,14 @@ use crate::alt::types::class_metadata::ClassMetadata;
 use crate::binding::binding::KeyClassMetadata;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::test::util::get_class;
 use crate::test::util::mk_state;
 use crate::testcase;
 
 pub fn get_class_metadata(name: &str, module_name: ModuleName, state: &State) -> ClassMetadata {
-    let solutions = state.get_solutions(module_name).unwrap();
+    let solutions = state.get_solutions(&Handle::new(module_name)).unwrap();
 
     let res = get_class(name, module_name, state).and_then(|cls| {
         let x = solutions

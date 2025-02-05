@@ -34,6 +34,7 @@ use crate::module::finder::find_module;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::report;
+use crate::state::handle::Handle;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
@@ -41,6 +42,7 @@ use crate::util::display::number_thousands;
 use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
 use crate::util::memory::MemoryUsageTrace;
+use crate::util::prelude::SliceExt;
 
 #[derive(Debug, Clone, ValueEnum, Default)]
 enum OutputFormat {
@@ -214,7 +216,8 @@ impl Args {
             memory_trace.peak()
         );
         if let Some(debug_info) = args.debug_info {
-            let mut output = serde_json::to_string_pretty(&state.debug_info(&modules))?;
+            let mut output =
+                serde_json::to_string_pretty(&state.debug_info(&modules.map(|x| Handle::new(*x))))?;
             if debug_info.extension() == Some(OsStr::new("js")) {
                 output = format!("var data = {output}");
             }

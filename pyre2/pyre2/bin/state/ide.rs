@@ -17,17 +17,21 @@ use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::types::types::Type;
 use crate::visitors::Visitors;
 
 impl State {
     pub fn get_type(&self, module: ModuleName, key: &Key) -> Option<Type> {
-        self.get_solutions(module)?.types.get(key).cloned()
+        self.get_solutions(&Handle::new(module))?
+            .types
+            .get(key)
+            .cloned()
     }
 
     fn identifier_at(&self, module: ModuleName, position: TextSize) -> Option<Identifier> {
-        let mod_module = self.get_ast(module)?;
+        let mod_module = self.get_ast(&Handle::new(module))?;
         fn f(x: &Expr, find: TextSize, res: &mut Option<Identifier>) {
             if let Expr::Name(x) = x
                 && x.range.contains_inclusive(find)
@@ -56,7 +60,7 @@ impl State {
         if let Key::Definition(x) = key {
             return Some((module, x.range()));
         }
-        let bindings = self.get_bindings(module)?;
+        let bindings = self.get_bindings(&Handle::new(module))?;
         let idx = bindings.key_to_idx(key);
         let res = self.binding_to_definition(module, bindings.get(idx), gas);
         if res.is_none()
@@ -76,7 +80,7 @@ impl State {
         if gas <= 0 {
             return None;
         }
-        let bindings = self.get_bindings(module)?;
+        let bindings = self.get_bindings(&Handle::new(module))?;
         match binding {
             Binding::Forward(k) => self.key_to_definition(module, bindings.idx_to_key(*k), gas - 1),
             Binding::Phi(ks) if !ks.is_empty() => self.key_to_definition(
@@ -85,7 +89,7 @@ impl State {
                 gas - 1,
             ),
             Binding::Import(m, name) => {
-                let bindings = self.get_bindings(*m)?;
+                let bindings = self.get_bindings(&Handle::new(*m))?;
                 let b = bindings.get(bindings.key_to_idx(&KeyExport(name.clone())));
                 self.binding_to_definition(*m, b, gas - 1)
             }
@@ -111,7 +115,7 @@ impl State {
         let is_interesting_type = |x: &Type| x != &Type::any_error();
         let is_interesting_expr = |x: &Expr| !Ast::is_literal(x);
 
-        let bindings = self.get_bindings(module)?;
+        let bindings = self.get_bindings(&Handle::new(module))?;
         let mut res = Vec::new();
         for idx in bindings.keys::<Key>() {
             match bindings.idx_to_key(idx) {

@@ -26,6 +26,7 @@ use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
 use crate::module::module_name::ModuleName;
+use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::table;
 use crate::table_for_each;
@@ -80,7 +81,7 @@ pub fn binding_memory(state: &State) -> String {
     let mut report = SmallMap::new();
     let phantom_table = PhantomTable::default();
     for module in state.modules() {
-        let bindings = state.get_bindings(module).unwrap();
+        let bindings = state.get_bindings(&Handle::new(module)).unwrap();
         table_for_each!(&phantom_table, |v| f(v, module, &bindings, &mut report));
     }
 

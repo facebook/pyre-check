@@ -22,6 +22,7 @@ use crate::config::Config;
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
+use crate::state::handle::Handle;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
@@ -194,7 +195,7 @@ pub fn mk_state(code: &str) -> (ModuleName, State) {
 }
 
 pub fn get_class(name: &str, module_name: ModuleName, state: &State) -> Option<Class> {
-    let solutions = state.get_solutions(module_name).unwrap();
+    let solutions = state.get_solutions(&Handle::new(module_name)).unwrap();
 
     match solutions.exports.get(&KeyExport(Name::new(name))) {
         Some(Type::ClassDef(cls)) => Some(cls.clone()),

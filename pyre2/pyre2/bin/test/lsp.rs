@@ -10,6 +10,7 @@ use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
 use crate::module::module_name::ModuleName;
+use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::test::util::TestEnv;
 
@@ -45,7 +46,7 @@ fn mk_state() -> (ModuleName, State) {
 /// Find the TextRange of the given needle on the line, but must occur
 fn at_after(line_no: usize, before: &str, needle: &str) -> TextRange {
     let (module, state) = mk_state();
-    let info = state.get_module_info(module).unwrap();
+    let info = state.get_module_info(&Handle::new(module)).unwrap();
     let line = info.contents().lines().nth(line_no - 1).unwrap();
     let (pre1, post1) = line.split_once(before).unwrap();
     let (pre2, _) = post1.split_once(needle).unwrap();

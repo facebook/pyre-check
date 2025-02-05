@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+pub mod handle;
 pub mod ide;
 pub mod info;
 pub mod loader;

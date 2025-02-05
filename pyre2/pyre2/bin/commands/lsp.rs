@@ -71,6 +71,7 @@ use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
+use crate::state::handle::Handle;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
@@ -333,11 +334,11 @@ impl<'a> Server<'a> {
             &params.text_document_position_params.text_document.uri,
             &self.include,
         );
-        let info = self.state.get_module_info(module)?;
+        let info = self.state.get_module_info(&Handle::new(module))?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
         let (module, range) = self.state.goto_definition(module, range)?;
         let path = find_module(module, &self.include)?;
-        let info = self.state.get_module_info(module)?;
+        let info = self.state.get_module_info(&Handle::new(module))?;
         let path = std::fs::canonicalize(&path).unwrap_or(path);
         Some(GotoDefinitionResponse::Scalar(Location {
             uri: Url::from_file_path(path).unwrap(),
@@ -357,7 +358,7 @@ impl<'a> Server<'a> {
             &params.text_document_position_params.text_document.uri,
             &self.include,
         );
-        let info = self.state.get_module_info(module)?;
+        let info = self.state.get_module_info(&Handle::new(module))?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
         let t = self.state.hover(module, range)?;
         Some(Hover {
@@ -371,7 +372,7 @@ impl<'a> Server<'a> {
 
     fn inlay_hints(&self, params: InlayHintParams) -> Option<Vec<InlayHint>> {
         let module = url_to_module(&params.text_document.uri, &self.include);
-        let info = self.state.get_module_info(module)?;
+        let info = self.state.get_module_info(&Handle::new(module))?;
         let t = self.state.inlay_hints(module)?;
         Some(t.into_map(|x| {
             let position = text_size_to_position(&info, x.0);
