@@ -35,7 +35,7 @@ use crate::util::fs_anyhow;
 use crate::util::uniques::UniqueFactory;
 
 pub struct Context<'a, Lookup> {
-    pub name: ModuleName,
+    pub module: ModuleName,
     pub config: &'a Config,
     pub loader: &'a dyn Loader,
     pub uniques: &'a UniqueFactory,
@@ -153,17 +153,17 @@ impl Step {
     }
 
     fn load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
-        let mut path = ModulePath::not_found(ctx.name);
+        let mut path = ModulePath::not_found(ctx.module);
         let mut code = Arc::new("".to_owned());
         let mut error_style = ErrorStyle::Never;
         let mut import_error = None;
         let mut self_error = None;
 
-        match ctx.loader.find(ctx.name) {
+        match ctx.loader.find(ctx.module) {
             Err(err) => {
                 import_error = Some(Arc::new(format!(
                     "Could not find import of `{}`, {err:#}",
-                    ctx.name
+                    ctx.module
                 )));
             }
             Ok((p, s)) => {
@@ -185,15 +185,16 @@ impl Step {
                 };
                 match res {
                     Err(err) => {
-                        self_error =
-                            Some(err.context(format!("When loading `{}` from `{path}`", ctx.name)))
+                        self_error = Some(
+                            err.context(format!("When loading `{}` from `{path}`", ctx.module)),
+                        )
                     }
                     Ok(res) => code = res,
                 }
             }
         }
 
-        let module_info = ModuleInfo::new(ctx.name, path, code);
+        let module_info = ModuleInfo::new(ctx.module, path, code);
         let errors = ErrorCollector::new(error_style);
         if let Some(err) = self_error {
             errors.add(
@@ -201,7 +202,7 @@ impl Step {
                 TextRange::default(),
                 format!(
                     "Failed to load {} from {}, got {err:#}",
-                    ctx.name,
+                    ctx.module,
                     module_info.path()
                 ),
             );

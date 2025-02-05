@@ -159,7 +159,7 @@ impl State {
 
             let stdlib = self.stdlib.read().unwrap().dupe();
             let set = compute(&Context {
-                name: module,
+                module,
                 config: &self.config,
                 loader: &self.loader,
                 uniques: &self.uniques,
@@ -518,7 +518,7 @@ impl LookupExport for State {
 impl LookupAnswer for State {
     fn get<K: Solve<Self> + Keyed<EXPORTED = true>>(
         &self,
-        name: ModuleName,
+        module: ModuleName,
         k: &K,
     ) -> Arc<K::Answer>
     where
@@ -526,6 +526,6 @@ impl LookupAnswer for State {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
-        self.lookup_answer(name, k)
+        self.lookup_answer(module, k)
     }
 }

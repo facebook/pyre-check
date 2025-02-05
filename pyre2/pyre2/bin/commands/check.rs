@@ -90,21 +90,21 @@ struct CheckLoader {
 }
 
 impl Loader for CheckLoader {
-    fn find(&self, name: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
-        if let Some(path) = self.sources.get(&name) {
+    fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
+        if let Some(path) = self.sources.get(&module) {
             Ok((
                 ModulePath::filesystem(path.clone()),
                 self.error_style_for_sources,
             ))
-        } else if let Some(path) = find_module(name, &self.search_roots) {
+        } else if let Some(path) = find_module(module, &self.search_roots) {
             Ok((
                 ModulePath::filesystem(path),
                 self.error_style_for_dependencies,
             ))
-        } else if let Some(path) = typeshed()?.find(name) {
+        } else if let Some(path) = typeshed()?.find(module) {
             Ok((path, self.error_style_for_dependencies))
         } else {
-            Err(anyhow::anyhow!("Could not find path for `{name}`"))
+            Err(anyhow::anyhow!("Could not find path for `{module}`"))
         }
     }
 }

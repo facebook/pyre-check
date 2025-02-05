@@ -11,8 +11,8 @@ use tracing::debug;
 
 use crate::module::module_name::ModuleName;
 
-pub fn find_module(name: ModuleName, include: &[PathBuf]) -> Option<PathBuf> {
-    let parts = name.components();
+pub fn find_module(module: ModuleName, include: &[PathBuf]) -> Option<PathBuf> {
+    let parts = module.components();
     let possibilities = vec![
         parts.join("/") + ".pyi",
         parts.join("/") + ".py",
@@ -24,7 +24,7 @@ pub fn find_module(name: ModuleName, include: &[PathBuf]) -> Option<PathBuf> {
         for suffix in &possibilities {
             let path = include.join(suffix);
             if path.exists() {
-                debug!("Found {name} at {}", path.display());
+                debug!("Found {module} at {}", path.display());
                 return Some(path);
             }
         }

@@ -144,10 +144,10 @@ impl BuckSourceDatabase {
         self.sources.keys().copied().collect()
     }
 
-    fn lookup(&self, name: ModuleName) -> LookupResult {
-        match self.sources.get(&name) {
+    fn lookup(&self, module: ModuleName) -> LookupResult {
+        match self.sources.get(&module) {
             Some(paths) => LookupResult::OwningSource(paths.first().clone()),
-            None => match self.dependencies.get(&name) {
+            None => match self.dependencies.get(&module) {
                 Some(paths) => LookupResult::ExternalSource(paths.first().clone()),
                 None => LookupResult::NoSource,
             },
@@ -156,8 +156,8 @@ impl BuckSourceDatabase {
 }
 
 impl Loader for BuckSourceDatabase {
-    fn find(&self, name: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
-        match self.lookup(name) {
+    fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
+        match self.lookup(module) {
             LookupResult::OwningSource(path) => {
                 Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Delayed))
             }

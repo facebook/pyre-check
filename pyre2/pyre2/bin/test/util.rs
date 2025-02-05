@@ -72,8 +72,8 @@ macro_rules! testcase_with_bug {
     };
 }
 
-fn default_path(name: ModuleName) -> PathBuf {
-    PathBuf::from(format!("{}.py", name.as_str().replace('.', "/")))
+fn default_path(module: ModuleName) -> PathBuf {
+    PathBuf::from(format!("{}.py", module.as_str().replace('.', "/")))
 }
 
 #[derive(Debug, Default, Clone)]
@@ -124,15 +124,15 @@ impl TestEnv {
 }
 
 impl Loader for TestEnv {
-    fn find(&self, name: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
+    fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
         let style = ErrorStyle::Immediate;
-        if let Some((path, contents)) = self.0.get(&name) {
+        if let Some((path, contents)) = self.0.get(&module) {
             match contents {
                 None => Ok((ModulePath::filesystem(path.clone()), style)),
                 Some(_) => Ok((ModulePath::memory(path.clone()), style)),
             }
-        } else if lookup_test_stdlib(name).is_some() {
-            Ok((ModulePath::memory(default_path(name)), style))
+        } else if lookup_test_stdlib(module).is_some() {
+            Ok((ModulePath::memory(default_path(module)), style))
         } else {
             Err(anyhow!("Module not given in test suite"))
         }

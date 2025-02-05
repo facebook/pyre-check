@@ -154,15 +154,15 @@ struct LspLoader {
 }
 
 impl Loader for LspLoader {
-    fn find(&self, name: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
-        if let Some(path) = self.open_modules.get(&name) {
+    fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
+        if let Some(path) = self.open_modules.get(&module) {
             Ok((ModulePath::memory(path.clone()), ErrorStyle::Delayed))
-        } else if let Some(path) = find_module(name, &self.search_roots) {
+        } else if let Some(path) = find_module(module, &self.search_roots) {
             Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Never))
-        } else if let Some(path) = typeshed()?.find(name) {
+        } else if let Some(path) = typeshed()?.find(module) {
             Ok((path, ErrorStyle::Never))
         } else {
-            Err(anyhow!("Could not find path for `{name}`"))
+            Err(anyhow!("Could not find path for `{module}`"))
         }
     }
 

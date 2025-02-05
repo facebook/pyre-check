@@ -159,7 +159,7 @@ pub struct AnswersSolver<'a, Ans: LookupAnswer> {
 pub trait LookupAnswer: Sized {
     fn get<K: Solve<Self> + Keyed<EXPORTED = true>>(
         &self,
-        name: ModuleName,
+        module: ModuleName,
         k: &K,
     ) -> Arc<K::Answer>
     where
@@ -465,7 +465,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn get_from_module<K: Solve<Ans> + Keyed<EXPORTED = true>>(
         &self,
-        name: ModuleName,
+        module: ModuleName,
         k: &K,
     ) -> Arc<K::Answer>
     where
@@ -473,10 +473,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
-        if name == self.module_info().name() {
+        if module == self.module_info().name() {
             self.get(k)
         } else {
-            self.answers.get(name, k)
+            self.answers.get(module, k)
         }
     }
 

@@ -72,9 +72,9 @@ impl BundledTypeshed {
         Ok(res)
     }
 
-    pub fn find(&self, name: ModuleName) -> Option<ModulePath> {
+    pub fn find(&self, module: ModuleName) -> Option<ModulePath> {
         self.find
-            .get(&name)
+            .get(&module)
             .map(|path| ModulePath::bundled_typeshed(path.clone()))
     }
 
