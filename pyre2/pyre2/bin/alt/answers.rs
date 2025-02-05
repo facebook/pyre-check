@@ -520,7 +520,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         );
         if let Ok((v, Some(r))) = &result {
             let k = self.bindings().idx_to_key(idx);
-            K::record_recursive(self, k, v.clone(), r.clone());
+            K::record_recursive(self, k, v.dupe(), r.clone());
         }
         match result {
             Ok((v, _)) => v,
