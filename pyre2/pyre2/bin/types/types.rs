@@ -533,6 +533,7 @@ impl Type {
             }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter().for_each(f),
             Type::ClassType(x) => x.visit(f),
+            Type::TypedDict(x) => x.visit(f),
             Type::Tuple(t) => t.visit(f),
             Type::Forall(_, x) => f(x),
             Type::Concatenate(args, pspec) => {
@@ -563,7 +564,6 @@ impl Type {
             | Type::Args(_)
             | Type::Kwargs(_)
             | Type::TypeVarTuple(_)
-            | Type::TypedDict(_)
             | Type::Ellipsis => {}
         }
     }
@@ -577,6 +577,7 @@ impl Type {
             }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter_mut().for_each(f),
             Type::ClassType(x) => x.visit_mut(f),
+            Type::TypedDict(x) => x.visit_mut(f),
             Type::Tuple(t) => t.visit_mut(f),
             Type::Forall(_, x) => f(x),
             Type::Concatenate(args, pspec) => {
@@ -607,7 +608,6 @@ impl Type {
             | Type::Args(_)
             | Type::Kwargs(_)
             | Type::TypeVarTuple(_)
-            | Type::TypedDict(_)
             | Type::Ellipsis => {}
         }
     }

@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_typed_dict,
@@ -308,14 +307,13 @@ B(x=0, y=1)  # E: EXPECTED Literal[1] <: str
     "#,
 );
 
-testcase_with_bug!(
-    "There should not be any errors",
+testcase!(
     test_generic_instantiation,
     r#"
 from typing import TypedDict, assert_type
 class C[T](TypedDict):
      x: T
-assert_type(C(x=0), C[int])  # E: EXPECTED Literal[0] <: ?_  # E: assert_type
+assert_type(C(x=0), C[int])
 assert_type(C[str](x=""), C[str])
     "#,
 );

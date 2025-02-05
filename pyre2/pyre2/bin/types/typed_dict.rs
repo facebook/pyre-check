@@ -88,4 +88,14 @@ impl TypedDict {
             ret: Type::TypedDict(Box::new(self.clone())),
         }
     }
+
+    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+        self.1.visit(&mut f);
+        self.2.iter().for_each(|(_, x)| f(&x.ty));
+    }
+
+    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+        self.1.visit_mut(&mut f);
+        self.2.iter_mut().for_each(|(_, x)| f(&mut x.ty));
+    }
 }
