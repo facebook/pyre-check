@@ -127,6 +127,11 @@ impl State {
         }
     }
 
+    pub fn import_handle(&self, handle: &Handle, module: ModuleName) -> Handle {
+        let _ = handle;
+        Handle::new(module)
+    }
+
     fn demand(&self, handle: &Handle, step: Step) {
         let module_state = self.get_module(handle);
         let mut computed = false;

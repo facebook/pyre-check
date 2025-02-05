@@ -86,12 +86,14 @@ impl State {
                 gas - 1,
             ),
             Binding::Import(m, name) => {
-                let handle = Handle::new(*m);
+                let handle = self.import_handle(handle, *m);
                 let bindings = self.get_bindings(&handle)?;
                 let b = bindings.get(bindings.key_to_idx(&KeyExport(name.clone())));
                 self.binding_to_definition(&handle, b, gas - 1)
             }
-            Binding::Module(name, _, _) => Some((Handle::new(*name), TextRange::default())),
+            Binding::Module(name, _, _) => {
+                Some((self.import_handle(handle, *name), TextRange::default()))
+            }
             Binding::CheckLegacyTypeParam(k, _) => {
                 let binding = bindings.get(*k);
                 self.key_to_definition(handle, bindings.idx_to_key(binding.0), gas - 1)
