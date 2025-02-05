@@ -303,7 +303,7 @@ pub enum Type {
     /// would have the form `Type::Type(box Type::TypedDict(TD, [arg1, arg2]))`. Note
     /// that TypedDict class definitions are still represented as `ClassDef(TD)`, just
     /// like regular classes.
-    TypedDict(TypedDict),
+    TypedDict(Box<TypedDict>),
     Tuple(Tuple),
     Module(Module),
     Forall(TParams, Box<Type>),

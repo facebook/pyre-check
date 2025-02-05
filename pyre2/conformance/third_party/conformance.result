@@ -195,7 +195,6 @@
   "callables_kwargs.py": [
     "Line 111: Expected 1 errors",
     "Line 122: Expected 1 errors",
-    "Line 41: Unexpected errors ['assert_type(TypedDict[TD1], TypedDict[TD1]) failed']",
     "Line 99: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol1']",
     "Line 100: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol2']",
     "Line 104: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol6']"

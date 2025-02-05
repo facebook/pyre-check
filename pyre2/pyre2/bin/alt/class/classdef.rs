@@ -17,6 +17,7 @@ use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtClassDef;
 use ruff_text_size::TextRange;
+use starlark_map::ordered_map::OrderedMap;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
@@ -394,7 +395,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let metadata = self.get_metadata_for_class(cls);
         if metadata.is_typed_dict() {
             let fields = self.get_typed_dict_fields(cls, &targs);
-            Type::TypedDict(TypedDict::new(cls.dupe(), targs, fields))
+            Type::TypedDict(Box::new(TypedDict::new(cls.dupe(), targs, fields)))
         } else {
             Type::ClassType(ClassType::new(cls.dupe(), targs))
         }
@@ -700,7 +701,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn get_typed_dict_fields(&self, cls: &Class, targs: &TArgs) -> SmallMap<Name, TypedDictField> {
+    fn get_typed_dict_fields(
+        &self,
+        cls: &Class,
+        targs: &TArgs,
+    ) -> OrderedMap<Name, TypedDictField> {
         let tparams = cls.tparams();
         let substitution = Substitution::new(
             tparams
