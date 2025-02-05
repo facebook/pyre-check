@@ -157,27 +157,25 @@ struct LspLoader {
 
 impl Loader for LspLoader {
     fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
-        let loaded = if let Some(path) = self.open_modules.get(&name) {
-            LoadResult::Loaded(
-                // TODO(grievejia): Properly model paths for in-memory sources
-                ModulePath::filesystem((*path).clone()),
-                self.open_files.get(path).unwrap().1.dupe(),
+        if let Some(path) = self.open_modules.get(&name) {
+            (
+                LoadResult::Loaded(
+                    // TODO(grievejia): Properly model paths for in-memory sources
+                    ModulePath::filesystem((*path).clone()),
+                    self.open_files.get(path).unwrap().1.dupe(),
+                ),
+                ErrorStyle::Delayed,
             )
         } else if let Some(path) = find_module(name, &self.search_roots) {
-            LoadResult::from_path(path)
+            (LoadResult::from_path(path), ErrorStyle::Never)
         } else if let Some((path, content)) = self.typeshed.find(name) {
-            LoadResult::Loaded(path, content)
+            (LoadResult::Loaded(path, content), ErrorStyle::Never)
         } else {
-            LoadResult::FailedToFind(anyhow!("Could not find path for `{name}`"))
-        };
-        (
-            loaded,
-            if self.open_modules.contains_key(&name) {
-                ErrorStyle::Delayed
-            } else {
-                ErrorStyle::Never
-            },
-        )
+            (
+                LoadResult::FailedToFind(anyhow!("Could not find path for `{name}`")),
+                ErrorStyle::Never,
+            )
+        }
     }
 }
 
