@@ -37,21 +37,21 @@ impl<T: ?Sized> Deref for ArcId<T> {
     }
 }
 
-impl<T: Display> Display for ArcId<T> {
+impl<T: Display + ?Sized> Display for ArcId<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Display::fmt(&self.0, f)
     }
 }
 
-impl<T> PartialEq for ArcId<T> {
+impl<T: ?Sized> PartialEq for ArcId<T> {
     fn eq(&self, other: &Self) -> bool {
         self.id() == other.id()
     }
 }
 
-impl<T> Eq for ArcId<T> {}
+impl<T: ?Sized> Eq for ArcId<T> {}
 
-impl<T: PartialOrd> PartialOrd for ArcId<T> {
+impl<T: PartialOrd + ?Sized> PartialOrd for ArcId<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.id() == other.id() {
             return Some(Ordering::Equal);
@@ -67,7 +67,7 @@ impl<T: PartialOrd> PartialOrd for ArcId<T> {
     }
 }
 
-impl<T: Ord> Ord for ArcId<T> {
+impl<T: Ord + ?Sized> Ord for ArcId<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         if self.id() == other.id() {
             return Ordering::Equal;
@@ -83,7 +83,7 @@ impl<T: Ord> Ord for ArcId<T> {
     }
 }
 
-impl<T> Hash for ArcId<T> {
+impl<T: ?Sized> Hash for ArcId<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.id().hash(state);
     }
@@ -99,8 +99,10 @@ impl<T> ArcId<T> {
     pub fn new(id: T) -> Self {
         Self(Arc::new(id))
     }
+}
 
+impl<T: ?Sized> ArcId<T> {
     pub fn id(&self) -> usize {
-        Arc::as_ptr(&self.0) as usize
+        Arc::as_ptr(&self.0) as *const () as usize
     }
 }
