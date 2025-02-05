@@ -420,13 +420,8 @@ impl State {
         }
     }
 
-    pub fn modules(&self) -> Vec<ModuleName> {
-        self.modules
-            .read()
-            .unwrap()
-            .keys()
-            .map(|k| k.module())
-            .collect()
+    pub fn handles(&self) -> Vec<Handle> {
+        self.modules.read().unwrap().keys().cloned().collect()
     }
 
     pub fn get_bindings(&self, handle: &Handle) -> Option<Bindings> {
