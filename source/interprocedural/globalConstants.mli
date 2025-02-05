@@ -38,7 +38,7 @@ module SharedMemory : sig
   module ReadOnly : sig
     type t
 
-    val get : t -> Reference.t -> StringLiteral.t option
+    val get : t -> cache:bool -> Reference.t -> StringLiteral.t option
   end
 
   val read_only : t -> ReadOnly.t

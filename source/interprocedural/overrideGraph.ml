@@ -227,7 +227,7 @@ module SharedMemory = struct
   module ReadOnly = struct
     type t = T.ReadOnly.t
 
-    let get_overriding_types handle ~member = T.ReadOnly.get handle member
+    let get_overriding_types handle ~member = T.ReadOnly.get handle ~cache:true member
 
     let overrides_exist handle member = T.ReadOnly.mem handle member
 

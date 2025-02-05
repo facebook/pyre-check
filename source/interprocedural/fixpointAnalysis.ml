@@ -308,7 +308,7 @@ module Make (Analysis : ANALYSIS) = struct
         end)
 
     let get_new_model shared_models_handle callable =
-      SharedModels.PreserveKeyOnly.get shared_models_handle callable
+      SharedModels.PreserveKeyOnly.get shared_models_handle ~cache:true callable
 
 
     let get_old_model shared_models_handle callable =
@@ -362,7 +362,7 @@ module Make (Analysis : ANALYSIS) = struct
       (* Separate diagnostics from state to speed up lookups, and cache fixpoint state
          separately. *)
       let shared_models_handle =
-        SharedModels.PreserveKeyOnly.set_new shared_models_handle callable state.model
+        SharedModels.PreserveKeyOnly.set_new shared_models_handle ~cache:true callable state.model
       in
       (* Skip result writing unless necessary (e.g. overrides don't have results) *)
       let () =
@@ -420,7 +420,9 @@ module Make (Analysis : ANALYSIS) = struct
                ( target,
                  Model.for_new_dependency
                    ~get_model:
-                     (SharedModels.ReadOnly.get (SharedModels.read_only shared_models_handle))
+                     (SharedModels.ReadOnly.get
+                        (SharedModels.read_only shared_models_handle)
+                        ~cache:false)
                    target ))
         |> List.fold
              ~init:(SharedModels.add_only shared_models_handle)

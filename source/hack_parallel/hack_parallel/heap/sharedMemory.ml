@@ -1202,7 +1202,7 @@ module FirstClassWithKeys = struct
     module ReadOnly : sig
       type t
 
-      val get : t -> key -> value option
+      val get : t -> cache:bool -> key -> value option
 
       val get_old : t -> key -> value option
 
@@ -1230,13 +1230,13 @@ module FirstClassWithKeys = struct
     module PreserveKeyOnly : sig
       type t
 
-      val get : t -> key -> value option
+      val get : t -> cache:bool -> key -> value option
 
       val get_old : t -> key -> value option
 
-      val set : t -> key -> value -> t
+      val set : t -> cache:bool -> key -> value -> t
 
-      val set_new : t -> key -> value -> t
+      val set_new : t -> cache:bool -> key -> value -> t
     end
 
     val preserve_key_only : t -> PreserveKeyOnly.t
@@ -1274,7 +1274,7 @@ module FirstClassWithKeys = struct
     let of_alist_sequential list =
       let first_class_handle =
         let first_class_handle = FirstClass.create () in
-        let () = List.iter list ~f:(fun (key, value) -> FirstClass.add first_class_handle key value) in
+        let () = List.iter list ~f:(fun (key, value) -> FirstClass.write_around first_class_handle key value) in
         first_class_handle
       in
       let keys =
@@ -1291,7 +1291,7 @@ module FirstClassWithKeys = struct
     let of_alist_parallel ~map_reduce list =
       let first_class_handle =
         let first_class_handle = FirstClass.create () in
-        let map = List.iter ~f:(fun (key, value) -> FirstClass.add first_class_handle key value) in
+        let map = List.iter ~f:(fun (key, value) -> FirstClass.write_around first_class_handle key value) in
         let () = map_reduce ~map ~inputs:list () in
         first_class_handle
       in
@@ -1322,14 +1322,14 @@ module FirstClassWithKeys = struct
           List.iter
             ~f:(fun (key, new_value) ->
               let value =
-                match FirstClass.get first_class_handle key with
+                match FirstClass.get_no_cache first_class_handle key with
                 | Some existing_value ->
                     let value = f existing_value new_value in
                     let () = FirstClass.remove first_class_handle key in
                     value
                 | None -> new_value
               in
-              FirstClass.add first_class_handle key value)
+              FirstClass.write_around first_class_handle key value)
             list
         in
         first_class_handle
@@ -1348,17 +1348,17 @@ module FirstClassWithKeys = struct
 
     let fold_sequential { Handle.first_class_handle; keys } ~init ~f =
       List.fold ~init ~f:(fun accumulator key ->
-          match FirstClass.get first_class_handle key with
+          match FirstClass.get_no_cache first_class_handle key with
           | Some value -> f ~key ~value accumulator
           | None -> accumulator) keys
 
     let map_parallel_keys ({ Handle.first_class_handle; _ } as handle) ~map_reduce ~f ~keys =
       let map key =
-        match FirstClass.get first_class_handle key with
+        match FirstClass.get_no_cache first_class_handle key with
         | Some value ->
             let value = f ~key ~value in
             let () = FirstClass.remove first_class_handle key in
-            let () = FirstClass.add first_class_handle key value in
+            let () = FirstClass.write_around first_class_handle key value in
             ()
         | None -> ()
       in
@@ -1381,7 +1381,11 @@ module FirstClassWithKeys = struct
     module ReadOnly = struct
       type t = FirstClass.t
 
-      let get = FirstClass.get
+      let get handle ~cache key =
+        if cache then
+          FirstClass.get handle key
+        else
+          FirstClass.get_no_cache handle key
 
       let get_old = FirstClass.get_old
 
@@ -1397,7 +1401,7 @@ module FirstClassWithKeys = struct
 
       (* Add a new key-value pair in the table. The key must not be already present. *)
       let add { Handle.first_class_handle; keys } key value =
-        let () = FirstClass.add first_class_handle key value in
+        let () = FirstClass.write_around first_class_handle key value in
         { Handle.first_class_handle; keys = key :: keys }
 
       (* Merge tables with the same handle but disjoint keys.
@@ -1438,24 +1442,38 @@ module FirstClassWithKeys = struct
     module PreserveKeyOnly = struct
       type t = FirstClass.t
 
-      let get = FirstClass.get
+      let get handle ~cache key =
+        if cache then
+          FirstClass.get handle key
+        else
+          FirstClass.get_no_cache handle key
 
       let get_old  = FirstClass.get_old
 
       (* Update the value for an existing key *)
-      let set handle key value =
+      let set handle ~cache key value =
         let () =
           (* Sanity check *)
           if not (FirstClass.mem handle key) then
             failwith "invariant failure: key not present in shared memory"
         in
         let () = FirstClass.remove handle key in
-        let () = FirstClass.add handle key value in
+        let () =
+          if cache then
+            FirstClass.add handle key value
+          else
+            FirstClass.write_around handle key value
+        in
         handle
 
       (* Set a 'new' value for a key that was oldified. *)
-      let set_new handle key value =
-        let () = FirstClass.add handle key value in
+      let set_new handle ~cache key value =
+        let () =
+          if cache then
+            FirstClass.add handle key value
+          else
+            FirstClass.write_around handle key value
+        in
         handle
     end
 

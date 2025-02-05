@@ -25,7 +25,7 @@ let targets_with_mode ~scheduler ~mode models =
   in
   let map targets =
     let fold set target =
-      match T.ReadOnly.get models target with
+      match T.ReadOnly.get models ~cache:false target with
       | Some { Model.modes; _ } when Model.ModeSet.contains mode modes -> target :: set
       | _ -> set
     in

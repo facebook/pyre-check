@@ -4636,7 +4636,7 @@ module SharedMemory = struct
   module ReadOnly = struct
     type t = T.ReadOnly.t
 
-    let get handle ~callable = T.ReadOnly.get handle callable
+    let get handle ~cache ~callable = T.ReadOnly.get handle ~cache callable
   end
 
   let read_only = T.read_only
@@ -4765,7 +4765,7 @@ module SharedMemory = struct
     let define_call_graphs = T.from_add_only define_call_graphs in
     let define_call_graphs_read_only = T.read_only define_call_graphs in
     let call_graph_to_json callable =
-      match ReadOnly.get define_call_graphs_read_only ~callable with
+      match ReadOnly.get define_call_graphs_read_only ~cache:false ~callable with
       | Some call_graph when not (DefineCallGraph.is_empty call_graph) ->
           [
             {

@@ -384,7 +384,7 @@ module FirstClassWithKeys : sig
     module ReadOnly : sig
       type t
 
-      val get : t -> key -> value option
+      val get : t -> cache:bool -> key -> value option
 
       val get_old : t -> key -> value option
 
@@ -412,13 +412,13 @@ module FirstClassWithKeys : sig
     module PreserveKeyOnly : sig
       type t
 
-      val get : t -> key -> value option
+      val get : t -> cache:bool -> key -> value option
 
       val get_old : t -> key -> value option
 
-      val set : t -> key -> value -> t
+      val set : t -> cache:bool -> key -> value -> t
 
-      val set_new : t -> key -> value -> t
+      val set_new : t -> cache:bool -> key -> value -> t
     end
 
     val preserve_key_only : t -> PreserveKeyOnly.t

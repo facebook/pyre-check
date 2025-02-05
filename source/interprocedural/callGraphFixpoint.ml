@@ -77,7 +77,9 @@ module CallGraphAnalysis = struct
     =
     let define_call_graph =
       define_call_graphs
-      |> CallGraph.SharedMemory.ReadOnly.get ~callable:(Target.strip_parameters callable)
+      |> CallGraph.SharedMemory.ReadOnly.get
+           ~cache:false
+           ~callable:(Target.strip_parameters callable)
       |> Option.value_exn
            ~message:(Format.asprintf "Missing call graph for `%a`" Target.pp callable)
     in
@@ -159,7 +161,7 @@ let compute
     let initial_call_graph callable =
       define_call_graphs
       |> CallGraph.SharedMemory.read_only
-      |> CallGraph.SharedMemory.ReadOnly.get ~callable
+      |> CallGraph.SharedMemory.ReadOnly.get ~cache:false ~callable
       |> Option.value ~default:CallGraph.DefineCallGraph.empty
     in
     let map =

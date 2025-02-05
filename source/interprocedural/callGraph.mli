@@ -549,7 +549,7 @@ module SharedMemory : sig
   module ReadOnly : sig
     type t
 
-    val get : t -> callable:Target.t -> DefineCallGraph.t option
+    val get : t -> cache:bool -> callable:Target.t -> DefineCallGraph.t option
   end
 
   val read_only : t -> ReadOnly.t

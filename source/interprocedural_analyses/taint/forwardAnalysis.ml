@@ -2543,6 +2543,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             let global_string =
               Interprocedural.GlobalConstants.SharedMemory.ReadOnly.get
                 FunctionContext.global_constants
+                ~cache:true
                 as_reference
             in
             (* Reanalyze expression with global identifier replaced by assigned string *)
