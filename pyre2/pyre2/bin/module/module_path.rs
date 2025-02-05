@@ -17,9 +17,10 @@ use dupe::Dupe;
 use crate::dunder;
 use crate::module::module_name::ModuleName;
 
-#[derive(Debug, Clone, Dupe, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Dupe, Copy, PartialEq, Eq, Hash, Default)]
 pub enum ModuleStyle {
     /// .py - executable code.
+    #[default]
     Executable,
     /// .pyi - just types that form an interface.
     Interface,
