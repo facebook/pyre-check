@@ -8,6 +8,7 @@
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use anyhow::anyhow;
 use clap::Parser;
@@ -88,9 +89,9 @@ struct Server<'a> {
     #[expect(dead_code)] // we'll use it later on
     initialize_params: InitializeParams,
     include: Vec<PathBuf>,
-    state: State,
+    state: Mutex<State>,
     config: Config,
-    open_files: SmallMap<PathBuf, (i32, Arc<String>)>,
+    open_files: Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>,
 }
 
 impl Args {
@@ -124,7 +125,7 @@ impl Args {
         };
         let include = self.include;
         let send = |msg| connection.sender.send(msg).unwrap();
-        let mut server = Server::new(&send, initialization_params, include);
+        let server = Server::new(&send, initialization_params, include);
         eprintln!("Reading messages");
         for msg in &connection.receiver {
             if matches!(&msg, Message::Request(req) if connection.handle_shutdown(req)?) {
@@ -183,7 +184,7 @@ fn to_real_path(path: &ModulePath) -> Option<&Path> {
 }
 
 impl<'a> Server<'a> {
-    fn process(&mut self, msg: Message) -> anyhow::Result<()> {
+    fn process(&self, msg: Message) -> anyhow::Result<()> {
         match msg {
             Message::Request(x) => {
                 if let Some(params) = as_request::<GotoDefinition>(&x) {
@@ -241,7 +242,7 @@ impl<'a> Server<'a> {
             send,
             initialize_params,
             include,
-            state: State::new(LoaderId::new(DummyLoader {}), true),
+            state: Mutex::new(State::new(LoaderId::new(DummyLoader {}), true)),
             config: Config::default(),
             open_files: Default::default(),
         }
@@ -261,9 +262,11 @@ impl<'a> Server<'a> {
         ));
     }
 
-    fn validate(&mut self) -> anyhow::Result<()> {
+    fn validate(&self) -> anyhow::Result<()> {
         let modules = self
             .open_files
+            .lock()
+            .unwrap()
             .keys()
             .map(|x| (module_from_path(x, &self.include), x.clone()))
             .collect::<SmallMap<_, _>>();
@@ -272,20 +275,20 @@ impl<'a> Server<'a> {
             .map(|x| Handle::new(*x, self.config.dupe()))
             .collect::<Vec<_>>();
 
-        self.state = State::new(
+        *self.state.lock().unwrap() = State::new(
             LoaderId::new(LspLoader {
                 open_modules: modules,
-                open_files: self.open_files.clone(), // Not good, but all of this is a hack
+                open_files: self.open_files.lock().unwrap().clone(), // Not good, but all of this is a hack
                 search_roots: self.include.clone(),
             }),
             true,
         );
-        self.state.run(handles);
+        self.state.lock().unwrap().run(handles);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
-        for x in self.open_files.keys() {
+        for x in self.open_files.lock().unwrap().keys() {
             diags.insert(x.as_path().to_owned(), Vec::new());
         }
-        for e in self.state.collect_errors() {
+        for e in self.state.lock().unwrap().collect_errors() {
             if let Some(path) = to_real_path(e.path()) {
                 diags.entry(path.to_owned()).or_default().push(Diagnostic {
                     range: source_range_to_range(e.source_range()),
@@ -305,8 +308,8 @@ impl<'a> Server<'a> {
         Ok(())
     }
 
-    fn did_open(&mut self, params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
-        self.open_files.insert(
+    fn did_open(&self, params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
+        self.open_files.lock().unwrap().insert(
             params.text_document.uri.to_file_path().unwrap(),
             (
                 params.text_document.version,
@@ -316,18 +319,20 @@ impl<'a> Server<'a> {
         self.validate()
     }
 
-    fn did_change(&mut self, params: DidChangeTextDocumentParams) -> anyhow::Result<()> {
+    fn did_change(&self, params: DidChangeTextDocumentParams) -> anyhow::Result<()> {
         // We asked for Sync full, so can just grab all the text from params
         let change = params.content_changes.into_iter().next().unwrap();
-        self.open_files.insert(
+        self.open_files.lock().unwrap().insert(
             params.text_document.uri.to_file_path().unwrap(),
             (params.text_document.version, Arc::new(change.text)),
         );
         self.validate()
     }
 
-    fn did_close(&mut self, params: DidCloseTextDocumentParams) -> anyhow::Result<()> {
+    fn did_close(&self, params: DidCloseTextDocumentParams) -> anyhow::Result<()> {
         self.open_files
+            .lock()
+            .unwrap()
             .shift_remove(&params.text_document.uri.to_file_path().unwrap());
         self.publish_diagnostics(params.text_document.uri, Vec::new(), None);
         Ok(())
@@ -339,12 +344,13 @@ impl<'a> Server<'a> {
     }
 
     fn goto_definition(&self, params: GotoDefinitionParams) -> Option<GotoDefinitionResponse> {
+        let state = self.state.lock().unwrap();
         let handle = self.make_handle(&params.text_document_position_params.text_document.uri);
-        let info = self.state.get_module_info(&handle)?;
+        let info = state.get_module_info(&handle)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let (handle, range) = self.state.goto_definition(&handle, range)?;
+        let (handle, range) = state.goto_definition(&handle, range)?;
         let path = find_module(handle.module(), &self.include)?;
-        let info = self.state.get_module_info(&handle)?;
+        let info = state.get_module_info(&handle)?;
         let path = std::fs::canonicalize(&path).unwrap_or(path);
         Some(GotoDefinitionResponse::Scalar(Location {
             uri: Url::from_file_path(path).unwrap(),
@@ -360,10 +366,11 @@ impl<'a> Server<'a> {
     }
 
     fn hover(&self, params: HoverParams) -> Option<Hover> {
+        let state = self.state.lock().unwrap();
         let handle = self.make_handle(&params.text_document_position_params.text_document.uri);
-        let info = self.state.get_module_info(&handle)?;
+        let info = state.get_module_info(&handle)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let t = self.state.hover(&handle, range)?;
+        let t = state.hover(&handle, range)?;
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: MarkupKind::PlainText,
@@ -374,9 +381,10 @@ impl<'a> Server<'a> {
     }
 
     fn inlay_hints(&self, params: InlayHintParams) -> Option<Vec<InlayHint>> {
+        let state = self.state.lock().unwrap();
         let handle = self.make_handle(&params.text_document.uri);
-        let info = self.state.get_module_info(&handle)?;
-        let t = self.state.inlay_hints(&handle)?;
+        let info = state.get_module_info(&handle)?;
+        let t = state.inlay_hints(&handle)?;
         Some(t.into_map(|x| {
             let position = text_size_to_position(&info, x.0);
             InlayHint {
