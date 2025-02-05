@@ -20,6 +20,7 @@ use crate::config::PythonVersion;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::module::source_db::BuckSourceDatabase;
+use crate::state::loader::LoaderId;
 use crate::state::state::State;
 use crate::util::fs_anyhow;
 
@@ -53,7 +54,7 @@ fn read_input_file(path: &Path) -> anyhow::Result<InputFile> {
 
 fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonArgs) -> Vec<Error> {
     let modules_to_check = sourcedb.modules_to_check();
-    let mut state = State::new(Box::new(sourcedb), config, common.parallel());
+    let mut state = State::new(LoaderId::new(sourcedb), config, common.parallel());
     state.run_one_shot(&modules_to_check);
     state.collect_errors()
 }

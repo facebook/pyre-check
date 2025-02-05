@@ -23,6 +23,7 @@ use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::loader::Loader;
+use crate::state::loader::LoaderId;
 use crate::state::state::State;
 use crate::test::stdlib::lookup_test_stdlib;
 use crate::types::class::Class;
@@ -116,7 +117,7 @@ impl TestEnv {
 
     pub fn to_state(self) -> State {
         let modules = self.0.keys().copied().collect::<Vec<_>>();
-        let mut state = State::new(Box::new(self), Config::default(), true);
+        let mut state = State::new(LoaderId::new(self), Config::default(), true);
         state.run(&modules);
         state
     }

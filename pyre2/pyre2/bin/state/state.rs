@@ -38,7 +38,7 @@ use crate::export::exports::LookupExport;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::report::debug_info::DebugInfo;
-use crate::state::loader::Loader;
+use crate::state::loader::LoaderId;
 use crate::state::steps::Context;
 use crate::state::steps::ModuleSteps;
 use crate::state::steps::Step;
@@ -52,7 +52,7 @@ use crate::util::uniques::UniqueFactory;
 
 pub struct State {
     config: Config,
-    loader: Box<dyn Loader>,
+    loader: LoaderId,
     uniques: UniqueFactory,
     parallel: bool,
     stdlib: RwLock<Arc<Stdlib>>,
@@ -113,7 +113,7 @@ impl ModuleState {
 }
 
 impl State {
-    pub fn new(loader: Box<dyn Loader>, config: Config, parallel: bool) -> Self {
+    pub fn new(loader: LoaderId, config: Config, parallel: bool) -> Self {
         Self {
             config,
             loader,
@@ -161,7 +161,7 @@ impl State {
             let set = compute(&Context {
                 name: module,
                 config: &self.config,
-                loader: &*self.loader,
+                loader: &self.loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
                 lookup: self,

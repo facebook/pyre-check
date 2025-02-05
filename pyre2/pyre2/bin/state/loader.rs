@@ -9,11 +9,13 @@ use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use dupe::Dupe;
 use itertools::Either;
 
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
+use crate::util::arc_id::ArcId;
 
 /// A function that loads a module, given the `ModuleName`.
 pub trait Loader: Sync + Debug {
@@ -26,4 +28,22 @@ pub trait Loader: Sync + Debug {
         &self,
         name: ModuleName,
     ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)>;
+}
+
+#[derive(Clone, Dupe, Debug, Hash, PartialEq, Eq)]
+pub struct LoaderId(ArcId<dyn Loader + Send>);
+
+impl Loader for LoaderId {
+    fn load(
+        &self,
+        name: ModuleName,
+    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
+        self.0.load(name)
+    }
+}
+
+impl LoaderId {
+    pub fn new(loader: impl Loader + Send + 'static) -> Self {
+        Self(ArcId::from_arc(Arc::new(loader)))
+    }
 }

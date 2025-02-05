@@ -71,6 +71,7 @@ use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::loader::Loader;
+use crate::state::loader::LoaderId;
 use crate::state::state::State;
 use crate::util::prelude::VecExt;
 
@@ -244,7 +245,7 @@ impl<'a> Server<'a> {
             initialize_params,
             include,
             typeshed,
-            state: State::new(Box::new(DummyLoader {}), Config::default(), true),
+            state: State::new(LoaderId::new(DummyLoader {}), Config::default(), true),
             open_files: Default::default(),
         }
     }
@@ -272,7 +273,7 @@ impl<'a> Server<'a> {
         let module_names = modules.keys().copied().collect::<Vec<_>>();
 
         self.state = State::new(
-            Box::new(LspLoader {
+            LoaderId::new(LspLoader {
                 open_modules: modules,
                 open_files: self.open_files.clone(), // Not good, but all of this is a hack
                 search_roots: self.include.clone(),

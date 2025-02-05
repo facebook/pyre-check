@@ -37,6 +37,7 @@ use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::report;
 use crate::state::loader::Loader;
+use crate::state::loader::LoaderId;
 use crate::state::state::State;
 use crate::util::display::number_thousands;
 use crate::util::forgetter::Forgetter;
@@ -186,7 +187,7 @@ impl Args {
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
         let state = State::new(
-            Box::new(CheckLoader {
+            LoaderId::new(CheckLoader {
                 sources: to_check,
                 typeshed: bundled_typeshed,
                 search_roots: include,

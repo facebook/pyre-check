@@ -102,6 +102,12 @@ impl<T> ArcId<T> {
 }
 
 impl<T: ?Sized> ArcId<T> {
+    // We can convert an `impl` into a `dyn` with `Arc::new`, but not `ArcId::new`.
+    // I don't really understand why, but this is a workaround.
+    pub fn from_arc(x: Arc<T>) -> Self {
+        Self(x)
+    }
+
     pub fn id(&self) -> usize {
         Arc::as_ptr(&self.0) as *const () as usize
     }
