@@ -250,12 +250,18 @@ def field(*args, **kwargs) -> Any: ...
 class KW_ONLY: ...
 "#;
 
+static SYS: &str = r#"
+platform: str
+version_info: tuple[int, int, int, str, int]
+"#;
+
 static STDLIB: &[(&str, &str)] = &[
     ("builtins", BUILTINS),
     ("typing", TYPING),
     ("types", TYPES),
     ("enum", ENUM),
     ("dataclasses", DATACLASSES),
+    ("sys", SYS),
 ];
 
 pub fn lookup_test_stdlib(module: ModuleName) -> Option<&'static str> {
