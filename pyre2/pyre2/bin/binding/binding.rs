@@ -591,7 +591,12 @@ impl DisplayWith<Bindings> for Binding {
         let m = ctx.module_info();
         match self {
             Self::Expr(None, x) => write!(f, "{}", m.display(x)),
-            Self::ReturnExpr(_, x, _) => write!(f, "ReturnExpr {}", m.display(x)),
+            Self::ReturnExpr(Some(y), x, _) => {
+                write!(f, "ReturnExpr {} {}", ctx.display(*y), m.display(x))
+            }
+            Self::ReturnExpr(None, x, _) => {
+                write!(f, "ReturnExpr {}", m.display(x))
+            }
             Self::Expr(Some(k), x) => {
                 write!(f, "{}: {}", ctx.display(*k), m.display(x))
             }
