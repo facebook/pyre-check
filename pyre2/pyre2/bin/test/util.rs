@@ -30,13 +30,13 @@ use crate::util::trace::init_tracing;
 
 #[macro_export]
 macro_rules! testcase {
-    ($name:ident, $imports:expr, $contents:expr,) => {
+    ($name:ident, $imports:expr, $contents:literal,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
             $crate::test::util::testcase_for_macro($imports, $contents, file!(), line!())
         }
     };
-    ($name:ident, $contents:expr,) => {
+    ($name:ident, $contents:literal,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
             $crate::test::util::testcase_for_macro(
@@ -51,13 +51,13 @@ macro_rules! testcase {
 
 #[macro_export]
 macro_rules! testcase_with_bug {
-    ($explanatation:literal, $name:ident, $imports:expr, $contents:expr,) => {
+    ($explanatation:literal, $name:ident, $imports:expr, $contents:literal,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
             $crate::test::util::testcase_for_macro($imports, $contents, file!(), line!() + 1)
         }
     };
-    ($explanatation:literal, $name:ident, $contents:expr,) => {
+    ($explanatation:literal, $name:ident, $contents:literal,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
             $crate::test::util::testcase_for_macro(
