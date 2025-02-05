@@ -250,13 +250,20 @@ def field(*args, **kwargs) -> Any: ...
 class KW_ONLY: ...
 "#;
 
+static STDLIB: &[(&str, &str)] = &[
+    ("builtins", BUILTINS),
+    ("typing", TYPING),
+    ("types", TYPES),
+    ("enum", ENUM),
+    ("dataclasses", DATACLASSES),
+];
+
 pub fn lookup_test_stdlib(module: ModuleName) -> Option<&'static str> {
-    match module.as_str() {
-        "builtins" => Some(BUILTINS),
-        "typing" => Some(TYPING),
-        "types" => Some(TYPES),
-        "enum" => Some(ENUM),
-        "dataclasses" => Some(DATACLASSES),
-        _ => None,
-    }
+    STDLIB.iter().find_map(|(name, source)| {
+        if *name == module.as_str() {
+            Some(*source)
+        } else {
+            None
+        }
+    })
 }
