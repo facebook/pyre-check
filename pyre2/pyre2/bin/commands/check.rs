@@ -94,25 +94,22 @@ impl Loader for CheckLoader {
         &self,
         name: ModuleName,
     ) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
-        match self.sources.get(&name) {
-            Some(path) => Ok((
+        if let Some(path) = self.sources.get(&name) {
+            Ok((
                 ModulePath::filesystem(path.clone()),
                 None,
                 self.error_style_for_sources,
-            )),
-            None => match find_module(name, &self.search_roots) {
-                Some(path) => Ok((
-                    ModulePath::filesystem(path),
-                    None,
-                    self.error_style_for_dependencies,
-                )),
-                None => match self.typeshed.find(name) {
-                    Some((path, content)) => {
-                        Ok((path, Some(content), self.error_style_for_dependencies))
-                    }
-                    None => Err(anyhow::anyhow!("Could not find path for `{name}`")),
-                },
-            },
+            ))
+        } else if let Some(path) = find_module(name, &self.search_roots) {
+            Ok((
+                ModulePath::filesystem(path),
+                None,
+                self.error_style_for_dependencies,
+            ))
+        } else if let Some((path, content)) = self.typeshed.find(name) {
+            Ok((path, Some(content), self.error_style_for_dependencies))
+        } else {
+            Err(anyhow::anyhow!("Could not find path for `{name}`"))
         }
     }
 }
