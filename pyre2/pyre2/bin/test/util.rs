@@ -117,9 +117,9 @@ impl TestEnv {
     }
 
     pub fn to_state(self) -> State {
-        let modules = self.0.keys().copied().collect::<Vec<_>>();
+        let handles = self.0.keys().map(|x| Handle::new(*x)).collect::<Vec<_>>();
         let mut state = State::new(LoaderId::new(self), Config::default(), true);
-        state.run(&modules);
+        state.run(handles);
         state
     }
 }

@@ -381,11 +381,11 @@ impl State {
         }
     }
 
-    fn run_internal(&mut self, modules: &[ModuleName]) {
+    fn run_internal(&mut self, handles: Vec<Handle>) {
         {
             let mut lock = self.todo.lock().unwrap();
-            for m in modules {
-                lock.push_fifo(Step::first(), Handle::new(*m));
+            for h in handles {
+                lock.push_fifo(Step::first(), h);
             }
         }
 
@@ -407,14 +407,14 @@ impl State {
     /// The state afterwards will be useful for timing queries.
     /// Note we grab the `mut` only to stop other people accessing us simultaneously,
     /// we don't actually need it.
-    pub fn run_one_shot(&mut self, modules: &[ModuleName]) {
+    pub fn run_one_shot(&mut self, handles: Vec<Handle>) {
         self.retain_memory = false;
-        self.run_internal(modules)
+        self.run_internal(handles)
     }
 
-    pub fn run(&mut self, modules: &[ModuleName]) {
+    pub fn run(&mut self, handles: Vec<Handle>) {
         self.retain_memory = true;
-        self.run_internal(modules)
+        self.run_internal(handles)
     }
 
     #[expect(dead_code)]

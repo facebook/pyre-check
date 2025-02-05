@@ -265,7 +265,7 @@ impl<'a> Server<'a> {
             .keys()
             .map(|x| (module_from_path(x, &self.include), x.clone()))
             .collect::<SmallMap<_, _>>();
-        let module_names = modules.keys().copied().collect::<Vec<_>>();
+        let handles = modules.keys().map(|x| Handle::new(*x)).collect::<Vec<_>>();
 
         self.state = State::new(
             LoaderId::new(LspLoader {
@@ -276,7 +276,7 @@ impl<'a> Server<'a> {
             Config::default(),
             true,
         );
-        self.state.run(&module_names);
+        self.state.run(handles);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.keys() {
             diags.insert(x.as_path().to_owned(), Vec::new());

@@ -42,7 +42,6 @@ use crate::util::display::number_thousands;
 use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
 use crate::util::memory::MemoryUsageTrace;
-use crate::util::prelude::SliceExt;
 
 #[derive(Debug, Clone, ValueEnum, Default)]
 enum OutputFormat {
@@ -162,7 +161,7 @@ impl Args {
                 }
             }
         }
-        let modules = to_check.keys().copied().collect::<Vec<_>>();
+        let handles = to_check.keys().map(|x| Handle::new(*x)).collect::<Vec<_>>();
         let config = match &args.python_version {
             None => Config::default(),
             Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),
@@ -193,9 +192,9 @@ impl Args {
         let state = holder.as_mut();
 
         if args.report_binding_memory.is_none() && args.debug_info.is_none() {
-            state.run_one_shot(&modules)
+            state.run_one_shot(handles.clone())
         } else {
-            state.run(&modules)
+            state.run(handles.clone())
         };
         let computing = start.elapsed();
         if let Some(path) = args.output {
@@ -216,8 +215,7 @@ impl Args {
             memory_trace.peak()
         );
         if let Some(debug_info) = args.debug_info {
-            let mut output =
-                serde_json::to_string_pretty(&state.debug_info(&modules.map(|x| Handle::new(*x))))?;
+            let mut output = serde_json::to_string_pretty(&state.debug_info(&handles))?;
             if debug_info.extension() == Some(OsStr::new("js")) {
                 output = format!("var data = {output}");
             }
