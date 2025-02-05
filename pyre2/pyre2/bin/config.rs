@@ -6,7 +6,9 @@
  */
 
 use std::str::FromStr;
+use std::sync::Arc;
 
+use dupe::Dupe;
 use itertools::Itertools;
 use regex::Match;
 use regex::Regex;
@@ -21,7 +23,7 @@ use ruff_python_ast::StmtIf;
 use crate::ast::Ast;
 use crate::util::prelude::SliceExt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Dupe, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PythonVersion {
     major: u32,
     minor: u32,
@@ -79,24 +81,24 @@ impl PythonVersion {
     }
 }
 
+#[derive(Clone, Dupe, Debug)]
+pub struct Config(Arc<ConfigInner>);
+
 #[derive(Clone, Debug)]
-pub struct Config {
+struct ConfigInner {
     version: PythonVersion,
     platform: String,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Self {
-            version: PythonVersion::default(),
-            platform: "linux".to_owned(),
-        }
+        Self::new(PythonVersion::default(), "linux".to_owned())
     }
 }
 
 impl Config {
     pub fn new(version: PythonVersion, platform: String) -> Self {
-        Self { version, platform }
+        Self(Arc::new(ConfigInner { version, platform }))
     }
 }
 
@@ -169,10 +171,10 @@ impl Config {
                 attr,
                 ..
             }) if &name.id == "sys" => match attr.as_str() {
-                "platform" => Some(Value::String(self.platform.clone())),
+                "platform" => Some(Value::String(self.0.platform.clone())),
                 "version_info" => Some(Value::Tuple(vec![
-                    Value::Int(self.version.major as i64),
-                    Value::Int(self.version.minor as i64),
+                    Value::Int(self.0.version.major as i64),
+                    Value::Int(self.0.version.minor as i64),
                 ])),
                 _ => None,
             },
