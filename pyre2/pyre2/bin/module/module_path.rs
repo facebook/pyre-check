@@ -90,26 +90,26 @@ impl ModulePath {
     }
 
     pub fn is_init(&self) -> bool {
-        match &*self.0 {
-            ModulePathDetails::FileSystem(path) => is_path_init(path),
-            ModulePathDetails::BundledTypeshed(relative_path) => is_path_init(relative_path),
-            ModulePathDetails::NotFound(_) => false,
-        }
+        self.as_path().is_some_and(is_path_init)
     }
 
     /// Whether things imported by this module are reexported.
     pub fn style(&self) -> ModuleStyle {
-        match &*self.0 {
-            ModulePathDetails::FileSystem(path) => ModuleStyle::of_path(path),
-            ModulePathDetails::BundledTypeshed(relative_path) => {
-                ModuleStyle::of_path(relative_path)
-            }
-            ModulePathDetails::NotFound(_) => ModuleStyle::Executable,
-        }
+        self.as_path().map(ModuleStyle::of_path).unwrap_or_default()
     }
 
     pub fn is_interface(&self) -> bool {
         self.style() == ModuleStyle::Interface
+    }
+
+    /// Convert to a path, that may not exist on disk.
+    fn as_path(&self) -> Option<&Path> {
+        match &*self.0 {
+            ModulePathDetails::FileSystem(path) | ModulePathDetails::BundledTypeshed(path) => {
+                Some(path)
+            }
+            ModulePathDetails::NotFound(_) => None,
+        }
     }
 
     pub fn as_filesystem_path(&self) -> Option<&Path> {
