@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use dupe::Dupe;
 use itertools::Itertools;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
@@ -96,14 +97,14 @@ fn test_goto_definition() {
     let (handle, state) = mk_state();
     assert_eq!(
         state.goto_definition(&handle, at(6, "f").start()),
-        Some((handle.module(), at_after(3, "def", "f")))
+        Some((handle.dupe(), at_after(3, "def", "f")))
     );
     assert_eq!(
         state.goto_definition(&handle, at(3, "Liter").end()),
-        Some((handle.module(), at(1, "Literal")))
+        Some((handle.dupe(), at(1, "Literal")))
     );
     assert_eq!(
         state.goto_definition(&handle, at(10, "A").start()),
-        Some((handle.module(), at_after(9, "class", "A")))
+        Some((handle.dupe(), at_after(9, "class", "A")))
     );
 }

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use dupe::Dupe;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
@@ -15,7 +16,6 @@ use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
-use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::state::handle::Handle;
 use crate::state::state::State;
@@ -53,9 +53,9 @@ impl State {
         handle: &Handle,
         key: &Key,
         gas: isize,
-    ) -> Option<(ModuleName, TextRange)> {
+    ) -> Option<(Handle, TextRange)> {
         if let Key::Definition(x) = key {
-            return Some((handle.module(), x.range()));
+            return Some((handle.dupe(), x.range()));
         }
         let bindings = self.get_bindings(handle)?;
         let idx = bindings.key_to_idx(key);
@@ -63,7 +63,7 @@ impl State {
         if res.is_none()
             && let Key::Anywhere(_, range) = key
         {
-            return Some((handle.module(), *range));
+            return Some((handle.dupe(), *range));
         }
         res
     }
@@ -73,7 +73,7 @@ impl State {
         handle: &Handle,
         binding: &Binding,
         gas: isize,
-    ) -> Option<(ModuleName, TextRange)> {
+    ) -> Option<(Handle, TextRange)> {
         if gas <= 0 {
             return None;
         }
@@ -91,7 +91,7 @@ impl State {
                 let b = bindings.get(bindings.key_to_idx(&KeyExport(name.clone())));
                 self.binding_to_definition(&handle, b, gas - 1)
             }
-            Binding::Module(name, _, _) => Some((*name, TextRange::default())),
+            Binding::Module(name, _, _) => Some((Handle::new(*name), TextRange::default())),
             Binding::CheckLegacyTypeParam(k, _) => {
                 let binding = bindings.get(*k);
                 self.key_to_definition(handle, bindings.idx_to_key(binding.0), gas - 1)
@@ -104,7 +104,7 @@ impl State {
         &self,
         handle: &Handle,
         position: TextSize,
-    ) -> Option<(ModuleName, TextRange)> {
+    ) -> Option<(Handle, TextRange)> {
         let id = self.identifier_at(handle, position)?;
         self.key_to_definition(handle, &Key::Usage(ShortIdentifier::new(&id)), 20)
     }

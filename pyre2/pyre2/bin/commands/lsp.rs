@@ -338,9 +338,9 @@ impl<'a> Server<'a> {
         let handle = self.make_handle(&params.text_document_position_params.text_document.uri);
         let info = self.state.get_module_info(&handle)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let (module, range) = self.state.goto_definition(&handle, range)?;
-        let path = find_module(module, &self.include)?;
-        let info = self.state.get_module_info(&Handle::new(module))?;
+        let (handle, range) = self.state.goto_definition(&handle, range)?;
+        let path = find_module(handle.module(), &self.include)?;
+        let info = self.state.get_module_info(&handle)?;
         let path = std::fs::canonicalize(&path).unwrap_or(path);
         Some(GotoDefinitionResponse::Scalar(Location {
             uri: Url::from_file_path(path).unwrap(),
