@@ -83,6 +83,8 @@ pub struct TestEnv(SmallMap<ModuleName, (PathBuf, Option<String>)>);
 
 impl TestEnv {
     pub fn new() -> Self {
+        // We aim to init the tracing before now, but if not, better now than never
+        test_init_tracing();
         Self::default()
     }
 
@@ -171,6 +173,10 @@ impl Loader for TestEnv {
 
 static INIT_TRACING_ONCE: Once = Once::new();
 
+pub fn test_init_tracing() {
+    INIT_TRACING_ONCE.call_once(|| init_tracing(true, true));
+}
+
 /// Should only be used from the `testcase!` macro.
 pub fn testcase_for_macro(
     mut env: TestEnv,
@@ -178,7 +184,7 @@ pub fn testcase_for_macro(
     file: &str,
     line: u32,
 ) -> anyhow::Result<()> {
-    INIT_TRACING_ONCE.call_once(|| init_tracing(true, true));
+    test_init_tracing();
     let mut start_line = line as usize + 1;
     if !env.0.is_empty() {
         start_line += 1;
