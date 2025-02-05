@@ -189,13 +189,13 @@ pub fn testcase_for_macro(
     Err(anyhow!("Test took too long (> {limit}s)"))
 }
 
-pub fn mk_state(code: &str) -> (ModuleName, State) {
+pub fn mk_state(code: &str) -> (Handle, State) {
     let state = TestEnv::one("main", code).to_state();
-    (ModuleName::from_str("main"), state)
+    (Handle::new(ModuleName::from_str("main")), state)
 }
 
-pub fn get_class(name: &str, module_name: ModuleName, state: &State) -> Option<Class> {
-    let solutions = state.get_solutions(&Handle::new(module_name)).unwrap();
+pub fn get_class(name: &str, handle: &Handle, state: &State) -> Option<Class> {
+    let solutions = state.get_solutions(handle).unwrap();
 
     match solutions.exports.get(&KeyExport(Name::new(name))) {
         Some(Type::ClassDef(cls)) => Some(cls.clone()),

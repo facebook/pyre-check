@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::module::module_name::ModuleName;
+use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::test::mro::get_class_metadata;
 use crate::test::util::mk_state;
@@ -17,10 +17,10 @@ use crate::types::types::Type;
 fn get_class_keywords(
     class_name: &str,
     keyword_name: &str,
-    module_name: ModuleName,
+    handle: &Handle,
     state: &State,
 ) -> Vec<Type> {
-    get_class_metadata(class_name, module_name, state)
+    get_class_metadata(class_name, handle, state)
         .keywords()
         .iter()
         .filter(|(name, _type)| name.as_str() == keyword_name)
@@ -28,29 +28,29 @@ fn get_class_keywords(
         .collect()
 }
 
-fn get_metaclass(class_name: &str, module_name: ModuleName, state: &State) -> Option<ClassType> {
-    get_class_metadata(class_name, module_name, state)
+fn get_metaclass(class_name: &str, handle: &Handle, state: &State) -> Option<ClassType> {
+    get_class_metadata(class_name, handle, state)
         .metaclass()
         .cloned()
 }
 
 #[test]
 fn test_look_up_class_keywords() {
-    let (module_name, state) = mk_state(
+    let (handle, state) = mk_state(
         r#"
 class A(foo=True): pass
 "#,
     );
     assert_eq!(
-        get_class_keywords("A", "foo", module_name, &state),
+        get_class_keywords("A", "foo", &handle, &state),
         vec![Type::Literal(Lit::Bool(true))],
     );
-    assert_eq!(get_class_keywords("A", "bar", module_name, &state), vec![]);
+    assert_eq!(get_class_keywords("A", "bar", &handle, &state), vec![]);
 }
 
 #[test]
 fn test_direct_metaclass() {
-    let (module_name, state) = mk_state(
+    let (handle, state) = mk_state(
         r#"
 class M0(type): pass
 class M1(M0): pass
@@ -58,15 +58,12 @@ class B(metaclass=M0): pass
 class C(B, metaclass=M1): pass
 "#,
     );
-    assert_eq!(
-        get_metaclass("C", module_name, &state).unwrap().name().id,
-        "M1"
-    );
+    assert_eq!(get_metaclass("C", &handle, &state).unwrap().name().id, "M1");
 }
 
 #[test]
 fn test_inherited_metaclass() {
-    let (module_name, state) = mk_state(
+    let (handle, state) = mk_state(
         r#"
 class M0(type): pass
 class M1(M0): pass
@@ -75,10 +72,7 @@ class B1(metaclass=M1): pass
 class C(B0, B1): pass
 "#,
     );
-    assert_eq!(
-        get_metaclass("C", module_name, &state).unwrap().name().id,
-        "M1"
-    );
+    assert_eq!(get_metaclass("C", &handle, &state).unwrap().name().id, "M1");
 }
 
 testcase!(

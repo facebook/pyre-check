@@ -14,7 +14,7 @@ use crate::testcase_with_bug;
 
 #[test]
 fn test_fields() {
-    let (module, state) = mk_state(
+    let (handle, state) = mk_state(
         r#"
 import enum
 class E(enum.Enum):
@@ -22,7 +22,7 @@ class E(enum.Enum):
     Y = 2
         "#,
     );
-    let cls = get_class("E", module, &state).unwrap();
+    let cls = get_class("E", &handle, &state).unwrap();
     let fields = cls
         .fields()
         .map(|f| f.as_str())

@@ -7,7 +7,6 @@
 
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::binding::binding::KeyClassMetadata;
-use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::state::handle::Handle;
 use crate::state::state::State;
@@ -15,10 +14,10 @@ use crate::test::util::get_class;
 use crate::test::util::mk_state;
 use crate::testcase;
 
-pub fn get_class_metadata(name: &str, module_name: ModuleName, state: &State) -> ClassMetadata {
-    let solutions = state.get_solutions(&Handle::new(module_name)).unwrap();
+pub fn get_class_metadata(name: &str, handle: &Handle, state: &State) -> ClassMetadata {
+    let solutions = state.get_solutions(handle).unwrap();
 
-    let res = get_class(name, module_name, state).and_then(|cls| {
+    let res = get_class(name, handle, state).and_then(|cls| {
         let x = solutions
             .class_metadata
             .get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
@@ -27,8 +26,8 @@ pub fn get_class_metadata(name: &str, module_name: ModuleName, state: &State) ->
     res.unwrap_or_else(|| panic!("No MRO for {name}"))
 }
 
-fn get_mro_names(name: &str, module_name: ModuleName, state: &State) -> Vec<String> {
-    get_class_metadata(name, module_name, state)
+fn get_mro_names(name: &str, handle: &Handle, state: &State) -> Vec<String> {
+    get_class_metadata(name, handle, state)
         .ancestors_no_object()
         .iter()
         .map(|cls| cls.name().as_str().to_owned())
@@ -49,24 +48,24 @@ fn assert_has_error(state: &State, error_msg: &str, assertion_msg: &str) {
 
 #[test]
 fn test_mro_simple_chain() {
-    let (module_name, driver) = mk_state(
+    let (handle, driver) = mk_state(
         r#"
 class A: pass
 class B(A): pass
 class C(B): pass
 "#,
     );
-    let mro_a = get_mro_names("A", module_name, &driver);
+    let mro_a = get_mro_names("A", &handle, &driver);
     assert_eq!(mro_a.len(), 0);
-    let mro_b = get_mro_names("B", module_name, &driver);
+    let mro_b = get_mro_names("B", &handle, &driver);
     assert_eq!(mro_b, vec!["A"]);
-    let mro_c = get_mro_names("C", module_name, &driver);
+    let mro_c = get_mro_names("C", &handle, &driver);
     assert_eq!(mro_c, vec!["B", "A"]);
 }
 
 #[test]
 fn test_mro_triangle() {
-    let (module_name, driver) = mk_state(
+    let (handle, driver) = mk_state(
         r#"
 class A: pass
 class B(A): pass
@@ -74,17 +73,17 @@ class C(B, A): pass
 "#,
     );
     assert_no_errors(&driver);
-    let mro_a = get_mro_names("A", module_name, &driver);
+    let mro_a = get_mro_names("A", &handle, &driver);
     assert_eq!(mro_a.len(), 0);
-    let mro_b = get_mro_names("B", module_name, &driver);
+    let mro_b = get_mro_names("B", &handle, &driver);
     assert_eq!(mro_b, vec!["A"]);
-    let mro_c = get_mro_names("C", module_name, &driver);
+    let mro_c = get_mro_names("C", &handle, &driver);
     assert_eq!(mro_c, vec!["B", "A"]);
 }
 
 #[test]
 fn test_mro_butterfly() {
-    let (module_name, driver) = mk_state(
+    let (handle, driver) = mk_state(
         r#"
 class A: pass
 class B: pass
@@ -93,13 +92,13 @@ class D(B, A): pass
 "#,
     );
     assert_no_errors(&driver);
-    let mro_a = get_mro_names("A", module_name, &driver);
+    let mro_a = get_mro_names("A", &handle, &driver);
     assert_eq!(mro_a.len(), 0);
-    let mro_b = get_mro_names("B", module_name, &driver);
+    let mro_b = get_mro_names("B", &handle, &driver);
     assert_eq!(mro_b.len(), 0);
-    let mro_c = get_mro_names("C", module_name, &driver);
+    let mro_c = get_mro_names("C", &handle, &driver);
     assert_eq!(mro_c, vec!["A", "B"]);
-    let mro_d = get_mro_names("D", module_name, &driver);
+    let mro_d = get_mro_names("D", &handle, &driver);
     assert_eq!(mro_d, vec!["B", "A"]);
 }
 
@@ -108,7 +107,7 @@ class D(B, A): pass
 // This is a convenient test since the article walks through algorithm execution in detail.
 #[test]
 fn test_mro_wikipedia_example() {
-    let (module_name, driver) = mk_state(
+    let (handle, driver) = mk_state(
         r#"
 class O: pass
 class A(O): pass
@@ -124,28 +123,28 @@ class Z(K1, K3, K2): pass
     );
     assert_no_errors(&driver);
     // O has no ancestors
-    let mro_o = get_mro_names("O", module_name, &driver);
+    let mro_o = get_mro_names("O", &handle, &driver);
     assert_eq!(mro_o.len(), 0);
     // A - E all have O as their only ancestor. Just check A and E for conciseness.
-    let mro_a = get_mro_names("A", module_name, &driver);
+    let mro_a = get_mro_names("A", &handle, &driver);
     assert_eq!(mro_a, vec!["O"]);
-    let mro_e = get_mro_names("E", module_name, &driver);
+    let mro_e = get_mro_names("E", &handle, &driver);
     assert_eq!(mro_e, vec!["O"]);
     // K1 - K3 have more complex MROs, check each.
-    let mro_k1 = get_mro_names("K1", module_name, &driver);
+    let mro_k1 = get_mro_names("K1", &handle, &driver);
     assert_eq!(mro_k1, vec!["C", "A", "B", "O"]);
-    let mro_k2 = get_mro_names("K2", module_name, &driver);
+    let mro_k2 = get_mro_names("K2", &handle, &driver);
     assert_eq!(mro_k2, vec!["B", "D", "E", "O"]);
-    let mro_k3 = get_mro_names("K3", module_name, &driver);
+    let mro_k3 = get_mro_names("K3", &handle, &driver);
     assert_eq!(mro_k3, vec!["A", "D", "O"]);
     // Finally, check Z
-    let mro_z = get_mro_names("Z", module_name, &driver);
+    let mro_z = get_mro_names("Z", &handle, &driver);
     assert_eq!(mro_z, vec!["K1", "C", "K3", "A", "K2", "B", "D", "E", "O"]);
 }
 
 #[test]
 fn test_mro_nonlinearizable_simple() {
-    let (module_name, driver) = mk_state(
+    let (handle, driver) = mk_state(
         r#"
 class A: pass
 class B(A): pass
@@ -159,15 +158,15 @@ class D(C): pass  # we will still record the MRO up until a linearization failur
         "Class `main.C` has a nonlinearizable inheritance chain detected at `main.A`.",
         "No error for nonlinearizable inheritance chain.",
     );
-    let mro_c = get_mro_names("C", module_name, &driver);
+    let mro_c = get_mro_names("C", &handle, &driver);
     assert_eq!(mro_c.len(), 0);
-    let mro_d = get_mro_names("D", module_name, &driver);
+    let mro_d = get_mro_names("D", &handle, &driver);
     assert_eq!(mro_d, vec!["C"]);
 }
 
 #[test]
 fn test_mro_cyclic() {
-    let (module_name, state) = mk_state(
+    let (handle, state) = mk_state(
         r#"
 class A(C): pass
 class B(A): pass
@@ -193,11 +192,11 @@ class C(B): pass
     // The current logic is essentially correct but has bad UX because we only actually
     // error where we detect the cycle, other classes silently produce an MRO right up
     // to the cycle (note that A even appears in the ancestors of A!).
-    let mro_a = get_mro_names("A", module_name, &state);
+    let mro_a = get_mro_names("A", &handle, &state);
     assert_eq!(mro_a.len(), 0);
-    let mro_b = get_mro_names("B", module_name, &state);
+    let mro_b = get_mro_names("B", &handle, &state);
     assert_eq!(mro_b.len(), 0);
-    let mro_c = get_mro_names("C", module_name, &state);
+    let mro_c = get_mro_names("C", &handle, &state);
     assert_eq!(mro_c.len(), 0);
 }
 
