@@ -51,13 +51,13 @@ macro_rules! testcase {
 
 #[macro_export]
 macro_rules! testcase_with_bug {
-    ($explanatation:expr, $name:ident, $imports:expr, $contents:expr,) => {
+    ($explanatation:literal, $name:ident, $imports:expr, $contents:expr,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
             $crate::test::util::testcase_for_macro($imports, $contents, file!(), line!() + 1)
         }
     };
-    ($explanatation:expr, $name:ident, $contents:expr,) => {
+    ($explanatation:literal, $name:ident, $contents:expr,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
             $crate::test::util::testcase_for_macro(
