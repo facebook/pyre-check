@@ -21,7 +21,6 @@ use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
-use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
@@ -432,54 +431,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::Dict(x) => {
                 let unwrapped_hint = hint.and_then(|ty| self.decompose_dict(ty));
                 let flattened_items = Ast::flatten_dict_items(&x.items);
-                if let Some(hint @ Type::TypedDict(typed_dict)) = hint {
-                    let fields = typed_dict.fields();
-                    let mut has_expansion = false;
-                    let mut keys: SmallSet<Name> = SmallSet::new();
-                    flattened_items.iter().for_each(|x| match &x.key {
-                        Some(key) => {
-                            let key_type = self.expr(key, None);
-                            if let Type::Literal(Lit::String(name)) = key_type {
-                                let key_name = Name::new(name.clone());
-                                if let Some(field) = fields.get(&key_name) {
-                                    self.expr(&x.value, Some(&field.ty));
-                                } else {
-                                    self.error(
-                                        key.range(),
-                                        format!(
-                                            "Key `{}` is not defined in TypedDict `{}`",
-                                            name,
-                                            typed_dict.name()
-                                        ),
-                                    );
-                                }
-                                keys.insert(key_name);
-                            } else {
-                                self.error(
-                                    key.range(),
-                                    format!("Expected string literal key, got `{}`", key_type),
-                                );
-                            }
-                        }
-                        None => {
-                            has_expansion = true;
-                            self.expr(&x.value, Some(hint));
-                        }
-                    });
-                    if !has_expansion {
-                        fields.iter().for_each(|(key, field)| {
-                            if field.required && !keys.contains(key) {
-                                self.error(
-                                    x.range,
-                                    format!(
-                                        "Missing required key `{}` for TypedDict `{}`",
-                                        key,
-                                        typed_dict.name()
-                                    ),
-                                );
-                            }
-                        });
-                    }
+                if let Some(hint @ Type::TypedDict(box typed_dict)) = hint {
+                    self.check_dict_items_against_typed_dict(flattened_items, typed_dict, x.range);
                     hint.clone()
                 } else if let Some(hint) = unwrapped_hint {
                     flattened_items.iter().for_each(|x| match &x.key {
