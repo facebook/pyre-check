@@ -19,6 +19,7 @@ use std::time::Instant;
 use anyhow::Context as _;
 use clap::Parser;
 use clap::ValueEnum;
+use itertools::Either;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use tracing::info;
@@ -93,21 +94,25 @@ impl Loader for CheckLoader {
     fn load(
         &self,
         name: ModuleName,
-    ) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
+    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
         if let Some(path) = self.sources.get(&name) {
             Ok((
                 ModulePath::filesystem(path.clone()),
-                None,
+                Either::Right(path.clone()),
                 self.error_style_for_sources,
             ))
         } else if let Some(path) = find_module(name, &self.search_roots) {
             Ok((
-                ModulePath::filesystem(path),
-                None,
+                ModulePath::filesystem(path.clone()),
+                Either::Right(path),
                 self.error_style_for_dependencies,
             ))
         } else if let Some((path, content)) = self.typeshed.find(name) {
-            Ok((path, Some(content), self.error_style_for_dependencies))
+            Ok((
+                path,
+                Either::Left(content),
+                self.error_style_for_dependencies,
+            ))
         } else {
             Err(anyhow::anyhow!("Could not find path for `{name}`"))
         }

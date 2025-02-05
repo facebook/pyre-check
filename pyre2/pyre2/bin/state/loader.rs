@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::path::PathBuf;
 use std::sync::Arc;
+
+use itertools::Either;
 
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
@@ -15,11 +18,11 @@ use crate::module::module_path::ModulePath;
 pub trait Loader: Sync {
     /// Return `Err` to indicate the module could not be found.
     /// The remaining components are the `ModulePath` where the module was found,
-    /// optionally the file contents, and the `ErrorStyle` to use when reporting errors.
-    /// If the contents are `None`, the file will be read from disk.
+    /// the file contents, and the `ErrorStyle` to use when reporting errors.
+    /// If the contents are `Left`, we use that string, otherwise the file will be read from disk.
     /// It is an error to return a non-disk path and `None` for the contents.
     fn load(
         &self,
         name: ModuleName,
-    ) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)>;
+    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)>;
 }

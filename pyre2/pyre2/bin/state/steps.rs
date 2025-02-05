@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use dupe::Dupe;
 use enum_iterator::Sequence;
+use itertools::Either;
 use parse_display::Display;
 use ruff_python_ast::ModModule;
 use ruff_text_size::TextRange;
@@ -167,22 +168,14 @@ impl Step {
                 path = p;
                 error_style = s;
                 match c {
-                    Some(c) => code = c,
-                    None => match path.as_filesystem_path() {
-                        Some(path) => match fs_anyhow::read_to_string(path) {
-                            Ok(c) => code = Arc::new(c),
-                            Err(err) => {
-                                self_error = Some(Arc::new(format!(
-                                    "Could not read `{}` at path `{}`, {err:#}",
-                                    ctx.name,
-                                    path.display()
-                                )));
-                            }
-                        },
-                        None => {
+                    Either::Left(c) => code = c,
+                    Either::Right(path) => match fs_anyhow::read_to_string(&path) {
+                        Ok(c) => code = Arc::new(c),
+                        Err(err) => {
                             self_error = Some(Arc::new(format!(
-                                "Could not read `{}` at path `{path}`, not a real path",
-                                ctx.name
+                                "Could not read `{}` at path `{}`, {err:#}",
+                                ctx.name,
+                                path.display()
                             )));
                         }
                     },

@@ -13,6 +13,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use anyhow::anyhow;
+use itertools::Either;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 
@@ -125,18 +126,21 @@ impl Loader for TestEnv {
     fn load(
         &self,
         name: ModuleName,
-    ) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
+    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
         let style = ErrorStyle::Immediate;
         if let Some((path, contents)) = self.0.get(&name) {
             Ok((
                 ModulePath::filesystem(path.clone()),
-                contents.as_ref().map(|x| Arc::new(x.clone())),
+                match contents {
+                    None => Either::Right(path.clone()),
+                    Some(contents) => Either::Left(Arc::new(contents.to_owned())),
+                },
                 style,
             ))
         } else if let Some(contents) = lookup_test_stdlib(name) {
             Ok((
                 ModulePath::filesystem(default_path(name)),
-                Some(Arc::new(contents.to_owned())),
+                Either::Left(Arc::new(contents.to_owned())),
                 style,
             ))
         } else {

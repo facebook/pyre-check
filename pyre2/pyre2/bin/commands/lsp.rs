@@ -11,6 +11,7 @@ use std::sync::Arc;
 use anyhow::anyhow;
 use clap::Parser;
 use dupe::Dupe;
+use itertools::Either;
 use lsp_server::Connection;
 use lsp_server::Message;
 use lsp_server::Notification;
@@ -139,7 +140,10 @@ impl Args {
 
 struct DummyLoader {}
 impl Loader for DummyLoader {
-    fn load(&self, _: ModuleName) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
+    fn load(
+        &self,
+        _: ModuleName,
+    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
         Err(anyhow!("Failed during init"))
     }
 }
@@ -155,18 +159,22 @@ impl Loader for LspLoader {
     fn load(
         &self,
         name: ModuleName,
-    ) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
+    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
         if let Some(path) = self.open_modules.get(&name) {
             Ok((
                 // TODO(grievejia): Properly model paths for in-memory sources
                 ModulePath::filesystem((*path).clone()),
-                Some(self.open_files.get(path).unwrap().1.dupe()),
+                Either::Left(self.open_files.get(path).unwrap().1.dupe()),
                 ErrorStyle::Delayed,
             ))
         } else if let Some(path) = find_module(name, &self.search_roots) {
-            Ok((ModulePath::filesystem(path), None, ErrorStyle::Never))
+            Ok((
+                ModulePath::filesystem(path.clone()),
+                Either::Right(path),
+                ErrorStyle::Never,
+            ))
         } else if let Some((path, content)) = self.typeshed.find(name) {
-            Ok((path, Some(content), ErrorStyle::Never))
+            Ok((path, Either::Left(content), ErrorStyle::Never))
         } else {
             Err(anyhow!("Could not find path for `{name}`"))
         }
