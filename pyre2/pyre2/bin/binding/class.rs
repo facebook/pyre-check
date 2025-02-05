@@ -16,7 +16,6 @@ use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtClassDef;
 use ruff_text_size::Ranged;
 use starlark_map::small_map::SmallMap;
-use starlark_map::small_set::SmallSet;
 
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingClassField;
@@ -45,7 +44,7 @@ impl<'a> BindingsBuilder<'a> {
             self.ensure_expr(&x.expression);
         }
 
-        self.scopes.push(Scope::class_body(x.name.clone()));
+        self.scopes.push(Scope::annotation());
 
         let definition_key = self
             .table
@@ -102,15 +101,7 @@ impl<'a> BindingsBuilder<'a> {
         let legacy_tparam_builder = legacy.unwrap();
         legacy_tparam_builder.add_name_definitions(self);
 
-        let non_field_names = self
-            .scopes
-            .current()
-            .flow
-            .info
-            .keys()
-            .cloned()
-            .collect::<SmallSet<_>>();
-
+        self.scopes.push(Scope::class_body(x.name.clone()));
         self.scopes.current_mut().stat.stmts(
             &body,
             &self.module_info,
@@ -121,12 +112,9 @@ impl<'a> BindingsBuilder<'a> {
         self.stmts(body);
 
         let last_scope = self.scopes.pop();
+        self.scopes.pop(); // annotation scope
         let mut fields = SmallMap::new();
         for (name, info) in last_scope.flow.info.iter() {
-            if non_field_names.contains(name) {
-                // TODO: this incorrectly filters out fields that reuse already-in-scope names.
-                continue;
-            }
             // A name with flow info but not static info is a reference to something that's not a class field.
             if let Some(stat_info) = last_scope.stat.0.get(name) {
                 let initialization = if info.is_initialized() {

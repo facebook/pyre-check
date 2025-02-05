@@ -9036,8 +9036,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "assert_type(int, TypeVar) failed",
-      "description": "assert_type(int, TypeVar) failed",
+      "concise_description": "assert_type(type[?_], TypeVar) failed",
+      "description": "assert_type(type[?_], TypeVar) failed",
       "line": 116,
       "name": "PyreError",
       "stop_column": 36,
