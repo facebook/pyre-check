@@ -163,7 +163,7 @@ impl State {
                 module_state.steps.write().unwrap().ast.clear();
             }
 
-            let stdlib = self.stdlib.read().unwrap().dupe();
+            let stdlib = self.get_stdlib(handle);
             let set = compute(&Context {
                 module: handle.module(),
                 config: &self.config,
@@ -299,7 +299,7 @@ impl State {
                 steps.answers.get().unwrap().dupe(),
             )
         };
-        let stdlib = self.stdlib.read().unwrap().dupe();
+        let stdlib = self.get_stdlib(handle);
         let lookup = self.lookup(handle);
         answers.1.solve_key(
             &lookup,
@@ -367,6 +367,11 @@ impl State {
         for (error, count) in items.iter().rev() {
             eprintln!("{} instances of {error}", number_thousands(*count));
         }
+    }
+
+    fn get_stdlib(&self, _handle: &Handle) -> Arc<Stdlib> {
+        // Safe because we always run compute_stdlib first
+        self.stdlib.read().unwrap().dupe()
     }
 
     fn compute_stdlib(&self) {
