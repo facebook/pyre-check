@@ -10,7 +10,6 @@ use itertools::Itertools;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
-use crate::module::module_name::ModuleName;
 use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::test::util::TestEnv;
@@ -39,9 +38,11 @@ fn mk_state() -> (Handle, State) {
             if line.is_empty() { line } else { &line[1..] }
         })
         .join("\n");
-    let state = TestEnv::one("main", &code).to_state();
+    let test_env = TestEnv::one("main", &code);
+    let handle = test_env.handle("main");
+    let state = test_env.to_state();
     assert_eq!(state.count_errors(), 0);
-    (Handle::new(ModuleName::from_str("main")), state)
+    (handle, state)
 }
 
 /// Find the TextRange of the given needle on the line, but must occur

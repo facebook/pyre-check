@@ -122,6 +122,10 @@ impl TestEnv {
         state.run(handles);
         state
     }
+
+    pub fn handle(&self, module: &str) -> Handle {
+        Handle::new(ModuleName::from_str(module))
+    }
 }
 
 impl Loader for TestEnv {
@@ -190,8 +194,9 @@ pub fn testcase_for_macro(
 }
 
 pub fn mk_state(code: &str) -> (Handle, State) {
-    let state = TestEnv::one("main", code).to_state();
-    (Handle::new(ModuleName::from_str("main")), state)
+    let test_env = TestEnv::one("main", code);
+    let handle = test_env.handle("main");
+    (handle, test_env.to_state())
 }
 
 pub fn get_class(name: &str, handle: &Handle, state: &State) -> Option<Class> {
