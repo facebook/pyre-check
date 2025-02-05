@@ -298,6 +298,15 @@ x: str = ""  # TODO: Inconsistent type annotations for x
     "#,
 );
 
+testcase_with_bug!(
+    "The annotation is currently part of the flow env, but should apply to the static env",
+    test_hoist_ann,
+    r#"
+x = 0 # TODO: Literal[0] <: str
+x: str = ""
+    "#,
+);
+
 testcase!(
     test_annot_flow_assign,
     r#"
