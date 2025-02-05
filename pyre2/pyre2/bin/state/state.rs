@@ -16,6 +16,7 @@ use parking_lot::FairMutex;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
+use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
@@ -52,11 +53,10 @@ use crate::util::prelude::SliceExt;
 use crate::util::uniques::UniqueFactory;
 
 pub struct State {
-    config: Config,
     loader: LoaderId,
     uniques: UniqueFactory,
     parallel: bool,
-    stdlib: RwLock<Arc<Stdlib>>,
+    stdlib: RwLock<SmallMap<Config, Arc<Stdlib>>>,
     modules: RwLock<SmallMap<Handle, Arc<ModuleState>>>,
     /// Items we still need to process. Stored in a max heap, so that
     /// the highest step (the module that is closest to being finished)
@@ -114,13 +114,12 @@ impl ModuleState {
 }
 
 impl State {
-    pub fn new(loader: LoaderId, config: Config, parallel: bool) -> Self {
+    pub fn new(loader: LoaderId, parallel: bool) -> Self {
         Self {
-            config,
             loader,
             uniques: UniqueFactory::new(),
             parallel,
-            stdlib: RwLock::new(Arc::new(Stdlib::for_bootstrapping())),
+            stdlib: Default::default(),
             modules: Default::default(),
             todo: Default::default(),
             retain_memory: true, // Will always be overwritten by entry points
@@ -128,8 +127,7 @@ impl State {
     }
 
     pub fn import_handle(&self, handle: &Handle, module: ModuleName) -> Handle {
-        let _ = handle;
-        Handle::new(module)
+        Handle::new(module, handle.config().dupe())
     }
 
     fn demand(&self, handle: &Handle, step: Step) {
@@ -166,7 +164,7 @@ impl State {
             let stdlib = self.get_stdlib(handle);
             let set = compute(&Context {
                 module: handle.module(),
-                config: &self.config,
+                config: handle.config(),
                 loader: &self.loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
@@ -369,16 +367,33 @@ impl State {
         }
     }
 
-    fn get_stdlib(&self, _handle: &Handle) -> Arc<Stdlib> {
+    fn get_stdlib(&self, handle: &Handle) -> Arc<Stdlib> {
         // Safe because we always run compute_stdlib first
-        self.stdlib.read().unwrap().dupe()
+        self.stdlib
+            .read()
+            .unwrap()
+            .get(handle.config())
+            .unwrap()
+            .dupe()
     }
 
-    fn compute_stdlib(&self) {
-        let stdlib = Arc::new(Stdlib::new(|module, name| {
-            self.lookup_stdlib(&Handle::new(module), name)
-        }));
-        *self.stdlib.write().unwrap() = stdlib;
+    fn compute_stdlib(&self, configs: SmallSet<Config>) {
+        *self.stdlib.write().unwrap() = configs
+            .iter()
+            .map(|c| (c.dupe(), Arc::new(Stdlib::for_bootstrapping())))
+            .collect();
+        let stdlibs = configs
+            .iter()
+            .map(|c| {
+                (
+                    c.dupe(),
+                    Arc::new(Stdlib::new(|module, name| {
+                        self.lookup_stdlib(&Handle::new(module, c.dupe()), name)
+                    })),
+                )
+            })
+            .collect();
+        *self.stdlib.write().unwrap() = stdlibs;
     }
 
     fn work(&self) {
@@ -395,6 +410,10 @@ impl State {
     }
 
     fn run_internal(&mut self, handles: Vec<Handle>) {
+        let configs = handles
+            .iter()
+            .map(|x| x.config().dupe())
+            .collect::<SmallSet<_>>();
         {
             let mut lock = self.todo.lock().unwrap();
             for h in handles {
@@ -402,7 +421,7 @@ impl State {
             }
         }
 
-        self.compute_stdlib();
+        self.compute_stdlib(configs);
 
         if self.parallel {
             rayon::scope(|s| {

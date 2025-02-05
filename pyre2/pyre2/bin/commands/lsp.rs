@@ -89,6 +89,7 @@ struct Server<'a> {
     initialize_params: InitializeParams,
     include: Vec<PathBuf>,
     state: State,
+    config: Config,
     open_files: SmallMap<PathBuf, (i32, Arc<String>)>,
 }
 
@@ -240,7 +241,8 @@ impl<'a> Server<'a> {
             send,
             initialize_params,
             include,
-            state: State::new(LoaderId::new(DummyLoader {}), Config::default(), true),
+            state: State::new(LoaderId::new(DummyLoader {}), true),
+            config: Config::default(),
             open_files: Default::default(),
         }
     }
@@ -265,7 +267,10 @@ impl<'a> Server<'a> {
             .keys()
             .map(|x| (module_from_path(x, &self.include), x.clone()))
             .collect::<SmallMap<_, _>>();
-        let handles = modules.keys().map(|x| Handle::new(*x)).collect::<Vec<_>>();
+        let handles = modules
+            .keys()
+            .map(|x| Handle::new(*x, self.config.dupe()))
+            .collect::<Vec<_>>();
 
         self.state = State::new(
             LoaderId::new(LspLoader {
@@ -273,7 +278,6 @@ impl<'a> Server<'a> {
                 open_files: self.open_files.clone(), // Not good, but all of this is a hack
                 search_roots: self.include.clone(),
             }),
-            Config::default(),
             true,
         );
         self.state.run(handles);
@@ -331,7 +335,7 @@ impl<'a> Server<'a> {
 
     fn make_handle(&self, uri: &Url) -> Handle {
         let module = module_from_path(&uri.to_file_path().unwrap(), &self.include);
-        Handle::new(module)
+        Handle::new(module, self.config.dupe())
     }
 
     fn goto_definition(&self, params: GotoDefinitionParams) -> Option<GotoDefinitionResponse> {

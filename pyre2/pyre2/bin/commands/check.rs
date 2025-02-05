@@ -18,6 +18,7 @@ use std::time::Instant;
 use anyhow::Context as _;
 use clap::Parser;
 use clap::ValueEnum;
+use dupe::Dupe;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use tracing::info;
@@ -161,11 +162,14 @@ impl Args {
                 }
             }
         }
-        let handles = to_check.keys().map(|x| Handle::new(*x)).collect::<Vec<_>>();
         let config = match &args.python_version {
             None => Config::default(),
             Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),
         };
+        let handles = to_check
+            .keys()
+            .map(|x| Handle::new(*x, config.dupe()))
+            .collect::<Vec<_>>();
         let error_style_for_sources = if args.output.is_some() {
             ErrorStyle::Delayed
         } else {
@@ -185,7 +189,6 @@ impl Args {
                     ErrorStyle::Never
                 },
             }),
-            config,
             args.common.parallel(),
         );
         let mut holder = Forgetter::new(state, allow_forget);

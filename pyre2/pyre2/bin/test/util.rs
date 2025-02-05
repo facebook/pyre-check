@@ -14,6 +14,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use anyhow::anyhow;
+use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 
@@ -116,15 +117,24 @@ impl TestEnv {
         self.0.insert(module_name, (path, None));
     }
 
+    pub fn config() -> Config {
+        Config::default()
+    }
+
     pub fn to_state(self) -> State {
-        let handles = self.0.keys().map(|x| Handle::new(*x)).collect::<Vec<_>>();
-        let mut state = State::new(LoaderId::new(self), Config::default(), true);
+        let config = Self::config();
+        let handles = self
+            .0
+            .keys()
+            .map(|x| Handle::new(*x, config.dupe()))
+            .collect::<Vec<_>>();
+        let mut state = State::new(LoaderId::new(self), true);
         state.run(handles);
         state
     }
 
     pub fn handle(&self, module: &str) -> Handle {
-        Handle::new(ModuleName::from_str(module))
+        Handle::new(ModuleName::from_str(module), Self::config())
     }
 }
 
