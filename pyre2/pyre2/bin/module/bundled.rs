@@ -8,7 +8,9 @@
 use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::LazyLock;
 
+use anyhow::anyhow;
 use anyhow::Context as _;
 use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
@@ -62,7 +64,7 @@ impl BundledTypeshed {
         Ok(items)
     }
 
-    pub fn new() -> anyhow::Result<Self> {
+    fn new() -> anyhow::Result<Self> {
         let content = Self::unpack()?;
         let mut index = SmallMap::new();
         for (relative_path, content) in content {
@@ -82,5 +84,15 @@ impl BundledTypeshed {
         let entry = self.index.get(&name)?;
         let fake_path = ModulePath::bundled_typeshed(entry.relative_path.clone());
         Some((fake_path, entry.content.dupe()))
+    }
+}
+
+static BUNDLED_TYPESHED: LazyLock<anyhow::Result<BundledTypeshed>> =
+    LazyLock::new(BundledTypeshed::new);
+
+pub fn typeshed() -> anyhow::Result<&'static BundledTypeshed> {
+    match &*BUNDLED_TYPESHED {
+        Ok(typeshed) => Ok(typeshed),
+        Err(error) => Err(anyhow!("{error:#}")),
     }
 }

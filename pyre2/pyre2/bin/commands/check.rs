@@ -31,6 +31,7 @@ use crate::config::PythonVersion;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::error::style::ErrorStyle;
+use crate::module::bundled::typeshed;
 use crate::module::bundled::BundledTypeshed;
 use crate::module::finder::find_module;
 use crate::module::module_name::ModuleName;
@@ -86,7 +87,7 @@ pub struct Args {
 #[derive(Debug, Clone)]
 struct CheckLoader {
     sources: SmallMap<ModuleName, PathBuf>,
-    typeshed: BundledTypeshed,
+    typeshed: &'static BundledTypeshed,
     search_roots: Vec<PathBuf>,
     error_style_for_sources: ErrorStyle,
     error_style_for_dependencies: ErrorStyle,
@@ -173,7 +174,7 @@ impl Args {
             }
         }
         let modules = to_check.keys().copied().collect::<Vec<_>>();
-        let bundled_typeshed = BundledTypeshed::new()?;
+        let bundled_typeshed = typeshed()?;
         let config = match &args.python_version {
             None => Config::default(),
             Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),

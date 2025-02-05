@@ -65,6 +65,7 @@ use starlark_map::small_map::SmallMap;
 use crate::commands::util::module_from_path;
 use crate::config::Config;
 use crate::error::style::ErrorStyle;
+use crate::module::bundled::typeshed;
 use crate::module::bundled::BundledTypeshed;
 use crate::module::finder::find_module;
 use crate::module::module_info::ModuleInfo;
@@ -88,7 +89,7 @@ struct Server<'a> {
     #[expect(dead_code)] // we'll use it later on
     initialize_params: InitializeParams,
     include: Vec<PathBuf>,
-    typeshed: BundledTypeshed,
+    typeshed: &'static BundledTypeshed,
     state: State,
     open_files: SmallMap<PathBuf, (i32, Arc<String>)>,
 }
@@ -123,7 +124,7 @@ impl Args {
             }
         };
         let include = self.include;
-        let typeshed = BundledTypeshed::new()?;
+        let typeshed = typeshed()?;
         let send = |msg| connection.sender.send(msg).unwrap();
         let mut server = Server::new(&send, initialization_params, include, typeshed);
         eprintln!("Reading messages");
@@ -248,7 +249,7 @@ impl<'a> Server<'a> {
         send: &'a dyn Fn(Message),
         initialize_params: InitializeParams,
         include: Vec<PathBuf>,
-        typeshed: BundledTypeshed,
+        typeshed: &'static BundledTypeshed,
     ) -> Self {
         Self {
             send,
