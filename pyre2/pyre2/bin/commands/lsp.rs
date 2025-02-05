@@ -91,7 +91,7 @@ struct Server<'a> {
     include: Vec<PathBuf>,
     state: Mutex<State>,
     config: Config,
-    open_files: Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>,
+    open_files: Arc<Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>>,
 }
 
 impl Args {
@@ -142,25 +142,19 @@ impl Args {
 }
 
 #[derive(Debug, Clone)]
-struct DummyLoader {}
-impl Loader for DummyLoader {
-    fn find(&self, _name: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
-        Err(anyhow!("Failed during init"))
-    }
-}
-
-#[derive(Debug, Clone)]
 struct LspLoader {
-    open_modules: SmallMap<ModuleName, PathBuf>,
-    open_files: SmallMap<PathBuf, (i32, Arc<String>)>,
+    open_files: Arc<Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>>,
     search_roots: Vec<PathBuf>,
 }
 
 impl Loader for LspLoader {
     fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
-        if let Some(path) = self.open_modules.get(&module) {
-            Ok((ModulePath::memory(path.clone()), ErrorStyle::Delayed))
-        } else if let Some(path) = find_module(module, &self.search_roots) {
+        for path in self.open_files.lock().unwrap().keys() {
+            if module_from_path(path, &self.search_roots) == module {
+                return Ok((ModulePath::memory(path.clone()), ErrorStyle::Delayed));
+            }
+        }
+        if let Some(path) = find_module(module, &self.search_roots) {
             Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Never))
         } else if let Some(path) = typeshed()?.find(module) {
             Ok((path, ErrorStyle::Never))
@@ -170,7 +164,7 @@ impl Loader for LspLoader {
     }
 
     fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
-        Some(self.open_files.get(path)?.1.dupe())
+        Some(self.open_files.lock().unwrap().get(path)?.1.dupe())
     }
 }
 
@@ -238,13 +232,18 @@ impl<'a> Server<'a> {
         initialize_params: InitializeParams,
         include: Vec<PathBuf>,
     ) -> Self {
+        let open_files = Arc::new(Mutex::new(SmallMap::new()));
+        let loader = LoaderId::new(LspLoader {
+            open_files: open_files.dupe(),
+            search_roots: include.clone(),
+        });
         Self {
             send,
             initialize_params,
             include,
-            state: Mutex::new(State::new(LoaderId::new(DummyLoader {}), true)),
+            state: Mutex::new(State::new(loader.dupe(), true)),
             config: Config::default(),
-            open_files: Default::default(),
+            open_files,
         }
     }
 
@@ -263,26 +262,14 @@ impl<'a> Server<'a> {
     }
 
     fn validate(&self) -> anyhow::Result<()> {
-        let modules = self
+        let handles = self
             .open_files
             .lock()
             .unwrap()
             .keys()
-            .map(|x| (module_from_path(x, &self.include), x.clone()))
-            .collect::<SmallMap<_, _>>();
-        let handles = modules
-            .keys()
-            .map(|x| Handle::new(*x, self.config.dupe()))
+            .map(|x| Handle::new(module_from_path(x, &self.include), self.config.dupe()))
             .collect::<Vec<_>>();
 
-        *self.state.lock().unwrap() = State::new(
-            LoaderId::new(LspLoader {
-                open_modules: modules,
-                open_files: self.open_files.lock().unwrap().clone(), // Not good, but all of this is a hack
-                search_roots: self.include.clone(),
-            }),
-            true,
-        );
         self.state.lock().unwrap().run(handles);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.lock().unwrap().keys() {
