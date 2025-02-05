@@ -31,7 +31,7 @@ pub enum ModuleStyle {
 pub struct ModulePath(Arc<ModulePathDetails>);
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
-enum ModulePathDetails {
+pub enum ModulePathDetails {
     /// The module source comes from a file on disk.
     FileSystem(PathBuf),
     /// The module source comes from typeshed bundled with Pyre (which gets stored in-memory).
@@ -112,11 +112,7 @@ impl ModulePath {
         }
     }
 
-    pub fn as_filesystem_path(&self) -> Option<&Path> {
-        match &*self.0 {
-            ModulePathDetails::FileSystem(path) => Some(path),
-            ModulePathDetails::BundledTypeshed(_) => None,
-            ModulePathDetails::NotFound(_) => None,
-        }
+    pub fn details(&self) -> &ModulePathDetails {
+        &self.0
     }
 }

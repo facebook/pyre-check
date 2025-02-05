@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -70,6 +71,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
+use crate::module::module_path::ModulePathDetails;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
@@ -184,6 +186,15 @@ impl Loader for LspLoader {
     }
 }
 
+/// Convert to a path we can show to the user. The contents may not match the disk, but it has
+/// to be basically right.
+fn to_real_path(path: &ModulePath) -> Option<&Path> {
+    match path.details() {
+        ModulePathDetails::FileSystem(path) => Some(path),
+        ModulePathDetails::BundledTypeshed(_) | ModulePathDetails::NotFound(_) => None,
+    }
+}
+
 impl<'a> Server<'a> {
     fn process(&mut self, msg: Message) -> anyhow::Result<()> {
         match msg {
@@ -288,7 +299,7 @@ impl<'a> Server<'a> {
             diags.insert(x.as_path().to_owned(), Vec::new());
         }
         for e in self.state.collect_errors() {
-            if let Some(path) = e.path().as_filesystem_path() {
+            if let Some(path) = to_real_path(e.path()) {
                 diags.entry(path.to_owned()).or_default().push(Diagnostic {
                     range: source_range_to_range(e.source_range()),
                     severity: Some(lsp_types::DiagnosticSeverity::ERROR),
