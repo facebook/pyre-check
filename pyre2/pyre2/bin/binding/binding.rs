@@ -484,7 +484,7 @@ pub enum Binding {
     Expr(Option<Idx<KeyAnnotation>>, Expr),
     /// An expression returned from a function.
     /// The `bool` is whether the function has `yield` within it.
-    ReturnExpr(Option<Idx<KeyAnnotation>>, Expr, bool),
+    ReturnExpr(Option<Idx<KeyAnnotation>>, Box<Expr>, bool),
     /// An expression returned from a function.
     SendTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
     /// Return type of yield
@@ -590,8 +590,9 @@ impl DisplayWith<Bindings> for Binding {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         let m = ctx.module_info();
         match self {
-            Self::Expr(None, x) | Self::ReturnExpr(None, x, _) => write!(f, "{}", m.display(x)),
-            Self::Expr(Some(k), x) | Self::ReturnExpr(Some(k), x, _) => {
+            Self::Expr(None, x) => write!(f, "{}", m.display(x)),
+            Self::ReturnExpr(_, x, _) => write!(f, "ReturnExpr {}", m.display(x)),
+            Self::Expr(Some(k), x) => {
                 write!(f, "{}: {}", ctx.display(*k), m.display(x))
             }
             Self::Generator(box target, box iterable) => {

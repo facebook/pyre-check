@@ -197,7 +197,7 @@ impl<'a> BindingsBuilder<'a> {
                 Key::ReturnExpression(ShortIdentifier::new(&func_name), x.range),
                 Binding::ReturnExpr(
                     return_ann,
-                    Ast::return_or_none_owned(x),
+                    Box::new(Ast::return_or_none_owned(x)),
                     !accumulate.yields.is_empty(),
                 ),
             );
