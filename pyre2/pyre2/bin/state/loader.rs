@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -15,7 +16,7 @@ use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 
 /// A function that loads a module, given the `ModuleName`.
-pub trait Loader: Sync {
+pub trait Loader: Sync + Debug {
     /// Return `Err` to indicate the module could not be found.
     /// The remaining components are the `ModulePath` where the module was found,
     /// the file contents, and the `ErrorStyle` to use when reporting errors.

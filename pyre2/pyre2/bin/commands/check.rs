@@ -82,6 +82,7 @@ pub struct Args {
     common: CommonArgs,
 }
 
+#[derive(Debug, Clone)]
 struct CheckLoader {
     sources: SmallMap<ModuleName, PathBuf>,
     typeshed: BundledTypeshed,

@@ -138,6 +138,7 @@ impl Args {
     }
 }
 
+#[derive(Debug, Clone)]
 struct DummyLoader {}
 impl Loader for DummyLoader {
     fn load(
@@ -148,6 +149,7 @@ impl Loader for DummyLoader {
     }
 }
 
+#[derive(Debug, Clone)]
 struct LspLoader {
     open_modules: SmallMap<ModuleName, PathBuf>,
     open_files: SmallMap<PathBuf, (i32, Arc<String>)>,
