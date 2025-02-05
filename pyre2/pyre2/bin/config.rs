@@ -23,7 +23,7 @@ use ruff_python_ast::StmtIf;
 use crate::ast::Ast;
 use crate::util::prelude::SliceExt;
 
-#[derive(Debug, Clone, Copy, Dupe, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Dupe, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PythonVersion {
     major: u32,
     minor: u32,
@@ -81,10 +81,10 @@ impl PythonVersion {
     }
 }
 
-#[derive(Clone, Dupe, Debug)]
+#[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash)]
 pub struct Config(Arc<ConfigInner>);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct ConfigInner {
     version: PythonVersion,
     platform: String,
