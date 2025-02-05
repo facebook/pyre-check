@@ -170,7 +170,7 @@ impl State {
                 loader: &self.loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
-                lookup: self,
+                lookup: &self.lookup(handle),
                 retain_memory: self.retain_memory,
             });
             {
@@ -219,10 +219,17 @@ impl State {
         load.errors.add(&load.module_info, range, msg);
     }
 
+    fn lookup<'a>(&'a self, handle: &Handle) -> StateHandle<'a> {
+        StateHandle {
+            state: self,
+            handle: handle.dupe(),
+        }
+    }
+
     fn lookup_stdlib(&self, handle: &Handle, name: &Name) -> Option<Class> {
         if !self
             .lookup_export(handle)
-            .is_ok_and(|x| x.contains(name, self))
+            .is_ok_and(|x| x.contains(name, &self.lookup(handle)))
         {
             self.add_error(
                 handle,
@@ -263,7 +270,7 @@ impl State {
         }
     }
 
-    fn lookup_answer<'b, K: Solve<Self> + Keyed<EXPORTED = true>>(
+    fn lookup_answer<'b, K: Solve<StateHandle<'b>> + Keyed<EXPORTED = true>>(
         &'b self,
         handle: &Handle,
         key: &K,
@@ -293,9 +300,10 @@ impl State {
             )
         };
         let stdlib = self.stdlib.read().unwrap().dupe();
+        let lookup = self.lookup(handle);
         answers.1.solve_key(
-            self,
-            self,
+            &lookup,
+            &lookup,
             &answers.0,
             &load.errors,
             &stdlib,
@@ -521,13 +529,19 @@ impl State {
     */
 }
 
-impl LookupExport for State {
+struct StateHandle<'a> {
+    state: &'a State,
+    handle: Handle,
+}
+
+impl<'a> LookupExport for StateHandle<'a> {
     fn get(&self, module: ModuleName) -> Result<Exports, Arc<String>> {
-        self.lookup_export(&Handle::new(module))
+        self.state
+            .lookup_export(&self.state.import_handle(&self.handle, module))
     }
 }
 
-impl LookupAnswer for State {
+impl<'a> LookupAnswer for StateHandle<'a> {
     fn get<K: Solve<Self> + Keyed<EXPORTED = true>>(
         &self,
         module: ModuleName,
@@ -538,6 +552,7 @@ impl LookupAnswer for State {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
-        self.lookup_answer(&Handle::new(module), k)
+        self.state
+            .lookup_answer(&self.state.import_handle(&self.handle, module), k)
     }
 }
