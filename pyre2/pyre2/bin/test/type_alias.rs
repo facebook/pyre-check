@@ -272,12 +272,19 @@ x: StringOrInt = 1
 "#,
 );
 
-testcase!(
-    test_alias_import,
+fn env_type_alias() -> TestEnv {
     TestEnv::one(
         "foo",
-        "from typing import TypeAlias\nStringOrInt: TypeAlias = str | int"
-    ),
+        r#"
+from typing import TypeAlias
+StringOrInt: TypeAlias = str | int
+"#,
+    )
+}
+
+testcase!(
+    test_alias_import,
+    env_type_alias(),
     r#"
 from foo import StringOrInt
 x: StringOrInt = 1

@@ -226,16 +226,20 @@ from ... import does_not_exist  # E: Could not resolve relative import `...`
 "#,
 );
 
-testcase!(
-    test_import_all,
+fn env_all_x() -> TestEnv {
     TestEnv::one(
         "foo",
         r#"
 __all__ = ["x"]
 x: int = 1
 y: int = 3
-    "#
-    ),
+    "#,
+    )
+}
+
+testcase!(
+    test_import_all,
+    env_all_x(),
     r#"
 from foo import *
 z = y  # E: Could not find name `y`
