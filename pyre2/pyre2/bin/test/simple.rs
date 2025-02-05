@@ -276,6 +276,19 @@ assert_type(C().attribute, int)
 );
 
 testcase!(
+    test_more_class_scope,
+    r#"
+x: int = 0
+class C:
+    x: str = x # E: EXPECTED Literal[0] <: str
+    y: int = x # E: EXPECTED str <: int
+    def m(self) -> str:
+        # x refers to global x: int
+        return x # E: EXPECTED Literal[0] <: str
+"#,
+);
+
+testcase!(
     test_class_attribute_lookup,
     r#"
 from typing import assert_type, Literal
