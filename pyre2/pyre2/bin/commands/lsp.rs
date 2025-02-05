@@ -167,8 +167,7 @@ impl Loader for LspLoader {
     ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
         if let Some(path) = self.open_modules.get(&name) {
             Ok((
-                // TODO(grievejia): Properly model paths for in-memory sources
-                ModulePath::filesystem((*path).clone()),
+                ModulePath::memory(path.clone()),
                 Either::Left(self.open_files.get(path).unwrap().1.dupe()),
                 ErrorStyle::Delayed,
             ))
@@ -190,7 +189,7 @@ impl Loader for LspLoader {
 /// to be basically right.
 fn to_real_path(path: &ModulePath) -> Option<&Path> {
     match path.details() {
-        ModulePathDetails::FileSystem(path) => Some(path),
+        ModulePathDetails::FileSystem(path) | ModulePathDetails::Memory(path) => Some(path),
         ModulePathDetails::BundledTypeshed(_) | ModulePathDetails::NotFound(_) => None,
     }
 }

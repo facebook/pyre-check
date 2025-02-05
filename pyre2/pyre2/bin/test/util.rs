@@ -130,17 +130,21 @@ impl Loader for TestEnv {
     ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
         let style = ErrorStyle::Immediate;
         if let Some((path, contents)) = self.0.get(&name) {
-            Ok((
-                ModulePath::filesystem(path.clone()),
-                match contents {
-                    None => Either::Right(path.clone()),
-                    Some(contents) => Either::Left(Arc::new(contents.to_owned())),
-                },
-                style,
-            ))
+            match contents {
+                None => Ok((
+                    ModulePath::filesystem(path.clone()),
+                    Either::Right(path.clone()),
+                    style,
+                )),
+                Some(contents) => Ok((
+                    ModulePath::memory(path.clone()),
+                    Either::Left(Arc::new(contents.to_owned())),
+                    style,
+                )),
+            }
         } else if let Some(contents) = lookup_test_stdlib(name) {
             Ok((
-                ModulePath::filesystem(default_path(name)),
+                ModulePath::memory(default_path(name)),
                 Either::Left(Arc::new(contents.to_owned())),
                 style,
             ))

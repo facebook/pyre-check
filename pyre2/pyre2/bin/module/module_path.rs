@@ -34,6 +34,8 @@ pub struct ModulePath(Arc<ModulePathDetails>);
 pub enum ModulePathDetails {
     /// The module source comes from a file on disk.
     FileSystem(PathBuf),
+    /// The module source comes from memory.
+    Memory(PathBuf),
     /// The module source comes from typeshed bundled with Pyre (which gets stored in-memory).
     /// The path is relative to the root of the typeshed directory.
     BundledTypeshed(PathBuf),
@@ -59,7 +61,9 @@ impl ModuleStyle {
 impl Display for ModulePath {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self.0 {
-            ModulePathDetails::FileSystem(path) => write!(f, "{}", path.display()),
+            ModulePathDetails::FileSystem(path) | ModulePathDetails::Memory(path) => {
+                write!(f, "{}", path.display())
+            }
             ModulePathDetails::BundledTypeshed(relative_path) => {
                 write!(
                     f,
@@ -79,6 +83,10 @@ impl Display for ModulePath {
 impl ModulePath {
     pub fn filesystem(path: PathBuf) -> Self {
         Self(Arc::new(ModulePathDetails::FileSystem(path)))
+    }
+
+    pub fn memory(path: PathBuf) -> Self {
+        Self(Arc::new(ModulePathDetails::Memory(path)))
     }
 
     pub fn bundled_typeshed(relative_path: PathBuf) -> Self {
@@ -105,9 +113,9 @@ impl ModulePath {
     /// Convert to a path, that may not exist on disk.
     fn as_path(&self) -> Option<&Path> {
         match &*self.0 {
-            ModulePathDetails::FileSystem(path) | ModulePathDetails::BundledTypeshed(path) => {
-                Some(path)
-            }
+            ModulePathDetails::FileSystem(path)
+            | ModulePathDetails::BundledTypeshed(path)
+            | ModulePathDetails::Memory(path) => Some(path),
             ModulePathDetails::NotFound(_) => None,
         }
     }
