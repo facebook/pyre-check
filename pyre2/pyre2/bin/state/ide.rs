@@ -23,15 +23,12 @@ use crate::types::types::Type;
 use crate::visitors::Visitors;
 
 impl State {
-    pub fn get_type(&self, module: ModuleName, key: &Key) -> Option<Type> {
-        self.get_solutions(&Handle::new(module))?
-            .types
-            .get(key)
-            .cloned()
+    pub fn get_type(&self, handle: &Handle, key: &Key) -> Option<Type> {
+        self.get_solutions(handle)?.types.get(key).cloned()
     }
 
-    fn identifier_at(&self, module: ModuleName, position: TextSize) -> Option<Identifier> {
-        let mod_module = self.get_ast(&Handle::new(module))?;
+    fn identifier_at(&self, handle: &Handle, position: TextSize) -> Option<Identifier> {
+        let mod_module = self.get_ast(handle)?;
         fn f(x: &Expr, find: TextSize, res: &mut Option<Identifier>) {
             if let Expr::Name(x) = x
                 && x.range.contains_inclusive(find)
@@ -46,57 +43,58 @@ impl State {
         res
     }
 
-    pub fn hover(&self, module: ModuleName, position: TextSize) -> Option<Type> {
-        let id = self.identifier_at(module, position)?;
-        self.get_type(module, &Key::Usage(ShortIdentifier::new(&id)))
+    pub fn hover(&self, handle: &Handle, position: TextSize) -> Option<Type> {
+        let id = self.identifier_at(handle, position)?;
+        self.get_type(handle, &Key::Usage(ShortIdentifier::new(&id)))
     }
 
     fn key_to_definition(
         &self,
-        module: ModuleName,
+        handle: &Handle,
         key: &Key,
         gas: isize,
     ) -> Option<(ModuleName, TextRange)> {
         if let Key::Definition(x) = key {
-            return Some((module, x.range()));
+            return Some((handle.module(), x.range()));
         }
-        let bindings = self.get_bindings(&Handle::new(module))?;
+        let bindings = self.get_bindings(handle)?;
         let idx = bindings.key_to_idx(key);
-        let res = self.binding_to_definition(module, bindings.get(idx), gas);
+        let res = self.binding_to_definition(handle, bindings.get(idx), gas);
         if res.is_none()
             && let Key::Anywhere(_, range) = key
         {
-            return Some((module, *range));
+            return Some((handle.module(), *range));
         }
         res
     }
 
     fn binding_to_definition(
         &self,
-        module: ModuleName,
+        handle: &Handle,
         binding: &Binding,
         gas: isize,
     ) -> Option<(ModuleName, TextRange)> {
         if gas <= 0 {
             return None;
         }
-        let bindings = self.get_bindings(&Handle::new(module))?;
+        let bindings = self.get_bindings(handle)?;
         match binding {
-            Binding::Forward(k) => self.key_to_definition(module, bindings.idx_to_key(*k), gas - 1),
+            Binding::Forward(k) => self.key_to_definition(handle, bindings.idx_to_key(*k), gas - 1),
             Binding::Phi(ks) if !ks.is_empty() => self.key_to_definition(
-                module,
+                handle,
                 bindings.idx_to_key(*ks.iter().next().unwrap()),
                 gas - 1,
             ),
             Binding::Import(m, name) => {
-                let bindings = self.get_bindings(&Handle::new(*m))?;
+                let handle = Handle::new(*m);
+                let bindings = self.get_bindings(&handle)?;
                 let b = bindings.get(bindings.key_to_idx(&KeyExport(name.clone())));
-                self.binding_to_definition(*m, b, gas - 1)
+                self.binding_to_definition(&handle, b, gas - 1)
             }
             Binding::Module(name, _, _) => Some((*name, TextRange::default())),
             Binding::CheckLegacyTypeParam(k, _) => {
                 let binding = bindings.get(*k);
-                self.key_to_definition(module, bindings.idx_to_key(binding.0), gas - 1)
+                self.key_to_definition(handle, bindings.idx_to_key(binding.0), gas - 1)
             }
             _ => None,
         }
@@ -104,18 +102,18 @@ impl State {
 
     pub fn goto_definition(
         &self,
-        module: ModuleName,
+        handle: &Handle,
         position: TextSize,
     ) -> Option<(ModuleName, TextRange)> {
-        let id = self.identifier_at(module, position)?;
-        self.key_to_definition(module, &Key::Usage(ShortIdentifier::new(&id)), 20)
+        let id = self.identifier_at(handle, position)?;
+        self.key_to_definition(handle, &Key::Usage(ShortIdentifier::new(&id)), 20)
     }
 
-    pub fn inlay_hints(&self, module: ModuleName) -> Option<Vec<(TextSize, String)>> {
+    pub fn inlay_hints(&self, handle: &Handle) -> Option<Vec<(TextSize, String)>> {
         let is_interesting_type = |x: &Type| x != &Type::any_error();
         let is_interesting_expr = |x: &Expr| !Ast::is_literal(x);
 
-        let bindings = self.get_bindings(&Handle::new(module))?;
+        let bindings = self.get_bindings(handle)?;
         let mut res = Vec::new();
         for idx in bindings.keys::<Key>() {
             match bindings.idx_to_key(idx) {
@@ -124,7 +122,7 @@ impl State {
                         Binding::Function(x)
                             if !matches!(bindings.get(idx), &Binding::AnnotatedType(..)) =>
                         {
-                            if let Some(ty) = self.get_type(module, key)
+                            if let Some(ty) = self.get_type(handle, key)
                                 && is_interesting_type(&ty)
                             {
                                 res.push((x.def.parameters.range.end(), format!(" -> {ty}")));
@@ -133,7 +131,7 @@ impl State {
                         _ => {}
                     }
                 }
-                key @ Key::Definition(_) if let Some(ty) = self.get_type(module, key) => {
+                key @ Key::Definition(_) if let Some(ty) = self.get_type(handle, key) => {
                     let e = match bindings.get(idx) {
                         Binding::NameAssign(_, None, e) => Some(&**e),
                         Binding::Expr(None, e) => Some(e),

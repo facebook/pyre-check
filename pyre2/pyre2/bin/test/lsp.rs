@@ -27,7 +27,7 @@ static CODE: &str = r#"
 10: class B(A): pass
 "#;
 
-fn mk_state() -> (ModuleName, State) {
+fn mk_state() -> (Handle, State) {
     let code = CODE
         .lines()
         .enumerate()
@@ -40,13 +40,13 @@ fn mk_state() -> (ModuleName, State) {
         .join("\n");
     let state = TestEnv::one("main", &code).to_state();
     assert_eq!(state.count_errors(), 0);
-    (ModuleName::from_str("main"), state)
+    (Handle::new(ModuleName::from_str("main")), state)
 }
 
 /// Find the TextRange of the given needle on the line, but must occur
 fn at_after(line_no: usize, before: &str, needle: &str) -> TextRange {
-    let (module, state) = mk_state();
-    let info = state.get_module_info(&Handle::new(module)).unwrap();
+    let (handle, state) = mk_state();
+    let info = state.get_module_info(&handle).unwrap();
     let line = info.contents().lines().nth(line_no - 1).unwrap();
     let (pre1, post1) = line.split_once(before).unwrap();
     let (pre2, _) = post1.split_once(needle).unwrap();
@@ -61,26 +61,29 @@ fn at(line_no: usize, needle: &str) -> TextRange {
 
 #[test]
 fn test_hover() {
-    let (module, state) = mk_state();
+    let (handle, state) = mk_state();
     assert_eq!(
-        state.hover(module, at(4, "x").start()).unwrap().to_string(),
+        state
+            .hover(&handle, at(4, "x").start())
+            .unwrap()
+            .to_string(),
         "list[int]"
     );
     assert_eq!(
-        state.hover(module, at(4, "x").end()).unwrap().to_string(),
+        state.hover(&handle, at(4, "x").end()).unwrap().to_string(),
         "list[int]"
     );
     assert_eq!(
-        state.hover(module, at(6, "f").end()).unwrap().to_string(),
+        state.hover(&handle, at(6, "f").end()).unwrap().to_string(),
         "(x: list[int], y: str, z: Literal[42]) -> list[int]"
     );
 }
 
 #[test]
 fn test_inlay_hint() {
-    let (module, state) = mk_state();
+    let (handle, state) = mk_state();
     assert_eq!(
-        state.inlay_hints(module).unwrap(),
+        state.inlay_hints(&handle).unwrap(),
         vec![
             (at(3, ")").end(), " -> list[int]".to_owned()),
             (at(6, "yyy").end(), ": list[int]".to_owned()),
@@ -90,17 +93,17 @@ fn test_inlay_hint() {
 
 #[test]
 fn test_goto_definition() {
-    let (module, state) = mk_state();
+    let (handle, state) = mk_state();
     assert_eq!(
-        state.goto_definition(module, at(6, "f").start()),
-        Some((module, at_after(3, "def", "f")))
+        state.goto_definition(&handle, at(6, "f").start()),
+        Some((handle.module(), at_after(3, "def", "f")))
     );
     assert_eq!(
-        state.goto_definition(module, at(3, "Liter").end()),
-        Some((module, at(1, "Literal")))
+        state.goto_definition(&handle, at(3, "Liter").end()),
+        Some((handle.module(), at(1, "Literal")))
     );
     assert_eq!(
-        state.goto_definition(module, at(10, "A").start()),
-        Some((module, at_after(9, "class", "A")))
+        state.goto_definition(&handle, at(10, "A").start()),
+        Some((handle.module(), at_after(9, "class", "A")))
     );
 }

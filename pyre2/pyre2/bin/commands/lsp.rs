@@ -336,7 +336,7 @@ impl<'a> Server<'a> {
         );
         let info = self.state.get_module_info(&Handle::new(module))?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let (module, range) = self.state.goto_definition(module, range)?;
+        let (module, range) = self.state.goto_definition(&Handle::new(module), range)?;
         let path = find_module(module, &self.include)?;
         let info = self.state.get_module_info(&Handle::new(module))?;
         let path = std::fs::canonicalize(&path).unwrap_or(path);
@@ -360,7 +360,7 @@ impl<'a> Server<'a> {
         );
         let info = self.state.get_module_info(&Handle::new(module))?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let t = self.state.hover(module, range)?;
+        let t = self.state.hover(&Handle::new(module), range)?;
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: MarkupKind::PlainText,
@@ -373,7 +373,7 @@ impl<'a> Server<'a> {
     fn inlay_hints(&self, params: InlayHintParams) -> Option<Vec<InlayHint>> {
         let module = url_to_module(&params.text_document.uri, &self.include);
         let info = self.state.get_module_info(&Handle::new(module))?;
-        let t = self.state.inlay_hints(module)?;
+        let t = self.state.inlay_hints(&Handle::new(module))?;
         Some(t.into_map(|x| {
             let position = text_size_to_position(&info, x.0);
             InlayHint {
