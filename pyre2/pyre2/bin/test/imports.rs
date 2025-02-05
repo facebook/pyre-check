@@ -501,11 +501,12 @@ from blank import int as int_int # E: Could not import `int` from `blank`
 
 #[test]
 fn test_import_fail_to_load() {
+    let temp = tempfile::tempdir().unwrap();
     let mut env = TestEnv::new();
-    env.add_error("foo");
+    env.add_real_path("foo", temp.path().join("foo.py"));
     env.add("main", "import foo");
     let errs = env.to_state().collect_errors();
     assert_eq!(errs.len(), 1);
     let msg = errs[0].to_string();
-    assert!(msg.contains("foo:1:1: Failed to load"));
+    assert!(msg.contains("foo.py:1:1: Failed to load"));
 }

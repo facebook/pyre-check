@@ -75,7 +75,7 @@ fn default_path(name: ModuleName) -> PathBuf {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct TestEnv(SmallMap<ModuleName, (PathBuf, Result<String, ()>)>);
+pub struct TestEnv(SmallMap<ModuleName, (PathBuf, Option<String>)>);
 
 impl TestEnv {
     pub fn new() -> Self {
@@ -85,7 +85,7 @@ impl TestEnv {
     pub fn add_with_path(&mut self, name: &str, code: &str, path: &str) {
         self.0.insert(
             ModuleName::from_str(name),
-            (PathBuf::from(path), Ok(code.to_owned())),
+            (PathBuf::from(path), Some(code.to_owned())),
         );
     }
 
@@ -93,7 +93,7 @@ impl TestEnv {
         let module_name = ModuleName::from_str(name);
         let relative_path = default_path(module_name);
         self.0
-            .insert(module_name, (relative_path, Ok(code.to_owned())));
+            .insert(module_name, (relative_path, Some(code.to_owned())));
     }
 
     pub fn one(name: &str, code: &str) -> Self {
@@ -108,10 +108,9 @@ impl TestEnv {
         res
     }
 
-    pub fn add_error(&mut self, name: &str) {
+    pub fn add_real_path(&mut self, name: &str, path: PathBuf) {
         let module_name = ModuleName::from_str(name);
-        self.0
-            .insert(module_name, (default_path(module_name), Err(())));
+        self.0.insert(module_name, (path, None));
     }
 
     pub fn to_state(self) -> State {
@@ -129,17 +128,11 @@ impl Loader for TestEnv {
     ) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
         let style = ErrorStyle::Immediate;
         if let Some((path, contents)) = self.0.get(&name) {
-            match contents {
-                Ok(contents) => {
-                    // TODO(grievejia): Properly model paths for in-memory sources
-                    Ok((
-                        ModulePath::filesystem(path.to_owned()),
-                        Some(Arc::new(contents.to_owned())),
-                        style,
-                    ))
-                }
-                Err(_) => Ok((ModulePath::not_found(name), None, style)),
-            }
+            Ok((
+                ModulePath::filesystem(path.clone()),
+                contents.as_ref().map(|x| Arc::new(x.clone())),
+                style,
+            ))
         } else if let Some(contents) = lookup_test_stdlib(name) {
             Ok((
                 ModulePath::filesystem(default_path(name)),
