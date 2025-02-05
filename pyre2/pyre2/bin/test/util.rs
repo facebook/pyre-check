@@ -76,7 +76,7 @@ fn default_path(name: ModuleName) -> PathBuf {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct TestEnv(SmallMap<ModuleName, (PathBuf, Result<String, String>)>);
+pub struct TestEnv(SmallMap<ModuleName, (PathBuf, Result<String, ()>)>);
 
 impl TestEnv {
     pub fn new() -> Self {
@@ -109,12 +109,10 @@ impl TestEnv {
         res
     }
 
-    pub fn add_error(&mut self, name: &str, err: &str) {
+    pub fn add_error(&mut self, name: &str) {
         let module_name = ModuleName::from_str(name);
-        self.0.insert(
-            module_name,
-            (default_path(module_name), Err(err.to_owned())),
-        );
+        self.0
+            .insert(module_name, (default_path(module_name), Err(())));
     }
 
     pub fn to_state(self) -> State {
@@ -136,10 +134,9 @@ impl Loader for TestEnv {
                         Arc::new(contents.to_owned()),
                     )
                 }
-                Err(err) => LoadResult::FailedToLoad(
-                    ModulePath::filesystem(path.to_owned()),
-                    anyhow!(err.to_owned()),
-                ),
+                Err(_) => {
+                    LoadResult::FailedToLoad(ModulePath::not_found(name), anyhow!("".to_owned()))
+                }
             }
         } else if let Some(contents) = lookup_test_stdlib(name) {
             LoadResult::Loaded(
