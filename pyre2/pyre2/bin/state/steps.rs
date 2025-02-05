@@ -19,13 +19,16 @@ use crate::alt::answers::Solutions;
 use crate::binding::bindings::Bindings;
 use crate::config::Config;
 use crate::error::collector::ErrorCollector;
+use crate::error::style::ErrorStyle;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModulePath;
 use crate::state::info::Info;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
+use crate::util::fs_anyhow;
 use crate::util::uniques::UniqueFactory;
 
 pub struct Context<'a, Lookup> {
@@ -147,11 +150,49 @@ impl Step {
     }
 
     fn load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
-        let (load_result, error_style) = ctx.loader.load(ctx.name);
-        let components = load_result.components(ctx.name);
-        let module_info = ModuleInfo::new(ctx.name, components.path, components.code);
+        let mut path = ModulePath::not_found(ctx.name);
+        let mut code = Arc::new("".to_owned());
+        let mut error_style = ErrorStyle::Never;
+        let mut import_error = None;
+        let mut self_error = None;
+
+        match ctx.loader.load(ctx.name) {
+            Err(err) => {
+                import_error = Some(Arc::new(format!(
+                    "Could not find import of `{}`, {err:#}",
+                    ctx.name
+                )));
+            }
+            Ok((p, c, s)) => {
+                path = p;
+                error_style = s;
+                match c {
+                    Some(c) => code = c,
+                    None => match path.as_filesystem_path() {
+                        Some(path) => match fs_anyhow::read_to_string(path) {
+                            Ok(c) => code = Arc::new(c),
+                            Err(err) => {
+                                self_error = Some(Arc::new(format!(
+                                    "Could not read `{}` at path `{}`, {err:#}",
+                                    ctx.name,
+                                    path.display()
+                                )));
+                            }
+                        },
+                        None => {
+                            self_error = Some(Arc::new(format!(
+                                "Could not read `{}` at path `{path}`, not a real path",
+                                ctx.name
+                            )));
+                        }
+                    },
+                }
+            }
+        }
+
+        let module_info = ModuleInfo::new(ctx.name, path, code);
         let errors = ErrorCollector::new(error_style);
-        if let Some(err) = components.self_error {
+        if let Some(err) = self_error {
             errors.add(
                 &module_info,
                 TextRange::default(),
@@ -162,9 +203,6 @@ impl Step {
                 ),
             );
         }
-        let import_error = components
-            .import_error
-            .map(|e| Arc::new(format!("Could not find import of `{}`, {e:#}", ctx.name)));
 
         Arc::new(Load {
             errors,

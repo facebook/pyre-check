@@ -69,7 +69,6 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
-use crate::state::loader::LoadResult;
 use crate::state::loader::Loader;
 use crate::state::state::State;
 use crate::util::prelude::VecExt;
@@ -140,11 +139,8 @@ impl Args {
 
 struct DummyLoader {}
 impl Loader for DummyLoader {
-    fn load(&self, _: ModuleName) -> (LoadResult, ErrorStyle) {
-        (
-            LoadResult::FailedToFind(anyhow!("Failed during init")),
-            ErrorStyle::Never,
-        )
+    fn load(&self, _: ModuleName) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
+        Err(anyhow!("Failed during init"))
     }
 }
 
@@ -156,25 +152,23 @@ struct LspLoader {
 }
 
 impl Loader for LspLoader {
-    fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
+    fn load(
+        &self,
+        name: ModuleName,
+    ) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
         if let Some(path) = self.open_modules.get(&name) {
-            (
-                LoadResult::Loaded(
-                    // TODO(grievejia): Properly model paths for in-memory sources
-                    ModulePath::filesystem((*path).clone()),
-                    self.open_files.get(path).unwrap().1.dupe(),
-                ),
+            Ok((
+                // TODO(grievejia): Properly model paths for in-memory sources
+                ModulePath::filesystem((*path).clone()),
+                Some(self.open_files.get(path).unwrap().1.dupe()),
                 ErrorStyle::Delayed,
-            )
+            ))
         } else if let Some(path) = find_module(name, &self.search_roots) {
-            (LoadResult::from_path(path), ErrorStyle::Never)
+            Ok((ModulePath::filesystem(path), None, ErrorStyle::Never))
         } else if let Some((path, content)) = self.typeshed.find(name) {
-            (LoadResult::Loaded(path, content), ErrorStyle::Never)
+            Ok((path, Some(content), ErrorStyle::Never))
         } else {
-            (
-                LoadResult::FailedToFind(anyhow!("Could not find path for `{name}`")),
-                ErrorStyle::Never,
-            )
+            Err(anyhow!("Could not find path for `{name}`"))
         }
     }
 }

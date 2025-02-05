@@ -12,6 +12,7 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -32,8 +33,8 @@ use crate::error::style::ErrorStyle;
 use crate::module::finder::find_module;
 use crate::module::finder::BundledTypeshed;
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModulePath;
 use crate::report;
-use crate::state::loader::LoadResult;
 use crate::state::loader::Loader;
 use crate::state::state::State;
 use crate::util::display::number_thousands;
@@ -89,24 +90,29 @@ struct CheckLoader {
 }
 
 impl Loader for CheckLoader {
-    fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
+    fn load(
+        &self,
+        name: ModuleName,
+    ) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
         match self.sources.get(&name) {
-            Some(path) => (
-                LoadResult::from_path((*path).clone()),
+            Some(path) => Ok((
+                ModulePath::filesystem(path.clone()),
+                None,
                 self.error_style_for_sources,
-            ),
-            None => {
-                let load_result = match find_module(name, &self.search_roots) {
-                    Some(path) => LoadResult::from_path(path),
-                    None => match self.typeshed.find(name) {
-                        Some((path, content)) => LoadResult::Loaded(path, content),
-                        None => LoadResult::FailedToFind(anyhow::anyhow!(
-                            "Could not find path for `{name}`"
-                        )),
-                    },
-                };
-                (load_result, self.error_style_for_dependencies)
-            }
+            )),
+            None => match find_module(name, &self.search_roots) {
+                Some(path) => Ok((
+                    ModulePath::filesystem(path),
+                    None,
+                    self.error_style_for_dependencies,
+                )),
+                None => match self.typeshed.find(name) {
+                    Some((path, content)) => {
+                        Ok((path, Some(content), self.error_style_for_dependencies))
+                    }
+                    None => Err(anyhow::anyhow!("Could not find path for `{name}`")),
+                },
+            },
         }
     }
 }

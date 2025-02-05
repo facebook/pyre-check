@@ -9,6 +9,7 @@ use std::cmp::Ordering;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use anyhow::anyhow;
 use anyhow::Context as _;
@@ -18,7 +19,7 @@ use vec1::Vec1;
 
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
-use crate::state::loader::LoadResult;
+use crate::module::module_path::ModulePath;
 use crate::state::loader::Loader;
 use crate::util::fs_anyhow;
 
@@ -156,14 +157,18 @@ impl BuckSourceDatabase {
 }
 
 impl Loader for BuckSourceDatabase {
-    fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
+    fn load(
+        &self,
+        name: ModuleName,
+    ) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
         match self.lookup(name) {
-            LookupResult::OwningSource(path) => (LoadResult::from_path(path), ErrorStyle::Delayed),
-            LookupResult::ExternalSource(path) => (LoadResult::from_path(path), ErrorStyle::Never),
-            LookupResult::NoSource => (
-                LoadResult::FailedToFind(anyhow!("Not a dependency or typeshed")),
-                ErrorStyle::Never,
-            ),
+            LookupResult::OwningSource(path) => {
+                Ok((ModulePath::filesystem(path), None, ErrorStyle::Delayed))
+            }
+            LookupResult::ExternalSource(path) => {
+                Ok((ModulePath::filesystem(path), None, ErrorStyle::Never))
+            }
+            LookupResult::NoSource => Err(anyhow!("Not a dependency or typeshed")),
         }
     }
 }

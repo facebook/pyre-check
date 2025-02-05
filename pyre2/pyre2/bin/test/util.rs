@@ -21,7 +21,6 @@ use crate::config::Config;
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
-use crate::state::loader::LoadResult;
 use crate::state::loader::Loader;
 use crate::state::state::State;
 use crate::test::stdlib::lookup_test_stdlib;
@@ -124,29 +123,32 @@ impl TestEnv {
 }
 
 impl Loader for TestEnv {
-    fn load(&self, name: ModuleName) -> (LoadResult, ErrorStyle) {
-        let loaded = if let Some((path, contents)) = self.0.get(&name) {
+    fn load(
+        &self,
+        name: ModuleName,
+    ) -> anyhow::Result<(ModulePath, Option<Arc<String>>, ErrorStyle)> {
+        let style = ErrorStyle::Immediate;
+        if let Some((path, contents)) = self.0.get(&name) {
             match contents {
                 Ok(contents) => {
                     // TODO(grievejia): Properly model paths for in-memory sources
-                    LoadResult::Loaded(
+                    Ok((
                         ModulePath::filesystem(path.to_owned()),
-                        Arc::new(contents.to_owned()),
-                    )
+                        Some(Arc::new(contents.to_owned())),
+                        style,
+                    ))
                 }
-                Err(_) => {
-                    LoadResult::FailedToLoad(ModulePath::not_found(name), anyhow!("".to_owned()))
-                }
+                Err(_) => Ok((ModulePath::not_found(name), None, style)),
             }
         } else if let Some(contents) = lookup_test_stdlib(name) {
-            LoadResult::Loaded(
+            Ok((
                 ModulePath::filesystem(default_path(name)),
-                Arc::new(contents.to_owned()),
-            )
+                Some(Arc::new(contents.to_owned())),
+                style,
+            ))
         } else {
-            LoadResult::FailedToFind(anyhow!("Module not given in test suite"))
-        };
-        (loaded, ErrorStyle::Immediate)
+            Err(anyhow!("Module not given in test suite"))
+        }
     }
 }
 
