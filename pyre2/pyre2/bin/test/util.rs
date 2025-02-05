@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Once;
@@ -13,7 +14,6 @@ use std::time::Duration;
 use std::time::Instant;
 
 use anyhow::anyhow;
-use itertools::Either;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 
@@ -124,33 +124,33 @@ impl TestEnv {
 }
 
 impl Loader for TestEnv {
-    fn load(
-        &self,
-        name: ModuleName,
-    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
+    fn find(&self, name: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
         let style = ErrorStyle::Immediate;
         if let Some((path, contents)) = self.0.get(&name) {
             match contents {
-                None => Ok((
-                    ModulePath::filesystem(path.clone()),
-                    Either::Right(path.clone()),
-                    style,
-                )),
-                Some(contents) => Ok((
-                    ModulePath::memory(path.clone()),
-                    Either::Left(Arc::new(contents.to_owned())),
-                    style,
-                )),
+                None => Ok((ModulePath::filesystem(path.clone()), style)),
+                Some(_) => Ok((ModulePath::memory(path.clone()), style)),
             }
-        } else if let Some(contents) = lookup_test_stdlib(name) {
-            Ok((
-                ModulePath::memory(default_path(name)),
-                Either::Left(Arc::new(contents.to_owned())),
-                style,
-            ))
+        } else if lookup_test_stdlib(name).is_some() {
+            Ok((ModulePath::memory(default_path(name)), style))
         } else {
             Err(anyhow!("Module not given in test suite"))
         }
+    }
+
+    fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
+        // This function involves scanning all paths to find what matches.
+        // Not super efficient, but fine for tests, and we don't have many modules.
+        for (p, contents) in self.0.values() {
+            if p == path
+                && let Some(c) = contents
+            {
+                return Some(Arc::new(c.clone()));
+            }
+        }
+        Some(Arc::new(
+            lookup_test_stdlib(ModuleName::from_str(path.file_stem()?.to_str()?))?.to_owned(),
+        ))
     }
 }
 

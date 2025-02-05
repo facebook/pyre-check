@@ -9,11 +9,9 @@ use std::cmp::Ordering;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use anyhow::anyhow;
 use anyhow::Context as _;
-use itertools::Either;
 use starlark_map::small_map::SmallMap;
 use tracing::debug;
 use vec1::Vec1;
@@ -158,21 +156,14 @@ impl BuckSourceDatabase {
 }
 
 impl Loader for BuckSourceDatabase {
-    fn load(
-        &self,
-        name: ModuleName,
-    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
+    fn find(&self, name: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
         match self.lookup(name) {
-            LookupResult::OwningSource(path) => Ok((
-                ModulePath::filesystem(path.clone()),
-                Either::Right(path),
-                ErrorStyle::Delayed,
-            )),
-            LookupResult::ExternalSource(path) => Ok((
-                ModulePath::filesystem(path.clone()),
-                Either::Right(path),
-                ErrorStyle::Never,
-            )),
+            LookupResult::OwningSource(path) => {
+                Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Delayed))
+            }
+            LookupResult::ExternalSource(path) => {
+                Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Never))
+            }
             LookupResult::NoSource => Err(anyhow!("Not a dependency or typeshed")),
         }
     }

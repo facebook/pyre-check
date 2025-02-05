@@ -12,7 +12,6 @@ use std::sync::LazyLock;
 
 use anyhow::anyhow;
 use anyhow::Context as _;
-use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
 use tar::Archive;
 use zstd::stream::read::Decoder;
@@ -23,14 +22,9 @@ use crate::module::module_path::ModulePath;
 const BUNDLED_TYPESHED_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/typeshed.tar.zst"));
 
 #[derive(Debug, Clone)]
-struct BundledTypeshedEntry {
-    relative_path: PathBuf,
-    content: Arc<String>,
-}
-
-#[derive(Debug, Clone)]
 pub struct BundledTypeshed {
-    index: SmallMap<ModuleName, BundledTypeshedEntry>,
+    find: SmallMap<ModuleName, PathBuf>,
+    load: SmallMap<PathBuf, Arc<String>>,
 }
 
 impl BundledTypeshed {
@@ -66,24 +60,26 @@ impl BundledTypeshed {
 
     fn new() -> anyhow::Result<Self> {
         let content = Self::unpack()?;
-        let mut index = SmallMap::new();
+        let mut res = Self {
+            find: SmallMap::new(),
+            load: SmallMap::new(),
+        };
         for (relative_path, content) in content {
             let module_name = ModuleName::from_relative_path(&relative_path)?;
-            index.insert(
-                module_name,
-                BundledTypeshedEntry {
-                    relative_path,
-                    content: Arc::new(content),
-                },
-            );
+            res.find.insert(module_name, relative_path.clone());
+            res.load.insert(relative_path, Arc::new(content));
         }
-        Ok(Self { index })
+        Ok(res)
     }
 
-    pub fn find(&self, name: ModuleName) -> Option<(ModulePath, Arc<String>)> {
-        let entry = self.index.get(&name)?;
-        let fake_path = ModulePath::bundled_typeshed(entry.relative_path.clone());
-        Some((fake_path, entry.content.dupe()))
+    pub fn find(&self, name: ModuleName) -> Option<ModulePath> {
+        self.find
+            .get(&name)
+            .map(|path| ModulePath::bundled_typeshed(path.clone()))
+    }
+
+    pub fn load(&self, path: &PathBuf) -> Option<Arc<String>> {
+        self.load.get(path).cloned()
     }
 }
 

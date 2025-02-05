@@ -7,9 +7,9 @@
 
 use std::sync::Arc;
 
+use anyhow::anyhow;
 use dupe::Dupe;
 use enum_iterator::Sequence;
-use itertools::Either;
 use parse_display::Display;
 use ruff_python_ast::ModModule;
 use ruff_text_size::TextRange;
@@ -23,9 +23,11 @@ use crate::error::collector::ErrorCollector;
 use crate::error::style::ErrorStyle;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
+use crate::module::bundled::typeshed;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
+use crate::module::module_path::ModulePathDetails;
 use crate::state::info::Info;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
@@ -157,28 +159,36 @@ impl Step {
         let mut import_error = None;
         let mut self_error = None;
 
-        match ctx.loader.load(ctx.name) {
+        match ctx.loader.find(ctx.name) {
             Err(err) => {
                 import_error = Some(Arc::new(format!(
                     "Could not find import of `{}`, {err:#}",
                     ctx.name
                 )));
             }
-            Ok((p, c, s)) => {
+            Ok((p, s)) => {
                 path = p;
                 error_style = s;
-                match c {
-                    Either::Left(c) => code = c,
-                    Either::Right(path) => match fs_anyhow::read_to_string(&path) {
-                        Ok(c) => code = Arc::new(c),
-                        Err(err) => {
-                            self_error = Some(Arc::new(format!(
-                                "Could not read `{}` at path `{}`, {err:#}",
-                                ctx.name,
-                                path.display()
-                            )));
-                        }
-                    },
+                let res = match path.details() {
+                    ModulePathDetails::FileSystem(path) => {
+                        fs_anyhow::read_to_string(path).map(Arc::new)
+                    }
+                    ModulePathDetails::Memory(path) => ctx
+                        .loader
+                        .load_from_memory(path)
+                        .ok_or_else(|| anyhow!("memory path not found")),
+                    ModulePathDetails::BundledTypeshed(path) => typeshed().and_then(|x| {
+                        x.load(path)
+                            .ok_or_else(|| anyhow!("bundled typeshed problem"))
+                    }),
+                    ModulePathDetails::NotFound(_) => Err(anyhow!("module was not found")),
+                };
+                match res {
+                    Err(err) => {
+                        self_error =
+                            Some(err.context(format!("When loading `{}` from `{path}`", ctx.name)))
+                    }
+                    Ok(res) => code = res,
                 }
             }
         }

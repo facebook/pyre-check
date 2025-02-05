@@ -6,11 +6,10 @@
  */
 
 use std::fmt::Debug;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 
 use dupe::Dupe;
-use itertools::Either;
 
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
@@ -20,25 +19,26 @@ use crate::util::arc_id::ArcId;
 /// A function that loads a module, given the `ModuleName`.
 pub trait Loader: Sync + Debug {
     /// Return `Err` to indicate the module could not be found.
-    /// The remaining components are the `ModulePath` where the module was found,
-    /// the file contents, and the `ErrorStyle` to use when reporting errors.
-    /// If the contents are `Left`, we use that string, otherwise the file will be read from disk.
-    /// It is an error to return a non-disk path and `None` for the contents.
-    fn load(
-        &self,
-        name: ModuleName,
-    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)>;
+    fn find(&self, name: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)>;
+
+    /// Load a file from memory, if you can find it. Only called if `find` returns
+    /// a `ModulePath::memory`.
+    fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
+        let _path = path;
+        None
+    }
 }
 
 #[derive(Clone, Dupe, Debug, Hash, PartialEq, Eq)]
 pub struct LoaderId(ArcId<dyn Loader + Send>);
 
 impl Loader for LoaderId {
-    fn load(
-        &self,
-        name: ModuleName,
-    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
-        self.0.load(name)
+    fn find(&self, name: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
+        self.0.find(name)
+    }
+
+    fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
+        self.0.load_from_memory(path)
     }
 }
 

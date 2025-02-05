@@ -12,14 +12,12 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
 use anyhow::Context as _;
 use clap::Parser;
 use clap::ValueEnum;
-use itertools::Either;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use tracing::info;
@@ -92,28 +90,19 @@ struct CheckLoader {
 }
 
 impl Loader for CheckLoader {
-    fn load(
-        &self,
-        name: ModuleName,
-    ) -> anyhow::Result<(ModulePath, Either<Arc<String>, PathBuf>, ErrorStyle)> {
+    fn find(&self, name: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
         if let Some(path) = self.sources.get(&name) {
             Ok((
                 ModulePath::filesystem(path.clone()),
-                Either::Right(path.clone()),
                 self.error_style_for_sources,
             ))
         } else if let Some(path) = find_module(name, &self.search_roots) {
             Ok((
-                ModulePath::filesystem(path.clone()),
-                Either::Right(path),
+                ModulePath::filesystem(path),
                 self.error_style_for_dependencies,
             ))
-        } else if let Some((path, content)) = typeshed()?.find(name) {
-            Ok((
-                path,
-                Either::Left(content),
-                self.error_style_for_dependencies,
-            ))
+        } else if let Some(path) = typeshed()?.find(name) {
+            Ok((path, self.error_style_for_dependencies))
         } else {
             Err(anyhow::anyhow!("Could not find path for `{name}`"))
         }
