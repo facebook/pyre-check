@@ -1157,6 +1157,7 @@ let check_arguments_against_parameters
         let has_default =
           match parameter with
           | Named { default; _ } -> default
+          | KeywordOnly { default; _ } -> default
           | _ -> false
         in
         let rec check ~arguments signature_match =

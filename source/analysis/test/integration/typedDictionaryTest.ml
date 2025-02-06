@@ -2587,6 +2587,19 @@ kwargs: Movie = {"name": "Life of Brian"}
 foo(**kwargs)
             |}
            [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors_inject_typing_and_typing_extensions
+           {|
+from typing import TypedDict
+from typing_extensions import Unpack
+class Movie(TypedDict, total=False):
+    name: str
+def foo(*, name: str = "") -> None:
+  pass
+kwargs: Movie = {"name": "Life of Brian"}
+foo(**kwargs)
+            |}
+           [];
       (* https://typing.readthedocs.io/en/latest/spec/callables.html#source-and-destination-contain-kwargs *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors_inject_typing_and_typing_extensions
