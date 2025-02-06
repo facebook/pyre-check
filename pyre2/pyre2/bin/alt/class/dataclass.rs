@@ -85,22 +85,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }).collect()
     }
 
-    /// Gets a dataclass field as a function param.
-    fn get_dataclass_param(&self, name: &Name, field: ClassField, kw_only: bool) -> Param {
-        let ClassField(ClassFieldInner::Simple {
-            ty, initialization, ..
-        }) = field;
-        let required = match initialization {
-            ClassFieldInitialization::Class => Required::Required,
-            ClassFieldInitialization::Instance => Required::Optional,
-        };
-        if kw_only {
-            Param::KwOnly(name.clone(), ty, required)
-        } else {
-            Param::Pos(name.clone(), ty, required)
-        }
-    }
-
     /// Gets __init__ method for an `@dataclass`-decorated class.
     fn get_dataclass_init(
         &self,
@@ -114,7 +98,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Required::Required,
         )];
         for (name, field, field_kw_only) in self.iter_fields(cls, fields) {
-            params.push(self.get_dataclass_param(&name, field, kw_only || field_kw_only));
+            params.push(field.as_param(&name, kw_only || field_kw_only));
         }
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), Type::None)),

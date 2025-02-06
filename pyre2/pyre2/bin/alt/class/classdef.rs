@@ -36,6 +36,8 @@ use crate::dunder;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
+use crate::types::callable::Param;
+use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassType;
@@ -129,6 +131,21 @@ impl ClassField {
                 readonly: *readonly,
                 is_enum_member: *is_enum_member,
             }),
+        }
+    }
+
+    pub fn as_param(self, name: &Name, kw_only: bool) -> Param {
+        let ClassField(ClassFieldInner::Simple {
+            ty, initialization, ..
+        }) = self;
+        let required = match initialization {
+            ClassFieldInitialization::Class => Required::Required,
+            ClassFieldInitialization::Instance => Required::Optional,
+        };
+        if kw_only {
+            Param::KwOnly(name.clone(), ty, required)
+        } else {
+            Param::Pos(name.clone(), ty, required)
         }
     }
 
