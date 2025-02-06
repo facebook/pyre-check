@@ -112,13 +112,14 @@ class RequestHandler(BaseHTTPRequestHandler):
             data = json.loads(body.decode("utf-8"))
             code = data["code"]
 
+            # lint-ignore: NoUnsafeFilesystemRule
             with open(os.path.join(self.tmp_dir, "sandbox.py"), "w") as f:
                 f.write(code)
 
             result: Optional[subprocess.CompletedProcess[str]] = None
 
             if build_system == "cargo":
-                # Run the cargo command
+                # lint-ignore: NoUnsafeExecRule
                 result = subprocess.run(
                     [
                         "cargo",
@@ -134,6 +135,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                     cwd="pyre2",
                 )
             elif build_system == "buck":
+                # lint-ignore: NoUnsafeExecRule
                 result = subprocess.run(
                     [
                         "buck2",
@@ -159,6 +161,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(html_output.encode("utf-8"))
                 else:
+                    # lint-ignore: NoUnsafeFilesystemRule
                     with open(os.path.join(self.tmp_dir, "output"), "r") as f:
                         output = f.read()
 
