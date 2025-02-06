@@ -8,6 +8,7 @@
 use std::sync::Arc;
 
 use ruff_python_ast::name::Name;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
@@ -15,6 +16,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::class::classdef::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassMetadata;
+use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::dunder;
 use crate::types::callable::Callable;
@@ -49,16 +51,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         all_fields
     }
 
-    pub fn get_dataclass_synthesized_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
+    pub fn get_dataclass_synthesized_fields(&self, cls: &Class) -> Option<ClassSynthesizedFields> {
         let metadata = self.get_metadata_for_class(cls);
         let dataclass = metadata.dataclass_metadata()?;
-        if *name == dunder::INIT && dataclass.kws.init {
-            Some(self.get_dataclass_init(cls, &dataclass.fields, dataclass.kws.kw_only))
-        } else if *name == dunder::MATCH_ARGS && dataclass.kws.match_args {
-            Some(self.get_dataclass_match_args(cls, &dataclass.fields, dataclass.kws.kw_only))
-        } else {
-            None
+        let mut fields = SmallMap::new();
+        if dataclass.kws.init {
+            fields.insert(
+                dunder::INIT,
+                self.get_dataclass_init(cls, &dataclass.fields, dataclass.kws.kw_only),
+            );
         }
+        if dataclass.kws.match_args {
+            fields.insert(
+                dunder::MATCH_ARGS,
+                self.get_dataclass_match_args(cls, &dataclass.fields, dataclass.kws.kw_only),
+            );
+        }
+        Some(ClassSynthesizedFields::new(fields))
     }
 
     fn iter_fields(&self, cls: &Class, fields: &SmallSet<Name>) -> Vec<(Name, ClassField, bool)> {

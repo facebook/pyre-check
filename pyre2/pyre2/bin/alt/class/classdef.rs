@@ -30,6 +30,7 @@ use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
+use crate::binding::binding::KeyClassSynthesizedFields;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::dunder;
 use crate::graph::index::Idx;
@@ -49,10 +50,10 @@ use crate::util::prelude::SliceExt;
 /// Raw information about an attribute declared somewhere in a class. We need to
 /// know whether it is initialized in the class body in order to determine
 /// both visibility rules and whether method binding should be performed.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClassField(pub ClassFieldInner);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClassFieldInner {
     Simple {
         ty: Type,
@@ -566,7 +567,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
             Some((*field).clone())
         } else {
-            self.get_synthesized_field(cls, name)
+            let synthesized_fields = self.get_from_class(
+                cls,
+                &KeyClassSynthesizedFields(ShortIdentifier::new(cls.name())),
+            );
+            synthesized_fields.get(name).cloned()
         }
     }
 

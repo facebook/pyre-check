@@ -218,9 +218,11 @@ impl SolveRecursive for KeyClassField {
 impl SolveRecursive for KeyClassSynthesizedFields {
     type Recursive = ();
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
-        ClassSynthesizedFields
+        ClassSynthesizedFields::default()
     }
-    fn visit_type_mut(_v: &mut ClassSynthesizedFields, _f: &mut dyn FnMut(&mut Type)) {}
+    fn visit_type_mut(v: &mut ClassSynthesizedFields, f: &mut dyn FnMut(&mut Type)) {
+        v.visit_type_mut(f)
+    }
 }
 impl SolveRecursive for KeyAnnotation {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {

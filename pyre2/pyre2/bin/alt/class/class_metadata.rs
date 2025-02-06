@@ -19,7 +19,6 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::class::classdef::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::DataclassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
@@ -207,10 +206,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             dataclass_metadata,
             self.errors(),
         )
-    }
-
-    pub fn get_synthesized_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
-        self.get_dataclass_synthesized_field(cls, name)
     }
 
     /// This helper deals with special cases where we want to intercept an `Expr`

@@ -603,9 +603,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn solve_class_synthesized_fields(
         &self,
-        _fields: &BindingClassSynthesizedFields,
+        fields: &BindingClassSynthesizedFields,
     ) -> Arc<ClassSynthesizedFields> {
-        Arc::new(ClassSynthesizedFields)
+        let cls = self.get_idx_class_def(fields.0).unwrap();
+        if let Some(fields) = self.get_dataclass_synthesized_fields(&cls) {
+            Arc::new(fields)
+        } else {
+            Arc::new(ClassSynthesizedFields::default())
+        }
     }
 
     fn solve_binding_inner(&self, binding: &Binding) -> Type {

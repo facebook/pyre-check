@@ -12,11 +12,13 @@ use std::iter;
 use std::sync::Arc;
 
 use ruff_python_ast::name::Name;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::class::classdef::ClassField;
 use crate::error::collector::ErrorCollector;
 use crate::types::callable::DataclassKeywords;
 use crate::types::class::Class;
@@ -139,11 +141,34 @@ impl ClassMetadata {
 
 /// A class's synthesized fields, such as a dataclass's `__init__` method.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct ClassSynthesizedFields;
+pub struct ClassSynthesizedFields(SmallMap<Name, ClassField>);
+
+impl ClassSynthesizedFields {
+    pub fn new(fields: SmallMap<Name, ClassField>) -> Self {
+        Self(fields)
+    }
+
+    pub fn get(&self, name: &Name) -> Option<&ClassField> {
+        self.0.get(name)
+    }
+
+    pub fn visit_type_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        for field in self.0.values_mut() {
+            field.visit_type_mut(f);
+        }
+    }
+}
 
 impl Display for ClassSynthesizedFields {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "ClassSynthesizedFields")
+        write!(
+            f,
+            "ClassSynthesizedFields {{ {} }}",
+            commas_iter(|| self
+                .0
+                .iter()
+                .map(|(name, field)| format!("{name} => {field}")))
+        )
     }
 }
 
