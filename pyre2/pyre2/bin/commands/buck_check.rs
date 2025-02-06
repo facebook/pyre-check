@@ -40,7 +40,7 @@ pub struct Args {
     common: CommonArgs,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 struct InputFile {
     dependencies: Vec<PathBuf>,
     py_version: String,

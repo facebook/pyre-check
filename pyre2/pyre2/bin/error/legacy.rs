@@ -14,7 +14,7 @@ use crate::util::prelude::SliceExt;
 /// <https://www.internalfb.com/code/fbsource/fbcode/tools/pyre/facebook/arc/lib/error.rs>
 ///
 /// Used to serialize errors in a Pyre1-compatible format.
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Eq)]
 pub struct LegacyError {
     line: usize,
     column: usize,
@@ -45,7 +45,7 @@ impl LegacyError {
     }
 }
 
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Eq)]
 pub struct LegacyErrors {
     pub errors: Vec<LegacyError>,
 }

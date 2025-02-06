@@ -22,20 +22,20 @@ use crate::module::module_path::ModulePath;
 use crate::state::loader::Loader;
 use crate::util::fs_anyhow;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 struct ManifestItem {
     module_name: ModuleName,
     relative_path: PathBuf,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct BuckSourceDatabase {
     sources: SmallMap<ModuleName, Vec1<PathBuf>>,
     dependencies: SmallMap<ModuleName, Vec1<PathBuf>>,
 }
 
 /// Return type from `BuckSourceDatabase::lookup`
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 enum LookupResult {
     /// Source file of this module is owned by the current target.
     /// Type errors in the file should be reported to user.

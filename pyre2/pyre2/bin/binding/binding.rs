@@ -817,7 +817,7 @@ impl DisplayWith<Bindings> for BindingAnnotation {
 /// Correctly analyzing which attributes are visible on class objects, as well
 /// as handling method binding correctly, requires distinguishing which fields
 /// are assigned values in the class body.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ClassFieldInitialization {
     Class,
     Instance,
