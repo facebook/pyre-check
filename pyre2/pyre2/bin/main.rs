@@ -20,6 +20,7 @@
 #![deny(clippy::str_to_string)]
 #![deny(clippy::string_to_string)]
 #![deny(clippy::trivially_copy_pass_by_ref)]
+#![deny(clippy::derive_partial_eq_without_eq)]
 #![feature(box_patterns)]
 #![feature(let_chains)]
 #![feature(if_let_guard)]
