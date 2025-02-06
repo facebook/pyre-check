@@ -103,7 +103,8 @@ impl<T> ArcId<T> {
 
 impl<T: ?Sized> ArcId<T> {
     // We can convert an `impl` into a `dyn` with `Arc::new`, but not `ArcId::new`.
-    // I don't really understand why, but this is a workaround.
+    // Reason is we don't implemented `UnsizedCoerce` (which is unstable), but using
+    // `from_arc` is a simple workaround.
     pub fn from_arc(x: Arc<T>) -> Self {
         Self(x)
     }
