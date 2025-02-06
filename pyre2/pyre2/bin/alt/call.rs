@@ -20,6 +20,7 @@ use crate::types::callable::CallableKind;
 use crate::types::callable::DataclassKeywords;
 use crate::types::callable::Params;
 use crate::types::class::ClassType;
+use crate::types::typed_dict::TypedDict;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 use crate::types::types::Var;
@@ -43,6 +44,8 @@ pub enum CallTarget {
     BoundMethod(Type, Callable),
     /// A class object.
     Class(ClassType),
+    /// A TypedDict.
+    TypedDict(TypedDict),
 }
 
 impl CallTarget {
@@ -105,7 +108,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .and_then(|attr| self.resolve_as_instance_method(attr))
                 .and_then(|ty| self.as_call_target(ty)),
             Type::Type(box Type::TypedDict(typed_dict)) => {
-                Some((Vec::new(), CallTarget::Callable(typed_dict.as_callable())))
+                Some((Vec::new(), CallTarget::TypedDict(*typed_dict)))
             }
             _ => None,
         }
@@ -203,7 +206,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ))
     }
 
-    fn construct(
+    fn construct_class(
         &self,
         cls: ClassType,
         args: &[CallArg],
@@ -252,6 +255,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         cls.self_type()
     }
 
+    fn construct_typed_dict(
+        &self,
+        typed_dict: TypedDict,
+        args: &[CallArg],
+        keywords: &[Keyword],
+        range: TextRange,
+    ) -> Type {
+        self.call_infer(
+            (Vec::new(), CallTarget::Callable(typed_dict.as_callable())),
+            args,
+            keywords,
+            range,
+        )
+    }
+
     pub fn call_infer(
         &self,
         call_target: (Vec<Var>, CallTarget),
@@ -261,7 +279,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         let is_dataclass = matches!(call_target.1, CallTarget::Dataclass(_));
         let res = match call_target.1 {
-            CallTarget::Class(cls) => self.construct(cls, args, keywords, range),
+            CallTarget::Class(cls) => self.construct_class(cls, args, keywords, range),
+            CallTarget::TypedDict(td) => self.construct_typed_dict(td, args, keywords, range),
             CallTarget::BoundMethod(obj, c) => {
                 let first_arg = CallArg::Type(&obj, range);
                 self.callable_infer(c, Some(first_arg), args, keywords, range)
