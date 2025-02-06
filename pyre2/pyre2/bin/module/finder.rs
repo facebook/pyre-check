@@ -8,6 +8,7 @@
 use std::path::PathBuf;
 
 use ruff_python_ast::name::Name;
+use vec1::Vec1;
 
 use crate::module::module_name::ModuleName;
 
@@ -17,25 +18,39 @@ enum FindResult {
     /// Found a regular package. First path must point to an __init__ file.
     /// Second path indicates where to continue search next. It should always point to the parent of the __init__ file.
     RegularPackage(PathBuf, PathBuf),
+    /// Found a namespace package.
+    /// The path component indicates where to continue search next. It may contain more than one directories as the namespace package
+    /// may span across multiple search roots.
+    NamespacePackage(Vec1<PathBuf>),
 }
 
 fn find_one_part(name: &Name, roots: &[PathBuf]) -> Option<FindResult> {
+    let mut namespace_roots = Vec::new();
     for root in roots {
+        let candidate_dir = root.join(name.as_str());
+        // First check if `name` corresponds to a regular package.
         for candidate_init_suffix in ["__init__.pyi", "__init__.py"] {
-            let candidate_dir = root.join(name.as_str());
             let init_path = candidate_dir.join(candidate_init_suffix);
             if init_path.exists() {
                 return Some(FindResult::RegularPackage(init_path, candidate_dir));
             }
         }
+        // Second check if `name` corresponds to a single-file module.
         for candidate_file_suffix in ["pyi", "py"] {
             let candidate_path = root.join(format!("{name}.{candidate_file_suffix}"));
             if candidate_path.exists() {
                 return Some(FindResult::SingleFileModule(candidate_path));
             }
         }
+        // Finally check if `name` corresponds to a namespace package.
+        if candidate_dir.is_dir() {
+            namespace_roots.push(candidate_dir);
+        }
     }
-    None
+    match Vec1::try_from_vec(namespace_roots) {
+        Err(_) => None,
+        Ok(namespace_roots) => Some(FindResult::NamespacePackage(namespace_roots)),
+    }
 }
 
 pub fn find_module(module: ModuleName, include: &[PathBuf]) -> Option<PathBuf> {
@@ -58,10 +73,17 @@ pub fn find_module(module: ModuleName, include: &[PathBuf]) -> Option<PathBuf> {
             Some(FindResult::RegularPackage(_, next_root)) => {
                 current_result = find_one_part(part, &[next_root]);
             }
+            Some(FindResult::NamespacePackage(next_roots)) => {
+                current_result = find_one_part(part, &next_roots);
+            }
         }
     }
     current_result.map(|x| match x {
         FindResult::SingleFileModule(path) | FindResult::RegularPackage(path, _) => path,
+        FindResult::NamespacePackage(roots) => {
+            // TODO(grievejia): Preserving all info in the list instead of dropping all but the first one.
+            roots.first().clone()
+        }
     })
 }
 
@@ -208,6 +230,37 @@ mod tests {
     }
 
     #[test]
+    fn test_basic_namespace_package() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let root = tempdir.path();
+        setup_test_directory(
+            root,
+            vec![
+                TestPath::dir("a", vec![]),
+                TestPath::dir("b", vec![TestPath::dir("c", vec![])]),
+                TestPath::dir("c", vec![TestPath::dir("d", vec![TestPath::file("e.py")])]),
+            ],
+        );
+        let search_roots = [root.to_path_buf()];
+        assert_eq!(
+            find_module(ModuleName::from_str("a"), &search_roots),
+            Some(root.join("a"))
+        );
+        assert_eq!(
+            find_module(ModuleName::from_str("b"), &search_roots),
+            Some(root.join("b"))
+        );
+        assert_eq!(
+            find_module(ModuleName::from_str("c.d"), &search_roots),
+            Some(root.join("c/d"))
+        );
+        assert_eq!(
+            find_module(ModuleName::from_str("c.d.e"), &search_roots),
+            Some(root.join("c/d/e.py"))
+        );
+    }
+
+    #[test]
     fn test_find_regular_package_early_return() {
         let tempdir = tempfile::tempdir().unwrap();
         let root = tempdir.path();
@@ -239,6 +292,34 @@ mod tests {
             // committed to `search_root0/a/` as the path to search next for `c`. And there's
             // no `c.py` in `search_root0/a/`.
             None
+        );
+    }
+
+    #[test]
+    fn test_find_namespace_package_no_early_return() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let root = tempdir.path();
+        setup_test_directory(
+            root,
+            vec![
+                TestPath::dir(
+                    "search_root0",
+                    vec![TestPath::dir("a", vec![TestPath::file("b.py")])],
+                ),
+                TestPath::dir(
+                    "search_root1",
+                    vec![TestPath::dir("a", vec![TestPath::file("c.py")])],
+                ),
+            ],
+        );
+        assert_eq!(
+            find_module(
+                ModuleName::from_str("a.c"),
+                &[root.join("search_root0"), root.join("search_root1")]
+            ),
+            // We will find `a.c` because `a` is a namespace package whose search roots
+            // include both `search_root0/a/` and `search_root1/a/`.
+            Some(root.join("search_root1/a/c.py"))
         );
     }
 }
