@@ -3,20 +3,32 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import json
 import os
 import shutil
+import socketserver
 import subprocess
 import sys
 import tempfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any, Optional
 
 global build_system
 
 
 class RequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        html = """
+    def __init__(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        self.tmp_dir: str = ""
+        super().__init__(*args, **kwargs)
+
+    def do_GET(self) -> None:
+        html: str = """
         <html>
             <head>
                 <style>
@@ -58,14 +70,18 @@ class RequestHandler(BaseHTTPRequestHandler):
                     // Load the code from the URL if it exists
                     var url = new URL(window.location.href);
                     var codeParam = url.searchParams.get('code');
+
                     if (codeParam) {
-                        editor.setValue(decodeURIComponent(codeParam));
-                        currentCode = codeParam;
+                        var code = decodeURIComponent(codeParam)
+                        editor.setValue(code);
+                        currentCode = code;
                     }
+
                     editor.on('change', function() {
                         var codeValue = editor.getValue();
                         currentCode = codeValue;
                     });
+
                     function checkCode() {
                         var url = new URL(window.location.href);
                         url.searchParams.set('code', encodeURIComponent(currentCode));
@@ -88,7 +104,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(html.encode())
 
-    def do_POST(self):
+    def do_POST(self) -> None:
         self.tmp_dir = tempfile.mkdtemp()
         try:
             content_length = int(self.headers["Content-Length"])
@@ -98,7 +114,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             with open(os.path.join(self.tmp_dir, "sandbox.py"), "w") as f:
                 f.write(code)
-            result = None
+
+            result: Optional[subprocess.CompletedProcess[str]] = None
+
             if build_system == "cargo":
                 # Run the cargo command
                 result = subprocess.run(
@@ -130,25 +148,29 @@ class RequestHandler(BaseHTTPRequestHandler):
                     capture_output=True,
                     text=True,
                 )
-            print(result)
-            if result.returncode != 0:
-                output = result.stdout + result.stderr
-                html_output = f"<pre><code class='language-bash'>{output}</code></pre>"
-                self.send_response(200)
-                self.end_headers()
-                self.wfile.write(html_output.encode("utf-8"))
-            else:
-                with open(os.path.join(self.tmp_dir, "output"), "r") as f:
-                    output = f.read()
-                    if not output.strip():
-                        html_output = "0 errors"
-                    else:
-                        html_output = (
-                            f"<pre><code class='language-python'>{output}</code></pre>"
-                        )
+
+            if result and isinstance(result, subprocess.CompletedProcess):
+                if result.returncode != 0:
+                    output = result.stdout + result.stderr
+                    html_output = (
+                        f"<pre><code class='language-bash'>{output}</code></pre>"
+                    )
                     self.send_response(200)
                     self.end_headers()
                     self.wfile.write(html_output.encode("utf-8"))
+                else:
+                    with open(os.path.join(self.tmp_dir, "output"), "r") as f:
+                        output = f.read()
+
+                        if not output.strip():
+                            html_output = "0 errors"
+                        else:
+                            html_output = f"<pre><code class='language-python'>{output}</code></pre>"
+
+                        self.send_response(200)
+                        self.end_headers()
+                        self.wfile.write(html_output.encode("utf-8"))
+
         except Exception as e:
             self.send_response(500)
             self.end_headers()
@@ -157,7 +179,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             shutil.rmtree(self.tmp_dir)
 
 
-def run_server(build_system):
+def run_server(build_system: str) -> None:
     server_address = ("", 8000)
     httpd = HTTPServer(server_address, RequestHandler)
     print("Server running on port 8000...")
@@ -166,7 +188,7 @@ def run_server(build_system):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2 or sys.argv[1] not in ["cargo", "buck"]:
-        print("Usage: python server.py <build_system>")
+        print("Specify how to run Pyre2 - Usage: python server.py {buck | cargo}")
         sys.exit(1)
-    build_system = sys.argv[1]
+    build_system: str = sys.argv[1]
     run_server(build_system)
