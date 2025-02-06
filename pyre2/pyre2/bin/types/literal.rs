@@ -43,7 +43,9 @@ pub enum Lit {
     Int(i64),
     Bool(bool),
     Bytes(Box<[u8]>),
-    Enum(Box<(ClassType, Name)>),
+    /// (enum class, member name, raw type assigned to name in class def)
+    /// We store the raw type so we can return it when the value or _value_ attribute is accessed.
+    Enum(Box<(ClassType, Name, Type)>),
 }
 
 impl Display for Lit {
@@ -65,7 +67,7 @@ impl Display for Lit {
                 }
                 write!(f, "'")
             }
-            Lit::Enum(box (enumeration, member)) => {
+            Lit::Enum(box (enumeration, member, _)) => {
                 let name = &enumeration.name();
                 write!(f, "{name}.{member}")
             }
@@ -224,7 +226,7 @@ impl Lit {
             Lit::Int(_) => stdlib.int(),
             Lit::Bool(_) => stdlib.bool(),
             Lit::Bytes(_) => stdlib.bytes(),
-            Lit::Enum(box (class_type, _)) => class_type.clone(),
+            Lit::Enum(box (class_type, ..)) => class_type.clone(),
         }
     }
 

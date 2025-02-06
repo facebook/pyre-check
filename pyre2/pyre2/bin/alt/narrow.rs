@@ -33,7 +33,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.get_enum_members(&e)
                 .into_iter()
                 .filter_map(|f| {
-                    if let Lit::Enum(box (_, member_name)) = &f
+                    if let Lit::Enum(box (_, member_name, _)) = &f
                         && *member_name == *name
                     {
                         None
@@ -146,7 +146,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                         (
                             Type::ClassType(left_cls),
-                            Type::Literal(Lit::Enum(box (right_cls, name))),
+                            Type::Literal(Lit::Enum(box (right_cls, name, _))),
                         ) if *left_cls == *right_cls => self.subtract_enum_member(left_cls, name),
                         _ => t.clone(),
                     }
@@ -236,7 +236,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                         (
                             Type::ClassType(left_cls),
-                            Type::Literal(Lit::Enum(box (right_cls, name))),
+                            Type::Literal(Lit::Enum(box (right_cls, name, _))),
                         ) if *left_cls == *right_cls => self.subtract_enum_member(left_cls, name),
                         _ => t.clone(),
                     })

@@ -110,12 +110,6 @@ impl ClassField {
         }
     }
 
-    pub fn is_enum_member(&self) -> bool {
-        match &self.0 {
-            ClassFieldInner::Simple { is_enum_member, .. } => *is_enum_member,
-        }
-    }
-
     fn instantiate_for(&self, cls: &ClassType) -> Self {
         match &self.0 {
             ClassFieldInner::Simple {

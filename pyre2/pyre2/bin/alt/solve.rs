@@ -608,6 +608,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let cls = self.get_idx_class_def(fields.0).unwrap();
         if let Some(fields) = self.get_typed_dict_synthesized_fields(&cls) {
             Arc::new(fields)
+        } else if let Some(fields) = self.get_enum_synthesized_fields(&cls) {
+            Arc::new(fields)
         } else if let Some(fields) = self.get_dataclass_synthesized_fields(&cls) {
             Arc::new(fields)
         } else {

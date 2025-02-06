@@ -24,10 +24,14 @@ use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_enum_member(&self, enum_: &EnumMetadata, name: &Name) -> Option<Lit> {
-        if let Some(field) = self.get_class_member(enum_.cls.class_object(), name)
-            && field.value.is_enum_member()
+        let field = self.get_class_member(enum_.cls.class_object(), name)?;
+        if let ClassField(ClassFieldInner::Simple {
+            ty: Type::Literal(lit),
+            is_enum_member: true,
+            ..
+        }) = field.value
         {
-            Some(Lit::Enum(Box::new((enum_.cls.clone(), name.clone()))))
+            Some(lit)
         } else {
             None
         }
@@ -77,7 +81,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    #[expect(dead_code)]
     pub fn get_enum_synthesized_fields(&self, cls: &Class) -> Option<ClassSynthesizedFields> {
         let metadata = self.get_metadata_for_class(cls);
         let enum_metadata = metadata.enum_metadata()?;
@@ -96,6 +99,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let lit = Type::Literal(Lit::Enum(Box::new((
                         enum_metadata.cls.clone(),
                         name.clone(),
+                        ty,
                     ))));
                     fields.insert(
                         name.clone(),

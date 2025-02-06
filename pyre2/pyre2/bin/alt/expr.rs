@@ -687,11 +687,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::Attribute(x) => {
                 let obj = self.expr_infer(&x.value);
                 match (&obj, x.attr.id.as_str()) {
-                    (Type::Literal(Lit::Enum(box (_, member))), "_name_" | "name") => {
+                    (Type::Literal(Lit::Enum(box (_, member, _))), "_name_" | "name") => {
                         Type::Literal(Lit::String(member.as_str().into()))
                     }
-                    (Type::Literal(Lit::Enum(box (_, member))), "_value_" | "value") => {
-                        self.attr_infer(&obj, member, x.range)
+                    (Type::Literal(Lit::Enum(box (_, _, raw_type))), "_value_" | "value") => {
+                        raw_type.clone()
                     }
                     _ => self.attr_infer(&obj, &x.attr.id, x.range),
                 }
