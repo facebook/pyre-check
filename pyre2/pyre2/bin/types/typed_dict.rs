@@ -11,11 +11,6 @@ use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use starlark_map::ordered_map::OrderedMap;
 
-use crate::types::callable::Callable;
-use crate::types::callable::Param;
-use crate::types::callable::ParamList;
-use crate::types::callable::Params;
-use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
@@ -75,28 +70,6 @@ impl TypedDict {
         // share a bit of behavior, so we occasionally convert a TypedDict to a ClassType in order
         // to reuse code.
         ClassType::new(self.0.dupe(), self.1.clone())
-    }
-
-    pub fn as_callable(&self) -> Callable {
-        let params = self
-            .fields()
-            .iter()
-            .map(|(name, field)| {
-                Param::KwOnly(
-                    name.clone(),
-                    field.ty.clone(),
-                    if field.required {
-                        Required::Required
-                    } else {
-                        Required::Optional
-                    },
-                )
-            })
-            .collect();
-        Callable {
-            params: Params::List(ParamList::new(params)),
-            ret: Type::TypedDict(Box::new(self.clone())),
-        }
     }
 
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {

@@ -262,12 +262,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         range: TextRange,
     ) -> Type {
+        // We know `__init__` exists because we synthesize it.
+        let init_method = self
+            .get_dunder_init(&typed_dict.as_class_type(), false)
+            .unwrap();
         self.call_infer(
-            (Vec::new(), CallTarget::Callable(typed_dict.as_callable())),
+            self.as_call_target_or_error(init_method, CallStyle::Method(&dunder::INIT), range),
             args,
             keywords,
             range,
-        )
+        );
+        Type::TypedDict(Box::new(typed_dict))
     }
 
     pub fn call_infer(
