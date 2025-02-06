@@ -14,10 +14,10 @@ use crate::module::module_name::ModuleName;
 pub fn find_module(module: ModuleName, include: &[PathBuf]) -> Option<PathBuf> {
     let parts = module.components();
     let possibilities = vec![
-        parts.join("/") + ".pyi",
-        parts.join("/") + ".py",
         parts.join("/") + "/__init__.pyi",
         parts.join("/") + "/__init__.py",
+        parts.join("/") + ".pyi",
+        parts.join("/") + ".py",
     ];
 
     for include in include {
@@ -141,6 +141,26 @@ mod tests {
         assert_eq!(
             find_module(ModuleName::from_str("foo.bar"), &[root.to_path_buf()]),
             Some(root.join("foo/bar.pyi"))
+        );
+    }
+
+    #[test]
+    fn test_find_init_takes_precedence() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let root = tempdir.path();
+        setup_test_directory(
+            root,
+            vec![TestPath::dir(
+                "foo",
+                vec![
+                    TestPath::file("bar.py"),
+                    TestPath::dir("bar", vec![TestPath::file("__init__.py")]),
+                ],
+            )],
+        );
+        assert_eq!(
+            find_module(ModuleName::from_str("foo.bar"), &[root.to_path_buf()]),
+            Some(root.join("foo/bar/__init__.py"))
         );
     }
 }
