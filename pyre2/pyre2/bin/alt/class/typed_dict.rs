@@ -21,6 +21,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::class::classdef::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassMetadata;
+use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::dunder;
@@ -168,7 +169,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .collect()
     }
 
-    fn get_typed_dict_init(&self, cls: &Class, fields: &SmallMap<Name, bool>) -> ClassField {
+    fn get_typed_dict_init(
+        &self,
+        cls: &Class,
+        fields: &SmallMap<Name, bool>,
+    ) -> ClassSynthesizedField {
         let mut params = vec![Param::Pos(
             Name::new("self"),
             cls.self_type(),
@@ -182,13 +187,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Box::new(Callable::list(ParamList::new(params), Type::None)),
             CallableKind::Def,
         );
-        ClassField(ClassFieldInner::Simple {
-            ty,
-            annotation: None,
-            initialization: ClassFieldInitialization::Class,
-            readonly: false,
-            is_enum_member: false,
-        })
+        ClassSynthesizedField {
+            inner: ClassField(ClassFieldInner::Simple {
+                ty,
+                annotation: None,
+                initialization: ClassFieldInitialization::Class,
+                readonly: false,
+                is_enum_member: false,
+            }),
+            overwrite: false,
+        }
     }
 
     pub fn get_typed_dict_synthesized_fields(&self, cls: &Class) -> Option<ClassSynthesizedFields> {

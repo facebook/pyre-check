@@ -542,18 +542,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
-        if cls.contains(name) {
+        let synthesized_fields = self.get_from_class(
+            cls,
+            &KeyClassSynthesizedFields(ShortIdentifier::new(cls.name())),
+        );
+        let synth = synthesized_fields.get(name);
+        if let Some(synth) = synth
+            && synth.overwrite
+        {
+            Some(synth.inner.clone())
+        } else if cls.contains(name) {
             let field = self.get_from_class(
                 cls,
                 &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
             );
             Some((*field).clone())
         } else {
-            let synthesized_fields = self.get_from_class(
-                cls,
-                &KeyClassSynthesizedFields(ShortIdentifier::new(cls.name())),
-            );
-            synthesized_fields.get(name).cloned()
+            synth.map(|f| f.inner.clone())
         }
     }
 

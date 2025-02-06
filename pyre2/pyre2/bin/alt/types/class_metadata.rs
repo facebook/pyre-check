@@ -132,22 +132,35 @@ impl ClassMetadata {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClassSynthesizedField {
+    pub inner: ClassField,
+    /// Should the synthesized field ovewrite a user-defined field of the same name defined on the same class?
+    pub overwrite: bool,
+}
+
+impl Display for ClassSynthesizedField {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, overwrite={})", self.inner, self.overwrite)
+    }
+}
+
 /// A class's synthesized fields, such as a dataclass's `__init__` method.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct ClassSynthesizedFields(SmallMap<Name, ClassField>);
+pub struct ClassSynthesizedFields(SmallMap<Name, ClassSynthesizedField>);
 
 impl ClassSynthesizedFields {
-    pub fn new(fields: SmallMap<Name, ClassField>) -> Self {
+    pub fn new(fields: SmallMap<Name, ClassSynthesizedField>) -> Self {
         Self(fields)
     }
 
-    pub fn get(&self, name: &Name) -> Option<&ClassField> {
+    pub fn get(&self, name: &Name) -> Option<&ClassSynthesizedField> {
         self.0.get(name)
     }
 
     pub fn visit_type_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         for field in self.0.values_mut() {
-            field.visit_type_mut(f);
+            field.inner.visit_type_mut(f);
         }
     }
 }
