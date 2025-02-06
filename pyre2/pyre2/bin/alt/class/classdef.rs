@@ -541,7 +541,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
-    fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
+    pub fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
         let synthesized_fields = self.get_from_class(
             cls,
             &KeyClassSynthesizedFields(ShortIdentifier::new(cls.name())),

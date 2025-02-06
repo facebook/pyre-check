@@ -6,12 +6,18 @@
  */
 
 use ruff_python_ast::name::Name;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::class::classdef::ClassField;
+use crate::alt::class::classdef::ClassFieldInner;
+use crate::alt::types::class_metadata::ClassSynthesizedField;
+use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::ClassFieldInitialization;
+use crate::types::class::Class;
 use crate::types::literal::Lit;
 use crate::types::types::Decoration;
 use crate::types::types::Type;
@@ -69,5 +75,44 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             _ => true,
         }
+    }
+
+    #[expect(dead_code)]
+    pub fn get_enum_synthesized_fields(&self, cls: &Class) -> Option<ClassSynthesizedFields> {
+        let metadata = self.get_metadata_for_class(cls);
+        let enum_metadata = metadata.enum_metadata()?;
+        let mut fields = SmallMap::new();
+        // Enum classes cannot inherit members.
+        for name in cls.fields() {
+            if let Some(ClassField(ClassFieldInner::Simple {
+                ty,
+                annotation,
+                initialization,
+                readonly,
+                is_enum_member: _,
+            })) = self.get_class_field(cls, name)
+            {
+                if self.is_valid_enum_member(name, &ty, initialization) {
+                    let lit = Type::Literal(Lit::Enum(Box::new((
+                        enum_metadata.cls.clone(),
+                        name.clone(),
+                    ))));
+                    fields.insert(
+                        name.clone(),
+                        ClassSynthesizedField {
+                            inner: ClassField(ClassFieldInner::Simple {
+                                ty: lit,
+                                annotation,
+                                initialization,
+                                readonly,
+                                is_enum_member: true,
+                            }),
+                            overwrite: true,
+                        },
+                    );
+                }
+            }
+        }
+        Some(ClassSynthesizedFields::new(fields))
     }
 }
