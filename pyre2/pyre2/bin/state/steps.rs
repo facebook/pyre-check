@@ -28,6 +28,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
+use crate::module::module_path::ModuleStyle;
 use crate::state::info::Info;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
@@ -153,7 +154,7 @@ impl Step {
     }
 
     fn load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
-        let mut path = ModulePath::not_found(ctx.module);
+        let mut module_path = ModulePath::not_found(ctx.module);
         let mut code = Arc::new("".to_owned());
         let mut error_style = ErrorStyle::Never;
         let mut import_error = None;
@@ -167,11 +168,15 @@ impl Step {
                 )));
             }
             Ok((p, s)) => {
-                path = p;
+                module_path = p;
                 error_style = s;
-                let res = match path.details() {
+                let res = match module_path.details() {
                     ModulePathDetails::FileSystem(path) => {
-                        fs_anyhow::read_to_string(path).map(Arc::new)
+                        if module_path.style() == ModuleStyle::Namespace {
+                            Ok(Arc::new("".to_owned()))
+                        } else {
+                            fs_anyhow::read_to_string(path).map(Arc::new)
+                        }
                     }
                     ModulePathDetails::Memory(path) => ctx
                         .loader
@@ -185,16 +190,17 @@ impl Step {
                 };
                 match res {
                     Err(err) => {
-                        self_error = Some(
-                            err.context(format!("When loading `{}` from `{path}`", ctx.module)),
-                        )
+                        self_error = Some(err.context(format!(
+                            "When loading `{}` from `{module_path}`",
+                            ctx.module
+                        )))
                     }
                     Ok(res) => code = res,
                 }
             }
         }
 
-        let module_info = ModuleInfo::new(ctx.module, path, code);
+        let module_info = ModuleInfo::new(ctx.module, module_path, code);
         let errors = ErrorCollector::new(error_style);
         if let Some(err) = self_error {
             errors.add(

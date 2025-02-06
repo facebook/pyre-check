@@ -24,6 +24,8 @@ pub enum ModuleStyle {
     Executable,
     /// .pyi - just types that form an interface.
     Interface,
+    /// directory - a namespace package.
+    Namespace,
 }
 
 /// Store information about where a module is sourced from.
@@ -33,6 +35,7 @@ pub struct ModulePath(Arc<ModulePathDetails>);
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub enum ModulePathDetails {
     /// The module source comes from a file on disk.
+    /// The path may point to a directory, in which case the module will be backed by namespace package.
     FileSystem(PathBuf),
     /// The module source comes from memory.
     Memory(PathBuf),
@@ -50,10 +53,13 @@ fn is_path_init(path: &Path) -> bool {
 
 impl ModuleStyle {
     fn of_path(path: &Path) -> Self {
-        if path.extension() == Some(OsStr::new("pyi")) {
+        let extension = path.extension();
+        if extension == Some(OsStr::new("pyi")) {
             ModuleStyle::Interface
-        } else {
+        } else if extension == Some(OsStr::new("py")) {
             ModuleStyle::Executable
+        } else {
+            ModuleStyle::Namespace
         }
     }
 }
