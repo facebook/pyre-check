@@ -37,11 +37,12 @@ else:
         "main",
         "import lib; x: str = lib.value  # E: EXPECTED Literal[42] <: str",
     );
-    let mut state = State::new(LoaderId::new(test_env), true);
+    let mut state = State::new(true);
+    let loader = LoaderId::new(test_env);
     state.run(vec![
-        Handle::new(ModuleName::from_str("linux"), linux.dupe()),
-        Handle::new(ModuleName::from_str("windows"), windows),
-        Handle::new(ModuleName::from_str("main"), linux),
+        Handle::new(ModuleName::from_str("linux"), linux.dupe(), loader.dupe()),
+        Handle::new(ModuleName::from_str("windows"), windows, loader.dupe()),
+        Handle::new(ModuleName::from_str("main"), linux, loader),
     ]);
     state.check_against_expectations().unwrap();
 }

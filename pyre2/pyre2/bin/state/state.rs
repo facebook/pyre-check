@@ -53,10 +53,9 @@ use crate::util::prelude::SliceExt;
 use crate::util::uniques::UniqueFactory;
 
 pub struct State {
-    loader: LoaderId,
     uniques: UniqueFactory,
     parallel: bool,
-    stdlib: RwLock<SmallMap<Config, Arc<Stdlib>>>,
+    stdlib: RwLock<SmallMap<(Config, LoaderId), Arc<Stdlib>>>,
     modules: RwLock<SmallMap<Handle, Arc<ModuleState>>>,
     /// Items we still need to process. Stored in a max heap, so that
     /// the highest step (the module that is closest to being finished)
@@ -114,9 +113,8 @@ impl ModuleState {
 }
 
 impl State {
-    pub fn new(loader: LoaderId, parallel: bool) -> Self {
+    pub fn new(parallel: bool) -> Self {
         Self {
-            loader,
             uniques: UniqueFactory::new(),
             parallel,
             stdlib: Default::default(),
@@ -127,7 +125,7 @@ impl State {
     }
 
     pub fn import_handle(&self, handle: &Handle, module: ModuleName) -> Handle {
-        Handle::new(module, handle.config().dupe())
+        Handle::new(module, handle.config().dupe(), handle.loader().dupe())
     }
 
     fn demand(&self, handle: &Handle, step: Step) {
@@ -165,7 +163,7 @@ impl State {
             let set = compute(&Context {
                 module: handle.module(),
                 config: handle.config(),
-                loader: &self.loader,
+                loader: handle.loader(),
                 uniques: &self.uniques,
                 stdlib: &stdlib,
                 lookup: &self.lookup(handle),
@@ -372,23 +370,23 @@ impl State {
         self.stdlib
             .read()
             .unwrap()
-            .get(handle.config())
+            .get(&(handle.config().dupe(), handle.loader().dupe()))
             .unwrap()
             .dupe()
     }
 
-    fn compute_stdlib(&self, configs: SmallSet<Config>) {
+    fn compute_stdlib(&self, configs: SmallSet<(Config, LoaderId)>) {
         *self.stdlib.write().unwrap() = configs
             .iter()
-            .map(|c| (c.dupe(), Arc::new(Stdlib::for_bootstrapping())))
+            .map(|k| (k.dupe(), Arc::new(Stdlib::for_bootstrapping())))
             .collect();
         let stdlibs = configs
             .iter()
-            .map(|c| {
+            .map(|(c, l)| {
                 (
-                    c.dupe(),
+                    (c.dupe(), l.dupe()),
                     Arc::new(Stdlib::new(|module, name| {
-                        self.lookup_stdlib(&Handle::new(module, c.dupe()), name)
+                        self.lookup_stdlib(&Handle::new(module, c.dupe(), l.dupe()), name)
                     })),
                 )
             })
@@ -412,7 +410,7 @@ impl State {
     fn run_internal(&mut self, handles: Vec<Handle>) {
         let configs = handles
             .iter()
-            .map(|x| x.config().dupe())
+            .map(|x| (x.config().dupe(), x.loader().dupe()))
             .collect::<SmallSet<_>>();
         {
             let mut lock = self.todo.lock().unwrap();

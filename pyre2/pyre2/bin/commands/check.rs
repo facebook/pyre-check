@@ -43,6 +43,7 @@ use crate::util::display::number_thousands;
 use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
 use crate::util::memory::MemoryUsageTrace;
+use crate::util::prelude::VecExt;
 
 #[derive(Debug, Clone, ValueEnum, Default)]
 enum OutputFormat {
@@ -166,31 +167,27 @@ impl Args {
             None => Config::default(),
             Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),
         };
-        let handles = to_check
-            .keys()
-            .map(|x| Handle::new(*x, config.dupe()))
-            .collect::<Vec<_>>();
         let error_style_for_sources = if args.output.is_some() {
             ErrorStyle::Delayed
         } else {
             ErrorStyle::Immediate
         };
+        let modules = to_check.keys().copied().collect::<Vec<_>>();
+        let loader = LoaderId::new(CheckLoader {
+            sources: to_check,
+            search_roots: include,
+            error_style_for_sources,
+            error_style_for_dependencies: if args.check_all {
+                error_style_for_sources
+            } else {
+                ErrorStyle::Never
+            },
+        });
+        let handles = modules.into_map(|x| Handle::new(x, config.dupe(), loader.dupe()));
 
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
-        let state = State::new(
-            LoaderId::new(CheckLoader {
-                sources: to_check,
-                search_roots: include,
-                error_style_for_sources,
-                error_style_for_dependencies: if args.check_all {
-                    error_style_for_sources
-                } else {
-                    ErrorStyle::Never
-                },
-            }),
-            args.common.parallel(),
-        );
+        let state = State::new(args.common.parallel());
         let mut holder = Forgetter::new(state, allow_forget);
         let state = holder.as_mut();
 

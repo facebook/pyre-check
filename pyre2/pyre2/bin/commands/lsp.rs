@@ -91,6 +91,7 @@ struct Server<'a> {
     include: Vec<PathBuf>,
     state: Mutex<State>,
     config: Config,
+    loader: LoaderId,
     open_files: Arc<Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>>,
 }
 
@@ -241,8 +242,9 @@ impl<'a> Server<'a> {
             send,
             initialize_params,
             include,
-            state: Mutex::new(State::new(loader.dupe(), true)),
+            state: Mutex::new(State::new(true)),
             config: Config::default(),
+            loader,
             open_files,
         }
     }
@@ -267,7 +269,13 @@ impl<'a> Server<'a> {
             .lock()
             .unwrap()
             .keys()
-            .map(|x| Handle::new(module_from_path(x, &self.include), self.config.dupe()))
+            .map(|x| {
+                Handle::new(
+                    module_from_path(x, &self.include),
+                    self.config.dupe(),
+                    self.loader.dupe(),
+                )
+            })
             .collect::<Vec<_>>();
 
         self.state.lock().unwrap().run(handles);
@@ -327,7 +335,7 @@ impl<'a> Server<'a> {
 
     fn make_handle(&self, uri: &Url) -> Handle {
         let module = module_from_path(&uri.to_file_path().unwrap(), &self.include);
-        Handle::new(module, self.config.dupe())
+        Handle::new(module, self.config.dupe(), self.loader.dupe())
     }
 
     fn goto_definition(&self, params: GotoDefinitionParams) -> Option<GotoDefinitionResponse> {

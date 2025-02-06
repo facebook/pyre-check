@@ -56,10 +56,10 @@ fn read_input_file(path: &Path) -> anyhow::Result<InputFile> {
 }
 
 fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonArgs) -> Vec<Error> {
-    let modules_to_check = sourcedb
-        .modules_to_check()
-        .into_map(|x| Handle::new(x, config.dupe()));
-    let mut state = State::new(LoaderId::new(sourcedb), common.parallel());
+    let modules = sourcedb.modules_to_check();
+    let loader = LoaderId::new(sourcedb);
+    let modules_to_check = modules.into_map(|x| Handle::new(x, config.dupe(), loader.dupe()));
+    let mut state = State::new(common.parallel());
     state.run_one_shot(modules_to_check);
     state.collect_errors()
 }
