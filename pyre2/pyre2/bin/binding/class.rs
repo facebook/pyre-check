@@ -20,10 +20,12 @@ use starlark_map::small_map::SmallMap;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
+use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
+use crate::binding::binding::KeyClassSynthesizedFields;
 use crate::binding::bindings::BindingsBuilder;
 use crate::binding::bindings::LegacyTParamBuilder;
 use crate::binding::scope::InstanceAttribute;
@@ -96,6 +98,10 @@ impl<'a> BindingsBuilder<'a> {
         self.table.insert(
             KeyClassMetadata(ShortIdentifier::new(&x.name)),
             BindingClassMetadata(definition_key, bases.clone(), keywords, decorators.clone()),
+        );
+        self.table.insert(
+            KeyClassSynthesizedFields(ShortIdentifier::new(&x.name)),
+            BindingClassSynthesizedFields(definition_key),
         );
 
         let legacy_tparam_builder = legacy.unwrap();
@@ -207,6 +213,10 @@ impl<'a> BindingsBuilder<'a> {
         self.table.insert(
             KeyClassMetadata(ShortIdentifier::new(&class_name)),
             BindingClassMetadata(definition_key, vec![Expr::Name(base_name)], vec![], vec![]),
+        );
+        self.table.insert(
+            KeyClassSynthesizedFields(ShortIdentifier::new(&class_name)),
+            BindingClassSynthesizedFields(definition_key),
         );
         let mut fields = SmallMap::new();
         match members {

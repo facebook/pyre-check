@@ -17,11 +17,13 @@ use starlark_map::small_map::SmallMap;
 
 use crate::alt::class::classdef::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
+use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
+use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::EmptyAnswer;
@@ -29,6 +31,7 @@ use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
+use crate::binding::binding::KeyClassSynthesizedFields;
 use crate::binding::binding::KeyExpect;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyLegacyTypeParam;
@@ -212,6 +215,13 @@ impl SolveRecursive for KeyClassField {
         v.visit_type_mut(f);
     }
 }
+impl SolveRecursive for KeyClassSynthesizedFields {
+    type Recursive = ();
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        ClassSynthesizedFields
+    }
+    fn visit_type_mut(_v: &mut ClassSynthesizedFields, _f: &mut dyn FnMut(&mut Type)) {}
+}
 impl SolveRecursive for KeyAnnotation {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         Annotation::default()
@@ -300,6 +310,17 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
 impl<Ans: LookupAnswer> Solve<Ans> for KeyClassField {
     fn solve(answers: &AnswersSolver<Ans>, binding: &BindingClassField) -> Arc<ClassField> {
         answers.solve_class_field(binding)
+    }
+
+    fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyClassSynthesizedFields {
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &BindingClassSynthesizedFields,
+    ) -> Arc<ClassSynthesizedFields> {
+        answers.solve_class_synthesized_fields(binding)
     }
 
     fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}

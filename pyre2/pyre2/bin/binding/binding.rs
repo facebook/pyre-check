@@ -30,6 +30,7 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::class::classdef::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
+use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::binding::bindings::Bindings;
 use crate::binding::narrow::NarrowOp;
@@ -54,6 +55,7 @@ mod check_size {
     assert_eq_size!(KeyExpect, [usize; 1]);
     assert_eq_size!(KeyExport, [usize; 3]);
     assert_eq_size!(KeyClassField, [usize; 4]);
+    assert_eq_size!(KeyClassSynthesizedFields, [usize; 1]);
     assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
     assert_eq_size!(KeyClassMetadata, [usize; 1]);
     assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
@@ -63,6 +65,7 @@ mod check_size {
     assert_eq_size!(BindingAnnotation, [usize; 9]);
     assert_eq_size!(BindingClassMetadata, [usize; 10]);
     assert_eq_size!(BindingClassField, [usize; 15]);
+    assert_eq_size!(BindingClassSynthesizedFields, [u8; 4]); // Equivalent to 0.5 usize
     assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
 }
 
@@ -84,6 +87,11 @@ impl Keyed for KeyClassField {
     const EXPORTED: bool = true;
     type Value = BindingClassField;
     type Answer = ClassField;
+}
+impl Keyed for KeyClassSynthesizedFields {
+    const EXPORTED: bool = true;
+    type Value = BindingClassSynthesizedFields;
+    type Answer = ClassSynthesizedFields;
 }
 impl Keyed for KeyExport {
     const EXPORTED: bool = true;
@@ -361,6 +369,29 @@ impl DisplayWith<ModuleInfo> for KeyClassField {
             ctx.display(&self.0),
             self.0.range(),
             self.1
+        )
+    }
+}
+
+/// Keys that refer to fields synthesized by a class, such as a dataclass's `__init__` method. This
+/// has to be its own key/binding type because of the dependencies between the various pieces of
+/// information about a class: ClassDef -> ClassMetadata -> ClassField -> ClassSynthesizedFields.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct KeyClassSynthesizedFields(pub ShortIdentifier);
+
+impl Ranged for KeyClassSynthesizedFields {
+    fn range(&self) -> TextRange {
+        self.0.range()
+    }
+}
+
+impl DisplayWith<ModuleInfo> for KeyClassSynthesizedFields {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
+        write!(
+            f,
+            "synthesized fields of {} {:?}",
+            ctx.display(&self.0),
+            self.0.range(),
         )
     }
 }
@@ -839,6 +870,18 @@ pub struct BindingClassField {
 impl DisplayWith<Bindings> for BindingClassField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         write!(f, "class field {}", self.value.display_with(ctx))
+    }
+}
+
+/// Bindings for fields synthesized by a class, such as a dataclass's `__init__` method. This
+/// has to be its own key/binding type because of the dependencies between the various pieces of
+/// information about a class: ClassDef -> ClassMetadata -> ClassField -> ClassSynthesizedFields.
+#[derive(Clone, Debug)]
+pub struct BindingClassSynthesizedFields(pub Idx<Key>);
+
+impl DisplayWith<Bindings> for BindingClassSynthesizedFields {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        write!(f, "synthesized fields of {}", ctx.display(self.0))
     }
 }
 

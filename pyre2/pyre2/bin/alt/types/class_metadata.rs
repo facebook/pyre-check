@@ -136,6 +136,16 @@ impl ClassMetadata {
     }
 }
 
+/// A class's synthesized fields, such as a dataclass's `__init__` method.
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct ClassSynthesizedFields;
+
+impl Display for ClassSynthesizedFields {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "ClassSynthesizedFields")
+    }
+}
+
 /// A struct representing a class's metaclass. A value of `None` indicates
 /// no explicit metaclass, in which case the default metaclass is `type`.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
