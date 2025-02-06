@@ -62,7 +62,6 @@ pub enum ClassFieldInner {
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
         readonly: bool,
-        is_enum_member: bool,
     },
 }
 
@@ -72,14 +71,12 @@ impl ClassField {
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
         readonly: bool,
-        is_enum_member: bool,
     ) -> Self {
         Self(ClassFieldInner::Simple {
             ty,
             annotation,
             initialization,
             readonly,
-            is_enum_member,
         })
     }
 
@@ -89,7 +86,6 @@ impl ClassField {
             annotation: None,
             initialization: ClassFieldInitialization::Class,
             readonly: false,
-            is_enum_member: false,
         })
     }
 
@@ -117,13 +113,11 @@ impl ClassField {
                 annotation,
                 initialization,
                 readonly,
-                is_enum_member,
             } => Self(ClassFieldInner::Simple {
                 ty: cls.instantiate_member(ty.clone()),
                 annotation: annotation.clone(),
                 initialization: *initialization,
                 readonly: *readonly,
-                is_enum_member: *is_enum_member,
             }),
         }
     }
@@ -480,11 +474,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
     ) -> ClassField {
         let metadata = self.get_metadata_for_class(class);
-        let mut is_enum_member = false;
         if let Some(enum_) = self.get_enum_from_class(class)
             && self.is_valid_enum_member(name, value_ty, initialization)
         {
-            is_enum_member = true;
             if annotation.is_some() {
                 self.error(range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
             }
@@ -516,13 +508,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let readonly = metadata
             .dataclass_metadata()
             .map_or(false, |dataclass| dataclass.kws.frozen);
-        ClassField::new(
-            ty.clone(),
-            ann.cloned(),
-            initialization,
-            readonly,
-            is_enum_member,
-        )
+        ClassField::new(ty.clone(), ann.cloned(), initialization, readonly)
     }
 
     pub fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {

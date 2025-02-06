@@ -111,7 +111,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 annotation: None,
                 initialization: ClassFieldInitialization::Class,
                 readonly: false,
-                is_enum_member: false,
             }),
             overwrite: false,
         }
@@ -146,7 +145,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 annotation: None,
                 initialization: ClassFieldInitialization::Class,
                 readonly: false,
-                is_enum_member: false,
             }),
             overwrite: false,
         }

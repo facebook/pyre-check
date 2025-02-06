@@ -87,7 +87,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 annotation,
                 initialization,
                 readonly,
-                is_enum_member: _,
             })) = self.get_class_field(cls, name)
             {
                 if self.is_valid_enum_member(name, &ty, initialization) {
@@ -104,7 +103,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 annotation,
                                 initialization,
                                 readonly,
-                                is_enum_member: true,
                             }),
                             overwrite: true,
                         },
