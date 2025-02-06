@@ -15,7 +15,6 @@ use crate::alt::class::classdef::ClassField;
 use crate::alt::class::classdef::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
-use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::types::class::Class;
 use crate::types::literal::Lit;
@@ -23,13 +22,12 @@ use crate::types::types::Decoration;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    pub fn get_enum_member(&self, enum_: &EnumMetadata, name: &Name) -> Option<Lit> {
-        let field = self.get_class_member(enum_.cls.class_object(), name)?;
-        if let ClassField(ClassFieldInner::Simple {
+    pub fn get_enum_member(&self, cls: &Class, name: &Name) -> Option<Lit> {
+        if let Some(ClassField(ClassFieldInner::Simple {
             ty: Type::Literal(lit),
-            is_enum_member: true,
             ..
-        }) = field.value
+        })) = self.get_class_field(cls, name)
+            && matches!(&lit, Lit::Enum(box (lit_cls, ..)) if lit_cls.class_object() == cls)
         {
             Some(lit)
         } else {
@@ -37,12 +35,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get_enum_members(&self, enum_: &EnumMetadata) -> SmallSet<Lit> {
-        enum_
-            .cls
-            .class_object()
-            .fields()
-            .filter_map(|f| self.get_enum_member(enum_, f))
+    pub fn get_enum_members(&self, cls: &Class) -> SmallSet<Lit> {
+        cls.fields()
+            .filter_map(|f| self.get_enum_member(cls, f))
             .collect()
     }
 

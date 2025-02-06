@@ -333,16 +333,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_enum_from_class(class_type.class_object())
     }
 
-    /// Given an identifier, see whether it is bound to an enum class. If so,
-    /// return the enum, otherwise return `None`.
-    pub fn get_enum_from_name(&self, name: Identifier) -> Option<EnumMetadata> {
-        let key = self
-            .bindings()
-            .key_to_idx(&Key::Usage(ShortIdentifier::new(&name)));
-        self.get_idx_class_def(key)
-            .and_then(|cls| self.get_enum_from_class(&cls))
-    }
-
     fn check_and_create_targs(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> TArgs {
         let tparams = cls.tparams();
         let nargs = targs.len();

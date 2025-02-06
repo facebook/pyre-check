@@ -11,6 +11,8 @@ use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::binding::binding::Key;
+use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::literal::Lit;
@@ -69,8 +71,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         x,
                         self.module_info(),
                         &|enum_name, member_name| {
-                            let enum_ = self.get_enum_from_name(enum_name)?;
-                            self.get_enum_member(&enum_, member_name)
+                            let key = self
+                                .bindings()
+                                .key_to_idx(&Key::Usage(ShortIdentifier::new(&enum_name)));
+                            let cls = self.get_idx_class_def(key)?;
+                            self.get_enum_member(&cls, member_name)
                         },
                         self.errors(),
                     );
