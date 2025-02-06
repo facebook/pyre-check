@@ -86,7 +86,11 @@ mod tests {
             root,
             vec![TestPath::dir(
                 "foo",
-                vec![TestPath::file("bar.py"), TestPath::file("baz.pyi")],
+                vec![
+                    TestPath::file("__init__.py"),
+                    TestPath::file("bar.py"),
+                    TestPath::file("baz.pyi"),
+                ],
             )],
         );
         assert_eq!(
@@ -112,6 +116,7 @@ mod tests {
             vec![TestPath::dir(
                 "foo",
                 vec![
+                    TestPath::file("__init__.py"),
                     TestPath::dir("bar", vec![TestPath::file("__init__.py")]),
                     TestPath::dir("baz", vec![TestPath::file("__init__.pyi")]),
                 ],
@@ -135,7 +140,11 @@ mod tests {
             root,
             vec![TestPath::dir(
                 "foo",
-                vec![TestPath::file("bar.pyi"), TestPath::file("bar.py")],
+                vec![
+                    TestPath::file("__init__.py"),
+                    TestPath::file("bar.pyi"),
+                    TestPath::file("bar.py"),
+                ],
             )],
         );
         assert_eq!(
@@ -153,6 +162,7 @@ mod tests {
             vec![TestPath::dir(
                 "foo",
                 vec![
+                    TestPath::file("__init__.py"),
                     TestPath::file("bar.py"),
                     TestPath::dir("bar", vec![TestPath::file("__init__.py")]),
                 ],
