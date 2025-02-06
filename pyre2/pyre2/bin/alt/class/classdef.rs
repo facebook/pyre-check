@@ -486,41 +486,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn is_valid_enum_member(
-        &self,
-        name: &Name,
-        ty: &Type,
-        initialization: ClassFieldInitialization,
-    ) -> bool {
-        // Names starting but not ending with __ are private
-        // Names starting and ending with _ are reserved by the enum
-        if name.starts_with("__") && !name.ends_with("__")
-            || name.starts_with("_") && name.ends_with("_")
-        {
-            return false;
-        }
-        // Enum members must be initialized on the class
-        if initialization == ClassFieldInitialization::Instance {
-            return false;
-        }
-        match ty {
-            // Methods decorated with @member are members
-            Type::Decoration(Decoration::EnumMember(_)) => true,
-            // Callables are not valid enum members
-            Type::BoundMethod(_, _) | Type::Callable(_, _) | Type::Decoration(_) => false,
-            // Values initialized with nonmember() are not members
-            Type::ClassType(cls)
-                if cls.class_object().has_qname("enum", "nonmember")
-                    || cls.class_object().has_qname("builtins", "staticmethod")
-                    || cls.class_object().has_qname("builtins", "classmethod")
-                    || cls.class_object().has_qname("enum", "property") =>
-            {
-                false
-            }
-            _ => true,
-        }
-    }
-
     pub fn calculate_class_field(
         &self,
         name: &Name,

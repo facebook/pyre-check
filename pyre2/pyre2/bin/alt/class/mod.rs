@@ -8,4 +8,5 @@
 pub mod class_metadata;
 pub mod classdef;
 pub mod dataclass;
+pub mod enums;
 pub mod typed_dict;

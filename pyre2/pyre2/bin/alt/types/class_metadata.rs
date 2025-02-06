@@ -16,14 +16,11 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
-use crate::alt::answers::AnswersSolver;
-use crate::alt::answers::LookupAnswer;
 use crate::alt::class::classdef::ClassField;
 use crate::error::collector::ErrorCollector;
 use crate::types::callable::DataclassKeywords;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
-use crate::types::literal::Lit;
 use crate::types::qname::QName;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
@@ -211,27 +208,6 @@ pub struct EnumMetadata {
     pub cls: ClassType,
     /// Whether this enum inherits from enum.Flag.
     pub is_flag: bool,
-}
-
-impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    pub fn get_enum_member(&self, enum_: &EnumMetadata, name: &Name) -> Option<Lit> {
-        if let Some(field) = self.get_class_member(enum_.cls.class_object(), name)
-            && field.value.is_enum_member()
-        {
-            Some(Lit::Enum(Box::new((enum_.cls.clone(), name.clone()))))
-        } else {
-            None
-        }
-    }
-
-    pub fn get_enum_members(&self, enum_: &EnumMetadata) -> SmallSet<Lit> {
-        enum_
-            .cls
-            .class_object()
-            .fields()
-            .filter_map(|f| self.get_enum_member(enum_, f))
-            .collect()
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
