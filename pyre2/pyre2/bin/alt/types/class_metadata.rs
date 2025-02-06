@@ -34,7 +34,7 @@ pub struct ClassMetadata {
     mro: Mro,
     metaclass: Metaclass,
     keywords: Keywords,
-    is_typed_dict: bool,
+    typed_dict_metadata: Option<TypedDictMetadata>,
     is_named_tuple: bool,
     enum_metadata: Option<EnumMetadata>,
     is_protocol: bool,
@@ -53,7 +53,7 @@ impl ClassMetadata {
         bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
         metaclass: Option<ClassType>,
         keywords: Vec<(Name, Type)>,
-        is_typed_dict: bool,
+        typed_dict_metadata: Option<TypedDictMetadata>,
         is_named_tuple: bool,
         enum_metadata: Option<EnumMetadata>,
         is_protocol: bool,
@@ -64,7 +64,7 @@ impl ClassMetadata {
             mro: Mro::new(cls, bases_with_metadata, errors),
             metaclass: Metaclass(metaclass),
             keywords: Keywords(keywords),
-            is_typed_dict,
+            typed_dict_metadata,
             is_named_tuple,
             enum_metadata,
             is_protocol,
@@ -77,7 +77,7 @@ impl ClassMetadata {
             mro: Mro::Cyclic,
             metaclass: Metaclass::default(),
             keywords: Keywords::default(),
-            is_typed_dict: false,
+            typed_dict_metadata: None,
             is_named_tuple: false,
             enum_metadata: None,
             is_protocol: false,
@@ -94,16 +94,12 @@ impl ClassMetadata {
         &self.keywords.0
     }
 
-    pub fn get_keyword(&self, name: &Name) -> Option<Type> {
-        self.keywords
-            .0
-            .iter()
-            .find(|(n, _)| n.as_str() == name)
-            .map(|(_, ty)| ty.clone())
+    pub fn is_typed_dict(&self) -> bool {
+        self.typed_dict_metadata.is_some()
     }
 
-    pub fn is_typed_dict(&self) -> bool {
-        self.is_typed_dict
+    pub fn typed_dict_metadata(&self) -> Option<&TypedDictMetadata> {
+        self.typed_dict_metadata.as_ref()
     }
 
     pub fn is_named_tuple(&self) -> bool {
@@ -205,8 +201,15 @@ impl Display for Keywords {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TypedDictMetadata {
+    /// Field name to the value of the `total` keyword in the defining class.
+    pub fields: SmallMap<Name, bool>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EnumMetadata {
     pub cls: ClassType,
+    /// Whether this enum inherits from enum.Flag.
     pub is_flag: bool,
 }
 

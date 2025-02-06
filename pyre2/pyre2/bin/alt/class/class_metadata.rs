@@ -22,6 +22,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::DataclassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
+use crate::alt::types::class_metadata::TypedDictMetadata;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyLegacyTypeParam;
@@ -30,6 +31,7 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::CallableKind;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
+use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
 use crate::types::type_var::Variance;
 use crate::types::types::CalleeKind;
@@ -138,7 +140,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "metaclass" => Either::Left(x),
                 _ => Either::Right((n.clone(), self.expr(x, None))),
             });
-
+        let typed_dict_metadata = if is_typed_dict {
+            let is_total = !keywords.iter().any(|(n, t)| {
+                n.as_str() == "total" && matches!(t, Type::Literal(Lit::Bool(false)))
+            });
+            let fields = self.get_typed_dict_fields(cls, &bases_with_metadata, is_total);
+            Some(TypedDictMetadata { fields })
+        } else {
+            None
+        };
         let base_metaclasses = bases_with_metadata
             .iter()
             .filter_map(|(b, metadata)| metadata.metaclass().map(|m| (&b.name().id, m)))
@@ -199,7 +209,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             bases_with_metadata,
             metaclass,
             keywords,
-            is_typed_dict,
+            typed_dict_metadata,
             is_named_tuple,
             enum_metadata,
             is_protocol,

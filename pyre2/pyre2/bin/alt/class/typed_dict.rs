@@ -5,20 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::sync::Arc;
+
 use ruff_python_ast::name::Name;
 use ruff_python_ast::DictItem;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::ordered_map::OrderedMap;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::class::classdef::ClassFieldInner;
+use crate::alt::types::class_metadata::ClassMetadata;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
 use crate::types::class::Class;
+use crate::types::class::ClassType;
 use crate::types::class::Substitution;
 use crate::types::class::TArgs;
 use crate::types::literal::Lit;
@@ -85,7 +90,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub(super) fn get_typed_dict_fields(
+    pub fn get_typed_dict_fields(
+        &self,
+        cls: &Class,
+        bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
+        is_total: bool,
+    ) -> SmallMap<Name, bool> {
+        let mut all_fields = SmallMap::new();
+        for (_, metadata) in bases_with_metadata.iter().rev() {
+            if let Some(td) = metadata.typed_dict_metadata() {
+                all_fields.extend(td.fields.clone());
+            }
+        }
+        for name in cls.fields() {
+            if cls.is_field_annotated(name) {
+                all_fields.insert(name.clone(), is_total);
+            }
+        }
+        all_fields
+    }
+
+    pub fn sub_typed_dict_fields(
         &self,
         cls: &Class,
         targs: &TArgs,
@@ -97,13 +122,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .zip(targs.as_slice().iter().cloned())
                 .collect(),
         );
-        self.get_all_members(cls)
+        let metadata = self.get_metadata_for_class(cls);
+        metadata
+            .typed_dict_metadata()
+            .unwrap()
+            .fields
             .iter()
-            .filter_map(|(name, (field, cls))| {
-                let metadata = self.get_metadata_for_class(cls);
-                if !metadata.is_typed_dict() {
-                    return None;
-                }
+            .filter_map(|(name, is_total)| {
                 if let ClassField(ClassFieldInner::Simple {
                     annotation:
                         Some(Annotation {
@@ -111,14 +136,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             qualifiers,
                         }),
                     ..
-                }) = field
+                }) = self.get_class_member(cls, name).unwrap().value
                 {
-                    let is_total = metadata
-                        .get_keyword(&Name::new("total"))
-                        .map_or(true, |ty| match ty {
-                            Type::Literal(Lit::Bool(b)) => b,
-                            _ => true,
-                        });
                     Some((
                         name.clone(),
                         TypedDictField {
@@ -128,7 +147,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             } else if qualifiers.contains(&Qualifier::NotRequired) {
                                 false
                             } else {
-                                is_total
+                                *is_total
                             },
                             read_only: qualifiers.contains(&Qualifier::ReadOnly),
                         },
