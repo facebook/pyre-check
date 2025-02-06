@@ -50,7 +50,7 @@ use crate::util::prelude::SliceExt;
 /// know whether it is initialized in the class body in order to determine
 /// both visibility rules and whether method binding should be performed.
 #[derive(Debug, Clone)]
-pub struct ClassField(pub(super) ClassFieldInner);
+pub struct ClassField(pub ClassFieldInner);
 
 #[derive(Debug, Clone)]
 pub enum ClassFieldInner {
@@ -113,7 +113,7 @@ impl ClassField {
         }
     }
 
-    pub(super) fn instantiate_for(&self, cls: &ClassType) -> Self {
+    fn instantiate_for(&self, cls: &ClassType) -> Self {
         match &self.0 {
             ClassFieldInner::Simple {
                 ty,
@@ -364,7 +364,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         TArgs::new(checked_targs)
     }
 
-    pub(super) fn create_default_targs(
+    pub fn create_default_targs(
         &self,
         cls: &Class,
         // Placeholder for strict mode: we want to force callers to pass a range so
@@ -558,7 +558,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
-    pub(super) fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
+    fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
         if cls.contains(name) {
             let field = self.get_from_class(
                 cls,

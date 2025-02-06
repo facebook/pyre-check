@@ -44,7 +44,7 @@ use crate::util::prelude::SliceExt;
 /// binding-level work of finding legacy type parameters versus the type-level
 /// work of computing inherticance information and the MRO.
 #[derive(Debug, Clone)]
-pub(super) enum BaseClass {
+pub enum BaseClass {
     TypedDict,
     Generic(Vec<Type>),
     Protocol(Vec<Type>),
@@ -241,7 +241,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub(super) fn base_class_of(&self, base_expr: &Expr) -> BaseClass {
+    pub fn base_class_of(&self, base_expr: &Expr) -> BaseClass {
         if let Some(special_base_class) = self.special_base_class(base_expr) {
             // This branch handles cases like `Protocol`
             special_base_class
@@ -259,7 +259,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub(super) fn class_tparams(
+    pub fn class_tparams(
         &self,
         name: &Identifier,
         scoped_tparams: Vec<TParamInfo>,

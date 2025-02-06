@@ -30,7 +30,7 @@ use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Gets dataclass fields for an `@dataclass`-decorated class.
-    pub(super) fn get_dataclass_fields(
+    pub fn get_dataclass_fields(
         &self,
         cls: &Class,
         bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
@@ -49,11 +49,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         all_fields
     }
 
-    pub(super) fn get_dataclass_synthesized_field(
-        &self,
-        cls: &Class,
-        name: &Name,
-    ) -> Option<ClassField> {
+    pub fn get_dataclass_synthesized_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
         let metadata = self.get_metadata_for_class(cls);
         let dataclass = metadata.dataclass_metadata()?;
         if *name == dunder::INIT && dataclass.synthesized_fields.init {
