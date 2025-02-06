@@ -7,6 +7,7 @@
 
 use std::cmp::Ordering;
 
+use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use starlark_map::ordered_map::OrderedMap;
 
@@ -16,6 +17,7 @@ use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
 use crate::types::class::Class;
+use crate::types::class::ClassType;
 use crate::types::class::TArgs;
 use crate::types::qname::QName;
 use crate::types::types::Type;
@@ -65,6 +67,14 @@ impl TypedDict {
 
     pub fn targs(&self) -> &TArgs {
         &self.1
+    }
+
+    pub fn as_class_type(&self) -> ClassType {
+        // TypedDict instances behave very differently from instances of other classes, so we don't
+        // represent TypedDicts as ClassType in normal typechecking logic. However, the two do
+        // share a bit of behavior, so we occasionally convert a TypedDict to a ClassType in order
+        // to reuse code.
+        ClassType::new(self.0.dupe(), self.1.clone())
     }
 
     pub fn as_callable(&self) -> Callable {

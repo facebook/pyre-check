@@ -112,11 +112,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         is_typed_dict = true;
                         let class_object = typed_dict.class_object();
                         let class_metadata = self.get_metadata_for_class(class_object);
-                        // In normal typechecking logic, TypedDicts should never be represented as ClassType.
-                        // However, we convert it to a ClassType here so that MRO works properly and we can look up
-                        // the types of the declared items.
                         Some((
-                            ClassType::new(class_object.clone(), typed_dict.targs().clone()),
+                            typed_dict.as_class_type(),
                             class_metadata,
                         ))
                     }
