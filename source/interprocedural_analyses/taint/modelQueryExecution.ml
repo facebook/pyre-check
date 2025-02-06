@@ -598,13 +598,14 @@ let matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee =
        random type. *)
     lazy Type.Any
   in
-  let { Interprocedural.CallGraph.CallCallees.call_targets; _ } =
+  let { Interprocedural.CallGraph.CallCallees.call_targets; new_targets; init_targets; _ } =
     Interprocedural.CallGraph.resolve_callees_from_type_external
       ~pyre_in_context:(PyrePysaEnvironment.InContext.create_at_global_scope pyre_api)
       ~override_graph:None
       ~return_type
       callee
   in
+  let call_targets = call_targets |> List.rev_append new_targets |> List.rev_append init_targets in
   let call_target_to_string call_target =
     call_target
     |> CallGraph.CallTarget.target
@@ -631,7 +632,7 @@ let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = funct
         ~name_constraint
         (decorator_name |> Reference.delocalize |> Reference.last)
   | ModelQuery.DecoratorConstraint.FullyQualifiedCallee name_constraint ->
-      let ({ Node.value = expression; location } as decorator_expression) =
+      let ({ Node.value = expression; _ } as decorator_expression) =
         Statement.Decorator.to_expression decorator
       in
       let callee =
@@ -642,15 +643,7 @@ let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = funct
             (* Regular decorator, such as `@foo` *) decorator_expression
         | _ -> decorator_expression
       in
-      if matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee then
-        true
-      else (* In case the callee is a callable class, such as a decorator class. *)
-        let callee =
-          Expression.Expression.Name
-            (Expression.Name.Attribute { base = callee; attribute = "__call__"; special = true })
-          |> Node.create ~location
-        in
-        matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee
+      matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee
   | ModelQuery.DecoratorConstraint.ArgumentsConstraint arguments_constraint -> (
       let { Statement.Decorator.arguments = decorator_arguments; _ } = decorator in
       let split_arguments =

@@ -2280,7 +2280,7 @@ let test_generated_annotations context =
                  (* We can choose to write either of the following constraint. *)
                  [
                    FullyQualifiedCallee (Matches (Re2.create_exn "test.registered"));
-                   FullyQualifiedCallee (Equals "test.registered.__call__");
+                   FullyQualifiedCallee (Equals "test.registered.__init__");
                  ]);
           ];
         models = [Return [TaintAnnotation (source "Test")]];
