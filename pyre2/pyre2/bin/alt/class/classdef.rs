@@ -626,14 +626,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Access is disallowed for instance-only attributes and for attributes whose
     /// type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
     pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<Attribute> {
-        if let Some(e) = self.get_enum_from_class(cls)
-            && let Some(enum_member) = self.get_enum_member(&e, name)
-        {
-            Some(Attribute::read_write(Type::Literal(enum_member)))
-        } else {
-            let member = self.get_class_member(cls, name)?.value;
-            Some(member.as_class_attribute(cls))
-        }
+        let member = self.get_class_member(cls, name)?.value;
+        Some(member.as_class_attribute(cls))
     }
 
     /// Get the class's `__new__` method.
