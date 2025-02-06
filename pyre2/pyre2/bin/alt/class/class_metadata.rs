@@ -22,7 +22,6 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::DataclassMetadata;
-use crate::alt::types::class_metadata::DataclassSynthesizedFields;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
@@ -182,15 +181,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ty_decorator.callee_kind()
             {
                 let dataclass_fields = self.get_dataclass_fields(cls, &bases_with_metadata);
-                let synthesized_fields = DataclassSynthesizedFields {
-                    init: kws.init,
-                    match_args: kws.match_args,
-                };
                 dataclass_metadata = Some(DataclassMetadata {
                     fields: dataclass_fields,
-                    synthesized_fields,
-                    frozen: kws.frozen,
-                    kw_only: kws.kw_only,
+                    kws,
                 });
             }
         }

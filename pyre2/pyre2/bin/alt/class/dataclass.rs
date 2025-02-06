@@ -52,10 +52,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_dataclass_synthesized_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
         let metadata = self.get_metadata_for_class(cls);
         let dataclass = metadata.dataclass_metadata()?;
-        if *name == dunder::INIT && dataclass.synthesized_fields.init {
-            Some(self.get_dataclass_init(cls, &dataclass.fields, dataclass.kw_only))
-        } else if *name == dunder::MATCH_ARGS && dataclass.synthesized_fields.match_args {
-            Some(self.get_dataclass_match_args(cls, &dataclass.fields, dataclass.kw_only))
+        if *name == dunder::INIT && dataclass.kws.init {
+            Some(self.get_dataclass_init(cls, &dataclass.fields, dataclass.kws.kw_only))
+        } else if *name == dunder::MATCH_ARGS && dataclass.kws.match_args {
+            Some(self.get_dataclass_match_args(cls, &dataclass.fields, dataclass.kws.kw_only))
         } else {
             None
         }

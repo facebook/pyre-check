@@ -18,6 +18,7 @@ use vec1::Vec1;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::error::collector::ErrorCollector;
+use crate::types::callable::DataclassKeywords;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
@@ -206,30 +207,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DataclassSynthesizedFields {
-    pub init: bool,
-    pub match_args: bool,
-}
-
-impl DataclassSynthesizedFields {
-    fn none() -> Self {
-        Self {
-            init: false,
-            match_args: false,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataclassMetadata {
     /// The dataclass fields, e.g., `{'x'}` for `@dataclass class C: x: int`.
     pub fields: SmallSet<Name>,
-    /// Synthesized fields of the dataclass, like the generated `__init__` method.
-    pub synthesized_fields: DataclassSynthesizedFields,
-    /// @dataclass(frozen=...).
-    pub frozen: bool,
-    /// @dataclass(kw_only=...).
-    pub kw_only: bool,
+    pub kws: DataclassKeywords,
 }
 
 impl DataclassMetadata {
@@ -239,13 +220,8 @@ impl DataclassMetadata {
         Self {
             // Dataclass fields are inherited.
             fields: self.fields.clone(),
-            // Synthesized fields like `__init__` should not be inherited, as doing so would
-            // incorrectly suggest that they are directly defined on the inheriting class.
-            synthesized_fields: DataclassSynthesizedFields::none(),
-            // The remaining metadata are irrelevant when there are no fields to synthesize, so
-            // just set them to some sensible-seeming value.
-            frozen: self.frozen,
-            kw_only: self.kw_only,
+            // The remaining metadata are irrelevant, so just set them to some sensible-seeming value.
+            kws: self.kws,
         }
     }
 }

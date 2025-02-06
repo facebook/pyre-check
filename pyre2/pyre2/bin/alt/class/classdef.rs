@@ -548,7 +548,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         };
         let readonly = metadata
             .dataclass_metadata()
-            .map_or(false, |dataclass| dataclass.frozen);
+            .map_or(false, |dataclass| dataclass.kws.frozen);
         ClassField::new(
             ty.clone(),
             ann.cloned(),
