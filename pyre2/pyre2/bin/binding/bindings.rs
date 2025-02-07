@@ -215,11 +215,13 @@ impl Bindings {
         for (k, static_info) in last_scope.stat.0 {
             let info = last_scope.flow.info.get(&k);
             let val = match info {
-                Some(FlowInfo {
-                    key,
-                    style: Some(FlowStyle::Annotated { ann, .. }),
-                }) => Binding::AnnotatedType(*ann, Box::new(Binding::Forward(*key))),
-                Some(FlowInfo { key, .. }) => Binding::Forward(*key),
+                Some(FlowInfo { key, .. }) => {
+                    if let Some(ann) = static_info.annot {
+                        Binding::AnnotatedType(ann, Box::new(Binding::Forward(*key)))
+                    } else {
+                        Binding::Forward(*key)
+                    }
+                }
                 None => {
                     // We think we have a binding for this, but we didn't encounter a flow element, so have no idea of what.
                     // This might be because we haven't fully implemented all bindings, or because the two disagree. Just guess.
