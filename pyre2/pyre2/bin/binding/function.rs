@@ -66,11 +66,10 @@ impl<'a> BindingsBuilder<'a> {
                 Key::Definition(ShortIdentifier::new(name)),
                 Binding::AnnotatedType(ann_key, Box::new(Binding::AnyType(AnyStyle::Implicit))),
             );
-            self.scopes.current_mut().stat.add(
-                name.id.clone(),
-                name.range,
-                Some(ShortIdentifier::new(name)),
-            );
+            self.scopes
+                .current_mut()
+                .stat
+                .add(name.id.clone(), name.range, Some(ann_key));
             self.bind_key(
                 &name.id,
                 bind_key,

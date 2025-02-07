@@ -43,7 +43,7 @@ pub struct StaticInfo {
     pub loc: TextRange,
     /// The location of the first annotated name for this binding, if any.
     #[allow(dead_code)]
-    pub annot: Option<ShortIdentifier>,
+    pub annot: Option<Idx<KeyAnnotation>>,
     /// How many times this will be redefined
     pub count: usize,
     /// True if this is going to appear as a `Key::Import``.
@@ -56,7 +56,7 @@ impl Static {
         &mut self,
         name: Name,
         loc: TextRange,
-        annot: Option<ShortIdentifier>,
+        annot: Option<Idx<KeyAnnotation>>,
         count: usize,
     ) -> &mut StaticInfo {
         // Use whichever one we see first
@@ -70,7 +70,7 @@ impl Static {
         res
     }
 
-    pub fn add(&mut self, name: Name, range: TextRange, annot: Option<ShortIdentifier>) {
+    pub fn add(&mut self, name: Name, range: TextRange, annot: Option<Idx<KeyAnnotation>>) {
         self.add_with_count(name, range, annot, 1);
     }
 
@@ -81,13 +81,15 @@ impl Static {
         top_level: bool,
         lookup: &dyn LookupExport,
         config: &Config,
+        mut get_annotation_idx: impl FnMut(ShortIdentifier) -> Idx<KeyAnnotation>,
     ) {
         let mut d = Definitions::new(x, module_info.name(), module_info.path().is_init(), config);
         if top_level && module_info.name() != ModuleName::builtins() {
             d.inject_builtins();
         }
         for (name, def) in d.definitions {
-            self.add_with_count(name, def.range, def.annot, def.count)
+            let annot = def.annot.map(&mut get_annotation_idx);
+            self.add_with_count(name, def.range, annot, def.count)
                 .uses_key_import = def.style == DefinitionStyle::ImportModule;
         }
         for (m, range) in d.import_all {

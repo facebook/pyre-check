@@ -286,6 +286,12 @@ impl<'a> BindingsBuilder<'a> {
             top_level,
             self.lookup,
             self.config,
+            |x| {
+                self.table
+                    .annotations
+                    .0
+                    .insert(KeyAnnotation::Annotation(x))
+            },
         );
     }
 
