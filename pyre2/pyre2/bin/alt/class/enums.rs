@@ -62,7 +62,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // Methods decorated with @member are members
             Type::Decoration(Decoration::EnumMember(_)) => true,
             // Callables are not valid enum members
-            Type::BoundMethod(_, _) | Type::Callable(_, _) | Type::Decoration(_) => false,
+            Type::BoundMethod(_) | Type::Callable(_, _) | Type::Decoration(_) => false,
             // Values initialized with nonmember() are not members
             Type::ClassType(cls)
                 if cls.class_object().has_qname("enum", "nonmember")

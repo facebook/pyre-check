@@ -19,6 +19,7 @@ use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
+use crate::types::callable::Params;
 use crate::types::class::Class;
 use crate::types::class::ClassKind;
 use crate::types::class::ClassType;
@@ -275,6 +276,33 @@ pub enum CalleeKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct BoundMethod {
+    pub obj: Type,
+    pub func: Type,
+}
+
+impl BoundMethod {
+    pub fn as_callable(&self) -> Option<Type> {
+        if let Type::Callable(
+            box Callable {
+                params: Params::List(params),
+                ret,
+            },
+            _,
+        ) = &self.func
+            && !params.is_empty()
+        {
+            Some(Type::Callable(
+                Box::new(Callable::list(params.tail(), ret.clone())),
+                CallableKind::Anon,
+            ))
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
     Literal(Lit),
     LiteralString,
@@ -282,7 +310,7 @@ pub enum Type {
     Callable(Box<Callable>, CallableKind),
     /// A method of a class. The first `Box<Type>` is the self/cls argument,
     /// and the second is the function.
-    BoundMethod(Box<Type>, Box<Type>),
+    BoundMethod(Box<BoundMethod>),
     Union(Vec<Type>),
     #[expect(dead_code)] // Not currently used, but may be in the future
     Intersect(Vec<Type>),
@@ -411,7 +439,9 @@ impl Type {
                 },
                 _,
             ) => Some(t),
-            Type::Forall(_, t) | Type::BoundMethod(_, t) => t.as_typeguard(),
+            Type::Forall(_, box t) | Type::BoundMethod(box BoundMethod { func: t, .. }) => {
+                t.as_typeguard()
+            }
             _ => None,
         }
     }
@@ -527,7 +557,7 @@ impl Type {
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match self {
             Type::Callable(c, _) => c.visit(f),
-            Type::BoundMethod(obj, func) => {
+            Type::BoundMethod(box BoundMethod { obj, func }) => {
                 f(obj);
                 f(func);
             }
@@ -571,7 +601,7 @@ impl Type {
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
             Type::Callable(c, _) => c.visit_mut(f),
-            Type::BoundMethod(obj, func) => {
+            Type::BoundMethod(box BoundMethod { obj, func }) => {
                 f(obj);
                 f(func);
             }

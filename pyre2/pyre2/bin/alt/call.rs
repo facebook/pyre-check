@@ -22,6 +22,7 @@ use crate::types::callable::Params;
 use crate::types::class::ClassType;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::AnyStyle;
+use crate::types::types::BoundMethod;
 use crate::types::types::Type;
 use crate::types::types::Var;
 
@@ -70,8 +71,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some((Vec::new(), CallTarget::Dataclass(*c)))
             }
             Type::Callable(c, _) => Some((Vec::new(), CallTarget::Callable(*c))),
-            Type::BoundMethod(obj, func) => match self.as_call_target(*func.clone()) {
-                Some((gs, CallTarget::Callable(c))) => Some((gs, CallTarget::BoundMethod(*obj, c))),
+            Type::BoundMethod(box BoundMethod { obj, func }) => match self
+                .as_call_target(func.clone())
+            {
+                Some((gs, CallTarget::Callable(c))) => Some((gs, CallTarget::BoundMethod(obj, c))),
                 _ => None,
             },
             Type::ClassDef(cls) => self.as_call_target(self.instantiate_fresh(&cls)),
@@ -188,13 +191,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
     ) -> Option<Type> {
         let dunder_call = match self.get_metaclass_dunder_call(cls)? {
-            Type::BoundMethod(_, func) => {
+            Type::BoundMethod(box BoundMethod { func, .. }) => {
                 // This method was bound to a general instance of the metaclass, but we have more
                 // information about the particular instance that it should be bound to.
-                Type::BoundMethod(
-                    Box::new(Type::type_form(Type::ClassType(cls.clone()))),
+                Type::BoundMethod(Box::new(BoundMethod {
+                    obj: Type::type_form(Type::ClassType(cls.clone())),
                     func,
-                )
+                }))
             }
             dunder_call => dunder_call,
         };

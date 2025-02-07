@@ -10,8 +10,6 @@ use itertools::izip;
 use crate::alt::answers::LookupAnswer;
 use crate::dunder;
 use crate::solver::solver::Subset;
-use crate::types::callable::Callable;
-use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
@@ -114,25 +112,11 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 && name == dunder::CALL
                 && let Some(want) = self.get_call_attr(&protocol)
             {
-                if let Type::BoundMethod(
-                    _,
-                    box Type::Callable(
-                        box Callable {
-                            params: Params::List(params),
-                            ret,
-                        },
-                        _,
-                    ),
-                ) = want
-                    && !params.is_empty()
+                if let Type::BoundMethod(box method) = want
+                    && let Some(want_no_self) = method.as_callable()
+                    && !self.is_subset_eq(&got, &want_no_self)
                 {
-                    let want_no_self = Type::Callable(
-                        Box::new(Callable::list(params.tail(), ret.clone())),
-                        CallableKind::Anon,
-                    );
-                    if !self.is_subset_eq(&got, &want_no_self) {
-                        return false;
-                    }
+                    return false;
                 }
             } else {
                 return false;
@@ -155,55 +139,15 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (l, Type::Intersect(us)) => us.iter().all(|u| self.is_subset_eq(l, u)),
             (l, Type::Union(us)) => us.iter().any(|u| self.is_subset_eq(l, u)),
             (Type::Intersect(ls), u) => ls.iter().any(|l| self.is_subset_eq(l, u)),
-            (
-                Type::BoundMethod(
-                    _,
-                    box Type::Callable(
-                        box Callable {
-                            params: Params::List(params),
-                            ret,
-                        },
-                        _,
-                    ),
-                ),
-                Type::Callable(_, _),
-            ) if !params.is_empty() => {
-                let l_no_self = Type::Callable(
-                    Box::new(Callable::list(params.tail(), ret.clone())),
-                    CallableKind::Anon,
-                );
+            (Type::BoundMethod(box method), Type::Callable(_, _))
+                if let Some(l_no_self) = method.as_callable() =>
+            {
                 self.is_subset_eq_impl(&l_no_self, want)
             }
-            (
-                Type::BoundMethod(
-                    _,
-                    box Type::Callable(
-                        box Callable {
-                            params: Params::List(l_params),
-                            ret: l_ret,
-                        },
-                        _,
-                    ),
-                ),
-                Type::BoundMethod(
-                    _,
-                    box Type::Callable(
-                        box Callable {
-                            params: Params::List(u_params),
-                            ret: u_ret,
-                        },
-                        _,
-                    ),
-                ),
-            ) if !l_params.is_empty() && !u_params.is_empty() => {
-                let l_no_self = Type::Callable(
-                    Box::new(Callable::list(l_params.tail(), l_ret.clone())),
-                    CallableKind::Anon,
-                );
-                let u_no_self = Type::Callable(
-                    Box::new(Callable::list(u_params.tail(), u_ret.clone())),
-                    CallableKind::Anon,
-                );
+            (Type::BoundMethod(box l), Type::BoundMethod(box u))
+                if let Some(l_no_self) = l.as_callable()
+                    && let Some(u_no_self) = u.as_callable() =>
+            {
                 self.is_subset_eq_impl(&l_no_self, &u_no_self)
             }
             (Type::Callable(l, _), Type::Callable(u, _)) => {

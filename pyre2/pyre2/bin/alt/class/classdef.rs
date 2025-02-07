@@ -43,6 +43,7 @@ use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
 use crate::types::typed_dict::TypedDict;
+use crate::types::types::BoundMethod;
 use crate::types::types::Decoration;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -240,7 +241,7 @@ fn make_bound_method(obj: Type, attr: Type) -> Type {
     // TODO(stroxler): Think about what happens if `attr` is not callable. This
     // can happen with the current logic if a decorator spits out a non-callable
     // type that gets wrapped in `@classmethod`.
-    Type::BoundMethod(Box::new(obj), Box::new(attr))
+    Type::BoundMethod(Box::new(BoundMethod { obj, func: attr }))
 }
 
 impl Display for ClassField {

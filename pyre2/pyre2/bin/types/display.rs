@@ -22,6 +22,7 @@ use crate::types::class::TArgs;
 use crate::types::qname::QName;
 use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
+use crate::types::types::BoundMethod;
 use crate::types::types::Decoration;
 use crate::types::types::NeverStyle;
 use crate::types::types::Type;
@@ -217,7 +218,7 @@ impl<'a> TypeDisplayContext<'a> {
                 x.fmt_with_type(f, &|t| self.display(t))?;
                 write!(f, ")")
             }
-            Type::BoundMethod(obj, func) => {
+            Type::BoundMethod(box BoundMethod { obj, func }) => {
                 write!(
                     f,
                     "BoundMethod[{}, {}]",
