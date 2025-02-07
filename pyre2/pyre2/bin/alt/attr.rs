@@ -485,9 +485,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Tuple(Tuple::Unbounded(box element)) => {
                 Some(AttributeBase::ClassInstance(stdlib.tuple(element)))
             }
-            Type::Tuple(Tuple::Concrete(elements)) => Some(AttributeBase::ClassInstance(
-                stdlib.tuple(self.unions(elements)),
-            )),
+            Type::Tuple(Tuple::Concrete(elements)) => {
+                Some(AttributeBase::ClassInstance(if elements.is_empty() {
+                    stdlib.tuple(Type::Any(AnyStyle::Implicit))
+                } else {
+                    stdlib.tuple(self.unions(elements))
+                }))
+            }
             Type::LiteralString => Some(AttributeBase::ClassInstance(stdlib.str())),
             Type::Literal(lit) => {
                 Some(AttributeBase::ClassInstance(lit.general_class_type(stdlib)))

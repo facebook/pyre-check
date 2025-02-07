@@ -941,8 +941,8 @@
   "literals_literalstring.py": [
     "Line 120: Expected 1 errors",
     "Line 48: Unexpected errors ['assert_type(str, LiteralString) failed']",
-    "Line 52: Unexpected errors ['assert_type(str, LiteralString) failed']",
-    "Line 53: Unexpected errors ['EXPECTED LiteralString <: Buffer']",
+    "Line 52: Unexpected errors ['assert_type(str, LiteralString) failed', 'EXPECTED tuple[LiteralString, LiteralString] <: Iterable[str]']",
+    "Line 53: Unexpected errors ['EXPECTED tuple[LiteralString, str] <: Iterable[str]', 'EXPECTED LiteralString <: Buffer']",
     "Line 57: Unexpected errors ['`LiteralString` has no attribute `__iadd__`']",
     "Line 58: Unexpected errors ['`LiteralString` has no attribute `__iadd__`']",
     "Line 63: Unexpected errors ['assert_type(str, LiteralString) failed']",
@@ -990,6 +990,7 @@
   "namedtuples_define_functional.py": [
     "Line 14: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]']",
     "Line 15: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]']",
+    "Line 18: Unexpected errors [\"EXPECTED tuple[Literal['x'], Literal['y']] <: Iterable[str] | str\"]",
     "Line 19: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]']",
     "Line 20: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]']",
     "Line 24: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point3, type[tuple[Any, ...]]]']",
@@ -1003,6 +1004,7 @@
     "Line 40: Unexpected errors ['Expected a callable, got NamedTuple']",
     "Line 41: Unexpected errors ['Expected a callable, got NamedTuple']",
     "Line 57: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT4, type[tuple[Any, ...]]]']",
+    "Line 63: Unexpected errors ['EXPECTED tuple[Literal[1], Literal[2]] <: Iterable[Any] | None']",
     "Line 64: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]']",
     "Line 65: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]']"
   ],
@@ -1144,10 +1146,11 @@
     "Line 82: Expected 1 errors"
   ],
   "protocols_modules.py": [
+    "Line 26: Expected 1 errors",
+    "Line 48: Expected 1 errors",
+    "Line 49: Expected 1 errors",
     "Line 10: Unexpected errors ['Could not find import of `_protocols_modules1`, Could not find path for `_protocols_modules1`']",
-    "Line 11: Unexpected errors ['Could not find import of `_protocols_modules2`, Could not find path for `_protocols_modules2`']",
-    "Line 25: Unexpected errors ['EXPECTED Module[_protocols_modules1] <: Options1']",
-    "Line 47: Unexpected errors ['EXPECTED Module[_protocols_modules2] <: Reporter1']"
+    "Line 11: Unexpected errors ['Could not find import of `_protocols_modules2`, Could not find path for `_protocols_modules2`']"
   ],
   "protocols_recursive.py": [
     "Line 25: Unexpected errors ['EXPECTED SimpleTree <: Traversable']",

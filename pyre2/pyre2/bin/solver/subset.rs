@@ -275,6 +275,9 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     _ => false,
                 }
             }
+            (_, Type::ClassType(want)) if self.type_order.is_protocol(want.class_object()) => {
+                self.is_subset_protocol(got.clone(), want.clone())
+            }
             (Type::ClassDef(got), Type::ClassDef(want)) => {
                 self.type_order.has_superclass(got, want)
             }

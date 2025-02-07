@@ -12814,6 +12814,26 @@
     },
     {
       "code": -2,
+      "column": 26,
+      "concise_description": "EXPECTED tuple[LiteralString, LiteralString] <: Iterable[str]",
+      "description": "EXPECTED tuple[LiteralString, LiteralString] <: Iterable[str]",
+      "line": 52,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 52
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "EXPECTED tuple[LiteralString, str] <: Iterable[str]",
+      "description": "EXPECTED tuple[LiteralString, str] <: Iterable[str]",
+      "line": 53,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 53
+    },
+    {
+      "code": -2,
       "column": 34,
       "concise_description": "EXPECTED LiteralString <: Buffer",
       "description": "EXPECTED LiteralString <: Buffer",
@@ -13842,6 +13862,16 @@
     },
     {
       "code": -2,
+      "column": 31,
+      "concise_description": "EXPECTED tuple[Literal['x'], Literal['y']] <: Iterable[str] | str",
+      "description": "EXPECTED tuple[Literal['x'], Literal['y']] <: Iterable[str] | str",
+      "line": 18,
+      "name": "PyreError",
+      "stop_column": 41,
+      "stop_line": 18
+    },
+    {
+      "code": -2,
       "column": 8,
       "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]",
       "description": "Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]",
@@ -14039,6 +14069,16 @@
       "name": "PyreError",
       "stop_column": 4,
       "stop_line": 57
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "EXPECTED tuple[Literal[1], Literal[2]] <: Iterable[Any] | None",
+      "description": "EXPECTED tuple[Literal[1], Literal[2]] <: Iterable[Any] | None",
+      "line": 63,
+      "name": "PyreError",
+      "stop_column": 49,
+      "stop_line": 63
     },
     {
       "code": -2,
@@ -15881,56 +15921,6 @@
       "name": "PyreError",
       "stop_column": 27,
       "stop_line": 11
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED Module[_protocols_modules1] <: Options1",
-      "description": "EXPECTED Module[_protocols_modules1] <: Options1",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED Module[_protocols_modules1] <: Options2",
-      "description": "EXPECTED Module[_protocols_modules1] <: Options2",
-      "line": 26,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 26
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "EXPECTED Module[_protocols_modules2] <: Reporter1",
-      "description": "EXPECTED Module[_protocols_modules2] <: Reporter1",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "EXPECTED Module[_protocols_modules2] <: Reporter2",
-      "description": "EXPECTED Module[_protocols_modules2] <: Reporter2",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "EXPECTED Module[_protocols_modules2] <: Reporter3",
-      "description": "EXPECTED Module[_protocols_modules2] <: Reporter3",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 49
     }
   ],
   "protocols_recursive.py": [
