@@ -171,13 +171,7 @@ impl<'a> BindingsBuilder<'a> {
             },
         );
 
-        self.scopes.current_mut().stat.stmts(
-            &body,
-            &self.module_info,
-            false,
-            self.lookup,
-            self.config,
-        );
+        self.init_static_scope(&body, false);
         self.stmts(body);
         let func_scope = self.scopes.pop();
         self.scopes.pop();

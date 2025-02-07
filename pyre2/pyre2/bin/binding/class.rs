@@ -108,13 +108,7 @@ impl<'a> BindingsBuilder<'a> {
         legacy_tparam_builder.add_name_definitions(self);
 
         self.scopes.push(Scope::class_body(x.name.clone()));
-        self.scopes.current_mut().stat.stmts(
-            &body,
-            &self.module_info,
-            false,
-            self.lookup,
-            self.config,
-        );
+        self.init_static_scope(&body, false);
         self.stmts(body);
 
         let last_scope = self.scopes.pop();

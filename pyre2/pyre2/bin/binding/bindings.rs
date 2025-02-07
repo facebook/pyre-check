@@ -206,11 +206,7 @@ impl Bindings {
             functions: Vec1::new(FuncInfo::default()),
             table: Default::default(),
         };
-        builder
-            .scopes
-            .current_mut()
-            .stat
-            .stmts(&x, &module_info, true, lookup, config);
+        builder.init_static_scope(&x, true);
         if module_info.name() != ModuleName::builtins() {
             builder.inject_builtins();
         }
@@ -283,6 +279,16 @@ impl BindingTable {
 }
 
 impl<'a> BindingsBuilder<'a> {
+    pub fn init_static_scope(&mut self, x: &[Stmt], top_level: bool) {
+        self.scopes.current_mut().stat.stmts(
+            x,
+            &self.module_info,
+            top_level,
+            self.lookup,
+            self.config,
+        );
+    }
+
     pub fn stmts(&mut self, xs: Vec<Stmt>) {
         for x in xs {
             self.stmt(x);
