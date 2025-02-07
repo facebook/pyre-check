@@ -126,14 +126,14 @@ impl<'a> BindingsBuilder<'a> {
                     class: definition_key,
                     name: name.clone(),
                     value: Binding::Forward(info.key),
-                    annotation: info.ann(),
+                    annotation: stat_info.annot,
                     range: stat_info.loc,
                     initialization,
                 };
                 fields.insert(
                     name.clone(),
                     ClassFieldProperties {
-                        is_annotated: info.ann().is_some(),
+                        is_annotated: stat_info.annot.is_some(),
                     },
                 );
                 self.table.insert(
