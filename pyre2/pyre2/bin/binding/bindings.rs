@@ -416,7 +416,13 @@ impl<'a> BindingsBuilder<'a> {
         key: Idx<Key>,
         style: Option<FlowStyle>,
     ) -> Option<Idx<KeyAnnotation>> {
-        let flow_ann = style.as_ref().and_then(|style| style.ann());
+        let flow_ann = style.as_ref().and_then(|style| {
+            if let FlowStyle::Annotated { ann, .. } = style {
+                Some(*ann)
+            } else {
+                None
+            }
+        });
         self.scopes.update_flow_info(name, key, style);
         let info = self.scopes.current().stat.0.get(name).unwrap_or_else(|| {
             let module = self.module_info.name();
