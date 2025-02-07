@@ -31,7 +31,6 @@ use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
 use crate::binding::binding::Binding;
-use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
@@ -371,12 +370,11 @@ impl<'a> BindingsBuilder<'a> {
         name: &Identifier,
         binding: Binding,
         style: Option<FlowStyle>,
-    ) -> Idx<Key> {
+    ) -> Option<Idx<KeyAnnotation>> {
         let idx = self
             .table
             .insert(Key::Definition(ShortIdentifier::new(name)), binding);
-        self.bind_key(&name.id, idx, style);
-        idx
+        self.bind_key(&name.id, idx, style)
     }
 
     /// In methods, we track assignments to `self` attribute targets so that we can
@@ -416,13 +414,6 @@ impl<'a> BindingsBuilder<'a> {
         key: Idx<Key>,
         style: Option<FlowStyle>,
     ) -> Option<Idx<KeyAnnotation>> {
-        let flow_ann = style.as_ref().and_then(|style| {
-            if let FlowStyle::Annotated { ann, .. } = style {
-                Some(*ann)
-            } else {
-                None
-            }
-        });
         self.scopes.update_flow_info(name, key, style);
         let info = self.scopes.current().stat.0.get(name).unwrap_or_else(|| {
             let module = self.module_info.name();
@@ -434,17 +425,7 @@ impl<'a> BindingsBuilder<'a> {
                 .1
                 .insert(key);
         }
-        info.annot.inspect(|ann| {
-            if let Some(flow_ann) = flow_ann
-                && flow_ann != *ann
-            {
-                let key = self.table.annotations.0.idx_to_key(flow_ann);
-                self.table.insert(
-                    KeyExpect(key.range()),
-                    BindingExpect::Eq(flow_ann, *ann, name.clone()),
-                );
-            }
-        })
+        info.annot
     }
 
     pub fn type_params(&mut self, x: &mut TypeParams) -> Vec<Quantified> {

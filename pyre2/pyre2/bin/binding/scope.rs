@@ -117,13 +117,8 @@ pub struct Flow {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum FlowStyle {
-    /// The annotation associated with this key, if any.
-    /// If there is one, all subsequent bindings must obey this annotation.
-    /// Also store am I initialized, or am I the result of `x: int`?
-    Annotated {
-        ann: Idx<KeyAnnotation>,
-        is_initialized: bool,
-    },
+    /// Am I initialized, or am I the result of `x: int`?
+    Annotated { is_initialized: bool },
     /// Am I the result of an import (which needs merging).
     /// E.g. `import foo.bar` and `import foo.baz` need merging.
     /// The `ModuleName` will be the most recent entry.

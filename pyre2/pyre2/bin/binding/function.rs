@@ -74,7 +74,6 @@ impl<'a> BindingsBuilder<'a> {
                 &name.id,
                 bind_key,
                 Some(FlowStyle::Annotated {
-                    ann: ann_key,
                     is_initialized: true,
                 }),
             );

@@ -179,14 +179,17 @@ impl<'a> BindingsBuilder<'a> {
                             Box::new(Binding::AnyType(AnyStyle::Implicit)),
                         )
                     };
-                    self.bind_definition(
+                    if let Some(ann) = self.bind_definition(
                         &name,
                         binding,
-                        Some(FlowStyle::Annotated {
-                            ann: ann_key,
-                            is_initialized,
-                        }),
-                    );
+                        Some(FlowStyle::Annotated { is_initialized }),
+                    ) && ann != ann_key
+                    {
+                        self.table.insert(
+                            KeyExpect(name.range),
+                            BindingExpect::Eq(ann_key, ann, name.id.clone()),
+                        );
+                    }
                 }
                 Expr::Attribute(attr) => {
                     self.ensure_expr(&attr.value);
