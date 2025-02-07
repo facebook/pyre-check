@@ -15,7 +15,6 @@ use ruff_python_ast::ExprName;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Stmt;
 use ruff_text_size::TextRange;
-use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use vec1::Vec1;
 
@@ -42,7 +41,6 @@ pub struct Static(pub SmallMap<Name, StaticInfo>);
 pub struct StaticInfo {
     pub loc: TextRange,
     /// The location of the first annotated name for this binding, if any.
-    #[allow(dead_code)]
     pub annot: Option<Idx<KeyAnnotation>>,
     /// How many times this will be redefined
     pub count: usize,
@@ -326,26 +324,11 @@ impl Scopes {
         self.0.iter_mut().rev()
     }
 
-    pub fn update_flow_info(
-        &mut self,
-        name: &Name,
-        key: Idx<Key>,
-        style: Option<FlowStyle>,
-    ) -> Option<Idx<KeyAnnotation>> {
-        match self.current_mut().flow.info.entry(name.clone()) {
-            Entry::Occupied(mut e) => {
-                // if there was a previous annotation, reuse that
-                let style = style.or_else(|| {
-                    e.get().ann().map(|ann| FlowStyle::Annotated {
-                        ann,
-                        is_initialized: true,
-                    })
-                });
-                *e.get_mut() = FlowInfo { key, style };
-                e.get().ann()
-            }
-            Entry::Vacant(e) => e.insert(FlowInfo { key, style }).ann(),
-        }
+    pub fn update_flow_info(&mut self, name: &Name, key: Idx<Key>, style: Option<FlowStyle>) {
+        self.current_mut()
+            .flow
+            .info
+            .insert(name.clone(), FlowInfo { key, style });
     }
 
     fn get_flow_info(&self, name: &Name) -> Option<&FlowInfo> {

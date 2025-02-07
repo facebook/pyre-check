@@ -290,7 +290,7 @@ impl<'a> BindingsBuilder<'a> {
                 if !exhaustive {
                     branches.push(mem::take(&mut self.scopes.current_mut().flow));
                 }
-                self.scopes.current_mut().flow = self.merge_flow(branches, range, false);
+                self.scopes.current_mut().flow = self.merge_flow(branches, range);
             }
             Stmt::With(x) => {
                 let kind = if x.is_async {
@@ -376,7 +376,7 @@ impl<'a> BindingsBuilder<'a> {
                     branches.push(base);
                 }
 
-                self.scopes.current_mut().flow = self.merge_flow(branches, range, false);
+                self.scopes.current_mut().flow = self.merge_flow(branches, range);
                 self.stmts(x.finalbody);
             }
             Stmt::Assert(x) => {

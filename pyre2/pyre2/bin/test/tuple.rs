@@ -107,8 +107,8 @@ assert_type(x[3:], tuple[()])
 testcase!(
     test_unbounded_tuple_hint,
     r#"
-x: tuple[str, ...] = ("ok",)
-x: tuple[int, ...] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: tuple[int, ...]
+x1: tuple[str, ...] = ("ok",)
+x2: tuple[int, ...] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: tuple[int, ...]
     "#,
 );
 
@@ -116,11 +116,11 @@ testcase!(
     test_superclass_tuple_hint,
     r#"
 from typing import Iterable, Literal
-x: Iterable[Literal['ok']] = ("ok",)
-x: Iterable = ("ok",)
-x: object = ("ok",)
-x: Iterable[int] = ("err",)  # E: EXPECTED Literal['err'] <: int
-x: list[int] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: list[int]
+x1: Iterable[Literal['ok']] = ("ok",)
+x2: Iterable = ("ok",)
+x3: object = ("ok",)
+x4: Iterable[int] = ("err",)  # E: EXPECTED Literal['err'] <: int
+x5: list[int] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: list[int]
     "#,
 );
 

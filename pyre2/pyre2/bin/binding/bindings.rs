@@ -414,7 +414,8 @@ impl<'a> BindingsBuilder<'a> {
         key: Idx<Key>,
         style: Option<FlowStyle>,
     ) -> Option<Idx<KeyAnnotation>> {
-        let annotation = self.scopes.update_flow_info(name, key, style);
+        let flow_ann = style.as_ref().and_then(|style| style.ann());
+        self.scopes.update_flow_info(name, key, style);
         let info = self.scopes.current().stat.0.get(name).unwrap_or_else(|| {
             let module = self.module_info.name();
             panic!("Name `{name}` not found in static scope of module `{module}`")
@@ -425,7 +426,17 @@ impl<'a> BindingsBuilder<'a> {
                 .1
                 .insert(key);
         }
-        annotation
+        info.annot.inspect(|ann| {
+            if let Some(flow_ann) = flow_ann
+                && flow_ann != *ann
+            {
+                let key = self.table.annotations.0.idx_to_key(flow_ann);
+                self.table.insert(
+                    KeyExpect(key.range()),
+                    BindingExpect::Eq(flow_ann, *ann, name.clone()),
+                );
+            }
+        })
     }
 
     pub fn type_params(&mut self, x: &mut TypeParams) -> Vec<Quantified> {
@@ -534,51 +545,15 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn merge_flow_style(
-        &mut self,
-        styles: SmallSet<Option<&FlowStyle>>,
-        name: &Name,
-        is_loop: bool,
-    ) -> Option<FlowStyle> {
+    fn merge_flow_style(&mut self, styles: SmallSet<Option<&FlowStyle>>) -> Option<FlowStyle> {
         if styles.len() == 1 {
             return styles.first().unwrap().cloned();
         }
-
-        // The only distinct styles we can meaningfully merge are annotations
-        let unordered_anns: SmallSet<Option<Idx<KeyAnnotation>>> =
-            styles.iter().map(|x| x.as_ref()?.ann()).collect();
-        let mut anns = unordered_anns
-            .into_iter()
-            .flatten()
-            .map(|k| (k, self.table.annotations.0.idx_to_key(k).range()))
-            .collect::<Vec<_>>();
-        anns.sort_by_key(|(_, range)| (range.start(), range.end()));
-        // If there are multiple annotations, this picks the first one.
-        let mut ann = None;
-        for other_ann in anns.into_iter() {
-            match &ann {
-                None => {
-                    ann = Some(other_ann);
-                }
-                Some(ann) => {
-                    // A loop might capture the same annotation multiple times at many exit points.
-                    // But we only want to consider it when we join up `if` statements.
-                    if !is_loop {
-                        self.table.insert(
-                            KeyExpect(other_ann.1),
-                            BindingExpect::Eq(other_ann.0, ann.0, name.clone()),
-                        );
-                    }
-                }
-            }
-        }
-        ann.map(|x| FlowStyle::Annotated {
-            ann: x.0,
-            is_initialized: true,
-        })
+        // TODO: Merging of flow style is hacky. What properties should be merged?
+        None
     }
 
-    pub fn merge_flow(&mut self, mut xs: Vec<Flow>, range: TextRange, is_loop: bool) -> Flow {
+    pub fn merge_flow(&mut self, mut xs: Vec<Flow>, range: TextRange) -> Flow {
         if xs.len() == 1 && xs[0].no_next {
             return xs.pop().unwrap();
         }
@@ -602,7 +577,7 @@ impl<'a> BindingsBuilder<'a> {
                     .iter()
                     .flat_map(|x| x.info.get(name.key()).map(|x| (x.key, x.style.as_ref())))
                     .unzip();
-            let style = self.merge_flow_style(styles, name.key(), is_loop);
+            let style = self.merge_flow_style(styles);
             let key = self
                 .table
                 .insert(Key::Phi(name.key().clone(), range), Binding::phi(values));
@@ -616,7 +591,7 @@ impl<'a> BindingsBuilder<'a> {
 
     fn merge_loop_into_current(&mut self, mut branches: Vec<Flow>, range: TextRange) {
         branches.push(mem::take(&mut self.scopes.current_mut().flow));
-        self.scopes.current_mut().flow = self.merge_flow(branches, range, true);
+        self.scopes.current_mut().flow = self.merge_flow(branches, range);
     }
 }
 

@@ -118,14 +118,14 @@ testcase!(
     test_set_hint,
     r#"
 from typing import Iterable, MutableSet, Literal
-x: set[int] = {1}
-x: set[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
-x: set[Literal[1]] = {2}  # E: EXPECTED Literal[2] <: Literal[1]
-x: MutableSet[int] = {1}
-x: MutableSet[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
-x: Iterable[int] = {1}
-x: object = {1}
-x: list[int] = {1}  # E: EXPECTED set[int] <: list[int]
+x1: set[int] = {1}
+x2: set[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
+x3: set[Literal[1]] = {2}  # E: EXPECTED Literal[2] <: Literal[1]
+x4: MutableSet[int] = {1}
+x5: MutableSet[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
+x6: Iterable[int] = {1}
+x7: object = {1}
+x8: list[int] = {1}  # E: EXPECTED set[int] <: list[int]
     "#,
 );
 
@@ -133,15 +133,15 @@ testcase!(
     test_dict_hint,
     r#"
 from typing import Iterable, MutableMapping, Literal
-x: dict[str, int] = {"a": 1}
-x: dict[str, int] = {"a": "oops"}  # E: EXPECTED Literal['oops'] <: int
-x: dict[str, Literal[1]] = {"a": 2} # E: EXPECTED Literal[2] <: Literal[1]
-x: MutableMapping[str, int] = {"a": 1}
-x: Iterable[str] = {"a": 1}
-x: Iterable[int] = {"oops": 1}  # E: EXPECTED Literal['oops'] <: int
-x: Iterable[Literal[4]] = {4: "a"}
-x: object = {"a": 1}
-x: list[str] = {"a": 1}  # E: EXPECTED dict[str, int] <: list[str]
+x1: dict[str, int] = {"a": 1}
+x2: dict[str, int] = {"a": "oops"}  # E: EXPECTED Literal['oops'] <: int
+x3: dict[str, Literal[1]] = {"a": 2} # E: EXPECTED Literal[2] <: Literal[1]
+x4: MutableMapping[str, int] = {"a": 1}
+x5: Iterable[str] = {"a": 1}
+x6: Iterable[int] = {"oops": 1}  # E: EXPECTED Literal['oops'] <: int
+x7: Iterable[Literal[4]] = {4: "a"}
+x8: object = {"a": 1}
+x9: list[str] = {"a": 1}  # E: EXPECTED dict[str, int] <: list[str]
     "#,
 );
 

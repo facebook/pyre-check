@@ -201,7 +201,7 @@ impl<'a> BindingsBuilder<'a> {
                     mem::swap(&mut self.scopes.current_mut().flow, &mut base);
                     branches.push(base);
                 }
-                self.scopes.current_mut().flow = self.merge_flow(branches, range, false);
+                self.scopes.current_mut().flow = self.merge_flow(branches, range);
                 narrow_ops.unwrap_or_default()
             }
             Pattern::MatchStar(_) => NarrowOps::new(),
@@ -255,6 +255,6 @@ impl<'a> BindingsBuilder<'a> {
         if !exhaustive {
             branches.push(mem::take(&mut self.scopes.current_mut().flow));
         }
-        self.scopes.current_mut().flow = self.merge_flow(branches, range, false);
+        self.scopes.current_mut().flow = self.merge_flow(branches, range);
     }
 }

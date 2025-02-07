@@ -289,20 +289,18 @@ def f(cond: bool):
     "#,
 );
 
-testcase_with_bug!(
-    "We ensure annots are consistent only when merging flow envs, missing trivial cases like this",
+testcase!(
     test_multiple_annotations_without_merge,
     r#"
 x: int = 0
-x: str = ""  # TODO: Inconsistent type annotations for x
+x: str = ""  # E: Inconsistent type annotations for x
     "#,
 );
 
-testcase_with_bug!(
-    "The annotation is currently part of the flow env, but should apply to the static env",
+testcase!(
     test_hoist_ann,
     r#"
-x = 0 # TODO: Literal[0] <: str
+x = 0 # E: Literal[0] <: str
 x: str = ""
     "#,
 );

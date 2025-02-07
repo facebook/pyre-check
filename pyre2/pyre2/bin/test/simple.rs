@@ -821,9 +821,9 @@ testcase_with_bug!(
     r#"
 class C:
     pass
-c: type[C] = C
+c1: type[C] = C
 # TODO(stroxler): Handle `type[Any]` correctly here.
-c: type[C, C] = C  # E: Expected 1 type argument for class `type`, got 2
+c2: type[C, C] = C  # E: Expected 1 type argument for class `type`, got 2
     "#,
 );
 
