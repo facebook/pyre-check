@@ -50,6 +50,8 @@ pub struct Definition {
     pub range: TextRange,
     /// If the definition occurs multiple times, the lowest `DefinitionStyle` is used (e.g. prefer `Local`).
     pub style: DefinitionStyle,
+    /// The location of the first annotated name for this definition, if any.
+    pub annot: Option<TextRange>,
     /// The number is the distinct times this variable was defined.
     pub count: usize,
 }
@@ -163,16 +165,24 @@ impl<'a> DefinitionsBuilder<'a> {
         }
     }
 
-    fn add_name(&mut self, x: &Name, range: TextRange, style: DefinitionStyle) {
+    fn add_name(
+        &mut self,
+        x: &Name,
+        range: TextRange,
+        style: DefinitionStyle,
+        annot: Option<TextRange>,
+    ) {
         match self.inner.definitions.entry(x.clone()) {
             Entry::Occupied(mut e) => {
                 e.get_mut().style = cmp::min(e.get().style, style);
+                e.get_mut().annot = e.get().annot.or(annot);
                 e.get_mut().count += 1;
             }
             Entry::Vacant(e) => {
                 e.insert(Definition {
                     range,
                     style,
+                    annot,
                     count: 1,
                 });
             }
@@ -180,11 +190,12 @@ impl<'a> DefinitionsBuilder<'a> {
     }
 
     fn add_identifier(&mut self, x: &Identifier, style: DefinitionStyle) {
-        self.add_name(&x.id, x.range, style);
+        self.add_name(&x.id, x.range, style, None);
     }
 
     fn expr_lvalue(&mut self, x: &Expr) {
-        let mut add_name = |x: &ExprName| self.add_name(&x.id, x.range, DefinitionStyle::Local);
+        let mut add_name =
+            |x: &ExprName| self.add_name(&x.id, x.range, DefinitionStyle::Local, None);
         Ast::expr_lvalue(x, &mut add_name)
     }
 
@@ -202,6 +213,7 @@ impl<'a> DefinitionsBuilder<'a> {
                             &module.first_component(),
                             a.name.range,
                             DefinitionStyle::ImportModule,
+                            None,
                         ),
                         Some(alias) => self.add_identifier(
                             alias,
@@ -303,7 +315,12 @@ impl<'a> DefinitionsBuilder<'a> {
                     _ => {}
                 }
             }
-            Stmt::AnnAssign(x) => self.expr_lvalue(&x.target),
+            Stmt::AnnAssign(x) => match &*x.target {
+                Expr::Name(x) => {
+                    self.add_name(&x.id, x.range, DefinitionStyle::Local, Some(x.range))
+                }
+                _ => {}
+            },
             Stmt::TypeAlias(x) => self.expr_lvalue(&x.name),
             Stmt::FunctionDef(x) => {
                 self.add_identifier(&x.name, DefinitionStyle::Local);
