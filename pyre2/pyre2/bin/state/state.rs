@@ -106,12 +106,6 @@ struct ModuleState {
     steps: RwLock<ModuleSteps>,
 }
 
-impl ModuleState {
-    fn clear(&self) {
-        self.steps.write().unwrap().clear();
-    }
-}
-
 impl State {
     pub fn new(parallel: bool) -> Self {
         Self {
@@ -445,14 +439,6 @@ impl State {
     pub fn run(&mut self, handles: Vec<Handle>) {
         self.retain_memory = true;
         self.run_internal(handles)
-    }
-
-    #[expect(dead_code)]
-    fn clear(&mut self) {
-        // Should we reset stdlib? Currently we don't.
-        for module in self.modules.get_mut().unwrap().values_mut() {
-            module.clear();
-        }
     }
 
     pub fn handles(&self) -> Vec<Handle> {

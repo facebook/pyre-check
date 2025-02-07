@@ -61,16 +61,6 @@ pub struct ModuleSteps {
     pub solutions: Info<Arc<Solutions>>,
 }
 
-impl ModuleSteps {
-    pub fn clear(&mut self) {
-        self.load.clear();
-        self.ast.clear();
-        self.exports.clear();
-        self.answers.clear();
-        self.solutions.clear();
-    }
-}
-
 #[derive(
     Debug, Clone, Copy, Dupe, Eq, PartialEq, PartialOrd, Ord, Display, Sequence
 )]
