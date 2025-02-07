@@ -795,6 +795,69 @@ module Modelable = struct
         type_annotation: Expression.t option Lazy.t;
       }
 
+  let create_callable ~pyre_api target =
+    let define =
+      lazy
+        (match Target.get_module_and_definition ~pyre_api target with
+        | Some (_, { Node.value; _ }) -> value
+        | None ->
+            Format.asprintf
+              "unknown target `%a` in `Modelable.create_callable`"
+              Target.pp_external
+              target
+            |> failwith)
+    in
+    Callable { target; define }
+
+
+  let create_attribute ~pyre_api target =
+    let name = Target.object_name target in
+    let get_type_annotation class_name attribute =
+      let get_annotation = function
+        | {
+            PyrePysaLogic.ClassSummary.Attribute.kind =
+              Simple { PyrePysaLogic.ClassSummary.Attribute.annotation; _ };
+            _;
+          } ->
+            annotation
+        | _ -> None
+      in
+      Analysis.PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
+      >>| Node.value
+      >>= fun class_summary ->
+      match
+        PyrePysaLogic.ClassSummary.constructor_attributes class_summary
+        |> Identifier.SerializableMap.find_opt attribute
+        >>| Node.value
+        >>| get_annotation
+      with
+      | Some annotation -> annotation
+      | None ->
+          PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false class_summary
+          |> Identifier.SerializableMap.find_opt attribute
+          >>| Node.value
+          >>= get_annotation
+    in
+    let type_annotation =
+      lazy
+        (let class_name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
+         let attribute = Reference.last name in
+         get_type_annotation class_name attribute)
+    in
+    Attribute { name; type_annotation }
+
+
+  let create_global ~pyre_api target =
+    let name = Target.object_name target in
+    let get_type_annotation reference =
+      match Analysis.PyrePysaEnvironment.ReadOnly.get_unannotated_global pyre_api reference with
+      | Some (SimpleAssign { explicit_annotation; _ }) -> explicit_annotation
+      | _ -> None
+    in
+    let type_annotation = lazy (get_type_annotation name) in
+    Global { name; type_annotation }
+
+
   let target = function
     | Callable { target; _ } -> target
     | Attribute { name; _ }
@@ -807,6 +870,11 @@ module Modelable = struct
     | Attribute { name; _ }
     | Global { name; _ } ->
         name
+
+
+  let define = function
+    | Callable { define; _ } -> Lazy.force define
+    | _ -> failwith "unexpected use of define"
 
 
   let type_annotation = function

@@ -1672,21 +1672,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
 
   let schedule_identifier = Configuration.ScheduleIdentifier.CallableModelQueries
 
-  let make_modelable ~pyre_api callable =
-    let define =
-      lazy
-        (match Target.get_module_and_definition ~pyre_api callable with
-        | Some (_, { Node.value; _ }) -> value
-        | None ->
-            (* This should only be called with valid targets, generated from `FetchCallables`. *)
-            Format.asprintf
-              "unknown target `%a` in `CallableQueryExecutor`"
-              Target.pp_external
-              callable
-            |> failwith)
-    in
-    Modelable.Callable { target = callable; define }
-
+  let make_modelable = Modelable.create_callable
 
   let generate_annotations_from_query_models
       ~pyre_api
@@ -1954,9 +1940,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | ModelQuery.Model.WriteToCache _ -> failwith "impossible case"
     in
     let { Statement.Define.signature = { parameters; return_annotation; _ }; captures; _ } =
-      match modelable with
-      | Modelable.Callable { define; _ } -> Lazy.force define
-      | _ -> failwith "unreachable"
+      Modelable.define modelable
     in
     let normalized_parameters = AccessPath.normalize_parameters parameters in
     List.concat_map models ~f:(apply_model ~normalized_parameters ~captures ~return_annotation)
@@ -2008,33 +1992,6 @@ module AttributeQueryExecutor = struct
     List.concat_map all_classes ~f:get_class_attributes
 
 
-  let get_type_annotation ~pyre_api class_name attribute =
-    let get_annotation = function
-      | {
-          PyrePysaLogic.ClassSummary.Attribute.kind =
-            Simple { PyrePysaLogic.ClassSummary.Attribute.annotation; _ };
-          _;
-        } ->
-          annotation
-      | _ -> None
-    in
-    PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
-    >>| Node.value
-    >>= fun class_summary ->
-    match
-      PyrePysaLogic.ClassSummary.constructor_attributes class_summary
-      |> Identifier.SerializableMap.find_opt attribute
-      >>| Node.value
-      >>| get_annotation
-    with
-    | Some annotation -> annotation
-    | None ->
-        PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false class_summary
-        |> Identifier.SerializableMap.find_opt attribute
-        >>| Node.value
-        >>= get_annotation
-
-
   include MakeQueryExecutor (struct
     type annotation = TaintAnnotation.t
 
@@ -2042,16 +1999,7 @@ module AttributeQueryExecutor = struct
 
     let schedule_identifier = Configuration.ScheduleIdentifier.AttributeModelQueries
 
-    let make_modelable ~pyre_api target =
-      let name = Target.object_name target in
-      let type_annotation =
-        lazy
-          (let class_name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
-           let attribute = Reference.last name in
-           get_type_annotation ~pyre_api class_name attribute)
-      in
-      Modelable.Attribute { name; type_annotation }
-
+    let make_modelable = Modelable.create_attribute
 
     let generate_annotations_from_query_models
         ~pyre_api:_
@@ -2103,12 +2051,6 @@ module GlobalVariableQueryExecutor = struct
     |> List.map ~f:Target.create_object
 
 
-  let get_type_annotation ~pyre_api reference =
-    match PyrePysaEnvironment.ReadOnly.get_unannotated_global pyre_api reference with
-    | Some (SimpleAssign { explicit_annotation; _ }) -> explicit_annotation
-    | _ -> None
-
-
   include MakeQueryExecutor (struct
     type annotation = TaintAnnotation.t
 
@@ -2116,11 +2058,7 @@ module GlobalVariableQueryExecutor = struct
 
     let schedule_identifier = Configuration.ScheduleIdentifier.GlobalModelQueries
 
-    let make_modelable ~pyre_api target =
-      let name = Target.object_name target in
-      let type_annotation = lazy (get_type_annotation ~pyre_api name) in
-      Modelable.Global { name; type_annotation }
-
+    let make_modelable = Modelable.create_global
 
     (* Generate taint annotations from the `models` part of a given model query. *)
     let generate_annotations_from_query_models

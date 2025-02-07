@@ -418,23 +418,28 @@ module NameCaptures : sig
 end
 
 module Modelable : sig
-  type t =
-    | Callable of {
-        target: Interprocedural.Target.t;
-        define: Ast.Statement.Define.t lazy_t;
-      }
-    | Attribute of {
-        name: Ast.Reference.t;
-        type_annotation: Ast.Expression.t option lazy_t;
-      }
-    | Global of {
-        name: Ast.Reference.t;
-        type_annotation: Ast.Expression.t option lazy_t;
-      }
+  type t
+
+  val create_callable
+    :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+    Interprocedural.Target.t ->
+    t
+
+  val create_attribute
+    :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+    Interprocedural.Target.t ->
+    t
+
+  val create_global
+    :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+    Interprocedural.Target.t ->
+    t
 
   val target : t -> Interprocedural.Target.t
 
   val name : t -> Ast.Reference.t
+
+  val define : t -> Ast.Statement.Define.t
 
   val type_annotation : t -> Ast.Expression.t option
 

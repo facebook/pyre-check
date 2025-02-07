@@ -84,7 +84,8 @@ let test_find_globals =
       {
         VariableWithType.name;
         type_annotation =
-          ModelQueryExecution.GlobalVariableQueryExecutor.get_type_annotation ~pyre_api name;
+          ModelParseResult.Modelable.create_global ~pyre_api (Target.create_object name)
+          |> ModelParseResult.Modelable.type_annotation;
       }
     in
     let actual =

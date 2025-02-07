@@ -4444,46 +4444,42 @@ let create_callable_model_from_annotations
   =
   let open Core.Result in
   let open ModelVerifier in
-  match modelable with
-  | Modelable.Callable { target; define } ->
-      let define = Lazy.force define in
-      resolve_global_callable
+  let target = Modelable.target modelable in
+  let define = Modelable.define modelable in
+  resolve_global_callable
+    ~path:None
+    ~location:Location.any
+    ~pyre_api
+    ~verify_decorators:false
+    ~decorators:define.signature.decorators
+    target
+  >>| (function
+        | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute (Type.Callable t))
+        | Some
+            (PyrePysaEnvironment.ModelQueries.Global.Attribute
+              (Type.Parametric
+                { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable t); _] }))
+          ->
+            Some t
+        | _ -> None)
+  >>= fun callable_annotation ->
+  let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
+  let annotations =
+    fix_constructors_and_property_setters_annotations
+      ~callable:target
+      ~source_sink_filter
+      annotations
+  in
+  List.fold_result annotations ~init:default_model ~f:(fun accumulator model_annotation ->
+      add_taint_annotation_to_model
         ~path:None
         ~location:Location.any
+        ~model_name:"Model query"
         ~pyre_api
-        ~verify_decorators:false
-        ~decorators:define.signature.decorators
-        target
-      >>| (function
-            | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute (Type.Callable t))
-            | Some
-                (PyrePysaEnvironment.ModelQueries.Global.Attribute
-                  (Type.Parametric
-                    {
-                      name = "BoundMethod";
-                      arguments = [Type.Argument.Single (Type.Callable t); _];
-                    })) ->
-                Some t
-            | _ -> None)
-      >>= fun callable_annotation ->
-      let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
-      let annotations =
-        fix_constructors_and_property_setters_annotations
-          ~callable:target
-          ~source_sink_filter
-          annotations
-      in
-      List.fold_result annotations ~init:default_model ~f:(fun accumulator model_annotation ->
-          add_taint_annotation_to_model
-            ~path:None
-            ~location:Location.any
-            ~model_name:"Model query"
-            ~pyre_api
-            ~callable_annotation
-            ~source_sink_filter
-            accumulator
-            model_annotation)
-  | _ -> failwith "unreachable"
+        ~callable_annotation
+        ~source_sink_filter
+        accumulator
+        model_annotation)
 
 
 let create_attribute_model_from_annotations ~pyre_api ~name ~source_sink_filter annotations =

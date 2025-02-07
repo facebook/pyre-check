@@ -95,12 +95,6 @@ module AttributeQueryExecutor : sig
 
   val get_attributes : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Interprocedural.Target.t list
 
-  val get_type_annotation
-    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-    string ->
-    string ->
-    Ast.Expression.t option
-
   val make_modelable
     :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     Interprocedural.Target.t ->
@@ -125,11 +119,6 @@ module GlobalVariableQueryExecutor : sig
     ReadWriteCache.t
 
   val get_globals : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Interprocedural.Target.t list
-
-  val get_type_annotation
-    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-    Ast.Reference.t ->
-    Ast.Expression.t option
 
   val make_modelable
     :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
