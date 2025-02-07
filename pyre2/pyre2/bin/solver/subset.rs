@@ -8,6 +8,7 @@
 use itertools::izip;
 
 use crate::alt::answers::LookupAnswer;
+use crate::dunder;
 use crate::solver::solver::Subset;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
@@ -85,7 +86,13 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         }
     }
 
-    pub fn is_subset_protocol(&mut self, got: Type, protocol: ClassType) -> bool {
+    fn get_call_attr(&mut self, protocol: &ClassType) -> Option<Type> {
+        self.type_order
+            .try_lookup_attr(protocol.clone().to_type(), &dunder::CALL)
+            .and_then(|attr| self.type_order.resolve_as_instance_method(attr))
+    }
+
+    fn is_subset_protocol(&mut self, got: Type, protocol: ClassType) -> bool {
         let recursive_check = (got.clone(), Type::ClassType(protocol.clone()));
         if !self.recursive_assumptions.insert(recursive_check) {
             // Assume recursive checks are true
@@ -94,11 +101,39 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         let to = self.type_order;
         let protocol_members = to.get_all_member_names(protocol.class_object());
         for name in protocol_members {
+            if name == dunder::INIT || name == dunder::NEW {
+                // Protocols can't be instantiated
+                continue;
+            }
             if let Some(got) = to.try_lookup_attr(got.clone(), &name)
                 && let Some(want) = to.try_lookup_attr(protocol.clone().to_type(), &name)
                 && to.is_attr_subset(&got, &want, &mut |got, want| self.is_subset_eq(got, want))
             {
                 continue;
+            } else if matches!(got, Type::Callable(_, _))
+                && name == dunder::CALL
+                && let Some(want) = self.get_call_attr(&protocol)
+            {
+                if let Type::BoundMethod(
+                    _,
+                    box Type::Callable(
+                        box Callable {
+                            params: Params::List(params),
+                            ret,
+                        },
+                        _,
+                    ),
+                ) = want
+                    && !params.is_empty()
+                {
+                    let want_no_self = Type::Callable(
+                        Box::new(Callable::list(params.tail(), ret.clone())),
+                        CallableKind::Anon,
+                    );
+                    if !self.is_subset_eq(&got, &want_no_self) {
+                        return false;
+                    }
+                }
             } else {
                 return false;
             }

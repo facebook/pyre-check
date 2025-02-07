@@ -65,6 +65,10 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.try_lookup_attr(base, attr_name)
     }
 
+    pub fn resolve_as_instance_method(self, attr: Attribute) -> Option<Type> {
+        self.0.resolve_as_instance_method(attr)
+    }
+
     pub fn is_attr_subset(
         self,
         got: &Attribute,
