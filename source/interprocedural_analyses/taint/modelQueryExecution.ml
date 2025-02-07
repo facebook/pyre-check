@@ -1533,10 +1533,10 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             scheduler_policies
             QueryKind.schedule_identifier
             ~default:
-              (Scheduler.Policy.fixed_chunk_count
+              (Scheduler.Policy.fixed_chunk_size
                  ~minimum_chunks_per_worker:1
                  ~minimum_chunk_size:1
-                 ~preferred_chunks_per_worker:1
+                 ~preferred_chunk_size:5000
                  ())
         in
         Scheduler.map_reduce
