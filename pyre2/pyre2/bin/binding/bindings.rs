@@ -491,16 +491,16 @@ impl<'a> BindingsBuilder<'a> {
         let items = x
             .info
             .iter_hashed()
-            .map(|x| (x.0.cloned(), x.1.ann()))
+            .map(|x| x.0.cloned())
             .collect::<SmallSet<_>>();
         let mut res = SmallMap::with_capacity(items.len());
-        for (name, ann) in items.into_iter() {
+        for name in items.into_iter() {
             let key = self
                 .table
                 .types
                 .0
                 .insert(Key::Phi(name.key().clone(), range));
-            res.insert_hashed(name, FlowInfo::new_with_ann(key, ann));
+            res.insert_hashed(name, FlowInfo { key, style: None });
         }
         Flow {
             info: res,
