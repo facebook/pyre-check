@@ -69,3 +69,23 @@ def g(p: P) -> None:
     c2: Callable[[str], str] = p  # E: EXPECTED P <: (str) -> str
  "#,
 );
+
+testcase!(
+    test_generic_protocol,
+    r#"
+from typing import Protocol, TypeVar
+T = TypeVar("T")
+class P(Protocol[T]):
+   x: T
+class C1:
+   x: int
+   y: str
+class C2:
+   x: str
+   y: str
+def f(proto: P[str]) -> None: ...
+def g(c1: C1, c2: C2) -> None:
+    f(c1)  # E: EXPECTED C1 <: P[str]
+    f(c2)
+"#,
+);
