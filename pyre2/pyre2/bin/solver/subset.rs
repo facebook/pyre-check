@@ -90,7 +90,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             .and_then(|attr| self.type_order.resolve_as_instance_method(attr))
     }
 
-    fn is_subset_protocol(&mut self, got: Type, protocol: ClassType) -> bool {
+    pub fn is_subset_protocol(&mut self, got: Type, protocol: ClassType) -> bool {
         let recursive_check = (got.clone(), Type::ClassType(protocol.clone()));
         if !self.recursive_assumptions.insert(recursive_check) {
             // Assume recursive checks are true
@@ -256,6 +256,12 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             (_, Type::ClassType(want)) if self.type_order.is_protocol(want.class_object()) => {
                 self.is_subset_protocol(got.clone(), want.clone())
+            }
+            (Type::ClassType(got), Type::BoundMethod(_) | Type::Callable(_, _))
+                if self.type_order.is_protocol(got.class_object())
+                    && let Some(call_ty) = self.get_call_attr(got) =>
+            {
+                self.is_subset_eq(&call_ty, want)
             }
             (Type::ClassDef(got), Type::ClassDef(want)) => {
                 self.type_order.has_superclass(got, want)

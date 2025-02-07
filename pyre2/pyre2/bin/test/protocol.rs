@@ -55,7 +55,7 @@ class P3(Protocol, P2):
 testcase!(
     test_callable_protocol,
     r#"
-from typing import Protocol
+from typing import Callable, Protocol
 class P(Protocol):
     def __call__(self, x: int) -> str: ...
 def f1(x: int) -> str: ...
@@ -63,5 +63,9 @@ def f2(x: str) -> str: ...
 
 p1: P = f1
 p2: P = f2  # E: EXPECTED (x: str) -> str <: P
+
+def g(p: P) -> None:
+    c1: Callable[[int], str] = p
+    c2: Callable[[str], str] = p  # E: EXPECTED P <: (str) -> str
  "#,
 );

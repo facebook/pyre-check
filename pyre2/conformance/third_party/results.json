@@ -3,7 +3,7 @@
   "pass": 9,
   "fail": 124,
   "pass_rate": 0.07,
-  "differences": 1143,
+  "differences": 1140,
   "passing": [
     "annotations_coroutines.py",
     "directives_no_type_check.py",
@@ -27,7 +27,7 @@
     "annotations_generators.py": 11,
     "annotations_methods.py": 8,
     "annotations_typeexpr.py": 5,
-    "callables_annotation.py": 19,
+    "callables_annotation.py": 16,
     "callables_kwargs.py": 4,
     "callables_protocol.py": 17,
     "callables_subtyping.py": 28,

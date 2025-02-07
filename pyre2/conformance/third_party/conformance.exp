@@ -2236,26 +2236,6 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED Proto1 <: (...) -> None",
-      "description": "EXPECTED Proto1 <: (...) -> None",
-      "line": 147,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 147
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED Proto5[Any] <: (...) -> None",
-      "description": "EXPECTED Proto5[Any] <: (...) -> None",
-      "line": 149,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 149
-    },
-    {
-      "code": -2,
       "column": 50,
       "concise_description": "EXPECTED Proto2 <: (int, ParamSpec(Ellipsis)) -> None",
       "description": "EXPECTED Proto2 <: (int, ParamSpec(Ellipsis)) -> None",
@@ -2273,16 +2253,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 152
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED Proto3 <: (...) -> None",
-      "description": "EXPECTED Proto3 <: (...) -> None",
-      "line": 153,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 153
     },
     {
       "code": -2,
