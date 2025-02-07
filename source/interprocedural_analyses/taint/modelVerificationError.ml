@@ -150,6 +150,7 @@ type kind =
   | UnsupportedClassConstraintCallee of Expression.t
   | UnsupportedDecoratorConstraint of Expression.t
   | UnsupportedDecoratorConstraintCallee of Expression.t
+  | UnsupportedFullyQualifiedCalleeInClassConstraint
   | UnsupportedIfCondition of Expression.t
   | UnsupportedVersionConstant of string
   | UnsupportedComparisonOperator of Expression.ComparisonOperator.operator
@@ -434,6 +435,8 @@ let description error =
         (Expression.show constraint_name)
   | UnsupportedDecoratorConstraintCallee callee ->
       Format.sprintf "Unsupported callee for decorator constraint: `%s`" (Expression.show callee)
+  | UnsupportedFullyQualifiedCalleeInClassConstraint ->
+      "Unsupported `fully_qualified_callee` constraint within a class constraint"
   | UnsupportedIfCondition condition ->
       Format.sprintf
         "Unsupported if condition: `%s`. If conditions need to be of the form: `sys.version \
@@ -613,6 +616,7 @@ let code { kind; _ } =
   | InvalidCrossRepositoryTaintAnchorString _ -> 71
   | InvalidCrossRepositoryTaintAnchorFormatString _ -> 72
   | UnmatchedPartialSinkKind _ -> 73
+  | UnsupportedFullyQualifiedCalleeInClassConstraint -> 74
 
 
 let display { kind = error; path; location } =

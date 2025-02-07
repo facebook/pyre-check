@@ -592,18 +592,9 @@ let matches_name_constraint ~name_captures ~name_constraint name =
       is_match
 
 
-let matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee =
-  let return_type =
-    (* Since this won't be used and resolving the return type could be expensive, let's pass a
-       random type. *)
-    lazy Type.Any
-  in
+let matches_callee_constraint ~name_captures ~name_constraint callees =
   let { Interprocedural.CallGraph.CallCallees.call_targets; new_targets; init_targets; _ } =
-    Interprocedural.CallGraph.resolve_callees_from_type_external
-      ~pyre_in_context:(PyrePysaEnvironment.InContext.create_at_global_scope pyre_api)
-      ~override_graph:None
-      ~return_type
-      callee
+    callees
   in
   let call_targets = call_targets |> List.rev_append new_targets |> List.rev_append init_targets in
   let call_target_to_string call_target =
@@ -626,26 +617,26 @@ let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = funct
   | ModelQuery.DecoratorConstraint.Not decorator_constraint ->
       not (matches_decorator_constraint ~pyre_api ~name_captures ~decorator decorator_constraint)
   | ModelQuery.DecoratorConstraint.NameConstraint name_constraint ->
-      let { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } = decorator in
+      let { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } =
+        CallableDecorator.statement decorator
+      in
       matches_name_constraint
         ~name_captures
         ~name_constraint
         (decorator_name |> Reference.delocalize |> Reference.last)
   | ModelQuery.DecoratorConstraint.FullyQualifiedCallee name_constraint ->
-      let ({ Node.value = expression; _ } as decorator_expression) =
-        Statement.Decorator.to_expression decorator
+      let callees =
+        match CallableDecorator.callees decorator with
+        | Some callees -> callees
+        | None ->
+            (* This is forbidden during parsing *)
+            failwith "fully_qualified_callee is not supported within cls.decorator"
       in
-      let callee =
-        match expression with
-        | Expression.Expression.Call { callee; _ } ->
-            (* Decorator factory, such as `@foo(1)` *) callee
-        | Expression.Expression.Name _ ->
-            (* Regular decorator, such as `@foo` *) decorator_expression
-        | _ -> decorator_expression
-      in
-      matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee
+      matches_callee_constraint ~name_captures ~name_constraint callees
   | ModelQuery.DecoratorConstraint.ArgumentsConstraint arguments_constraint -> (
-      let { Statement.Decorator.arguments = decorator_arguments; _ } = decorator in
+      let { Statement.Decorator.arguments = decorator_arguments; _ } =
+        CallableDecorator.statement decorator
+      in
       let split_arguments =
         List.partition_tf ~f:(fun { Expression.Call.Argument.name; _ } ->
             match name with
@@ -827,10 +818,13 @@ let class_matches_decorator_constraint ~name_captures ~pyre_api ~decorator_const
         List.exists decorators ~f:(fun decorator ->
             Statement.Decorator.from_expression decorator
             >>| (fun decorator ->
+                  (* For now, we don't support `fully_qualified_callee` within `cls.decorator()` constraints.
+                   * We could do it in the future by storing the result of the call to `get_class_summary` above
+                   * in `Modelable.t` *)
                   matches_decorator_constraint
                     ~pyre_api
                     ~name_captures
-                    ~decorator
+                    ~decorator:(CallableDecorator.create_without_callees decorator)
                     decorator_constraint)
             |> Option.value ~default:false))
   |> Option.value ~default:false
@@ -958,14 +952,7 @@ let rec matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures value
   | ModelQuery.Constraint.AnyDecoratorConstraint decorator_constraint ->
       Modelable.decorators value
       |> List.exists ~f:(fun decorator ->
-             Statement.Decorator.from_expression decorator
-             >>| (fun decorator ->
-                   matches_decorator_constraint
-                     ~pyre_api
-                     ~name_captures
-                     ~decorator
-                     decorator_constraint)
-             |> Option.value ~default:false)
+             matches_decorator_constraint ~pyre_api ~name_captures ~decorator decorator_constraint)
   | ModelQuery.Constraint.ClassConstraint class_constraint ->
       Modelable.class_name value
       >>| (fun name ->

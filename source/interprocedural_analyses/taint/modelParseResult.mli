@@ -417,6 +417,18 @@ module NameCaptures : sig
   val get : t -> string -> string option
 end
 
+module CallableDecorator : sig
+  type t
+
+  val create : pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t -> Ast.Statement.Decorator.t -> t
+
+  val create_without_callees : Ast.Statement.Decorator.t -> t
+
+  val statement : t -> Ast.Statement.Decorator.t
+
+  val callees : t -> Interprocedural.CallGraph.CallCallees.t option
+end
+
 module Modelable : sig
   type t
 
@@ -447,7 +459,7 @@ module Modelable : sig
 
   val parameters : t -> Ast.Expression.Parameter.t list
 
-  val decorators : t -> Ast.Expression.t list
+  val decorators : t -> CallableDecorator.t list
 
   val class_name : t -> string option
 

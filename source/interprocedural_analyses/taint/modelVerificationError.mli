@@ -136,6 +136,7 @@ type kind =
   | UnsupportedClassConstraintCallee of Expression.t
   | UnsupportedDecoratorConstraint of Expression.t
   | UnsupportedDecoratorConstraintCallee of Expression.t
+  | UnsupportedFullyQualifiedCalleeInClassConstraint
   | UnsupportedIfCondition of Expression.t
   | UnsupportedVersionConstant of string
   | UnsupportedComparisonOperator of Expression.ComparisonOperator.operator
