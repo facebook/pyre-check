@@ -23,7 +23,6 @@ use crate::alt::class::classdef::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
-use crate::binding::binding::ClassFieldInitialization;
 use crate::dunder;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
@@ -187,15 +186,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Box::new(Callable::list(ParamList::new(params), Type::None)),
             CallableKind::Def,
         );
-        ClassSynthesizedField {
-            inner: ClassField(ClassFieldInner::Simple {
-                ty,
-                annotation: None,
-                initialization: ClassFieldInitialization::Class,
-                readonly: false,
-            }),
-            overwrite: false,
-        }
+        ClassSynthesizedField::new(ty, false)
     }
 
     pub fn get_typed_dict_synthesized_fields(&self, cls: &Class) -> Option<ClassSynthesizedFields> {

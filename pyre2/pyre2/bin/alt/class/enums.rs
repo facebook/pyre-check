@@ -83,10 +83,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // Enum classes cannot inherit members.
         for name in cls.fields() {
             if let Some(ClassField(ClassFieldInner::Simple {
-                ty,
-                annotation,
-                initialization,
-                readonly,
+                ty, initialization, ..
             })) = self.get_class_field(cls, name)
             {
                 if self.is_valid_enum_member(name, &ty, initialization) {
@@ -95,18 +92,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         name.clone(),
                         ty,
                     ))));
-                    fields.insert(
-                        name.clone(),
-                        ClassSynthesizedField {
-                            inner: ClassField(ClassFieldInner::Simple {
-                                ty: lit,
-                                annotation,
-                                initialization,
-                                readonly,
-                            }),
-                            overwrite: true,
-                        },
-                    );
+                    fields.insert(name.clone(), ClassSynthesizedField::new(lit, true));
                 }
             }
         }

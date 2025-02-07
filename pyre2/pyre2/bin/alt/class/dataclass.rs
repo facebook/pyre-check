@@ -18,7 +18,6 @@ use crate::alt::class::classdef::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
-use crate::binding::binding::ClassFieldInitialization;
 use crate::dunder;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
@@ -105,15 +104,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Box::new(Callable::list(ParamList::new(params), Type::None)),
             CallableKind::Def,
         );
-        ClassSynthesizedField {
-            inner: ClassField(ClassFieldInner::Simple {
-                ty,
-                annotation: None,
-                initialization: ClassFieldInitialization::Class,
-                readonly: false,
-            }),
-            overwrite: false,
-        }
+        ClassSynthesizedField::new(ty, false)
     }
 
     fn get_dataclass_match_args(
@@ -139,14 +130,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .collect()
         };
         let ty = Type::Tuple(Tuple::Concrete(ts));
-        ClassSynthesizedField {
-            inner: ClassField(ClassFieldInner::Simple {
-                ty,
-                annotation: None,
-                initialization: ClassFieldInitialization::Class,
-                readonly: false,
-            }),
-            overwrite: false,
-        }
+        ClassSynthesizedField::new(ty, false)
     }
 }

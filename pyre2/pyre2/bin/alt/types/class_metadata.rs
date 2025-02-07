@@ -17,6 +17,8 @@ use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
 use crate::alt::class::classdef::ClassField;
+use crate::alt::class::classdef::ClassFieldInner;
+use crate::binding::binding::ClassFieldInitialization;
 use crate::error::collector::ErrorCollector;
 use crate::types::callable::DataclassKeywords;
 use crate::types::class::Class;
@@ -142,6 +144,20 @@ pub struct ClassSynthesizedField {
 impl Display for ClassSynthesizedField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({}, overwrite={})", self.inner, self.overwrite)
+    }
+}
+
+impl ClassSynthesizedField {
+    pub fn new(ty: Type, overwrite: bool) -> Self {
+        Self {
+            inner: ClassField(ClassFieldInner::Simple {
+                ty,
+                annotation: None,
+                initialization: ClassFieldInitialization::Class,
+                readonly: false,
+            }),
+            overwrite,
+        }
     }
 }
 
