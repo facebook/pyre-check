@@ -41,6 +41,9 @@ pub struct Static(pub SmallMap<Name, StaticInfo>);
 #[derive(Clone, Debug)]
 pub struct StaticInfo {
     pub loc: TextRange,
+    /// The location of the first annotated name for this binding, if any.
+    #[allow(dead_code)]
+    pub annot: Option<TextRange>,
     /// How many times this will be redefined
     pub count: usize,
     /// True if this is going to appear as a `Key::Import``.
@@ -49,10 +52,17 @@ pub struct StaticInfo {
 }
 
 impl Static {
-    fn add_with_count(&mut self, name: Name, loc: TextRange, count: usize) -> &mut StaticInfo {
+    fn add_with_count(
+        &mut self,
+        name: Name,
+        loc: TextRange,
+        annot: Option<TextRange>,
+        count: usize,
+    ) -> &mut StaticInfo {
         // Use whichever one we see first
         let res = self.0.entry(name).or_insert(StaticInfo {
             loc,
+            annot,
             count: 0,
             uses_key_import: false,
         });
@@ -60,8 +70,8 @@ impl Static {
         res
     }
 
-    pub fn add(&mut self, name: Name, range: TextRange) {
-        self.add_with_count(name, range, 1);
+    pub fn add(&mut self, name: Name, range: TextRange, annot: Option<TextRange>) {
+        self.add_with_count(name, range, annot, 1);
     }
 
     pub fn stmts(
@@ -77,20 +87,22 @@ impl Static {
             d.inject_builtins();
         }
         for (name, def) in d.definitions {
-            self.add_with_count(name, def.range, def.count)
+            self.add_with_count(name, def.range, def.annot, def.count)
                 .uses_key_import = def.style == DefinitionStyle::ImportModule;
         }
         for (m, range) in d.import_all {
             if let Ok(exports) = lookup.get(m) {
                 for name in exports.wildcard(lookup).iter() {
-                    self.add_with_count(name.clone(), range, 1).uses_key_import = true;
+                    // TODO: semantics of import * and global var with same name
+                    self.add_with_count(name.clone(), range, None, 1)
+                        .uses_key_import = true;
                 }
             }
         }
     }
 
     pub fn expr_lvalue(&mut self, x: &Expr) {
-        let mut add = |name: &ExprName| self.add(name.id.clone(), name.range);
+        let mut add = |name: &ExprName| self.add(name.id.clone(), name.range, None);
         Ast::expr_lvalue(x, &mut add);
     }
 }

@@ -434,7 +434,7 @@ impl<'a> BindingsBuilder<'a> {
             self.scopes
                 .current_mut()
                 .stat
-                .add(name.id.clone(), name.range);
+                .add(name.id.clone(), name.range, None);
             self.bind_definition(name, Binding::TypeParameter(q), None);
         }
         qs
@@ -672,11 +672,11 @@ impl LegacyTParamBuilder {
                     KeyLegacyTypeParam(ShortIdentifier::new(identifier)),
                     BindingLegacyTypeParam(*key),
                 );
-                builder
-                    .scopes
-                    .current_mut()
-                    .stat
-                    .add(identifier.id.clone(), identifier.range);
+                builder.scopes.current_mut().stat.add(
+                    identifier.id.clone(),
+                    identifier.range,
+                    None,
+                );
                 let key = builder
                     .table
                     .legacy_tparams

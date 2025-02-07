@@ -77,7 +77,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.scopes
                     .current_mut()
                     .stat
-                    .add(name.id.clone(), name.range);
+                    .add(name.id.clone(), name.range, None);
                 self.bind_key(&name.id, bind_key, None);
             }
         }
