@@ -143,12 +143,10 @@
     "Line 86: Expected 1 errors",
     "Line 91: Expected 1 errors",
     "Line 110: Unexpected errors ['Yield expression found but the function has an incompatible annotation `AsyncIntIterator`']",
-    "Line 127: Unexpected errors ['EXPECTED Generator[None, float, None] <: Generator[None, int, None]']",
-    "Line 131: Unexpected errors ['EXPECTED int <: float']",
     "Line 149: Unexpected errors ['EXPECTED list[int] <: Generator[int, None, None]']",
     "Line 150: Unexpected errors ['EXPECTED list[int] <: Generator[int, None, None]']",
-    "Line 154: Unexpected errors ['Missing argument `result`', 'EXPECTED Literal[1] <: float']",
-    "Line 160: Unexpected errors ['Missing argument `result`', 'EXPECTED Literal[1] <: float']",
+    "Line 154: Unexpected errors ['Missing argument `result`']",
+    "Line 160: Unexpected errors ['Missing argument `result`']",
     "Line 182: Unexpected errors ['assert_type(() -> AsyncIterator[int], () -> Coroutine[Any, Any, AsyncIterator[int]]) failed']",
     "Line 187: Unexpected errors ['EXPECTED None <: int']"
   ],
@@ -214,11 +212,6 @@
   ],
   "callables_subtyping.py": [
     "Line 297: Expected 1 errors",
-    "Line 20: Unexpected errors ['EXPECTED (float) -> int <: (int) -> float']",
-    "Line 21: Unexpected errors ['EXPECTED (float) -> float <: (int) -> float']",
-    "Line 22: Unexpected errors ['EXPECTED (int) -> int <: (int) -> float']",
-    "Line 24: Unexpected errors ['EXPECTED (float) -> int <: (float) -> float']",
-    "Line 28: Unexpected errors ['EXPECTED (float) -> int <: (int) -> int']",
     "Line 54: Unexpected errors ['EXPECTED Standard2 <: PosOnly2']",
     "Line 57: Unexpected errors ['EXPECTED Standard2 <: KwOnly2']",
     "Line 79: Unexpected errors ['EXPECTED IntArgs3 <: NoArgs3']",
@@ -264,7 +257,6 @@
   "constructors_call_init.py": [
     "Line 42: Expected 1 errors",
     "Line 107: Expected 1 errors",
-    "Line 20: Unexpected errors ['EXPECTED Literal[1] <: float']",
     "Line 72: Unexpected errors ['assert_type(Class5[Any], Class5[list[int]]) failed']",
     "Line 74: Unexpected errors ['assert_type(Class5[Any], Class5[set[str]]) failed']",
     "Line 75: Unexpected errors ['assert_type(Class5[Any], Class5[float]) failed']",
@@ -284,7 +276,6 @@
   ],
   "constructors_call_new.py": [
     "Line 16: Unexpected errors ['EXPECTED object <: Class1[?_]', 'Expected 0 positional arguments, got 1']",
-    "Line 20: Unexpected errors ['EXPECTED Literal[1] <: float']",
     "Line 29: Unexpected errors ['EXPECTED object <: Class2[?_]', 'Expected 0 positional arguments, got 1']",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', 'Missing argument `x`']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', 'Missing argument `x`']",
@@ -358,8 +349,7 @@
   ],
   "dataclasses_frozen.py": [
     "Lines 22, 23: Expected error (tag 'DC2')",
-    "Lines 32, 33: Expected error (tag 'DC4')",
-    "Line 14: Unexpected errors ['EXPECTED Literal[1] <: float']"
+    "Lines 32, 33: Expected error (tag 'DC4')"
   ],
   "dataclasses_hash.py": [
     "Line 15: Expected 1 errors",
@@ -369,8 +359,7 @@
   "dataclasses_inheritance.py": [
     "Line 60: Expected 1 errors",
     "Line 64: Expected 1 errors",
-    "Line 25: Unexpected errors ['Missing argument `a`', 'Missing argument `b`']",
-    "Line 37: Unexpected errors ['EXPECTED Literal[15] <: float']"
+    "Line 25: Unexpected errors ['Missing argument `a`', 'Missing argument `b`']"
   ],
   "dataclasses_kwonly.py": [
     "Line 17: Unexpected errors ['Missing argument `b`']",
@@ -456,7 +445,6 @@
     "Lines 58, 61: Expected error (tag 'DC1')",
     "Lines 64, 67: Expected error (tag 'DC2')",
     "Lines 70, 73: Expected error (tag 'DC3')",
-    "Line 22: Unexpected errors ['EXPECTED int <: float']",
     "Line 25: Unexpected errors ['Missing argument `quantity_on_hand`']",
     "Line 35: Unexpected errors ['EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto']",
     "Line 38: Unexpected errors ['Missing argument `flush`']",
@@ -1080,29 +1068,11 @@
     "Line 157: Expected 1 errors",
     "Line 218: Expected 1 errors",
     "Line 27: Unexpected errors ['Missing argument `mode`']",
-    "Line 102: Unexpected errors ['EXPECTED Literal[2] <: float']",
-    "Line 148: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 172: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 182: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 190: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 194: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 199: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 216: Unexpected errors ['Expected 1 more positional argument']",
     "Line 217: Unexpected errors ['Missing argument `val1`']",
-    "Line 245: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 251: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 266: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 271: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 277: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 280: Unexpected errors ['EXPECTED Concrete5_Good1 <: Template5']",
     "Line 281: Unexpected errors ['EXPECTED Concrete5_Good2 <: Template5']",
     "Line 284: Unexpected errors ['EXPECTED Concrete5_Good5 <: Template5']",
-    "Line 305: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 313: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 318: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 324: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 328: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 333: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 338: Unexpected errors ['Missing argument `val1`']"
   ],
   "protocols_explicit.py": [
@@ -1114,8 +1084,6 @@
     "Line 165: Expected 1 errors"
   ],
   "protocols_generic.py": [
-    "Line 55: Unexpected errors ['EXPECTED Box[int] <: Box[float]']",
-    "Line 65: Unexpected errors ['EXPECTED Sender[float] <: Sender[int]']",
     "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access get_parent)']",
     "Line 144: Unexpected errors ['EXPECTED ConcreteHasProperty1 <: HasPropertyProto']",
     "Line 145: Unexpected errors ['EXPECTED ConcreteHasProperty2 <: HasPropertyProto']"
@@ -1157,7 +1125,7 @@
     "Line 98: Unexpected errors ['EXPECTED Proto6[float, float] <: Proto7[object, int]']",
     "Line 100: Unexpected errors ['EXPECTED Proto6[float, float] <: Proto7[complex, int]']",
     "Line 128: Unexpected errors ['EXPECTED DefaultJob <: SupportsExit | SupportsQuit']",
-    "Line 142: Unexpected errors ['EXPECTED Literal[1] <: float', 'EXPECTED Literal[2] <: float', 'EXPECTED Literal[3] <: float']"
+    "Line 142: Unexpected errors ['EXPECTED tuple[Literal[1], Literal[2], Literal[3]] <: HashableFloats']"
   ],
   "protocols_variance.py": [
     "Line 21: Expected 1 errors",
@@ -1234,11 +1202,7 @@
     "Line 39: Unexpected errors ['EXPECTED type[object] <: type[None]']",
     "Line 40: Unexpected errors ['EXPECTED type[type] <: type[TypeVar[Self]]', 'Expected 2 more positional arguments', 'EXPECTED TypeVar[Self] <: type[None]', 'EXPECTED None <: str']"
   ],
-  "specialtypes_promotions.py": [
-    "Line 7: Unexpected errors ['EXPECTED Literal[1] <: float']",
-    "Line 8: Unexpected errors ['EXPECTED float <: complex']",
-    "Line 9: Unexpected errors ['EXPECTED Literal[1] <: complex']"
-  ],
+  "specialtypes_promotions.py": [],
   "specialtypes_type.py": [
     "Line 70: Expected 1 errors",
     "Line 39: Unexpected errors ['Expected a callable, got type[?_]']",
@@ -1269,7 +1233,6 @@
     "Line 175: Unexpected errors ['EXPECTED type <: type[?_]']"
   ],
   "tuples_type_compat.py": [
-    "Line 14: Unexpected errors ['EXPECTED tuple[int, int] <: tuple[float, complex]']",
     "Line 22: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 27: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 28: Unexpected errors ['EXPECTED tuple[int] <: tuple[int, Error]']",

@@ -643,8 +643,7 @@ testcase_with_bug!(
     "TODO: implement reflective operators",
     test_complex,
     r#"
-z: complex =  3 + 4j # E: EXPECTED complex <: int # E: EXPECTED int <: complex
-
+z: complex =  3 + 4j # E: EXPECTED complex <: int
     "#,
 );
 

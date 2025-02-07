@@ -238,6 +238,19 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     want,
                 )
             }
+            (Type::ClassType(got), Type::ClassType(want))
+                if *want == self.type_order.stdlib().float()
+                    && *got == self.type_order.stdlib().int() =>
+            {
+                true
+            }
+            (Type::ClassType(got), Type::ClassType(want))
+                if *want == self.type_order.stdlib().complex()
+                    && (*got == self.type_order.stdlib().int()
+                        || *got == self.type_order.stdlib().float()) =>
+            {
+                true
+            }
             (Type::ClassType(got), Type::ClassType(want)) => {
                 let got_is_protocol = self.type_order.is_protocol(got.class_object());
                 let want_is_protocol = self.type_order.is_protocol(want.class_object());

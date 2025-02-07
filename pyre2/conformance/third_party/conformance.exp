@@ -1641,26 +1641,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED Generator[None, float, None] <: Generator[None, int, None]",
-      "description": "EXPECTED Generator[None, float, None] <: Generator[None, int, None]",
-      "line": 127,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 127
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED int <: float",
-      "description": "EXPECTED int <: float",
-      "line": 131,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 131
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "EXPECTED Generator[None, int, None] <: Generator[None, str, None]",
       "description": "EXPECTED Generator[None, int, None] <: Generator[None, str, None]",
       "line": 135,
@@ -1700,32 +1680,12 @@
     },
     {
       "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED Literal[1] <: float",
-      "description": "EXPECTED Literal[1] <: float",
-      "line": 154,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 154
-    },
-    {
-      "code": -2,
       "column": 15,
       "concise_description": "Missing argument `result`",
       "description": "Missing argument `result`",
       "line": 160,
       "name": "PyreError",
       "stop_column": 28,
-      "stop_line": 160
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED Literal[1] <: float",
-      "description": "EXPECTED Literal[1] <: float",
-      "line": 160,
-      "name": "PyreError",
-      "stop_column": 30,
       "stop_line": 160
     },
     {
@@ -2792,46 +2752,6 @@
   "callables_subtyping.py": [
     {
       "code": -2,
-      "column": 34,
-      "concise_description": "EXPECTED (float) -> int <: (int) -> float",
-      "description": "EXPECTED (float) -> int <: (int) -> float",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
-      "column": 34,
-      "concise_description": "EXPECTED (float) -> float <: (int) -> float",
-      "description": "EXPECTED (float) -> float <: (int) -> float",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
-      "column": 34,
-      "concise_description": "EXPECTED (int) -> int <: (int) -> float",
-      "description": "EXPECTED (int) -> int <: (int) -> float",
-      "line": 22,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 22
-    },
-    {
-      "code": -2,
-      "column": 36,
-      "concise_description": "EXPECTED (float) -> int <: (float) -> float",
-      "description": "EXPECTED (float) -> int <: (float) -> float",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
       "column": 36,
       "concise_description": "EXPECTED (int) -> int <: (float) -> float",
       "description": "EXPECTED (int) -> int <: (float) -> float",
@@ -2839,16 +2759,6 @@
       "name": "PyreError",
       "stop_column": 39,
       "stop_line": 26
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED (float) -> int <: (int) -> int",
-      "description": "EXPECTED (float) -> int <: (int) -> int",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 28
     },
     {
       "code": -2,
@@ -3467,16 +3377,6 @@
   "constructors_call_init.py": [
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "EXPECTED Literal[1] <: float",
-      "description": "EXPECTED Literal[1] <: float",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "EXPECTED float <: int",
       "description": "EXPECTED float <: int",
@@ -3738,16 +3638,6 @@
       "name": "PyreError",
       "stop_column": 35,
       "stop_line": 16
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "EXPECTED Literal[1] <: float",
-      "description": "EXPECTED Literal[1] <: float",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 20
     },
     {
       "code": -2,
@@ -4803,16 +4693,6 @@
   "dataclasses_frozen.py": [
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED Literal[1] <: float",
-      "description": "EXPECTED Literal[1] <: float",
-      "line": 14,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 14
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Could not assign to read-only field `a`",
       "description": "Could not assign to read-only field `a`",
@@ -4864,16 +4744,6 @@
       "name": "PyreError",
       "stop_column": 12,
       "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Literal[15] <: float",
-      "description": "EXPECTED Literal[15] <: float",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 37
     }
   ],
   "dataclasses_kwonly.py": [
@@ -5884,16 +5754,6 @@
     }
   ],
   "dataclasses_usage.py": [
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED int <: float",
-      "description": "EXPECTED int <: float",
-      "line": 22,
-      "name": "PyreError",
-      "stop_column": 55,
-      "stop_line": 22
-    },
     {
       "code": -2,
       "column": 6,
@@ -12099,16 +11959,6 @@
     },
     {
       "code": -2,
-      "column": 60,
-      "concise_description": "EXPECTED Literal[1] <: float",
-      "description": "EXPECTED Literal[1] <: float",
-      "line": 67,
-      "name": "PyreError",
-      "stop_column": 61,
-      "stop_line": 67
-    },
-    {
-      "code": -2,
       "column": 36,
       "concise_description": "EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]",
       "description": "EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]",
@@ -12125,16 +11975,6 @@
       "line": 80,
       "name": "PyreError",
       "stop_column": 62,
-      "stop_line": 80
-    },
-    {
-      "code": -2,
-      "column": 60,
-      "concise_description": "EXPECTED Literal[1] <: float",
-      "description": "EXPECTED Literal[1] <: float",
-      "line": 80,
-      "name": "PyreError",
-      "stop_column": 61,
       "stop_line": 80
     },
     {
@@ -14866,16 +14706,6 @@
     },
     {
       "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[2] <: float",
-      "description": "EXPECTED Literal[2] <: float",
-      "line": 102,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 102
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "EXPECTED Concrete2_Bad1 <: Template2",
       "description": "EXPECTED Concrete2_Bad1 <: Template2",
@@ -14903,16 +14733,6 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 116
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 148,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 148
     },
     {
       "code": -2,
@@ -14956,56 +14776,6 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 172,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 172
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 182,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 182
-    },
-    {
-      "code": -2,
-      "column": 26,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 190,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 190
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 194,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 194
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 199,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 199
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "Expected 1 more positional argument",
       "description": "Expected 1 more positional argument",
@@ -15033,56 +14803,6 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 219
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 245,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 245
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 251,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 251
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 266,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 266
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 271,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 271
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 277,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 277
     },
     {
       "code": -2,
@@ -15166,66 +14886,6 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 305,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 305
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 313,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 313
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 318,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 318
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 324,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 324
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 328,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 328
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED Literal[0] <: float",
-      "description": "EXPECTED Literal[0] <: float",
-      "line": 333,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 333
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "Missing argument `val1`",
       "description": "Missing argument `val1`",
@@ -15300,16 +14960,6 @@
     },
     {
       "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED Box[int] <: Box[float]",
-      "description": "EXPECTED Box[int] <: Box[float]",
-      "line": 55,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 55
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "EXPECTED Box[float] <: Box[int]",
       "description": "EXPECTED Box[float] <: Box[int]",
@@ -15317,16 +14967,6 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 56
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Sender[float] <: Sender[int]",
-      "description": "EXPECTED Sender[float] <: Sender[int]",
-      "line": 65,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 65
     },
     {
       "code": -2,
@@ -15681,32 +15321,12 @@
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED Literal[1] <: float",
-      "description": "EXPECTED Literal[1] <: float",
+      "column": 13,
+      "concise_description": "EXPECTED tuple[Literal[1], Literal[2], Literal[3]] <: HashableFloats",
+      "description": "EXPECTED tuple[Literal[1], Literal[2], Literal[3]] <: HashableFloats",
       "line": 142,
       "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 142
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED Literal[2] <: float",
-      "description": "EXPECTED Literal[2] <: float",
-      "line": 142,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 142
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "EXPECTED Literal[3] <: float",
-      "description": "EXPECTED Literal[3] <: float",
-      "line": 142,
-      "name": "PyreError",
-      "stop_column": 21,
+      "stop_column": 22,
       "stop_line": 142
     }
   ],
@@ -16336,36 +15956,6 @@
   "specialtypes_promotions.py": [
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED Literal[1] <: float",
-      "description": "EXPECTED Literal[1] <: float",
-      "line": 7,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 7
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "EXPECTED float <: complex",
-      "description": "EXPECTED float <: complex",
-      "line": 8,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 8
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "EXPECTED Literal[1] <: complex",
-      "description": "EXPECTED Literal[1] <: complex",
-      "line": 9,
-      "name": "PyreError",
-      "stop_column": 7,
-      "stop_line": 9
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "Object of class `float` has no attribute `numerator`",
       "description": "Object of class `float` has no attribute `numerator`",
@@ -16738,16 +16328,6 @@
     }
   ],
   "tuples_type_compat.py": [
-    {
-      "code": -2,
-      "column": 33,
-      "concise_description": "EXPECTED tuple[int, int] <: tuple[float, complex]",
-      "description": "EXPECTED tuple[int, int] <: tuple[float, complex]",
-      "line": 14,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 14
-    },
     {
       "code": -2,
       "column": 27,
