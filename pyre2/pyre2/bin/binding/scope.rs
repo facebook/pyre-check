@@ -43,7 +43,7 @@ pub struct StaticInfo {
     pub loc: TextRange,
     /// The location of the first annotated name for this binding, if any.
     #[allow(dead_code)]
-    pub annot: Option<TextRange>,
+    pub annot: Option<ShortIdentifier>,
     /// How many times this will be redefined
     pub count: usize,
     /// True if this is going to appear as a `Key::Import``.
@@ -56,7 +56,7 @@ impl Static {
         &mut self,
         name: Name,
         loc: TextRange,
-        annot: Option<TextRange>,
+        annot: Option<ShortIdentifier>,
         count: usize,
     ) -> &mut StaticInfo {
         // Use whichever one we see first
@@ -70,7 +70,7 @@ impl Static {
         res
     }
 
-    pub fn add(&mut self, name: Name, range: TextRange, annot: Option<TextRange>) {
+    pub fn add(&mut self, name: Name, range: TextRange, annot: Option<ShortIdentifier>) {
         self.add_with_count(name, range, annot, 1);
     }
 

@@ -27,6 +27,7 @@ use crate::config::Config;
 use crate::dunder;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModuleStyle;
+use crate::module::short_identifier::ShortIdentifier;
 use crate::visitors::Visitors;
 
 /// How a name is defined.
@@ -51,7 +52,7 @@ pub struct Definition {
     /// If the definition occurs multiple times, the lowest `DefinitionStyle` is used (e.g. prefer `Local`).
     pub style: DefinitionStyle,
     /// The location of the first annotated name for this definition, if any.
-    pub annot: Option<TextRange>,
+    pub annot: Option<ShortIdentifier>,
     /// The number is the distinct times this variable was defined.
     pub count: usize,
 }
@@ -170,12 +171,14 @@ impl<'a> DefinitionsBuilder<'a> {
         x: &Name,
         range: TextRange,
         style: DefinitionStyle,
-        annot: Option<TextRange>,
+        annot: Option<ShortIdentifier>,
     ) {
         match self.inner.definitions.entry(x.clone()) {
             Entry::Occupied(mut e) => {
                 e.get_mut().style = cmp::min(e.get().style, style);
-                e.get_mut().annot = e.get().annot.or(annot);
+                if e.get().annot.is_none() {
+                    e.get_mut().annot = annot;
+                }
                 e.get_mut().count += 1;
             }
             Entry::Vacant(e) => {
@@ -317,7 +320,12 @@ impl<'a> DefinitionsBuilder<'a> {
             }
             Stmt::AnnAssign(x) => match &*x.target {
                 Expr::Name(x) => {
-                    self.add_name(&x.id, x.range, DefinitionStyle::Local, Some(x.range))
+                    self.add_name(
+                        &x.id,
+                        x.range,
+                        DefinitionStyle::Local,
+                        Some(ShortIdentifier::expr_name(x)),
+                    );
                 }
                 _ => {}
             },
