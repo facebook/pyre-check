@@ -1078,9 +1078,7 @@
   "protocols_definition.py": [
     "Line 117: Expected 1 errors",
     "Line 157: Expected 1 errors",
-    "Line 158: Expected 1 errors",
     "Line 218: Expected 1 errors",
-    "Line 339: Expected 1 errors",
     "Line 27: Unexpected errors ['Missing argument `mode`']",
     "Line 102: Unexpected errors ['EXPECTED Literal[2] <: float']",
     "Line 148: Unexpected errors ['EXPECTED Literal[0] <: float']",

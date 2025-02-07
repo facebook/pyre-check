@@ -71,6 +71,25 @@ def g(p: P) -> None:
 );
 
 testcase!(
+    test_protocol_readonly,
+    r#"
+from typing import Protocol
+class P(Protocol):
+    x: int
+class C1:
+    @property
+    def x(self) -> int: ...
+class C2:
+    @property
+    def x(self) -> int: ...
+    @x.setter
+    def x(self, value: int) -> None: ...
+p1: P = C1()  # E: EXPECTED C1 <: P
+p2: P = C2()
+ "#,
+);
+
+testcase!(
     test_generic_protocol,
     r#"
 from typing import Protocol, TypeVar

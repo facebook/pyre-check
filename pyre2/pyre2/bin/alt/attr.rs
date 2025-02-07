@@ -341,10 +341,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 AttributeInner::ReadOnly(got) | AttributeInner::ReadWrite(got),
                 AttributeInner::ReadOnly(want),
             ) => is_subset(got, want),
+            (
+                AttributeInner::Property(_, None, _) | AttributeInner::ReadOnly(_),
+                AttributeInner::Property(_, Some(_), _) | AttributeInner::ReadWrite(_),
+            ) => false,
             // TODO handle properties
             (_, AttributeInner::Property(_, _, _)) => true,
             (AttributeInner::Property(_, _, _), _) => true,
-            _ => false,
         }
     }
 

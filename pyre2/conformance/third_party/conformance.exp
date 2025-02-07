@@ -14927,6 +14927,16 @@
     {
       "code": -2,
       "column": 22,
+      "concise_description": "EXPECTED Concrete3_Bad3 <: Template3",
+      "description": "EXPECTED Concrete3_Bad3 <: Template3",
+      "line": 158,
+      "name": "PyreError",
+      "stop_column": 38,
+      "stop_line": 158
+    },
+    {
+      "code": -2,
+      "column": 22,
       "concise_description": "EXPECTED Concrete3_Bad4 <: Template3",
       "description": "EXPECTED Concrete3_Bad4 <: Template3",
       "line": 159,
@@ -15223,6 +15233,16 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 338
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED Concrete6_Bad1 <: Template6",
+      "description": "EXPECTED Concrete6_Bad1 <: Template6",
+      "line": 339,
+      "name": "PyreError",
+      "stop_column": 38,
+      "stop_line": 339
     },
     {
       "code": -2,
