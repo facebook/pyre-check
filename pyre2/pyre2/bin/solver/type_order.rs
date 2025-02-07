@@ -17,6 +17,7 @@ use crate::alt::attr::Attribute;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
+use crate::types::types::Type;
 
 /// `TypeOrder` provides a minimal API allowing `Subset` to request additional
 /// information about types that may be required for solving bindings
@@ -60,7 +61,16 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.get_all_member_names(cls)
     }
 
-    pub fn get_instance_attribute(self, cls: &ClassType, name: &Name) -> Option<Attribute> {
-        self.0.get_instance_attribute(cls, name)
+    pub fn try_lookup_attr(self, base: Type, attr_name: &Name) -> Option<Attribute> {
+        self.0.try_lookup_attr(base, attr_name)
+    }
+
+    pub fn is_attr_subset(
+        self,
+        got: &Attribute,
+        want: &Attribute,
+        is_subset: &mut dyn FnMut(&Type, &Type) -> bool,
+    ) -> bool {
+        self.0.is_attr_subset(got, want, is_subset)
     }
 }

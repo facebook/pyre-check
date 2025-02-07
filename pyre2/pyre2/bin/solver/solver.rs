@@ -15,6 +15,7 @@ use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
+use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::LookupAnswer;
 use crate::error::collector::ErrorCollector;
@@ -296,6 +297,7 @@ impl Solver {
                 type_order,
                 union: true,
                 gas: 25,
+                recursive_assumptions: SmallSet::new(),
             }
             .is_subset_eq(&branches[0], b);
         }
@@ -398,6 +400,7 @@ impl Solver {
             type_order,
             union: false,
             gas: 25,
+            recursive_assumptions: SmallSet::new(),
         }
         .is_subset_eq(got, want)
     }
@@ -411,6 +414,9 @@ pub struct Subset<'a, Ans: LookupAnswer> {
     // True if we are doing a union, false if we are actually checking for subset.
     union: bool,
     gas: usize,
+    /// Recursive assumptions of pairs of types that is_subset_eq returns true for.
+    /// Used for structural typechecking of protocols.
+    pub recursive_assumptions: SmallSet<(Type, Type)>,
 }
 
 impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {

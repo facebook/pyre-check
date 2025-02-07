@@ -15,6 +15,7 @@ use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
+use crate::types::class::ClassType;
 use crate::types::class::TArgs;
 use crate::types::simplify::unions;
 use crate::types::tuple::Tuple;
@@ -84,6 +85,27 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         }
     }
 
+    pub fn is_subset_protocol(&mut self, got: Type, protocol: ClassType) -> bool {
+        let recursive_check = (got.clone(), Type::ClassType(protocol.clone()));
+        if !self.recursive_assumptions.insert(recursive_check) {
+            // Assume recursive checks are true
+            return true;
+        }
+        let to = self.type_order;
+        let protocol_members = to.get_all_member_names(protocol.class_object());
+        for name in protocol_members {
+            if let Some(got) = to.try_lookup_attr(got.clone(), &name)
+                && let Some(want) = to.try_lookup_attr(protocol.clone().to_type(), &name)
+                && to.is_attr_subset(&got, &want, &mut |got, want| self.is_subset_eq(got, want))
+            {
+                continue;
+            } else {
+                return false;
+            }
+        }
+        true
+    }
+
     /// Implementation of subset equality for Type, other than Var.
     pub fn is_subset_eq_impl(&mut self, got: &Type, want: &Type) -> bool {
         match (got, want) {
@@ -116,6 +138,38 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     CallableKind::Anon,
                 );
                 self.is_subset_eq_impl(&l_no_self, want)
+            }
+            (
+                Type::BoundMethod(
+                    _,
+                    box Type::Callable(
+                        box Callable {
+                            params: Params::List(l_params),
+                            ret: l_ret,
+                        },
+                        _,
+                    ),
+                ),
+                Type::BoundMethod(
+                    _,
+                    box Type::Callable(
+                        box Callable {
+                            params: Params::List(u_params),
+                            ret: u_ret,
+                        },
+                        _,
+                    ),
+                ),
+            ) if !l_params.is_empty() && !u_params.is_empty() => {
+                let l_no_self = Type::Callable(
+                    Box::new(Callable::list(l_params.tail(), l_ret.clone())),
+                    CallableKind::Anon,
+                );
+                let u_no_self = Type::Callable(
+                    Box::new(Callable::list(u_params.tail(), u_ret.clone())),
+                    CallableKind::Anon,
+                );
+                self.is_subset_eq_impl(&l_no_self, &u_no_self)
             }
             (Type::Callable(l, _), Type::Callable(u, _)) => {
                 self.is_subset_eq(&l.ret, &u.ret)
@@ -216,17 +270,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     Some(got) => self.check_targs(got.targs(), want.targs(), want.tparams()),
                     // Structural checking for assigning to protocols
                     None if want_is_protocol => {
-                        let want_members =
-                            self.type_order.get_all_member_names(want.class_object());
-                        for name in want_members {
-                            if self.type_order.get_instance_attribute(got, &name).is_some() {
-                                // TODO: check types of attributes
-                                continue;
-                            } else {
-                                return false;
-                            }
-                        }
-                        true
+                        self.is_subset_protocol(got.clone().to_type(), want.clone())
                     }
                     _ => false,
                 }

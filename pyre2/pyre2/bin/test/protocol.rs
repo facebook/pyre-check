@@ -22,12 +22,16 @@ class C2:
 class C3(P, C1): ...
 class C4(P):
     y: int
+class C5:
+    x: int
+    y: int
 def f(proto: P) -> None: ...
-def g(p: P, c1: C1, c2: C2, c3: C3, c4: C4) -> None:
+def g(p: P, c1: C1, c2: C2, c3: C3, c4: C4, c5: C5) -> None:
     f(c1)
     f(c2)  # E: EXPECTED C2 <: P
     f(c3)
     f(c4)
+    f(c5)  # E: EXPECTED C5 <: P
     c: C1 = p  # E: EXPECTED P <: C1
  "#,
 );

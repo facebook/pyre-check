@@ -39,8 +39,8 @@
     "Line 65: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
     "Line 68: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
     "Line 72: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']",
-    "Line 89: Unexpected errors ['Expected 5 more positional arguments']",
-    "Line 92: Unexpected errors ['Expected 1 more positional argument']",
+    "Line 89: Unexpected errors ['Expected 5 more positional arguments', 'EXPECTED map[str] <: Iterable[str]']",
+    "Line 92: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED Literal[1] <: SupportsIndex']",
     "Line 95: Unexpected errors ['EXPECTED Literal[0] <: slice[Error, Error, Error]']",
     "Line 127: Unexpected errors ['Expected 1 more positional argument']",
     "Line 130: Unexpected errors ['Expected 1 more positional argument']"
@@ -142,7 +142,6 @@
   "annotations_generators.py": [
     "Line 86: Expected 1 errors",
     "Line 91: Expected 1 errors",
-    "Line 101: Unexpected errors ['Yield expression found but the function has an incompatible annotation `IntIterator`']",
     "Line 110: Unexpected errors ['Yield expression found but the function has an incompatible annotation `AsyncIntIterator`']",
     "Line 127: Unexpected errors ['EXPECTED Generator[None, float, None] <: Generator[None, int, None]']",
     "Line 131: Unexpected errors ['EXPECTED int <: float']",
@@ -173,7 +172,6 @@
   "callables_annotation.py": [
     "Line 56: Expected 1 errors",
     "Line 59: Expected 1 errors",
-    "Line 159: Expected 1 errors",
     "Line 51: Unexpected errors ['assert_type(int, tuple[int, ...]) failed']",
     "Line 52: Unexpected errors ['assert_type(int, dict[str, int]) failed']",
     "Line 90: Unexpected errors ['EXPECTED (x: int) -> str <: (int, ParamSpec(Ellipsis)) -> str']",
@@ -186,6 +184,9 @@
     "Line 152: Unexpected errors ['EXPECTED (int, ParamSpec(Ellipsis)) -> None <: Proto2']",
     "Line 153: Unexpected errors ['EXPECTED Proto3 <: (...) -> None']",
     "Line 154: Unexpected errors ['EXPECTED (...) -> None <: Proto3']",
+    "Line 155: Unexpected errors ['EXPECTED Proto3 <: Proto4[Ellipsis]']",
+    "Line 156: Unexpected errors ['EXPECTED Proto4[Ellipsis] <: Proto3']",
+    "Line 157: Unexpected errors ['EXPECTED Proto7 <: Proto6']",
     "Line 171: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback1, type[(ParamSpec(ParamSpec[P])) -> str]]\"]",
     "Line 174: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback1, type[(ParamSpec(ParamSpec[P])) -> str]]\"]",
     "Line 175: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, type[(int, ParamSpec(ParamSpec[P])) -> str]]\"]",
@@ -225,43 +226,34 @@
     "Line 313: Unexpected errors ['EXPECTED (*, path: str) -> str <: Proto14_NoDefault']"
   ],
   "callables_subtyping.py": [
-    "Line 51: Expected 1 errors",
-    "Line 52: Expected 1 errors",
-    "Line 55: Expected 1 errors",
-    "Line 58: Expected 1 errors",
-    "Line 82: Expected 1 errors",
-    "Line 85: Expected 1 errors",
-    "Line 86: Expected 1 errors",
-    "Line 116: Expected 1 errors",
-    "Line 119: Expected 1 errors",
-    "Line 120: Expected 1 errors",
-    "Line 122: Expected 1 errors",
-    "Line 124: Expected 1 errors",
-    "Line 125: Expected 1 errors",
-    "Line 126: Expected 1 errors",
-    "Line 151: Expected 1 errors",
-    "Line 154: Expected 1 errors",
-    "Line 155: Expected 1 errors",
-    "Line 187: Expected 1 errors",
-    "Line 190: Expected 1 errors",
-    "Line 191: Expected 1 errors",
-    "Line 193: Expected 1 errors",
-    "Line 195: Expected 1 errors",
-    "Line 196: Expected 1 errors",
-    "Line 197: Expected 1 errors",
-    "Line 236: Expected 1 errors",
-    "Line 237: Expected 1 errors",
-    "Line 240: Expected 1 errors",
-    "Line 243: Expected 1 errors",
-    "Line 273: Expected 1 errors",
     "Line 297: Expected 1 errors",
     "Line 20: Unexpected errors ['EXPECTED (float) -> int <: (int) -> float']",
     "Line 21: Unexpected errors ['EXPECTED (float) -> float <: (int) -> float']",
     "Line 22: Unexpected errors ['EXPECTED (int) -> int <: (int) -> float']",
     "Line 24: Unexpected errors ['EXPECTED (float) -> int <: (float) -> float']",
     "Line 28: Unexpected errors ['EXPECTED (float) -> int <: (int) -> int']",
+    "Line 54: Unexpected errors ['EXPECTED Standard2 <: PosOnly2']",
+    "Line 57: Unexpected errors ['EXPECTED Standard2 <: KwOnly2']",
+    "Line 79: Unexpected errors ['EXPECTED IntArgs3 <: NoArgs3']",
+    "Line 80: Unexpected errors ['EXPECTED FloatArgs3 <: NoArgs3']",
+    "Line 83: Unexpected errors ['EXPECTED FloatArgs3 <: IntArgs3']",
+    "Line 117: Unexpected errors ['EXPECTED IntStrArgs4 <: PosOnly4']",
+    "Line 118: Unexpected errors ['EXPECTED StrArgs4 <: PosOnly4']",
+    "Line 121: Unexpected errors ['EXPECTED IntStrArgs4 <: StrArgs4']",
+    "Line 123: Unexpected errors ['EXPECTED IntStrArgs4 <: IntArgs4']",
+    "Line 148: Unexpected errors ['EXPECTED IntKwargs5 <: NoKwargs5']",
+    "Line 149: Unexpected errors ['EXPECTED FloatKwargs5 <: NoKwargs5']",
+    "Line 152: Unexpected errors ['EXPECTED FloatKwargs5 <: IntKwargs5']",
+    "Line 188: Unexpected errors ['EXPECTED IntStrKwargs6 <: KwOnly6']",
+    "Line 189: Unexpected errors ['EXPECTED StrKwargs6 <: KwOnly6']",
+    "Line 192: Unexpected errors ['EXPECTED IntStrKwargs6 <: StrKwargs6']",
+    "Line 194: Unexpected errors ['EXPECTED IntStrKwargs6 <: IntKwargs6']",
     "Line 211: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]",
-    "Line 213: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]"
+    "Line 213: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]",
+    "Line 239: Unexpected errors ['EXPECTED DefaultArg8 <: NoDefaultArg8']",
+    "Line 242: Unexpected errors ['EXPECTED DefaultArg8 <: NoX8']",
+    "Line 271: Unexpected errors ['EXPECTED Overloaded9 <: IntArg9']",
+    "Line 296: Unexpected errors ['EXPECTED IntStrArg10 <: Overloaded10']"
   ],
   "classes_classvar.py": [
     "Line 45: Expected 1 errors",
@@ -383,8 +375,11 @@
     "Line 14: Unexpected errors ['EXPECTED Literal[1] <: float']"
   ],
   "dataclasses_hash.py": [
-    "Line 15: Expected 1 errors",
-    "Line 32: Expected 1 errors"
+    "Line 23: Unexpected errors ['EXPECTED DC2 <: Hashable']",
+    "Line 40: Unexpected errors ['EXPECTED DC4 <: Hashable']",
+    "Line 48: Unexpected errors ['EXPECTED DC5 <: Hashable']",
+    "Line 59: Unexpected errors ['EXPECTED DC6 <: Hashable']",
+    "Line 70: Unexpected errors ['EXPECTED DC7 <: Hashable']"
   ],
   "dataclasses_inheritance.py": [
     "Line 60: Expected 1 errors",
@@ -436,7 +431,7 @@
     "Line 29: Unexpected errors ['EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]']",
     "Line 60: Unexpected errors ['Missing argument `base`']",
     "Line 64: Unexpected errors ['Missing argument `base`']",
-    "Line 68: Unexpected errors ['Missing argument `base`']",
+    "Line 68: Unexpected errors ['Missing argument `base`', 'EXPECTED Literal[0] <: SupportsIndex | slice[Error, Error, Error]']",
     "Line 102: Unexpected errors ['EXPECTED type[ConverterClass] <: (@_) -> @_']",
     "Line 103: Unexpected errors ['EXPECTED int | str <: int']",
     "Line 104: Unexpected errors ['EXPECTED type[dict] <: (@_) -> @_']",
@@ -502,7 +497,8 @@
   ],
   "directives_cast.py": [
     "Line 16: Expected 1 errors",
-    "Line 10: Unexpected errors ['Expected 1 more positional argument']"
+    "Line 10: Unexpected errors ['Expected 1 more positional argument']",
+    "Line 11: Unexpected errors ['EXPECTED int <: slice[Error, Error, Error]']"
   ],
   "directives_deprecated.py": [
     "Line 24: Expected 1 errors",
@@ -585,8 +581,8 @@
     "Line 34: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access __add__)']",
     "Line 67: Unexpected errors ['assert_type(MyStr, str) failed']",
     "Line 68: Unexpected errors ['assert_type(MyStr, str) failed', 'EXPECTED str <: MyStr']",
-    "Line 139: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument']",
-    "Line 140: Unexpected errors ['assert_type(Any, int) failed', 'Expected 1 more positional argument']",
+    "Line 139: Unexpected errors ['assert_type(int | Any, int) failed', 'Expected 1 more positional argument']",
+    "Line 140: Unexpected errors ['assert_type(int | Any, int) failed', 'Expected 1 more positional argument']",
     "Line 182: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED MyIterableAny <: () -> @_']"
   ],
   "generics_defaults.py": [
@@ -701,8 +697,8 @@
     "Line 55: Unexpected errors ['assert_type(Shape, Circle) failed', 'EXPECTED type[Circle] <: Shape']"
   ],
   "generics_self_protocols.py": [
-    "Line 61: Expected 1 errors",
-    "Line 64: Expected 1 errors"
+    "Line 57: Unexpected errors ['EXPECTED ReturnSelf <: ShapeProtocol']",
+    "Line 58: Unexpected errors ['EXPECTED ReturnConcreteShape <: ShapeProtocol']"
   ],
   "generics_self_usage.py": [
     "Line 73: Expected 1 errors",
@@ -1034,7 +1030,9 @@
   "narrowing_typeguard.py": [
     "Line 102: Expected 1 errors",
     "Line 107: Expected 1 errors",
+    "Line 13: Unexpected errors ['EXPECTED tuple[?_, ...] <: Sized']",
     "Line 17: Unexpected errors ['assert_type(tuple[?_, ?_], tuple[str, str]) failed']",
+    "Line 23: Unexpected errors ['EXPECTED list[object] <: Sized']",
     "Line 31: Unexpected errors ['EXPECTED type[int] <: type[@_]']",
     "Line 32: Unexpected errors ['assert_type(set[?_], set[int]) failed']",
     "Line 52: Unexpected errors ['EXPECTED type[type] <: type[TypeVar[Self]]', 'Expected 2 more positional arguments', 'EXPECTED TypeVar[Self] <: UnionType | type | tuple[Unknown, ...]', 'EXPECTED A <: str']",
@@ -1050,7 +1048,7 @@
     "Line 110: Expected 1 errors",
     "Line 195: Expected 1 errors",
     "Line 199: Expected 1 errors",
-    "Line 15: Unexpected errors ['EXPECTED bool <: TypeIs[tuple[?_, ?_]]']",
+    "Line 15: Unexpected errors ['EXPECTED bool <: TypeIs[tuple[?_, ?_]]', 'EXPECTED tuple[?_, ...] <: Sized']",
     "Line 19: Unexpected errors ['assert_type(tuple[str, ...], tuple[str, str]) failed']",
     "Line 28: Unexpected errors ['EXPECTED bool <: TypeIs[Awaitable[Any]]']",
     "Line 35: Unexpected errors ['Expression is not awaitable']",
@@ -1095,21 +1093,13 @@
     "Line 109: Unexpected errors ['EXPECTED type[ConcreteC3] <: ProtoC2']"
   ],
   "protocols_definition.py": [
-    "Line 115: Expected 1 errors",
-    "Line 116: Expected 1 errors",
     "Line 117: Expected 1 errors",
     "Line 157: Expected 1 errors",
     "Line 158: Expected 1 errors",
-    "Line 159: Expected 1 errors",
-    "Line 160: Expected 1 errors",
     "Line 218: Expected 1 errors",
-    "Line 285: Expected 1 errors",
-    "Line 286: Expected 1 errors",
-    "Line 287: Expected 1 errors",
-    "Line 288: Expected 1 errors",
-    "Line 289: Expected 1 errors",
     "Line 339: Expected 1 errors",
     "Line 27: Unexpected errors ['Missing argument `mode`']",
+    "Line 79: Unexpected errors ['EXPECTED Concrete <: Template']",
     "Line 102: Unexpected errors ['EXPECTED Literal[2] <: float']",
     "Line 148: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 172: Unexpected errors ['EXPECTED Literal[0] <: float']",
@@ -1117,20 +1107,23 @@
     "Line 190: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 194: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 199: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 216: Unexpected errors ['Expected 1 more positional argument']",
-    "Line 217: Unexpected errors ['Missing argument `val1`']",
+    "Line 216: Unexpected errors ['Expected 1 more positional argument', 'EXPECTED Concrete4_Good6 <: Template4']",
+    "Line 217: Unexpected errors ['Missing argument `val1`', 'EXPECTED Concrete4_Good7 <: Template4']",
     "Line 245: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 251: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 266: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 271: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 277: Unexpected errors ['EXPECTED Literal[0] <: float']",
+    "Line 280: Unexpected errors ['EXPECTED Concrete5_Good1 <: Template5']",
+    "Line 281: Unexpected errors ['EXPECTED Concrete5_Good2 <: Template5']",
+    "Line 284: Unexpected errors ['EXPECTED Concrete5_Good5 <: Template5']",
     "Line 305: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 313: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 318: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 324: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 328: Unexpected errors ['EXPECTED Literal[0] <: float']",
     "Line 333: Unexpected errors ['EXPECTED Literal[0] <: float']",
-    "Line 338: Unexpected errors ['Missing argument `val1`']"
+    "Line 338: Unexpected errors ['Missing argument `val1`', 'EXPECTED Concrete6_Good3 <: Template6']"
   ],
   "protocols_explicit.py": [
     "Line 56: Expected 1 errors",
@@ -1141,12 +1134,11 @@
     "Line 165: Expected 1 errors"
   ],
   "protocols_generic.py": [
-    "Line 40: Expected 1 errors",
-    "Line 146: Expected 1 errors",
-    "Line 147: Expected 1 errors",
     "Line 55: Unexpected errors ['EXPECTED Box[int] <: Box[float]']",
     "Line 65: Unexpected errors ['EXPECTED Sender[float] <: Sender[int]']",
-    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access get_parent)']"
+    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access get_parent)']",
+    "Line 144: Unexpected errors ['EXPECTED ConcreteHasProperty1 <: HasPropertyProto']",
+    "Line 145: Unexpected errors ['EXPECTED ConcreteHasProperty2 <: HasPropertyProto']"
   ],
   "protocols_merging.py": [
     "Line 82: Expected 1 errors"
@@ -1158,6 +1150,9 @@
     "Line 47: Unexpected errors ['EXPECTED Module[_protocols_modules2] <: Reporter1']"
   ],
   "protocols_recursive.py": [
+    "Line 25: Unexpected errors ['EXPECTED SimpleTree <: Traversable']",
+    "Line 38: Unexpected errors ['EXPECTED Tree[float] <: Traversable']",
+    "Line 80: Unexpected errors ['EXPECTED ImplB <: ProtoA[Never, @_]']",
     "Line 81: Unexpected errors ['assert_type(Any, list[int]) failed']"
   ],
   "protocols_runtime_checkable.py": [
@@ -1168,13 +1163,20 @@
     "Line 92: Expected 1 errors",
     "Line 96: Expected 1 errors"
   ],
-  "protocols_self.py": [],
+  "protocols_self.py": [
+    "Line 32: Unexpected errors ['EXPECTED One <: Copyable']",
+    "Line 33: Unexpected errors ['EXPECTED Other <: Copyable']",
+    "Line 54: Unexpected errors ['EXPECTED C1[str] <: P1Parent[str]']",
+    "Line 55: Unexpected errors ['EXPECTED C1[str] <: P1Child[str]']",
+    "Line 72: Unexpected errors ['EXPECTED C2[str] <: P2Parent[str]']",
+    "Line 73: Unexpected errors ['EXPECTED C2[str] <: P2Child[str]']"
+  ],
   "protocols_subtyping.py": [
     "Line 16: Expected 1 errors",
-    "Line 79: Expected 1 errors",
-    "Line 80: Expected 1 errors",
-    "Line 102: Expected 1 errors",
-    "Line 103: Expected 1 errors"
+    "Line 98: Unexpected errors ['EXPECTED Proto6[float, float] <: Proto7[object, int]']",
+    "Line 100: Unexpected errors ['EXPECTED Proto6[float, float] <: Proto7[complex, int]']",
+    "Line 128: Unexpected errors ['EXPECTED DefaultJob <: SupportsExit | SupportsQuit']",
+    "Line 142: Unexpected errors ['EXPECTED tuple[Literal[1], Literal[2], Literal[3]] <: HashableFloats']"
   ],
   "protocols_variance.py": [
     "Line 21: Expected 1 errors",
@@ -1293,8 +1295,11 @@
     "Line 47: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 59: Unexpected errors ['EXPECTED tuple[Any] <: tuple[int, int]']",
     "Line 71: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
+    "Line 72: Unexpected errors ['EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized']",
     "Line 74: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int]) failed']",
+    "Line 76: Unexpected errors ['EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized']",
     "Line 78: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, int] | tuple[str, str]) failed']",
+    "Line 80: Unexpected errors ['EXPECTED tuple[int] | tuple[int, Error, int] | tuple[str, str] <: Sized']",
     "Line 82: Unexpected errors ['assert_type(tuple[int] | tuple[int, Any, int] | tuple[str, str], tuple[int, str, int]) failed']",
     "Line 91: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
     "Line 93: Unexpected errors ['Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 2) into 1 value', 'Cannot unpack tuple[int] | tuple[int, Error, int] | tuple[str, str] (of size 3) into 1 value']",

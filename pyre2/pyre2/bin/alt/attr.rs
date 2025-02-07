@@ -37,13 +37,14 @@ enum LookupResult {
 
 /// The result of looking up an attribute. We can analyze get and set actions
 /// on an attribute, each of which can be allowed with some type or disallowed.
+#[derive(Debug)]
 pub struct Attribute(AttributeInner);
 
 /// The result of an attempt to access an attribute (with a get or set operation).
 ///
 /// The operation is either permitted with an attribute `Type`, or is not allowed
 /// and has a reason.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum AttributeInner {
     /// A `NoAccess` attribute indicates that the attribute is well-defined, but does
     /// not allow the access pattern (for example class access on an instance-only attribute)
@@ -63,7 +64,7 @@ enum NotFound {
     ModuleExport(Module),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum NoAccessReason {
     /// The attribute is only initialized on instances, but we saw an attempt
     /// to use it as a class attribute.
@@ -324,6 +325,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.check_attr_set(base, attr_name, Either::Right(got), range, todo_ctx)
     }
 
+    pub fn is_attr_subset(
+        &self,
+        got: &Attribute,
+        want: &Attribute,
+        is_subset: &mut dyn FnMut(&Type, &Type) -> bool,
+    ) -> bool {
+        match (&got.0, &want.0) {
+            (_, AttributeInner::NoAccess(_)) => true,
+            (AttributeInner::NoAccess(_), _) => false,
+            (AttributeInner::ReadWrite(got), AttributeInner::ReadWrite(want)) => {
+                is_subset(got, want) && is_subset(want, got)
+            }
+            (
+                AttributeInner::ReadOnly(got) | AttributeInner::ReadWrite(got),
+                AttributeInner::ReadOnly(want),
+            ) => is_subset(got, want),
+            // TODO handle properties
+            (_, AttributeInner::Property(_, _, _)) => true,
+            (AttributeInner::Property(_, _, _), _) => true,
+            _ => false,
+        }
+    }
+
     fn resolve_get_access(
         &self,
         attr: Attribute,
@@ -430,6 +454,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 )))
             }
             None => LookupResult::InternalError(InternalError::AttributeBaseUndefined(base)),
+        }
+    }
+
+    pub fn try_lookup_attr(&self, base: Type, attr_name: &Name) -> Option<Attribute> {
+        match self.lookup_attr(base, attr_name) {
+            LookupResult::Found(attr) => Some(attr),
+            _ => None,
         }
     }
 
