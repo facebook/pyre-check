@@ -114,7 +114,7 @@ def test() -> None:
         ],
         capture_output=True,
     )
-    tests = [line.strip() for line in res.stdout.splitlines()]
+    tests = [line.strip() for line in res.stdout.splitlines()] + ["test:"]
     run(
         ["buck2", "test", "--reuse-current-config"]
         + tests
