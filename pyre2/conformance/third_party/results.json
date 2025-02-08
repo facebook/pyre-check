@@ -1,11 +1,12 @@
 {
   "total": 133,
-  "pass": 10,
-  "fail": 123,
+  "pass": 11,
+  "fail": 122,
   "pass_rate": 0.08,
-  "differences": 1111,
+  "differences": 1107,
   "passing": [
     "annotations_coroutines.py",
+    "dataclasses_order.py",
     "directives_no_type_check.py",
     "directives_type_ignore.py",
     "directives_type_ignore_file2.py",
@@ -46,7 +47,6 @@
     "dataclasses_hash.py": 3,
     "dataclasses_inheritance.py": 3,
     "dataclasses_kwonly.py": 10,
-    "dataclasses_order.py": 4,
     "dataclasses_postinit.py": 3,
     "dataclasses_slots.py": 5,
     "dataclasses_transform_class.py": 10,

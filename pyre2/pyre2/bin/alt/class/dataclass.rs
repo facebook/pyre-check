@@ -61,6 +61,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.get_dataclass_init(cls, &dataclass.fields, dataclass.kws.kw_only),
             );
         }
+        if dataclass.kws.order {
+            fields.extend(self.get_dataclass_rich_comparison_methods(cls));
+        }
         if dataclass.kws.match_args {
             fields.insert(
                 dunder::MATCH_ARGS,
@@ -131,5 +134,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         };
         let ty = Type::Tuple(Tuple::Concrete(ts));
         ClassSynthesizedField::new(ty, false)
+    }
+
+    fn get_dataclass_rich_comparison_methods(
+        &self,
+        cls: &Class,
+    ) -> SmallMap<Name, ClassSynthesizedField> {
+        let self_ty = cls.self_type();
+        let self_ = Param::Pos(Name::new("self"), self_ty.clone(), Required::Required);
+        let other = Param::Pos(Name::new("other"), self_ty, Required::Required);
+        let ret = Type::ClassType(self.stdlib.bool());
+        let field = ClassSynthesizedField::new(
+            Type::Callable(
+                Box::new(Callable::list(ParamList::new(vec![self_, other]), ret)),
+                CallableKind::Def,
+            ),
+            false,
+        );
+        dunder::RICH_CMPS
+            .iter()
+            .map(|name| (name.clone(), field.clone()))
+            .collect()
     }
 }

@@ -4971,49 +4971,9 @@
   "dataclasses_order.py": [
     {
       "code": -2,
-      "column": 4,
-      "concise_description": "`<` not supported between instances of `DC1` and `DC1`",
-      "description": "`<` not supported between instances of `DC1` and `DC1`",
-      "line": 22,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 22
-    },
-    {
-      "code": -2,
-      "column": 4,
-      "concise_description": "`<=` not supported between instances of `DC1` and `DC1`",
-      "description": "`<=` not supported between instances of `DC1` and `DC1`",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 4,
-      "concise_description": "`>` not supported between instances of `DC1` and `DC1`",
-      "description": "`>` not supported between instances of `DC1` and `DC1`",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
-      "column": 4,
-      "concise_description": "`>=` not supported between instances of `DC1` and `DC1`",
-      "description": "`>=` not supported between instances of `DC1` and `DC1`",
-      "line": 31,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 4,
-      "concise_description": "`<` not supported between instances of `DC1` and `DC2`",
-      "description": "`<` not supported between instances of `DC1` and `DC2`",
+      "column": 12,
+      "concise_description": "EXPECTED DC2 <: DC1",
+      "description": "EXPECTED DC2 <: DC1",
       "line": 50,
       "name": "PyreError",
       "stop_column": 17,
@@ -5927,32 +5887,12 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "Object of class `InventoryItem` has no attribute `__lt__`",
-      "description": "Object of class `InventoryItem` has no attribute `__lt__`",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Missing argument `flush`",
       "description": "Missing argument `flush`",
       "line": 42,
       "name": "PyreError",
       "stop_column": 6,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "Object of class `InventoryItem` has no attribute `__le__`",
-      "description": "Object of class `InventoryItem` has no attribute `__le__`",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 16,
       "stop_line": 42
     },
     {
@@ -5967,32 +5907,12 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "Object of class `InventoryItem` has no attribute `__gt__`",
-      "description": "Object of class `InventoryItem` has no attribute `__gt__`",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Missing argument `flush`",
       "description": "Missing argument `flush`",
       "line": 44,
       "name": "PyreError",
       "stop_column": 6,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "Object of class `InventoryItem` has no attribute `__ge__`",
-      "description": "Object of class `InventoryItem` has no attribute `__ge__`",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 16,
       "stop_line": 44
     },
     {

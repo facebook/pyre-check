@@ -149,6 +149,7 @@ pub enum CallableKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DataclassKeywords {
     pub init: bool,
+    pub order: bool,
     pub frozen: bool,
     pub match_args: bool,
     pub kw_only: bool,
@@ -158,6 +159,7 @@ impl Default for DataclassKeywords {
     fn default() -> Self {
         Self {
             init: true,
+            order: false,
             frozen: false,
             match_args: true,
             kw_only: false,
@@ -175,9 +177,11 @@ impl DataclassKeywords {
         };
         match name.map(|name| name.as_str()) {
             Some("init") => self.init = value,
+            Some("order") => self.order = value,
             Some("frozen") => self.frozen = value,
             Some("match_args") => self.match_args = value,
             Some("kw_only") => self.kw_only = value,
+            // Just ignore any unrecognized keywords. We report this error elsewhere.
             _ => {}
         }
     }

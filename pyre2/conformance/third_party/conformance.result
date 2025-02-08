@@ -373,12 +373,7 @@
     "Line 50: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 1']",
     "Line 61: Unexpected errors ['EXPECTED float <: int', 'Multiple values for argument `b`']"
   ],
-  "dataclasses_order.py": [
-    "Line 22: Unexpected errors ['`<` not supported between instances of `DC1` and `DC1`']",
-    "Line 25: Unexpected errors ['`<=` not supported between instances of `DC1` and `DC1`']",
-    "Line 28: Unexpected errors ['`>` not supported between instances of `DC1` and `DC1`']",
-    "Line 31: Unexpected errors ['`>=` not supported between instances of `DC1` and `DC1`']"
-  ],
+  "dataclasses_order.py": [],
   "dataclasses_postinit.py": [
     "Line 19: Expected 1 errors",
     "Line 36: Expected 1 errors",
@@ -453,10 +448,10 @@
     "Line 38: Unexpected errors ['Missing argument `flush`']",
     "Line 39: Unexpected errors ['Missing argument `flush`']",
     "Line 40: Unexpected errors ['Missing argument `flush`']",
-    "Line 41: Unexpected errors ['Missing argument `flush`', 'Object of class `InventoryItem` has no attribute `__lt__`']",
-    "Line 42: Unexpected errors ['Missing argument `flush`', 'Object of class `InventoryItem` has no attribute `__le__`']",
-    "Line 43: Unexpected errors ['Missing argument `flush`', 'Object of class `InventoryItem` has no attribute `__gt__`']",
-    "Line 44: Unexpected errors ['Missing argument `flush`', 'Object of class `InventoryItem` has no attribute `__ge__`']",
+    "Line 41: Unexpected errors ['Missing argument `flush`']",
+    "Line 42: Unexpected errors ['Missing argument `flush`']",
+    "Line 43: Unexpected errors ['Missing argument `flush`']",
+    "Line 44: Unexpected errors ['Missing argument `flush`']",
     "Line 66: Unexpected errors ['EXPECTED Literal[1] <: _MISSING_TYPE']",
     "Line 72: Unexpected errors ['EXPECTED Literal[0] <: InitVar[int]']",
     "Line 92: Unexpected errors ['Missing argument `base`']",
