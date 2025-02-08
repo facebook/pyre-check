@@ -251,7 +251,8 @@ class KW_ONLY: ...
 
 static SYS: &str = r#"
 platform: str
-version_info: tuple[int, int, int, str, int]
+class _version_info(tuple[int, int, int, str, int]): ...
+version_info: _version_info
 "#;
 
 static STDLIB: &[(&str, &str)] = &[

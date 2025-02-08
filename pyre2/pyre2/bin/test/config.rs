@@ -5,38 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::test::util::TestEnv;
 use crate::testcase;
-
-fn sys() -> TestEnv {
-    TestEnv::one(
-        "sys",
-        r#"
-version_info = (3, 12)
-platform = "linux"
-"#,
-    )
-}
 
 testcase!(
     test_sys_version,
-    sys(),
     r#"
 from typing import assert_type
 import sys
-if sys.version_info >= (3, 12):
+if sys.version_info >= (3, 0):
     X = str
 else:
     X = int
 assert_type(X(), str)
 
-if sys.version_info == (3, 7):
+if sys.version_info == (2, 7):
     Y = str
 else:
     Y = int
 assert_type(Y(), int)
 
-if sys.version_info < (3, 11, 3):
+if sys.version_info < (3, 0, 0):
     Z = str
 else:
     Z = int
@@ -46,11 +34,10 @@ assert_type(Z(), int)
 
 testcase!(
     test_class_under_version,
-    sys(),
     r#"
 from typing import assert_type
 import sys
-if sys.version_info >= (3, 10):
+if sys.version_info >= (3, 0):
     class Bar:
         def magic(self) -> Foo:
             return Foo()
