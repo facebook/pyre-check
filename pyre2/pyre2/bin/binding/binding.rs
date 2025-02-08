@@ -133,6 +133,9 @@ pub enum Key {
     AsyncReturnType(TextRange),
     /// The return type of a yield expression.
     YieldTypeOfYieldAnnotation(TextRange),
+    /// return expression key for use when checking an annotation against none
+    #[allow(dead_code)]
+    ReturnExpressionWithNone(ShortIdentifier, TextRange),
     /// The type at a specific return point.
     ReturnExpression(ShortIdentifier, TextRange),
     /// The type yielded inside of a specific yield expression inside a function.
@@ -176,6 +179,7 @@ impl Ranged for Key {
             Self::ReturnTypeOfYieldAnnotation(x) => x.range(),
             Self::YieldTypeOfYieldAnnotation(x) => x.range(),
             Self::ReturnExpression(_, r) => *r,
+            Self::ReturnExpressionWithNone(_, r) => *r,
             Self::YieldTypeOfYield(_, r) => *r,
             Self::YieldTypeOfGenerator(x) => x.range(),
             Self::ReturnType(x) => x.range(),
@@ -228,6 +232,9 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::Anywhere(n, r) => write!(f, "anywhere {n} {r:?}"),
             Self::ReturnType(x) => write!(f, "return {} {:?}", ctx.display(x), x.range()),
             Self::ReturnExpression(x, i) => {
+                write!(f, "return {} {:?} @ {i:?}", ctx.display(x), x.range())
+            }
+            Self::ReturnExpressionWithNone(x, i) => {
                 write!(f, "return {} {:?} @ {i:?}", ctx.display(x), x.range())
             }
             Self::YieldTypeOfYield(x, i) => {
