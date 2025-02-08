@@ -25,6 +25,7 @@ use crate::types::types::AnyStyle;
 use crate::types::types::Decoration;
 use crate::types::types::Type;
 
+#[derive(Debug)]
 enum LookupResult {
     /// The lookup succeeded, resulting in a type.
     Found(Attribute),
@@ -58,6 +59,7 @@ enum AttributeInner {
     Property(Type, Option<Type>, Class),
 }
 
+#[derive(Debug)]
 enum NotFound {
     Attribute(ClassType),
     ClassAttribute(Class),
@@ -76,6 +78,7 @@ pub enum NoAccessReason {
     SettingReadOnlyProperty(Class),
 }
 
+#[derive(Debug)]
 enum InternalError {
     /// An internal error caused by `as_attribute_base` being partial.
     AttributeBaseUndefined(Type),

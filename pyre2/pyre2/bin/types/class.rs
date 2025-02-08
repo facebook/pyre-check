@@ -36,11 +36,21 @@ pub struct ClassFieldProperties {
     pub is_annotated: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 struct ClassInner {
     qname: QName,
     tparams: TParams,
     fields: SmallMap<Name, ClassFieldProperties>,
+}
+
+impl Debug for ClassInner {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ClassInner")
+            .field("qname", &self.qname)
+            .field("tparams", &self.tparams)
+            // We don't print `fields` because it's way too long.
+            .finish_non_exhaustive()
+    }
 }
 
 pub enum ClassKind {

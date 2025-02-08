@@ -265,6 +265,7 @@ impl Display for ClassField {
 ///
 /// For example, given `class A: x: int; class B(A): pass`, the defining class
 /// for attribute `x` is `A` even when `x` is looked up on `B`.
+#[derive(Debug)]
 pub struct WithDefiningClass<T> {
     pub value: T,
     defining_class: Class,
