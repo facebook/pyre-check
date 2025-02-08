@@ -176,3 +176,55 @@ def f() -> None:
 assert_type(f(), None)
 "#,
 );
+
+testcase!(
+    test_return_never_with_unreachable,
+    r#"
+from typing import NoReturn
+
+def fail() -> NoReturn:
+    raise Exception()
+
+def f(b: bool) -> int:
+    if b:
+        return 1
+    else:
+        fail()
+        return 4
+"#,
+);
+
+testcase!(
+    test_return_never_error_return,
+    r#"
+def f(x: int): pass
+
+def g():
+   return f("test") # E: EXPECTED Literal['test'] <: int
+"#,
+);
+
+testcase!(
+    test_return_no_error,
+    r#"
+def B() -> None:
+    (3)
+"#,
+);
+
+testcase_with_bug!(
+    "Should not raise a type error on the NoReturn branch of the if statement.",
+    test_return_never_with_wrong_type,
+    r#"
+from typing import NoReturn
+
+def fail() -> NoReturn:
+    raise Exception()
+
+def f(b: bool) -> int:
+    if b:
+        return None # E: EXPECTED None <: int
+    else:
+        fail() # E: EXPECTED None <: int
+"#,
+);
