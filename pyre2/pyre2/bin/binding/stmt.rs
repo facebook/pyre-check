@@ -501,8 +501,10 @@ impl<'a> BindingsBuilder<'a> {
             Stmt::Nonlocal(x) => self.todo("Bindings::stmt", &x),
             Stmt::Expr(x) => {
                 self.ensure_expr(&x.value);
-                self.table
-                    .insert(Key::Anon(x.range), Binding::Expr(None, *x.value));
+                self.table.insert(
+                    Key::StmtExpr(x.value.range()),
+                    Binding::Expr(None, *x.value),
+                );
             }
             Stmt::Pass(_) => { /* no-op */ }
             Stmt::Break(x) => {
