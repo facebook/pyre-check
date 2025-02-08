@@ -949,3 +949,24 @@ if True:
 x: Literal["little", "big"] = "big"
 "#,
 );
+
+testcase_with_bug!(
+    "This should be an error",
+    test_compare_int_str_error,
+    r#"
+0 < "oops"
+    "#,
+);
+
+testcase_with_bug!(
+    "TODO",
+    test_contains_error,
+    r#"
+class C:
+    def __contains__(self, x: int) -> bool:
+        return True
+def f(c: C, x: int, y: str):
+    x in c  # OK
+    y in c  # TODO: this should be an error
+    "#,
+);
