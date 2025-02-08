@@ -33,6 +33,7 @@ use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
+use crate::types::tuple::Tuple;
 use crate::types::type_var::Variance;
 use crate::types::types::CalleeKind;
 use crate::types::types::TParamInfo;
@@ -107,6 +108,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             dataclass_metadata = Some(base_dataclass.inherit());
                         }
                         Some((c, class_metadata))
+                    }
+                    Type::Tuple(Tuple::Concrete(ts)) => {
+                        let class_ty = self.stdlib.tuple(self.unions(ts));
+                        let metadata = self.get_metadata_for_class(class_ty.class_object());
+                        Some((class_ty, metadata))
+                    }
+                    Type::Tuple(Tuple::Unbounded(t)) => {
+                        let class_ty = self.stdlib.tuple(*t);
+                        let metadata = self.get_metadata_for_class(class_ty.class_object());
+                        Some((class_ty, metadata))
                     }
                     Type::TypedDict(typed_dict) => {
                         is_typed_dict = true;

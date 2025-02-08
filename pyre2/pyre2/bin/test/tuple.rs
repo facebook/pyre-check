@@ -154,3 +154,18 @@ for x in f():
     assert_type(x, int | bool | str)
     "#,
 );
+
+testcase!(
+    test_tuple_parent,
+    r#"
+from typing import assert_type
+class C1(tuple[int, ...]):
+    pass
+class C2(tuple[int, int]):
+    pass
+for x in C1():
+    assert_type(x, int)
+for x in C2():
+    assert_type(x, int)
+    "#,
+);
