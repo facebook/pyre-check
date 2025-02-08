@@ -4968,7 +4968,58 @@
       "stop_line": 61
     }
   ],
-  "dataclasses_order.py": [],
+  "dataclasses_order.py": [
+    {
+      "code": -2,
+      "column": 4,
+      "concise_description": "`<` not supported between instances of `DC1` and `DC1`",
+      "description": "`<` not supported between instances of `DC1` and `DC1`",
+      "line": 22,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 22
+    },
+    {
+      "code": -2,
+      "column": 4,
+      "concise_description": "`<=` not supported between instances of `DC1` and `DC1`",
+      "description": "`<=` not supported between instances of `DC1` and `DC1`",
+      "line": 25,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 25
+    },
+    {
+      "code": -2,
+      "column": 4,
+      "concise_description": "`>` not supported between instances of `DC1` and `DC1`",
+      "description": "`>` not supported between instances of `DC1` and `DC1`",
+      "line": 28,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 4,
+      "concise_description": "`>=` not supported between instances of `DC1` and `DC1`",
+      "description": "`>=` not supported between instances of `DC1` and `DC1`",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
+      "column": 4,
+      "concise_description": "`<` not supported between instances of `DC1` and `DC2`",
+      "description": "`<` not supported between instances of `DC1` and `DC2`",
+      "line": 50,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 50
+    }
+  ],
   "dataclasses_postinit.py": [
     {
       "code": -2,
@@ -5146,6 +5197,16 @@
     },
     {
       "code": -2,
+      "column": 6,
+      "concise_description": "`<` not supported between instances of `Customer1` and `Customer1`",
+      "description": "`<` not supported between instances of `Customer1` and `Customer1`",
+      "line": 72,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 72
+    },
+    {
+      "code": -2,
       "column": 8,
       "concise_description": "Missing argument `not_a_field`",
       "description": "Missing argument `not_a_field`",
@@ -5193,6 +5254,16 @@
       "name": "PyreError",
       "stop_column": 22,
       "stop_line": 76
+    },
+    {
+      "code": -2,
+      "column": 6,
+      "concise_description": "`<` not supported between instances of `Customer2` and `Customer2`",
+      "description": "`<` not supported between instances of `Customer2` and `Customer2`",
+      "line": 78,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 78
     },
     {
       "code": -2,
@@ -5552,6 +5623,16 @@
     },
     {
       "code": -2,
+      "column": 6,
+      "concise_description": "`<` not supported between instances of `Customer1` and `Customer1`",
+      "description": "`<` not supported between instances of `Customer1` and `Customer1`",
+      "line": 61,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 61
+    },
+    {
+      "code": -2,
       "column": 18,
       "concise_description": "Unexpected keyword argument `id`",
       "description": "Unexpected keyword argument `id`",
@@ -5609,6 +5690,16 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 71
+    },
+    {
+      "code": -2,
+      "column": 6,
+      "concise_description": "`<` not supported between instances of `Customer2` and `Customer2`",
+      "description": "`<` not supported between instances of `Customer2` and `Customer2`",
+      "line": 73,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 73
     },
     {
       "code": -2,
@@ -5694,6 +5785,16 @@
     },
     {
       "code": -2,
+      "column": 6,
+      "concise_description": "`<` not supported between instances of `Customer1` and `Customer1`",
+      "description": "`<` not supported between instances of `Customer1` and `Customer1`",
+      "line": 73,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 73
+    },
+    {
+      "code": -2,
       "column": 18,
       "concise_description": "Unexpected keyword argument `id`",
       "description": "Unexpected keyword argument `id`",
@@ -5721,6 +5822,16 @@
       "name": "PyreError",
       "stop_column": 22,
       "stop_line": 77
+    },
+    {
+      "code": -2,
+      "column": 6,
+      "concise_description": "`<` not supported between instances of `Customer2` and `Customer2`",
+      "description": "`<` not supported between instances of `Customer2` and `Customer2`",
+      "line": 79,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 79
     },
     {
       "code": -2,

@@ -6,12 +6,14 @@
  */
 
 use ruff_python_ast::name::Name;
+use ruff_python_ast::CmpOp;
 use ruff_python_ast::Operator;
 
 pub const AENTER: Name = Name::new_static("__aenter__");
 pub const AEXIT: Name = Name::new_static("__aexit__");
 pub const ALL: Name = Name::new_static("__all__");
 pub const CALL: Name = Name::new_static("__call__");
+pub const CONTAINS: Name = Name::new_static("__contains__");
 pub const ENTER: Name = Name::new_static("__enter__");
 pub const EXIT: Name = Name::new_static("__exit__");
 pub const FILE: Name = Name::new_static("__file__");
@@ -45,4 +47,19 @@ pub fn inplace_dunder(op: Operator) -> Name {
         Operator::BitAnd => "__iand__",
         Operator::FloorDiv => "__ifloordiv__",
     })
+}
+
+/// Returns the associated dunder if `op` corresponds to a "rich comparison method":
+/// https://docs.python.org/3/reference/datamodel.html#object.__lt__.
+pub fn rich_comparison_dunder(op: CmpOp) -> Option<Name> {
+    let name = match op {
+        CmpOp::Lt => "__lt__",
+        CmpOp::LtE => "__le__",
+        CmpOp::Eq => "__eq__",
+        CmpOp::NotEq => "__ne__",
+        CmpOp::Gt => "__gt__",
+        CmpOp::GtE => "__ge__",
+        _ => return None,
+    };
+    Some(Name::new_static(name))
 }

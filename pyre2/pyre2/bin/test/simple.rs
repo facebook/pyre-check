@@ -950,16 +950,14 @@ x: Literal["little", "big"] = "big"
 "#,
 );
 
-testcase_with_bug!(
-    "This should be an error",
+testcase!(
     test_compare_int_str_error,
     r#"
-0 < "oops"
+0 < "oops"  # E: EXPECTED Literal['oops'] <: int
     "#,
 );
 
-testcase_with_bug!(
-    "TODO",
+testcase!(
     test_contains_error,
     r#"
 class C:
@@ -967,6 +965,6 @@ class C:
         return True
 def f(c: C, x: int, y: str):
     x in c  # OK
-    y in c  # TODO: this should be an error
+    y in c  # E: EXPECTED str <: int
     "#,
 );

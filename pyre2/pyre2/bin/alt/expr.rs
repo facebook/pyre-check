@@ -9,6 +9,7 @@ use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Arguments;
 use ruff_python_ast::BoolOp;
+use ruff_python_ast::CmpOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
@@ -573,9 +574,60 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .arc_clone()
             }
             Expr::Compare(x) => {
-                let _ty = self.expr_infer(&x.left);
-                let _tys = x.comparators.map(|x| self.expr_infer(x));
-                // We don't actually check that comparing these types is sensible, which matches Pyright
+                let left = self.expr_infer(&x.left);
+                let comparisons = x.ops.iter().zip(x.comparators.iter());
+                for (op, comparator) in comparisons {
+                    let right = self.expr_infer(comparator);
+                    let right_range = comparator.range();
+                    let compare_by_method =
+                        |ty, method, arg| self.call_method(ty, &method, x.range, &[arg], &[]);
+                    let comparison_error = || {
+                        self.error(
+                            x.range,
+                            format!(
+                                "`{}` not supported between instances of `{}` and `{}`",
+                                op.as_str(),
+                                left,
+                                right
+                            ),
+                        );
+                    };
+                    match op {
+                        CmpOp::Eq | CmpOp::NotEq | CmpOp::Is | CmpOp::IsNot => {
+                            // We assume these comparisons never error. Technically, `__eq__` and
+                            // `__ne__` can be overridden, but we generally bake in the assumption
+                            // that `==` and `!=` check equality as typically defined in Python.
+                        }
+                        CmpOp::In | CmpOp::NotIn => {
+                            // `x in y` desugars to `y.__contains__(x)`
+                            if compare_by_method(
+                                &right,
+                                dunder::CONTAINS,
+                                CallArg::Type(&left, x.left.range()),
+                            )
+                            .is_some()
+                            {
+                                // Comparison method called. We ignore the return type and assume `bool`.
+                            } else {
+                                comparison_error();
+                            }
+                        }
+                        _ => {
+                            if let Some(magic_method) = dunder::rich_comparison_dunder(*op)
+                                && compare_by_method(
+                                    &left,
+                                    magic_method,
+                                    CallArg::Type(&right, right_range),
+                                )
+                                .is_some()
+                            {
+                                // Comparison method called. We ignore the return type and assume `bool`.
+                            } else {
+                                comparison_error();
+                            }
+                        }
+                    }
+                }
                 self.stdlib.bool().to_type()
             }
             Expr::Call(x) if is_special_name(&x.func, "assert_type") => {

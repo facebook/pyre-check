@@ -291,7 +291,7 @@ from dataclasses import dataclass
 class D1:
     x: int
 def f(d: D1, e: D1):
-    if d < e: ...  # TODO: this should be an error, by default dataclasses aren't comparable
+    if d < e: ...  # E: `<` not supported between instances of `D1` and `D1`
     if d == e: ...  # OK: `==` and `!=` never error regardless
 
 @dataclass(order=True)
@@ -301,8 +301,8 @@ class D2:
 class D3:
     x: int
 def f(d: D2, e: D2, f: D3):
-    if d < e: ...  # OK
-    if e < f: ...  # TODO: this should be an error, instances of different dataclasses aren't comparable
+    if d < e: ...  # TODO: should be OK  # E: `<` not supported between instances of `D2` and `D2`
+    if e < f: ...  # E: `<` not supported between instances of `D2` and `D3`
     if e != f: ...  # OK: `==` and `!=` never error regardless
     "#,
 );
