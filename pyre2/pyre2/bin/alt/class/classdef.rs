@@ -33,6 +33,7 @@ use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyClassSynthesizedFields;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::dunder;
+use crate::error::collector::ErrorCollector;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
@@ -284,10 +285,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         fields: SmallMap<Name, ClassFieldProperties>,
         bases: &[Expr],
         legacy_tparams: &[Idx<KeyLegacyTypeParam>],
+        errors: &ErrorCollector,
     ) -> Class {
-        let scoped_tparams = self.scoped_type_params(x.type_params.as_deref());
-        let bases = bases.map(|x| self.base_class_of(x));
-        let tparams = self.class_tparams(&x.name, scoped_tparams, bases, legacy_tparams);
+        let scoped_tparams = self.scoped_type_params(x.type_params.as_deref(), errors);
+        let bases = bases.map(|x| self.base_class_of(x, errors));
+        let tparams = self.class_tparams(&x.name, scoped_tparams, bases, legacy_tparams, errors);
         Class::new(
             x.name.clone(),
             self.module_info().dupe(),
@@ -296,8 +298,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
-    pub fn get_idx_class_def(&self, idx: Idx<Key>) -> Option<Class> {
-        let ty = self.get_idx(idx);
+    pub fn get_idx_class_def(&self, idx: Idx<Key>, errors: &ErrorCollector) -> Option<Class> {
+        let ty = self.get_idx(idx, errors);
         match &*ty {
             Type::ClassDef(cls) => Some(cls.dupe()),
             _ => None,
@@ -317,19 +319,39 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
-    pub fn get_metadata_for_class(&self, cls: &Class) -> Arc<ClassMetadata> {
-        self.get_from_class(cls, &KeyClassMetadata(ShortIdentifier::new(cls.name())))
+    pub fn get_metadata_for_class(
+        &self,
+        cls: &Class,
+        errors: &ErrorCollector,
+    ) -> Arc<ClassMetadata> {
+        self.get_from_class(
+            cls,
+            &KeyClassMetadata(ShortIdentifier::new(cls.name())),
+            errors,
+        )
     }
 
-    fn get_enum_from_class(&self, cls: &Class) -> Option<EnumMetadata> {
-        self.get_metadata_for_class(cls).enum_metadata().cloned()
+    fn get_enum_from_class(&self, cls: &Class, errors: &ErrorCollector) -> Option<EnumMetadata> {
+        self.get_metadata_for_class(cls, errors)
+            .enum_metadata()
+            .cloned()
     }
 
-    pub fn get_enum_from_class_type(&self, class_type: &ClassType) -> Option<EnumMetadata> {
-        self.get_enum_from_class(class_type.class_object())
+    pub fn get_enum_from_class_type(
+        &self,
+        class_type: &ClassType,
+        errors: &ErrorCollector,
+    ) -> Option<EnumMetadata> {
+        self.get_enum_from_class(class_type.class_object(), errors)
     }
 
-    fn check_and_create_targs(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> TArgs {
+    fn check_and_create_targs(
+        &self,
+        cls: &Class,
+        targs: Vec<Type>,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> TArgs {
         let tparams = cls.tparams();
         let nargs = targs.len();
         let mut checked_targs = Vec::new();
@@ -343,6 +365,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 _ => {
                     self.error(
+                        errors,
                         range,
                         format!(
                             "Expected {} for class `{}`, got {}.",
@@ -384,10 +407,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn type_of_instance(&self, cls: &Class, targs: TArgs) -> Type {
-        let metadata = self.get_metadata_for_class(cls);
+    fn type_of_instance(&self, cls: &Class, targs: TArgs, errors: &ErrorCollector) -> Type {
+        let metadata = self.get_metadata_for_class(cls, errors);
         if metadata.is_typed_dict() {
-            let fields = self.sub_typed_dict_fields(cls, &targs);
+            let fields = self.sub_typed_dict_fields(cls, &targs, errors);
             Type::TypedDict(Box::new(TypedDict::new(cls.dupe(), targs, fields)))
         } else {
             Type::ClassType(ClassType::new(cls.dupe(), targs))
@@ -396,9 +419,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Given a class or typed dictionary and some (explicit) type arguments, construct a `Type`
     /// that represents the type of an instance of the class or typed dictionary with those `targs`.
-    pub fn specialize(&self, cls: &Class, targs: Vec<Type>, range: TextRange) -> Type {
-        let targs = self.check_and_create_targs(cls, targs, range);
-        self.type_of_instance(cls, targs)
+    pub fn specialize(
+        &self,
+        cls: &Class,
+        targs: Vec<Type>,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        let targs = self.check_and_create_targs(cls, targs, range, errors);
+        self.type_of_instance(cls, targs, errors)
     }
 
     /// Given a class or typed dictionary, create a `Type` that represents to an instance annotated
@@ -409,39 +438,46 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ///
     /// We require a range because depending on the configuration we may raise
     /// a type error when a generic class or typed dictionary is promoted using gradual types.
-    pub fn promote(&self, cls: &Class, range: TextRange) -> Type {
+    pub fn promote(&self, cls: &Class, range: TextRange, errors: &ErrorCollector) -> Type {
         let targs = self.create_default_targs(cls, Some(range));
-        self.type_of_instance(cls, targs)
+        self.type_of_instance(cls, targs, errors)
     }
 
     /// Private version of `promote` that does not potentially
     /// raise strict mode errors. Should only be used for unusual scenarios.
-    fn promote_silently(&self, cls: &Class) -> Type {
+    fn promote_silently(&self, cls: &Class, errors: &ErrorCollector) -> Type {
         let targs = self.create_default_targs(cls, None);
-        self.type_of_instance(cls, targs)
+        self.type_of_instance(cls, targs, errors)
     }
 
-    pub fn unwrap_class_object_silently(&self, ty: &Type) -> Option<Type> {
+    pub fn unwrap_class_object_silently(&self, ty: &Type, errors: &ErrorCollector) -> Option<Type> {
         match ty {
-            Type::ClassDef(c) => Some(self.promote_silently(c)),
-            Type::TypeAlias(ta) => self.unwrap_class_object_silently(&ta.as_value(self.stdlib)),
+            Type::ClassDef(c) => Some(self.promote_silently(c, errors)),
+            Type::TypeAlias(ta) => {
+                self.unwrap_class_object_silently(&ta.as_value(self.stdlib), errors)
+            }
             _ => None,
         }
     }
 
     /// Creates a type from the class with fresh variables for its type parameters.
-    pub fn instantiate_fresh(&self, cls: &Class) -> Type {
+    pub fn instantiate_fresh(&self, cls: &Class, errors: &ErrorCollector) -> Type {
         let qs = cls.tparams().quantified().collect::<Vec<_>>();
         let targs = TArgs::new(qs.map(|q| Type::Quantified(*q)));
-        let promoted_cls = Type::type_form(self.type_of_instance(cls, targs));
+        let promoted_cls = Type::type_form(self.type_of_instance(cls, targs, errors));
         self.solver()
             .fresh_quantified(qs.as_slice(), promoted_cls, self.uniques)
             .1
     }
 
     /// Get an ancestor `ClassType`, in terms of the type parameters of `class`.
-    fn get_ancestor(&self, class: &Class, want: &Class) -> Option<ClassType> {
-        self.get_metadata_for_class(class)
+    fn get_ancestor(
+        &self,
+        class: &Class,
+        want: &Class,
+        errors: &ErrorCollector,
+    ) -> Option<ClassType> {
+        self.get_metadata_for_class(class, errors)
             .ancestors(self.stdlib)
             .find(|ancestor| ancestor.class_object() == want)
             .cloned()
@@ -449,19 +485,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Is `want` a superclass of `class` in the class hierarchy? Will return `false` if
     /// `want` is a protocol, unless it is explicitly marked as a base class in the MRO.
-    pub fn has_superclass(&self, class: &Class, want: &Class) -> bool {
-        class == want || self.get_ancestor(class, want).is_some()
+    pub fn has_superclass(&self, class: &Class, want: &Class, errors: &ErrorCollector) -> bool {
+        class == want || self.get_ancestor(class, want, errors).is_some()
     }
 
     /// Return the type representing `class` upcast to `want`, if `want` is a
     /// supertype of `class` in the class hierarchy. Will return `None` if
     /// `want` is not a superclass, including if `want` is a protocol (unless it
     /// explicitly appears in the MRO).
-    pub fn as_superclass(&self, class: &ClassType, want: &Class) -> Option<ClassType> {
+    pub fn as_superclass(
+        &self,
+        class: &ClassType,
+        want: &Class,
+        errors: &ErrorCollector,
+    ) -> Option<ClassType> {
         if class.class_object() == want {
             Some(class.clone())
         } else {
-            self.get_ancestor(class.class_object(), want)
+            self.get_ancestor(class.class_object(), want, errors)
                 .map(|ancestor| ancestor.substitute(&class.substitution()))
         }
     }
@@ -474,27 +515,32 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         initialization: ClassFieldInitialization,
         class: &Class,
         range: TextRange,
+        errors: &ErrorCollector,
     ) -> ClassField {
-        let metadata = self.get_metadata_for_class(class);
-        if let Some(enum_) = self.get_enum_from_class(class)
+        let metadata = self.get_metadata_for_class(class, errors);
+        if let Some(enum_) = self.get_enum_from_class(class, errors)
             && self.is_valid_enum_member(name, value_ty, initialization)
         {
             if annotation.is_some() {
-                self.error(range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
+                self.error(errors,range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
             }
 
-            if let Some(enum_value_ty) = self.type_of_enum_value(enum_) {
+            if let Some(enum_value_ty) = self.type_of_enum_value(enum_, errors) {
                 if !matches!(value_ty, Type::Tuple(_))
-                    && !self
-                        .solver()
-                        .is_subset_eq(value_ty, &enum_value_ty, self.type_order())
+                    && !self.solver().is_subset_eq(
+                        value_ty,
+                        &enum_value_ty,
+                        self.type_order(),
+                        errors,
+                    )
                 {
-                    self.error(range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name));
+                    self.error(errors,range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name));
                 }
             }
         }
         if metadata.is_typed_dict() && matches!(initialization, ClassFieldInitialization::Class) {
             self.error(
+                errors,
                 range,
                 format!("TypedDict item `{}` may not be initialized.", name),
             );
@@ -513,10 +559,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ClassField::new(ty.clone(), ann.cloned(), initialization, readonly)
     }
 
-    pub fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
+    pub fn get_class_field(
+        &self,
+        cls: &Class,
+        name: &Name,
+        errors: &ErrorCollector,
+    ) -> Option<ClassField> {
         let synthesized_fields = self.get_from_class(
             cls,
             &KeyClassSynthesizedFields(ShortIdentifier::new(cls.name())),
+            errors,
         );
         let synth = synthesized_fields.get(name);
         if let Some(synth) = synth
@@ -527,6 +579,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let field = self.get_from_class(
                 cls,
                 &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
+                errors,
             );
             Some((*field).clone())
         } else {
@@ -538,17 +591,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         cls: &Class,
         name: &Name,
+        errors: &ErrorCollector,
     ) -> Option<WithDefiningClass<ClassField>> {
-        if let Some(field) = self.get_class_field(cls, name) {
+        if let Some(field) = self.get_class_field(cls, name, errors) {
             Some(WithDefiningClass {
                 value: field,
                 defining_class: cls.dupe(),
             })
         } else {
-            self.get_metadata_for_class(cls)
+            self.get_metadata_for_class(cls, errors)
                 .ancestors(self.stdlib)
                 .filter_map(|ancestor| {
-                    self.get_class_field(ancestor.class_object(), name)
+                    self.get_class_field(ancestor.class_object(), name, errors)
                         .map(|field| WithDefiningClass {
                             value: field.instantiate_for(ancestor),
                             defining_class: ancestor.class_object().dupe(),
@@ -559,17 +613,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     // Get every member of a class, including those declared in parent classes.
-    fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
+    fn get_all_members(
+        &self,
+        cls: &Class,
+        errors: &ErrorCollector,
+    ) -> SmallMap<Name, (ClassField, Class)> {
         let mut members = SmallMap::new();
         for name in cls.fields() {
-            if let Some(field) = self.get_class_field(cls, name) {
+            if let Some(field) = self.get_class_field(cls, name, errors) {
                 members.insert(name.clone(), (field, cls.dupe()));
             }
         }
-        for ancestor in self.get_metadata_for_class(cls).ancestors(self.stdlib) {
+        for ancestor in self
+            .get_metadata_for_class(cls, errors)
+            .ancestors(self.stdlib)
+        {
             for name in ancestor.class_object().fields() {
                 if !members.contains_key(name) {
-                    if let Some(field) = self.get_class_field(ancestor.class_object(), name) {
+                    if let Some(field) = self.get_class_field(ancestor.class_object(), name, errors)
+                    {
                         members.insert(
                             name.clone(),
                             (
@@ -584,15 +646,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         members
     }
 
-    pub fn get_all_member_names(&self, cls: &Class) -> SmallSet<Name> {
-        self.get_all_members(cls)
+    pub fn get_all_member_names(&self, cls: &Class, errors: &ErrorCollector) -> SmallSet<Name> {
+        self.get_all_members(cls, errors)
             .keys()
             .cloned()
             .collect::<SmallSet<_>>()
     }
 
-    pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
-        self.get_class_member(cls.class_object(), name)
+    pub fn get_instance_attribute(
+        &self,
+        cls: &ClassType,
+        name: &Name,
+        errors: &ErrorCollector,
+    ) -> Option<Attribute> {
+        self.get_class_member(cls.class_object(), name, errors)
             .map(|member| member.value.as_instance_attribute(cls))
     }
 
@@ -603,8 +670,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ///
     /// Access is disallowed for instance-only attributes and for attributes whose
     /// type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
-    pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<Attribute> {
-        let member = self.get_class_member(cls, name)?.value;
+    pub fn get_class_attribute(
+        &self,
+        cls: &Class,
+        name: &Name,
+        errors: &ErrorCollector,
+    ) -> Option<Attribute> {
+        let member = self.get_class_member(cls, name, errors)?.value;
         Some(member.as_class_attribute(cls))
     }
 
@@ -613,8 +685,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// This lookup skips normal method binding logic (it behaves like a cross
     /// between a classmethod and a constructor; downstream code handles this
     /// using the raw callable type).
-    pub fn get_dunder_new(&self, cls: &ClassType) -> Option<Type> {
-        let new_member = self.get_class_member(cls.class_object(), &dunder::NEW)?;
+    pub fn get_dunder_new(&self, cls: &ClassType, errors: &ErrorCollector) -> Option<Type> {
+        let new_member = self.get_class_member(cls.class_object(), &dunder::NEW, errors)?;
         if new_member.defined_on(self.stdlib.object_class_type().class_object()) {
             // The default behavior of `object.__new__` is already baked into our implementation of
             // class construction; we only care about `__new__` if it is overridden.
@@ -629,8 +701,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// (1) it isn't defined (possible if we've been passed a custom typeshed), or
     /// (2) the class overrides `object.__new__` but not `object.__init__`, in wich case the
     ///     `__init__` call always succeeds at runtime.
-    pub fn get_dunder_init(&self, cls: &ClassType, overrides_new: bool) -> Option<Type> {
-        let init_method = self.get_class_member(cls.class_object(), &dunder::INIT)?;
+    pub fn get_dunder_init(
+        &self,
+        cls: &ClassType,
+        overrides_new: bool,
+        errors: &ErrorCollector,
+    ) -> Option<Type> {
+        let init_method = self.get_class_member(cls.class_object(), &dunder::INIT, errors)?;
         if !(overrides_new
             && init_method.defined_on(self.stdlib.object_class_type().class_object()))
         {
@@ -641,10 +718,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     /// Get the metaclass `__call__` method.
-    pub fn get_metaclass_dunder_call(&self, cls: &ClassType) -> Option<Type> {
-        let metadata = self.get_metadata_for_class(cls.class_object());
+    pub fn get_metaclass_dunder_call(
+        &self,
+        cls: &ClassType,
+        errors: &ErrorCollector,
+    ) -> Option<Type> {
+        let metadata = self.get_metadata_for_class(cls.class_object(), errors);
         let metaclass = metadata.metaclass()?;
-        let attr = self.get_class_member(metaclass.class_object(), &dunder::CALL)?;
+        let attr = self.get_class_member(metaclass.class_object(), &dunder::CALL, errors)?;
         if attr.defined_on(self.stdlib.builtins_type().class_object()) {
             // The behavior of `type.__call__` is already baked into our implementation of constructors,
             // so we can skip analyzing it at the type level.

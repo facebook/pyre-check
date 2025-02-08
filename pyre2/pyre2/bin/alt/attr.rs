@@ -15,6 +15,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::callable::CallArg;
 use crate::alt::types::class_metadata::EnumMetadata;
+use crate::error::collector::ErrorCollector;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::module::Module;
@@ -195,16 +196,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         base: Type,
         attr_name: &Name,
         range: TextRange,
+        errors: &ErrorCollector,
         todo_ctx: &str,
     ) -> Type {
         match self.get_type_or_conflated_error_msg(
-            self.lookup_attr(base, attr_name),
+            self.lookup_attr(base, attr_name, errors),
             attr_name,
             range,
+            errors,
             todo_ctx,
         ) {
             Ok(ty) => ty,
-            Err(msg) => self.error(range, msg),
+            Err(msg) => self.error(errors, range, msg),
         }
     }
 
@@ -216,15 +219,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         base: Type,
         attr_name: &Name,
         range: TextRange,
+        errors: &ErrorCollector,
         todo_ctx: &str,
     ) -> Option<Type> {
-        match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attr) => match self.resolve_get_access(attr, range) {
+        match self.lookup_attr(base, attr_name, errors) {
+            LookupResult::Found(attr) => match self.resolve_get_access(attr, range, errors) {
                 Ok(ty) => Some(ty),
-                Err(e) => Some(self.error(range, e.to_error_msg(attr_name))),
+                Err(e) => Some(self.error(errors, range, e.to_error_msg(attr_name))),
             },
             LookupResult::InternalError(e) => {
-                Some(self.error(range, e.to_error_msg(attr_name, todo_ctx)))
+                Some(self.error(errors, range, e.to_error_msg(attr_name, todo_ctx)))
             }
             _ => None,
         }
@@ -233,9 +237,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Look up the `_value_` attribute of an enum class. This field has to be a plain instance
     /// attribute annotated in the class body; it is used to validate enum member values, which are
     /// supposed to all share this type.
-    pub fn type_of_enum_value(&self, enum_: EnumMetadata) -> Option<Type> {
+    pub fn type_of_enum_value(&self, enum_: EnumMetadata, errors: &ErrorCollector) -> Option<Type> {
         let base = Type::ClassType(enum_.cls);
-        match self.lookup_attr(base, &Name::new_static("_value_")) {
+        match self.lookup_attr(base, &Name::new_static("_value_"), errors) {
             LookupResult::Found(attr) => match attr.0 {
                 AttributeInner::ReadWrite(ty) => Some(ty),
                 AttributeInner::ReadOnly(_)
@@ -254,20 +258,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         got: Either<&Expr, &Type>,
         range: TextRange,
+        errors: &ErrorCollector,
         todo_ctx: &str,
     ) {
-        match self.lookup_attr(base, attr_name) {
+        match self.lookup_attr(base, attr_name, errors) {
             LookupResult::Found(attr) => match attr.0 {
                 AttributeInner::NoAccess(e) => {
-                    self.error(range, e.to_error_msg(attr_name));
+                    self.error(errors, range, e.to_error_msg(attr_name));
                 }
                 AttributeInner::ReadWrite(want) => match got {
                     Either::Left(got) => {
-                        self.expr(got, Some(&want));
+                        self.expr(got, Some(&want), errors);
                     }
                     Either::Right(got) => {
-                        if !self.solver().is_subset_eq(got, &want, self.type_order()) {
+                        if !self
+                            .solver()
+                            .is_subset_eq(got, &want, self.type_order(), errors)
+                        {
                             self.error(
+                                errors,
                                 range,
                                 format!(
                                     "Could not assign type `{}` to attribute `{}` with type `{}`",
@@ -281,27 +290,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 },
                 AttributeInner::ReadOnly(_) => {
                     self.error(
+                        errors,
                         range,
                         format!("Could not assign to read-only field `{attr_name}`"),
                     );
                 }
                 AttributeInner::Property(_, None, cls) => {
                     let e = NoAccessReason::SettingReadOnlyProperty(cls);
-                    self.error(range, e.to_error_msg(attr_name));
+                    self.error(errors, range, e.to_error_msg(attr_name));
                 }
                 AttributeInner::Property(_, Some(setter), _) => {
                     let got = match &got {
                         Either::Left(got) => CallArg::Expr(got),
                         Either::Right(got) => CallArg::Type(got, range),
                     };
-                    self.call_property_setter(setter, got, range);
+                    self.call_property_setter(setter, got, range, errors);
                 }
             },
             LookupResult::InternalError(e) => {
-                self.error(range, e.to_error_msg(attr_name, todo_ctx));
+                self.error(errors, range, e.to_error_msg(attr_name, todo_ctx));
             }
             LookupResult::NotFound(e) => {
-                self.error(range, e.to_error_msg(attr_name));
+                self.error(errors, range, e.to_error_msg(attr_name));
             }
         }
     }
@@ -312,9 +322,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         got: &Expr,
         range: TextRange,
+        errors: &ErrorCollector,
         todo_ctx: &str,
     ) {
-        self.check_attr_set(base, attr_name, Either::Left(got), range, todo_ctx)
+        self.check_attr_set(base, attr_name, Either::Left(got), range, errors, todo_ctx)
     }
 
     pub fn check_attr_set_with_type(
@@ -323,9 +334,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         got: &Type,
         range: TextRange,
+        errors: &ErrorCollector,
         todo_ctx: &str,
     ) {
-        self.check_attr_set(base, attr_name, Either::Right(got), range, todo_ctx)
+        self.check_attr_set(base, attr_name, Either::Right(got), range, errors, todo_ctx)
     }
 
     pub fn is_attr_subset(
@@ -358,11 +370,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         attr: Attribute,
         range: TextRange,
+        errors: &ErrorCollector,
     ) -> Result<Type, NoAccessReason> {
         match attr.0 {
             AttributeInner::NoAccess(reason) => Err(reason),
             AttributeInner::ReadWrite(ty) | AttributeInner::ReadOnly(ty) => Ok(ty),
-            AttributeInner::Property(getter, ..) => Ok(self.call_property_getter(getter, range)),
+            AttributeInner::Property(getter, ..) => {
+                Ok(self.call_property_getter(getter, range, errors))
+            }
         }
     }
 
@@ -385,10 +400,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         lookup: LookupResult,
         attr_name: &Name,
         range: TextRange,
+        errors: &ErrorCollector,
         todo_ctx: &str,
     ) -> Result<Type, String> {
         match lookup {
-            LookupResult::Found(attr) => match self.resolve_get_access(attr, range) {
+            LookupResult::Found(attr) => match self.resolve_get_access(attr, range, errors) {
                 Ok(ty) => Ok(ty.clone()),
                 Err(err) => Err(err.to_error_msg(attr_name)),
             },
@@ -397,25 +413,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn lookup_attr(&self, base: Type, attr_name: &Name) -> LookupResult {
-        match self.as_attribute_base(base.clone(), self.stdlib) {
+    fn lookup_attr(&self, base: Type, attr_name: &Name, errors: &ErrorCollector) -> LookupResult {
+        match self.as_attribute_base(base.clone(), self.stdlib, errors) {
             Some(AttributeBase::ClassInstance(class)) => {
-                match self.get_instance_attribute(&class, attr_name) {
+                match self.get_instance_attribute(&class, attr_name, errors) {
                     Some(attr) => LookupResult::Found(attr),
                     None => LookupResult::NotFound(NotFound::Attribute(class)),
                 }
             }
             Some(AttributeBase::ClassObject(class)) => {
-                match self.get_class_attribute(&class, attr_name) {
+                match self.get_class_attribute(&class, attr_name, errors) {
                     Some(attr) => LookupResult::Found(attr),
                     None => {
                         // Classes are instances of their metaclass, which defaults to `builtins.type`.
-                        let metadata = self.get_metadata_for_class(&class);
+                        let metadata = self.get_metadata_for_class(&class, errors);
                         let instance_attr = match metadata.metaclass() {
-                            Some(meta) => self.get_instance_attribute(meta, attr_name),
-                            None => {
-                                self.get_instance_attribute(&self.stdlib.builtins_type(), attr_name)
-                            }
+                            Some(meta) => self.get_instance_attribute(meta, attr_name, errors),
+                            None => self.get_instance_attribute(
+                                &self.stdlib.builtins_type(),
+                                attr_name,
+                                errors,
+                            ),
                         };
                         match instance_attr {
                             Some(attr) => LookupResult::Found(attr),
@@ -424,10 +442,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
             }
-            Some(AttributeBase::Module(module)) => match self.get_module_attr(&module, attr_name) {
-                Some(attr) => LookupResult::found_type(attr),
-                None => LookupResult::NotFound(NotFound::ModuleExport(module)),
-            },
+            Some(AttributeBase::Module(module)) => {
+                match self.get_module_attr(&module, attr_name, errors) {
+                    Some(attr) => LookupResult::found_type(attr),
+                    None => LookupResult::NotFound(NotFound::ModuleExport(module)),
+                }
+            }
             Some(AttributeBase::Quantified(q)) => {
                 if q.is_param_spec() && attr_name == "args" {
                     LookupResult::found_type(Type::type_form(Type::Args(q)))
@@ -435,7 +455,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     LookupResult::found_type(Type::type_form(Type::Kwargs(q)))
                 } else {
                     let class = q.as_value(self.stdlib);
-                    match self.get_instance_attribute(&class, attr_name) {
+                    match self.get_instance_attribute(&class, attr_name, errors) {
                         Some(attr) => LookupResult::Found(attr),
                         None => LookupResult::NotFound(NotFound::Attribute(class)),
                     }
@@ -444,7 +464,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(AttributeBase::TypeAny(style)) => {
                 let builtins_type_classtype = self.stdlib.builtins_type();
                 LookupResult::found_type(
-                    self.get_instance_attribute(&builtins_type_classtype, attr_name)
+                    self.get_instance_attribute(&builtins_type_classtype, attr_name, errors)
                         .and_then(|attr| self.resolve_as_instance_method(attr))
                         .map_or_else(|| style.propagate(), |ty| ty),
                 )
@@ -463,16 +483,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn try_lookup_attr(&self, base: Type, attr_name: &Name) -> Option<Attribute> {
-        match self.lookup_attr(base, attr_name) {
+    pub fn try_lookup_attr(
+        &self,
+        base: Type,
+        attr_name: &Name,
+        errors: &ErrorCollector,
+    ) -> Option<Attribute> {
+        match self.lookup_attr(base, attr_name, errors) {
             LookupResult::Found(attr) => Some(attr),
             _ => None,
         }
     }
 
-    fn get_module_attr(&self, module: &Module, attr_name: &Name) -> Option<Type> {
+    fn get_module_attr(
+        &self,
+        module: &Module,
+        attr_name: &Name,
+        errors: &ErrorCollector,
+    ) -> Option<Type> {
         match module.as_single_module() {
-            Some(module_name) => self.get_import(attr_name, module_name),
+            Some(module_name) => self.get_import(attr_name, module_name, errors),
             None => {
                 // TODO: This is fallable, but we don't detect it yet.
                 Some(module.push_path(attr_name.clone()).to_type())
@@ -480,7 +510,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn as_attribute_base(&self, ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
+    fn as_attribute_base(
+        &self,
+        ty: Type,
+        stdlib: &Stdlib,
+        errors: &ErrorCollector,
+    ) -> Option<AttributeBase> {
         match ty {
             Type::ClassType(class_type) => Some(AttributeBase::ClassInstance(class_type)),
             Type::ClassDef(cls) => Some(AttributeBase::ClassObject(cls)),
@@ -495,7 +530,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(AttributeBase::ClassInstance(if elements.is_empty() {
                     stdlib.tuple(Type::Any(AnyStyle::Implicit))
                 } else {
-                    stdlib.tuple(self.unions(elements))
+                    stdlib.tuple(self.unions(elements, errors))
                 }))
             }
             Type::LiteralString => Some(AttributeBase::ClassInstance(stdlib.str())),
@@ -506,7 +541,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(AttributeBase::ClassInstance(stdlib.bool()))
             }
             Type::Any(style) => Some(AttributeBase::Any(style)),
-            Type::TypeAlias(ta) => self.as_attribute_base(ta.as_value(stdlib), stdlib),
+            Type::TypeAlias(ta) => self.as_attribute_base(ta.as_value(stdlib), stdlib, errors),
             Type::Type(box Type::ClassType(class)) => {
                 Some(AttributeBase::ClassObject(class.class_object().dupe()))
             }
@@ -523,10 +558,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Callable(_, _) => Some(AttributeBase::ClassInstance(stdlib.function_type())),
             Type::BoundMethod(_) => Some(AttributeBase::ClassInstance(stdlib.method_type())),
             Type::Ellipsis => Some(AttributeBase::ClassInstance(stdlib.ellipsis_type())),
-            Type::Forall(_, box base) => self.as_attribute_base(base, stdlib),
+            Type::Forall(_, box base) => self.as_attribute_base(base, stdlib, errors),
             Type::Var(v) => {
                 if let Some(_guard) = self.recurser.recurse(v) {
-                    self.as_attribute_base(self.solver().force_var(v), stdlib)
+                    self.as_attribute_base(self.solver().force_var(v), stdlib, errors)
                 } else {
                     None
                 }
@@ -534,7 +569,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Decoration(Decoration::Property(box (getter, _))) => {
                 Some(AttributeBase::Property(getter))
             }
-            Type::Decoration(Decoration::EnumMember(box ty)) => self.as_attribute_base(ty, stdlib),
+            Type::Decoration(Decoration::EnumMember(box ty)) => {
+                self.as_attribute_base(ty, stdlib, errors)
+            }
             Type::Decoration(_) => None,
             // TODO: check to see which ones should have class representations
             Type::Union(_)

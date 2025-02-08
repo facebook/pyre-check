@@ -16,6 +16,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::solve::Iterable;
 use crate::alt::unwrap::UnwrappedDict;
+use crate::error::collector::ErrorCollector;
 use crate::types::callable::Callable;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
@@ -49,13 +50,17 @@ impl CallArg<'_> {
     // Splat arguments might be fixed-length tuples, which are handled precisely, or have unknown
     // length. This function evaluates splat args to determine how many params should be consumed,
     // but does not evaulate other expressions, which might be contextually typed.
-    fn pre_eval<Ans: LookupAnswer>(&self, solver: &AnswersSolver<Ans>) -> CallArgPreEval {
+    fn pre_eval<Ans: LookupAnswer>(
+        &self,
+        solver: &AnswersSolver<Ans>,
+        errors: &ErrorCollector,
+    ) -> CallArgPreEval {
         match self {
             Self::Type(ty, _) => CallArgPreEval::Type(ty, false),
             Self::Expr(e) => CallArgPreEval::Expr(e, false),
             Self::Star(e, range) => {
-                let ty = solver.expr_infer(e);
-                let iterables = solver.iterate(&ty, *range);
+                let ty = solver.expr_infer(e, errors);
+                let iterables = solver.iterate(&ty, *range, errors);
                 // If we have a union of iterables, use a fixed length only if every iterable is
                 // fixed and has the same length. Otherwise, use star.
                 let mut fixed_lens = Vec::new();
@@ -77,7 +82,7 @@ impl CallArg<'_> {
                             }
                         }
                     }
-                    let tys = fixed_tys.into_map(|tys| solver.unions(tys));
+                    let tys = fixed_tys.into_map(|tys| solver.unions(tys, errors));
                     CallArgPreEval::Fixed(tys, 0)
                 } else {
                     let mut star_tys = Vec::new();
@@ -87,7 +92,7 @@ impl CallArg<'_> {
                             Iterable::FixedLen(tys) => star_tys.extend(tys),
                         }
                     }
-                    let ty = solver.unions(star_tys);
+                    let ty = solver.unions(star_tys, errors);
                     CallArgPreEval::Star(ty, false)
                 }
             }
@@ -123,31 +128,36 @@ impl CallArgPreEval<'_> {
         hint: &Type,
         vararg: bool,
         range: TextRange,
+        errors: &ErrorCollector,
     ) {
         match self {
             Self::Type(ty, done) => {
                 *done = true;
-                solver.check_type(hint, ty, range);
+                solver.check_type(hint, ty, range, errors);
             }
             Self::Expr(x, done) => {
                 *done = true;
-                solver.expr(x, Some(hint));
+                solver.expr(x, Some(hint), errors);
             }
             Self::Star(ty, done) => {
                 *done = vararg;
-                solver.check_type(hint, ty, range);
+                solver.check_type(hint, ty, range, errors);
             }
             Self::Fixed(tys, i) => {
-                solver.check_type(hint, &tys[*i], range);
+                solver.check_type(hint, &tys[*i], range, errors);
                 *i += 1;
             }
         }
     }
 
-    fn post_infer<Ans: LookupAnswer>(&mut self, solver: &AnswersSolver<Ans>) {
+    fn post_infer<Ans: LookupAnswer>(
+        &mut self,
+        solver: &AnswersSolver<Ans>,
+        errors: &ErrorCollector,
+    ) {
         match self {
             Self::Expr(x, _) => {
-                solver.expr_infer(x);
+                solver.expr_infer(x, errors);
             }
             _ => {}
         }
@@ -155,15 +165,15 @@ impl CallArgPreEval<'_> {
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    fn is_param_spec_args(&self, x: &CallArg, q: Quantified) -> bool {
+    fn is_param_spec_args(&self, x: &CallArg, q: Quantified, errors: &ErrorCollector) -> bool {
         match x {
-            CallArg::Star(x, _) => self.expr_infer(x) == Type::Args(q),
+            CallArg::Star(x, _) => self.expr_infer(x, errors) == Type::Args(q),
             _ => false,
         }
     }
 
-    fn is_param_spec_kwargs(&self, x: &Keyword, q: Quantified) -> bool {
-        self.expr_infer(&x.value) == Type::Kwargs(q)
+    fn is_param_spec_kwargs(&self, x: &Keyword, q: Quantified, errors: &ErrorCollector) -> bool {
+        self.expr_infer(&x.value, errors) == Type::Kwargs(q)
     }
 
     fn callable_infer_params(
@@ -173,6 +183,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         args: &[CallArg],
         keywords: &[Keyword],
         range: TextRange,
+        errors: &ErrorCollector,
     ) {
         let iargs = self_arg.iter().chain(args.iter());
 
@@ -182,7 +193,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut seen_names: SmallMap<Name, usize> = SmallMap::new();
         let mut extra_arg_pos = None;
         for arg in iargs {
-            let mut arg_pre = arg.pre_eval(self);
+            let mut arg_pre = arg.pre_eval(self, errors);
             while arg_pre.step() {
                 num_positional_args += 1;
                 let param = if let Some((p_idx, p)) = iparams.peek() {
@@ -205,9 +216,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None
                 };
                 match param {
-                    Some((hint, vararg)) => arg_pre.post_check(self, hint, vararg, arg.range()),
+                    Some((hint, vararg)) => {
+                        arg_pre.post_check(self, hint, vararg, arg.range(), errors)
+                    }
                     None => {
-                        arg_pre.post_infer(self);
+                        arg_pre.post_infer(self, errors);
                         if arg_pre.is_star() {
                             num_positional_args -= 1;
                         }
@@ -236,7 +249,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     (num_positional_args - 1).to_string(),
                 )
             };
-            self.error(arg_range, format!("Expected {expected}, got {actual}"));
+            self.error(
+                errors,
+                arg_range,
+                format!("Expected {expected}, got {actual}"),
+            );
         }
         let mut need_positional = 0;
         let mut kwparams = SmallMap::new();
@@ -267,6 +284,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if need_positional > 0 {
             let range = keywords.first().map_or(range, |kw| kw.range);
             self.error(
+                errors,
                 range,
                 format!(
                     "Expected {}",
@@ -278,12 +296,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for kw in keywords {
             match &kw.arg {
                 None => {
-                    let ty = self.expr_infer(&kw.value);
+                    let ty = self.expr_infer(&kw.value, errors);
                     if let Type::TypedDict(typed_dict) = ty {
                         typed_dict.fields().iter().for_each(|(name, field)| {
                             let mut hint = kwargs;
                             if let Some(&p_idx) = seen_names.get(name) {
                                 self.error(
+                                    errors,
                                     kw.range,
                                     format!("Multiple values for argument `{}`", name),
                                 );
@@ -292,6 +311,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 seen_names.insert(name.clone(), p_idx);
                                 if required && !field.required {
                                     self.error(
+                                        errors,
                                         kw.range,
                                         format!("Expected key `{}` to be required", name),
                                     );
@@ -299,28 +319,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 hint = Some(ty)
                             } else if kwargs.is_none() && !kwargs_is_unpack {
                                 self.error(
+                                    errors,
                                     kw.range,
                                     format!("Unexpected keyword argument `{}`", name),
                                 );
                             }
                             hint.iter().for_each(|want| {
-                                self.check_type(want, &field.ty, kw.range);
+                                self.check_type(want, &field.ty, kw.range, errors);
                             });
                         })
                     } else {
-                        match self.decompose_dict(&ty) {
+                        match self.decompose_dict(&ty, errors) {
                             Some(UnwrappedDict { key, value }) => {
                                 if self.solver().is_subset_eq(
                                     &key,
                                     &self.stdlib.str().to_type(),
                                     self.type_order(),
+                                    errors,
                                 ) {
                                     kwargs.iter().for_each(|want| {
-                                        self.check_type(want, &value, kw.range);
+                                        self.check_type(want, &value, kw.range, errors);
                                     });
                                     splat_kwargs.push((value, kw.range));
                                 } else {
-                                    self.error(
+                                    self.error(errors,
                                     kw.value.range(),
                                     format!(
                                         "Expected argument after ** to have `str` keys, got: {}",
@@ -331,6 +353,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                             None => {
                                 self.error(
+                                    errors,
                                     kw.value.range(),
                                     format!(
                                         "Expected argument after ** to be a mapping, got: {}",
@@ -345,6 +368,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let mut hint = kwargs;
                     if let Some(&p_idx) = seen_names.get(&id.id) {
                         self.error(
+                            errors,
                             kw.range,
                             format!("Multiple values for argument `{}`", id.id),
                         );
@@ -353,19 +377,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         seen_names.insert(id.id.clone(), p_idx);
                         hint = Some(ty)
                     } else if kwargs.is_none() {
-                        self.error(kw.range, format!("Unexpected keyword argument `{}`", id.id));
+                        self.error(
+                            errors,
+                            kw.range,
+                            format!("Unexpected keyword argument `{}`", id.id),
+                        );
                     }
-                    self.expr(&kw.value, hint);
+                    self.expr(&kw.value, hint, errors);
                 }
             }
         }
         for (name, &(_, want, required)) in kwparams.iter() {
             if !seen_names.contains_key(name) {
                 if splat_kwargs.is_empty() && required {
-                    self.error(range, format!("Missing argument `{}`", name));
+                    self.error(errors, range, format!("Missing argument `{}`", name));
                 }
                 for (ty, range) in &splat_kwargs {
-                    self.check_type(want, ty, *range);
+                    self.check_type(want, ty, *range, errors);
                 }
             }
         }
@@ -378,15 +406,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         args: &[CallArg],
         keywords: &[Keyword],
         range: TextRange,
+        errors: &ErrorCollector,
     ) -> Type {
         match callable.params {
             Params::List(params) => {
-                self.callable_infer_params(&params, self_arg, args, keywords, range);
+                self.callable_infer_params(&params, self_arg, args, keywords, range, errors);
             }
             Params::Ellipsis => {
                 // Deal with Callable[..., R]
                 for arg in self_arg.iter().chain(args.iter()) {
-                    arg.pre_eval(self).post_infer(self)
+                    arg.pre_eval(self, errors).post_infer(self, errors)
                 }
             }
             Params::ParamSpec(concatenate, p) => {
@@ -402,14 +431,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         args,
                         keywords,
                         range,
+                        errors,
                     ),
                     Type::Quantified(q) => {
-                        if !args.last().is_some_and(|x| self.is_param_spec_args(x, q))
+                        if !args
+                            .last()
+                            .is_some_and(|x| self.is_param_spec_args(x, q, errors))
                             || !keywords
                                 .last()
-                                .is_some_and(|x| self.is_param_spec_kwargs(x, q))
+                                .is_some_and(|x| self.is_param_spec_kwargs(x, q, errors))
                         {
-                            self.error(
+                            self.error(errors,
                                 range,
                                 "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)".to_owned(),
                             );
@@ -420,12 +452,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 &args[0..args.len() - 1],
                                 &keywords[0..keywords.len() - 1],
                                 range,
+                                errors,
                             );
                         }
                     }
                     _ => {
                         // This could well be our error, but not really sure
-                        self.error(range, "Unexpected ParamSpec type".to_owned());
+                        self.error(errors, range, "Unexpected ParamSpec type".to_owned());
                     }
                 }
             }

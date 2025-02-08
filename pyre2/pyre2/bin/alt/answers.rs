@@ -152,7 +152,6 @@ pub struct AnswersSolver<'a, Ans: LookupAnswer> {
     exports: &'a dyn LookupExport,
     answers: &'a Ans,
     current: &'a Answers,
-    errors: &'a ErrorCollector,
     bindings: &'a Bindings,
     pub uniques: &'a UniqueFactory,
     pub recurser: &'a Recurser<Var>,
@@ -250,7 +249,11 @@ impl SolveRecursive for KeyLegacyTypeParam {
 }
 
 pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
-    fn solve(answers: &AnswersSolver<Ans>, binding: &Self::Value) -> Arc<Self::Answer>;
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &Self::Value,
+        _errors: &ErrorCollector,
+    ) -> Arc<Self::Answer>;
 
     fn recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive;
 
@@ -259,13 +262,18 @@ pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
         _key: &Self,
         _answer: Arc<Self::Answer>,
         _recursive: Self::Recursive,
+        _errors: &ErrorCollector,
     ) {
     }
 }
 
 impl<Ans: LookupAnswer> Solve<Ans> for Key {
-    fn solve(answers: &AnswersSolver<Ans>, binding: &Binding) -> Arc<Type> {
-        answers.solve_binding(binding)
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &Binding,
+        errors: &ErrorCollector,
+    ) -> Arc<Type> {
+        answers.solve_binding(binding, errors)
     }
 
     fn recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive {
@@ -277,22 +285,31 @@ impl<Ans: LookupAnswer> Solve<Ans> for Key {
         key: &Key,
         answer: Arc<Type>,
         recursive: Var,
+        errors: &ErrorCollector,
     ) {
-        answers.record_recursive(key.range(), answer, recursive);
+        answers.record_recursive(key.range(), answer, recursive, errors);
     }
 }
 
 impl<Ans: LookupAnswer> Solve<Ans> for KeyExpect {
-    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingExpect) -> Arc<EmptyAnswer> {
-        answers.solve_expectation(binding)
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &BindingExpect,
+        errors: &ErrorCollector,
+    ) -> Arc<EmptyAnswer> {
+        answers.solve_expectation(binding, errors)
     }
 
     fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}
 }
 
 impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
-    fn solve(answers: &AnswersSolver<Ans>, binding: &Binding) -> Arc<Type> {
-        answers.solve_binding(binding)
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &Binding,
+        errors: &ErrorCollector,
+    ) -> Arc<Type> {
+        answers.solve_binding(binding, errors)
     }
 
     fn recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive {
@@ -304,14 +321,19 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
         key: &KeyExport,
         answer: Arc<Type>,
         recursive: Var,
+        errors: &ErrorCollector,
     ) {
-        answers.record_recursive(key.range(), answer, recursive);
+        answers.record_recursive(key.range(), answer, recursive, errors);
     }
 }
 
 impl<Ans: LookupAnswer> Solve<Ans> for KeyClassField {
-    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingClassField) -> Arc<ClassField> {
-        answers.solve_class_field(binding)
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &BindingClassField,
+        errors: &ErrorCollector,
+    ) -> Arc<ClassField> {
+        answers.solve_class_field(binding, errors)
     }
 
     fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}
@@ -321,24 +343,33 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyClassSynthesizedFields {
     fn solve(
         answers: &AnswersSolver<Ans>,
         binding: &BindingClassSynthesizedFields,
+        errors: &ErrorCollector,
     ) -> Arc<ClassSynthesizedFields> {
-        answers.solve_class_synthesized_fields(binding)
+        answers.solve_class_synthesized_fields(binding, errors)
     }
 
     fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}
 }
 
 impl<Ans: LookupAnswer> Solve<Ans> for KeyAnnotation {
-    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingAnnotation) -> Arc<Annotation> {
-        answers.solve_annotation(binding)
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &BindingAnnotation,
+        errors: &ErrorCollector,
+    ) -> Arc<Annotation> {
+        answers.solve_annotation(binding, errors)
     }
 
     fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
 }
 
 impl<Ans: LookupAnswer> Solve<Ans> for KeyClassMetadata {
-    fn solve(answers: &AnswersSolver<Ans>, binding: &BindingClassMetadata) -> Arc<ClassMetadata> {
-        answers.solve_mro(binding)
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &BindingClassMetadata,
+        errors: &ErrorCollector,
+    ) -> Arc<ClassMetadata> {
+        answers.solve_mro(binding, errors)
     }
 
     fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
@@ -348,8 +379,9 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyLegacyTypeParam {
     fn solve(
         answers: &AnswersSolver<Ans>,
         binding: &BindingLegacyTypeParam,
+        errors: &ErrorCollector,
     ) -> Arc<LegacyTypeParameterLookup> {
-        answers.solve_legacy_tparam(binding)
+        answers.solve_legacy_tparam(binding, errors)
     }
 
     fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
@@ -398,6 +430,7 @@ impl Answers {
         fn pre_solve<Ans: LookupAnswer, K: Solve<Ans>>(
             items: &mut SolutionsEntry<K>,
             answers: &AnswersSolver<Ans>,
+            errors: &ErrorCollector,
             exported_only: bool,
         ) where
             AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
@@ -409,7 +442,7 @@ impl Answers {
             }
             for idx in answers.bindings.keys::<K>() {
                 let k = answers.bindings.idx_to_key(idx);
-                let v = answers.get(k);
+                let v = answers.get(k, errors);
                 if retain {
                     items.insert(k.clone(), Arc::unwrap_or_clone(v));
                 }
@@ -419,7 +452,6 @@ impl Answers {
             stdlib,
             answers,
             bindings,
-            errors,
             exports,
             uniques,
             recurser: &Recurser::new(),
@@ -428,6 +460,7 @@ impl Answers {
         table_mut_for_each!(&mut res, |items| pre_solve(
             items,
             &answers_solver,
+            errors,
             exported_only
         ));
 
@@ -460,22 +493,17 @@ impl Answers {
             uniques,
             answers,
             bindings,
-            errors,
             exports,
             recurser: &Recurser::new(),
             current: self,
         };
-        solver.get(key)
+        solver.get(key, errors)
     }
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn bindings(&self) -> &Bindings {
         self.bindings
-    }
-
-    pub fn errors(&self) -> &ErrorCollector {
-        self.errors
     }
 
     pub fn module_info(&self) -> &ModuleInfo {
@@ -490,6 +518,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         module: ModuleName,
         k: &K,
+        errors: &ErrorCollector,
     ) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
@@ -497,7 +526,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         if module == self.module_info().name() {
-            self.get(k)
+            self.get(k, errors)
         } else {
             self.answers.get(module, k)
         }
@@ -507,20 +536,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         cls: &Class,
         k: &K,
+        errors: &ErrorCollector,
     ) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
-        self.get_from_module(cls.module_info().name(), k)
+        self.get_from_module(cls.module_info().name(), k, errors)
     }
 
     pub fn type_order(&self) -> TypeOrder<Ans> {
         TypeOrder::new(self)
     }
 
-    pub fn get_idx<K: Solve<Ans>>(&self, idx: Idx<K>) -> Arc<K::Answer>
+    pub fn get_idx<K: Solve<Ans>>(&self, idx: Idx<K>, errors: &ErrorCollector) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -537,13 +567,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let result = calculation.calculate_with_recursive(
             || {
                 let binding = self.bindings().get(idx);
-                K::solve(self, binding)
+                K::solve(self, binding, errors)
             },
             || K::recursive(self),
         );
         if let Ok((v, Some(r))) = &result {
             let k = self.bindings().idx_to_key(idx);
-            K::record_recursive(self, k, v.dupe(), r.clone());
+            K::record_recursive(self, k, v.dupe(), r.clone(), errors);
         }
         match result {
             Ok((v, _)) => v,
@@ -551,68 +581,93 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get<K: Solve<Ans>>(&self, k: &K) -> Arc<K::Answer>
+    pub fn get<K: Solve<Ans>>(&self, k: &K, errors: &ErrorCollector) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        self.get_idx(self.bindings().key_to_idx(k))
+        self.get_idx(self.bindings().key_to_idx(k), errors)
     }
 
-    fn record_recursive(&self, loc: TextRange, answer: Arc<Type>, recursive: Var) {
+    fn record_recursive(
+        &self,
+        loc: TextRange,
+        answer: Arc<Type>,
+        recursive: Var,
+        errors: &ErrorCollector,
+    ) {
         self.solver().record_recursive(
             recursive,
             answer.arc_clone(),
             self.type_order(),
-            self.errors(),
+            errors,
             self.module_info(),
             loc,
         );
     }
 
-    pub fn check_type(&self, want: &Type, got: &Type, loc: TextRange) -> Type {
+    pub fn check_type(
+        &self,
+        want: &Type,
+        got: &Type,
+        loc: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
         if matches!(got, Type::Any(AnyStyle::Error)) {
             // Don't propagate errors
             got.clone()
-        } else if self.solver().is_subset_eq(got, want, self.type_order()) {
+        } else if self
+            .solver()
+            .is_subset_eq(got, want, self.type_order(), errors)
+        {
             got.clone()
         } else {
             self.solver()
-                .error(want, got, self.errors(), self.module_info(), loc);
+                .error(want, got, errors, self.module_info(), loc);
             want.clone()
         }
     }
 
-    pub fn distribute_over_union(&self, ty: &Type, mut f: impl FnMut(&Type) -> Type) -> Type {
+    pub fn distribute_over_union(
+        &self,
+        ty: &Type,
+        errors: &ErrorCollector,
+        mut f: impl FnMut(&Type) -> Type,
+    ) -> Type {
         match ty {
-            Type::Union(tys) => self.unions(tys.map(f)),
+            Type::Union(tys) => self.unions(tys.map(f), errors),
             _ => f(ty),
         }
     }
 
-    pub fn unions(&self, xs: Vec<Type>) -> Type {
-        self.solver().unions(xs, self.type_order())
+    pub fn unions(&self, xs: Vec<Type>, errors: &ErrorCollector) -> Type {
+        self.solver().unions(xs, self.type_order(), errors)
     }
 
-    pub fn union(&self, x: Type, y: Type) -> Type {
-        self.unions(vec![x, y])
+    pub fn union(&self, x: Type, y: Type, errors: &ErrorCollector) -> Type {
+        self.unions(vec![x, y], errors)
     }
 
-    pub fn todo(&self, msg: &str, x: impl Ranged + Debug) -> Type {
-        self.errors().todo(self.module_info(), msg, x);
+    pub fn todo(&self, errors: &ErrorCollector, msg: &str, x: impl Ranged + Debug) -> Type {
+        errors.todo(self.module_info(), msg, x);
         Type::any_error()
     }
 
-    pub fn error(&self, range: TextRange, msg: String) -> Type {
-        self.errors().add(self.module_info(), range, msg);
+    pub fn error(&self, errors: &ErrorCollector, range: TextRange, msg: String) -> Type {
+        errors.add(self.module_info(), range, msg);
         Type::any_error()
     }
 
-    pub fn get_import(&self, name: &Name, from: ModuleName) -> Option<Type> {
+    pub fn get_import(
+        &self,
+        name: &Name,
+        from: ModuleName,
+        errors: &ErrorCollector,
+    ) -> Option<Type> {
         if let Ok(exports) = self.exports.get(from) {
             if exports.contains(name, self.exports) {
                 Some(
-                    self.get_from_module(from, &KeyExport(name.clone()))
+                    self.get_from_module(from, &KeyExport(name.clone()), errors)
                         .arc_clone(),
                 )
             } else {

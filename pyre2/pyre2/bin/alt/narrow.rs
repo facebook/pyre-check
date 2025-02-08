@@ -13,6 +13,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::binding::narrow::NarrowOp;
 use crate::binding::narrow::NarrowVal;
+use crate::error::collector::ErrorCollector;
 use crate::types::callable::CallableKind;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
@@ -23,14 +24,14 @@ use crate::util::prelude::SliceExt;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     // Get the union of all members of an enum, minus the specified member
-    fn subtract_enum_member(&self, cls: &ClassType, name: &Name) -> Type {
-        let e = self.get_enum_from_class_type(cls).unwrap();
+    fn subtract_enum_member(&self, cls: &ClassType, name: &Name, errors: &ErrorCollector) -> Type {
+        let e = self.get_enum_from_class_type(cls, errors).unwrap();
         // Enums derived from enum.Flag cannot be treated as a union of their members
         if e.is_flag {
             return Type::ClassType(cls.clone());
         }
         self.unions(
-            self.get_enum_members(cls.class_object())
+            self.get_enum_members(cls.class_object(), errors)
                 .into_iter()
                 .filter_map(|f| {
                     if let Lit::Enum(box (_, member_name, _)) = &f
@@ -42,15 +43,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 })
                 .collect::<Vec<_>>(),
+            errors,
         )
     }
 
-    fn intersect(&self, left: &Type, right: &Type) -> Type {
+    fn intersect(&self, left: &Type, right: &Type, errors: &ErrorCollector) -> Type {
         // Get our best approximation of ty & right.
-        self.distribute_over_union(left, |t| {
-            if self.solver().is_subset_eq(right, t, self.type_order()) {
+        self.distribute_over_union(left, errors, |t| {
+            if self
+                .solver()
+                .is_subset_eq(right, t, self.type_order(), errors)
+            {
                 right.clone()
-            } else if self.solver().is_subset_eq(t, right, self.type_order()) {
+            } else if self
+                .solver()
+                .is_subset_eq(t, right, self.type_order(), errors)
+            {
                 t.clone()
             } else {
                 Type::never()
@@ -58,9 +66,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    fn subtract(&self, left: &Type, right: &Type) -> Type {
-        self.distribute_over_union(left, |left| {
-            if self.solver().is_subset_eq(left, right, self.type_order()) {
+    fn subtract(&self, left: &Type, right: &Type, errors: &ErrorCollector) -> Type {
+        self.distribute_over_union(left, errors, |left| {
+            if self
+                .solver()
+                .is_subset_eq(left, right, self.type_order(), errors)
+            {
                 Type::never()
             } else {
                 left.clone()
@@ -68,8 +79,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    fn resolve_narrowing_call(&self, func: &NarrowVal, args: &Arguments) -> Option<NarrowOp> {
-        let func_ty = self.narrow_val_infer(func);
+    fn resolve_narrowing_call(
+        &self,
+        func: &NarrowVal,
+        args: &Arguments,
+        errors: &ErrorCollector,
+    ) -> Option<NarrowOp> {
+        let func_ty = self.narrow_val_infer(func, errors);
         if args.args.len() > 1 {
             let second_arg = &args.args[1];
             let op = match func_ty.callee_kind() {
@@ -90,9 +106,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .map(|t| NarrowOp::TypeGuard(t.clone()))
     }
 
-    fn narrow_val_infer(&self, val: &NarrowVal) -> Type {
+    fn narrow_val_infer(&self, val: &NarrowVal, errors: &ErrorCollector) -> Type {
         match val {
-            NarrowVal::Expr(e) => self.expr(e, None),
+            NarrowVal::Expr(e) => self.expr(e, None, errors),
             NarrowVal::Type(t, _) => (**t).clone(),
         }
     }
@@ -114,25 +130,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn unwrap_class_object_or_error(&self, ty: &Type, range: TextRange) -> Option<Type> {
-        let unwrapped = self.unwrap_class_object_silently(ty);
+    fn unwrap_class_object_or_error(
+        &self,
+        ty: &Type,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Option<Type> {
+        let unwrapped = self.unwrap_class_object_silently(ty, errors);
         if unwrapped.is_none() {
-            self.error(range, format!("Expected class object, got {}", ty));
+            self.error(errors, range, format!("Expected class object, got {}", ty));
         }
         unwrapped
     }
 
-    pub fn narrow(&self, ty: &Type, op: &NarrowOp) -> Type {
+    pub fn narrow(&self, ty: &Type, op: &NarrowOp, errors: &ErrorCollector) -> Type {
         match op {
             NarrowOp::Is(v) => {
-                let right = self.narrow_val_infer(v);
+                let right = self.narrow_val_infer(v, errors);
                 // Get our best approximation of ty & right.
-                self.intersect(ty, &right)
+                self.intersect(ty, &right, errors)
             }
             NarrowOp::IsNot(v) => {
-                let right = self.narrow_val_infer(v);
+                let right = self.narrow_val_infer(v, errors);
                 // Get our best approximation of ty - right.
-                self.distribute_over_union(ty, |t| {
+                self.distribute_over_union(ty, errors, |t| {
                     // Only certain literal types can be compared by identity.
                     match (t, &right) {
                         (
@@ -147,66 +168,74 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         (
                             Type::ClassType(left_cls),
                             Type::Literal(Lit::Enum(box (right_cls, name, _))),
-                        ) if *left_cls == *right_cls => self.subtract_enum_member(left_cls, name),
+                        ) if *left_cls == *right_cls => {
+                            self.subtract_enum_member(left_cls, name, errors)
+                        }
                         _ => t.clone(),
                     }
                 })
             }
             NarrowOp::IsInstance(v) => {
-                let right = self.narrow_val_infer(v);
+                let right = self.narrow_val_infer(v, errors);
                 if let Some(distributed_op) =
                     self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, v.range())
                 {
-                    self.narrow(ty, &distributed_op)
-                } else if let Some(right) = self.unwrap_class_object_or_error(&right, v.range()) {
-                    self.intersect(ty, &right)
+                    self.narrow(ty, &distributed_op, errors)
+                } else if let Some(right) =
+                    self.unwrap_class_object_or_error(&right, v.range(), errors)
+                {
+                    self.intersect(ty, &right, errors)
                 } else {
                     ty.clone()
                 }
             }
             NarrowOp::IsNotInstance(v) => {
-                let right = self.narrow_val_infer(v);
+                let right = self.narrow_val_infer(v, errors);
                 if let Some(distributed_op) =
                     self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, v.range())
                 {
-                    self.narrow(ty, &distributed_op.negate())
-                } else if let Some(right) = self.unwrap_class_object_or_error(&right, v.range()) {
-                    self.subtract(ty, &right)
+                    self.narrow(ty, &distributed_op.negate(), errors)
+                } else if let Some(right) =
+                    self.unwrap_class_object_or_error(&right, v.range(), errors)
+                {
+                    self.subtract(ty, &right, errors)
                 } else {
                     ty.clone()
                 }
             }
             NarrowOp::IsSubclass(v) => {
-                let right = self.narrow_val_infer(v);
+                let right = self.narrow_val_infer(v, errors);
                 if let Some(distributed_op) =
                     self.distribute_narrow_op_over_tuple(&NarrowOp::IsSubclass, &right, v.range())
                 {
-                    self.narrow(ty, &distributed_op)
-                } else if let Some(left) = self.untype_opt(ty.clone(), v.range())
-                    && let Some(right) = self.unwrap_class_object_or_error(&right, v.range())
+                    self.narrow(ty, &distributed_op, errors)
+                } else if let Some(left) = self.untype_opt(ty.clone(), v.range(), errors)
+                    && let Some(right) =
+                        self.unwrap_class_object_or_error(&right, v.range(), errors)
                 {
-                    Type::type_form(self.intersect(&left, &right))
+                    Type::type_form(self.intersect(&left, &right, errors))
                 } else {
                     ty.clone()
                 }
             }
             NarrowOp::IsNotSubclass(v) => {
-                let right = self.narrow_val_infer(v);
+                let right = self.narrow_val_infer(v, errors);
                 if let Some(distributed_op) =
                     self.distribute_narrow_op_over_tuple(&NarrowOp::IsSubclass, &right, v.range())
                 {
-                    self.narrow(ty, &distributed_op.negate())
-                } else if let Some(left) = self.untype_opt(ty.clone(), v.range())
-                    && let Some(right) = self.unwrap_class_object_or_error(&right, v.range())
+                    self.narrow(ty, &distributed_op.negate(), errors)
+                } else if let Some(left) = self.untype_opt(ty.clone(), v.range(), errors)
+                    && let Some(right) =
+                        self.unwrap_class_object_or_error(&right, v.range(), errors)
                 {
-                    Type::type_form(self.subtract(&left, &right))
+                    Type::type_form(self.subtract(&left, &right, errors))
                 } else {
                     ty.clone()
                 }
             }
             NarrowOp::TypeGuard(t) => t.clone(),
             NarrowOp::NotTypeGuard(_) => ty.clone(),
-            NarrowOp::Truthy | NarrowOp::Falsy => self.distribute_over_union(ty, |t| {
+            NarrowOp::Truthy | NarrowOp::Falsy => self.distribute_over_union(ty, errors, |t| {
                 let boolval = matches!(op, NarrowOp::Truthy);
                 if t.as_bool() == Some(!boolval) {
                     Type::never()
@@ -217,17 +246,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }),
             NarrowOp::Eq(v) => {
-                let right = self.narrow_val_infer(v);
+                let right = self.narrow_val_infer(v, errors);
                 if matches!(right, Type::Literal(_) | Type::None) {
-                    self.intersect(ty, &right)
+                    self.intersect(ty, &right, errors)
                 } else {
                     ty.clone()
                 }
             }
             NarrowOp::NotEq(v) => {
-                let right = self.narrow_val_infer(v);
+                let right = self.narrow_val_infer(v, errors);
                 if matches!(right, Type::Literal(_) | Type::None) {
-                    self.distribute_over_union(ty, |t| match (t, &right) {
+                    self.distribute_over_union(ty, errors, |t| match (t, &right) {
                         (_, _) if *t == right => Type::never(),
                         (Type::ClassType(cls), Type::Literal(Lit::Bool(b)))
                             if *cls == self.stdlib.bool() =>
@@ -237,7 +266,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         (
                             Type::ClassType(left_cls),
                             Type::Literal(Lit::Enum(box (right_cls, name, _))),
-                        ) if *left_cls == *right_cls => self.subtract_enum_member(left_cls, name),
+                        ) if *left_cls == *right_cls => {
+                            self.subtract_enum_member(left_cls, name, errors)
+                        }
                         _ => t.clone(),
                     })
                 } else {
@@ -247,22 +278,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             NarrowOp::And(ops) => {
                 let mut ops_iter = ops.iter();
                 if let Some(first_op) = ops_iter.next() {
-                    let mut ret = self.narrow(ty, first_op);
+                    let mut ret = self.narrow(ty, first_op, errors);
                     for next_op in ops_iter {
-                        ret = self.narrow(&ret, next_op);
+                        ret = self.narrow(&ret, next_op, errors);
                     }
                     ret
                 } else {
                     ty.clone()
                 }
             }
-            NarrowOp::Or(ops) => self.unions(ops.map(|op| self.narrow(ty, op))),
+            NarrowOp::Or(ops) => self.unions(ops.map(|op| self.narrow(ty, op, errors)), errors),
             NarrowOp::Call(func, args) | NarrowOp::NotCall(func, args) => {
-                if let Some(resolved_op) = self.resolve_narrowing_call(func, args) {
+                if let Some(resolved_op) = self.resolve_narrowing_call(func, args, errors) {
                     if matches!(op, NarrowOp::Call(..)) {
-                        self.narrow(ty, &resolved_op)
+                        self.narrow(ty, &resolved_op, errors)
                     } else {
-                        self.narrow(ty, &resolved_op.negate())
+                        self.narrow(ty, &resolved_op.negate(), errors)
                     }
                 } else {
                     ty.clone()

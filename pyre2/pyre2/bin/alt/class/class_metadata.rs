@@ -26,6 +26,7 @@ use crate::alt::types::class_metadata::TypedDictMetadata;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyLegacyTypeParam;
+use crate::error::collector::ErrorCollector;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::CallableKind;
@@ -74,20 +75,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         bases: &[Expr],
         keywords: &[(Name, Expr)],
         decorators: &[Decorator],
+        errors: &ErrorCollector,
     ) -> ClassMetadata {
         let mut is_typed_dict = false;
         let mut is_named_tuple = false;
         let mut enum_metadata = None;
         let mut dataclass_metadata = None;
-        let bases: Vec<BaseClass> = bases.map(|x| self.base_class_of(x));
+        let bases: Vec<BaseClass> = bases.map(|x| self.base_class_of(x, errors));
         let is_protocol = bases.iter().any(|x| matches!(x, BaseClass::Protocol(_)));
         let bases_with_metadata = bases
             .iter()
             .filter_map(|x| match x {
-                BaseClass::Expr(x) => match self.expr_untype(x) {
+                BaseClass::Expr(x) => match self.expr_untype(x, errors) {
                     Type::ClassType(c) => {
                         let cls = c.class_object();
-                        let class_metadata = self.get_metadata_for_class(cls);
+                        let class_metadata = self.get_metadata_for_class(cls, errors);
                         if class_metadata.is_typed_dict() {
                             is_typed_dict = true;
                         }
@@ -97,7 +99,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             is_named_tuple = true;
                         }
                         if is_protocol && !class_metadata.is_protocol() {
-                            self.error(
+                            self.error(errors,
                                 x.range(),
                                 "If `Protocol` is included as a base class, all other bases must be protocols.".to_owned(),
                             );
@@ -110,19 +112,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Some((c, class_metadata))
                     }
                     Type::Tuple(Tuple::Concrete(ts)) => {
-                        let class_ty = self.stdlib.tuple(self.unions(ts));
-                        let metadata = self.get_metadata_for_class(class_ty.class_object());
+                        let class_ty = self.stdlib.tuple(self.unions(ts, errors));
+                        let metadata = self.get_metadata_for_class(class_ty.class_object(), errors);
                         Some((class_ty, metadata))
                     }
                     Type::Tuple(Tuple::Unbounded(t)) => {
                         let class_ty = self.stdlib.tuple(*t);
-                        let metadata = self.get_metadata_for_class(class_ty.class_object());
+                        let metadata = self.get_metadata_for_class(class_ty.class_object(), errors);
                         Some((class_ty, metadata))
                     }
                     Type::TypedDict(typed_dict) => {
                         is_typed_dict = true;
                         let class_object = typed_dict.class_object();
-                        let class_metadata = self.get_metadata_for_class(class_object);
+                        let class_metadata = self.get_metadata_for_class(class_object, errors);
                         Some((
                             typed_dict.as_class_type(),
                             class_metadata,
@@ -139,6 +141,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .collect::<Vec<_>>();
         if is_named_tuple && bases_with_metadata.len() > 1 {
             self.error(
+                errors,
                 cls.name().range,
                 "Named tuples do not support multiple inheritance".to_owned(),
             );
@@ -146,7 +149,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let (metaclasses, keywords): (Vec<_>, Vec<(_, _)>) =
             keywords.iter().partition_map(|(n, x)| match n.as_str() {
                 "metaclass" => Either::Left(x),
-                _ => Either::Right((n.clone(), self.expr(x, None))),
+                _ => Either::Right((n.clone(), self.expr(x, None, errors))),
             });
         let typed_dict_metadata = if is_typed_dict {
             let is_total = !keywords.iter().any(|(n, t)| {
@@ -161,17 +164,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .iter()
             .filter_map(|(b, metadata)| metadata.metaclass().map(|m| (&b.name().id, m)))
             .collect::<Vec<_>>();
-        let metaclass =
-            self.calculate_metaclass(cls, metaclasses.into_iter().next(), &base_metaclasses);
+        let metaclass = self.calculate_metaclass(
+            cls,
+            metaclasses.into_iter().next(),
+            &base_metaclasses,
+            errors,
+        );
         if let Some(metaclass) = &metaclass {
-            self.check_base_class_metaclasses(cls, metaclass, &base_metaclasses);
+            self.check_base_class_metaclasses(cls, metaclass, &base_metaclasses, errors);
             if self.solver().is_subset_eq(
                 &Type::ClassType(metaclass.clone()),
                 &Type::ClassType(self.stdlib.enum_meta()),
                 self.type_order(),
+                errors,
             ) {
                 if !cls.tparams().is_empty() {
-                    self.error(cls.name().range, "Enums may not be generic.".to_owned());
+                    self.error(
+                        errors,
+                        cls.name().range,
+                        "Enums may not be generic.".to_owned(),
+                    );
                 }
                 enum_metadata = Some(EnumMetadata {
                     // A generic enum is an error, but we create Any type args anyway to handle it gracefully.
@@ -181,19 +193,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &Type::ClassType(base.clone()),
                             &Type::ClassType(self.stdlib.enum_flag()),
                             self.type_order(),
+                            errors,
                         )
                     }),
                 })
             }
             if is_typed_dict {
                 self.error(
+                    errors,
                     cls.name().range,
                     "Typed dictionary definitions may not specify a metaclass.".to_owned(),
                 );
             }
         }
         for decorator in decorators {
-            let ty_decorator = self.expr(&decorator.expression, None);
+            let ty_decorator = self.expr(&decorator.expression, None, errors);
             if let Some(CalleeKind::Callable(CallableKind::Dataclass(kws))) =
                 ty_decorator.callee_kind()
             {
@@ -207,7 +221,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if is_typed_dict
             && let Some(bad) = bases_with_metadata.iter().find(|x| !x.1.is_typed_dict())
         {
-            self.error(
+            self.error(errors,
                 cls.name().range,
                 format!("`{}` is not a typed dictionary. Typed dictionary definitions may only extend other typed dictionaries.", bad.0),
             );
@@ -222,7 +236,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             enum_metadata,
             is_protocol,
             dataclass_metadata,
-            self.errors(),
+            errors,
         )
     }
 
@@ -231,9 +245,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// `expr_untype` and creating a `BaseClass::Type`.
     ///
     /// TODO(stroxler): See if there's a way to express this more clearly in the types.
-    fn special_base_class(&self, base_expr: &Expr) -> Option<BaseClass> {
+    fn special_base_class(&self, base_expr: &Expr, errors: &ErrorCollector) -> Option<BaseClass> {
         if let Expr::Name(name) = base_expr {
-            match &*self.get(&Key::Usage(ShortIdentifier::expr_name(name))) {
+            match &*self.get(&Key::Usage(ShortIdentifier::expr_name(name)), errors) {
                 Type::Type(box Type::SpecialForm(special)) => match special {
                     SpecialForm::Protocol => Some(BaseClass::Protocol(Vec::new())),
                     SpecialForm::Generic => Some(BaseClass::Generic(Vec::new())),
@@ -247,16 +261,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn base_class_of(&self, base_expr: &Expr) -> BaseClass {
-        if let Some(special_base_class) = self.special_base_class(base_expr) {
+    pub fn base_class_of(&self, base_expr: &Expr, errors: &ErrorCollector) -> BaseClass {
+        if let Some(special_base_class) = self.special_base_class(base_expr, errors) {
             // This branch handles cases like `Protocol`
             special_base_class
         } else if let Expr::Subscript(subscript) = base_expr
-            && let Some(mut special_base_class) = self.special_base_class(&subscript.value)
+            && let Some(mut special_base_class) = self.special_base_class(&subscript.value, errors)
             && special_base_class.can_apply()
         {
             // This branch handles `Generic[...]` and `Protocol[...]`
-            let args = Ast::unpack_slice(&subscript.slice).map(|x| self.expr_untype(x));
+            let args = Ast::unpack_slice(&subscript.slice).map(|x| self.expr_untype(x, errors));
             special_base_class.apply(args);
             special_base_class
         } else {
@@ -271,10 +285,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         scoped_tparams: Vec<TParamInfo>,
         bases: Vec<BaseClass>,
         legacy: &[Idx<KeyLegacyTypeParam>],
+        errors: &ErrorCollector,
     ) -> TParams {
         let legacy_tparams = legacy
             .iter()
-            .filter_map(|key| self.get_idx(*key).deref().parameter().cloned())
+            .filter_map(|key| self.get_idx(*key, errors).deref().parameter().cloned())
             .collect::<SmallSet<_>>();
         let legacy_map = legacy_tparams
             .iter()
@@ -286,6 +301,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let p = legacy_map.get(&q);
             if p.is_none() {
                 self.error(
+                    errors,
                     name.range,
                     "Redundant type parameter declaration".to_owned(),
                 );
@@ -319,6 +335,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         if !generic_tparams.is_empty() && !protocol_tparams.is_empty() {
             self.error(
+                errors,
                 name.range,
                 format!(
                     "Class `{}` specifies type parameters in both `Generic` and `Protocol` bases",
@@ -337,7 +354,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for p in legacy_tparams.iter() {
             if !tparams.contains(p) {
                 if !implicit_tparams_okay {
-                    self.error(
+                    self.error(errors,
                         name.range,
                         format!(
                             "Class `{}` uses type variables not specified in `Generic` or `Protocol` base",
@@ -354,7 +371,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 tparam.variance = Some(Variance::Invariant);
             }
         }
-        self.type_params(name.range, tparams.into_iter().collect())
+        self.type_params(name.range, tparams.into_iter().collect(), errors)
     }
 
     fn calculate_metaclass(
@@ -362,8 +379,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         cls: &Class,
         raw_metaclass: Option<&Expr>,
         base_metaclasses: &[(&Name, &ClassType)],
+        errors: &ErrorCollector,
     ) -> Option<ClassType> {
-        let direct_meta = raw_metaclass.and_then(|x| self.direct_metaclass(cls, x));
+        let direct_meta = raw_metaclass.and_then(|x| self.direct_metaclass(cls, x, errors));
 
         if let Some(metaclass) = direct_meta {
             Some(metaclass)
@@ -377,6 +395,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &Type::ClassType(m.clone()),
                         &Type::ClassType(inherited.clone()),
                         self.type_order(),
+                        errors,
                     ),
                 };
                 if accept_m {
@@ -392,6 +411,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         cls: &Class,
         metaclass: &ClassType,
         base_metaclasses: &[(&Name, &ClassType)],
+        errors: &ErrorCollector,
     ) {
         // It is a runtime error to define a class whose metaclass (whether
         // specified directly or through inheritance) is not a subtype of all
@@ -399,11 +419,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let metaclass_type = Type::ClassType(metaclass.clone());
         for (base_name, m) in base_metaclasses.iter() {
             let base_metaclass_type = Type::ClassType((*m).clone());
-            if !self
-                .solver()
-                .is_subset_eq(&metaclass_type, &base_metaclass_type, self.type_order())
-            {
-                self.error(
+            if !self.solver().is_subset_eq(
+                &metaclass_type,
+                &base_metaclass_type,
+                self.type_order(),
+                errors,
+            ) {
+                self.error(errors,
                     cls.name().range,
                     format!(
                         "Class `{}` has metaclass `{}` which is not a subclass of metaclass `{}` from base class `{}`",
@@ -417,17 +439,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn direct_metaclass(&self, cls: &Class, raw_metaclass: &Expr) -> Option<ClassType> {
-        match self.expr_untype(raw_metaclass) {
+    fn direct_metaclass(
+        &self,
+        cls: &Class,
+        raw_metaclass: &Expr,
+        errors: &ErrorCollector,
+    ) -> Option<ClassType> {
+        match self.expr_untype(raw_metaclass, errors) {
             Type::ClassType(meta) => {
                 if self.solver().is_subset_eq(
                     &Type::ClassType(meta.clone()),
                     &Type::ClassType(self.stdlib.builtins_type()),
                     self.type_order(),
+                    errors,
                 ) {
                     Some(meta)
                 } else {
                     self.error(
+                        errors,
                         raw_metaclass.range(),
                         format!(
                             "Metaclass of `{}` has type `{}` which is not a subclass of `type`",
@@ -440,6 +469,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             ty => {
                 self.error(
+                    errors,
                     cls.name().range,
                     format!(
                         "Metaclass of `{}` has type `{}` is not a simple class type.",

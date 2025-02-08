@@ -7,6 +7,7 @@
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::error::collector::ErrorCollector;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
@@ -57,11 +58,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.solver().expand(var.to_type())
     }
 
-    fn is_subset_eq(&self, got: &Type, want: &Type) -> bool {
-        self.solver().is_subset_eq(got, want, self.type_order())
+    fn is_subset_eq(&self, got: &Type, want: &Type, errors: &ErrorCollector) -> bool {
+        self.solver()
+            .is_subset_eq(got, want, self.type_order(), errors)
     }
 
-    pub fn is_async_generator(&self, ty: &Type) -> bool {
+    pub fn is_async_generator(&self, ty: &Type, errors: &ErrorCollector) -> bool {
         let yield_ty = self.fresh_var();
         let send_ty = self.fresh_var();
 
@@ -70,24 +72,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .async_generator(yield_ty.to_type(), send_ty.to_type())
             .to_type();
         self.solver()
-            .is_subset_eq(&async_generator_ty, ty, self.type_order())
+            .is_subset_eq(&async_generator_ty, ty, self.type_order(), errors)
     }
 
-    pub fn unwrap_awaitable(&self, ty: &Type) -> Option<Type> {
+    pub fn unwrap_awaitable(&self, ty: &Type, errors: &ErrorCollector) -> Option<Type> {
         let var = self.fresh_var();
         let awaitable_ty = self.stdlib.awaitable(var.to_type()).to_type();
-        if self.is_subset_eq(ty, &awaitable_ty) {
+        if self.is_subset_eq(ty, &awaitable_ty, errors) {
             Some(self.expand_var(var))
         } else {
             None
         }
     }
 
-    pub fn decompose_dict(&self, ty: &Type) -> Option<UnwrappedDict> {
+    pub fn decompose_dict(&self, ty: &Type, errors: &ErrorCollector) -> Option<UnwrappedDict> {
         let key = self.fresh_var();
         let value = self.fresh_var();
         let dict_type = self.stdlib.dict(key.to_type(), value.to_type()).to_type();
-        if self.is_subset_eq(&dict_type, ty) {
+        if self.is_subset_eq(&dict_type, ty, errors) {
             let (key, value) = self.expand_var_pair_opt(key, value)?;
             Some(UnwrappedDict { key, value })
         } else {
@@ -95,27 +97,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn decompose_set(&self, ty: &Type) -> Option<Type> {
+    pub fn decompose_set(&self, ty: &Type, errors: &ErrorCollector) -> Option<Type> {
         let elem = self.fresh_var();
         let set_type = self.stdlib.set(elem.to_type()).to_type();
-        if self.is_subset_eq(&set_type, ty) {
+        if self.is_subset_eq(&set_type, ty, errors) {
             self.expand_var_opt(elem)
         } else {
             None
         }
     }
 
-    pub fn decompose_list(&self, ty: &Type) -> Option<Type> {
+    pub fn decompose_list(&self, ty: &Type, errors: &ErrorCollector) -> Option<Type> {
         let elem = self.fresh_var();
         let list_type = self.stdlib.list(elem.to_type()).to_type();
-        if self.is_subset_eq(&list_type, ty) {
+        if self.is_subset_eq(&list_type, ty, errors) {
             self.expand_var_opt(elem)
         } else {
             None
         }
     }
 
-    pub fn decompose_generator(&self, ty: &Type) -> Option<(Type, Type, Type)> {
+    pub fn decompose_generator(
+        &self,
+        ty: &Type,
+        errors: &ErrorCollector,
+    ) -> Option<(Type, Type, Type)> {
         let yield_ty = self.fresh_var();
         let send_ty = self.fresh_var();
         let return_ty = self.fresh_var();
@@ -123,7 +129,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .stdlib
             .generator(yield_ty.to_type(), send_ty.to_type(), return_ty.to_type())
             .to_type();
-        if self.is_subset_eq(&generator_ty, ty) {
+        if self.is_subset_eq(&generator_ty, ty, errors) {
             let yield_ty: Type = self.expand_var_opt(yield_ty)?;
             let send_ty = self.expand_var_opt(send_ty).unwrap_or(Type::None);
             let return_ty = self.expand_var_opt(return_ty).unwrap_or(Type::None);
@@ -138,14 +144,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         }
     }
-    pub fn decompose_async_generator(&self, ty: &Type) -> Option<(Type, Type)> {
+    pub fn decompose_async_generator(
+        &self,
+        ty: &Type,
+        errors: &ErrorCollector,
+    ) -> Option<(Type, Type)> {
         let yield_ty = self.fresh_var();
         let send_ty = self.fresh_var();
         let async_generator_ty = self
             .stdlib
             .async_generator(yield_ty.to_type(), send_ty.to_type())
             .to_type();
-        if self.is_subset_eq(&async_generator_ty, ty) {
+        if self.is_subset_eq(&async_generator_ty, ty, errors) {
             let yield_ty: Type = self.expand_var_opt(yield_ty)?;
             let send_ty = self.expand_var_opt(send_ty).unwrap_or(Type::None);
             Some((yield_ty, send_ty))
@@ -155,10 +165,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         }
     }
-    pub fn decompose_tuple(&self, ty: &Type) -> Option<Type> {
+    pub fn decompose_tuple(&self, ty: &Type, errors: &ErrorCollector) -> Option<Type> {
         let elem = self.fresh_var();
         let tuple_type = self.stdlib.tuple(elem.to_type()).to_type();
-        if self.is_subset_eq(&tuple_type, ty) {
+        if self.is_subset_eq(&tuple_type, ty, errors) {
             self.expand_var_opt(elem)
         } else {
             None

@@ -14,6 +14,7 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::Attribute;
+use crate::error::collector::ErrorCollector;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
@@ -37,32 +38,47 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.stdlib
     }
 
-    pub fn has_superclass(self, got: &Class, want: &Class) -> bool {
-        self.0.has_superclass(got, want)
+    pub fn has_superclass(self, got: &Class, want: &Class, errors: &ErrorCollector) -> bool {
+        self.0.has_superclass(got, want, errors)
     }
 
-    pub fn as_superclass(self, class: &ClassType, want: &Class) -> Option<ClassType> {
-        self.0.as_superclass(class, want)
+    pub fn as_superclass(
+        self,
+        class: &ClassType,
+        want: &Class,
+        errors: &ErrorCollector,
+    ) -> Option<ClassType> {
+        self.0.as_superclass(class, want, errors)
     }
 
-    pub fn has_metaclass(self, cls: &Class, metaclass: &ClassType) -> bool {
-        let metadata = self.0.get_metadata_for_class(cls);
+    pub fn has_metaclass(
+        self,
+        cls: &Class,
+        metaclass: &ClassType,
+        errors: &ErrorCollector,
+    ) -> bool {
+        let metadata = self.0.get_metadata_for_class(cls, errors);
         match metadata.metaclass() {
             Some(m) => *m == *metaclass,
             None => *metaclass == self.stdlib().builtins_type(),
         }
     }
 
-    pub fn is_protocol(self, cls: &Class) -> bool {
-        self.0.get_metadata_for_class(cls).is_protocol()
+    pub fn is_protocol(self, cls: &Class, errors: &ErrorCollector) -> bool {
+        self.0.get_metadata_for_class(cls, errors).is_protocol()
     }
 
-    pub fn get_all_member_names(self, cls: &Class) -> SmallSet<Name> {
-        self.0.get_all_member_names(cls)
+    pub fn get_all_member_names(self, cls: &Class, errors: &ErrorCollector) -> SmallSet<Name> {
+        self.0.get_all_member_names(cls, errors)
     }
 
-    pub fn try_lookup_attr(self, base: Type, attr_name: &Name) -> Option<Attribute> {
-        self.0.try_lookup_attr(base, attr_name)
+    pub fn try_lookup_attr(
+        self,
+        base: Type,
+        attr_name: &Name,
+        errors: &ErrorCollector,
+    ) -> Option<Attribute> {
+        self.0.try_lookup_attr(base, attr_name, errors)
     }
 
     pub fn resolve_as_instance_method(self, attr: Attribute) -> Option<Type> {
