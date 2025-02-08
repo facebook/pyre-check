@@ -820,7 +820,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     return_type
                 }
             }
-
             Binding::ReturnExpr(ann, e, has_yields) => {
                 let ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k, errors));
                 let hint = ann.as_ref().and_then(|x| x.ty.as_ref());
@@ -839,6 +838,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     self.expr(e, hint, errors)
                 }
+            }
+            Binding::ReturnExprWithReturn(_ann, _e, _has_yields, _last_statement_types) => {
+                // todo zeina: solve this binding
+                Type::any_error()
             }
             Binding::ExceptionHandler(box ann, is_star) => {
                 let base_exception_type = self.stdlib.base_exception().to_type();

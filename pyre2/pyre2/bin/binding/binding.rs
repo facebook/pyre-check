@@ -517,6 +517,12 @@ pub enum Binding {
     /// The `bool` is whether the function has `yield` within it.
     ReturnExpr(Option<Idx<KeyAnnotation>>, Box<Expr>, bool),
     /// An expression returned from a function.
+    /// A `bool` to indicate function has `yield` within it.
+    /// An optional return annotation
+    /// A vector of all types of last statements in a function body  
+    #[allow(dead_code)]
+    ReturnExprWithReturn(Option<Idx<KeyAnnotation>>, Box<Expr>, bool, Vec<Idx<Key>>),
+    /// An expression returned from a function.
     SendTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
     /// Return type of yield
     ReturnTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
@@ -622,11 +628,11 @@ impl DisplayWith<Bindings> for Binding {
         let m = ctx.module_info();
         match self {
             Self::Expr(None, x) => write!(f, "{}", m.display(x)),
-            Self::ReturnExpr(Some(y), x, _) => {
-                write!(f, "ReturnExpr {} {}", ctx.display(*y), m.display(x))
+            Self::ReturnExpr(Some(y), x, _) | Self::ReturnExprWithReturn(Some(y), x, _, _) => {
+                write!(f, "{} {}", ctx.display(*y), m.display(x))
             }
-            Self::ReturnExpr(None, x, _) => {
-                write!(f, "ReturnExpr {}", m.display(x))
+            Self::ReturnExpr(None, x, _) | Self::ReturnExprWithReturn(None, x, _, _) => {
+                write!(f, "{}", m.display(x))
             }
             Self::Expr(Some(k), x) => {
                 write!(f, "{}: {}", ctx.display(*k), m.display(x))
