@@ -7,6 +7,7 @@
 
 import ast
 import logging
+import os
 import re
 import multiprocessing
 import itertools
@@ -141,10 +142,13 @@ class AnnotatedFunctionGenerator(ModelGenerator[FunctionDefinitionModel]):
             for path in self.paths:
                 annotated_functions.update(self._annotate_functions(path))
         else:
-            with multiprocessing.Pool() as pool:
+            number_processes = os.cpu_count()
+            LOG.info(f"Using {number_processes} workers")
+            with multiprocessing.Pool(processes=number_processes, maxtasksperchild=1) as pool:
                 for functions in pool.imap_unordered(
                     _invoke_AnnotatedFunctionGenerator_annotate_function,
                     [(self, batch) for batch in _batched(self.paths, 1000)],
+                    chunksize=1,
                 ):
                     annotated_functions.update(functions)
 
