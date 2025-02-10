@@ -144,47 +144,41 @@ impl Step {
     }
 
     fn load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
-        let module_path = ctx.path.dupe();
-        let mut code = Arc::new("".to_owned());
-        let mut error_style = ErrorStyle::Never;
-        let mut self_error = None;
+        let error_style = match ctx.loader.find(ctx.module) {
+            Ok((_, s)) => s,
+            Err(_) => {
+                // We shouldn't reach here, as we must be able to load the module to get here.
+                // But if we do, delayed is fairly safe.
+                ErrorStyle::Delayed
+            }
+        };
 
-        // FIXME: We have `find` asking for information about the module, but we don't use the path
-        // since we got that passed in. We shouldn't really be calling find here.
-        match ctx.loader.find(ctx.module) {
-            Err(_) => {}
-            Ok((_, s)) => {
-                error_style = s;
-                let res = match module_path.details() {
-                    ModulePathDetails::FileSystem(path) => {
-                        if module_path.style() == ModuleStyle::Namespace {
-                            Ok(Arc::new("".to_owned()))
-                        } else {
-                            fs_anyhow::read_to_string(path).map(Arc::new)
-                        }
-                    }
-                    ModulePathDetails::Memory(path) => ctx
-                        .loader
-                        .load_from_memory(path)
-                        .ok_or_else(|| anyhow!("memory path not found")),
-                    ModulePathDetails::BundledTypeshed(path) => typeshed().and_then(|x| {
-                        x.load(path)
-                            .ok_or_else(|| anyhow!("bundled typeshed problem"))
-                    }),
-                };
-                match res {
-                    Err(err) => {
-                        self_error = Some(err.context(format!(
-                            "When loading `{}` from `{module_path}`",
-                            ctx.module
-                        )))
-                    }
-                    Ok(res) => code = res,
+        let res = match ctx.path.details() {
+            ModulePathDetails::FileSystem(path) => {
+                if ctx.path.style() == ModuleStyle::Namespace {
+                    Ok(Arc::new("".to_owned()))
+                } else {
+                    fs_anyhow::read_to_string(path).map(Arc::new)
                 }
             }
-        }
+            ModulePathDetails::Memory(path) => ctx
+                .loader
+                .load_from_memory(path)
+                .ok_or_else(|| anyhow!("memory path not found")),
+            ModulePathDetails::BundledTypeshed(path) => typeshed().and_then(|x| {
+                x.load(path)
+                    .ok_or_else(|| anyhow!("bundled typeshed problem"))
+            }),
+        };
+        let (code, self_error) = match res {
+            Err(err) => (
+                Arc::new(String::new()),
+                Some(err.context(format!("When loading `{}` from `{}`", ctx.module, ctx.path))),
+            ),
+            Ok(res) => (res, None),
+        };
 
-        let module_info = ModuleInfo::new(ctx.module, module_path, code);
+        let module_info = ModuleInfo::new(ctx.module, ctx.path.dupe(), code);
         let errors = ErrorCollector::new(error_style);
         if let Some(err) = self_error {
             errors.add(
