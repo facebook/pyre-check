@@ -4,5 +4,5 @@
 
 ```scrut
 $ $PYRE2 check ../empty -a
-* 0 errors, * (glob*)
+* 0 errors, * (glob)
 ```
