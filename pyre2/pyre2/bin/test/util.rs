@@ -80,7 +80,7 @@ fn default_path(module: ModuleName) -> PathBuf {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct TestEnv(SmallMap<ModuleName, (PathBuf, Option<String>)>);
+pub struct TestEnv(SmallMap<ModuleName, (ModulePath, Option<String>)>);
 
 impl TestEnv {
     pub fn new() -> Self {
@@ -92,13 +92,16 @@ impl TestEnv {
     pub fn add_with_path(&mut self, name: &str, code: &str, path: &str) {
         self.0.insert(
             ModuleName::from_str(name),
-            (PathBuf::from(path), Some(code.to_owned())),
+            (
+                ModulePath::memory(PathBuf::from(path)),
+                Some(code.to_owned()),
+            ),
         );
     }
 
     pub fn add(&mut self, name: &str, code: &str) {
         let module_name = ModuleName::from_str(name);
-        let relative_path = default_path(module_name);
+        let relative_path = ModulePath::memory(default_path(module_name));
         self.0
             .insert(module_name, (relative_path, Some(code.to_owned())));
     }
@@ -117,7 +120,8 @@ impl TestEnv {
 
     pub fn add_real_path(&mut self, name: &str, path: PathBuf) {
         let module_name = ModuleName::from_str(name);
-        self.0.insert(module_name, (path, None));
+        self.0
+            .insert(module_name, (ModulePath::filesystem(path), None));
     }
 
     pub fn config() -> Config {
@@ -140,11 +144,8 @@ impl TestEnv {
 impl Loader for TestEnv {
     fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
         let style = ErrorStyle::Immediate;
-        if let Some((path, contents)) = self.0.get(&module) {
-            match contents {
-                None => Ok((ModulePath::filesystem(path.clone()), style)),
-                Some(_) => Ok((ModulePath::memory(path.clone()), style)),
-            }
+        if let Some((path, _)) = self.0.get(&module) {
+            Ok((path.dupe(), style))
         } else if lookup_test_stdlib(module).is_some() {
             Ok((ModulePath::memory(default_path(module)), style))
         } else {
@@ -155,8 +156,9 @@ impl Loader for TestEnv {
     fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
         // This function involves scanning all paths to find what matches.
         // Not super efficient, but fine for tests, and we don't have many modules.
+        let memory_path = ModulePath::memory(path.to_owned());
         for (p, contents) in self.0.values() {
-            if p == path
+            if p == &memory_path
                 && let Some(c) = contents
             {
                 return Some(Arc::new(c.clone()));
