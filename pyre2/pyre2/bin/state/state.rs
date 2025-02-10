@@ -521,12 +521,16 @@ impl State {
         Ok(())
     }
 
+    fn invalidate_everything(&mut self) {
+        *self = State::new(self.parallel);
+    }
+
     /// Called if the `find` portion of loading might have changed.
     /// E.g. you have include paths, and a new file appeared earlier on the path.
     #[expect(dead_code)]
     pub fn invalidate_find(&mut self, loader: LoaderId) {
         let _ = loader;
-        // Not yet implemented.
+        self.invalidate_everything();
     }
 
     /// Called if the `load` portion of loading might have changed.
@@ -535,7 +539,7 @@ impl State {
     pub fn invalidate_load(&mut self, loader: LoaderId, files: &[PathBuf]) {
         let _ = loader;
         let _ = files;
-        // Not yet implemented.
+        self.invalidate_everything();
     }
 
     /// Called if the files read from the disk might have changed.
@@ -544,7 +548,7 @@ impl State {
     #[expect(dead_code)]
     pub fn invalidate_disk(&mut self, files: &[PathBuf]) {
         let _ = files;
-        // Not yet implemented.
+        self.invalidate_everything();
     }
 
     /* Notes on how to move to incremental
