@@ -21,6 +21,7 @@ use crate::binding::binding::Binding;
 use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
+use crate::binding::binding::ClassBinding;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyClassField;
@@ -179,12 +180,13 @@ impl<'a> BindingsBuilder<'a> {
         let name = x.name.clone();
         self.bind_definition(
             &name,
-            Binding::ClassDef(
-                Box::new((x, fields)),
-                bases.into_boxed_slice(),
-                decorators.into_boxed_slice(),
-                legacy_tparams.into_boxed_slice(),
-            ),
+            Binding::ClassDef(Box::new(ClassBinding {
+                def: x,
+                fields,
+                bases: bases.into_boxed_slice(),
+                decorators: decorators.into_boxed_slice(),
+                legacy_tparams: legacy_tparams.into_boxed_slice(),
+            })),
             None,
         );
     }

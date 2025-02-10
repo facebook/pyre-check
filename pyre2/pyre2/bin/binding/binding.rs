@@ -519,6 +519,15 @@ pub struct FunctionBinding {
 }
 
 #[derive(Clone, Debug)]
+pub struct ClassBinding {
+    pub def: StmtClassDef,
+    pub fields: SmallMap<Name, ClassFieldProperties>,
+    pub bases: Box<[Expr]>,
+    pub decorators: Box<[Idx<Key>]>,
+    pub legacy_tparams: Box<[Idx<KeyLegacyTypeParam>]>,
+}
+
+#[derive(Clone, Debug)]
 pub enum Binding {
     /// An expression, optionally with a Key saying what the type must be.
     /// The Key must be a type of types, e.g. `Type::Type`.
@@ -576,17 +585,8 @@ pub enum Binding {
     Function(Box<FunctionBinding>),
     /// An import statement, typically with Self::Import.
     Import(ModuleName, Name),
-    /// A class definition, but with the body stripped out. Fields:
-    /// * (class definition, map from field names to simple properties)
-    /// * the base classes from the class header
-    /// * the class decorators
-    /// * binding information for possible legacy type params
-    ClassDef(
-        Box<(StmtClassDef, SmallMap<Name, ClassFieldProperties>)>,
-        Box<[Expr]>,
-        Box<[Idx<Key>]>,
-        Box<[Idx<KeyLegacyTypeParam>]>,
-    ),
+    /// A class definition, but with the body stripped out.
+    ClassDef(Box<ClassBinding>),
     FunctionalClassDef(Identifier, SmallMap<Name, ClassFieldProperties>),
     /// The Self type for a class, must point at a class.
     SelfType(Idx<Key>),
@@ -730,7 +730,7 @@ impl DisplayWith<Bindings> for Binding {
             }
             Self::Function(x) => write!(f, "def {}", x.def.name.id),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
-            Self::ClassDef(box (c, _), _, _, _) => write!(f, "class {}", c.name.id),
+            Self::ClassDef(x) => write!(f, "class {}", x.def.name.id),
             Self::FunctionalClassDef(x, _) => write!(f, "class {}", x.id),
             Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),

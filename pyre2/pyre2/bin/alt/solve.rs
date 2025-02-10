@@ -1027,15 +1027,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExport(name.clone()))
                 .arc_clone(),
-            Binding::ClassDef(box (x, fields), bases, decorators, legacy_tparams) => {
+            Binding::ClassDef(x) => {
                 let mut ty = Type::ClassDef(self.class_definition(
-                    x,
-                    fields.clone(),
-                    bases,
-                    legacy_tparams,
+                    &x.def,
+                    x.fields.clone(),
+                    &x.bases,
+                    &x.legacy_tparams,
                     errors,
                 ));
-                for x in decorators.iter().rev() {
+                for x in x.decorators.iter().rev() {
                     ty = self.apply_decorator(*x, ty, errors)
                 }
                 ty
