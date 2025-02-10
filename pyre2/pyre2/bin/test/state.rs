@@ -39,10 +39,16 @@ else:
     );
     let mut state = State::new(true);
     let loader = LoaderId::new(test_env);
+
+    let f = |name: &str, config: &Config| {
+        let name = ModuleName::from_str(name);
+        Handle::new(name, config.dupe(), loader.dupe())
+    };
+
     state.run(vec![
-        Handle::new(ModuleName::from_str("linux"), linux.dupe(), loader.dupe()),
-        Handle::new(ModuleName::from_str("windows"), windows, loader.dupe()),
-        Handle::new(ModuleName::from_str("main"), linux, loader),
+        f("linux", &linux),
+        f("windows", &windows),
+        f("main", &linux),
     ]);
     state.check_against_expectations().unwrap();
 }
