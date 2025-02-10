@@ -42,6 +42,7 @@ use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::report::debug_info::DebugInfo;
 use crate::state::handle::Handle;
+use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderFindCache;
 use crate::state::loader::LoaderId;
@@ -262,7 +263,7 @@ impl State {
         }
     }
 
-    fn lookup_export(&self, handle: &Handle) -> Result<Exports, Arc<String>> {
+    fn lookup_export(&self, handle: &Handle) -> Result<Exports, FindError> {
         self.demand(handle, Step::Exports);
         let m = self.get_module(handle);
         let lock = m.steps.read().unwrap();
@@ -605,7 +606,7 @@ struct StateHandle<'a> {
 }
 
 impl<'a> LookupExport for StateHandle<'a> {
-    fn get(&self, module: ModuleName) -> Result<Exports, Arc<String>> {
+    fn get(&self, module: ModuleName) -> Result<Exports, FindError> {
         self.state
             .lookup_export(&self.state.import_handle(&self.handle, module))
     }

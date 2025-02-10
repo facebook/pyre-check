@@ -30,6 +30,7 @@ use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
 use crate::module::module_path::ModuleStyle;
 use crate::state::info::Info;
+use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
 use crate::util::fs_anyhow;
@@ -50,7 +51,7 @@ pub struct Context<'a, Lookup> {
 pub struct Load {
     pub errors: ErrorCollector,
     pub module_info: ModuleInfo,
-    pub import_error: Option<Arc<String>>,
+    pub import_error: Option<FindError>,
 }
 
 #[derive(Debug, Default)]
@@ -155,10 +156,7 @@ impl Step {
         // since we got that passed in. We shouldn't really be calling find here.
         match ctx.loader.find(ctx.module) {
             Err(err) => {
-                import_error = Some(Arc::new(format!(
-                    "Could not find import of `{}`, {err}",
-                    ctx.module
-                )));
+                import_error = Some(err);
             }
             Ok((_, s)) => {
                 error_style = s;

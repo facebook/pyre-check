@@ -5,9 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::fmt;
 use std::fmt::Debug;
-use std::fmt::Display;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -37,11 +35,9 @@ impl FindError {
             commas_iter(|| search_roots.iter().map(|x| x.display()))
         ))
     }
-}
 
-impl Display for FindError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:#}", self.0)
+    pub fn display(&self, module: ModuleName) -> String {
+        format!("Could not find import of `{module}`, {:#}", self.0)
     }
 }
 

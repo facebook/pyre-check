@@ -315,7 +315,7 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Err(err) => {
-                self.error(TextRange::default(), Arc::unwrap_or_clone(err));
+                self.error(TextRange::default(), err.display(builtins_module));
             }
         }
     }

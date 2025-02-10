@@ -21,9 +21,10 @@ use crate::export::definitions::DunderAllEntry;
 use crate::graph::calculation::Calculation;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::state::loader::FindError;
 
 pub trait LookupExport {
-    fn get(&self, module: ModuleName) -> Result<Exports, Arc<String>>;
+    fn get(&self, module: ModuleName) -> Result<Exports, FindError>;
 }
 
 #[derive(Debug, Default, Clone, Dupe)]
@@ -112,6 +113,7 @@ impl Exports {
 mod tests {
     use std::path::PathBuf;
 
+    use anyhow::anyhow;
     use starlark_map::small_map::SmallMap;
     use starlark_map::smallmap;
 
@@ -121,10 +123,10 @@ mod tests {
     use crate::module::module_path::ModuleStyle;
 
     impl LookupExport for SmallMap<ModuleName, Exports> {
-        fn get(&self, module: ModuleName) -> Result<Exports, Arc<String>> {
+        fn get(&self, module: ModuleName) -> Result<Exports, FindError> {
             match self.get(&module) {
                 Some(x) => Ok(x.dupe()),
-                None => Err(Arc::new("Error".to_owned())),
+                None => Err(FindError::new(anyhow!("Error"))),
             }
         }
     }

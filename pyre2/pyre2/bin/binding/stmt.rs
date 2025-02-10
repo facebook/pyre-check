@@ -6,7 +6,6 @@
  */
 
 use std::mem;
-use std::sync::Arc;
 
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprCall;
@@ -397,7 +396,7 @@ impl<'a> BindingsBuilder<'a> {
                 for x in x.names {
                     let m = ModuleName::from_name(&x.name.id);
                     if let Err(err) = self.lookup.get(m) {
-                        self.error(x.range, Arc::unwrap_or_clone(err));
+                        self.error(x.range, err.display(m));
                     }
                     match x.asname {
                         Some(asname) => {
@@ -482,7 +481,7 @@ impl<'a> BindingsBuilder<'a> {
                             }
                         }
                         Err(err) => {
-                            self.error(x.range, Arc::unwrap_or_clone(err));
+                            self.error(x.range, err.display(m));
                             self.bind_unimportable_names(&x);
                         }
                     }
