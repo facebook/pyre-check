@@ -19,6 +19,7 @@ use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::handle::Handle;
+use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
@@ -80,7 +81,7 @@ fn test_multiple_path() {
     struct Load(TestEnv);
 
     impl Loader for Load {
-        fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
+        fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
             match FILES.iter().find(|x| x.0 == module.as_str()) {
                 Some((_, path, _)) => Ok((
                     ModulePath::memory(PathBuf::from(path)),

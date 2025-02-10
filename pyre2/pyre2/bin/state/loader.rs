@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::fmt;
 use std::fmt::Debug;
+use std::fmt::Display;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -18,10 +20,19 @@ use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::util::arc_id::ArcId;
 
+#[derive(Debug, Clone, Dupe)]
+pub struct FindError(pub Arc<anyhow::Error>);
+
+impl Display for FindError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:#}", self.0)
+    }
+}
+
 /// A function that loads a module, given the `ModuleName`.
 pub trait Loader: Sync + Debug {
     /// Return `Err` to indicate the module could not be found.
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>>;
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError>;
 
     /// Load a file from memory, if you can find it. Only called if `find` returns
     /// a `ModulePath::memory`.
@@ -35,7 +46,7 @@ pub trait Loader: Sync + Debug {
 pub struct LoaderId(ArcId<dyn Loader + Send>);
 
 impl Loader for LoaderId {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         self.0.find(module)
     }
 
@@ -53,11 +64,11 @@ impl LoaderId {
 #[derive(Debug)]
 pub struct LoaderFindCache<T> {
     loader: T,
-    cache: Mutex<SmallMap<ModuleName, Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>>>>,
+    cache: Mutex<SmallMap<ModuleName, Result<(ModulePath, ErrorStyle), FindError>>>,
 }
 
 impl<T: Loader> Loader for LoaderFindCache<T> {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         {
             if let Some(result) = self.cache.lock().unwrap().get(&module) {
                 return result.dupe();

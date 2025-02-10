@@ -73,6 +73,7 @@ use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
 use crate::state::handle::Handle;
+use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
@@ -149,7 +150,7 @@ struct LspLoader {
 }
 
 impl Loader for LspLoader {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         for path in self.open_files.lock().unwrap().keys() {
             if module_from_path(path, &self.search_roots) == module {
                 return Ok((ModulePath::memory(path.clone()), ErrorStyle::Delayed));
@@ -157,10 +158,12 @@ impl Loader for LspLoader {
         }
         if let Some(path) = find_module(module, &self.search_roots) {
             Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Never))
-        } else if let Some(path) = typeshed()?.find(module) {
+        } else if let Some(path) = typeshed().map_err(|e| FindError(Arc::new(e)))?.find(module) {
             Ok((path, ErrorStyle::Never))
         } else {
-            Err(Arc::new(anyhow!("Could not find path for `{module}`")))
+            Err(FindError(Arc::new(anyhow!(
+                "Could not find path for `{module}`"
+            ))))
         }
     }
 

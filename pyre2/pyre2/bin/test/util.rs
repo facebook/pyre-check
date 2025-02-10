@@ -24,6 +24,7 @@ use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::handle::Handle;
+use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
@@ -150,14 +151,16 @@ impl TestEnv {
 }
 
 impl Loader for TestEnv {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         let style = ErrorStyle::Immediate;
         if let Some((path, _)) = self.0.get(&module) {
             Ok((path.dupe(), style))
         } else if lookup_test_stdlib(module).is_some() {
             Ok((ModulePath::memory(default_path(module)), style))
         } else {
-            Err(Arc::new(anyhow!("Module not given in test suite")))
+            Err(FindError(Arc::new(anyhow!(
+                "Module not given in test suite"
+            ))))
         }
     }
 

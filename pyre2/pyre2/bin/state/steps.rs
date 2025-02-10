@@ -156,7 +156,7 @@ impl Step {
         match ctx.loader.find(ctx.module) {
             Err(err) => {
                 import_error = Some(Arc::new(format!(
-                    "Could not find import of `{}`, {err:#}",
+                    "Could not find import of `{}`, {err}",
                     ctx.module
                 )));
             }

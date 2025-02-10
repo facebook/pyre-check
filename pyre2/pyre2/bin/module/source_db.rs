@@ -20,6 +20,7 @@ use vec1::Vec1;
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
+use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::util::fs_anyhow;
 
@@ -160,7 +161,7 @@ impl BuckSourceDatabase {
 }
 
 impl Loader for BuckSourceDatabase {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         match self.lookup(module) {
             LookupResult::OwningSource(path) => {
                 Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Delayed))
@@ -168,7 +169,9 @@ impl Loader for BuckSourceDatabase {
             LookupResult::ExternalSource(path) => {
                 Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Never))
             }
-            LookupResult::NoSource => Err(Arc::new(anyhow!("Not a dependency or typeshed"))),
+            LookupResult::NoSource => {
+                Err(FindError(Arc::new(anyhow!("Not a dependency or typeshed"))))
+            }
         }
     }
 }

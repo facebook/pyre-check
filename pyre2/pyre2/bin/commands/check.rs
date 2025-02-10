@@ -37,6 +37,7 @@ use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::report;
 use crate::state::handle::Handle;
+use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
@@ -93,7 +94,7 @@ struct CheckLoader {
 }
 
 impl Loader for CheckLoader {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         if let Some(path) = self.sources.get(&module) {
             Ok((
                 ModulePath::filesystem(path.clone()),
@@ -104,12 +105,12 @@ impl Loader for CheckLoader {
                 ModulePath::filesystem(path),
                 self.error_style_for_dependencies,
             ))
-        } else if let Some(path) = typeshed()?.find(module) {
+        } else if let Some(path) = typeshed().map_err(|e| FindError(Arc::new(e)))?.find(module) {
             Ok((path, self.error_style_for_dependencies))
         } else {
-            Err(Arc::new(anyhow::anyhow!(
+            Err(FindError(Arc::new(anyhow::anyhow!(
                 "Could not find path for `{module}`"
-            )))
+            ))))
         }
     }
 }
