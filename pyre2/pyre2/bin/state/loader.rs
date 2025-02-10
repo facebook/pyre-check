@@ -8,8 +8,10 @@
 use std::fmt::Debug;
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use dupe::Dupe;
+use starlark_map::small_map::SmallMap;
 
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
@@ -45,5 +47,37 @@ impl Loader for LoaderId {
 impl LoaderId {
     pub fn new(loader: impl Loader + Send + 'static) -> Self {
         Self(ArcId::from_arc(Arc::new(loader)))
+    }
+}
+
+#[derive(Debug)]
+pub struct LoaderFindCache<T> {
+    loader: T,
+    cache: Mutex<SmallMap<ModuleName, Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>>>>,
+}
+
+impl<T: Loader> Loader for LoaderFindCache<T> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
+        {
+            if let Some(result) = self.cache.lock().unwrap().get(&module) {
+                return result.dupe();
+            }
+        }
+        let res = self.loader.find(module.dupe());
+        self.cache.lock().unwrap().insert(module, res.dupe());
+        res
+    }
+
+    fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
+        self.loader.load_from_memory(path)
+    }
+}
+
+impl<T> LoaderFindCache<T> {
+    pub fn new(loader: T) -> Self {
+        Self {
+            loader,
+            cache: Mutex::new(SmallMap::new()),
+        }
     }
 }

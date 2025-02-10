@@ -41,6 +41,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::report::debug_info::DebugInfo;
 use crate::state::handle::Handle;
+use crate::state::loader::LoaderFindCache;
 use crate::state::loader::LoaderId;
 use crate::state::steps::Context;
 use crate::state::steps::ModuleSteps;
@@ -58,6 +59,7 @@ pub struct State {
     parallel: bool,
     stdlib: RwLock<SmallMap<(Config, LoaderId), Arc<Stdlib>>>,
     modules: RwLock<SmallMap<Handle, Arc<ModuleState>>>,
+    loaders: RwLock<SmallMap<LoaderId, Arc<LoaderFindCache<LoaderId>>>>,
     /// Items we still need to process. Stored in a max heap, so that
     /// the highest step (the module that is closest to being finished)
     /// gets picked first, ensuring we release its memory quickly.
@@ -114,6 +116,7 @@ impl State {
             parallel,
             stdlib: Default::default(),
             modules: Default::default(),
+            loaders: Default::default(),
             todo: Default::default(),
             retain_memory: true, // Will always be overwritten by entry points
         }
@@ -155,10 +158,11 @@ impl State {
             }
 
             let stdlib = self.get_stdlib(handle);
+            let loader = self.get_cached_loader(handle);
             let set = compute(&Context {
                 module: handle.module(),
                 config: handle.config(),
-                loader: handle.loader(),
+                loader: &*loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
                 lookup: &self.lookup(handle),
@@ -360,6 +364,16 @@ impl State {
         }
     }
 
+    fn get_cached_loader(&self, handle: &Handle) -> Arc<LoaderFindCache<LoaderId>> {
+        // Safe because we always fill these in before starting
+        self.loaders
+            .read()
+            .unwrap()
+            .get(handle.loader())
+            .unwrap()
+            .dupe()
+    }
+
     fn get_stdlib(&self, handle: &Handle) -> Arc<Stdlib> {
         // Safe because we always run compute_stdlib first
         self.stdlib
@@ -407,6 +421,12 @@ impl State {
             .iter()
             .map(|x| (x.config().dupe(), x.loader().dupe()))
             .collect::<SmallSet<_>>();
+
+        *self.loaders.write().unwrap() = configs
+            .iter()
+            .map(|x| (x.1.dupe(), Arc::new(LoaderFindCache::new(x.1.dupe()))))
+            .collect::<SmallMap<_, _>>();
+
         {
             let mut lock = self.todo.lock().unwrap();
             for h in handles {
