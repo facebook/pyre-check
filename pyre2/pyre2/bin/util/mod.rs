@@ -8,6 +8,7 @@
 //! Utility functions that are not specific to the things Pyre does.
 
 pub mod arc_id;
+pub mod args;
 pub mod display;
 pub mod enum_heap;
 pub mod forgetter;
