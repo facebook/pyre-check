@@ -23,7 +23,9 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::FindError;
 
+/// Find the exports of a given module.
 pub trait LookupExport {
+    /// Get the exports of a given module, or an error if the module is not available.
     fn get(&self, module: ModuleName) -> Result<Exports, FindError>;
 }
 
