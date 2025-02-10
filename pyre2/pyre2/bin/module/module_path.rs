@@ -15,7 +15,6 @@ use std::sync::Arc;
 use dupe::Dupe;
 
 use crate::dunder;
-use crate::module::module_name::ModuleName;
 
 #[derive(Debug, Clone, Dupe, Copy, PartialEq, Eq, Hash, Default)]
 pub enum ModuleStyle {
@@ -42,9 +41,6 @@ pub enum ModulePathDetails {
     /// The module source comes from typeshed bundled with Pyre (which gets stored in-memory).
     /// The path is relative to the root of the typeshed directory.
     BundledTypeshed(PathBuf),
-    /// Representing the possibility that a module source doesn't exist.
-    /// The module name indicates the module that is looked up but not found.
-    NotFound(ModuleName),
 }
 
 fn is_path_init(path: &Path) -> bool {
@@ -77,11 +73,6 @@ impl Display for ModulePath {
                     relative_path.display()
                 )
             }
-            ModulePathDetails::NotFound(module_name) => {
-                // This branch is not expected to be reachable since nonexistent module shouldn't have an errors,
-                // but lets make it clear this is a fake path if it ever happens to leak into any output.
-                write!(f, "empty {module_name}")
-            }
         }
     }
 }
@@ -97,11 +88,6 @@ impl ModulePath {
 
     pub fn bundled_typeshed(relative_path: PathBuf) -> Self {
         Self(Arc::new(ModulePathDetails::BundledTypeshed(relative_path)))
-    }
-
-    #[allow(dead_code)]
-    pub fn not_found(module_name: ModuleName) -> Self {
-        Self(Arc::new(ModulePathDetails::NotFound(module_name)))
     }
 
     pub fn is_init(&self) -> bool {
@@ -123,7 +109,6 @@ impl ModulePath {
             ModulePathDetails::FileSystem(path)
             | ModulePathDetails::BundledTypeshed(path)
             | ModulePathDetails::Memory(path) => Some(path),
-            ModulePathDetails::NotFound(_) => None,
         }
     }
 

@@ -176,7 +176,6 @@ impl Step {
                         x.load(path)
                             .ok_or_else(|| anyhow!("bundled typeshed problem"))
                     }),
-                    ModulePathDetails::NotFound(_) => Err(anyhow!("module was not found")),
                 };
                 match res {
                     Err(err) => {
