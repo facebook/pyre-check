@@ -912,16 +912,16 @@ impl DisplayWith<Bindings> for BindingClassSynthesizedFields {
 /// The `Vec<(Name, Expr)>` contains the class keywords from the class header.
 /// The `Vec<Idx<Key>>` points to the class's decorators.
 #[derive(Clone, Debug)]
-pub struct BindingClassMetadata(
-    pub Idx<Key>,
-    pub Vec<Expr>,
-    pub Vec<(Name, Expr)>,
-    pub Vec<Idx<Key>>,
-);
+pub struct BindingClassMetadata {
+    pub def: Idx<Key>,
+    pub bases: Vec<Expr>,
+    pub keywords: Vec<(Name, Expr)>,
+    pub decorators: Vec<Idx<Key>>,
+}
 
 impl DisplayWith<Bindings> for BindingClassMetadata {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
-        write!(f, "mro {}", ctx.display(self.0))
+        write!(f, "mro {}", ctx.display(self.def))
     }
 }
 

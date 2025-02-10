@@ -94,7 +94,12 @@ impl<'a> BindingsBuilder<'a> {
 
         self.table.insert(
             KeyClassMetadata(ShortIdentifier::new(&x.name)),
-            BindingClassMetadata(definition_key, bases.clone(), keywords, decorators.clone()),
+            BindingClassMetadata {
+                def: definition_key,
+                bases: bases.clone(),
+                keywords,
+                decorators: decorators.clone(),
+            },
         );
         self.table.insert(
             KeyClassSynthesizedFields(ShortIdentifier::new(&x.name)),
@@ -204,7 +209,12 @@ impl<'a> BindingsBuilder<'a> {
             .insert(Key::Definition(ShortIdentifier::new(&class_name)));
         self.table.insert(
             KeyClassMetadata(ShortIdentifier::new(&class_name)),
-            BindingClassMetadata(definition_key, vec![Expr::Name(base_name)], vec![], vec![]),
+            BindingClassMetadata {
+                def: definition_key,
+                bases: vec![Expr::Name(base_name)],
+                keywords: vec![],
+                decorators: vec![],
+            },
         );
         self.table.insert(
             KeyClassSynthesizedFields(ShortIdentifier::new(&class_name)),

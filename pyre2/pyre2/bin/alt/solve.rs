@@ -120,12 +120,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         binding: &BindingClassMetadata,
         errors: &ErrorCollector,
     ) -> Arc<ClassMetadata> {
-        match binding {
-            BindingClassMetadata(k, bases, keywords, decorators) => {
-                let cls = self.get_idx_class_def(*k).unwrap();
-                Arc::new(self.class_metadata_of(&cls, bases, keywords, decorators, errors))
-            }
-        }
+        let BindingClassMetadata {
+            def: k,
+            bases,
+            keywords,
+            decorators,
+        } = binding;
+        let cls = self.get_idx_class_def(*k).unwrap();
+        Arc::new(self.class_metadata_of(&cls, bases, keywords, decorators, errors))
     }
 
     pub fn solve_annotation(
