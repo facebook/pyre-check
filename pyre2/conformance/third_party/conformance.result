@@ -482,7 +482,7 @@
     "Line 58: Expected 1 errors",
     "Line 69: Expected 1 errors",
     "Line 98: Expected 1 errors",
-    "Line 19: Unexpected errors ['Could not find import of `_directives_deprecated_library`, Could not find path for `_directives_deprecated_library`']"
+    "Line 19: Unexpected errors ['Could not find import of `_directives_deprecated_library`, looked at search roots: ']"
   ],
   "directives_no_type_check.py": [],
   "directives_reveal_type.py": [
@@ -518,12 +518,12 @@
   ],
   "enums_member_names.py": [],
   "enums_member_values.py": [
-    "Line 90: Unexpected errors ['Could not find import of `_enums_member_values`, Could not find path for `_enums_member_values`']"
+    "Line 90: Unexpected errors ['Could not find import of `_enums_member_values`, looked at search roots: ']"
   ],
   "enums_members.py": [
     "Line 27: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `genus` of class `Pet` is not visible on the class']",
     "Line 28: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `species` of class `Pet` is not visible on the class']",
-    "Line 33: Unexpected errors ['Could not find import of `_enums_members`, Could not find path for `_enums_members`']",
+    "Line 33: Unexpected errors ['Could not find import of `_enums_members`, looked at search roots: ']",
     "Line 35: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 36: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 37: Unexpected errors ['`Pet2.CAT` is not a valid enum member']",
@@ -1099,8 +1099,8 @@
     "Line 26: Expected 1 errors",
     "Line 48: Expected 1 errors",
     "Line 49: Expected 1 errors",
-    "Line 10: Unexpected errors ['Could not find import of `_protocols_modules1`, Could not find path for `_protocols_modules1`']",
-    "Line 11: Unexpected errors ['Could not find import of `_protocols_modules2`, Could not find path for `_protocols_modules2`']"
+    "Line 10: Unexpected errors ['Could not find import of `_protocols_modules1`, looked at search roots: ']",
+    "Line 11: Unexpected errors ['Could not find import of `_protocols_modules2`, looked at search roots: ']"
   ],
   "protocols_recursive.py": [
     "Line 25: Unexpected errors ['EXPECTED SimpleTree <: Traversable']",
@@ -1186,7 +1186,7 @@
     "Lines 84, 85, 86: Expected error (tag 'Derived3-2')",
     "Lines 94, 102: Expected error (tag 'Derived4')",
     "Lines 125, 126: Expected error (tag 'func')",
-    "Line 8: Unexpected errors ['Could not find import of `_qualifiers_final_decorator`, Could not find path for `_qualifiers_final_decorator`']"
+    "Line 8: Unexpected errors ['Could not find import of `_qualifiers_final_decorator`, looked at search roots: ']"
   ],
   "specialtypes_any.py": [
     "Line 62: Unexpected errors ['assert_type(tuple[Any], tuple[Any, ...]) failed']",

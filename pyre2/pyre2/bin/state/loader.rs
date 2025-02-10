@@ -9,9 +9,11 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use anyhow::anyhow;
 use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
 
@@ -19,6 +21,7 @@ use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::util::arc_id::ArcId;
+use crate::util::display::commas_iter;
 
 #[derive(Debug, Clone, Dupe)]
 pub struct FindError(Arc<anyhow::Error>);
@@ -26,6 +29,13 @@ pub struct FindError(Arc<anyhow::Error>);
 impl FindError {
     pub fn new(err: anyhow::Error) -> Self {
         Self(Arc::new(err))
+    }
+
+    pub fn search_path(search_roots: &[PathBuf]) -> FindError {
+        Self::new(anyhow!(
+            "looked at search roots: {}",
+            commas_iter(|| search_roots.iter().map(|x| x.display()))
+        ))
     }
 }
 

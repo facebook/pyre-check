@@ -10,7 +10,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use anyhow::anyhow;
 use clap::Parser;
 use dupe::Dupe;
 use lsp_server::Connection;
@@ -161,9 +160,7 @@ impl Loader for LspLoader {
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok((path, ErrorStyle::Never))
         } else {
-            Err(FindError::new(anyhow!(
-                "Could not find path for `{module}`"
-            )))
+            Err(FindError::search_path(&self.search_roots))
         }
     }
 

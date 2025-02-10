@@ -107,9 +107,7 @@ impl Loader for CheckLoader {
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok((path, self.error_style_for_dependencies))
         } else {
-            Err(FindError::new(anyhow::anyhow!(
-                "Could not find path for `{module}`"
-            )))
+            Err(FindError::search_path(&self.search_roots))
         }
     }
 }
