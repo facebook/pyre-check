@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
@@ -518,6 +519,32 @@ impl State {
                 .check(&load.errors.collect())?;
         }
         Ok(())
+    }
+
+    /// Called if the `find` portion of loading might have changed.
+    /// E.g. you have include paths, and a new file appeared earlier on the path.
+    #[expect(dead_code)]
+    pub fn invalidate_find(&mut self, loader: LoaderId) {
+        let _ = loader;
+        // Not yet implemented.
+    }
+
+    /// Called if the `load` portion of loading might have changed.
+    /// Specify which files might have changed.
+    #[expect(dead_code)]
+    pub fn invalidate_load(&mut self, loader: LoaderId, files: &[PathBuf]) {
+        let _ = loader;
+        let _ = files;
+        // Not yet implemented.
+    }
+
+    /// Called if the files read from the disk might have changed.
+    /// Specify which files might have changed.
+    /// You must use the same absolute/relative paths as were given by `find`.
+    #[expect(dead_code)]
+    pub fn invalidate_disk(&mut self, files: &[PathBuf]) {
+        let _ = files;
+        // Not yet implemented.
     }
 
     /* Notes on how to move to incremental
