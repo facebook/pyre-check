@@ -168,6 +168,7 @@ impl State {
             let loader = self.get_cached_loader(handle.loader());
             let set = compute(&Context {
                 module: handle.module(),
+                path: handle.path(),
                 config: handle.config(),
                 loader: &*loader,
                 uniques: &self.uniques,

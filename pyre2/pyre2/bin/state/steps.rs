@@ -37,6 +37,7 @@ use crate::util::uniques::UniqueFactory;
 
 pub struct Context<'a, Lookup> {
     pub module: ModuleName,
+    pub path: &'a ModulePath,
     pub config: &'a Config,
     pub loader: &'a dyn Loader,
     pub uniques: &'a UniqueFactory,
@@ -144,12 +145,14 @@ impl Step {
     }
 
     fn load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
-        let mut module_path = ModulePath::not_found(ctx.module);
+        let module_path = ctx.path.dupe();
         let mut code = Arc::new("".to_owned());
         let mut error_style = ErrorStyle::Never;
         let mut import_error = None;
         let mut self_error = None;
 
+        // FIXME: We have `find` asking for information about the module, but we don't use the path
+        // since we got that passed in. We shouldn't really be calling find here.
         match ctx.loader.find(ctx.module) {
             Err(err) => {
                 import_error = Some(Arc::new(format!(
@@ -157,8 +160,7 @@ impl Step {
                     ctx.module
                 )));
             }
-            Ok((p, s)) => {
-                module_path = p;
+            Ok((_, s)) => {
                 error_style = s;
                 let res = match module_path.details() {
                     ModulePathDetails::FileSystem(path) => {

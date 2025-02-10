@@ -34,6 +34,10 @@ impl Handle {
         self.module
     }
 
+    pub fn path(&self) -> &ModulePath {
+        &self.path
+    }
+
     pub fn config(&self) -> &Config {
         &self.config
     }
