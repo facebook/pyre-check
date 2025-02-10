@@ -249,7 +249,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Some(ret) = self.call_metaclass(&cls, range, args, keywords, errors)
             && !self
                 .solver()
-                .is_subset_eq(&ret, &instance_ty, self.type_order(), errors)
+                .is_subset_eq(&ret, &instance_ty, self.type_order())
         {
             // Got something other than an instance of the class under construction.
             return ret;
@@ -272,7 +272,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
             if !self
                 .solver()
-                .is_subset_eq(&ret, &instance_ty, self.type_order(), errors)
+                .is_subset_eq(&ret, &instance_ty, self.type_order())
             {
                 // Got something other than an instance of the class under construction.
                 return ret;

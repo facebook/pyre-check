@@ -82,7 +82,7 @@ impl CallArg<'_> {
                             }
                         }
                     }
-                    let tys = fixed_tys.into_map(|tys| solver.unions(tys, errors));
+                    let tys = fixed_tys.into_map(|tys| solver.unions(tys));
                     CallArgPreEval::Fixed(tys, 0)
                 } else {
                     let mut star_tys = Vec::new();
@@ -92,7 +92,7 @@ impl CallArg<'_> {
                             Iterable::FixedLen(tys) => star_tys.extend(tys),
                         }
                     }
-                    let ty = solver.unions(star_tys, errors);
+                    let ty = solver.unions(star_tys);
                     CallArgPreEval::Star(ty, false)
                 }
             }
@@ -329,13 +329,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             });
                         })
                     } else {
-                        match self.decompose_dict(&ty, errors) {
+                        match self.decompose_dict(&ty) {
                             Some(UnwrappedDict { key, value }) => {
                                 if self.solver().is_subset_eq(
                                     &key,
                                     &self.stdlib.str().to_type(),
                                     self.type_order(),
-                                    errors,
                                 ) {
                                     kwargs.iter().for_each(|want| {
                                         self.check_type(want, &value, kw.range, errors);

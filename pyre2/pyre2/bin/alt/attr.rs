@@ -200,7 +200,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         todo_ctx: &str,
     ) -> Type {
         match self.get_type_or_conflated_error_msg(
-            self.lookup_attr(base, attr_name, errors),
+            self.lookup_attr(base, attr_name),
             attr_name,
             range,
             errors,
@@ -222,7 +222,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
         todo_ctx: &str,
     ) -> Option<Type> {
-        match self.lookup_attr(base, attr_name, errors) {
+        match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => match self.resolve_get_access(attr, range, errors) {
                 Ok(ty) => Some(ty),
                 Err(e) => Some(self.error(errors, range, e.to_error_msg(attr_name))),
@@ -237,9 +237,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Look up the `_value_` attribute of an enum class. This field has to be a plain instance
     /// attribute annotated in the class body; it is used to validate enum member values, which are
     /// supposed to all share this type.
-    pub fn type_of_enum_value(&self, enum_: EnumMetadata, errors: &ErrorCollector) -> Option<Type> {
+    pub fn type_of_enum_value(&self, enum_: EnumMetadata) -> Option<Type> {
         let base = Type::ClassType(enum_.cls);
-        match self.lookup_attr(base, &Name::new_static("_value_"), errors) {
+        match self.lookup_attr(base, &Name::new_static("_value_")) {
             LookupResult::Found(attr) => match attr.0 {
                 AttributeInner::ReadWrite(ty) => Some(ty),
                 AttributeInner::ReadOnly(_)
@@ -261,7 +261,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
         todo_ctx: &str,
     ) {
-        match self.lookup_attr(base, attr_name, errors) {
+        match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => match attr.0 {
                 AttributeInner::NoAccess(e) => {
                     self.error(errors, range, e.to_error_msg(attr_name));
@@ -271,10 +271,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.expr(got, Some(&want), errors);
                     }
                     Either::Right(got) => {
-                        if !self
-                            .solver()
-                            .is_subset_eq(got, &want, self.type_order(), errors)
-                        {
+                        if !self.solver().is_subset_eq(got, &want, self.type_order()) {
                             self.error(
                                 errors,
                                 range,
@@ -413,8 +410,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn lookup_attr(&self, base: Type, attr_name: &Name, errors: &ErrorCollector) -> LookupResult {
-        match self.as_attribute_base(base.clone(), self.stdlib, errors) {
+    fn lookup_attr(&self, base: Type, attr_name: &Name) -> LookupResult {
+        match self.as_attribute_base(base.clone(), self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
                 match self.get_instance_attribute(&class, attr_name) {
                     Some(attr) => LookupResult::Found(attr),
@@ -479,13 +476,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn try_lookup_attr(
-        &self,
-        base: Type,
-        attr_name: &Name,
-        errors: &ErrorCollector,
-    ) -> Option<Attribute> {
-        match self.lookup_attr(base, attr_name, errors) {
+    pub fn try_lookup_attr(&self, base: Type, attr_name: &Name) -> Option<Attribute> {
+        match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => Some(attr),
             _ => None,
         }
@@ -501,12 +493,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn as_attribute_base(
-        &self,
-        ty: Type,
-        stdlib: &Stdlib,
-        errors: &ErrorCollector,
-    ) -> Option<AttributeBase> {
+    fn as_attribute_base(&self, ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         match ty {
             Type::ClassType(class_type) => Some(AttributeBase::ClassInstance(class_type)),
             Type::ClassDef(cls) => Some(AttributeBase::ClassObject(cls)),
@@ -521,7 +508,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(AttributeBase::ClassInstance(if elements.is_empty() {
                     stdlib.tuple(Type::Any(AnyStyle::Implicit))
                 } else {
-                    stdlib.tuple(self.unions(elements, errors))
+                    stdlib.tuple(self.unions(elements))
                 }))
             }
             Type::LiteralString => Some(AttributeBase::ClassInstance(stdlib.str())),
@@ -532,7 +519,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(AttributeBase::ClassInstance(stdlib.bool()))
             }
             Type::Any(style) => Some(AttributeBase::Any(style)),
-            Type::TypeAlias(ta) => self.as_attribute_base(ta.as_value(stdlib), stdlib, errors),
+            Type::TypeAlias(ta) => self.as_attribute_base(ta.as_value(stdlib), stdlib),
             Type::Type(box Type::ClassType(class)) => {
                 Some(AttributeBase::ClassObject(class.class_object().dupe()))
             }
@@ -549,10 +536,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Callable(_, _) => Some(AttributeBase::ClassInstance(stdlib.function_type())),
             Type::BoundMethod(_) => Some(AttributeBase::ClassInstance(stdlib.method_type())),
             Type::Ellipsis => Some(AttributeBase::ClassInstance(stdlib.ellipsis_type())),
-            Type::Forall(_, box base) => self.as_attribute_base(base, stdlib, errors),
+            Type::Forall(_, box base) => self.as_attribute_base(base, stdlib),
             Type::Var(v) => {
                 if let Some(_guard) = self.recurser.recurse(v) {
-                    self.as_attribute_base(self.solver().force_var(v), stdlib, errors)
+                    self.as_attribute_base(self.solver().force_var(v), stdlib)
                 } else {
                     None
                 }
@@ -560,9 +547,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Decoration(Decoration::Property(box (getter, _))) => {
                 Some(AttributeBase::Property(getter))
             }
-            Type::Decoration(Decoration::EnumMember(box ty)) => {
-                self.as_attribute_base(ty, stdlib, errors)
-            }
+            Type::Decoration(Decoration::EnumMember(box ty)) => self.as_attribute_base(ty, stdlib),
             Type::Decoration(_) => None,
             // TODO: check to see which ones should have class representations
             Type::Union(_)

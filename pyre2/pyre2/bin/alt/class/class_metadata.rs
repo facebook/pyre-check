@@ -112,7 +112,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Some((c, class_metadata))
                     }
                     Type::Tuple(Tuple::Concrete(ts)) => {
-                        let class_ty = self.stdlib.tuple(self.unions(ts, errors));
+                        let class_ty = self.stdlib.tuple(self.unions(ts));
                         let metadata = self.get_metadata_for_class(class_ty.class_object());
                         Some((class_ty, metadata))
                     }
@@ -176,7 +176,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &Type::ClassType(metaclass.clone()),
                 &Type::ClassType(self.stdlib.enum_meta()),
                 self.type_order(),
-                errors,
             ) {
                 if !cls.tparams().is_empty() {
                     self.error(
@@ -193,7 +192,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &Type::ClassType(base.clone()),
                             &Type::ClassType(self.stdlib.enum_flag()),
                             self.type_order(),
-                            errors,
                         )
                     }),
                 })
@@ -395,7 +393,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &Type::ClassType(m.clone()),
                         &Type::ClassType(inherited.clone()),
                         self.type_order(),
-                        errors,
                     ),
                 };
                 if accept_m {
@@ -419,12 +416,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let metaclass_type = Type::ClassType(metaclass.clone());
         for (base_name, m) in base_metaclasses.iter() {
             let base_metaclass_type = Type::ClassType((*m).clone());
-            if !self.solver().is_subset_eq(
-                &metaclass_type,
-                &base_metaclass_type,
-                self.type_order(),
-                errors,
-            ) {
+            if !self
+                .solver()
+                .is_subset_eq(&metaclass_type, &base_metaclass_type, self.type_order())
+            {
                 self.error(errors,
                     cls.name().range,
                     format!(
@@ -451,7 +446,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     &Type::ClassType(meta.clone()),
                     &Type::ClassType(self.stdlib.builtins_type()),
                     self.type_order(),
-                    errors,
                 ) {
                     Some(meta)
                 } else {

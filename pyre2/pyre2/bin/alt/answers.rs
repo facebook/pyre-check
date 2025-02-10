@@ -618,10 +618,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if matches!(got, Type::Any(AnyStyle::Error)) {
             // Don't propagate errors
             got.clone()
-        } else if self
-            .solver()
-            .is_subset_eq(got, want, self.type_order(), errors)
-        {
+        } else if self.solver().is_subset_eq(got, want, self.type_order()) {
             got.clone()
         } else {
             self.solver()
@@ -630,24 +627,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn distribute_over_union(
-        &self,
-        ty: &Type,
-        errors: &ErrorCollector,
-        mut f: impl FnMut(&Type) -> Type,
-    ) -> Type {
+    pub fn distribute_over_union(&self, ty: &Type, mut f: impl FnMut(&Type) -> Type) -> Type {
         match ty {
-            Type::Union(tys) => self.unions(tys.map(f), errors),
+            Type::Union(tys) => self.unions(tys.map(f)),
             _ => f(ty),
         }
     }
 
-    pub fn unions(&self, xs: Vec<Type>, errors: &ErrorCollector) -> Type {
-        self.solver().unions(xs, self.type_order(), errors)
+    pub fn unions(&self, xs: Vec<Type>) -> Type {
+        self.solver().unions(xs, self.type_order())
     }
 
-    pub fn union(&self, x: Type, y: Type, errors: &ErrorCollector) -> Type {
-        self.unions(vec![x, y], errors)
+    pub fn union(&self, x: Type, y: Type) -> Type {
+        self.unions(vec![x, y])
     }
 
     pub fn todo(&self, errors: &ErrorCollector, msg: &str, x: impl Ranged + Debug) -> Type {

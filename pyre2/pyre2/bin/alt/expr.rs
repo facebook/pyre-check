@@ -89,7 +89,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 _ => types.push(t),
             }
         }
-        self.unions(types, errors)
+        self.unions(types)
     }
 
     pub fn expr(&self, x: &Expr, check: Option<&Type>, errors: &ErrorCollector) -> Type {
@@ -119,7 +119,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
-        self.distribute_over_union(obj, errors, |obj| {
+        self.distribute_over_union(obj, |obj| {
             self.type_of_attr_get(obj.clone(), attr_name, range, errors, "Expr::attr_infer")
         })
     }
@@ -137,14 +137,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Type::Any(style) = &lhs {
             return style.propagate();
         } else if x.op == Operator::BitOr
-            && let Some(l) = self.untype_opt(lhs.clone(), x.left.range(), errors)
-            && let Some(r) = self.untype_opt(rhs.clone(), x.right.range(), errors)
+            && let Some(l) = self.untype_opt(lhs.clone(), x.left.range())
+            && let Some(r) = self.untype_opt(rhs.clone(), x.right.range())
         {
-            return Type::type_form(self.union(l, r, errors));
+            return Type::type_form(self.union(l, r));
         }
-        self.distribute_over_union(&lhs, errors, |lhs| {
-            binop_call(x.op, lhs, rhs.clone(), x.range)
-        })
+        self.distribute_over_union(&lhs, |lhs| binop_call(x.op, lhs, rhs.clone(), x.range))
     }
 
     /// When interpreted as static types (as opposed to when accounting for runtime
@@ -331,7 +329,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         format!("Unary {} is not supported on {}", x.op.as_str(), t),
                     ),
                 };
-                self.distribute_over_union(&t, errors, |t| match x.op {
+                self.distribute_over_union(&t, |t| match x.op {
                     UnaryOp::USub => {
                         let f = |lit: &Lit| {
                             lit.negate(self.stdlib, self.module_info(), x.range, errors)
@@ -415,14 +413,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     match condition_type.as_bool() {
                         Some(true) => body_type,
                         Some(false) => orelse_type,
-                        None => self.union(body_type, orelse_type, errors),
+                        None => self.union(body_type, orelse_type),
                     }
                 }
             }
             Expr::Tuple(x) => {
                 let ts = match hint {
                     Some(Type::Tuple(Tuple::Concrete(elts))) if elts.len() == x.elts.len() => elts,
-                    Some(ty) => match self.decompose_tuple(ty, errors) {
+                    Some(ty) => match self.decompose_tuple(ty) {
                         Some(elem_ty) => &vec![elem_ty; x.elts.len()],
                         None => &Vec::new(),
                     },
@@ -437,7 +435,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 )
             }
             Expr::List(x) => {
-                let hint = hint.and_then(|ty| self.decompose_list(ty, errors));
+                let hint = hint.and_then(|ty| self.decompose_list(ty));
                 if let Some(hint) = hint {
                     x.elts.iter().for_each(|x| {
                         self.expr(x, Some(&hint), errors);
@@ -450,11 +448,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let tys = x
                         .elts
                         .map(|x| self.expr_infer(x, errors).promote_literals(self.stdlib));
-                    self.stdlib.list(self.unions(tys, errors)).to_type()
+                    self.stdlib.list(self.unions(tys)).to_type()
                 }
             }
             Expr::Dict(x) => {
-                let unwrapped_hint = hint.and_then(|ty| self.decompose_dict(ty, errors));
+                let unwrapped_hint = hint.and_then(|ty| self.decompose_dict(ty));
                 let flattened_items = Ast::flatten_dict_items(&x.items);
                 if let Some(hint @ Type::TypedDict(box typed_dict)) = hint {
                     self.check_dict_items_against_typed_dict(
@@ -502,7 +500,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                         None => {
                             let value_t = self.expr(&x.value, None, errors);
-                            if let Some(unwrapped) = self.decompose_dict(&value_t, errors) {
+                            if let Some(unwrapped) = self.decompose_dict(&value_t) {
                                 key_tys.push(unwrapped.key);
                                 value_tys.push(unwrapped.value);
                             } else {
@@ -514,13 +512,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         }
                     });
-                    let key_ty = self.unions(key_tys, errors);
-                    let value_ty = self.unions(value_tys, errors);
+                    let key_ty = self.unions(key_tys);
+                    let value_ty = self.unions(value_tys);
                     self.stdlib.dict(key_ty, value_ty).to_type()
                 }
             }
             Expr::Set(x) => {
-                let hint = hint.and_then(|ty| self.decompose_set(ty, errors));
+                let hint = hint.and_then(|ty| self.decompose_set(ty));
                 if let Some(hint) = hint {
                     x.elts.iter().for_each(|x| {
                         self.expr(x, Some(&hint), errors);
@@ -533,11 +531,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let tys = x
                         .elts
                         .map(|x| self.expr_infer(x, errors).promote_literals(self.stdlib));
-                    self.stdlib.set(self.unions(tys, errors)).to_type()
+                    self.stdlib.set(self.unions(tys)).to_type()
                 }
             }
             Expr::ListComp(x) => {
-                let hint = hint.and_then(|ty| self.decompose_list(ty, errors));
+                let hint = hint.and_then(|ty| self.decompose_list(ty));
                 self.ifs_infer(&x.generators, errors);
                 if let Some(hint) = hint {
                     self.expr(&x.elt, Some(&hint), errors);
@@ -550,7 +548,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::SetComp(x) => {
-                let hint = hint.and_then(|ty| self.decompose_set(ty, errors));
+                let hint = hint.and_then(|ty| self.decompose_set(ty));
                 self.ifs_infer(&x.generators, errors);
                 if let Some(hint) = hint {
                     self.expr(&x.elt, Some(&hint), errors);
@@ -563,7 +561,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::DictComp(x) => {
-                let hint = hint.and_then(|ty| self.decompose_dict(ty, errors));
+                let hint = hint.and_then(|ty| self.decompose_dict(ty));
                 self.ifs_infer(&x.generators, errors);
                 if let Some(hint) = hint {
                     self.expr(&x.key, Some(&hint.key), errors);
@@ -588,7 +586,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Await(x) => {
                 let awaiting_ty = self.expr_infer(&x.value, errors);
-                match self.unwrap_awaitable(&awaiting_ty, errors) {
+                match self.unwrap_awaitable(&awaiting_ty) {
                     Some(ty) => ty,
                     None => self.error(errors, x.range, "Expression is not awaitable".to_owned()),
                 }
@@ -750,7 +748,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Expr::Starred(x) => CallArg::Star(&x.value, x.range),
                         _ => CallArg::Expr(arg),
                     });
-                    self.distribute_over_union(&ty_fun, errors, |ty| {
+                    self.distribute_over_union(&ty_fun, |ty| {
                         let callable = self.as_call_target_or_error(
                             ty.clone(),
                             CallStyle::FreeForm,

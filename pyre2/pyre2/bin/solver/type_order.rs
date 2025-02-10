@@ -14,7 +14,6 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::Attribute;
-use crate::error::collector::ErrorCollector;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
@@ -62,13 +61,8 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.get_all_member_names(cls)
     }
 
-    pub fn try_lookup_attr(
-        self,
-        base: Type,
-        attr_name: &Name,
-        errors: &ErrorCollector,
-    ) -> Option<Attribute> {
-        self.0.try_lookup_attr(base, attr_name, errors)
+    pub fn try_lookup_attr(self, base: Type, attr_name: &Name) -> Option<Attribute> {
+        self.0.try_lookup_attr(base, attr_name)
     }
 
     pub fn resolve_as_instance_method(self, attr: Attribute) -> Option<Type> {

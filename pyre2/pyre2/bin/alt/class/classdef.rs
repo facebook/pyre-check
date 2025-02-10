@@ -499,14 +499,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(errors,range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
             }
 
-            if let Some(enum_value_ty) = self.type_of_enum_value(enum_, errors) {
+            if let Some(enum_value_ty) = self.type_of_enum_value(enum_) {
                 if !matches!(value_ty, Type::Tuple(_))
-                    && !self.solver().is_subset_eq(
-                        value_ty,
-                        &enum_value_ty,
-                        self.type_order(),
-                        errors,
-                    )
+                    && !self
+                        .solver()
+                        .is_subset_eq(value_ty, &enum_value_ty, self.type_order())
                 {
                     self.error(errors,range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name));
                 }
