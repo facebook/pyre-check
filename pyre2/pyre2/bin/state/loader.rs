@@ -21,7 +21,13 @@ use crate::module::module_path::ModulePath;
 use crate::util::arc_id::ArcId;
 
 #[derive(Debug, Clone, Dupe)]
-pub struct FindError(pub Arc<anyhow::Error>);
+pub struct FindError(Arc<anyhow::Error>);
+
+impl FindError {
+    pub fn new(err: anyhow::Error) -> Self {
+        Self(Arc::new(err))
+    }
+}
 
 impl Display for FindError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

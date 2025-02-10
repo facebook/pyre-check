@@ -158,9 +158,7 @@ impl Loader for TestEnv {
         } else if lookup_test_stdlib(module).is_some() {
             Ok((ModulePath::memory(default_path(module)), style))
         } else {
-            Err(FindError(Arc::new(anyhow!(
-                "Module not given in test suite"
-            ))))
+            Err(FindError::new(anyhow!("Module not given in test suite")))
         }
     }
 

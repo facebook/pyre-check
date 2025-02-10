@@ -9,7 +9,6 @@ use std::cmp::Ordering;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use anyhow::anyhow;
 use anyhow::Context as _;
@@ -169,9 +168,7 @@ impl Loader for BuckSourceDatabase {
             LookupResult::ExternalSource(path) => {
                 Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Never))
             }
-            LookupResult::NoSource => {
-                Err(FindError(Arc::new(anyhow!("Not a dependency or typeshed"))))
-            }
+            LookupResult::NoSource => Err(FindError::new(anyhow!("Not a dependency or typeshed"))),
         }
     }
 }

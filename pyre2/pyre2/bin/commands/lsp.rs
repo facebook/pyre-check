@@ -158,12 +158,12 @@ impl Loader for LspLoader {
         }
         if let Some(path) = find_module(module, &self.search_roots) {
             Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Never))
-        } else if let Some(path) = typeshed().map_err(|e| FindError(Arc::new(e)))?.find(module) {
+        } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok((path, ErrorStyle::Never))
         } else {
-            Err(FindError(Arc::new(anyhow!(
+            Err(FindError::new(anyhow!(
                 "Could not find path for `{module}`"
-            ))))
+            )))
         }
     }
 

@@ -12,7 +12,6 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -105,12 +104,12 @@ impl Loader for CheckLoader {
                 ModulePath::filesystem(path),
                 self.error_style_for_dependencies,
             ))
-        } else if let Some(path) = typeshed().map_err(|e| FindError(Arc::new(e)))?.find(module) {
+        } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok((path, self.error_style_for_dependencies))
         } else {
-            Err(FindError(Arc::new(anyhow::anyhow!(
+            Err(FindError::new(anyhow::anyhow!(
                 "Could not find path for `{module}`"
-            ))))
+            )))
         }
     }
 }
