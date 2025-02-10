@@ -19,7 +19,6 @@ use anyhow::Context as _;
 use clap::Parser;
 use clap::ValueEnum;
 use dupe::Dupe;
-use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use tracing::info;
 
@@ -44,6 +43,7 @@ use crate::util::display::number_thousands;
 use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
 use crate::util::memory::MemoryUsageTrace;
+use crate::util::prelude::VecExt;
 
 #[derive(Debug, Clone, ValueEnum, Default)]
 enum OutputFormat {
@@ -95,6 +95,8 @@ struct CheckLoader {
 impl Loader for CheckLoader {
     fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         if let Some(path) = self.sources.get(&module) {
+            // FIXME: Because we pre-created these handles, the only real reason to do this
+            // is for the error-style, which is a pretty weird reason to do it.
             Ok((
                 ModulePath::filesystem(path.clone()),
                 self.error_style_for_sources,
@@ -148,20 +150,9 @@ impl Args {
         }
 
         let mut to_check = SmallMap::with_capacity(args.files.len());
-        for file in args.files {
-            let module = module_from_path(&file, &include);
-            match to_check.entry(module) {
-                Entry::Vacant(new_entry) => {
-                    new_entry.insert(file);
-                }
-                Entry::Occupied(old_entry) => {
-                    return Err(anyhow::anyhow!(
-                        "Two files map to the same module: `{}` and `{}` both map to `{module}`",
-                        file.display(),
-                        old_entry.get().display()
-                    ));
-                }
-            }
+        for file in &args.files {
+            let module = module_from_path(file, &include);
+            to_check.entry(module).or_insert_with(|| file.clone());
         }
         let config = match &args.python_version {
             None => Config::default(),
@@ -174,7 +165,7 @@ impl Args {
         };
         let loader = LoaderId::new(CheckLoader {
             sources: to_check.clone(),
-            search_roots: include,
+            search_roots: include.clone(),
             error_style_for_sources,
             error_style_for_dependencies: if args.check_all {
                 error_style_for_sources
@@ -182,17 +173,14 @@ impl Args {
                 ErrorStyle::Never
             },
         });
-        let handles = to_check
-            .into_iter()
-            .map(|(name, path)| {
-                Handle::new(
-                    name,
-                    ModulePath::filesystem(path),
-                    config.dupe(),
-                    loader.dupe(),
-                )
-            })
-            .collect::<Vec<_>>();
+        let handles = args.files.into_map(|x| {
+            Handle::new(
+                module_from_path(&x, &include),
+                ModulePath::filesystem(x),
+                config.dupe(),
+                loader.dupe(),
+            )
+        });
 
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
