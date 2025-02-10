@@ -10,7 +10,6 @@ use std::ops::Deref;
 use itertools::Either;
 use itertools::Itertools;
 use ruff_python_ast::name::Name;
-use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
@@ -74,7 +73,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         cls: &Class,
         bases: &[Expr],
         keywords: &[(Name, Expr)],
-        decorators: &[Decorator],
+        decorators: &[Idx<Key>],
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         let mut is_typed_dict = false;
@@ -205,7 +204,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
         }
         for decorator in decorators {
-            let ty_decorator = self.expr(&decorator.expression, None, errors);
+            let ty_decorator = self.get_idx(*decorator);
             if let Some(CalleeKind::Callable(CallableKind::Dataclass(kws))) =
                 ty_decorator.callee_kind()
             {

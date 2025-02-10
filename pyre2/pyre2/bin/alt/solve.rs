@@ -1036,7 +1036,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                 ));
                 for x in decorators.iter().rev() {
-                    ty = self.apply_decorator(x, ty, errors)
+                    ty = self.apply_decorator(*x, ty, errors)
                 }
                 ty
             }
@@ -1227,6 +1227,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let binding_ty = self.get_idx(*key).arc_clone();
                 self.attr_infer(&binding_ty, &attr.id, attr.range, errors)
             }
+            Binding::Decorator(expr) => self.expr_infer(expr, errors),
         }
     }
 
@@ -1307,7 +1308,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         );
         let mut ty = callable.forall(self.type_params(x.def.range, tparams, errors));
         for x in x.decorators.iter().rev() {
-            ty = self.apply_decorator(x, ty, errors)
+            ty = self.apply_decorator(*x, ty, errors)
         }
         ty
     }

@@ -10,6 +10,7 @@ use std::mem;
 use itertools::Either;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::Comprehension;
+use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBoolOp;
 use ruff_python_ast::ExprLambda;
@@ -28,6 +29,7 @@ use crate::binding::scope::Flow;
 use crate::binding::scope::Scope;
 use crate::dunder;
 use crate::export::special::SpecialExport;
+use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::types::AnyStyle;
 use crate::visitors::Visitors;
@@ -258,5 +260,17 @@ impl<'a> BindingsBuilder<'a> {
         if let Some(x) = x {
             self.ensure_type(x, tparams_builder);
         }
+    }
+
+    pub fn ensure_and_bind_decorators(&mut self, decorators: Vec<Decorator>) -> Vec<Idx<Key>> {
+        let mut decorator_keys = Vec::with_capacity(decorators.len());
+        for x in decorators {
+            self.ensure_expr(&x.expression);
+            let k = self
+                .table
+                .insert(Key::Anon(x.range), Binding::Decorator(x.expression));
+            decorator_keys.push(k);
+        }
+        decorator_keys
     }
 }

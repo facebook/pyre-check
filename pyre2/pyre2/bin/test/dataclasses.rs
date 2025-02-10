@@ -305,3 +305,13 @@ def f(d: D2, e: D2, f: D3):
     if e != f: ...  # OK: `==` and `!=` never error regardless
     "#,
 );
+
+testcase!(
+    test_bad_keyword,
+    r#"
+from dataclasses import dataclass
+@dataclass(flibbertigibbet=True)  # E: Unexpected keyword argument
+class C:
+    pass
+    "#,
+);

@@ -40,11 +40,7 @@ use crate::util::prelude::SliceExt;
 impl<'a> BindingsBuilder<'a> {
     pub fn class_def(&mut self, mut x: StmtClassDef) {
         let body = mem::take(&mut x.body);
-        let decorators = mem::take(&mut x.decorator_list);
-
-        for x in decorators.iter() {
-            self.ensure_expr(&x.expression);
-        }
+        let decorators = self.ensure_and_bind_decorators(mem::take(&mut x.decorator_list));
 
         self.scopes.push(Scope::annotation());
 

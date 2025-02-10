@@ -89,7 +89,7 @@ impl<'a> BindingsBuilder<'a> {
 
     pub fn function_def(&mut self, mut x: StmtFunctionDef) {
         let body = mem::take(&mut x.body);
-        let decorators = mem::take(&mut x.decorator_list);
+        let decorators = self.ensure_and_bind_decorators(mem::take(&mut x.decorator_list));
         let kind = if is_ellipse(&body) {
             FunctionKind::Stub
         } else {
@@ -103,10 +103,6 @@ impl<'a> BindingsBuilder<'a> {
             ScopeKind::ClassBody(body) => Some(self.table.types.0.insert(body.as_self_type_key())),
             _ => None,
         };
-
-        for x in decorators.iter() {
-            self.ensure_expr(&x.expression);
-        }
 
         self.scopes.push(Scope::annotation());
 

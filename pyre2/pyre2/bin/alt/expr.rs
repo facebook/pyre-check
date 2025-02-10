@@ -11,7 +11,6 @@ use ruff_python_ast::Arguments;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::Comprehension;
-use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprSlice;
@@ -33,6 +32,7 @@ use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
+use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
@@ -266,7 +266,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Apply a decorator. This effectively synthesizes a function call.
     pub fn apply_decorator(
         &self,
-        decorator: &Decorator,
+        decorator: Idx<Key>,
         decoratee: Type,
         errors: &ErrorCollector,
     ) -> Type {
@@ -275,7 +275,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // itself depends on a TypeVar.
             return decoratee;
         }
-        let ty_decorator = self.expr(&decorator.expression, None, errors);
+        let ty_decorator = self.get_idx(decorator);
         match ty_decorator.callee_kind() {
             Some(CalleeKind::Class(ClassKind::StaticMethod)) => {
                 return Type::Decoration(Decoration::StaticMethod(Box::new(decoratee)));
@@ -291,10 +291,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             _ => {}
         }
-        match ty_decorator {
+        match &*ty_decorator {
             Type::Decoration(Decoration::PropertySetterDecorator(getter)) => {
                 return Type::Decoration(Decoration::Property(Box::new((
-                    *getter,
+                    (**getter).clone(),
                     Some(decoratee),
                 ))));
             }
@@ -304,11 +304,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // TODO: don't blanket ignore class decorators.
             return decoratee;
         }
-        let call_target = {
-            self.as_call_target_or_error(ty_decorator, CallStyle::FreeForm, decorator.range, errors)
-        };
-        let arg = CallArg::Type(&decoratee, decorator.range);
-        self.call_infer(call_target, &[arg], &[], decorator.range, errors)
+        let range = self.bindings().idx_to_key(decorator).range();
+        let call_target = self.as_call_target_or_error(
+            ty_decorator.arc_clone(),
+            CallStyle::FreeForm,
+            range,
+            errors,
+        );
+        let arg = CallArg::Type(&decoratee, range);
+        self.call_infer(call_target, &[arg], &[], range, errors)
     }
 
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>, errors: &ErrorCollector) -> Type {
