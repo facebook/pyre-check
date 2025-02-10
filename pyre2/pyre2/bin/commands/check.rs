@@ -12,6 +12,7 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -93,7 +94,7 @@ struct CheckLoader {
 }
 
 impl Loader for CheckLoader {
-    fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
         if let Some(path) = self.sources.get(&module) {
             Ok((
                 ModulePath::filesystem(path.clone()),
@@ -107,7 +108,9 @@ impl Loader for CheckLoader {
         } else if let Some(path) = typeshed()?.find(module) {
             Ok((path, self.error_style_for_dependencies))
         } else {
-            Err(anyhow::anyhow!("Could not find path for `{module}`"))
+            Err(Arc::new(anyhow::anyhow!(
+                "Could not find path for `{module}`"
+            )))
         }
     }
 }

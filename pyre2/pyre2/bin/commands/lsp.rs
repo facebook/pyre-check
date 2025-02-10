@@ -149,7 +149,7 @@ struct LspLoader {
 }
 
 impl Loader for LspLoader {
-    fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
         for path in self.open_files.lock().unwrap().keys() {
             if module_from_path(path, &self.search_roots) == module {
                 return Ok((ModulePath::memory(path.clone()), ErrorStyle::Delayed));
@@ -160,7 +160,7 @@ impl Loader for LspLoader {
         } else if let Some(path) = typeshed()?.find(module) {
             Ok((path, ErrorStyle::Never))
         } else {
-            Err(anyhow!("Could not find path for `{module}`"))
+            Err(Arc::new(anyhow!("Could not find path for `{module}`")))
         }
     }
 

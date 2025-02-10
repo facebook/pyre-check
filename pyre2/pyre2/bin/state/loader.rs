@@ -19,7 +19,7 @@ use crate::util::arc_id::ArcId;
 /// A function that loads a module, given the `ModuleName`.
 pub trait Loader: Sync + Debug {
     /// Return `Err` to indicate the module could not be found.
-    fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)>;
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>>;
 
     /// Load a file from memory, if you can find it. Only called if `find` returns
     /// a `ModulePath::memory`.
@@ -33,7 +33,7 @@ pub trait Loader: Sync + Debug {
 pub struct LoaderId(ArcId<dyn Loader + Send>);
 
 impl Loader for LoaderId {
-    fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
         self.0.find(module)
     }
 

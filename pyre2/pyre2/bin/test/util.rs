@@ -138,7 +138,7 @@ impl TestEnv {
 }
 
 impl Loader for TestEnv {
-    fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
         let style = ErrorStyle::Immediate;
         if let Some((path, contents)) = self.0.get(&module) {
             match contents {
@@ -148,7 +148,7 @@ impl Loader for TestEnv {
         } else if lookup_test_stdlib(module).is_some() {
             Ok((ModulePath::memory(default_path(module)), style))
         } else {
-            Err(anyhow!("Module not given in test suite"))
+            Err(Arc::new(anyhow!("Module not given in test suite")))
         }
     }
 

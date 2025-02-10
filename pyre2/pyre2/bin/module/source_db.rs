@@ -9,6 +9,7 @@ use std::cmp::Ordering;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use anyhow::anyhow;
 use anyhow::Context as _;
@@ -156,7 +157,7 @@ impl BuckSourceDatabase {
 }
 
 impl Loader for BuckSourceDatabase {
-    fn find(&self, module: ModuleName) -> anyhow::Result<(ModulePath, ErrorStyle)> {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), Arc<anyhow::Error>> {
         match self.lookup(module) {
             LookupResult::OwningSource(path) => {
                 Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Delayed))
@@ -164,7 +165,7 @@ impl Loader for BuckSourceDatabase {
             LookupResult::ExternalSource(path) => {
                 Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Never))
             }
-            LookupResult::NoSource => Err(anyhow!("Not a dependency or typeshed")),
+            LookupResult::NoSource => Err(Arc::new(anyhow!("Not a dependency or typeshed"))),
         }
     }
 }
