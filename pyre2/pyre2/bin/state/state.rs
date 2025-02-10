@@ -233,7 +233,7 @@ impl State {
     fn lookup_stdlib(&self, handle: &Handle, name: &Name) -> Option<Class> {
         if !self
             .lookup_export(handle)
-            .is_ok_and(|x| x.contains(name, &self.lookup(handle)))
+            .contains(name, &self.lookup(handle))
         {
             self.add_error(
                 handle,
@@ -263,15 +263,11 @@ impl State {
         }
     }
 
-    fn lookup_export(&self, handle: &Handle) -> Result<Exports, FindError> {
+    fn lookup_export(&self, handle: &Handle) -> Exports {
         self.demand(handle, Step::Exports);
         let m = self.get_module(handle);
         let lock = m.steps.read().unwrap();
-        if let Some(err) = &lock.load.get().unwrap().import_error {
-            Err(err.dupe())
-        } else {
-            Ok(lock.exports.get().unwrap().dupe())
-        }
+        lock.exports.get().unwrap().dupe()
     }
 
     fn lookup_answer<'b, K: Solve<StateHandle<'b>> + Keyed<EXPORTED = true>>(
@@ -608,8 +604,9 @@ struct StateHandle<'a> {
 
 impl<'a> LookupExport for StateHandle<'a> {
     fn get(&self, module: ModuleName) -> Result<Exports, FindError> {
-        self.state
-            .lookup_export(&self.state.import_handle(&self.handle, module)?)
+        Ok(self
+            .state
+            .lookup_export(&self.state.import_handle(&self.handle, module)?))
     }
 }
 

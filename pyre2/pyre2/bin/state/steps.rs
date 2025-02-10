@@ -30,7 +30,6 @@ use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
 use crate::module::module_path::ModuleStyle;
 use crate::state::info::Info;
-use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
 use crate::util::fs_anyhow;
@@ -51,7 +50,6 @@ pub struct Context<'a, Lookup> {
 pub struct Load {
     pub errors: ErrorCollector,
     pub module_info: ModuleInfo,
-    pub import_error: Option<FindError>,
 }
 
 #[derive(Debug, Default)]
@@ -149,15 +147,12 @@ impl Step {
         let module_path = ctx.path.dupe();
         let mut code = Arc::new("".to_owned());
         let mut error_style = ErrorStyle::Never;
-        let mut import_error = None;
         let mut self_error = None;
 
         // FIXME: We have `find` asking for information about the module, but we don't use the path
         // since we got that passed in. We shouldn't really be calling find here.
         match ctx.loader.find(ctx.module) {
-            Err(err) => {
-                import_error = Some(err);
-            }
+            Err(_) => {}
             Ok((_, s)) => {
                 error_style = s;
                 let res = match module_path.details() {
@@ -206,7 +201,6 @@ impl Step {
         Arc::new(Load {
             errors,
             module_info,
-            import_error,
         })
     }
 
