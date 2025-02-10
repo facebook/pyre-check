@@ -108,7 +108,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             return true;
         }
         let to = self.type_order;
-        let protocol_members = to.get_all_member_names(protocol.class_object(), errors);
+        let protocol_members = to.get_all_member_names(protocol.class_object());
         for name in protocol_members {
             if name == dunder::INIT || name == dunder::NEW {
                 // Protocols can't be instantiated
@@ -267,16 +267,13 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 true
             }
             (Type::ClassType(got), Type::ClassType(want)) => {
-                let got_is_protocol = self.type_order.is_protocol(got.class_object(), errors);
-                let want_is_protocol = self.type_order.is_protocol(want.class_object(), errors);
+                let got_is_protocol = self.type_order.is_protocol(got.class_object());
+                let want_is_protocol = self.type_order.is_protocol(want.class_object());
                 if got_is_protocol && !want_is_protocol {
                     // Protocols are never assignable to concrete types
                     return false;
                 }
-                match self
-                    .type_order
-                    .as_superclass(got, want.class_object(), errors)
-                {
+                match self.type_order.as_superclass(got, want.class_object()) {
                     Some(got) => {
                         self.check_targs(got.targs(), want.targs(), want.tparams(), errors)
                     }
@@ -287,32 +284,30 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     _ => false,
                 }
             }
-            (_, Type::ClassType(want))
-                if self.type_order.is_protocol(want.class_object(), errors) =>
-            {
+            (_, Type::ClassType(want)) if self.type_order.is_protocol(want.class_object()) => {
                 self.is_subset_protocol(got.clone(), want.clone(), errors)
             }
             (Type::ClassType(got), Type::BoundMethod(_) | Type::Callable(_, _))
-                if self.type_order.is_protocol(got.class_object(), errors)
+                if self.type_order.is_protocol(got.class_object())
                     && let Some(call_ty) = self.get_call_attr(got, errors) =>
             {
                 self.is_subset_eq(&call_ty, want, errors)
             }
             (Type::ClassDef(got), Type::ClassDef(want)) => {
-                self.type_order.has_superclass(got, want, errors)
+                self.type_order.has_superclass(got, want)
             }
-            (Type::ClassDef(got), Type::Type(box Type::ClassType(want))) => self
-                .type_order
-                .has_superclass(got, want.class_object(), errors),
-            (Type::Type(box Type::ClassType(got)), Type::ClassDef(want)) => self
-                .type_order
-                .has_superclass(got.class_object(), want, errors),
+            (Type::ClassDef(got), Type::Type(box Type::ClassType(want))) => {
+                self.type_order.has_superclass(got, want.class_object())
+            }
+            (Type::Type(box Type::ClassType(got)), Type::ClassDef(want)) => {
+                self.type_order.has_superclass(got.class_object(), want)
+            }
             (Type::ClassDef(got), Type::ClassType(want)) => {
-                self.type_order.has_metaclass(got, want, errors)
+                self.type_order.has_metaclass(got, want)
             }
-            (Type::Type(box Type::ClassType(got)), Type::ClassType(want)) => self
-                .type_order
-                .has_metaclass(got.class_object(), want, errors),
+            (Type::Type(box Type::ClassType(got)), Type::ClassType(want)) => {
+                self.type_order.has_metaclass(got.class_object(), want)
+            }
             (Type::ClassDef(_), Type::Type(box Type::Any(_)))
             | (Type::Type(box Type::Any(_)), Type::ClassDef(_)) => true,
             (Type::Tuple(Tuple::Concrete(lelts)), Type::Tuple(Tuple::Concrete(uelts))) => {

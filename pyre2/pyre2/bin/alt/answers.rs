@@ -152,6 +152,10 @@ pub struct AnswersSolver<'a, Ans: LookupAnswer> {
     exports: &'a dyn LookupExport,
     answers: &'a Ans,
     current: &'a Answers,
+    // The base solver is only used to reset the error collector at binding
+    // boundaries. Answers code should generally use the error collector passed
+    // along the call stack instead.
+    base_errors: &'a ErrorCollector,
     bindings: &'a Bindings,
     pub uniques: &'a UniqueFactory,
     pub recurser: &'a Recurser<Var>,
@@ -343,9 +347,9 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyClassSynthesizedFields {
     fn solve(
         answers: &AnswersSolver<Ans>,
         binding: &BindingClassSynthesizedFields,
-        errors: &ErrorCollector,
+        _errors: &ErrorCollector,
     ) -> Arc<ClassSynthesizedFields> {
-        answers.solve_class_synthesized_fields(binding, errors)
+        answers.solve_class_synthesized_fields(binding)
     }
 
     fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}
@@ -379,9 +383,9 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyLegacyTypeParam {
     fn solve(
         answers: &AnswersSolver<Ans>,
         binding: &BindingLegacyTypeParam,
-        errors: &ErrorCollector,
+        _errors: &ErrorCollector,
     ) -> Arc<LegacyTypeParameterLookup> {
-        answers.solve_legacy_tparam(binding, errors)
+        answers.solve_legacy_tparam(binding)
     }
 
     fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
@@ -430,7 +434,6 @@ impl Answers {
         fn pre_solve<Ans: LookupAnswer, K: Solve<Ans>>(
             items: &mut SolutionsEntry<K>,
             answers: &AnswersSolver<Ans>,
-            errors: &ErrorCollector,
             exported_only: bool,
         ) where
             AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
@@ -442,7 +445,7 @@ impl Answers {
             }
             for idx in answers.bindings.keys::<K>() {
                 let k = answers.bindings.idx_to_key(idx);
-                let v = answers.get(k, errors);
+                let v = answers.get(k);
                 if retain {
                     items.insert(k.clone(), Arc::unwrap_or_clone(v));
                 }
@@ -452,6 +455,7 @@ impl Answers {
             stdlib,
             answers,
             bindings,
+            base_errors: errors,
             exports,
             uniques,
             recurser: &Recurser::new(),
@@ -460,7 +464,6 @@ impl Answers {
         table_mut_for_each!(&mut res, |items| pre_solve(
             items,
             &answers_solver,
-            errors,
             exported_only
         ));
 
@@ -493,11 +496,12 @@ impl Answers {
             uniques,
             answers,
             bindings,
+            base_errors: errors,
             exports,
             recurser: &Recurser::new(),
             current: self,
         };
-        solver.get(key, errors)
+        solver.get(key)
     }
 }
 
@@ -518,7 +522,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         module: ModuleName,
         k: &K,
-        errors: &ErrorCollector,
     ) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
@@ -526,7 +529,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         if module == self.module_info().name() {
-            self.get(k, errors)
+            self.get(k)
         } else {
             self.answers.get(module, k)
         }
@@ -536,21 +539,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         cls: &Class,
         k: &K,
-        errors: &ErrorCollector,
     ) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
-        self.get_from_module(cls.module_info().name(), k, errors)
+        self.get_from_module(cls.module_info().name(), k)
     }
 
     pub fn type_order(&self) -> TypeOrder<Ans> {
         TypeOrder::new(self)
     }
 
-    pub fn get_idx<K: Solve<Ans>>(&self, idx: Idx<K>, errors: &ErrorCollector) -> Arc<K::Answer>
+    pub fn get_idx<K: Solve<Ans>>(&self, idx: Idx<K>) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -567,13 +569,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let result = calculation.calculate_with_recursive(
             || {
                 let binding = self.bindings().get(idx);
-                K::solve(self, binding, errors)
+                K::solve(self, binding, self.base_errors)
             },
             || K::recursive(self),
         );
         if let Ok((v, Some(r))) = &result {
             let k = self.bindings().idx_to_key(idx);
-            K::record_recursive(self, k, v.dupe(), r.clone(), errors);
+            K::record_recursive(self, k, v.dupe(), r.clone(), self.base_errors);
         }
         match result {
             Ok((v, _)) => v,
@@ -581,12 +583,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get<K: Solve<Ans>>(&self, k: &K, errors: &ErrorCollector) -> Arc<K::Answer>
+    pub fn get<K: Solve<Ans>>(&self, k: &K) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        self.get_idx(self.bindings().key_to_idx(k), errors)
+        self.get_idx(self.bindings().key_to_idx(k))
     }
 
     fn record_recursive(
@@ -658,16 +660,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Type::any_error()
     }
 
-    pub fn get_import(
-        &self,
-        name: &Name,
-        from: ModuleName,
-        errors: &ErrorCollector,
-    ) -> Option<Type> {
+    pub fn get_import(&self, name: &Name, from: ModuleName) -> Option<Type> {
         if let Ok(exports) = self.exports.get(from) {
             if exports.contains(name, self.exports) {
                 Some(
-                    self.get_from_module(from, &KeyExport(name.clone()), errors)
+                    self.get_from_module(from, &KeyExport(name.clone()))
                         .arc_clone(),
                 )
             } else {

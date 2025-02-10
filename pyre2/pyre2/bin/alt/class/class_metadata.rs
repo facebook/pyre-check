@@ -89,7 +89,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 BaseClass::Expr(x) => match self.expr_untype(x, errors) {
                     Type::ClassType(c) => {
                         let cls = c.class_object();
-                        let class_metadata = self.get_metadata_for_class(cls, errors);
+                        let class_metadata = self.get_metadata_for_class(cls);
                         if class_metadata.is_typed_dict() {
                             is_typed_dict = true;
                         }
@@ -113,18 +113,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     Type::Tuple(Tuple::Concrete(ts)) => {
                         let class_ty = self.stdlib.tuple(self.unions(ts, errors));
-                        let metadata = self.get_metadata_for_class(class_ty.class_object(), errors);
+                        let metadata = self.get_metadata_for_class(class_ty.class_object());
                         Some((class_ty, metadata))
                     }
                     Type::Tuple(Tuple::Unbounded(t)) => {
                         let class_ty = self.stdlib.tuple(*t);
-                        let metadata = self.get_metadata_for_class(class_ty.class_object(), errors);
+                        let metadata = self.get_metadata_for_class(class_ty.class_object());
                         Some((class_ty, metadata))
                     }
                     Type::TypedDict(typed_dict) => {
                         is_typed_dict = true;
                         let class_object = typed_dict.class_object();
-                        let class_metadata = self.get_metadata_for_class(class_object, errors);
+                        let class_metadata = self.get_metadata_for_class(class_object);
                         Some((
                             typed_dict.as_class_type(),
                             class_metadata,
@@ -245,9 +245,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// `expr_untype` and creating a `BaseClass::Type`.
     ///
     /// TODO(stroxler): See if there's a way to express this more clearly in the types.
-    fn special_base_class(&self, base_expr: &Expr, errors: &ErrorCollector) -> Option<BaseClass> {
+    fn special_base_class(&self, base_expr: &Expr) -> Option<BaseClass> {
         if let Expr::Name(name) = base_expr {
-            match &*self.get(&Key::Usage(ShortIdentifier::expr_name(name)), errors) {
+            match &*self.get(&Key::Usage(ShortIdentifier::expr_name(name))) {
                 Type::Type(box Type::SpecialForm(special)) => match special {
                     SpecialForm::Protocol => Some(BaseClass::Protocol(Vec::new())),
                     SpecialForm::Generic => Some(BaseClass::Generic(Vec::new())),
@@ -262,11 +262,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn base_class_of(&self, base_expr: &Expr, errors: &ErrorCollector) -> BaseClass {
-        if let Some(special_base_class) = self.special_base_class(base_expr, errors) {
+        if let Some(special_base_class) = self.special_base_class(base_expr) {
             // This branch handles cases like `Protocol`
             special_base_class
         } else if let Expr::Subscript(subscript) = base_expr
-            && let Some(mut special_base_class) = self.special_base_class(&subscript.value, errors)
+            && let Some(mut special_base_class) = self.special_base_class(&subscript.value)
             && special_base_class.can_apply()
         {
             // This branch handles `Generic[...]` and `Protocol[...]`
@@ -289,7 +289,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> TParams {
         let legacy_tparams = legacy
             .iter()
-            .filter_map(|key| self.get_idx(*key, errors).deref().parameter().cloned())
+            .filter_map(|key| self.get_idx(*key).deref().parameter().cloned())
             .collect::<SmallSet<_>>();
         let legacy_map = legacy_tparams
             .iter()

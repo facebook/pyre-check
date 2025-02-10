@@ -19,7 +19,6 @@ use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
-use crate::error::collector::ErrorCollector;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
@@ -52,18 +51,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         all_fields
     }
 
-    pub fn get_dataclass_synthesized_fields(
-        &self,
-        cls: &Class,
-        errors: &ErrorCollector,
-    ) -> Option<ClassSynthesizedFields> {
-        let metadata = self.get_metadata_for_class(cls, errors);
+    pub fn get_dataclass_synthesized_fields(&self, cls: &Class) -> Option<ClassSynthesizedFields> {
+        let metadata = self.get_metadata_for_class(cls);
         let dataclass = metadata.dataclass_metadata()?;
         let mut fields = SmallMap::new();
         if dataclass.kws.init {
             fields.insert(
                 dunder::INIT,
-                self.get_dataclass_init(cls, &dataclass.fields, dataclass.kws.kw_only, errors),
+                self.get_dataclass_init(cls, &dataclass.fields, dataclass.kws.kw_only),
             );
         }
         if dataclass.kws.order {
@@ -72,26 +67,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if dataclass.kws.match_args {
             fields.insert(
                 dunder::MATCH_ARGS,
-                self.get_dataclass_match_args(
-                    cls,
-                    &dataclass.fields,
-                    dataclass.kws.kw_only,
-                    errors,
-                ),
+                self.get_dataclass_match_args(cls, &dataclass.fields, dataclass.kws.kw_only),
             );
         }
         Some(ClassSynthesizedFields::new(fields))
     }
 
-    fn iter_fields(
-        &self,
-        cls: &Class,
-        fields: &SmallSet<Name>,
-        errors: &ErrorCollector,
-    ) -> Vec<(Name, ClassField, bool)> {
+    fn iter_fields(&self, cls: &Class, fields: &SmallSet<Name>) -> Vec<(Name, ClassField, bool)> {
         let mut kw_only = false;
         fields.iter().filter_map(|name| {
-            let field @ ClassField(ClassFieldInner::Simple { ty, .. }) = &self.get_class_member(cls, name, errors).unwrap().value;
+            let field @ ClassField(ClassFieldInner::Simple { ty, .. }) = &self.get_class_member(cls, name).unwrap().value;
             // A field with type KW_ONLY is a sentinel value that indicates that the remaining
             // fields should be keyword-only params in the generated `__init__`.
             if matches!(ty, Type::ClassType(cls) if cls.class_object().has_qname("dataclasses", "KW_ONLY")) {
@@ -109,14 +94,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         cls: &Class,
         fields: &SmallSet<Name>,
         kw_only: bool,
-        errors: &ErrorCollector,
     ) -> ClassSynthesizedField {
         let mut params = vec![Param::Pos(
             Name::new("self"),
             cls.self_type(),
             Required::Required,
         )];
-        for (name, field, field_kw_only) in self.iter_fields(cls, fields, errors) {
+        for (name, field, field_kw_only) in self.iter_fields(cls, fields) {
             params.push(field.as_param(&name, kw_only || field_kw_only));
         }
         let ty = Type::Callable(
@@ -131,13 +115,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         cls: &Class,
         fields: &SmallSet<Name>,
         kw_only: bool,
-        errors: &ErrorCollector,
     ) -> ClassSynthesizedField {
         // Keyword-only fields do not appear in __match_args__.
         let ts = if kw_only {
             Vec::new()
         } else {
-            let filtered_fields = self.iter_fields(cls, fields, errors);
+            let filtered_fields = self.iter_fields(cls, fields);
             filtered_fields
                 .iter()
                 .filter_map(|(name, _, field_kw_only)| {

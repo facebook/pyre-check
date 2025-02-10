@@ -25,13 +25,13 @@ use crate::util::prelude::SliceExt;
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     // Get the union of all members of an enum, minus the specified member
     fn subtract_enum_member(&self, cls: &ClassType, name: &Name, errors: &ErrorCollector) -> Type {
-        let e = self.get_enum_from_class_type(cls, errors).unwrap();
+        let e = self.get_enum_from_class_type(cls).unwrap();
         // Enums derived from enum.Flag cannot be treated as a union of their members
         if e.is_flag {
             return Type::ClassType(cls.clone());
         }
         self.unions(
-            self.get_enum_members(cls.class_object(), errors)
+            self.get_enum_members(cls.class_object())
                 .into_iter()
                 .filter_map(|f| {
                     if let Lit::Enum(box (_, member_name, _)) = &f
@@ -136,7 +136,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Option<Type> {
-        let unwrapped = self.unwrap_class_object_silently(ty, errors);
+        let unwrapped = self.unwrap_class_object_silently(ty);
         if unwrapped.is_none() {
             self.error(errors, range, format!("Expected class object, got {}", ty));
         }

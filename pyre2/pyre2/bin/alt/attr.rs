@@ -416,24 +416,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn lookup_attr(&self, base: Type, attr_name: &Name, errors: &ErrorCollector) -> LookupResult {
         match self.as_attribute_base(base.clone(), self.stdlib, errors) {
             Some(AttributeBase::ClassInstance(class)) => {
-                match self.get_instance_attribute(&class, attr_name, errors) {
+                match self.get_instance_attribute(&class, attr_name) {
                     Some(attr) => LookupResult::Found(attr),
                     None => LookupResult::NotFound(NotFound::Attribute(class)),
                 }
             }
             Some(AttributeBase::ClassObject(class)) => {
-                match self.get_class_attribute(&class, attr_name, errors) {
+                match self.get_class_attribute(&class, attr_name) {
                     Some(attr) => LookupResult::Found(attr),
                     None => {
                         // Classes are instances of their metaclass, which defaults to `builtins.type`.
-                        let metadata = self.get_metadata_for_class(&class, errors);
+                        let metadata = self.get_metadata_for_class(&class);
                         let instance_attr = match metadata.metaclass() {
-                            Some(meta) => self.get_instance_attribute(meta, attr_name, errors),
-                            None => self.get_instance_attribute(
-                                &self.stdlib.builtins_type(),
-                                attr_name,
-                                errors,
-                            ),
+                            Some(meta) => self.get_instance_attribute(meta, attr_name),
+                            None => {
+                                self.get_instance_attribute(&self.stdlib.builtins_type(), attr_name)
+                            }
                         };
                         match instance_attr {
                             Some(attr) => LookupResult::Found(attr),
@@ -442,12 +440,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
             }
-            Some(AttributeBase::Module(module)) => {
-                match self.get_module_attr(&module, attr_name, errors) {
-                    Some(attr) => LookupResult::found_type(attr),
-                    None => LookupResult::NotFound(NotFound::ModuleExport(module)),
-                }
-            }
+            Some(AttributeBase::Module(module)) => match self.get_module_attr(&module, attr_name) {
+                Some(attr) => LookupResult::found_type(attr),
+                None => LookupResult::NotFound(NotFound::ModuleExport(module)),
+            },
             Some(AttributeBase::Quantified(q)) => {
                 if q.is_param_spec() && attr_name == "args" {
                     LookupResult::found_type(Type::type_form(Type::Args(q)))
@@ -455,7 +451,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     LookupResult::found_type(Type::type_form(Type::Kwargs(q)))
                 } else {
                     let class = q.as_value(self.stdlib);
-                    match self.get_instance_attribute(&class, attr_name, errors) {
+                    match self.get_instance_attribute(&class, attr_name) {
                         Some(attr) => LookupResult::Found(attr),
                         None => LookupResult::NotFound(NotFound::Attribute(class)),
                     }
@@ -464,7 +460,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(AttributeBase::TypeAny(style)) => {
                 let builtins_type_classtype = self.stdlib.builtins_type();
                 LookupResult::found_type(
-                    self.get_instance_attribute(&builtins_type_classtype, attr_name, errors)
+                    self.get_instance_attribute(&builtins_type_classtype, attr_name)
                         .and_then(|attr| self.resolve_as_instance_method(attr))
                         .map_or_else(|| style.propagate(), |ty| ty),
                 )
@@ -495,14 +491,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn get_module_attr(
-        &self,
-        module: &Module,
-        attr_name: &Name,
-        errors: &ErrorCollector,
-    ) -> Option<Type> {
+    fn get_module_attr(&self, module: &Module, attr_name: &Name) -> Option<Type> {
         match module.as_single_module() {
-            Some(module_name) => self.get_import(attr_name, module_name, errors),
+            Some(module_name) => self.get_import(attr_name, module_name),
             None => {
                 // TODO: This is fallable, but we don't detect it yet.
                 Some(module.push_path(attr_name.clone()).to_type())

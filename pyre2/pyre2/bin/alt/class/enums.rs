@@ -16,23 +16,17 @@ use crate::alt::class::classdef::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::binding::binding::ClassFieldInitialization;
-use crate::error::collector::ErrorCollector;
 use crate::types::class::Class;
 use crate::types::literal::Lit;
 use crate::types::types::Decoration;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    pub fn get_enum_member(
-        &self,
-        cls: &Class,
-        name: &Name,
-        errors: &ErrorCollector,
-    ) -> Option<Lit> {
+    pub fn get_enum_member(&self, cls: &Class, name: &Name) -> Option<Lit> {
         if let Some(ClassField(ClassFieldInner::Simple {
             ty: Type::Literal(lit),
             ..
-        })) = self.get_class_field(cls, name, errors)
+        })) = self.get_class_field(cls, name)
             && matches!(&lit, Lit::Enum(box (lit_cls, ..)) if lit_cls.class_object() == cls)
         {
             Some(lit)
@@ -41,9 +35,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get_enum_members(&self, cls: &Class, errors: &ErrorCollector) -> SmallSet<Lit> {
+    pub fn get_enum_members(&self, cls: &Class) -> SmallSet<Lit> {
         cls.fields()
-            .filter_map(|f| self.get_enum_member(cls, f, errors))
+            .filter_map(|f| self.get_enum_member(cls, f))
             .collect()
     }
 
@@ -82,19 +76,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get_enum_synthesized_fields(
-        &self,
-        cls: &Class,
-        errors: &ErrorCollector,
-    ) -> Option<ClassSynthesizedFields> {
-        let metadata = self.get_metadata_for_class(cls, errors);
+    pub fn get_enum_synthesized_fields(&self, cls: &Class) -> Option<ClassSynthesizedFields> {
+        let metadata = self.get_metadata_for_class(cls);
         let enum_metadata = metadata.enum_metadata()?;
         let mut fields = SmallMap::new();
         // Enum classes cannot inherit members.
         for name in cls.fields() {
             if let Some(ClassField(ClassFieldInner::Simple {
                 ty, initialization, ..
-            })) = self.get_class_field(cls, name, errors)
+            })) = self.get_class_field(cls, name)
             {
                 if self.is_valid_enum_member(name, &ty, initialization) {
                     let lit = Type::Literal(Lit::Enum(Box::new((

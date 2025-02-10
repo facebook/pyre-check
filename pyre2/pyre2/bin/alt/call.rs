@@ -71,25 +71,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     /// Return a pair of the quantified variables I had to instantiate, and the resulting call target.
-    pub fn as_call_target(
-        &self,
-        ty: Type,
-        errors: &ErrorCollector,
-    ) -> Option<(Vec<Var>, CallTarget)> {
+    pub fn as_call_target(&self, ty: Type) -> Option<(Vec<Var>, CallTarget)> {
         match ty {
             Type::Callable(c, CallableKind::Dataclass(_)) => {
                 Some((Vec::new(), CallTarget::Dataclass(*c)))
             }
             Type::Callable(c, _) => Some((Vec::new(), CallTarget::Callable(*c))),
             Type::BoundMethod(box BoundMethod { obj, func }) => match self
-                .as_call_target(func.clone(), errors)
+                .as_call_target(func.clone())
             {
                 Some((gs, CallTarget::Callable(c))) => Some((gs, CallTarget::BoundMethod(obj, c))),
                 _ => None,
             },
-            Type::ClassDef(cls) => {
-                self.as_call_target(self.instantiate_fresh(&cls, errors), errors)
-            }
+            Type::ClassDef(cls) => self.as_call_target(self.instantiate_fresh(&cls)),
             Type::Type(box Type::ClassType(cls)) => Some((Vec::new(), CallTarget::Class(cls))),
             Type::Forall(params, t) => {
                 let (mut qs, t) = self.solver().fresh_quantified(
@@ -97,18 +91,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     *t,
                     self.uniques,
                 );
-                self.as_call_target(t, errors).map(|(qs2, x)| {
+                self.as_call_target(t).map(|(qs2, x)| {
                     qs.extend(qs2);
                     (qs, x)
                 })
             }
             Type::Var(v) if let Some(_guard) = self.recurser.recurse(v) => {
-                self.as_call_target(self.solver().force_var(v), errors)
+                self.as_call_target(self.solver().force_var(v))
             }
             Type::Union(xs) => {
                 let res = xs
                     .into_iter()
-                    .map(|x| self.as_call_target(x, errors))
+                    .map(|x| self.as_call_target(x))
                     .collect::<Option<SmallSet<_>>>()?;
                 if res.len() == 1 {
                     Some(res.into_iter().next().unwrap())
@@ -117,11 +111,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Type::Any(style) => Some((Vec::new(), CallTarget::any(style))),
-            Type::TypeAlias(ta) => self.as_call_target(ta.as_value(self.stdlib), errors),
+            Type::TypeAlias(ta) => self.as_call_target(ta.as_value(self.stdlib)),
             Type::ClassType(cls) => self
-                .get_instance_attribute(&cls, &dunder::CALL, errors)
+                .get_instance_attribute(&cls, &dunder::CALL)
                 .and_then(|attr| self.resolve_as_instance_method(attr))
-                .and_then(|ty| self.as_call_target(ty, errors)),
+                .and_then(|ty| self.as_call_target(ty)),
             Type::Type(box Type::TypedDict(typed_dict)) => {
                 Some((Vec::new(), CallTarget::TypedDict(*typed_dict)))
             }
@@ -136,7 +130,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> (Vec<Var>, CallTarget) {
-        match self.as_call_target(ty.clone(), errors) {
+        match self.as_call_target(ty.clone()) {
             Some(target) => target,
             None => {
                 let expect_message = match call_style {
@@ -217,7 +211,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         errors: &ErrorCollector,
     ) -> Option<Type> {
-        let dunder_call = match self.get_metaclass_dunder_call(cls, errors)? {
+        let dunder_call = match self.get_metaclass_dunder_call(cls)? {
             Type::BoundMethod(box BoundMethod { func, .. }) => {
                 // This method was bound to a general instance of the metaclass, but we have more
                 // information about the particular instance that it should be bound to.
@@ -260,7 +254,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // Got something other than an instance of the class under construction.
             return ret;
         }
-        let overrides_new = if let Some(new_method) = self.get_dunder_new(&cls, errors) {
+        let overrides_new = if let Some(new_method) = self.get_dunder_new(&cls) {
             let cls_ty = Type::type_form(instance_ty.clone());
             let mut full_args = vec![CallArg::Type(&cls_ty, range)];
             full_args.extend_from_slice(args);
@@ -287,7 +281,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             false
         };
-        if let Some(init_method) = self.get_dunder_init(&cls, overrides_new, errors) {
+        if let Some(init_method) = self.get_dunder_init(&cls, overrides_new) {
             self.call_infer(
                 self.as_call_target_or_error(
                     init_method,
@@ -314,7 +308,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         // We know `__init__` exists because we synthesize it.
         let init_method = self
-            .get_dunder_init(&typed_dict.as_class_type(), false, errors)
+            .get_dunder_init(&typed_dict.as_class_type(), false)
             .unwrap();
         self.call_infer(
             self.as_call_target_or_error(

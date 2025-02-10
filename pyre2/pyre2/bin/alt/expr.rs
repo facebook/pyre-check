@@ -154,15 +154,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// are gradual if needed (e.g. `list` is treated as `list[Any]` when used as an annotation).
     ///
     /// This function canonicalizes to `Type::ClassType` or `Type::TypedDict`
-    pub fn canonicalize_all_class_types(
-        &self,
-        ty: Type,
-        range: TextRange,
-        errors: &ErrorCollector,
-    ) -> Type {
+    pub fn canonicalize_all_class_types(&self, ty: Type, range: TextRange) -> Type {
         ty.transform(|ty| match ty {
             Type::ClassDef(cls) => {
-                *ty = Type::type_form(self.promote(cls, range, errors));
+                *ty = Type::type_form(self.promote(cls, range));
             }
             _ => {}
         })
@@ -359,9 +354,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Lambda(lambda) => {
                 let hint_callable = hint.and_then(|ty| {
-                    if let Some((_, CallTarget::Callable(c))) =
-                        self.as_call_target(ty.clone(), errors)
-                    {
+                    if let Some((_, CallTarget::Callable(c))) = self.as_call_target(ty.clone()) {
                         Some(c)
                     } else {
                         None
@@ -373,7 +366,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         .iter()
                         .map(|p| {
                             let ty = self
-                                .get(&Key::Definition(ShortIdentifier::new(p.name())), errors)
+                                .get(&Key::Definition(ShortIdentifier::new(p.name())))
                                 .arc_clone();
                             Param::Pos(p.name().clone().id, ty, Required::Required)
                         })
@@ -602,24 +595,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Yield(x) => {
                 let yield_expr_type = &self
-                    .get(&Key::YieldTypeOfYieldAnnotation(x.range), errors)
+                    .get(&Key::YieldTypeOfYieldAnnotation(x.range))
                     .arc_clone();
                 let yield_value = Ast::yield_or_none(x);
                 let inferred_expr_type = &self.expr_infer(&yield_value, errors);
 
                 self.check_type(yield_expr_type, inferred_expr_type, x.range, errors);
 
-                self.get(&Key::SendTypeOfYieldAnnotation(x.range()), errors)
+                self.get(&Key::SendTypeOfYieldAnnotation(x.range()))
                     .arc_clone()
             }
             Expr::YieldFrom(y) => {
                 let inferred_expr_type = &self.expr_infer(&y.value, errors);
-                let final_generator_type =
-                    &*self.get(&Key::TypeOfYieldAnnotation(x.range()), errors);
+                let final_generator_type = &*self.get(&Key::TypeOfYieldAnnotation(x.range()));
 
                 self.check_type(final_generator_type, inferred_expr_type, x.range(), errors);
 
-                self.get(&Key::ReturnTypeOfYieldAnnotation(x.range()), errors)
+                self.get(&Key::ReturnTypeOfYieldAnnotation(x.range()))
                     .arc_clone()
             }
             Expr::Compare(x) => {
@@ -690,12 +682,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let a = self.canonicalize_all_class_types(
                         self.solver().deep_force(a).explicit_any().anon_callables(),
                         expr_a.range(),
-                        errors,
                     );
                     let b = self.canonicalize_all_class_types(
                         self.solver().deep_force(b).explicit_any().anon_callables(),
                         expr_b.range(),
-                        errors,
                     );
                     if a != b {
                         self.error(
@@ -989,7 +979,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::Name(x) => match x.id.as_str() {
                 "Any" => Type::type_form(Type::any_explicit()),
                 _ => self
-                    .get(&Key::Usage(ShortIdentifier::expr_name(x)), errors)
+                    .get(&Key::Usage(ShortIdentifier::expr_name(x)))
                     .arc_clone(),
             },
             Expr::Slice(_) => {

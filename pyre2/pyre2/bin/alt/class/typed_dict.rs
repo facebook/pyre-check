@@ -129,7 +129,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         cls: &Class,
         targs: &TArgs,
-        errors: &ErrorCollector,
     ) -> OrderedMap<Name, TypedDictField> {
         let tparams = cls.tparams();
         let substitution = Substitution::new(
@@ -138,7 +137,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .zip(targs.as_slice().iter().cloned())
                 .collect(),
         );
-        let metadata = self.get_metadata_for_class(cls, errors);
+        let metadata = self.get_metadata_for_class(cls);
         metadata
             .typed_dict_metadata()
             .unwrap()
@@ -152,7 +151,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             qualifiers,
                         }),
                     ..
-                }) = self.get_class_member(cls, name, errors).unwrap().value
+                }) = self.get_class_member(cls, name).unwrap().value
                 {
                     Some((
                         name.clone(),
@@ -179,7 +178,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         cls: &Class,
         fields: &SmallMap<Name, bool>,
-        errors: &ErrorCollector,
     ) -> ClassSynthesizedField {
         let mut params = vec![Param::Pos(
             Name::new("self"),
@@ -187,7 +185,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Required::Required,
         )];
         for (name, _) in fields {
-            let field = self.get_class_member(cls, name, errors).unwrap().value;
+            let field = self.get_class_member(cls, name).unwrap().value;
             params.push(field.as_param(name, true));
         }
         let ty = Type::Callable(
@@ -197,15 +195,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ClassSynthesizedField::new(ty, false)
     }
 
-    pub fn get_typed_dict_synthesized_fields(
-        &self,
-        cls: &Class,
-        errors: &ErrorCollector,
-    ) -> Option<ClassSynthesizedFields> {
-        let metadata = self.get_metadata_for_class(cls, errors);
+    pub fn get_typed_dict_synthesized_fields(&self, cls: &Class) -> Option<ClassSynthesizedFields> {
+        let metadata = self.get_metadata_for_class(cls);
         let td = metadata.typed_dict_metadata()?;
         Some(ClassSynthesizedFields::new(
-            smallmap! { dunder::INIT => self.get_typed_dict_init(cls, &td.fields, errors) },
+            smallmap! { dunder::INIT => self.get_typed_dict_init(cls, &td.fields) },
         ))
     }
 }
