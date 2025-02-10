@@ -39,8 +39,10 @@ use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModulePath;
 use crate::report::debug_info::DebugInfo;
 use crate::state::handle::Handle;
+use crate::state::loader::Loader;
 use crate::state::loader::LoaderFindCache;
 use crate::state::loader::LoaderId;
 use crate::state::steps::Context;
@@ -123,7 +125,12 @@ impl State {
     }
 
     pub fn import_handle(&self, handle: &Handle, module: ModuleName) -> Handle {
-        Handle::new(module, handle.config().dupe(), handle.loader().dupe())
+        Handle::new(
+            module,
+            self.get_cached_find(handle.loader(), module),
+            handle.config().dupe(),
+            handle.loader().dupe(),
+        )
     }
 
     fn demand(&self, handle: &Handle, step: Step) {
@@ -158,7 +165,7 @@ impl State {
             }
 
             let stdlib = self.get_stdlib(handle);
-            let loader = self.get_cached_loader(handle);
+            let loader = self.get_cached_loader(handle.loader());
             let set = compute(&Context {
                 module: handle.module(),
                 config: handle.config(),
@@ -364,14 +371,16 @@ impl State {
         }
     }
 
-    fn get_cached_loader(&self, handle: &Handle) -> Arc<LoaderFindCache<LoaderId>> {
+    fn get_cached_find(&self, loader: &LoaderId, module: ModuleName) -> ModulePath {
+        match self.get_cached_loader(loader).find(module) {
+            Ok(path) => path.0,
+            Err(_) => ModulePath::not_found(module),
+        }
+    }
+
+    fn get_cached_loader(&self, loader: &LoaderId) -> Arc<LoaderFindCache<LoaderId>> {
         // Safe because we always fill these in before starting
-        self.loaders
-            .read()
-            .unwrap()
-            .get(handle.loader())
-            .unwrap()
-            .dupe()
+        self.loaders.read().unwrap().get(loader).unwrap().dupe()
     }
 
     fn get_stdlib(&self, handle: &Handle) -> Arc<Stdlib> {
@@ -395,7 +404,8 @@ impl State {
                 (
                     (c.dupe(), l.dupe()),
                     Arc::new(Stdlib::new(|module, name| {
-                        self.lookup_stdlib(&Handle::new(module, c.dupe(), l.dupe()), name)
+                        let path = self.get_cached_find(l, module);
+                        self.lookup_stdlib(&Handle::new(module, path, c.dupe(), l.dupe()), name)
                     })),
                 )
             })

@@ -272,6 +272,7 @@ impl<'a> Server<'a> {
             .map(|x| {
                 Handle::new(
                     module_from_path(x, &self.include),
+                    ModulePath::memory(x.clone()),
                     self.config.dupe(),
                     self.loader.dupe(),
                 )
@@ -334,8 +335,14 @@ impl<'a> Server<'a> {
     }
 
     fn make_handle(&self, uri: &Url) -> Handle {
-        let module = module_from_path(&uri.to_file_path().unwrap(), &self.include);
-        Handle::new(module, self.config.dupe(), self.loader.dupe())
+        let path = uri.to_file_path().unwrap();
+        let module = module_from_path(&path, &self.include);
+        let module_path = if self.open_files.lock().unwrap().contains_key(&path) {
+            ModulePath::memory(path)
+        } else {
+            ModulePath::filesystem(path)
+        };
+        Handle::new(module, module_path, self.config.dupe(), self.loader.dupe())
     }
 
     fn goto_definition(&self, params: GotoDefinitionParams) -> Option<GotoDefinitionResponse> {

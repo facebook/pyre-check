@@ -30,7 +30,6 @@ use crate::state::state::State;
 use crate::test::stdlib::lookup_test_stdlib;
 use crate::types::class::Class;
 use crate::types::types::Type;
-use crate::util::prelude::VecExt;
 use crate::util::trace::init_tracing;
 
 #[macro_export]
@@ -130,13 +129,22 @@ impl TestEnv {
 
     pub fn to_state(self) -> (State, impl Fn(&str) -> Handle) {
         let config = Self::config();
-        let modules = self.0.keys().copied().collect::<Vec<_>>();
-        let loader = LoaderId::new(self);
-        let handles = modules.into_map(|x| Handle::new(x, config.dupe(), loader.dupe()));
+        let loader = LoaderId::new(self.clone());
+        let handles = self
+            .0
+            .into_iter()
+            .map(|(x, (path, _))| Handle::new(x, path, config.dupe(), loader.dupe()))
+            .collect();
         let mut state = State::new(true);
         state.run(handles);
         (state, move |module| {
-            Handle::new(ModuleName::from_str(module), Self::config(), loader.dupe())
+            let name = ModuleName::from_str(module);
+            Handle::new(
+                name,
+                loader.find(name).unwrap().0,
+                Self::config(),
+                loader.dupe(),
+            )
         })
     }
 }

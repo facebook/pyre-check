@@ -141,8 +141,11 @@ impl BuckSourceDatabase {
         }
     }
 
-    pub fn modules_to_check(&self) -> Vec<ModuleName> {
-        self.sources.keys().copied().collect()
+    pub fn modules_to_check(&self) -> Vec<(ModuleName, PathBuf)> {
+        self.sources
+            .iter()
+            .flat_map(|(name, paths)| paths.iter().map(|path| (*name, path.clone())))
+            .collect()
     }
 
     fn lookup(&self, module: ModuleName) -> LookupResult {

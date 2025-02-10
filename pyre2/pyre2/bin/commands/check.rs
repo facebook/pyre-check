@@ -44,7 +44,6 @@ use crate::util::display::number_thousands;
 use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
 use crate::util::memory::MemoryUsageTrace;
-use crate::util::prelude::VecExt;
 
 #[derive(Debug, Clone, ValueEnum, Default)]
 enum OutputFormat {
@@ -175,9 +174,8 @@ impl Args {
         } else {
             ErrorStyle::Immediate
         };
-        let modules = to_check.keys().copied().collect::<Vec<_>>();
         let loader = LoaderId::new(CheckLoader {
-            sources: to_check,
+            sources: to_check.clone(),
             search_roots: include,
             error_style_for_sources,
             error_style_for_dependencies: if args.check_all {
@@ -186,7 +184,17 @@ impl Args {
                 ErrorStyle::Never
             },
         });
-        let handles = modules.into_map(|x| Handle::new(x, config.dupe(), loader.dupe()));
+        let handles = to_check
+            .into_iter()
+            .map(|(name, path)| {
+                Handle::new(
+                    name,
+                    ModulePath::filesystem(path),
+                    config.dupe(),
+                    loader.dupe(),
+                )
+            })
+            .collect::<Vec<_>>();
 
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();

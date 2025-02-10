@@ -13,6 +13,7 @@ use crate::config::Config;
 use crate::config::PythonVersion;
 use crate::module::module_name::ModuleName;
 use crate::state::handle::Handle;
+use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
 use crate::test::util::TestEnv;
@@ -42,7 +43,8 @@ else:
 
     let f = |name: &str, config: &Config| {
         let name = ModuleName::from_str(name);
-        Handle::new(name, config.dupe(), loader.dupe())
+        let path = loader.find(name).unwrap().0;
+        Handle::new(name, path, config.dupe(), loader.dupe())
     };
 
     state.run(vec![
