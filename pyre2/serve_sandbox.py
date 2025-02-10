@@ -189,9 +189,18 @@ def run_server(build_system: str) -> None:
     httpd.serve_forever()
 
 
-if __name__ == "__main__":
+def main() -> None:
+    global build_system
     if len(sys.argv) != 2 or sys.argv[1] not in ["cargo", "buck"]:
         print("Specify how to run Pyre2 - Usage: python server.py {buck | cargo}")
         sys.exit(1)
-    build_system: str = sys.argv[1]
+    build_system = sys.argv[1]
     run_server(build_system)
+
+
+build_system: str
+
+
+if __name__ == "__main__":
+    # Do not add code here, it won't be run. Add them to the function called below.
+    main()  # pragma: no cover
