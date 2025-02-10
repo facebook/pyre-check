@@ -125,13 +125,13 @@ impl State {
         }
     }
 
-    pub fn import_handle(&self, handle: &Handle, module: ModuleName) -> Handle {
-        Handle::new(
+    pub fn import_handle(&self, handle: &Handle, module: ModuleName) -> Result<Handle, FindError> {
+        Ok(Handle::new(
             module,
-            self.get_cached_find(handle.loader(), module),
+            self.get_cached_find(handle.loader(), module)?,
             handle.config().dupe(),
             handle.loader().dupe(),
-        )
+        ))
     }
 
     fn demand(&self, handle: &Handle, step: Step) {
@@ -373,11 +373,12 @@ impl State {
         }
     }
 
-    fn get_cached_find(&self, loader: &LoaderId, module: ModuleName) -> ModulePath {
-        match self.get_cached_loader(loader).find(module) {
-            Ok(path) => path.0,
-            Err(_) => ModulePath::not_found(module),
-        }
+    fn get_cached_find(
+        &self,
+        loader: &LoaderId,
+        module: ModuleName,
+    ) -> Result<ModulePath, FindError> {
+        self.get_cached_loader(loader).find(module).map(|x| x.0)
     }
 
     fn get_cached_loader(&self, loader: &LoaderId) -> Arc<LoaderFindCache<LoaderId>> {
@@ -406,7 +407,7 @@ impl State {
                 (
                     (c.dupe(), l.dupe()),
                     Arc::new(Stdlib::new(|module, name| {
-                        let path = self.get_cached_find(l, module);
+                        let path = self.get_cached_find(l, module).ok()?;
                         self.lookup_stdlib(&Handle::new(module, path, c.dupe(), l.dupe()), name)
                     })),
                 )
@@ -608,7 +609,7 @@ struct StateHandle<'a> {
 impl<'a> LookupExport for StateHandle<'a> {
     fn get(&self, module: ModuleName) -> Result<Exports, FindError> {
         self.state
-            .lookup_export(&self.state.import_handle(&self.handle, module))
+            .lookup_export(&self.state.import_handle(&self.handle, module)?)
     }
 }
 
@@ -623,7 +624,9 @@ impl<'a> LookupAnswer for StateHandle<'a> {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
-        self.state
-            .lookup_answer(&self.state.import_handle(&self.handle, module), k)
+        // The unwrap is safe because we must have said there were no exports,
+        // so no one can be trying to get at them
+        let handle = self.state.import_handle(&self.handle, module).unwrap();
+        self.state.lookup_answer(&handle, k)
     }
 }

@@ -99,6 +99,7 @@ impl ModulePath {
         Self(Arc::new(ModulePathDetails::BundledTypeshed(relative_path)))
     }
 
+    #[allow(dead_code)]
     pub fn not_found(module_name: ModuleName) -> Self {
         Self(Arc::new(ModulePathDetails::NotFound(module_name)))
     }
