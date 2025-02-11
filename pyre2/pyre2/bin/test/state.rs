@@ -83,10 +83,9 @@ fn test_multiple_path() {
     impl Loader for Load {
         fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
             match FILES.iter().find(|x| x.0 == module.as_str()) {
-                Some((_, path, _)) => Ok((
-                    ModulePath::memory(PathBuf::from(path)),
-                    ErrorStyle::Immediate,
-                )),
+                Some((_, path, _)) => {
+                    Ok((ModulePath::memory(PathBuf::from(path)), ErrorStyle::Delayed))
+                }
                 None => self.0.find(module),
             }
         }
@@ -110,6 +109,7 @@ fn test_multiple_path() {
             loader.dupe(),
         )
     }));
+    state.print_errors();
     state.check_against_expectations().unwrap();
     assert_eq!(state.collect_errors().len(), 3);
 }
