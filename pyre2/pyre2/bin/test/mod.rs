@@ -11,6 +11,7 @@ mod assign;
 mod attributes;
 mod callable;
 mod class_keywords;
+mod class_overrides;
 mod class_subtyping;
 mod config;
 mod constructors;
