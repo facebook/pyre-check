@@ -10,8 +10,6 @@ use dupe::Dupe;
 /// How should we print out errors for a particular module.
 #[derive(Debug, Clone, Dupe, Copy, PartialEq, Eq)]
 pub enum ErrorStyle {
-    /// As the error is detected, will be immediately printed and stored.
-    Immediate,
     /// Will not be printed immediately, but will be stored.
     Delayed,
     /// Errors will not be printed or stored.

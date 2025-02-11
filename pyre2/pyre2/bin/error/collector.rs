@@ -83,9 +83,6 @@ impl ErrorCollector {
             // Should we record these anyway? Not clear.
             return;
         }
-        if self.style == ErrorStyle::Immediate {
-            error!("{err}");
-        }
         if self.style != ErrorStyle::Never {
             self.errors.lock().unwrap().push(err);
         }
