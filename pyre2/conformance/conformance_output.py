@@ -196,7 +196,7 @@ def get_pyre2_command(test: bool) -> list[str]:
         "--reuse-current-config",
         "fbcode//tools/pyre/pyre2:pyre2",
         "--",
-        "expect-test",
+        "check",
         # We seem to be a bit non-deterministic in some places, so let's disable
         # parallelism for now.
         "--threads=1",

@@ -37,7 +37,7 @@ impl<T: clap::Args> Standard<T> {
 #[command(about = "Next generation of Pyre type checker", long_about = None)]
 enum Args {
     /// Test typing result a single file
-    #[clap(name = "check", alias = "expect-test")]
+    #[clap(name = "check")]
     ExpectTest(Standard<crate::commands::check::Args>),
 
     /// Entry point for Buck integration
