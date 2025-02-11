@@ -129,6 +129,8 @@ pub enum FlowStyle {
     /// Am I an alias for a module import, `import foo.bar as baz`
     /// would get `foo.bar` here.
     ImportAs(ModuleName),
+    /// Am I a function definition? Used to chain overload definitions.
+    FunctionDef,
 }
 
 #[derive(Debug, Clone)]

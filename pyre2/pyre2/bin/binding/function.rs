@@ -287,7 +287,11 @@ impl<'a> BindingsBuilder<'a> {
             },
         );
 
-        self.bind_definition(&func_name, Binding::Function(function_idx), None);
+        self.bind_definition(
+            &func_name,
+            Binding::Function(function_idx),
+            Some(FlowStyle::FunctionDef),
+        );
     }
 }
 
