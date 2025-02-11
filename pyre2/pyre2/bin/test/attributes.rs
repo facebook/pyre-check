@@ -56,6 +56,26 @@ class A:
     "#,
 );
 
+testcase_with_bug!(
+    "Example of how making methods read-write but not invariant is unsound",
+    test_method_assign,
+    r#"
+from typing import Protocol
+class X(Protocol):
+    def foo(self) -> object:
+        return 1
+class Y:
+    def foo(self) -> int:
+        return 1
+def func(x: X):
+    # ignore the below error
+    x.foo = lambda: "hi"  # E: EXPECTED () -> Literal['hi'] <: BoundMethod[X, (self: X) -> object]
+y: Y = Y()
+func(y)
+y.foo()  # result is "hi"
+    "#,
+);
+
 testcase!(
     test_use_of_class_body_scope_in_class_body_statement,
     r#"

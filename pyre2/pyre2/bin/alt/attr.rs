@@ -346,6 +346,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match (&got.0, &want.0) {
             (_, AttributeInner::NoAccess(_)) => true,
             (AttributeInner::NoAccess(_), _) => false,
+            (
+                AttributeInner::ReadWrite(got @ Type::BoundMethod(_)),
+                AttributeInner::ReadWrite(want @ Type::BoundMethod(_)),
+            ) => is_subset(got, want),
             (AttributeInner::ReadWrite(got), AttributeInner::ReadWrite(want)) => {
                 is_subset(got, want) && is_subset(want, got)
             }
