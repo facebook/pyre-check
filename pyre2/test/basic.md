@@ -3,7 +3,7 @@
 ## No errors on the empty file
 
 ```scrut
-$ $PYRE2 check ../empty -a
+$ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py -a
 * 0 errors, * (glob)
 [0]
 ```
