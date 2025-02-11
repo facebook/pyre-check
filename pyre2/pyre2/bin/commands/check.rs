@@ -106,10 +106,7 @@ impl Loader for CheckLoader {
                 self.error_style_for_sources,
             ))
         } else if let Some(path) = find_module(module, &self.search_roots) {
-            Ok((
-                ModulePath::filesystem(path),
-                self.error_style_for_dependencies,
-            ))
+            Ok((path, self.error_style_for_dependencies))
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok((path, self.error_style_for_dependencies))
         } else {

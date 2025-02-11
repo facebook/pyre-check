@@ -157,7 +157,7 @@ impl Loader for LspLoader {
             }
         }
         if let Some(path) = find_module(module, &self.search_roots) {
-            Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Never))
+            Ok((path, ErrorStyle::Never))
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok((path, ErrorStyle::Never))
         } else {

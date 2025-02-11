@@ -11,6 +11,7 @@ use ruff_python_ast::name::Name;
 use vec1::Vec1;
 
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModulePath;
 
 enum FindResult {
     /// Found a single-file module. The path must not point to an __init__ file.
@@ -53,7 +54,7 @@ fn find_one_part(name: &Name, roots: &[PathBuf]) -> Option<FindResult> {
     }
 }
 
-pub fn find_module(module: ModuleName, include: &[PathBuf]) -> Option<PathBuf> {
+pub fn find_module(module: ModuleName, include: &[PathBuf]) -> Option<ModulePath> {
     let parts = module.components();
     if parts.is_empty() {
         return None;
@@ -79,10 +80,12 @@ pub fn find_module(module: ModuleName, include: &[PathBuf]) -> Option<PathBuf> {
         }
     }
     current_result.map(|x| match x {
-        FindResult::SingleFileModule(path) | FindResult::RegularPackage(path, _) => path,
+        FindResult::SingleFileModule(path) | FindResult::RegularPackage(path, _) => {
+            ModulePath::filesystem(path)
+        }
         FindResult::NamespacePackage(roots) => {
             // TODO(grievejia): Preserving all info in the list instead of dropping all but the first one.
-            roots.first().clone()
+            ModulePath::filesystem(roots.first().clone())
         }
     })
 }
@@ -150,11 +153,11 @@ mod tests {
         );
         assert_eq!(
             find_module(ModuleName::from_str("foo.bar"), &[root.to_path_buf()]),
-            Some(root.join("foo/bar.py"))
+            Some(ModulePath::filesystem(root.join("foo/bar.py")))
         );
         assert_eq!(
             find_module(ModuleName::from_str("foo.baz"), &[root.to_path_buf()]),
-            Some(root.join("foo/baz.pyi"))
+            Some(ModulePath::filesystem(root.join("foo/baz.pyi")))
         );
         assert_eq!(
             find_module(ModuleName::from_str("foo.qux"), &[root.to_path_buf()]),
@@ -179,11 +182,11 @@ mod tests {
         );
         assert_eq!(
             find_module(ModuleName::from_str("foo.bar"), &[root.to_path_buf()]),
-            Some(root.join("foo/bar/__init__.py"))
+            Some(ModulePath::filesystem(root.join("foo/bar/__init__.py")))
         );
         assert_eq!(
             find_module(ModuleName::from_str("foo.baz"), &[root.to_path_buf()]),
-            Some(root.join("foo/baz/__init__.pyi"))
+            Some(ModulePath::filesystem(root.join("foo/baz/__init__.pyi")))
         );
     }
 
@@ -204,7 +207,7 @@ mod tests {
         );
         assert_eq!(
             find_module(ModuleName::from_str("foo.bar"), &[root.to_path_buf()]),
-            Some(root.join("foo/bar.pyi"))
+            Some(ModulePath::filesystem(root.join("foo/bar.pyi")))
         );
     }
 
@@ -225,7 +228,7 @@ mod tests {
         );
         assert_eq!(
             find_module(ModuleName::from_str("foo.bar"), &[root.to_path_buf()]),
-            Some(root.join("foo/bar/__init__.py"))
+            Some(ModulePath::filesystem(root.join("foo/bar/__init__.py")))
         );
     }
 
@@ -244,19 +247,19 @@ mod tests {
         let search_roots = [root.to_path_buf()];
         assert_eq!(
             find_module(ModuleName::from_str("a"), &search_roots),
-            Some(root.join("a"))
+            Some(ModulePath::filesystem(root.join("a")))
         );
         assert_eq!(
             find_module(ModuleName::from_str("b"), &search_roots),
-            Some(root.join("b"))
+            Some(ModulePath::filesystem(root.join("b")))
         );
         assert_eq!(
             find_module(ModuleName::from_str("c.d"), &search_roots),
-            Some(root.join("c/d"))
+            Some(ModulePath::filesystem(root.join("c/d")))
         );
         assert_eq!(
             find_module(ModuleName::from_str("c.d.e"), &search_roots),
-            Some(root.join("c/d/e.py"))
+            Some(ModulePath::filesystem(root.join("c/d/e.py")))
         );
     }
 
@@ -319,7 +322,7 @@ mod tests {
             ),
             // We will find `a.c` because `a` is a namespace package whose search roots
             // include both `search_root0/a/` and `search_root1/a/`.
-            Some(root.join("search_root1/a/c.py"))
+            Some(ModulePath::filesystem(root.join("search_root1/a/c.py")))
         );
     }
 }
