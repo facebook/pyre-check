@@ -25,6 +25,7 @@ From this directory, you can run:
 - Run a command: `buck2 run pyre2 -- COMMAND_LINE_ARGUMENTS`
   - For example, run on a single file: `buck2 run pyre2 -- check test.py`
 - Run a single test: `buck2 test pyre2 -- NAME_OF_THE_TEST`
+- Run the end-to-end tests: `buck2 test test:`
 - Run `arc pyre` (a.k.a. per-target type checking) with Pyre2:
   `arc pyre check <targets_to_check> -c python.type_checker=fbcode//tools/pyre/pyre2:pyre2_for_buck`
 - Debug a file: `buck2 run pyre2 -- check <filename> --debug-info=debug.js`,
