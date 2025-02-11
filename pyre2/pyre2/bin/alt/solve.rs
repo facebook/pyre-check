@@ -1026,7 +1026,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(values)
             }
-            Binding::Function(x) => self.get_idx(*x).ty.clone(),
+            Binding::Function(x, _pred) => self.get_idx(*x).ty.clone(),
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExport(name.clone()))
                 .arc_clone(),

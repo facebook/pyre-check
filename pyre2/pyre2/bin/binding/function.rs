@@ -89,6 +89,21 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     pub fn function_def(&mut self, mut x: StmtFunctionDef) {
+        // Get preceding function definition, if any. Used for building an overload type.
+        let pred_idx = self
+            .scopes
+            .current()
+            .flow
+            .info
+            .get(&x.name.id)
+            .and_then(|flow| {
+                if let Some(FlowStyle::FunctionDef) = flow.style {
+                    Some(flow.key)
+                } else {
+                    None
+                }
+            });
+
         let body = mem::take(&mut x.body);
         let decorators = self.ensure_and_bind_decorators(mem::take(&mut x.decorator_list));
         let kind = if is_ellipse(&body) {
@@ -289,7 +304,7 @@ impl<'a> BindingsBuilder<'a> {
 
         self.bind_definition(
             &func_name,
-            Binding::Function(function_idx),
+            Binding::Function(function_idx, pred_idx),
             Some(FlowStyle::FunctionDef),
         );
     }

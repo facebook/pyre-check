@@ -532,6 +532,7 @@ pub enum FunctionKind {
 
 #[derive(Clone, Debug)]
 pub struct FunctionBinding {
+    /// A function definition, but with the return/body stripped out.
     pub def: StmtFunctionDef,
     pub kind: FunctionKind,
     pub decorators: Box<[Idx<Key>]>,
@@ -607,8 +608,8 @@ pub enum Binding {
     StrType,
     /// A type parameter.
     TypeParameter(Quantified),
-    /// A function definition, but with the return/body stripped out.
-    Function(Idx<KeyFunction>),
+    /// The type of a function. Stores an optional reference to the predecessor of this function.
+    Function(Idx<KeyFunction>, Option<Idx<Key>>),
     /// An import statement, typically with Self::Import.
     Import(ModuleName, Name),
     /// A class definition, but with the body stripped out.
@@ -754,7 +755,7 @@ impl DisplayWith<Bindings> for Binding {
                 };
                 write!(f, "unpack {} {:?} @ {}", x.display_with(ctx), range, pos)
             }
-            Self::Function(x) => write!(f, "{}", ctx.display(*x)),
+            Self::Function(x, _pred) => write!(f, "{}", ctx.display(*x)),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::ClassDef(x) => write!(f, "class {}", x.def.name.id),
             Self::FunctionalClassDef(x, _) => write!(f, "class {}", x.id),
