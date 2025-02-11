@@ -158,11 +158,7 @@ impl Args {
             None => Config::default(),
             Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),
         };
-        let error_style_for_sources = if args.output.is_some() {
-            ErrorStyle::Delayed
-        } else {
-            ErrorStyle::Immediate
-        };
+        let error_style_for_sources = ErrorStyle::Delayed;
         let loader = LoaderId::new(CheckLoader {
             sources: to_check.clone(),
             search_roots: include.clone(),
@@ -198,6 +194,7 @@ impl Args {
             let errors = state.collect_errors();
             args.output_format.write_errors_to_file(&path, &errors)?;
         } else {
+            state.print_errors();
             state.check_against_expectations()?;
         }
         let printing = start.elapsed();
