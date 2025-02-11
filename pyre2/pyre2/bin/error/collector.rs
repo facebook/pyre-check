@@ -55,7 +55,7 @@ impl ModuleErrors {
 
 /// Collects the user errors (e.g. type errors) associated with a module.
 // Deliberately don't implement Clone,
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ErrorCollector {
     style: ErrorStyle,
     errors: Mutex<ModuleErrors>,
@@ -164,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_error_collector() {
-        let errors = ErrorCollector::default();
+        let errors = ErrorCollector::new(ErrorStyle::Delayed);
         let mi = ModuleInfo::new(
             ModuleName::from_name(&Name::new("main")),
             ModulePath::filesystem(Path::new("main.py").to_owned()),
