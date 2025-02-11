@@ -171,10 +171,7 @@ impl Step {
             }),
         };
         let (code, self_error) = match res {
-            Err(err) => (
-                Arc::new(String::new()),
-                Some(err.context(format!("When loading `{}` from `{}`", ctx.module, ctx.path))),
-            ),
+            Err(err) => (Arc::new(String::new()), Some(err)),
             Ok(res) => (res, None),
         };
 
@@ -185,7 +182,7 @@ impl Step {
                 &module_info,
                 TextRange::default(),
                 format!(
-                    "Failed to load {} from {}, got {err:#}",
+                    "Failed to load `{}` from `{}`, got {err:#}",
                     ctx.module,
                     module_info.path()
                 ),
