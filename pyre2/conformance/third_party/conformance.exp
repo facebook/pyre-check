@@ -15562,16 +15562,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED None <: Never",
-      "description": "EXPECTED None <: Never",
-      "line": 77,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 77
-    },
-    {
-      "code": -2,
       "column": 21,
       "concise_description": "EXPECTED list[Never] <: list[int]",
       "description": "EXPECTED list[Never] <: list[int]",

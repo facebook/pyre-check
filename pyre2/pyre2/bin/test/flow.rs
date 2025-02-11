@@ -74,10 +74,10 @@ from typing import assert_type, Any, Literal
 def f(condition) -> None:
     x = 1
     while condition():
-        assert_type(x, Literal[1] | list[int | Any])
+        assert_type(x, Literal[1] | list[Literal[1] | list[Any]])
         x = [x]
-        assert_type(x, list[int | list[int | Any]])
-    assert_type(x, Literal[1] | list[int | Any])
+        assert_type(x, list[Literal[1] | list[Any]])
+    assert_type(x, Literal[1] | list[Literal[1] | list[Any]])
     "#,
 );
 

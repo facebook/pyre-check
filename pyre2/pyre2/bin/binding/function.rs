@@ -147,18 +147,25 @@ impl<'a> BindingsBuilder<'a> {
         });
 
         let never = function_last_expressions(&body, self.config);
-        if never != Some(Vec::new()) && kind == FunctionKind::Impl {
-            // If we can reach the end, and the code is real (not just ellipse),
-            // check None is an OK return type.
-            // Note that we special case ellipse even in non-interface, as that is what Pyright does.
-            self.functions.last_mut().returns.push(StmtReturn {
-                range: match never.as_deref() {
-                    Some([x]) => x.range(), // Try and narrow the range
-                    _ => x.range,
-                },
-                value: None,
-            });
+        let mut return_never_keys: Vec<Idx<Key>> = Vec::new();
+        if let Some(exprs) = &never {
+            return_never_keys.reserve(exprs.len());
+            for expr in exprs {
+                let k: Key = Key::StmtExpr(expr.range());
+                let k_to_idx = self.table.types.0.insert(k);
+                return_never_keys.push(k_to_idx);
+            }
         }
+        let never_is_empty = never == Some(Vec::new());
+        let never_is_none = never.is_none();
+        // synthesize none value here to avoid cloning later
+        let fake_none_value = StmtReturn {
+            range: match never.as_deref() {
+                Some([x]) => x.range(), // Try and narrow the range
+                _ => x.range,
+            },
+            value: None,
+        };
 
         let legacy_tparam_builder = legacy.unwrap();
         legacy_tparam_builder.add_name_definitions(self);
@@ -197,20 +204,90 @@ impl<'a> BindingsBuilder<'a> {
         let accumulate = self.functions.pop().unwrap();
 
         let mut return_expr_keys = SmallSet::with_capacity(accumulate.returns.len());
-        for x in accumulate.returns.clone() {
-            let key = self.table.insert(
-                Key::ReturnExpression(ShortIdentifier::new(&func_name), x.range),
-                Binding::ReturnExpr(
-                    return_ann,
-                    Box::new(Ast::return_or_none_owned(x)),
-                    !accumulate.yields.is_empty(),
-                ),
-            );
-            return_expr_keys.insert(key);
+        let has_yields = !accumulate.yields.is_empty();
+
+        if !accumulate.returns.is_empty() {
+            if never_is_none {
+                let key = self.table.insert(
+                    Key::ReturnExpressionWithNone(ShortIdentifier::new(&func_name), x.range),
+                    Binding::ReturnExpr(
+                        return_ann,
+                        Box::new(Ast::return_or_none_owned(fake_none_value.clone())),
+                        has_yields,
+                    ),
+                );
+                return_expr_keys.insert(key);
+            }
+
+            if !(never_is_empty || never_is_none) {
+                let key = self.table.insert(
+                    Key::ReturnExpressionWithNone(
+                        ShortIdentifier::new(&func_name),
+                        x.clone().range,
+                    ),
+                    Binding::ReturnExprWithNone(
+                        return_ann,
+                        fake_none_value.range(),
+                        has_yields,
+                        return_never_keys.clone(),
+                    ),
+                );
+                return_expr_keys.insert(key);
+            }
+
+            for x in accumulate.returns.clone() {
+                if never_is_empty || never_is_none {
+                    let key = self.table.insert(
+                        Key::ReturnExpression(ShortIdentifier::new(&func_name), x.range),
+                        Binding::ReturnExpr(
+                            return_ann,
+                            Box::new(Ast::return_or_none_owned(x)),
+                            has_yields,
+                        ),
+                    );
+                    return_expr_keys.insert(key);
+                } else {
+                    let key = self.table.insert(
+                        Key::ReturnExpression(ShortIdentifier::new(&func_name), x.clone().range),
+                        Binding::ReturnExpr(
+                            return_ann,
+                            Box::new(Ast::return_or_none_owned(x.clone())),
+                            has_yields,
+                        ),
+                    );
+                    return_expr_keys.insert(key);
+                }
+            }
+        }
+
+        if accumulate.returns.is_empty() && kind == FunctionKind::Impl {
+            // Note that we special case ellipse even in non-interface, as that is what Pyright does.
+            if never_is_none {
+                let key = self.table.insert(
+                    Key::ReturnExpressionWithNone(ShortIdentifier::new(&func_name), x.range),
+                    Binding::ReturnExpr(
+                        return_ann,
+                        Box::new(Ast::return_or_none_owned(fake_none_value.clone())),
+                        has_yields,
+                    ),
+                );
+                return_expr_keys.insert(key);
+            } else if !never_is_empty {
+                let key = self.table.insert(
+                    Key::ReturnExpression(ShortIdentifier::new(&func_name), x.range),
+                    Binding::ReturnExprWithNone(
+                        return_ann,
+                        fake_none_value.range(),
+                        has_yields,
+                        return_never_keys,
+                    ),
+                );
+                return_expr_keys.insert(key);
+            }
         }
 
         let mut return_type = Binding::phi(return_expr_keys);
-        if !accumulate.yields.is_empty() {
+        if has_yields {
             let mut yield_expr_keys = SmallSet::with_capacity(accumulate.yields.len());
             for x in accumulate.yields.clone() {
                 // create the appropriate bindings depending on whether we see a yield or a yieldFrom

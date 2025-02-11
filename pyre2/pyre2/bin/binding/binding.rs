@@ -567,7 +567,7 @@ pub enum Binding {
     /// An optional return annotation
     /// A vector of all types of last statements in a function body  
     #[allow(dead_code)]
-    ReturnExprWithReturn(Option<Idx<KeyAnnotation>>, Box<Expr>, bool, Vec<Idx<Key>>),
+    ReturnExprWithNone(Option<Idx<KeyAnnotation>>, TextRange, bool, Vec<Idx<Key>>),
     /// An expression returned from a function.
     SendTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
     /// Return type of yield
@@ -667,11 +667,17 @@ impl DisplayWith<Bindings> for Binding {
         let m = ctx.module_info();
         match self {
             Self::Expr(None, x) => write!(f, "{}", m.display(x)),
-            Self::ReturnExpr(Some(y), x, _) | Self::ReturnExprWithReturn(Some(y), x, _, _) => {
+            Self::ReturnExpr(Some(y), x, _) => {
                 write!(f, "{} {}", ctx.display(*y), m.display(x))
             }
-            Self::ReturnExpr(None, x, _) | Self::ReturnExprWithReturn(None, x, _, _) => {
+            Self::ReturnExpr(None, x, _) => {
                 write!(f, "{}", m.display(x))
+            }
+            Self::ReturnExprWithNone(Some(y), _, _, _) => {
+                write!(f, "ReturnExprwithNone, {}", ctx.display(*y))
+            }
+            Self::ReturnExprWithNone(None, _, _, _) => {
+                write!(f, "ReturnExprwithNone")
             }
             Self::Expr(Some(k), x) => {
                 write!(f, "{}: {}", ctx.display(*k), m.display(x))

@@ -829,9 +829,61 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.expr(e, hint, errors)
                 }
             }
-            Binding::ReturnExprWithReturn(_ann, _e, _has_yields, _last_statement_types) => {
-                // todo zeina: solve this binding
-                Type::any_error()
+            Binding::ReturnExprWithNone(ann, expr_range, has_yields, last_statement_types) => {
+                let ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
+                let hint = ann.as_ref().and_then(|x| x.ty.as_ref());
+
+                let all_never = last_statement_types
+                    .iter()
+                    .all(|k| self.get_idx(*k).is_never());
+
+                if all_never {
+                    // if all branches to the function are NoReturn, then infer Never
+                    Type::never()
+                } else if *has_yields {
+                    match &hint {
+                        Some(t) => {
+                            let decomposed = self.decompose_generator(t);
+                            let return_type = decomposed.map(|(_, _, r)| r);
+                            if return_type.is_some_and(|x| x != Type::None) {
+                                self.error(
+                                    errors,
+                                    *expr_range,
+                                    format!("Expected None, got generator type {}", t),
+                                )
+                            } else {
+                                Type::None
+                            }
+                        }
+                        None => Type::None,
+                    }
+                } else if matches!(hint, Some(Type::TypeGuard(_))) {
+                    self.error(
+                        errors,
+                        *expr_range,
+                        "This function has an implicit `None` return but claims to return a `TypeGuard`".to_owned(),
+                    )
+                } else {
+                    match hint {
+                        Some(t) => {
+                            if t.is_none() {
+                                Type::None
+                            } else if !self
+                                .solver()
+                                .is_subset_eq(&Type::None, t, self.type_order())
+                            {
+                                self.error(
+                                    errors,
+                                    *expr_range,
+                                    format!("Expr has type None but should have type {}", t),
+                                )
+                            } else {
+                                Type::None
+                            }
+                        }
+                        None => Type::None,
+                    }
+                }
             }
             Binding::ExceptionHandler(box ann, is_star) => {
                 let base_exception_type = self.stdlib.base_exception().to_type();

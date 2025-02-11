@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_missing_return,
@@ -74,8 +73,7 @@ def f(b: bool) -> int:
 "#,
 );
 
-testcase_with_bug!(
-    "Should not require a return statement",
+testcase!(
     test_return_never,
     r#"
 from typing import NoReturn
@@ -87,12 +85,11 @@ def f(b: bool) -> int:
     if b:
         return 1
     else:
-        fail() # E: EXPECTED None <: int
+        fail()
 "#,
 );
 
-testcase_with_bug!(
-    "Should not require a return statement",
+testcase!(
     test_return_never_should_not_fail,
     r#"
 from typing import NoReturn
@@ -101,7 +98,7 @@ def fail() -> NoReturn:
     raise Exception()
 
 def f() -> int:
-   fail() # E: EXPECTED None <: int
+   fail()
 "#,
 );
 
@@ -116,7 +113,7 @@ def f(b: bool) -> int:
     if b:
         return 1
     else:
-        does_not_fail() # E: EXPECTED None <: int
+        does_not_fail() # E: Expr has type None but should have type int
 "#,
 );
 
@@ -128,7 +125,7 @@ def fail():
     pass
 
 def f() -> int:
-   fail() # E: EXPECTED None <: int
+   fail() # E: Expr has type None but should have type int
 
 "#,
 );
@@ -163,17 +160,44 @@ def f(b: bool) -> int:  # E: EXPECTED None <: int
 "#,
 );
 
-//TODO zeina: pyright also does not infer the NoReturn type (so may not be a bug), but we should be able to infer it
-testcase_with_bug!(
-    "Should infer NoReturn",
+testcase!(
     test_infer_never,
     r#"
-from typing import NoReturn, assert_type
+from typing import assert_type, Never
 
-def f() -> None:
+def f():
     raise Exception()
 
-assert_type(f(), None)
+assert_type(f(), Never)
+"#,
+);
+
+testcase!(
+    test_infer_never2,
+    r#"
+from typing import NoReturn, assert_type, Literal
+
+def fail() -> NoReturn:
+    raise Exception()
+
+def f(b: bool):
+    if b:
+        return 1
+    else:
+        fail()
+
+assert_type(f(True), Literal[1])
+"#,
+);
+
+testcase!(
+    test_infer_never3,
+    r#"
+from typing import assert_type
+
+def f() -> int:
+   raise Exception()
+assert_type(f(), int)
 "#,
 );
 
@@ -212,8 +236,7 @@ def B() -> None:
 "#,
 );
 
-testcase_with_bug!(
-    "Should not raise a type error on the NoReturn branch of the if statement.",
+testcase!(
     test_return_never_with_wrong_type,
     r#"
 from typing import NoReturn
@@ -225,6 +248,6 @@ def f(b: bool) -> int:
     if b:
         return None # E: EXPECTED None <: int
     else:
-        fail() # E: EXPECTED None <: int
+        fail()
 "#,
 );
