@@ -6,4 +6,5 @@
  */
 
 pub mod class_metadata;
+pub mod function_answer;
 pub mod legacy_lookup;

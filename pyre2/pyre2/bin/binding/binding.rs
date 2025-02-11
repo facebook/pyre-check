@@ -30,6 +30,7 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
+use crate::alt::types::function_answer::FunctionAnswer;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::binding::bindings::Bindings;
 use crate::binding::narrow::NarrowOp;
@@ -99,7 +100,7 @@ impl Keyed for KeyExport {
 }
 impl Keyed for KeyFunction {
     type Value = FunctionBinding;
-    type Answer = Type;
+    type Answer = FunctionAnswer;
 }
 impl Keyed for KeyAnnotation {
     type Value = BindingAnnotation;

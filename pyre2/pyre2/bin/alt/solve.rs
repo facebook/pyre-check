@@ -26,6 +26,7 @@ use crate::alt::callable::CallArg;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
+use crate::alt::types::function_answer::FunctionAnswer;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
@@ -1025,7 +1026,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(values)
             }
-            Binding::Function(x) => self.get_idx(*x).arc_clone(),
+            Binding::Function(x) => self.get_idx(*x).ty.clone(),
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExport(name.clone()))
                 .arc_clone(),
@@ -1233,7 +1234,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn solve_function(&self, x: &FunctionBinding, errors: &ErrorCollector) -> Arc<Type> {
+    pub fn solve_function(
+        &self,
+        x: &FunctionBinding,
+        errors: &ErrorCollector,
+    ) -> Arc<FunctionAnswer> {
         let check_default = |default: &Option<Box<Expr>>, ty: &Type| {
             let mut required = Required::Required;
             if let Some(default) = default {
@@ -1312,7 +1317,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for x in x.decorators.iter().rev() {
             ty = self.apply_decorator(*x, ty, errors)
         }
-        Arc::new(ty)
+        Arc::new(FunctionAnswer {
+            ty,
+            is_overload: false, // TODO: detect overload when applying decorators
+        })
     }
 
     /// Unwraps a type, originally evaluated as a value, so that it can be used as a type annotation.

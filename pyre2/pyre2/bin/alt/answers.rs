@@ -18,6 +18,7 @@ use starlark_map::small_map::SmallMap;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
+use crate::alt::types::function_answer::FunctionAnswer;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -210,12 +211,14 @@ impl SolveRecursive for KeyExport {
     }
 }
 impl SolveRecursive for KeyFunction {
-    type Recursive = Var;
-    fn promote_recursive(x: Self::Recursive) -> Self::Answer {
-        Type::Var(x)
+    type Recursive = ();
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        // TODO(samgoldman) I'm not sure this really makes sense. These bindings should never
+        // be recursive, but this definition is required.
+        FunctionAnswer::recursive()
     }
-    fn visit_type_mut(v: &mut Type, f: &mut dyn FnMut(&mut Type)) {
-        f(v);
+    fn visit_type_mut(v: &mut FunctionAnswer, f: &mut dyn FnMut(&mut Type)) {
+        f(&mut v.ty);
     }
 }
 impl SolveRecursive for KeyClassField {
@@ -347,23 +350,11 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyFunction {
         answers: &AnswersSolver<Ans>,
         binding: &FunctionBinding,
         errors: &ErrorCollector,
-    ) -> Arc<Type> {
+    ) -> Arc<FunctionAnswer> {
         answers.solve_function(binding, errors)
     }
 
-    fn recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive {
-        answers.solver().fresh_recursive(answers.uniques)
-    }
-
-    fn record_recursive(
-        answers: &AnswersSolver<Ans>,
-        key: &KeyFunction,
-        answer: Arc<Type>,
-        recursive: Var,
-        errors: &ErrorCollector,
-    ) {
-        answers.record_recursive(key.range(), answer, recursive, errors);
-    }
+    fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}
 }
 
 impl<Ans: LookupAnswer> Solve<Ans> for KeyClassField {
