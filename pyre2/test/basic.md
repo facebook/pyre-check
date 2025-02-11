@@ -10,8 +10,8 @@ $ $PYRE2 check ../empty -a
 ## We can typecheck two files with the same name
 
 ```scrut
-$ echo "x: str = 12 # E: str" > $TMPDIR/same_name.py && \
-> echo "x: str = True # E: str" > $TMPDIR/same_name.pyi && \
+$ echo "x: str = 12" > $TMPDIR/same_name.py && \
+> echo "x: str = True" > $TMPDIR/same_name.pyi && \
 > $PYRE2 check $TMPDIR/same_name.py $TMPDIR/same_name.pyi | sort
  INFO 2 errors, * (glob)
 ERROR */same_name.py:1:10-12:* (glob)
