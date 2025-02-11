@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::process::ExitCode;
+
 use clap::Parser;
 
 use crate::util::args::get_args_expanded;
@@ -48,7 +50,7 @@ enum Args {
 }
 
 /// Run based on the command line arguments.
-pub fn run() -> anyhow::Result<()> {
+pub fn run() -> anyhow::Result<ExitCode> {
     if PROFILING {
         loop {
             let _ = run_once(false);
@@ -57,7 +59,7 @@ pub fn run() -> anyhow::Result<()> {
     run_once(true)
 }
 
-fn run_once(allow_forget: bool) -> anyhow::Result<()> {
+fn run_once(allow_forget: bool) -> anyhow::Result<ExitCode> {
     let args = Args::parse_from(get_args_expanded()?);
     match args {
         Args::ExpectTest(args) => {

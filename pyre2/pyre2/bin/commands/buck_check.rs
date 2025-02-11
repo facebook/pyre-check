@@ -7,6 +7,7 @@
 
 use std::path::Path;
 use std::path::PathBuf;
+use std::process::ExitCode;
 use std::str::FromStr;
 
 use anyhow::Context as _;
@@ -94,7 +95,7 @@ fn write_output(errors: &[Error], path: Option<&Path>) -> anyhow::Result<()> {
 }
 
 impl Args {
-    pub fn run(self) -> anyhow::Result<()> {
+    pub fn run(self) -> anyhow::Result<ExitCode> {
         let input_file = read_input_file(self.input_path.as_path())?;
         let python_version = PythonVersion::from_str(&input_file.py_version)?;
         let config = Config::new(python_version, "linux".to_owned());
@@ -106,6 +107,6 @@ impl Args {
         let type_errors = compute_errors(config, sourcedb, &self.common);
         info!("Found {} type errors", type_errors.len());
         write_output(&type_errors, self.output_path.as_deref())?;
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 }

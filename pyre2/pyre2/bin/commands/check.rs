@@ -11,6 +11,7 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
+use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
 use std::time::Instant;
@@ -144,12 +145,12 @@ impl OutputFormat {
 }
 
 impl Args {
-    pub fn run(self, allow_forget: bool) -> anyhow::Result<()> {
+    pub fn run(self, allow_forget: bool) -> anyhow::Result<ExitCode> {
         let args = self;
         let include = args.include;
 
         if args.files.is_empty() {
-            return Ok(());
+            return Ok(ExitCode::SUCCESS);
         }
 
         let mut to_check = SmallMap::with_capacity(args.files.len());
@@ -226,6 +227,6 @@ impl Args {
         if args.expectations {
             state.check_against_expectations()?;
         }
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 }

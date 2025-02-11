@@ -7,6 +7,7 @@
 
 use std::path::Path;
 use std::path::PathBuf;
+use std::process::ExitCode;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -96,7 +97,7 @@ struct Server<'a> {
 }
 
 impl Args {
-    pub fn run(self) -> anyhow::Result<()> {
+    pub fn run(self) -> anyhow::Result<ExitCode> {
         // Note that  we must have our logging only write out to stderr.
         eprintln!("starting generic LSP server");
 
@@ -138,7 +139,7 @@ impl Args {
 
         // Shut down gracefully.
         eprintln!("shutting down server");
-        Ok(())
+        Ok(ExitCode::SUCCESS)
     }
 }
 
