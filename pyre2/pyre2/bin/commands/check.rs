@@ -205,9 +205,10 @@ impl Args {
         if let Some(limit) = args.summarize_errors {
             state.print_error_summary(limit);
         }
+        let count_errors = state.count_errors();
         info!(
             "{} errors, {} modules, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
-            number_thousands(state.count_errors()),
+            number_thousands(count_errors),
             number_thousands(state.module_count()),
             memory_trace.peak()
         );
@@ -226,7 +227,11 @@ impl Args {
         }
         if args.expectations {
             state.check_against_expectations()?;
+            Ok(ExitCode::SUCCESS)
+        } else if count_errors > 0 {
+            Ok(ExitCode::FAILURE)
+        } else {
+            Ok(ExitCode::SUCCESS)
         }
-        Ok(ExitCode::SUCCESS)
     }
 }
