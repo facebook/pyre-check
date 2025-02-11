@@ -230,7 +230,7 @@ class MethodType:
 "#;
 
 static DATACLASSES: &str = r#"
-from typing import overload, Any, Callable, TypeVar
+from typing import overload, Any, Callable, Mapping, TypeVar
 
 _T = TypeVar('_T')
 
@@ -252,7 +252,38 @@ def dataclass(
     weakref_slot: bool = False,
 ) -> Callable[[type[_T]], type[_T]]: ...
 
-def field(*args, **kwargs) -> Any: ...
+@overload
+def field(
+    *,
+    default: _T,
+    init: bool = True,
+    repr: bool = True,
+    hash: bool | None = None,
+    compare: bool = True,
+    metadata: Mapping[Any, Any] | None = None,
+    kw_only: bool = ...,
+) -> _T: ...
+@overload
+def field(
+    *,
+    default_factory: Callable[[], _T],
+    init: bool = True,
+    repr: bool = True,
+    hash: bool | None = None,
+    compare: bool = True,
+    metadata: Mapping[Any, Any] | None = None,
+    kw_only: bool = ...,
+) -> _T: ...
+@overload
+def field(
+    *,
+    init: bool = True,
+    repr: bool = True,
+    hash: bool | None = None,
+    compare: bool = True,
+    metadata: Mapping[Any, Any] | None = None,
+    kw_only: bool = ...,
+) -> Any: ...
 
 class KW_ONLY: ...
 "#;

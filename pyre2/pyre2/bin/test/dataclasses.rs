@@ -315,3 +315,17 @@ class C:
     pass
     "#,
 );
+
+testcase_with_bug!(
+    "TODO",
+    test_dataclasses_field,
+    r#"
+from dataclasses import dataclass, field
+@dataclass
+class C:
+    x: int = field(init=False)
+    y: str
+C(y="")  # Should be OK  # E: Missing argument
+C(x=0, y="")  # Should be an error: Unexpected keyword argument `x`
+    "#,
+);
