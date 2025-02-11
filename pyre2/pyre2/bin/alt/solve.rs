@@ -1025,7 +1025,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(values)
             }
-            Binding::Function(x) => self.function_def(x, errors),
+            Binding::Function(x) => self.get_idx(*x).arc_clone(),
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExport(name.clone()))
                 .arc_clone(),
@@ -1233,7 +1233,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn function_def(&self, x: &FunctionBinding, errors: &ErrorCollector) -> Type {
+    pub fn solve_function(&self, x: &FunctionBinding, errors: &ErrorCollector) -> Arc<Type> {
         let check_default = |default: &Option<Box<Expr>>, ty: &Type| {
             let mut required = Required::Required;
             if let Some(default) = default {
@@ -1312,7 +1312,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for x in x.decorators.iter().rev() {
             ty = self.apply_decorator(*x, ty, errors)
         }
-        ty
+        Arc::new(ty)
     }
 
     /// Unwraps a type, originally evaluated as a value, so that it can be used as a type annotation.

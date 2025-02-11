@@ -25,6 +25,7 @@ use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
+use crate::binding::binding::KeyFunction;
 use crate::binding::bindings::BindingsBuilder;
 use crate::binding::bindings::FuncInfo;
 use crate::binding::bindings::LegacyTParamBuilder;
@@ -276,16 +277,17 @@ impl<'a> BindingsBuilder<'a> {
             );
         }
 
-        self.bind_definition(
-            &func_name,
-            Binding::Function(Box::new(FunctionBinding {
+        let function_idx = self.table.insert(
+            KeyFunction(ShortIdentifier::new(&func_name)),
+            FunctionBinding {
                 def: x,
                 kind,
                 decorators: decorators.into_boxed_slice(),
                 legacy_tparams: legacy_tparams.into_boxed_slice(),
-            })),
-            None,
+            },
         );
+
+        self.bind_definition(&func_name, Binding::Function(function_idx), None);
     }
 }
 

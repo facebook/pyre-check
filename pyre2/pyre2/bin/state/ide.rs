@@ -128,7 +128,8 @@ impl State {
                             if let Some(ty) = self.get_type(handle, key)
                                 && is_interesting_type(&ty)
                             {
-                                res.push((x.def.parameters.range.end(), format!(" -> {ty}")));
+                                let fun = bindings.get(*x);
+                                res.push((fun.def.parameters.range.end(), format!(" -> {ty}")));
                             }
                         }
                         _ => {}

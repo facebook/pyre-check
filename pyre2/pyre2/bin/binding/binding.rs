@@ -97,6 +97,10 @@ impl Keyed for KeyExport {
     type Value = Binding;
     type Answer = Type;
 }
+impl Keyed for KeyFunction {
+    type Value = FunctionBinding;
+    type Answer = Type;
+}
 impl Keyed for KeyAnnotation {
     type Value = BindingAnnotation;
     type Answer = Annotation;
@@ -360,6 +364,21 @@ impl DisplayWith<ModuleInfo> for KeyExport {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct KeyFunction(pub ShortIdentifier);
+
+impl Ranged for KeyFunction {
+    fn range(&self) -> TextRange {
+        self.0.range()
+    }
+}
+
+impl DisplayWith<ModuleInfo> for KeyFunction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
+        write!(f, "{} {:?}", ctx.display(&self.0), self.0.range())
+    }
+}
+
 /// A reference to a field in a class.
 /// The range is the range of the class name, not the field name.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -518,6 +537,12 @@ pub struct FunctionBinding {
     pub legacy_tparams: Box<[Idx<KeyLegacyTypeParam>]>,
 }
 
+impl DisplayWith<Bindings> for FunctionBinding {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, _ctx: &Bindings) -> fmt::Result {
+        write!(f, "def {}", self.def.name.id)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ClassBinding {
     pub def: StmtClassDef,
@@ -582,7 +607,7 @@ pub enum Binding {
     /// A type parameter.
     TypeParameter(Quantified),
     /// A function definition, but with the return/body stripped out.
-    Function(Box<FunctionBinding>),
+    Function(Idx<KeyFunction>),
     /// An import statement, typically with Self::Import.
     Import(ModuleName, Name),
     /// A class definition, but with the body stripped out.
@@ -728,7 +753,7 @@ impl DisplayWith<Bindings> for Binding {
                 };
                 write!(f, "unpack {} {:?} @ {}", x.display_with(ctx), range, pos)
             }
-            Self::Function(x) => write!(f, "def {}", x.def.name.id),
+            Self::Function(x) => write!(f, "{}", ctx.display(*x)),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::ClassDef(x) => write!(f, "class {}", x.def.name.id),
             Self::FunctionalClassDef(x, _) => write!(f, "class {}", x.id),

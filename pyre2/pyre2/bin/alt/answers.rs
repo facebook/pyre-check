@@ -27,6 +27,7 @@ use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::EmptyAnswer;
+use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClassField;
@@ -34,6 +35,7 @@ use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyClassSynthesizedFields;
 use crate::binding::binding::KeyExpect;
 use crate::binding::binding::KeyExport;
+use crate::binding::binding::KeyFunction;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::Keyed;
 use crate::binding::bindings::BindingEntry;
@@ -207,6 +209,15 @@ impl SolveRecursive for KeyExport {
         f(v);
     }
 }
+impl SolveRecursive for KeyFunction {
+    type Recursive = Var;
+    fn promote_recursive(x: Self::Recursive) -> Self::Answer {
+        Type::Var(x)
+    }
+    fn visit_type_mut(v: &mut Type, f: &mut dyn FnMut(&mut Type)) {
+        f(v);
+    }
+}
 impl SolveRecursive for KeyClassField {
     type Recursive = ();
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
@@ -323,6 +334,30 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
     fn record_recursive(
         answers: &AnswersSolver<Ans>,
         key: &KeyExport,
+        answer: Arc<Type>,
+        recursive: Var,
+        errors: &ErrorCollector,
+    ) {
+        answers.record_recursive(key.range(), answer, recursive, errors);
+    }
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyFunction {
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &FunctionBinding,
+        errors: &ErrorCollector,
+    ) -> Arc<Type> {
+        answers.solve_function(binding, errors)
+    }
+
+    fn recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive {
+        answers.solver().fresh_recursive(answers.uniques)
+    }
+
+    fn record_recursive(
+        answers: &AnswersSolver<Ans>,
+        key: &KeyFunction,
         answer: Arc<Type>,
         recursive: Var,
         errors: &ErrorCollector,
