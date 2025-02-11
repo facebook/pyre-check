@@ -79,6 +79,9 @@ pub struct Args {
     summarize_errors: Option<usize>,
     #[clap(long)]
     python_version: Option<String>,
+    /// Check against any `E:` lines in the file.
+    #[clap(long)]
+    expectations: bool,
 
     #[clap(flatten)]
     common: CommonArgs,
@@ -195,7 +198,6 @@ impl Args {
             args.output_format.write_errors_to_file(&path, &errors)?;
         } else {
             state.print_errors();
-            state.check_against_expectations()?;
         }
         let printing = start.elapsed();
         memory_trace.stop();
@@ -220,6 +222,9 @@ impl Args {
                 &path,
                 report::binding_memory::binding_memory(state).as_bytes(),
             )?;
+        }
+        if args.expectations {
+            state.check_against_expectations()?;
         }
         Ok(())
     }

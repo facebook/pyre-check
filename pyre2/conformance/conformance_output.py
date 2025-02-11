@@ -197,6 +197,7 @@ def get_pyre2_command(test: bool) -> list[str]:
         "fbcode//tools/pyre/pyre2:pyre2",
         "--",
         "check",
+        "--expectations",
         # We seem to be a bit non-deterministic in some places, so let's disable
         # parallelism for now.
         "--threads=1",
