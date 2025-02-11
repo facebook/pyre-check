@@ -138,6 +138,7 @@ impl TestEnv {
             .collect();
         let mut state = State::new(true);
         state.run(handles);
+        state.print_errors();
         (state, move |module| {
             let name = ModuleName::from_str(module);
             Handle::new(
@@ -152,7 +153,7 @@ impl TestEnv {
 
 impl Loader for TestEnv {
     fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
-        let style = ErrorStyle::Immediate;
+        let style = ErrorStyle::Delayed;
         if let Some((path, _)) = self.0.get(&module) {
             Ok((path.dupe(), style))
         } else if lookup_test_stdlib(module).is_some() {
