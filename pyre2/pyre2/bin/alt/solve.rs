@@ -1039,7 +1039,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                 ));
                 for x in x.decorators.iter().rev() {
-                    ty = self.apply_decorator(*x, ty, errors)
+                    ty = self.apply_decorator(*x, ty, &mut false, errors)
                 }
                 ty
             }
@@ -1314,13 +1314,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             CallableKind::from_name(self.module_info().name(), &x.def.name.id),
         );
         let mut ty = callable.forall(self.type_params(x.def.range, tparams, errors));
+        let mut is_overload = false;
         for x in x.decorators.iter().rev() {
-            ty = self.apply_decorator(*x, ty, errors)
+            ty = self.apply_decorator(*x, ty, &mut is_overload, errors)
         }
-        Arc::new(FunctionAnswer {
-            ty,
-            is_overload: false, // TODO: detect overload when applying decorators
-        })
+        Arc::new(FunctionAnswer { ty, is_overload })
     }
 
     /// Unwraps a type, originally evaluated as a value, so that it can be used as a type annotation.
