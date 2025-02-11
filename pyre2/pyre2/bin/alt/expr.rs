@@ -630,7 +630,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             errors,
                             x.range,
                             format!(
-                                "`{}` not supported between instances of `{}` and `{}`",
+                                "`{}` not supported between `{}` and `{}`",
                                 op.as_str(),
                                 left,
                                 right

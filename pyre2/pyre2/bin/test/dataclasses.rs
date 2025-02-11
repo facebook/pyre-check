@@ -290,7 +290,7 @@ from dataclasses import dataclass
 class D1:
     x: int
 def f(d: D1, e: D1):
-    if d < e: ...  # E: `<` not supported between instances of `D1` and `D1`
+    if d < e: ...  # E: `<` not supported between `D1` and `D1`
     if d == e: ...  # OK: `==` and `!=` never error regardless
 
 @dataclass(order=True)

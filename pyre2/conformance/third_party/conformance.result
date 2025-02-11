@@ -377,7 +377,7 @@
     "Line 68: Unexpected errors ['Missing argument `not_a_field`', 'Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
     "Line 74: Unexpected errors ['Missing argument `not_a_field`', 'Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
     "Line 76: Unexpected errors ['Missing argument `not_a_field`', 'Unexpected keyword argument `id`']",
-    "Line 78: Unexpected errors ['`<` not supported between instances of `Customer2` and `Customer2`']",
+    "Line 78: Unexpected errors ['`<` not supported between `Customer2` and `Customer2`']",
     "Line 106: Unexpected errors ['Unexpected keyword argument `id`']",
     "Line 119: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']"
   ],
@@ -407,7 +407,7 @@
     "Line 50: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
     "Line 53: Unexpected errors ['Expected 0 positional arguments, got 2']",
     "Line 67: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
-    "Line 73: Unexpected errors ['`<` not supported between instances of `Customer2` and `Customer2`']",
+    "Line 73: Unexpected errors ['`<` not supported between `Customer2` and `Customer2`']",
     "Line 94: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']"
   ],
   "dataclasses_transform_meta.py": [
@@ -418,7 +418,7 @@
     "Line 69: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
     "Line 75: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']",
     "Line 77: Unexpected errors ['Unexpected keyword argument `id`']",
-    "Line 79: Unexpected errors ['`<` not supported between instances of `Customer2` and `Customer2`']",
+    "Line 79: Unexpected errors ['`<` not supported between `Customer2` and `Customer2`']",
     "Line 100: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']"
   ],
   "dataclasses_usage.py": [
