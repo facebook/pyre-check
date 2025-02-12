@@ -10,10 +10,9 @@ $ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py -a
 
 ## Error on a non-existent file
 
-```scrut
+```scrut {output_stream: stderr}
 $ $PYRE2 check $TMPDIR/does_not_exist
-ERROR */does_not_exist:1:1: Failed to load* (glob)
- INFO 1 errors, * (glob)
+No files matched pattern `*/does_not_exist` (glob)
 [1]
 ```
 
@@ -48,6 +47,18 @@ $ echo "x: str = 12" > $TMPDIR/shown1.py && \
 > $PYRE2 check $TMPDIR/shown2.py --include=$TMPDIR --check-all
 ERROR */shown*.py:1:* (glob)
 ERROR */shown*.py:1:* (glob)
+ INFO 2 errors, * (glob)
+[1]
+```
+
+## We can do our own globbing
+
+```scrut
+$ echo "x: str = 12" > $TMPDIR/glob1.py && \
+> echo "x: str = 12" > $TMPDIR/glob2.py && \
+> $PYRE2 check "$TMPDIR/glob*.py"
+ERROR */glob*.py:1:* (glob)
+ERROR */glob*.py:1:* (glob)
  INFO 2 errors, * (glob)
 [1]
 ```

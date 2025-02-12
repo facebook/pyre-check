@@ -43,6 +43,7 @@ use crate::state::state::State;
 use crate::util::display::number_thousands;
 use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
+use crate::util::globs::Globs;
 use crate::util::memory::MemoryUsageTrace;
 use crate::util::prelude::VecExt;
 
@@ -55,7 +56,7 @@ enum OutputFormat {
 
 #[derive(Debug, Parser, Clone)]
 pub struct Args {
-    files: Vec<PathBuf>,
+    files: Vec<String>,
     /// Write the errors to a file, instead of printing them.
     #[arg(long, short = 'o')]
     output: Option<PathBuf>,
@@ -146,12 +147,13 @@ impl Args {
         let args = self;
         let include = args.include;
 
-        if args.files.is_empty() {
+        let files = Globs::new(args.files).resolve()?;
+        if files.is_empty() {
             return Ok(ExitCode::SUCCESS);
         }
 
-        let mut to_check = SmallMap::with_capacity(args.files.len());
-        for file in &args.files {
+        let mut to_check = SmallMap::with_capacity(files.len());
+        for file in &files {
             let module = module_from_path(file, &include);
             to_check.entry(module).or_insert_with(|| file.clone());
         }
@@ -170,7 +172,7 @@ impl Args {
                 ErrorStyle::Never
             },
         });
-        let handles = args.files.into_map(|x| {
+        let handles = files.into_map(|x| {
             Handle::new(
                 module_from_path(&x, &include),
                 ModulePath::filesystem(x),
