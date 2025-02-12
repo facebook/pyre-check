@@ -749,6 +749,16 @@ for _ in None:  # E: `None` is not iterable
 );
 
 testcase!(
+    test_invalid_targets,
+    r#"
+[1 for x.y in []]  # E: Could not find name `x`
+[1 for z[0] in []]  # E: Could not find name `z`
+a.b += 1  # E: Could not find name `a`
+(c.d := 1)  # E: Could not find name `c`  # E: Parse error: Assignment expression target must be an identifier
+    "#,
+);
+
+testcase!(
     test_assert,
     r#"
 def foo() -> str: ...

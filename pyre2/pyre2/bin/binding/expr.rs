@@ -64,6 +64,7 @@ impl<'a> BindingsBuilder<'a> {
             self.scopes.current_mut().stat.expr_lvalue(&comp.target);
             let make_binding = |k| Binding::IterableValue(k, comp.iter.clone());
             self.bind_target(&comp.target, &make_binding, None);
+            self.ensure_expr(&comp.target);
         }
     }
 
