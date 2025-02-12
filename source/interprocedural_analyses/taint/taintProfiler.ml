@@ -23,7 +23,13 @@ type step_event = {
 }
 
 type statement_event = {
-  statement: Statement.statement Node.t;
+  statement: Statement.t;
+  analysis: analysis;
+  seconds: float;
+}
+
+type expression_event = {
+  expression: Expression.t;
   analysis: analysis;
   seconds: float;
 }
@@ -35,11 +41,18 @@ type fetch_model_event = {
   model_words: int;
 }
 
+type expression_timer = {
+  timer: Timer.t;
+  accumulated: float;
+}
+
 type profiler = {
   mutable step_events: step_event list;
   mutable statement_events: statement_event list;
+  mutable expression_events: expression_event list;
   mutable fetch_model_events: fetch_model_event list;
-  timer: Timer.t;
+  whole_timer: Timer.t;
+  mutable current_expression: expression_timer;
 }
 
 type t = profiler option
@@ -48,7 +61,15 @@ type t = profiler option
 let none = None
 
 let create () =
-  Some { step_events = []; statement_events = []; fetch_model_events = []; timer = Timer.start () }
+  Some
+    {
+      step_events = [];
+      statement_events = [];
+      expression_events = [];
+      fetch_model_events = [];
+      whole_timer = Timer.start ();
+      current_expression = { timer = Timer.start (); accumulated = 0. };
+    }
 
 
 let track_duration ~profiler ~name ~f =
@@ -73,6 +94,31 @@ let track_statement_analysis ~profiler ~analysis ~statement ~f =
       result
 
 
+let track_expression_analysis ~profiler ~analysis ~expression ~f =
+  match profiler with
+  | None -> f ()
+  | Some profiler ->
+      (* Expressions are nested, therefore we need to stop the timer for the outer
+       * expression and accumulate the time spent. *)
+      let outer_expression_accumulated_seconds =
+        let { timer; accumulated } = profiler.current_expression in
+        accumulated +. Timer.stop_in_sec timer
+      in
+      profiler.current_expression <- { timer = Timer.start (); accumulated = 0. };
+      let result = f () in
+      let current_expression = profiler.current_expression in
+      profiler.expression_events <-
+        {
+          expression;
+          analysis;
+          seconds = Timer.stop_in_sec current_expression.timer +. current_expression.accumulated;
+        }
+        :: profiler.expression_events;
+      profiler.current_expression <-
+        { timer = Timer.start (); accumulated = outer_expression_accumulated_seconds };
+      result
+
+
 let track_model_fetch ~profiler ~analysis ~call_target ~f =
   match profiler with
   | None -> f ()
@@ -88,13 +134,23 @@ let track_model_fetch ~profiler ~analysis ~call_target ~f =
 
 module StatementKey = struct
   type t = {
-    statement: Statement.statement Node.t;
+    statement: Statement.t;
     analysis: analysis;
   }
   [@@deriving sexp, compare]
 end
 
 module StatementEventMap = Map.Make (StatementKey)
+
+module ExpressionKey = struct
+  type t = {
+    expression: Expression.t;
+    analysis: analysis;
+  }
+  [@@deriving sexp, compare]
+end
+
+module ExpressionEventMap = Map.Make (ExpressionKey)
 
 module TargetKey = struct
   type t = {
@@ -106,10 +162,18 @@ end
 
 module FetchModelEventMap = Map.Make (TargetKey)
 
-let dump = function
+let dump ~max_number_expressions = function
   | None -> ()
-  | Some { step_events; statement_events; fetch_model_events; timer } ->
-      let total_seconds = Timer.stop_in_sec timer in
+  | Some
+      {
+        step_events;
+        statement_events;
+        expression_events;
+        fetch_model_events;
+        whole_timer;
+        current_expression = _;
+      } ->
+      let total_seconds = Timer.stop_in_sec whole_timer in
       Log.dump "Performance metrics:";
       Log.dump "Total time: %.2fs" total_seconds;
 
@@ -204,6 +268,48 @@ let dump = function
           statement
       in
       List.iter statement_events ~f:display_statement_row;
+
+      Log.dump "Performance per expression:";
+      let add_expression_event map { expression; analysis; seconds } =
+        Map.update map { ExpressionKey.expression; analysis } ~f:(function
+            | None -> [seconds]
+            | Some times -> seconds :: times)
+      in
+      let expression_events =
+        expression_events
+        |> List.fold ~f:add_expression_event ~init:ExpressionEventMap.empty
+        |> Core.Map.to_alist
+        |> List.sort ~compare:(fun (_, left_times) (_, right_times) ->
+               let left_seconds = List.fold ~init:0.0 ~f:( +. ) left_times in
+               let right_seconds = List.fold ~init:0.0 ~f:( +. ) right_times in
+               Float.compare right_seconds left_seconds)
+      in
+      if List.length expression_events > max_number_expressions then
+        Log.dump
+          "WARNING: Showing the first %d expressions out of %d expressions"
+          max_number_expressions
+          (List.length expression_events);
+      Log.dump
+        "| Line | Column | Analysis | Iterations | Total Time | Percent of Total Time | Expression \
+         |";
+      let display_expression_row
+          ({ ExpressionKey.expression = { location; _ } as expression; analysis }, times)
+        =
+        let iterations = List.length times in
+        let seconds = List.fold ~init:0.0 ~f:( +. ) times in
+        Log.dump
+          "| %4d | %3d | %a | %2d | %8.3fs | %4.2f%% | %a |"
+          location.start.line
+          location.start.column
+          analysis_pp
+          analysis
+          iterations
+          seconds
+          (seconds /. total_seconds *. 100.0)
+          Expression.pp
+          expression
+      in
+      List.iter (List.take expression_events max_number_expressions) ~f:display_expression_row;
 
       Log.dump "Performance per callee model:";
       let add_fetch_model_event map ({ target; analysis; _ } as event) =

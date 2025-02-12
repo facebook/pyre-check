@@ -202,7 +202,7 @@ module Analysis = struct
       TaintProfiler.track_duration ~profiler ~name:"Sanitize" ~f:(fun () ->
           Model.apply_sanitizers ~taint_configuration model)
     in
-    TaintProfiler.dump profiler;
+    TaintProfiler.dump ~max_number_expressions:50 profiler;
     { AnalyzeDefineResult.result; model; additional_dependencies = [] }
 
 

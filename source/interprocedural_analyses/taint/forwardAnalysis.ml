@@ -2459,9 +2459,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~(pyre_in_context : PyrePysaEnvironment.InContext.t)
       ~state
       ~is_result_used
-      ~expression:{ Node.value; location }
+      ~expression:({ Node.value; location } as expression)
     =
-    let taint, state =
+    let analyze_expression_inner () =
       let value = CallGraph.redirect_expressions ~pyre_in_context ~location value in
       match value with
       | Await expression -> analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
@@ -2668,6 +2668,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
           in
           taint, store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
+    in
+    let taint, state =
+      TaintProfiler.track_expression_analysis
+        ~profiler
+        ~analysis:TaintProfiler.Forward
+        ~expression
+        ~f:analyze_expression_inner
     in
     log
       "Forward taint of expression `%a`: %a"

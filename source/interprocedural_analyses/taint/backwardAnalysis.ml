@@ -2226,7 +2226,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~(pyre_in_context : PyrePysaEnvironment.InContext.t)
       ~taint
       ~state
-      ~expression:{ Node.value; location }
+      ~expression:({ Node.value; location } as expression)
     =
     log
       "Backward analysis of expression: `%a` with backward taint: %a"
@@ -2234,147 +2234,158 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       value
       BackwardState.Tree.pp
       taint;
-    let value = CallGraph.redirect_expressions ~pyre_in_context ~location value in
-    match value with
-    | Await expression -> analyze_expression ~pyre_in_context ~taint ~state ~expression
-    | BinaryOperator _ -> failwith "T101299882"
-    | BooleanOperator { left; operator = _; right } ->
-        analyze_expression ~pyre_in_context ~taint ~state ~expression:right
-        |> fun state -> analyze_expression ~pyre_in_context ~taint ~state ~expression:left
-    | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
-        match ComparisonOperator.override ~location comparison with
-        | Some override -> analyze_expression ~pyre_in_context ~taint ~state ~expression:override
-        | None ->
-            let taint =
-              BackwardState.Tree.add_local_breadcrumbs (Features.type_bool_scalar_set ()) taint
-            in
-            analyze_expression ~pyre_in_context ~taint ~state ~expression:right
-            |> fun state -> analyze_expression ~pyre_in_context ~taint ~state ~expression:left)
-    | Call { callee; arguments } ->
-        analyze_call ~pyre_in_context ~location ~taint ~state ~callee ~arguments
-    | Constant _ -> state
-    | Dictionary entries ->
-        List.fold ~f:(analyze_dictionary_entry ~pyre_in_context taint) entries ~init:state
-    | DictionaryComprehension { Comprehension.element = { key; value }; generators; _ } ->
-        let pyre_in_context =
-          PyrePysaEnvironment.InContext.resolve_generators pyre_in_context generators
-        in
-        let state =
-          analyze_expression
+    let analyze_expression_inner () =
+      let value = CallGraph.redirect_expressions ~pyre_in_context ~location value in
+      match value with
+      | Await expression -> analyze_expression ~pyre_in_context ~taint ~state ~expression
+      | BinaryOperator _ -> failwith "T101299882"
+      | BooleanOperator { left; operator = _; right } ->
+          analyze_expression ~pyre_in_context ~taint ~state ~expression:right
+          |> fun state -> analyze_expression ~pyre_in_context ~taint ~state ~expression:left
+      | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
+          match ComparisonOperator.override ~location comparison with
+          | Some override -> analyze_expression ~pyre_in_context ~taint ~state ~expression:override
+          | None ->
+              let taint =
+                BackwardState.Tree.add_local_breadcrumbs (Features.type_bool_scalar_set ()) taint
+              in
+              analyze_expression ~pyre_in_context ~taint ~state ~expression:right
+              |> fun state -> analyze_expression ~pyre_in_context ~taint ~state ~expression:left)
+      | Call { callee; arguments } ->
+          analyze_call ~pyre_in_context ~location ~taint ~state ~callee ~arguments
+      | Constant _ -> state
+      | Dictionary entries ->
+          List.fold ~f:(analyze_dictionary_entry ~pyre_in_context taint) entries ~init:state
+      | DictionaryComprehension { Comprehension.element = { key; value }; generators; _ } ->
+          let pyre_in_context =
+            PyrePysaEnvironment.InContext.resolve_generators pyre_in_context generators
+          in
+          let state =
+            analyze_expression
+              ~pyre_in_context
+              ~taint:(read_tree [AccessPath.dictionary_keys] taint)
+              ~state
+              ~expression:key
+          in
+          let state =
+            analyze_expression
+              ~pyre_in_context
+              ~taint:(read_tree [Abstract.TreeDomain.Label.AnyIndex] taint)
+              ~state
+              ~expression:value
+          in
+          analyze_generators ~pyre_in_context ~state generators
+      | Generator comprehension -> analyze_comprehension ~pyre_in_context taint comprehension state
+      | Lambda { parameters = _; body } ->
+          (* Ignore parameter bindings and pretend body is inlined *)
+          analyze_expression ~pyre_in_context ~taint ~state ~expression:body
+      | List list ->
+          let total = List.length list in
+          List.rev list
+          |> List.foldi ~f:(analyze_reverse_list_element ~total ~pyre_in_context taint) ~init:state
+      | ListComprehension comprehension ->
+          analyze_comprehension ~pyre_in_context taint comprehension state
+      | Name (Name.Identifier identifier) ->
+          let taint =
+            BackwardState.Tree.add_local_type_breadcrumbs
+              ~pyre_in_context
+              ~expression:{ Node.value; location }
+              taint
+          in
+          store_taint ~weak:true ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
+      | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
+          analyze_expression ~pyre_in_context ~taint ~state ~expression:base
+      | Name (Name.Attribute { base; attribute; special }) ->
+          analyze_attribute_access
             ~pyre_in_context
-            ~taint:(read_tree [AccessPath.dictionary_keys] taint)
-            ~state
-            ~expression:key
-        in
-        let state =
-          analyze_expression
-            ~pyre_in_context
-            ~taint:(read_tree [Abstract.TreeDomain.Label.AnyIndex] taint)
-            ~state
-            ~expression:value
-        in
-        analyze_generators ~pyre_in_context ~state generators
-    | Generator comprehension -> analyze_comprehension ~pyre_in_context taint comprehension state
-    | Lambda { parameters = _; body } ->
-        (* Ignore parameter bindings and pretend body is inlined *)
-        analyze_expression ~pyre_in_context ~taint ~state ~expression:body
-    | List list ->
-        let total = List.length list in
-        List.rev list
-        |> List.foldi ~f:(analyze_reverse_list_element ~total ~pyre_in_context taint) ~init:state
-    | ListComprehension comprehension ->
-        analyze_comprehension ~pyre_in_context taint comprehension state
-    | Name (Name.Identifier identifier) ->
-        let taint =
-          BackwardState.Tree.add_local_type_breadcrumbs
-            ~pyre_in_context
-            ~expression:{ Node.value; location }
-            taint
-        in
-        store_taint ~weak:true ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
-    | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
-        analyze_expression ~pyre_in_context ~taint ~state ~expression:base
-    | Name (Name.Attribute { base; attribute; special }) ->
-        analyze_attribute_access
-          ~pyre_in_context
-          ~location
-          ~resolve_properties:true
-          ~base
-          ~attribute
-          ~special
-          ~base_taint:BackwardState.Tree.bottom
-          ~attribute_taint:taint
-          ~state
-    | Set set ->
-        let element_taint = read_tree [Abstract.TreeDomain.Label.AnyIndex] taint in
-        List.fold
-          set
-          ~f:(fun state expression ->
-            analyze_expression ~pyre_in_context ~taint:element_taint ~state ~expression)
-          ~init:state
-    | SetComprehension comprehension ->
-        analyze_comprehension ~pyre_in_context taint comprehension state
-    | Starred (Starred.Once expression)
-    | Starred (Starred.Twice expression) ->
-        let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex] taint in
-        analyze_expression ~pyre_in_context ~taint ~state ~expression
-    | Slice _ ->
-        (* This case should be unreachable, fail if we hit it *)
-        failwith "Slice nodes should always be rewritten by `CallGraph.redirect_expressions`"
-    | Subscript _ ->
-        (* This case should be unreachable, fail if we hit it *)
-        failwith "Subscripts nodes should always be rewritten by `CallGraph.redirect_expressions`"
-    | FormatString substrings ->
-        let substrings =
-          List.concat_map substrings ~f:(function
-              | Substring.Format { value; format_spec = None } -> [value]
-              | Substring.Format { value; format_spec = Some format_spec } -> [value; format_spec]
-              | Substring.Literal { Node.value; location } ->
-                  [
-                    Expression.Constant (Constant.String { StringLiteral.value; kind = String })
-                    |> Node.create ~location;
-                  ])
-        in
-        let string_literal, substrings = CallModel.arguments_for_string_format substrings in
-        let call_target =
-          CallModel.StringFormatCall.CallTarget.from_format_string
-            ~call_graph_of_define:FunctionContext.call_graph_of_define
             ~location
-        in
-        analyze_joined_string
-          ~pyre_in_context
-          ~taint
-          ~state
-          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
-          {
-            CallModel.StringFormatCall.nested_expressions = substrings;
-            string_literal = { value = string_literal; location };
-            call_target;
-            location;
-          }
-    | Ternary { target; test; alternative } ->
-        let state_then = analyze_expression ~pyre_in_context ~taint ~state ~expression:target in
-        let state_else =
-          analyze_expression ~pyre_in_context ~taint ~state ~expression:alternative
-        in
-        join state_then state_else
-        |> fun state ->
-        analyze_expression ~pyre_in_context ~taint:BackwardState.Tree.empty ~state ~expression:test
-    | Tuple list ->
-        let total = List.length list in
-        List.rev list
-        |> List.foldi ~f:(analyze_reverse_list_element ~total ~pyre_in_context taint) ~init:state
-    | UnaryOperator { operator = _; operand } ->
-        analyze_expression ~pyre_in_context ~taint ~state ~expression:operand
-    | WalrusOperator { target; value } ->
-        let state = analyze_assignment ~pyre_in_context ~target ~value state in
-        analyze_expression ~pyre_in_context ~taint ~state ~expression:value
-    | Yield None -> state
-    | Yield (Some expression)
-    | YieldFrom expression ->
-        let access_path = { AccessPath.root = AccessPath.Root.LocalResult; path = [] } in
-        let return_taint = get_taint (Some access_path) state in
-        analyze_expression ~pyre_in_context ~taint:return_taint ~state ~expression
+            ~resolve_properties:true
+            ~base
+            ~attribute
+            ~special
+            ~base_taint:BackwardState.Tree.bottom
+            ~attribute_taint:taint
+            ~state
+      | Set set ->
+          let element_taint = read_tree [Abstract.TreeDomain.Label.AnyIndex] taint in
+          List.fold
+            set
+            ~f:(fun state expression ->
+              analyze_expression ~pyre_in_context ~taint:element_taint ~state ~expression)
+            ~init:state
+      | SetComprehension comprehension ->
+          analyze_comprehension ~pyre_in_context taint comprehension state
+      | Starred (Starred.Once expression)
+      | Starred (Starred.Twice expression) ->
+          let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex] taint in
+          analyze_expression ~pyre_in_context ~taint ~state ~expression
+      | Slice _ ->
+          (* This case should be unreachable, fail if we hit it *)
+          failwith "Slice nodes should always be rewritten by `CallGraph.redirect_expressions`"
+      | Subscript _ ->
+          (* This case should be unreachable, fail if we hit it *)
+          failwith "Subscripts nodes should always be rewritten by `CallGraph.redirect_expressions`"
+      | FormatString substrings ->
+          let substrings =
+            List.concat_map substrings ~f:(function
+                | Substring.Format { value; format_spec = None } -> [value]
+                | Substring.Format { value; format_spec = Some format_spec } -> [value; format_spec]
+                | Substring.Literal { Node.value; location } ->
+                    [
+                      Expression.Constant (Constant.String { StringLiteral.value; kind = String })
+                      |> Node.create ~location;
+                    ])
+          in
+          let string_literal, substrings = CallModel.arguments_for_string_format substrings in
+          let call_target =
+            CallModel.StringFormatCall.CallTarget.from_format_string
+              ~call_graph_of_define:FunctionContext.call_graph_of_define
+              ~location
+          in
+          analyze_joined_string
+            ~pyre_in_context
+            ~taint
+            ~state
+            ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
+            {
+              CallModel.StringFormatCall.nested_expressions = substrings;
+              string_literal = { value = string_literal; location };
+              call_target;
+              location;
+            }
+      | Ternary { target; test; alternative } ->
+          let state_then = analyze_expression ~pyre_in_context ~taint ~state ~expression:target in
+          let state_else =
+            analyze_expression ~pyre_in_context ~taint ~state ~expression:alternative
+          in
+          join state_then state_else
+          |> fun state ->
+          analyze_expression
+            ~pyre_in_context
+            ~taint:BackwardState.Tree.empty
+            ~state
+            ~expression:test
+      | Tuple list ->
+          let total = List.length list in
+          List.rev list
+          |> List.foldi ~f:(analyze_reverse_list_element ~total ~pyre_in_context taint) ~init:state
+      | UnaryOperator { operator = _; operand } ->
+          analyze_expression ~pyre_in_context ~taint ~state ~expression:operand
+      | WalrusOperator { target; value } ->
+          let state = analyze_assignment ~pyre_in_context ~target ~value state in
+          analyze_expression ~pyre_in_context ~taint ~state ~expression:value
+      | Yield None -> state
+      | Yield (Some expression)
+      | YieldFrom expression ->
+          let access_path = { AccessPath.root = AccessPath.Root.LocalResult; path = [] } in
+          let return_taint = get_taint (Some access_path) state in
+          analyze_expression ~pyre_in_context ~taint:return_taint ~state ~expression
+    in
+    TaintProfiler.track_expression_analysis
+      ~profiler
+      ~analysis:TaintProfiler.Backward
+      ~expression
+      ~f:analyze_expression_inner
 
 
   (* Returns the taint, and whether to collapse one level (due to star expression) *)

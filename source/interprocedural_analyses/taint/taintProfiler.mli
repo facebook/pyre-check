@@ -23,7 +23,14 @@ val track_duration : profiler:t -> name:string -> f:(unit -> 'a) -> 'a
 val track_statement_analysis
   :  profiler:t ->
   analysis:analysis ->
-  statement:Statement.statement Node.t ->
+  statement:Statement.t ->
+  f:(unit -> 'a) ->
+  'a
+
+val track_expression_analysis
+  :  profiler:t ->
+  analysis:analysis ->
+  expression:Expression.t ->
   f:(unit -> 'a) ->
   'a
 
@@ -34,4 +41,4 @@ val track_model_fetch
   f:(unit -> Model.t) ->
   Model.t
 
-val dump : t -> unit
+val dump : max_number_expressions:int -> t -> unit
