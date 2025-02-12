@@ -45,7 +45,7 @@ testcase!(
     r#"
 from typing import overload
 
-class ParentA:
+class A:
     @overload
     def method(self, x: int) -> int:
         ...
@@ -55,7 +55,24 @@ class ParentA:
         ...
 
     def method(self, x: int | str) -> int | str:
-        return 0
-      
+        return 0        
+ "#,
+);
+
+testcase_with_bug!(
+    "Todo: should raise an error because method does not exist in base class",
+    test_no_base_override,
+    r#"
+from typing import override # E: Could not import `override` from `typing`
+
+class A:
+    def method1(self) -> int:
+        return 1
+
+
+class B(A):
+    @override
+    def method2(self) -> int:  
+        return 1
  "#,
 );
