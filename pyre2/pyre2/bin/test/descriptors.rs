@@ -121,3 +121,13 @@ def f(c: C):
     reveal_type(C.foo)  # E: revealed type: property_with_setter[(self: C) -> int, (self: C, value: str) -> None]
     "#,
 );
+
+// Make sure we don't crash.
+testcase!(
+    test_staticmethod_class,
+    r#"
+@staticmethod
+class C:
+    pass
+    "#,
+);

@@ -28,6 +28,7 @@ macro_rules! table {
             $($vis)* expectations: $t<KeyExpect>,
             $($vis)* exports: $t<KeyExport>,
             $($vis)* functions: $t<KeyFunction>,
+            $($vis)* classes: $t<KeyClass>,
             $($vis)* class_fields: $t<KeyClassField>,
             $($vis)* class_synthesized_fields: $t<KeyClassSynthesizedFields>,
             $($vis)* annotations: $t<KeyAnnotation>,
@@ -57,6 +58,12 @@ macro_rules! table {
             type Value = $t<KeyFunction>;
             fn get(&self) -> &Self::Value { &self.functions }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.functions }
+        }
+
+        impl $crate::binding::table::TableKeyed<KeyClass> for $name {
+            type Value = $t<KeyClass>;
+            fn get(&self) -> &Self::Value { &self.classes }
+            fn get_mut(&mut self) -> &mut Self::Value { &mut self.classes }
         }
 
         impl $crate::binding::table::TableKeyed<KeyClassField> for $name {
@@ -116,6 +123,7 @@ macro_rules! table_for_each(
         $f(&($e).expectations);
         $f(&($e).exports);
         $f(&($e).functions);
+        $f(&($e).classes);
         $f(&($e).class_fields);
         $f(&($e).class_synthesized_fields);
         $f(&($e).annotations);
@@ -131,6 +139,7 @@ macro_rules! table_mut_for_each(
         $f(&mut ($e).expectations);
         $f(&mut ($e).exports);
         $f(&mut ($e).functions);
+        $f(&mut ($e).classes);
         $f(&mut ($e).class_fields);
         $f(&mut ($e).class_synthesized_fields);
         $f(&mut ($e).annotations);
@@ -146,6 +155,7 @@ macro_rules! table_try_for_each(
         $f(&($e).expectations)?;
         $f(&($e).exports)?;
         $f(&($e).functions)?;
+        $f(&($e).classes)?;
         $f(&($e).class_fields)?;
         $f(&($e).class_synthesized_fields)?;
         $f(&($e).annotations)?;

@@ -31,6 +31,7 @@ use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
+use crate::binding::binding::BindingClass;
 use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
@@ -56,6 +57,7 @@ use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
+use crate::types::class::Class;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::quantified::Quantified;
@@ -127,7 +129,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             keywords,
             decorators,
         } = binding;
-        let cls = self.get_idx_class_def(*k).unwrap();
+        let cls = self.get_idx(*k);
         Arc::new(self.class_metadata_of(&cls, bases, keywords, decorators, errors))
     }
 
@@ -668,6 +670,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Arc::new(EmptyAnswer)
     }
 
+    pub fn solve_class(&self, cls: &BindingClass, errors: &ErrorCollector) -> Arc<Class> {
+        Arc::new(match cls {
+            BindingClass::ClassDef(x) => self.class_definition(
+                &x.def,
+                x.fields.clone(),
+                &x.bases,
+                &x.legacy_tparams,
+                errors,
+            ),
+            BindingClass::FunctionalClassDef(x, fields) => {
+                self.functional_class_definition(x, fields)
+            }
+        })
+    }
+
     pub fn solve_class_field(
         &self,
         field: &BindingClassField,
@@ -680,7 +697,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             value_ty.as_ref(),
             annotation.as_deref(),
             field.initialization,
-            &self.get_idx_class_def(field.class).unwrap(),
+            &self.get_idx(field.class),
             field.range,
             errors,
         ))
@@ -690,7 +707,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         fields: &BindingClassSynthesizedFields,
     ) -> Arc<ClassSynthesizedFields> {
-        let cls = self.get_idx_class_def(fields.0).unwrap();
+        let cls = self.get_idx(fields.0);
         if let Some(fields) = self.get_typed_dict_synthesized_fields(&cls) {
             Arc::new(fields)
         } else if let Some(fields) = self.get_enum_synthesized_fields(&cls) {
@@ -1082,26 +1099,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExport(name.clone()))
                 .arc_clone(),
-            Binding::ClassDef(x) => {
-                let mut ty = Type::ClassDef(self.class_definition(
-                    &x.def,
-                    x.fields.clone(),
-                    &x.bases,
-                    &x.legacy_tparams,
-                    errors,
-                ));
-                for x in x.decorators.iter().rev() {
+            Binding::ClassDef(x, decorators) => {
+                let mut ty = Type::ClassDef((*self.get_idx(*x)).clone());
+                for x in decorators.iter().rev() {
                     ty = self.apply_decorator(*x, ty, &mut false, errors)
                 }
                 ty
             }
-            Binding::FunctionalClassDef(x, fields) => {
-                Type::ClassDef(self.functional_class_definition(x, fields))
-            }
-            Binding::SelfType(k) => match &*self.get_idx(*k) {
-                Type::ClassDef(c) => c.self_type(),
-                _ => unreachable!(),
-            },
+            Binding::SelfType(k) => self.get_idx(*k).self_type(),
             Binding::Forward(k) => self.get_idx(*k).arc_clone(),
             Binding::Phi(ks) => {
                 if ks.len() == 1 {

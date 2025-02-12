@@ -22,6 +22,7 @@ use crate::alt::types::function_answer::FunctionAnswer;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
+use crate::binding::binding::BindingClass;
 use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
@@ -31,6 +32,7 @@ use crate::binding::binding::EmptyAnswer;
 use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
+use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyClassSynthesizedFields;
@@ -221,6 +223,13 @@ impl SolveRecursive for KeyFunction {
         f(&mut v.ty);
     }
 }
+impl SolveRecursive for KeyClass {
+    type Recursive = ();
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        unreachable!("Classes cannot be recursive");
+    }
+    fn visit_type_mut(_v: &mut Class, _f: &mut dyn FnMut(&mut Type)) {}
+}
 impl SolveRecursive for KeyClassField {
     type Recursive = ();
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
@@ -352,6 +361,18 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyFunction {
         errors: &ErrorCollector,
     ) -> Arc<FunctionAnswer> {
         answers.solve_function(binding, errors)
+    }
+
+    fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyClass {
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &BindingClass,
+        errors: &ErrorCollector,
+    ) -> Arc<Class> {
+        answers.solve_class(binding, errors)
     }
 
     fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}

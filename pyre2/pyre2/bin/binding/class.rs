@@ -18,12 +18,14 @@ use ruff_text_size::Ranged;
 use starlark_map::small_map::SmallMap;
 
 use crate::binding::binding::Binding;
+use crate::binding::binding::BindingClass;
 use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::ClassBinding;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
+use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyClassSynthesizedFields;
@@ -45,11 +47,8 @@ impl<'a> BindingsBuilder<'a> {
 
         self.scopes.push(Scope::annotation());
 
-        let definition_key = self
-            .table
-            .types
-            .0
-            .insert(Key::Definition(ShortIdentifier::new(&x.name)));
+        let class_key = KeyClass(ShortIdentifier::new(&x.name));
+        let definition_key = self.table.classes.0.insert(class_key.clone());
 
         x.type_params.iter_mut().for_each(|x| {
             self.type_params(x);
@@ -182,17 +181,19 @@ impl<'a> BindingsBuilder<'a> {
 
         let legacy_tparams = legacy_tparam_builder.lookup_keys(self);
 
-        let name = x.name.clone();
         self.bind_definition(
-            &name,
-            Binding::ClassDef(Box::new(ClassBinding {
+            &x.name,
+            Binding::ClassDef(definition_key, decorators.into_boxed_slice()),
+            None,
+        );
+        self.table.insert(
+            class_key,
+            BindingClass::ClassDef(Box::new(ClassBinding {
                 def: x,
                 fields,
                 bases: bases.into_boxed_slice(),
-                decorators: decorators.into_boxed_slice(),
                 legacy_tparams: legacy_tparams.into_boxed_slice(),
             })),
-            None,
         );
     }
 
@@ -202,11 +203,8 @@ impl<'a> BindingsBuilder<'a> {
         base_name: ExprName,
         members: &[Expr],
     ) {
-        let definition_key = self
-            .table
-            .types
-            .0
-            .insert(Key::Definition(ShortIdentifier::new(&class_name)));
+        let class_key = KeyClass(ShortIdentifier::new(&class_name));
+        let definition_key = self.table.classes.0.insert(class_key.clone());
         self.table.insert(
             KeyClassMetadata(ShortIdentifier::new(&class_name)),
             BindingClassMetadata {
@@ -265,8 +263,12 @@ impl<'a> BindingsBuilder<'a> {
         );
         self.bind_definition(
             &class_name,
-            Binding::FunctionalClassDef(class_name.clone(), fields),
+            Binding::ClassDef(definition_key, Box::new([])),
             None,
+        );
+        self.table.insert(
+            class_key,
+            BindingClass::FunctionalClassDef(class_name.clone(), fields),
         );
     }
 }

@@ -27,7 +27,6 @@ use crate::alt::attr::NoAccessReason;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::ClassFieldInitialization;
-use crate::binding::binding::Key;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyClassSynthesizedFields;
@@ -296,14 +295,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             tparams,
             fields.clone(),
         )
-    }
-
-    pub fn get_idx_class_def(&self, idx: Idx<Key>) -> Option<Class> {
-        let ty = self.get_idx(idx);
-        match &*ty {
-            Type::ClassDef(cls) => Some(cls.dupe()),
-            _ => None,
-        }
     }
 
     pub fn functional_class_definition(

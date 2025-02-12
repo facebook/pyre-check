@@ -81,8 +81,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             let key = self
                                 .bindings()
                                 .key_to_idx(&Key::Usage(ShortIdentifier::new(&enum_name)));
-                            let cls = self.get_idx_class_def(key)?;
-                            self.get_enum_member(&cls, member_name)
+                            let ty = self.get_idx(key);
+                            let cls = match &*ty {
+                                Type::ClassDef(c) => c,
+                                _ => {
+                                    return None;
+                                }
+                            };
+                            self.get_enum_member(cls, member_name)
                         },
                         errors,
                     );
