@@ -42,6 +42,19 @@ export function activate(context: ExtensionContext) {
 
     // Start the client. This will also launch the server
     client.start();
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('pyre2.restartClient', async () => {
+            await client.stop();
+            client = new LanguageClient(
+                'Pyre2',
+                'Pyre2 language server',
+                serverOptions,
+                clientOptions
+            );
+            await client.start();
+        }),
+    );
 }
 
 export function deactivate(): Thenable<void> | undefined {

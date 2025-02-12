@@ -36,6 +36,13 @@
                 ]
             }
         ],
+        "commands": [
+            {
+                "title": "Restart Pyre2 Client",
+                "category": "pyre2",
+                "command": "pyre2.restartClient"
+            }
+        ],
         "configuration": {
             "properties": {
                 "pyre2.lspPath": {
