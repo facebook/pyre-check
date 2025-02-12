@@ -215,3 +215,15 @@ B(1)
 B("")  # E: EXPECTED Literal[''] <: int
     "#,
 );
+
+testcase!(
+    test_decorated_init,
+    r#"
+from typing import Any, assert_type
+def decorator(func) -> Any: ...
+class C:
+    @decorator
+    def __init__(self): ...
+assert_type(C(), C)
+    "#,
+);
