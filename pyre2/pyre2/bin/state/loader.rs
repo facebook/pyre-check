@@ -9,7 +9,7 @@ use std::fmt::Debug;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::RwLock;
 
 use anyhow::anyhow;
 use dupe::Dupe;
@@ -76,18 +76,18 @@ impl LoaderId {
 #[derive(Debug)]
 pub struct LoaderFindCache<T> {
     loader: T,
-    cache: Mutex<SmallMap<ModuleName, Result<(ModulePath, ErrorStyle), FindError>>>,
+    cache: RwLock<SmallMap<ModuleName, Result<(ModulePath, ErrorStyle), FindError>>>,
 }
 
 impl<T: Loader> Loader for LoaderFindCache<T> {
     fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         {
-            if let Some(result) = self.cache.lock().unwrap().get(&module) {
+            if let Some(result) = self.cache.read().unwrap().get(&module) {
                 return result.dupe();
             }
         }
         let res = self.loader.find(module.dupe());
-        self.cache.lock().unwrap().insert(module, res.dupe());
+        self.cache.write().unwrap().insert(module, res.dupe());
         res
     }
 
@@ -100,7 +100,7 @@ impl<T> LoaderFindCache<T> {
     pub fn new(loader: T) -> Self {
         Self {
             loader,
-            cache: Mutex::new(SmallMap::new()),
+            cache: RwLock::new(SmallMap::new()),
         }
     }
 }
