@@ -10,12 +10,14 @@ use ruff_python_ast::Keyword;
 use ruff_python_ast::Operator;
 use ruff_text_size::TextRange;
 use starlark_map::small_set::SmallSet;
+use vec1::Vec1;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::callable::CallArg;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
+use crate::error::style::ErrorStyle;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::DataclassKeywords;
@@ -48,6 +50,8 @@ pub enum CallTarget {
     Class(ClassType),
     /// A TypedDict.
     TypedDict(TypedDict),
+    /// An overload.
+    Overload(Vec1<Option<(Vec<Var>, CallTarget)>>),
 }
 
 impl CallTarget {
@@ -77,6 +81,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some((Vec::new(), CallTarget::Dataclass(*c)))
             }
             Type::Callable(c, _) => Some((Vec::new(), CallTarget::Callable(*c))),
+            Type::Overload(overloads) => Some((
+                Vec::new(),
+                CallTarget::Overload(overloads.mapped(|ty| self.as_call_target(ty))),
+            )),
             Type::BoundMethod(box BoundMethod { obj, func }) => match self
                 .as_call_target(func.clone())
             {
@@ -345,6 +353,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             CallTarget::Callable(callable) | CallTarget::Dataclass(callable) => {
                 self.callable_infer(callable, None, args, keywords, range, errors)
+            }
+            CallTarget::Overload(overloads) => {
+                for call_target in overloads.into_iter() {
+                    if let Some(call_target) = call_target {
+                        let call_errors = ErrorCollector::new(ErrorStyle::Delayed);
+                        let res = self.call_infer(call_target, args, keywords, range, &call_errors);
+                        if call_errors.len() == 0 {
+                            return res;
+                        }
+                    }
+                }
+                return self.error(errors, range, "No matching overload found".to_owned());
             }
         };
         self.solver().finish_quantified(&call_target.0);

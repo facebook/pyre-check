@@ -14,6 +14,7 @@ use parse_display::Display;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
+use vec1::Vec1;
 
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
@@ -311,6 +312,8 @@ pub enum Type {
     /// A method of a class. The first `Box<Type>` is the self/cls argument,
     /// and the second is the function.
     BoundMethod(Box<BoundMethod>),
+    /// An overloaded function.
+    Overload(Vec1<Type>),
     Union(Vec<Type>),
     #[expect(dead_code)] // Not currently used, but may be in the future
     Intersect(Vec<Type>),
@@ -566,6 +569,7 @@ impl Type {
                 f(func);
             }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter().for_each(f),
+            Type::Overload(xs) => xs.iter().for_each(f),
             Type::ClassType(x) => x.visit(f),
             Type::TypedDict(x) => x.visit(f),
             Type::Tuple(t) => t.visit(f),
@@ -610,6 +614,7 @@ impl Type {
                 f(func);
             }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter_mut().for_each(f),
+            Type::Overload(xs) => xs.iter_mut().for_each(f),
             Type::ClassType(x) => x.visit_mut(f),
             Type::TypedDict(x) => x.visit_mut(f),
             Type::Tuple(t) => t.visit_mut(f),

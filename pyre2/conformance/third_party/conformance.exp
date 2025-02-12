@@ -5118,12 +5118,12 @@
     },
     {
       "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED int | str <: int",
-      "description": "EXPECTED int | str <: int",
+      "column": 41,
+      "concise_description": "EXPECTED Overload[(s: str) -> int, (s: list[str]) -> int] <: (@_) -> @_",
+      "description": "EXPECTED Overload[(s: str) -> int, (s: list[str]) -> int] <: (@_) -> @_",
       "line": 103,
       "name": "PyreError",
-      "stop_column": 62,
+      "stop_column": 61,
       "stop_line": 103
     },
     {
@@ -5258,6 +5258,16 @@
     }
   ],
   "dataclasses_transform_field.py": [
+    {
+      "code": -2,
+      "column": 61,
+      "concise_description": "EXPECTED tuple[Overload[(*, default: str | None, resolver: () -> Any, init: bool) -> Any, (*, default: str | None, resolver: None, init: bool) -> Any], (*, init: bool, kw_only: bool) -> Any] <: tuple[(...) -> Any | type[Any], ...]",
+      "description": "EXPECTED tuple[Overload[(*, default: str | None, resolver: () -> Any, init: bool) -> Any, (*, default: str | None, resolver: None, init: bool) -> Any], (*, init: bool, kw_only: bool) -> Any] <: tuple[(...) -> Any | type[Any], ...]",
+      "line": 48,
+      "name": "PyreError",
+      "stop_column": 77,
+      "stop_line": 48
+    },
     {
       "code": -2,
       "column": 16,
@@ -10489,6 +10499,16 @@
     },
     {
       "code": -2,
+      "column": 17,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
+      "line": 30,
+      "name": "PyreError",
+      "stop_column": 28,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
       "column": 32,
       "concise_description": "Expected 1 type argument for class `Array`, got 2.",
       "description": "Expected 1 type argument for class `Array`, got 2.",
@@ -10505,6 +10525,16 @@
       "line": 31,
       "name": "PyreError",
       "stop_column": 59,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 28,
       "stop_line": 31
     },
     {
@@ -11973,18 +12003,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, IO[str]) failed",
-      "description": "assert_type(Any, IO[str]) failed",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, IO[bytes]) failed",
-      "description": "assert_type(Any, IO[bytes]) failed",
+      "concise_description": "assert_type(IO[str], IO[bytes]) failed",
+      "description": "assert_type(IO[str], IO[bytes]) failed",
       "line": 50,
       "name": "PyreError",
       "stop_column": 43,
@@ -11993,8 +12013,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, IO[Any]) failed",
-      "description": "assert_type(Any, IO[Any]) failed",
+      "concise_description": "assert_type(IO[str], IO[Any]) failed",
+      "description": "assert_type(IO[str], IO[Any]) failed",
       "line": 51,
       "name": "PyreError",
       "stop_column": 44,
@@ -12225,18 +12245,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, C) failed",
-      "description": "assert_type(Any, C) failed",
-      "line": 165,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 165
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, B) failed",
-      "description": "assert_type(Any, B) failed",
+      "concise_description": "assert_type(C, B) failed",
+      "description": "assert_type(C, B) failed",
       "line": 166,
       "name": "PyreError",
       "stop_column": 29,
@@ -12254,12 +12264,12 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Literal[1] <: Buffer",
-      "description": "EXPECTED Literal[1] <: Buffer",
+      "column": 13,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
       "line": 167,
       "name": "PyreError",
-      "stop_column": 24,
+      "stop_column": 18,
       "stop_line": 167
     },
     {
@@ -14373,8 +14383,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(bytes | int, int) failed",
-      "description": "assert_type(bytes | int, int) failed",
+      "concise_description": "assert_type(Any, int) failed",
+      "description": "assert_type(Any, int) failed",
       "line": 35,
       "name": "PyreError",
       "stop_column": 23,
@@ -14382,9 +14392,19 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
+      "line": 35,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(bytes | int, bytes) failed",
-      "description": "assert_type(bytes | int, bytes) failed",
+      "concise_description": "assert_type(Any, bytes) failed",
+      "description": "assert_type(Any, bytes) failed",
       "line": 36,
       "name": "PyreError",
       "stop_column": 27,
@@ -14392,12 +14412,22 @@
     },
     {
       "code": -2,
-      "column": 3,
-      "concise_description": "EXPECTED Literal[''] <: int | slice[Error, Error, Error]",
-      "description": "EXPECTED Literal[''] <: int | slice[Error, Error, Error]",
+      "column": 13,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
       "line": 37,
       "name": "PyreError",
-      "stop_column": 5,
+      "stop_column": 6,
       "stop_line": 37
     }
   ],

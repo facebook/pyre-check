@@ -18,6 +18,7 @@ use ruff_text_size::TextRange;
 use starlark_map::ordered_set::OrderedSet;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
+use vec1::Vec1;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
@@ -1095,7 +1096,33 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(values)
             }
-            Binding::Function(x, _pred) => self.get_idx(*x).ty.clone(),
+            Binding::Function(idx, pred) => {
+                let def = self.get_idx(*idx);
+                if def.is_overload {
+                    // This is an overloaded function. We should warn if this function is actually called anywhere.
+                    def.ty.clone()
+                } else {
+                    let mut acc = Vec::new();
+                    let mut pred = pred;
+                    while let Some(pred_idx) = pred {
+                        if let Binding::Function(idx, pred_) = self.bindings().get(*pred_idx) {
+                            let def = self.get_idx(*idx);
+                            if def.is_overload {
+                                acc.push(def.ty.clone());
+                                pred = pred_;
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    acc.reverse();
+                    if let Ok(overloads) = Vec1::try_from_vec(acc) {
+                        Type::Overload(overloads)
+                    } else {
+                        def.ty.clone()
+                    }
+                }
+            }
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExport(name.clone()))
                 .arc_clone(),

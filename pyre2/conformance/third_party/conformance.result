@@ -388,7 +388,7 @@
     "Line 64: Unexpected errors ['Missing argument `base`']",
     "Line 68: Unexpected errors ['Missing argument `base`']",
     "Line 102: Unexpected errors ['EXPECTED type[ConverterClass] <: (@_) -> @_']",
-    "Line 103: Unexpected errors ['EXPECTED int | str <: int']",
+    "Line 103: Unexpected errors ['EXPECTED Overload[(s: str) -> int, (s: list[str]) -> int] <: (@_) -> @_']",
     "Line 104: Unexpected errors ['EXPECTED type[dict] <: (@_) -> @_']",
     "Line 112: Unexpected errors ['Expected 0 positional arguments, got 5']",
     "Line 114: Unexpected errors [\"EXPECTED Literal['f1'] <: int\"]",
@@ -398,6 +398,7 @@
     "Line 132: Unexpected errors ['EXPECTED type[str] <: () -> str | None']"
   ],
   "dataclasses_transform_field.py": [
+    "Line 48: Unexpected errors ['EXPECTED tuple[Overload[(*, default: str | None, resolver: () -> Any, init: bool) -> Any, (*, default: str | None, resolver: None, init: bool) -> Any], (*, init: bool, kw_only: bool) -> Any] <: tuple[(...) -> Any | type[Any], ...]']",
     "Line 60: Unexpected errors ['Unexpected keyword argument `name`']",
     "Line 77: Unexpected errors ['Unexpected keyword argument `name`']"
   ],
@@ -783,8 +784,8 @@
     "Line 18: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'Expected 1 type argument for class `Array`, got 2.']",
     "Line 22: Unexpected errors ['Expected 1 type argument for class `Array`, got 3.', 'Expected 1 type argument for class `Array`, got 3.']",
     "Line 29: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'Expected 1 type argument for class `Array`, got 3.']",
-    "Line 30: Unexpected errors ['assert_type(Any, Array[?_]) failed', 'Expected 1 type argument for class `Array`, got 2.']",
-    "Line 31: Unexpected errors ['assert_type(Any, Array[?_]) failed', 'Expected 1 type argument for class `Array`, got 3.']"
+    "Line 30: Unexpected errors ['assert_type(Any, Array[?_]) failed', 'No matching overload found', 'Expected 1 type argument for class `Array`, got 2.']",
+    "Line 31: Unexpected errors ['assert_type(Any, Array[?_]) failed', 'No matching overload found', 'Expected 1 type argument for class `Array`, got 3.']"
   ],
   "generics_typevartuple_specialization.py": [
     "Line 16: Unexpected errors ['TODO: Starred(ExprStarred - Answers::expr_infer']",
@@ -884,9 +885,8 @@
     "Line 43: Expected 1 errors"
   ],
   "literals_interactions.py": [
-    "Line 49: Unexpected errors ['assert_type(Any, IO[str]) failed']",
-    "Line 50: Unexpected errors ['assert_type(Any, IO[bytes]) failed']",
-    "Line 51: Unexpected errors ['assert_type(Any, IO[Any]) failed']",
+    "Line 50: Unexpected errors ['assert_type(IO[str], IO[bytes]) failed']",
+    "Line 51: Unexpected errors ['assert_type(IO[str], IO[Any]) failed']",
     "Line 71: Unexpected errors ['EXPECTED Matrix[Literal[3], Literal[7]] <: Matrix[Literal[3], TypeVar[C]]']",
     "Line 72: Unexpected errors ['assert_type(Matrix[Literal[2], TypeVar[C]], Matrix[Literal[2], Literal[7]]) failed']",
     "Line 106: Unexpected errors [\"EXPECTED str <: Literal['ABORTED', 'MALFORMED']\"]"
@@ -903,9 +903,8 @@
     "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]",
     "Line 116: Unexpected errors ['assert_type(str, LiteralString) failed']",
     "Line 130: Unexpected errors ['EXPECTED Container[str] <: Container[LiteralString]']",
-    "Line 165: Unexpected errors ['assert_type(Any, C) failed']",
-    "Line 166: Unexpected errors ['assert_type(Any, B) failed']",
-    "Line 167: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED Literal[1] <: Buffer']"
+    "Line 166: Unexpected errors ['assert_type(C, B) failed']",
+    "Line 167: Unexpected errors ['assert_type(Any, A) failed', 'No matching overload found']"
   ],
   "literals_parameterizations.py": [
     "Line 46: Expected 1 errors",
@@ -1036,8 +1035,8 @@
   "overloads_basic.py": [
     "Lines 62, 63: Expected error (tag 'func1')",
     "Lines 74, 75: Expected error (tag 'func2')",
-    "Line 35: Unexpected errors ['assert_type(bytes | int, int) failed']",
-    "Line 36: Unexpected errors ['assert_type(bytes | int, bytes) failed']"
+    "Line 35: Unexpected errors ['assert_type(Any, int) failed', 'No matching overload found']",
+    "Line 36: Unexpected errors ['assert_type(Any, bytes) failed', 'No matching overload found']"
   ],
   "protocols_class_objects.py": [
     "Line 29: Expected 1 errors",

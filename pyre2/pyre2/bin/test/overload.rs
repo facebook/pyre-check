@@ -23,7 +23,7 @@ def f(x: str) -> str: ...
 def f(x):
     return x
 
-assert_type(f(1), int)  # E: assert_type
+assert_type(f(1), int)
 
 def anywhere():
     assert_type(f(1), int)  # E: assert_type # E: EXPECTED Literal[1] <: str
