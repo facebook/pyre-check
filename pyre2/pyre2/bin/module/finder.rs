@@ -85,7 +85,7 @@ pub fn find_module(module: ModuleName, include: &[PathBuf]) -> Option<ModulePath
         }
         FindResult::NamespacePackage(roots) => {
             // TODO(grievejia): Preserving all info in the list instead of dropping all but the first one.
-            ModulePath::filesystem(roots.first().clone())
+            ModulePath::namespace(roots.first().clone())
         }
     })
 }
@@ -247,15 +247,15 @@ mod tests {
         let search_roots = [root.to_path_buf()];
         assert_eq!(
             find_module(ModuleName::from_str("a"), &search_roots),
-            Some(ModulePath::filesystem(root.join("a")))
+            Some(ModulePath::namespace(root.join("a")))
         );
         assert_eq!(
             find_module(ModuleName::from_str("b"), &search_roots),
-            Some(ModulePath::filesystem(root.join("b")))
+            Some(ModulePath::namespace(root.join("b")))
         );
         assert_eq!(
             find_module(ModuleName::from_str("c.d"), &search_roots),
-            Some(ModulePath::filesystem(root.join("c/d")))
+            Some(ModulePath::namespace(root.join("c/d")))
         );
         assert_eq!(
             find_module(ModuleName::from_str("c.d.e"), &search_roots),

@@ -8,6 +8,15 @@ $ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py -a
 [0]
 ```
 
+## Error on a non-existent file
+
+```scrut
+$ $PYRE2 check $TMPDIR/does_not_exist
+ERROR */does_not_exist:1:1: Failed to load* (glob)
+ INFO 1 errors, * (glob)
+[1]
+```
+
 ## We can typecheck two files with the same name
 
 ```scrut

@@ -23,8 +23,6 @@ pub enum ModuleStyle {
     Executable,
     /// .pyi - just types that form an interface.
     Interface,
-    /// directory - a namespace package.
-    Namespace,
 }
 
 /// Store information about where a module is sourced from.
@@ -33,10 +31,11 @@ pub struct ModulePath(Arc<ModulePathDetails>);
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub enum ModulePathDetails {
-    /// The module source comes from a file on disk.
-    /// The path may point to a directory, in which case the module will be backed by namespace package.
+    /// The module source comes from a file on disk. Probably a `.py` or `.pyi` file.
     FileSystem(PathBuf),
-    /// The module source comes from memory.
+    /// A directory where the module is backed by a namespace package.
+    Namespace(PathBuf),
+    /// The module source comes from memory, only for files (not namespace).
     Memory(PathBuf),
     /// The module source comes from typeshed bundled with Pyre (which gets stored in-memory).
     /// The path is relative to the root of the typeshed directory.
@@ -49,13 +48,10 @@ fn is_path_init(path: &Path) -> bool {
 
 impl ModuleStyle {
     fn of_path(path: &Path) -> Self {
-        let extension = path.extension();
-        if extension == Some(OsStr::new("pyi")) {
+        if path.extension() == Some(OsStr::new("pyi")) {
             ModuleStyle::Interface
-        } else if extension == Some(OsStr::new("py")) {
-            ModuleStyle::Executable
         } else {
-            ModuleStyle::Namespace
+            ModuleStyle::Executable
         }
     }
 }
@@ -63,7 +59,9 @@ impl ModuleStyle {
 impl Display for ModulePath {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self.0 {
-            ModulePathDetails::FileSystem(path) | ModulePathDetails::Memory(path) => {
+            ModulePathDetails::FileSystem(path)
+            | ModulePathDetails::Memory(path)
+            | ModulePathDetails::Namespace(path) => {
                 write!(f, "{}", path.display())
             }
             ModulePathDetails::BundledTypeshed(relative_path) => {
@@ -80,6 +78,10 @@ impl Display for ModulePath {
 impl ModulePath {
     pub fn filesystem(path: PathBuf) -> Self {
         Self(Arc::new(ModulePathDetails::FileSystem(path)))
+    }
+
+    pub fn namespace(path: PathBuf) -> Self {
+        Self(Arc::new(ModulePathDetails::Namespace(path)))
     }
 
     pub fn memory(path: PathBuf) -> Self {
@@ -108,7 +110,8 @@ impl ModulePath {
         match &*self.0 {
             ModulePathDetails::FileSystem(path)
             | ModulePathDetails::BundledTypeshed(path)
-            | ModulePathDetails::Memory(path) => Some(path),
+            | ModulePathDetails::Memory(path)
+            | ModulePathDetails::Namespace(path) => Some(path),
         }
     }
 

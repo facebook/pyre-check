@@ -174,7 +174,9 @@ impl Loader for LspLoader {
 /// to be basically right.
 fn to_real_path(path: &ModulePath) -> Option<&Path> {
     match path.details() {
-        ModulePathDetails::FileSystem(path) | ModulePathDetails::Memory(path) => Some(path),
+        ModulePathDetails::FileSystem(path)
+        | ModulePathDetails::Memory(path)
+        | ModulePathDetails::Namespace(path) => Some(path),
         ModulePathDetails::BundledTypeshed(_) => None,
     }
 }

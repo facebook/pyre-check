@@ -28,7 +28,6 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
-use crate::module::module_path::ModuleStyle;
 use crate::state::info::Info;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
@@ -154,13 +153,8 @@ impl Step {
         };
 
         let res = match ctx.path.details() {
-            ModulePathDetails::FileSystem(path) => {
-                if ctx.path.style() == ModuleStyle::Namespace {
-                    Ok(Arc::new("".to_owned()))
-                } else {
-                    fs_anyhow::read_to_string(path).map(Arc::new)
-                }
-            }
+            ModulePathDetails::FileSystem(path) => fs_anyhow::read_to_string(path).map(Arc::new),
+            ModulePathDetails::Namespace(_) => Ok(Arc::new("".to_owned())),
             ModulePathDetails::Memory(path) => ctx
                 .loader
                 .load_from_memory(path)
