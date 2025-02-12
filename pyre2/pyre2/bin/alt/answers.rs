@@ -18,7 +18,7 @@ use starlark_map::small_map::SmallMap;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
-use crate::alt::types::function_answer::FunctionAnswer;
+use crate::alt::types::decorated_function::DecoratedFunction;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -217,9 +217,9 @@ impl SolveRecursive for KeyFunction {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         // TODO(samgoldman) I'm not sure this really makes sense. These bindings should never
         // be recursive, but this definition is required.
-        FunctionAnswer::recursive()
+        DecoratedFunction::recursive()
     }
-    fn visit_type_mut(v: &mut FunctionAnswer, f: &mut dyn FnMut(&mut Type)) {
+    fn visit_type_mut(v: &mut DecoratedFunction, f: &mut dyn FnMut(&mut Type)) {
         f(&mut v.ty);
     }
 }
@@ -359,7 +359,7 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyFunction {
         answers: &AnswersSolver<Ans>,
         binding: &FunctionBinding,
         errors: &ErrorCollector,
-    ) -> Arc<FunctionAnswer> {
+    ) -> Arc<DecoratedFunction> {
         answers.solve_function(binding, errors)
     }
 

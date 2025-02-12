@@ -11,21 +11,24 @@ use std::fmt::Display;
 
 use crate::types::types::Type;
 
+/// The type of a function definition after decorators are applied. Metadata arising from the
+/// decorators can be stored here. Note that the type might not be a function at all, since
+/// decorators can produce any type.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FunctionAnswer {
+pub struct DecoratedFunction {
     pub ty: Type,
     pub is_overload: bool,
 }
 
-impl Display for FunctionAnswer {
+impl Display for DecoratedFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Display::fmt(&self.ty, f)
     }
 }
 
-impl FunctionAnswer {
+impl DecoratedFunction {
     pub fn recursive() -> Self {
-        FunctionAnswer {
+        DecoratedFunction {
             ty: Type::any_implicit(),
             is_overload: false,
         }

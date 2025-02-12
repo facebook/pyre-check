@@ -27,7 +27,7 @@ use crate::alt::callable::CallArg;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
-use crate::alt::types::function_answer::FunctionAnswer;
+use crate::alt::types::decorated_function::DecoratedFunction;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
@@ -1322,7 +1322,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         x: &FunctionBinding,
         errors: &ErrorCollector,
-    ) -> Arc<FunctionAnswer> {
+    ) -> Arc<DecoratedFunction> {
         let check_default = |default: &Option<Box<Expr>>, ty: &Type| {
             let mut required = Required::Required;
             if let Some(default) = default {
@@ -1402,7 +1402,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for x in x.decorators.iter().rev() {
             ty = self.apply_decorator(*x, ty, &mut is_overload, errors)
         }
-        Arc::new(FunctionAnswer { ty, is_overload })
+        Arc::new(DecoratedFunction { ty, is_overload })
     }
 
     /// Unwraps a type, originally evaluated as a value, so that it can be used as a type annotation.
