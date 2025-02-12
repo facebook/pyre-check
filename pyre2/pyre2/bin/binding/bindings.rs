@@ -153,8 +153,9 @@ impl Bindings {
     {
         self.0.table.get::<K>().0.key_to_idx(k).unwrap_or_else(|| {
             panic!(
-                "key_to_idx - key not found, module {}, key {k:?}",
-                self.0.module_info.name()
+                "key_to_idx - key not found, module `{}`, path `{}`, key {k:?}",
+                self.0.module_info.name(),
+                self.0.module_info.path(),
             )
         })
     }
