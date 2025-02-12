@@ -12,7 +12,7 @@ testcase_with_bug!(
     "todo: parent can derive from Any. This program is well-typed. Add decorator to typeshed",
     test_override_any,
     r#"
-from typing import override, Any # E: Could not import `override` from `typing`
+from typing import override, Any
  
 class ParentB(Any):
     pass
@@ -63,7 +63,7 @@ testcase_with_bug!(
     "Todo: should raise an error because method does not exist in base class",
     test_no_base_override,
     r#"
-from typing import override # E: Could not import `override` from `typing`
+from typing import override
 
 class A:
     def method1(self) -> int:
