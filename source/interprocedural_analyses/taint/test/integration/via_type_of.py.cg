@@ -1,8 +1,10 @@
 @generated
 Call dependencies
+object.__init__ (override) -> []
 via_type_of.$toplevel (fun) -> []
 via_type_of.Test1_C.$class_toplevel (method) -> []
 via_type_of.Test1_C.__init__ (method) -> [via_type_of.Test1_C.x (object) via_type_of.Test1_C.y (object) via_type_of.Test1_C.z (object)]
+via_type_of.Test1_C.__init__ (override) -> []
 via_type_of.Test2_C.$class_toplevel (method) -> []
 via_type_of.Test3_C.$class_toplevel (method) -> [object.__init__ (method) object.__new__ (method)]
 via_type_of.Test4_C.$class_toplevel (method) -> []

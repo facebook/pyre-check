@@ -85,6 +85,86 @@
     "callable": "functions_as_locals.a_or_b",
     "callable_line": 51,
     "code": 5002,
+    "line": 58,
+    "start": 9,
+    "end": 23,
+    "filename": "functions_as_locals.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "functions_as_locals.py",
+              "line": 58,
+              "start": 9,
+              "end": 23
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "functions_as_locals.py",
+                "line": 58,
+                "start": 9,
+                "end": 23
+              },
+              "resolves_to": [ "functions_as_locals.barB" ],
+              "port": "formal(arg2, position=1)",
+              "call_site": "58:4-58:24"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "functions_as_locals.barB",
+      "index": 0,
+      "parameter": "formal(arg2)"
+    },
+    "master_handle": "functions_as_locals.a_or_b:5002:0:Call|functions_as_locals.barB|0|formal(arg2):94b957292fc2dc5a45fca39881482f95"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "functions_as_locals.a_or_b",
+    "callable_line": 51,
+    "code": 5002,
     "line": 57,
     "start": 6,
     "end": 20,
@@ -281,6 +361,27 @@
               "resolves_to": [ "functions_as_locals.foo" ],
               "port": "formal(arg, position=0)",
               "call_site": "17:4-17:10"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "functions_as_locals.py",
+                "line": 18,
+                "start": 6,
+                "end": 7
+              },
+              "resolves_to": [ "functions_as_locals.foo" ],
+              "port": "formal(arg, position=0)",
+              "call_site": "18:4-18:8"
             }
           }
         ]

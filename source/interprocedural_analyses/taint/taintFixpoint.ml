@@ -25,10 +25,10 @@ module Context = struct
     taint_configuration: TaintConfiguration.SharedMemory.t;
     pyre_api: PyrePysaEnvironment.ReadOnly.t;
     class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
-    (* Use a lightweight handle, to avoid copying a large handle for each worker. *)
-    define_call_graphs: Interprocedural.CallGraph.SharedMemory.ReadOnly.t;
+    (* Avoid copying a large-sized closure for each worker, to reduce the memory usage. *)
+    get_define_call_graph:
+      Interprocedural.Target.t -> Interprocedural.CallGraph.DefineCallGraph.t option;
     global_constants: Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t;
-    decorator_resolution: Interprocedural.CallGraph.DecoratorResolution.Results.t;
   }
 end
 
@@ -113,7 +113,7 @@ module Analysis = struct
       ~pyre_api
       ~class_interval_graph
       ~global_constants
-      ~define_call_graphs
+      ~get_define_call_graph
       ~qualifier
       ~callable
       ~define
@@ -130,12 +130,7 @@ module Analysis = struct
         TaintProfiler.none
     in
     let call_graph_of_define =
-      match
-        Interprocedural.CallGraph.SharedMemory.ReadOnly.get
-          define_call_graphs
-          ~cache:false
-          ~callable
-      with
+      match get_define_call_graph callable with
       | Some call_graph -> call_graph
       | None ->
           Format.asprintf "Missing call graph for `%a`" Interprocedural.Target.pp callable
@@ -212,9 +207,8 @@ module Analysis = struct
           Context.taint_configuration;
           pyre_api;
           class_interval_graph;
-          define_call_graphs;
+          get_define_call_graph;
           global_constants;
-          decorator_resolution = _;
         }
       ~callable
       ~previous_model:({ Model.modes; sanitizers; _ } as previous_model)
@@ -262,7 +256,7 @@ module Analysis = struct
         ~pyre_api
         ~class_interval_graph
         ~global_constants
-        ~define_call_graphs
+        ~get_define_call_graph
         ~qualifier
         ~callable
         ~define
@@ -270,6 +264,9 @@ module Analysis = struct
         ~modes
         ~previous_model
         ~get_callee_model
+
+
+  let skip_additional_dependency _ = false
 end
 
 let get_scheduler_policy policies =

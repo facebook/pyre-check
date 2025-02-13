@@ -46,4 +46,6 @@ module SharedMemory : sig
   val save_to_cache : t -> unit
 
   val load_from_cache : unit -> (t, SaveLoadSharedMemory.Usage.t) result
+
+  val cleanup : t -> unit
 end

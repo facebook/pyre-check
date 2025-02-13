@@ -1,8 +1,10 @@
 @generated
 Call dependencies
+object.__init__ (override) -> []
 readonly.$toplevel (fun) -> []
 readonly.A.$class_toplevel (method) -> []
 readonly.A.__init__ (method) -> [readonly.A.B (object) readonly.A.mapping (object)]
+readonly.A.__init__ (override) -> []
 readonly.A.readonly_tito (method) -> []
 readonly.A.self_readonly_map (method) -> [_test_sink (fun) readonly.A.mapping (object) typing.Mapping.get (method)]
 readonly.A.self_readonly_str (method) -> [_test_sink (fun) readonly.A.B (object)]

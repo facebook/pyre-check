@@ -230,9 +230,9 @@ module Regular = struct
     | Function { name; _ } -> Reference.create name
     | Method { class_name; method_name; _ } ->
         Reference.create ~prefix:(Reference.create class_name) method_name
-    | Override _
-    | Object _ ->
-        failwith "unexpected"
+    | (Override _ as regular)
+    | (Object _ as regular) ->
+        Format.asprintf "Unexpected: %a" pp_pretty_with_kind regular |> failwith
 
 
   let create_derived_override_exn ~at_type = function
@@ -377,6 +377,15 @@ let create define_name define =
 
 
 let create_object reference = Object (Reference.show reference) |> from_regular
+
+let get_corresponding_method_exn ~must_be_regular target =
+  (if must_be_regular then
+     as_regular_exn target
+  else
+    get_regular target)
+  |> Regular.get_corresponding_method_exn
+  |> from_regular
+
 
 let class_name target = target |> get_regular |> Regular.class_name
 

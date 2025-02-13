@@ -1,6 +1,8 @@
 @generated
 Call dependencies
+object.__init__ (override) -> []
 typevar.$toplevel (fun) -> []
 typevar.Foo.$class_toplevel (method) -> []
 typevar.Foo.__init__ (method) -> [typevar.Foo.tainted (object)]
+typevar.Foo.__init__ (override) -> []
 typevar.issue (fun) -> [_test_sink (fun) typevar.Foo.tainted (object)]

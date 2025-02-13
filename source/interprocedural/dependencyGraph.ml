@@ -112,11 +112,8 @@ module Reversed = struct
       let override_to_method_edge override =
         if Target.is_override override then
           let corresponding_method =
-            override
-            |> Target.as_regular_exn
-               (* TODO(T204630385): Handle `Target.Parameterized` with `Override`. *)
-            |> Target.Regular.get_corresponding_method_exn
-            |> Target.from_regular
+            (* TODO(T204630385): Handle `Target.Parameterized` with `Override`. *)
+            Target.get_corresponding_method_exn ~must_be_regular:true override
           in
           Some (override, [corresponding_method])
         else

@@ -246,10 +246,7 @@ module SharedMemory = struct
           let corresponding_method =
             (* In the override graph, keys can only be `Target.Regular.Method` and hence not
                `Target.Parameterized`. *)
-            target
-            |> Target.get_regular
-            |> Target.Regular.get_corresponding_method_exn
-            |> Target.from_regular
+            Target.get_corresponding_method_exn ~must_be_regular:false target
           in
           let overrides =
             handle

@@ -127,6 +127,8 @@ val as_regular_exn : t -> Regular.t
 
 val strip_parameters : t -> t
 
+val get_corresponding_method_exn : must_be_regular:bool -> t -> t
+
 (* Accessors. *)
 
 val class_name : t -> string option

@@ -221,13 +221,17 @@ module Make (Analysis : ANALYSIS) : sig
 
   type t
 
+  module State : sig
+    type t
+  end
+
   val record_initial_models
     :  scheduler:Scheduler.t ->
     initial_models:SharedModels.t ->
     initial_callables:Target.t list ->
     stubs:Target.t list ->
     override_targets:Target.t list ->
-    SharedModels.t
+    State.t
 
   val compute
     :  scheduler:Scheduler.t ->
@@ -239,7 +243,7 @@ module Make (Analysis : ANALYSIS) : sig
     max_iterations:int ->
     error_on_max_iterations:bool ->
     epoch:Epoch.t ->
-    shared_models:SharedModels.t ->
+    state:State.t ->
     t
 
   val get_result : t -> Target.t -> Analysis.Result.t
@@ -255,6 +259,8 @@ module Make (Analysis : ANALYSIS) : sig
   (** Remove the fixpoint state from the shared memory. This must be called before computing another
       fixpoint. *)
   val cleanup : t -> unit
+
+  val targets : t -> Target.t list
 
   val update_models
     :  scheduler:Scheduler.t ->

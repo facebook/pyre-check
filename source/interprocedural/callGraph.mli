@@ -539,6 +539,8 @@ module WholeProgramCallGraph : sig
   val fold : t -> init:'a -> f:(target:Target.t -> callees:Target.t list -> 'a -> 'a) -> 'a
 
   val to_target_graph : t -> TargetGraph.t
+
+  val merge_disjoint : t -> t -> t
 end
 
 (** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its

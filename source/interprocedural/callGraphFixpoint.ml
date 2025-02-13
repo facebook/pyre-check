@@ -70,65 +70,114 @@ module CallGraphAnalysis = struct
   end
 
   let analyze_define
-      ~context:{ Context.pyre_api; define_call_graphs; decorator_resolution; _ }
+      ~context:{ Context.pyre_api; define_call_graphs; decorator_resolution }
       ~callable
       ~previous_model:{ CallGraph.HigherOrderCallGraph.call_graph = previous_call_graph; _ }
       ~get_callee_model
     =
-    let define_call_graph =
-      define_call_graphs
-      |> CallGraph.SharedMemory.ReadOnly.get
-           ~cache:false
-           ~callable:(Target.strip_parameters callable)
-      |> Option.value_exn
-           ~message:(Format.asprintf "Missing call graph for `%a`" Target.pp callable)
-    in
     let qualifier, { Ast.Node.value = define; _ } =
       callable
       |> Target.strip_parameters
       |> CallGraph.get_module_and_definition_exn ~pyre_api ~decorator_resolution
     in
-    let ({ CallGraph.HigherOrderCallGraph.call_graph; _ } as model) =
-      CallGraph.higher_order_call_graph_of_define
-        ~define_call_graph
-        ~pyre_api
-        ~qualifier
-        ~define
-        ~initial_state:(CallGraph.HigherOrderCallGraph.State.initialize_from_callable callable)
-        ~get_callee_model
-    in
-    let dependencies call_graph =
-      call_graph
-      |> CallGraph.DefineCallGraph.all_targets
-           ~use_case:CallGraph.AllTargetsUseCase.CallGraphDependency
-      |> Target.Set.of_list
-    in
-    let additional_dependencies =
-      Target.Set.diff (dependencies call_graph) (dependencies previous_call_graph)
-    in
-    if CallGraph.debug_higher_order_call_graph define then (
-      Log.dump
-        "Returned callables for `%a`: `%a`"
-        Target.pp_pretty_with_kind
-        callable
-        CallGraph.CallTarget.Set.pp
-        model.CallGraph.HigherOrderCallGraph.returned_callables;
-      Log.dump
-        "Additional dependencies for `%a`: `%a`"
-        Ast.Reference.pp
-        (Analysis.PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define)
-        Target.Set.pp_pretty_with_kind
-        additional_dependencies);
-    {
-      AnalyzeDefineResult.result = ();
-      model;
-      additional_dependencies = Target.Set.elements additional_dependencies;
-    }
+    if Ast.Statement.Define.is_stub define then
+      (* Skip analyzing stubs, which do not have initial call graphs. Otherwise we would fail to get
+         their initial call graphs below, when analyzing them in the next iteration. *)
+      { AnalyzeDefineResult.result = (); model = empty_model; additional_dependencies = [] }
+    else
+      let define_call_graph =
+        define_call_graphs
+        |> CallGraph.SharedMemory.ReadOnly.get
+             ~cache:false
+             ~callable:(Target.strip_parameters callable)
+        |> Option.value_exn
+             ~message:(Format.asprintf "Missing call graph for `%a`" Target.pp callable)
+      in
+      let ({ CallGraph.HigherOrderCallGraph.call_graph; _ } as model) =
+        CallGraph.higher_order_call_graph_of_define
+          ~define_call_graph
+          ~pyre_api
+          ~qualifier
+          ~define
+          ~initial_state:(CallGraph.HigherOrderCallGraph.State.initialize_from_callable callable)
+          ~get_callee_model
+      in
+      let dependencies call_graph =
+        call_graph
+        |> CallGraph.DefineCallGraph.all_targets
+             ~use_case:CallGraph.AllTargetsUseCase.CallGraphDependency
+        |> Target.Set.of_list
+      in
+      let additional_dependencies =
+        Target.Set.diff (dependencies call_graph) (dependencies previous_call_graph)
+      in
+      if CallGraph.debug_higher_order_call_graph define then (
+        Log.dump
+          "Returned callables for `%a`: `%a`"
+          Target.pp_pretty_with_kind
+          callable
+          CallGraph.CallTarget.Set.pp
+          model.CallGraph.HigherOrderCallGraph.returned_callables;
+        Log.dump
+          "Additional dependencies for `%a`: `%a`"
+          Ast.Reference.pp
+          (Analysis.PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define)
+          Target.Set.pp_pretty_with_kind
+          additional_dependencies);
+      {
+        AnalyzeDefineResult.result = ();
+        model;
+        additional_dependencies = Target.Set.elements additional_dependencies;
+      }
 end
 
 module Fixpoint = FixpointAnalysis.Make (CallGraphAnalysis)
 
-type t = Fixpoint.t
+type fixpoint = Fixpoint.t
+
+type t = {
+  fixpoint: fixpoint;
+  whole_program_call_graph: CallGraph.WholeProgramCallGraph.t;
+  get_define_call_graph: Target.t -> CallGraph.DefineCallGraph.t option;
+}
+
+let get_model { fixpoint; _ } = Fixpoint.get_model fixpoint
+
+let cleanup { fixpoint; _ } = Fixpoint.cleanup fixpoint
+
+let get_define_call_graph ~fixpoint callable =
+  let open Option in
+  callable
+  |> Fixpoint.get_model fixpoint
+  >>| fun { CallGraph.HigherOrderCallGraph.call_graph; _ } -> call_graph
+
+
+let build_whole_program_call_graph ~scheduler ~scheduler_policy fixpoint =
+  let build_whole_program_call_graph =
+    List.fold ~init:CallGraph.WholeProgramCallGraph.empty ~f:(fun so_far callable ->
+        match get_define_call_graph ~fixpoint callable with
+        | None -> so_far
+        | Some call_graph ->
+            CallGraph.WholeProgramCallGraph.add_or_exn
+              ~callable
+              ~callees:
+                (CallGraph.DefineCallGraph.all_targets
+                   ~use_case:CallGraph.AllTargetsUseCase.TaintAnalysisDependency
+                   call_graph)
+              so_far)
+  in
+  let whole_program_call_graph =
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
+      ~initial:CallGraph.WholeProgramCallGraph.empty
+      ~map:build_whole_program_call_graph
+      ~reduce:CallGraph.WholeProgramCallGraph.merge_disjoint
+      ~inputs:(Fixpoint.targets fixpoint)
+      ()
+  in
+  whole_program_call_graph
+
 
 let compute
     ~scheduler
@@ -182,11 +231,13 @@ let compute
       ()
     |> Fixpoint.SharedModels.from_add_only
   in
-  let shared_models =
+  let fixpoint_state =
     Fixpoint.record_initial_models
       ~scheduler
       ~initial_callables:definitions
-      ~stubs:(FetchCallables.get_stubs initial_callables)
+      ~stubs:[]
+        (* No need to initialize models for stubs, since we cannot build call graphs for them
+           anyway. *)
       ~override_targets
       ~initial_models
   in
@@ -202,11 +253,11 @@ let compute
           define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
           decorator_resolution;
         }
-      ~callables_to_analyze:(List.rev_append decorated_callables callables_to_analyze)
+      ~callables_to_analyze:(List.rev_append callables_to_analyze decorated_callables)
       ~max_iterations
       ~error_on_max_iterations:false
       ~epoch:Fixpoint.Epoch.initial
-      ~shared_models
+      ~state:fixpoint_state
   in
   let drop_decorated_targets
       ~target:_
@@ -221,9 +272,8 @@ let compute
   let timer = Timer.start () in
   let fixpoint = Fixpoint.update_models fixpoint ~scheduler ~update_model:drop_decorated_targets in
   Log.info "Dropping decorated targets in models took %.2fs" (Timer.stop_in_sec timer);
-  fixpoint
-
-
-let get_model = Fixpoint.get_model
-
-let cleanup = Fixpoint.cleanup
+  {
+    fixpoint;
+    whole_program_call_graph = build_whole_program_call_graph ~scheduler ~scheduler_policy fixpoint;
+    get_define_call_graph = get_define_call_graph ~fixpoint;
+  }

@@ -818,6 +818,55 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def foo():
+       return
+     def bar():
+       return
+     class A:
+       def m():
+         return foo
+     class B(A):
+       def m():
+         return bar
+     def baz(a: A):
+       return a.m()  # Test `Override` target
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.baz"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "13:9-13:14",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     ~receiver_class:"test.A"
+                                     (Target.Regular.Override
+                                        { class_name = "test.A"; method_name = "m"; kind = Normal });
+                                 ]
+                               ())) );
+                   ];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                     CallTarget.create_regular
+                       (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                   ];
+               };
+             ]
+           ();
     ]
 
 

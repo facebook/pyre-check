@@ -591,9 +591,7 @@
                 "features": [
                   { "always-via": "special_source" },
                   { "always-via": "obscure:model" },
-                  { "always-via": "tito" },
-                  { "via": "obscure:unknown-callee" },
-                  { "via": "lambda" }
+                  { "always-via": "tito" }
                 ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
@@ -647,9 +645,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito" },
       { "always-via": "broadening" },
-      { "always-via": "issue-broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -689,9 +685,7 @@
               { "has": "first-index" },
               { "first-index": "<unknown>" },
               { "always-via": "obscure:model" },
-              { "always-via": "tito" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "tito" }
             ],
             "tito_positions": [
               { "line": 32, "start": 20, "end": 59 },
@@ -734,9 +728,7 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
       { "always-via": "obscure:model" },
-      { "always-via": "tito" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -778,13 +770,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 29, "start": 20, "end": 79 },
-              { "line": 29, "start": 24, "end": 40 },
               { "line": 29, "start": 42, "end": 78 }
             ],
             "origin": {
@@ -826,9 +815,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -870,13 +857,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 26, "start": 20, "end": 79 },
-              { "line": 26, "start": 24, "end": 40 },
               { "line": 26, "start": 42, "end": 78 }
             ],
             "origin": {
@@ -918,9 +902,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -962,13 +944,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 21, "start": 20, "end": 74 },
-              { "line": 21, "start": 24, "end": 55 },
               { "line": 21, "start": 57, "end": 73 }
             ],
             "origin": {
@@ -1010,9 +989,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1054,13 +1031,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 21, "start": 20, "end": 74 },
-              { "line": 21, "start": 24, "end": 55 },
               { "line": 21, "start": 57, "end": 73 }
             ],
             "origin": {
@@ -1102,9 +1076,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1146,13 +1118,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 21, "start": 20, "end": 74 },
-              { "line": 21, "start": 24, "end": 55 },
               { "line": 21, "start": 57, "end": 73 }
             ],
             "origin": {
@@ -1194,9 +1163,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1238,13 +1205,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 16, "start": 20, "end": 60 },
-              { "line": 16, "start": 24, "end": 35 },
               { "line": 16, "start": 37, "end": 59 }
             ],
             "origin": {
@@ -1286,9 +1250,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1330,13 +1292,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 16, "start": 20, "end": 60 },
-              { "line": 16, "start": 24, "end": 35 },
               { "line": 16, "start": 37, "end": 59 }
             ],
             "origin": {
@@ -1378,9 +1337,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1422,13 +1379,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 16, "start": 20, "end": 60 },
-              { "line": 16, "start": 24, "end": 35 },
               { "line": 16, "start": 37, "end": 59 }
             ],
             "origin": {
@@ -1470,9 +1424,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1514,13 +1466,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 12, "start": 20, "end": 54 },
-              { "line": 12, "start": 24, "end": 35 },
               { "line": 12, "start": 37, "end": 53 }
             ],
             "origin": {
@@ -1562,9 +1511,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1606,13 +1553,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 12, "start": 20, "end": 54 },
-              { "line": 12, "start": 24, "end": 35 },
               { "line": 12, "start": 37, "end": 53 }
             ],
             "origin": {
@@ -1654,9 +1598,7 @@
       { "always-via": "obscure:model" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" },
-      { "via": "lambda" }
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1775,14 +1717,10 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" },
-              { "via": "obscure:unknown-callee" },
-              { "via": "lambda" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [
               { "line": 59, "start": 16, "end": 51 },
-              { "line": 59, "start": 20, "end": 34 },
               { "line": 59, "start": 36, "end": 50 }
             ],
             "origin": {

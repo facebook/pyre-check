@@ -1,11 +1,13 @@
 @generated
 Call dependencies
+object.__init__ (override) -> []
 via_attribute_name.$toplevel (fun) -> []
 via_attribute_name.SinkAttributes.$class_toplevel (method) -> []
 via_attribute_name.SourceAttributes.$class_toplevel (method) -> []
 via_attribute_name.TitoAttributeModelQuery.$class_toplevel (method) -> []
 via_attribute_name.TitoAttributes.$class_toplevel (method) -> []
 via_attribute_name.TitoAttributes.__init__ (method) -> [via_attribute_name.TitoAttributes.x (object) via_attribute_name.TitoAttributes.y (object) via_attribute_name.TitoAttributes.z (object)]
+via_attribute_name.TitoAttributes.__init__ (override) -> []
 via_attribute_name.test_sink_attribute_x (fun) -> [_test_source (fun) via_attribute_name.SinkAttributes.x (object)]
 via_attribute_name.test_sink_attribute_y (fun) -> [_test_source (fun) via_attribute_name.SinkAttributes.y (object)]
 via_attribute_name.test_sink_attribute_z (fun) -> [_test_source (fun) via_attribute_name.SinkAttributes.z (object)]

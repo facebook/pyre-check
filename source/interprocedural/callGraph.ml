@@ -4025,9 +4025,15 @@ module HigherOrderCallGraph = struct
 
       let rec analyze_call ~location ~call ~arguments ~state =
         let formal_arguments_if_non_stub target =
-          target
-          |> Target.get_module_and_definition ~pyre_api:Context.pyre_api
-          >>= fun (_, { Node.value = define; _ }) -> formal_arguments_from_non_stub_define define
+          if Target.is_override target || Target.is_object target then
+            (* TODO(T204630385): It is possible for a target to be an `Override`, which we do not
+               handle for now, or an `Object`, such as a function-typed variable that cannot be
+               resolved by the original call graph building. *)
+            None
+          else
+            target
+            |> Target.get_module_and_definition ~pyre_api:Context.pyre_api
+            >>= fun (_, { Node.value = define; _ }) -> formal_arguments_from_non_stub_define define
         in
         let create_parameter_target (parameter_target, (_, argument_matches)) =
           match argument_matches, parameter_target with

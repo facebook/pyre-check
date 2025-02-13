@@ -441,6 +441,9 @@ module TestEnvironment = struct
     taint_configuration_shared_memory: TaintConfiguration.SharedMemory.t;
     whole_program_call_graph: CallGraph.WholeProgramCallGraph.t;
     define_call_graphs: CallGraph.SharedMemory.t;
+    get_define_call_graph:
+      Interprocedural.Target.t -> Interprocedural.CallGraph.DefineCallGraph.t option;
+    call_graph_fixpoint_state: CallGraphFixpoint.t;
     override_graph_heap: OverrideGraph.Heap.t;
     override_graph_shared_memory: OverrideGraph.SharedMemory.t;
     initial_callables: FetchCallables.t;
@@ -452,8 +455,41 @@ module TestEnvironment = struct
     class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
     global_constants: GlobalConstants.SharedMemory.t;
     stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
-    decorator_resolution: CallGraph.DecoratorResolution.Results.t;
   }
+
+  let cleanup
+      {
+        static_analysis_configuration = _;
+        taint_configuration = _;
+        taint_configuration_shared_memory = _;
+        whole_program_call_graph = _;
+        define_call_graphs;
+        get_define_call_graph = _;
+        call_graph_fixpoint_state;
+        override_graph_heap = _;
+        override_graph_shared_memory;
+        initial_callables = _;
+        stubs = _;
+        initial_models;
+        model_query_results = _;
+        pyre_api = _;
+        class_interval_graph;
+        class_interval_graph_shared_memory;
+        global_constants;
+        stubs_shared_memory_handle;
+      }
+    =
+    CallGraph.SharedMemory.cleanup define_call_graphs;
+    CallGraphFixpoint.cleanup call_graph_fixpoint_state;
+    OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
+    (* Clean up nitial_models, in case we didn't actually compute the fixpoint for that test. In
+       tests where we do compute the fixpoint, it's fine to cleanup models twice. *)
+    Taint.TaintFixpoint.SharedModels.cleanup ~clean_old:true initial_models;
+    ClassIntervalSetGraph.SharedMemory.cleanup
+      class_interval_graph_shared_memory
+      class_interval_graph;
+    Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle;
+    GlobalConstants.SharedMemory.cleanup global_constants
 end
 
 let set_up_decorator_preprocessing ~handle models =
@@ -512,6 +548,7 @@ let initialize
     ?(taint_configuration = TaintConfiguration.Heap.default)
     ?(verify_empty_model_queries = true)
     ?model_path
+    ?(higher_order_call_graph_max_iterations = 10)
     ~context
     source_content
   =
@@ -624,20 +661,51 @@ let initialize
 
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
-  let decorator_resolution = Interprocedural.CallGraph.DecoratorResolution.Results.empty in
-  let { CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs } =
+  let decorators = CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions in
+  let decorator_resolution =
+    CallGraph.DecoratorResolution.Results.resolve_batch_exn
+      ~debug:false
+      ~pyre_api
+      ~override_graph:override_graph_shared_memory
+      ~decorators
+      definitions
+  in
+  let ({ CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
     CallGraph.SharedMemory.build_whole_program_call_graph
-      ~scheduler:(Test.mock_scheduler ())
+      ~scheduler
       ~static_analysis_configuration
       ~pyre_api
       ~resolve_module_path:None
       ~override_graph:(Some override_graph_shared_memory_read_only)
       ~store_shared_memory:true
       ~attribute_targets:(SharedModels.object_targets initial_models)
-      ~decorators:Interprocedural.CallGraph.CallableToDecoratorsMap.empty
+      ~decorators
       ~skip_analysis_targets:Target.Set.empty
       ~definitions
       ~decorator_resolution
+  in
+  let dependency_graph =
+    DependencyGraph.build_whole_program_dependency_graph
+      ~static_analysis_configuration
+      ~prune:DependencyGraph.PruneMethod.None
+      ~initial_callables
+      ~call_graph:whole_program_call_graph
+      ~overrides:override_graph_heap
+  in
+  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let ({ CallGraphFixpoint.whole_program_call_graph; get_define_call_graph; _ } as
+      call_graph_fixpoint_state)
+    =
+    CallGraphFixpoint.compute
+      ~scheduler
+      ~scheduler_policy
+      ~pyre_api
+      ~call_graph
+      ~dependency_graph
+      ~override_graph_shared_memory
+      ~initial_callables
+      ~decorator_resolution
+      ~max_iterations:higher_order_call_graph_max_iterations
   in
   let initial_models =
     MissingFlow.add_unknown_callee_models
@@ -657,6 +725,8 @@ let initialize
     taint_configuration_shared_memory;
     whole_program_call_graph;
     define_call_graphs;
+    get_define_call_graph;
+    call_graph_fixpoint_state;
     override_graph_heap;
     override_graph_shared_memory;
     initial_callables;
@@ -668,7 +738,6 @@ let initialize
     class_interval_graph_shared_memory;
     global_constants;
     stubs_shared_memory_handle;
-    decorator_resolution;
   }
 
 
@@ -783,25 +852,22 @@ let end_to_end_integration_test path context =
       in
       create_expected_and_actual_files ~suffix:".overrides" actual
     in
-    let {
-      TestEnvironment.static_analysis_configuration;
-      taint_configuration;
-      taint_configuration_shared_memory;
-      whole_program_call_graph;
-      define_call_graphs;
-      pyre_api;
-      override_graph_heap;
-      override_graph_shared_memory;
-      initial_models;
-      initial_callables;
-      model_query_results = _;
-      stubs;
-      class_interval_graph;
-      class_interval_graph_shared_memory;
-      global_constants;
-      stubs_shared_memory_handle;
-      decorator_resolution;
-    }
+    let ({
+           TestEnvironment.static_analysis_configuration;
+           taint_configuration;
+           taint_configuration_shared_memory;
+           whole_program_call_graph;
+           get_define_call_graph;
+           pyre_api;
+           override_graph_heap;
+           override_graph_shared_memory;
+           initial_models;
+           initial_callables;
+           stubs;
+           class_interval_graph_shared_memory;
+           global_constants;
+           _;
+         } as test_environment)
       =
       try
         initialize
@@ -819,7 +885,8 @@ let end_to_end_integration_test path context =
               Printf.printf "%s\n" (ModelVerificationError.display error));
           raise exn
     in
-    let entrypoints = SharedModels.entrypoints ~scheduler:(Test.mock_scheduler ()) initial_models in
+    let scheduler = Test.mock_scheduler () in
+    let entrypoints = SharedModels.entrypoints ~scheduler initial_models in
     let prune_method =
       match entrypoints with
       | [] -> Interprocedural.DependencyGraph.PruneMethod.Internals
@@ -833,9 +900,9 @@ let end_to_end_integration_test path context =
         ~call_graph:whole_program_call_graph
         ~overrides:override_graph_heap
     in
-    let shared_models =
+    let fixpoint_state =
       TaintFixpoint.record_initial_models
-        ~scheduler:(Test.mock_scheduler ())
+        ~scheduler
         ~initial_models
         ~initial_callables:(FetchCallables.get_definitions initial_callables)
         ~stubs
@@ -844,9 +911,9 @@ let end_to_end_integration_test path context =
     let override_graph_shared_memory_read_only =
       Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory
     in
-    let fixpoint_state =
+    let fixpoint =
       TaintFixpoint.compute
-        ~scheduler:(Test.mock_scheduler ())
+        ~scheduler
         ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
         ~override_graph:override_graph_shared_memory_read_only
         ~dependency_graph
@@ -855,16 +922,15 @@ let end_to_end_integration_test path context =
             TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
             pyre_api;
             class_interval_graph = class_interval_graph_shared_memory;
-            define_call_graphs = Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs;
+            get_define_call_graph;
             global_constants =
               Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
-            decorator_resolution;
           }
         ~callables_to_analyze
         ~max_iterations:100
         ~error_on_max_iterations:true
         ~epoch:TaintFixpoint.Epoch.initial
-        ~shared_models
+        ~state:fixpoint_state
     in
     let resolve_module_path qualifier =
       PyrePysaEnvironment.ReadOnly.relative_path_of_qualifier pyre_api qualifier
@@ -874,7 +940,7 @@ let end_to_end_integration_test path context =
     let serialize_model callable =
       TaintReporting.fetch_and_externalize
         ~taint_configuration
-        ~fixpoint_state
+        ~fixpoint_state:fixpoint
         ~resolve_module_path
         ~resolve_callable_location:(Target.get_callable_location ~pyre_api)
         ~override_graph:override_graph_shared_memory_read_only
@@ -896,14 +962,8 @@ let end_to_end_integration_test path context =
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:""
     in
-    let () = TaintFixpoint.cleanup fixpoint_state in
-    let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
-    let () =
-      ClassIntervalSetGraph.SharedMemory.cleanup
-        class_interval_graph_shared_memory
-        class_interval_graph
-    in
-    let () = Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle in
+    let () = TaintFixpoint.cleanup fixpoint in
+    let () = TestEnvironment.cleanup test_environment in
     divergent_files, serialized_models
   in
   let divergent_files =

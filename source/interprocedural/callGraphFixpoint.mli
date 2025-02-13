@@ -5,7 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t
+type fixpoint
+
+type t = {
+  fixpoint: fixpoint;
+  whole_program_call_graph: CallGraph.WholeProgramCallGraph.t;
+  get_define_call_graph: Target.t -> CallGraph.DefineCallGraph.t option;
+}
 
 val compute
   :  scheduler:Scheduler.t ->

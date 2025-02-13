@@ -27,21 +27,21 @@ let assert_fixpoint
   let taint_configuration =
     TaintConfiguration.apply_missing_flows TaintConfiguration.Heap.default missing_flows
   in
-  let {
-    TestEnvironment.static_analysis_configuration;
-    taint_configuration;
-    taint_configuration_shared_memory;
-    whole_program_call_graph;
-    define_call_graphs;
-    pyre_api;
-    override_graph_heap;
-    override_graph_shared_memory;
-    initial_models;
-    initial_callables;
-    stubs;
-    class_interval_graph_shared_memory;
-    _;
-  }
+  let ({
+         TestEnvironment.static_analysis_configuration;
+         taint_configuration;
+         taint_configuration_shared_memory;
+         whole_program_call_graph;
+         get_define_call_graph;
+         pyre_api;
+         override_graph_heap;
+         override_graph_shared_memory;
+         initial_models;
+         initial_callables;
+         stubs;
+         class_interval_graph_shared_memory;
+         _;
+       } as test_environment)
     =
     initialize
       ?models_source
@@ -59,7 +59,7 @@ let assert_fixpoint
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
   in
-  let shared_models =
+  let state =
     TaintFixpoint.record_initial_models
       ~scheduler:(Test.mock_scheduler ())
       ~initial_models
@@ -79,16 +79,15 @@ let assert_fixpoint
           TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
           pyre_api;
           class_interval_graph = class_interval_graph_shared_memory;
-          define_call_graphs = Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs;
+          get_define_call_graph;
           global_constants =
             GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only;
-          decorator_resolution = CallGraph.DecoratorResolution.Results.empty;
         }
       ~callables_to_analyze
       ~max_iterations:100
       ~error_on_max_iterations:true
       ~epoch:TaintFixpoint.Epoch.initial
-      ~shared_models
+      ~state
   in
   assert_bool
     "Call graph is empty!"
@@ -106,6 +105,7 @@ let assert_fixpoint
     List.iter ~f:(check_expectation ~pyre_api ~taint_configuration ~get_model ~get_errors) expect
   in
   let () = TaintFixpoint.cleanup fixpoint_state in
+  let () = TestEnvironment.cleanup test_environment in
   ()
 
 

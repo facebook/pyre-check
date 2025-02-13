@@ -816,7 +816,7 @@ let run_taint_analysis
            (List.length callables_kept))
       ~end_message:"Analysis fixpoint complete"
   in
-  let shared_models =
+  let fixpoint_state =
     TaintFixpoint.record_initial_models
       ~scheduler
       ~initial_models
@@ -824,7 +824,11 @@ let run_taint_analysis
       ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
       ~override_targets
   in
-  let fixpoint_state =
+  (* Use a lightweight handle, to avoid copying a large handle for each worker. *)
+  let get_define_call_graph define_call_graphs callable =
+    Interprocedural.CallGraph.SharedMemory.ReadOnly.get define_call_graphs ~cache:false ~callable
+  in
+  let fixpoint =
     Taint.TaintFixpoint.compute
       ~scheduler
       ~scheduler_policy:(Taint.TaintFixpoint.get_scheduler_policy scheduler_policies)
@@ -835,15 +839,16 @@ let run_taint_analysis
           Taint.TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
           pyre_api;
           class_interval_graph = class_interval_graph_shared_memory;
-          define_call_graphs = Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs;
+          get_define_call_graph =
+            get_define_call_graph
+              (Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs);
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
-          decorator_resolution;
         }
       ~callables_to_analyze
       ~max_iterations:100
       ~error_on_max_iterations:true
       ~epoch:Taint.TaintFixpoint.Epoch.initial
-      ~shared_models
+      ~state:fixpoint_state
   in
 
   let all_callables = List.rev_append (SharedModels.targets initial_models) callables_to_analyze in
@@ -860,7 +865,7 @@ let run_taint_analysis
         ~callables_to_analyze
         ~all_callables
         ~rules:taint_configuration.TaintConfiguration.Heap.rules
-        ~fixpoint_state
+        ~fixpoint_state:fixpoint
   in
 
   let callables = Target.Set.of_list all_callables in
@@ -873,7 +878,7 @@ let run_taint_analysis
       ~resolve_module_path
       ~callables
       ~fixpoint_step_logger
-      ~fixpoint_state
+      ~fixpoint_state:fixpoint
   in
 
   if compact_ocaml_heap_flag then
@@ -905,7 +910,7 @@ let run_taint_analysis
           ~callables
           ~skipped_overrides
           ~model_verification_errors
-          ~fixpoint_state
+          ~fixpoint_state:fixpoint
           ~errors
           ~cache
           ~file_coverage
