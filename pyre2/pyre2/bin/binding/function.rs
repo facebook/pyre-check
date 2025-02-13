@@ -110,9 +110,17 @@ impl<'a> BindingsBuilder<'a> {
         self.functions.push(FuncInfo::default());
 
         let func_name = x.name.clone();
-        let self_type = match &self.scopes.current().kind {
-            ScopeKind::ClassBody(body) => Some(self.table.types.0.insert(body.as_self_type_key())),
-            _ => None,
+        let (self_type, class_meta) = match &self.scopes.current().kind {
+            ScopeKind::ClassBody(body) => (
+                Some(self.table.types.0.insert(body.as_self_type_key())),
+                Some(
+                    self.table
+                        .class_metadata
+                        .0
+                        .insert(body.as_class_metadata_key()),
+                ),
+            ),
+            _ => (None, None),
         };
 
         self.scopes.push(Scope::annotation());
@@ -382,7 +390,7 @@ impl<'a> BindingsBuilder<'a> {
 
         self.bind_definition(
             &func_name,
-            Binding::Function(function_idx, pred_idx),
+            Binding::Function(function_idx, pred_idx, class_meta),
             Some(FlowStyle::FunctionDef(function_idx)),
         );
     }

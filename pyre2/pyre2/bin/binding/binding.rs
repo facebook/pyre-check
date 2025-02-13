@@ -632,7 +632,12 @@ pub enum Binding {
     /// A type parameter.
     TypeParameter(Quantified),
     /// The type of a function. Stores an optional reference to the predecessor of this function.
-    Function(Idx<KeyFunction>, Option<Idx<Key>>),
+    /// If the function is defined in a class scope, stores a reference to the class metadata.
+    Function(
+        Idx<KeyFunction>,
+        Option<Idx<Key>>,
+        Option<Idx<KeyClassMetadata>>,
+    ),
     /// An import statement, typically with Self::Import.
     Import(ModuleName, Name),
     /// A class definition, points to a BindingClass and any decorators.
@@ -783,7 +788,7 @@ impl DisplayWith<Bindings> for Binding {
                 };
                 write!(f, "unpack {} {:?} @ {}", x.display_with(ctx), range, pos)
             }
-            Self::Function(x, _pred) => write!(f, "{}", ctx.display(*x)),
+            Self::Function(x, _pred, _class) => write!(f, "{}", ctx.display(*x)),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::ClassDef(x, _) => write!(f, "{}", ctx.display(*x)),
             Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),

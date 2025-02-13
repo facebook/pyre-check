@@ -122,7 +122,7 @@ impl State {
             match bindings.idx_to_key(idx) {
                 key @ Key::ReturnType(id) => {
                     match bindings.get(bindings.key_to_idx(&Key::Definition(id.clone()))) {
-                        Binding::Function(x, _pred)
+                        Binding::Function(x, _pred, _class_meta)
                             if !matches!(bindings.get(idx), &Binding::AnnotatedType(..)) =>
                         {
                             if let Some(ty) = self.get_type(handle, key)

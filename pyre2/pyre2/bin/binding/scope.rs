@@ -22,6 +22,7 @@ use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
+use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyFunction;
 use crate::config::Config;
 use crate::export::definitions::DefinitionStyle;
@@ -158,6 +159,10 @@ pub struct ClassBodyInner {
 impl ClassBodyInner {
     pub fn as_self_type_key(&self) -> Key {
         Key::SelfType(ShortIdentifier::new(&self.name))
+    }
+
+    pub fn as_class_metadata_key(&self) -> KeyClassMetadata {
+        KeyClassMetadata(ShortIdentifier::new(&self.name))
     }
 }
 

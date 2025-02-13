@@ -1098,7 +1098,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(values)
             }
-            Binding::Function(idx, mut pred) => {
+            Binding::Function(idx, mut pred, _class_metadata) => {
                 // Overloads in .pyi should not have an implementation.
                 // TODO: Overloaded methods in protocols also do not need implementations.
                 let needs_implementation =
@@ -1417,7 +1417,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     // Given the index to a function binding, return the previous function binding, if any.
     pub fn step_overload_pred(&self, pred: &mut Option<Idx<Key>>) -> Option<Type> {
         let pred_idx = (*pred)?;
-        if let Binding::Function(idx, pred_) = self.bindings().get(pred_idx) {
+        if let Binding::Function(idx, pred_, _) = self.bindings().get(pred_idx) {
             let def = self.get_idx(*idx);
             if def.is_overload {
                 *pred = *pred_;
