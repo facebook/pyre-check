@@ -477,7 +477,7 @@ let compute_coverage
   let compute_kind_coverage callables =
     callables
     |> List.filter_map ~f:(fun callable ->
-           match TaintFixpoint.get_model fixpoint_state callable with
+           match TaintFixpoint.State.ReadOnly.get_model fixpoint_state callable with
            | Some model -> Some (KindCoverage.from_model model)
            | None -> None)
     |> Algorithms.fold_balanced ~f:KindCoverage.union ~init:KindCoverage.empty
@@ -865,7 +865,7 @@ let run_taint_analysis
         ~callables_to_analyze
         ~all_callables
         ~rules:taint_configuration.TaintConfiguration.Heap.rules
-        ~fixpoint_state:fixpoint
+        ~fixpoint_state:(TaintFixpoint.State.read_only fixpoint.TaintFixpoint.state)
   in
 
   let callables = Target.Set.of_list all_callables in
@@ -878,7 +878,7 @@ let run_taint_analysis
       ~resolve_module_path
       ~callables
       ~fixpoint_step_logger
-      ~fixpoint_state:fixpoint
+      ~fixpoint
   in
 
   if compact_ocaml_heap_flag then
@@ -910,7 +910,7 @@ let run_taint_analysis
           ~callables
           ~skipped_overrides
           ~model_verification_errors
-          ~fixpoint_state:fixpoint
+          ~fixpoint_state:(TaintFixpoint.State.read_only fixpoint.TaintFixpoint.state)
           ~errors
           ~cache
           ~file_coverage

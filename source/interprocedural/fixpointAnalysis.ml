@@ -276,6 +276,7 @@ module Make (Analysis : ANALYSIS) = struct
     epoch: Epoch.t;
     iteration: int;
   }
+  [@@deriving show]
 
   (* The fixpoint state, stored in shared memory. *)
   module State = struct
@@ -290,22 +291,41 @@ module Make (Analysis : ANALYSIS) = struct
           let description = "InterproceduralFixpointResults"
         end)
 
-    type meta_data = {
-      is_partial: bool;
-      step: step;
-    }
+    module MetaData = struct
+      type t = {
+        is_partial: bool;
+        step: step;
+      }
+      [@@deriving show]
+    end
 
     (* Caches the fixpoint state (is_partial) of a call model. *)
-    module SharedFixpoint =
-      Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
-        (Target.SharedMemoryKey)
-        (struct
-          type t = meta_data
+    module SharedFixpoint = struct
+      include
+        Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
+          (Target.SharedMemoryKey)
+          (struct
+            type t = MetaData.t
 
-          let prefix = Hack_parallel.Std.Prefix.make ()
+            let prefix = Hack_parallel.Std.Prefix.make ()
 
-          let description = "InterproceduralFixpointMetadata"
-        end)
+            let description = "InterproceduralFixpointMetadata"
+          end)
+
+      let get_is_partial shared_fixpoint callable =
+        match get shared_fixpoint callable with
+        | Some { is_partial; _ } -> is_partial
+        | None -> (
+            match get_old shared_fixpoint callable with
+            | None -> true
+            | Some { is_partial; _ } -> is_partial)
+
+
+      let get_meta_data shared_fixpoint callable =
+        match get shared_fixpoint callable with
+        | Some _ as meta_data -> meta_data
+        | None -> get_old shared_fixpoint callable
+    end
 
     type t = {
       shared_fixpoint: SharedFixpoint.t;
@@ -326,30 +346,32 @@ module Make (Analysis : ANALYSIS) = struct
       | None -> get_old_model shared_models callable
 
 
+    module ReadOnly = struct
+      type t = { shared_models: SharedModels.ReadOnly.t }
+
+      let get_new_model { shared_models; _ } callable =
+        SharedModels.ReadOnly.get shared_models ~cache:true callable
+
+
+      let get_old_model { shared_models; _ } callable =
+        SharedModels.ReadOnly.get_old shared_models callable
+
+
+      let get_model read_only callable =
+        match get_new_model read_only callable with
+        | Some _ as model -> model
+        | None -> get_old_model read_only callable
+    end
+
+    let read_only { shared_models; _ } =
+      { ReadOnly.shared_models = SharedModels.read_only shared_models }
+
+
     let get_result callable = SharedResults.get callable |> Option.value ~default:Result.empty
 
     let set_result callable result =
       SharedResults.remove_batch (SharedResults.KeySet.singleton callable);
       SharedResults.add callable result
-
-
-    let get_is_partial shared_fixpoint callable =
-      match SharedFixpoint.get shared_fixpoint callable with
-      | Some { is_partial; _ } -> is_partial
-      | None -> (
-          match SharedFixpoint.get_old shared_fixpoint callable with
-          | None -> true
-          | Some { is_partial; _ } -> is_partial)
-
-
-    let get_meta_data shared_fixpoint callable =
-      match SharedFixpoint.get shared_fixpoint callable with
-      | Some _ as meta_data -> meta_data
-      | None -> SharedFixpoint.get_old shared_fixpoint callable
-
-
-    let meta_data_to_string { is_partial; step = { epoch; iteration } } =
-      Format.sprintf "{ partial: %b; epoch: %d; iteration: %d }" is_partial epoch iteration
 
 
     type iteration_callable_result = {
@@ -397,24 +419,29 @@ module Make (Analysis : ANALYSIS) = struct
       shared_models
 
 
-    let clear_results shared_models =
+    let clear_results { shared_models; _ } =
       shared_models
       |> SharedModels.keys
       |> SharedResults.KeySet.of_list
       |> SharedResults.remove_batch
 
 
-    let targets shared_models = SharedModels.keys shared_models
+    let targets { shared_models; _ } = SharedModels.keys shared_models
 
     (** Remove the fixpoint state from the shared memory. This must be called before computing
         another fixpoint. *)
-    let cleanup { shared_models; shared_fixpoint } =
-      let targets = shared_models |> targets |> SharedResults.KeySet.of_list in
+    let cleanup ({ shared_models; shared_fixpoint } as state) =
+      let targets = state |> targets |> SharedResults.KeySet.of_list in
       let () = SharedModels.cleanup ~clean_old:true shared_models in
       let () = SharedResults.remove_batch targets in
       let () = SharedFixpoint.remove_batch shared_fixpoint targets in
       let () = SharedFixpoint.remove_old_batch shared_fixpoint targets in
       ()
+
+
+    let update_models ~scheduler ~update_model ({ shared_models; _ } as state) =
+      let shared_models = SharedModels.map_parallel shared_models ~scheduler ~f:update_model in
+      { state with shared_models }
   end
 
   let initialize_models_for_new_dependencies ~shared_models = function
@@ -650,7 +677,7 @@ module Make (Analysis : ANALYSIS) = struct
     =
     let () =
       (* Verify invariants *)
-      match State.get_meta_data shared_fixpoint callable with
+      match State.SharedFixpoint.get_meta_data shared_fixpoint callable with
       | None -> ()
       | Some { step = { epoch; _ }; _ } when epoch <> step.epoch ->
           Format.asprintf
@@ -746,7 +773,7 @@ module Make (Analysis : ANALYSIS) = struct
     =
     let might_change_if_reanalyzed =
       List.fold previous_callables ~init:Target.Set.empty ~f:(fun accumulator callable ->
-          if not (State.get_is_partial shared_fixpoint callable) then
+          if not (State.SharedFixpoint.get_is_partial shared_fixpoint callable) then
             accumulator
           else
             (* callable must be re-analyzed next iteration because its result has changed, and
@@ -768,20 +795,21 @@ module Make (Analysis : ANALYSIS) = struct
           Target.Set.diff might_change_if_reanalyzed (Target.Set.of_list callables_to_reanalyze)
         in
         let check_missing callable =
-          match State.get_meta_data shared_fixpoint callable with
+          match State.SharedFixpoint.get_meta_data shared_fixpoint callable with
           | None -> () (* okay, caller is in a later epoch *)
           | Some { step = { epoch; _ }; _ } when epoch = Epoch.predefined -> ()
           | Some meta ->
               let message =
                 Format.asprintf
                   "Re-analysis in iteration %d determined to analyze %a but it is not part of \
-                   epoch %a (meta: %s)"
+                   epoch %a (meta: %a)"
                   step.iteration
                   Target.pp_pretty
                   callable
                   Epoch.pp
                   step.epoch
-                  (State.meta_data_to_string meta)
+                  State.MetaData.pp
+                  meta
               in
               Log.error "%s" message;
               failwith message
@@ -904,31 +932,6 @@ module Make (Analysis : ANALYSIS) = struct
         initial_callables_to_analyze
     in
     { fixpoint_reached_iterations = iterations; state }
-
-
-  let get_model { state = { State.shared_models; _ }; _ } target =
-    State.get_model (SharedModels.preserve_key_only shared_models) target
-
-
-  let get_result _ target = State.get_result target
-
-  let set_result _ target result = State.set_result target result
-
-  let clear_results { state = { State.shared_models; _ }; _ } = State.clear_results shared_models
-
-  let get_iterations { fixpoint_reached_iterations; _ } = fixpoint_reached_iterations
-
-  let cleanup { state; _ } = State.cleanup state
-
-  let targets { state = { State.shared_models; _ }; _ } = State.targets shared_models
-
-  let update_models
-      ~scheduler
-      ~update_model
-      ({ state = { State.shared_models; _ } as state; _ } as result)
-    =
-    let shared_models = SharedModels.map_parallel shared_models ~scheduler ~f:update_model in
-    { result with state = { state with shared_models } }
 end
 
 module WithoutLogging = struct

@@ -942,7 +942,7 @@ let end_to_end_integration_test path context =
     let serialize_model callable =
       TaintReporting.fetch_and_externalize
         ~taint_configuration
-        ~fixpoint_state:fixpoint
+        ~fixpoint_state:(TaintFixpoint.State.read_only fixpoint.TaintFixpoint.state)
         ~resolve_module_path
         ~resolve_callable_location:(Target.get_callable_location ~pyre_api)
         ~override_graph:override_graph_shared_memory_read_only
@@ -964,7 +964,7 @@ let end_to_end_integration_test path context =
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:""
     in
-    let () = TaintFixpoint.cleanup fixpoint in
+    let () = TaintFixpoint.State.cleanup fixpoint.TaintFixpoint.state in
     let () = TestEnvironment.cleanup test_environment in
     divergent_files, serialized_models
   in

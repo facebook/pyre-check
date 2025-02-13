@@ -57,7 +57,7 @@ let assert_fixpoint
       ~override_targets
       ~initial_models
   in
-  let fixpoint_state =
+  let ({ TaintFixpoint.fixpoint_reached_iterations; _ } as fixpoint) =
     TaintFixpoint.compute
       ~scheduler:(Test.mock_scheduler ())
       ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
@@ -85,16 +85,19 @@ let assert_fixpoint
   assert_equal
     ~msg:"Fixpoint iterations"
     expect_iterations
-    (TaintFixpoint.get_iterations fixpoint_state)
+    fixpoint_reached_iterations
     ~printer:Int.to_string;
-  let get_model = TaintFixpoint.get_model fixpoint_state in
+  let get_model =
+    TaintFixpoint.State.ReadOnly.get_model
+      (TaintFixpoint.State.read_only fixpoint.TaintFixpoint.state)
+  in
   let get_errors callable =
-    TaintFixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data
+    TaintFixpoint.State.get_result callable |> IssueHandle.SerializableMap.data
   in
   let () =
     List.iter ~f:(check_expectation ~pyre_api ~taint_configuration ~get_model ~get_errors) expect
   in
-  TaintFixpoint.cleanup fixpoint_state;
+  TaintFixpoint.State.cleanup fixpoint.TaintFixpoint.state;
   TestEnvironment.cleanup test_environment;
   ()
 

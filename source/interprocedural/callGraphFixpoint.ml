@@ -141,21 +141,23 @@ type t = {
   get_define_call_graph: Target.t -> CallGraph.DefineCallGraph.t option;
 }
 
-let get_model { fixpoint; _ } = Fixpoint.get_model fixpoint
+let get_model { fixpoint = { state; _ }; _ } =
+  Fixpoint.State.ReadOnly.get_model (Fixpoint.State.read_only state)
 
-let cleanup { fixpoint; _ } = Fixpoint.cleanup fixpoint
 
-let get_define_call_graph ~fixpoint callable =
+let cleanup { fixpoint = { state; _ }; _ } = Fixpoint.State.cleanup state
+
+let get_define_call_graph ~state callable =
   let open Option in
   callable
-  |> Fixpoint.get_model fixpoint
+  |> Fixpoint.State.ReadOnly.get_model state
   >>| fun { CallGraph.HigherOrderCallGraph.call_graph; _ } -> call_graph
 
 
-let build_whole_program_call_graph ~scheduler ~scheduler_policy fixpoint =
-  let build_whole_program_call_graph =
+let build_whole_program_call_graph ~scheduler ~scheduler_policy state =
+  let build_whole_program_call_graph ~state =
     List.fold ~init:CallGraph.WholeProgramCallGraph.empty ~f:(fun so_far callable ->
-        match get_define_call_graph ~fixpoint callable with
+        match get_define_call_graph ~state callable with
         | None -> so_far
         | Some call_graph ->
             CallGraph.WholeProgramCallGraph.add_or_exn
@@ -171,9 +173,9 @@ let build_whole_program_call_graph ~scheduler ~scheduler_policy fixpoint =
       scheduler
       ~policy:scheduler_policy
       ~initial:CallGraph.WholeProgramCallGraph.empty
-      ~map:build_whole_program_call_graph
+      ~map:(build_whole_program_call_graph ~state:(Fixpoint.State.read_only state))
       ~reduce:CallGraph.WholeProgramCallGraph.merge_disjoint
-      ~inputs:(Fixpoint.targets fixpoint)
+      ~inputs:(Fixpoint.State.targets state)
       ()
   in
   whole_program_call_graph
@@ -231,7 +233,7 @@ let compute
       ()
     |> Fixpoint.SharedModels.from_add_only
   in
-  let fixpoint_state =
+  let state =
     Fixpoint.record_initial_models
       ~scheduler
       ~initial_callables:definitions
@@ -241,7 +243,7 @@ let compute
       ~override_targets
       ~initial_models
   in
-  let fixpoint =
+  let ({ Fixpoint.state; _ } as fixpoint) =
     Fixpoint.compute
       ~scheduler
       ~scheduler_policy
@@ -257,7 +259,7 @@ let compute
       ~max_iterations
       ~error_on_max_iterations:false
       ~epoch:Fixpoint.Epoch.initial
-      ~state:fixpoint_state
+      ~state
   in
   let drop_decorated_targets
       ~target:_
@@ -270,10 +272,11 @@ let compute
     }
   in
   let timer = Timer.start () in
-  let fixpoint = Fixpoint.update_models fixpoint ~scheduler ~update_model:drop_decorated_targets in
+  let state = Fixpoint.State.update_models state ~scheduler ~update_model:drop_decorated_targets in
   Log.info "Dropping decorated targets in models took %.2fs" (Timer.stop_in_sec timer);
+  let fixpoint = { fixpoint with state } in
   {
     fixpoint;
-    whole_program_call_graph = build_whole_program_call_graph ~scheduler ~scheduler_policy fixpoint;
-    get_define_call_graph = get_define_call_graph ~fixpoint;
+    whole_program_call_graph = build_whole_program_call_graph ~scheduler ~scheduler_policy state;
+    get_define_call_graph = get_define_call_graph ~state:(Fixpoint.State.read_only state);
   }

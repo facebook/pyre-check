@@ -9,7 +9,7 @@ open Interprocedural
 
 val externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
-  fixpoint_state:TaintFixpoint.t ->
+  fixpoint_state:TaintFixpoint.State.ReadOnly.t ->
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
   resolve_callable_location:(Target.t -> Ast.Location.WithModule.t option) ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
@@ -20,7 +20,7 @@ val externalize
 
 val fetch_and_externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
-  fixpoint_state:TaintFixpoint.t ->
+  fixpoint_state:TaintFixpoint.State.ReadOnly.t ->
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
   resolve_callable_location:(Target.t -> Ast.Location.WithModule.t option) ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
@@ -35,7 +35,7 @@ val produce_errors
   taint_configuration:TaintConfiguration.SharedMemory.t ->
   callables:Target.Set.t ->
   fixpoint_step_logger:StepLogger.t ->
-  fixpoint_state:TaintFixpoint.t ->
+  fixpoint:TaintFixpoint.t ->
   Yojson.Safe.t list
 
 val save_results_to_directory
@@ -50,7 +50,7 @@ val save_results_to_directory
   skipped_overrides:Target.t list ->
   callables:Target.Set.t ->
   model_verification_errors:ModelVerificationError.t list ->
-  fixpoint_state:TaintFixpoint.t ->
+  fixpoint_state:TaintFixpoint.State.ReadOnly.t ->
   errors:Yojson.Safe.t list ->
   cache:Cache.t ->
   file_coverage:FileCoverage.t ->

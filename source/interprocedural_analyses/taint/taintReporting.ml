@@ -14,7 +14,7 @@ open Interprocedural
 
 (* Patch the forward reference to access the final summaries in trace info generation. *)
 let has_significant_summary ~fixpoint_state ~trace_kind ~port:root ~path ~callee =
-  match TaintFixpoint.get_model fixpoint_state callee with
+  match TaintFixpoint.State.ReadOnly.get_model fixpoint_state callee with
   | None -> false
   | Some { Model.forward; backward; _ } -> (
       match trace_kind with
@@ -63,12 +63,13 @@ let statistics ~model_verification_errors =
   `Assoc ["model_verification_errors", `List model_verification_errors]
 
 
-let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callables ~fixpoint_state =
+let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callables ~fixpoint_state:_ =
   let extract_errors callables =
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     List.map
       ~f:(fun callable ->
-        TaintFixpoint.get_result fixpoint_state callable
+        callable
+        |> TaintFixpoint.State.get_result
         |> IssueHandle.SerializableMap.data
         |> List.map ~f:(Issue.to_error ~taint_configuration))
       callables
@@ -140,11 +141,11 @@ let fetch_and_externalize
     []
   else
     let model =
-      TaintFixpoint.get_model fixpoint_state callable |> Option.value ~default:Model.empty_model
+      callable
+      |> TaintFixpoint.State.ReadOnly.get_model fixpoint_state
+      |> Option.value ~default:Model.empty_model
     in
-    let result =
-      TaintFixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data
-    in
+    let result = callable |> TaintFixpoint.State.get_result |> IssueHandle.SerializableMap.data in
     externalize
       ~taint_configuration
       ~fixpoint_state
@@ -289,7 +290,7 @@ let produce_errors
     ~taint_configuration
     ~callables
     ~fixpoint_step_logger
-    ~fixpoint_state
+    ~fixpoint:{ TaintFixpoint.fixpoint_reached_iterations; state }
   =
   let errors =
     extract_errors
@@ -297,16 +298,15 @@ let produce_errors
       ~scheduler
       ~scheduler_policies
       ~callables:(Target.Set.elements callables)
-      ~fixpoint_state
+      ~fixpoint_state:state
   in
   (* Log and record stats *)
   let () = Log.info "Found %d issues" (List.length errors) in
-  let iterations = TaintFixpoint.get_iterations fixpoint_state in
   let () =
     StepLogger.finish
       ~integers:
         [
-          "iterations", iterations;
+          "iterations", fixpoint_reached_iterations;
           "heap size", Hack_parallel.Std.SharedMemory.heap_size ();
           "issues", List.length errors;
         ]
