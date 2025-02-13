@@ -59,8 +59,7 @@ assert_type(foo.f(1), int)
     "#,
 );
 
-testcase_with_bug!(
-    "Protocol overloaded methods do not need an implementation",
+testcase!(
     test_protocol,
     r#"
 from typing import Protocol, assert_type, overload
@@ -72,7 +71,7 @@ class P(Protocol):
     def m(self, x: str) -> str: ...
 
 def test(o: P):
-    assert_type(o.m(1), int) # E: assert_type # E: EXPECTED Literal[1] <: str
+    assert_type(o.m(1), int)
     "#,
 );
 

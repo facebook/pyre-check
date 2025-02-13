@@ -2512,6 +2512,16 @@
     },
     {
       "code": -2,
+      "column": 19,
+      "concise_description": "EXPECTED Overloaded9 <: StrArg9",
+      "description": "EXPECTED Overloaded9 <: StrArg9",
+      "line": 272,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 272
+    },
+    {
+      "code": -2,
       "column": 21,
       "concise_description": "EXPECTED Overloaded9 <: FloatArg9",
       "description": "EXPECTED Overloaded9 <: FloatArg9",
@@ -2519,6 +2529,26 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 273
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "EXPECTED IntStrArg10 <: Overloaded10",
+      "description": "EXPECTED IntStrArg10 <: Overloaded10",
+      "line": 296,
+      "name": "PyreError",
+      "stop_column": 35,
+      "stop_line": 296
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "EXPECTED StrArg10 <: Overloaded10",
+      "description": "EXPECTED StrArg10 <: Overloaded10",
+      "line": 297,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 297
     }
   ],
   "classes_classvar.py": [

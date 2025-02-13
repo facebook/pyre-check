@@ -1098,17 +1098,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(values)
             }
-            Binding::Function(idx, mut pred, _class_metadata) => {
+            Binding::Function(idx, mut pred, class_meta) => {
                 // Overloads in .pyi should not have an implementation.
-                // TODO: Overloaded methods in protocols also do not need implementations.
-                let needs_implementation =
-                    self.module_info().path().style() == ModuleStyle::Executable;
+                let skip_implementation = self.module_info().path().style()
+                    == ModuleStyle::Interface
+                    || class_meta.is_some_and(|idx| self.get_idx(idx).is_protocol());
                 let def = self.get_idx(*idx);
                 if def.is_overload {
                     // This function is decorated with @overload. We should warn if this function is actually called anywhere.
                     let successor = self.bindings().get(*idx).successor;
                     let ty = def.ty.clone();
-                    if !needs_implementation && successor.is_none() {
+                    if skip_implementation && successor.is_none() {
                         // This is the last definition in the chain. We should produce an overload type.
                         let mut acc = Vec1::new(ty);
                         while let Some(ty) = self.step_overload_pred(&mut pred) {
