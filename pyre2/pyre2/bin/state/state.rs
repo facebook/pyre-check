@@ -62,9 +62,9 @@ use crate::util::uniques::UniqueFactory;
 pub struct State {
     uniques: UniqueFactory,
     parallel: bool,
-    stdlib: RwLock<SmallMap<(Config, LoaderId), Arc<Stdlib>>>,
+    stdlib: SmallMap<(Config, LoaderId), Arc<Stdlib>>,
     modules: LockedMap<Handle, Arc<ModuleState>>,
-    loaders: RwLock<SmallMap<LoaderId, Arc<LoaderFindCache<LoaderId>>>>,
+    loaders: SmallMap<LoaderId, Arc<LoaderFindCache<LoaderId>>>,
     /// Items we still need to process. Stored in a max heap, so that
     /// the highest step (the module that is closest to being finished)
     /// gets picked first, ensuring we release its memory quickly.
@@ -380,21 +380,19 @@ impl State {
 
     fn get_cached_loader(&self, loader: &LoaderId) -> Arc<LoaderFindCache<LoaderId>> {
         // Safe because we always fill these in before starting
-        self.loaders.read().unwrap().get(loader).unwrap().dupe()
+        self.loaders.get(loader).unwrap().dupe()
     }
 
     fn get_stdlib(&self, handle: &Handle) -> Arc<Stdlib> {
         // Safe because we always run compute_stdlib first
         self.stdlib
-            .read()
-            .unwrap()
             .get(&(handle.config().dupe(), handle.loader().dupe()))
             .unwrap()
             .dupe()
     }
 
-    fn compute_stdlib(&self, configs: SmallSet<(Config, LoaderId)>) {
-        *self.stdlib.write().unwrap() = configs
+    fn compute_stdlib(&mut self, configs: SmallSet<(Config, LoaderId)>) {
+        self.stdlib = configs
             .iter()
             .map(|k| (k.dupe(), Arc::new(Stdlib::for_bootstrapping())))
             .collect();
@@ -410,7 +408,7 @@ impl State {
                 )
             })
             .collect();
-        *self.stdlib.write().unwrap() = stdlibs;
+        self.stdlib = stdlibs;
     }
 
     fn work(&self) {
@@ -432,7 +430,7 @@ impl State {
             .map(|x| (x.config().dupe(), x.loader().dupe()))
             .collect::<SmallSet<_>>();
 
-        *self.loaders.write().unwrap() = configs
+        self.loaders = configs
             .iter()
             .map(|x| (x.1.dupe(), Arc::new(LoaderFindCache::new(x.1.dupe()))))
             .collect::<SmallMap<_, _>>();
