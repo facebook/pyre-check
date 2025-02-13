@@ -51,6 +51,8 @@ use crate::binding::binding::UnpackedPosition;
 use crate::dunder;
 use crate::dunder::inplace_dunder;
 use crate::error::collector::ErrorCollector;
+use crate::graph::index::Idx;
+use crate::module::module_path::ModuleStyle;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
@@ -1096,24 +1098,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(values)
             }
-            Binding::Function(idx, pred) => {
+            Binding::Function(idx, mut pred) => {
+                // Overloads in .pyi should not have an implementation.
+                // TODO: Overloaded methods in protocols also do not need implementations.
+                let needs_implementation =
+                    self.module_info().path().style() == ModuleStyle::Executable;
                 let def = self.get_idx(*idx);
                 if def.is_overload {
-                    // This is an overloaded function. We should warn if this function is actually called anywhere.
-                    def.ty.clone()
+                    // This function is decorated with @overload. We should warn if this function is actually called anywhere.
+                    let successor = self.bindings().get(*idx).successor;
+                    let ty = def.ty.clone();
+                    if !needs_implementation && successor.is_none() {
+                        // This is the last definition in the chain. We should produce an overload type.
+                        let mut acc = Vec1::new(ty);
+                        while let Some(ty) = self.step_overload_pred(&mut pred) {
+                            acc.push(ty);
+                        }
+                        acc.reverse();
+                        Type::Overload(acc)
+                    } else {
+                        ty
+                    }
                 } else {
                     let mut acc = Vec::new();
-                    let mut pred = pred;
-                    while let Some(pred_idx) = pred {
-                        if let Binding::Function(idx, pred_) = self.bindings().get(*pred_idx) {
-                            let def = self.get_idx(*idx);
-                            if def.is_overload {
-                                acc.push(def.ty.clone());
-                                pred = pred_;
-                                continue;
-                            }
-                        }
-                        break;
+                    while let Some(ty) = self.step_overload_pred(&mut pred) {
+                        acc.push(ty);
                     }
                     acc.reverse();
                     if let Ok(overloads) = Vec1::try_from_vec(acc) {
@@ -1403,6 +1412,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ty = self.apply_decorator(*x, ty, &mut is_overload, errors)
         }
         Arc::new(DecoratedFunction { ty, is_overload })
+    }
+
+    // Given the index to a function binding, return the previous function binding, if any.
+    pub fn step_overload_pred(&self, pred: &mut Option<Idx<Key>>) -> Option<Type> {
+        let pred_idx = (*pred)?;
+        if let Binding::Function(idx, pred_) = self.bindings().get(pred_idx) {
+            let def = self.get_idx(*idx);
+            if def.is_overload {
+                *pred = *pred_;
+                Some(def.ty.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     /// Unwraps a type, originally evaluated as a value, so that it can be used as a type annotation.
