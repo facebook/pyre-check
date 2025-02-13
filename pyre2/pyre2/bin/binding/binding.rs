@@ -560,6 +560,7 @@ pub struct FunctionBinding {
     pub kind: FunctionKind,
     pub decorators: Box<[Idx<Key>]>,
     pub legacy_tparams: Box<[Idx<KeyLegacyTypeParam>]>,
+    pub successor: Option<Idx<KeyFunction>>,
 }
 
 impl DisplayWith<Bindings> for FunctionBinding {

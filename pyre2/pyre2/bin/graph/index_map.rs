@@ -44,6 +44,13 @@ impl<K, V> IndexMap<K, V> {
         }
     }
 
+    pub fn get_mut(&mut self, key: Idx<K>) -> Option<&mut V> {
+        match self.items.get_mut(key.idx()) {
+            Some(Some(v)) => Some(v),
+            _ => None,
+        }
+    }
+
     pub fn get_exists(&self, key: Idx<K>) -> &V {
         self.get(key).unwrap()
     }

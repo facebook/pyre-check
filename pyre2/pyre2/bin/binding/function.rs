@@ -90,19 +90,14 @@ impl<'a> BindingsBuilder<'a> {
 
     pub fn function_def(&mut self, mut x: StmtFunctionDef) {
         // Get preceding function definition, if any. Used for building an overload type.
-        let pred_idx = self
-            .scopes
-            .current()
-            .flow
-            .info
-            .get(&x.name.id)
-            .and_then(|flow| {
-                if let Some(FlowStyle::FunctionDef) = flow.style {
-                    Some(flow.key)
-                } else {
-                    None
-                }
-            });
+        let mut pred_idx = None;
+        let mut pred_function_idx = None;
+        if let Some(flow) = self.scopes.current().flow.info.get(&x.name.id) {
+            if let Some(FlowStyle::FunctionDef(fidx)) = flow.style {
+                pred_idx = Some(flow.key);
+                pred_function_idx = Some(fidx);
+            }
+        }
 
         let body = mem::take(&mut x.body);
         let decorators = self.ensure_and_bind_decorators(mem::take(&mut x.decorator_list));
@@ -376,13 +371,19 @@ impl<'a> BindingsBuilder<'a> {
                 kind,
                 decorators: decorators.into_boxed_slice(),
                 legacy_tparams: legacy_tparams.into_boxed_slice(),
+                successor: None,
             },
         );
+
+        if let Some(pred_idx) = pred_function_idx {
+            let pred_binding = self.table.functions.1.get_mut(pred_idx).unwrap();
+            pred_binding.successor = Some(function_idx);
+        }
 
         self.bind_definition(
             &func_name,
             Binding::Function(function_idx, pred_idx),
-            Some(FlowStyle::FunctionDef),
+            Some(FlowStyle::FunctionDef(function_idx)),
         );
     }
 }

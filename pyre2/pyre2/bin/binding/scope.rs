@@ -22,6 +22,7 @@ use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
+use crate::binding::binding::KeyFunction;
 use crate::config::Config;
 use crate::export::definitions::DefinitionStyle;
 use crate::export::definitions::Definitions;
@@ -130,7 +131,7 @@ pub enum FlowStyle {
     /// would get `foo.bar` here.
     ImportAs(ModuleName),
     /// Am I a function definition? Used to chain overload definitions.
-    FunctionDef,
+    FunctionDef(Idx<KeyFunction>),
 }
 
 #[derive(Debug, Clone)]
