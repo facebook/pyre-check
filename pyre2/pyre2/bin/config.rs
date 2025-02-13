@@ -22,6 +22,7 @@ use ruff_python_ast::StmtIf;
 
 use crate::ast::Ast;
 use crate::util::prelude::SliceExt;
+use crate::util::with_hash::WithHash;
 
 #[derive(Debug, Clone, Copy, Dupe, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PythonVersion {
@@ -82,7 +83,7 @@ impl PythonVersion {
 }
 
 #[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash)]
-pub struct Config(Arc<ConfigInner>);
+pub struct Config(Arc<WithHash<ConfigInner>>);
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct ConfigInner {
@@ -98,7 +99,7 @@ impl Default for Config {
 
 impl Config {
     pub fn new(version: PythonVersion, platform: String) -> Self {
-        Self(Arc::new(ConfigInner { version, platform }))
+        Self(Arc::new(WithHash::new(ConfigInner { version, platform })))
     }
 }
 
