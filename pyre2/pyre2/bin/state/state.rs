@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
+use std::time::Duration;
 
 use dupe::Dupe;
 use dupe::OptionDupedExt;
@@ -144,7 +145,17 @@ impl State {
                 _ => break,
             }
             drop(lock);
-            let _compute_lock = module_state.lock.lock();
+            let compute_lock = module_state.lock.try_lock_for(Duration::from_millis(100));
+            if compute_lock.is_none() {
+                // Typechecking empty.py with -j25 deadlocks about 1% of the time. At -j100 it deadlocks about 5% of the time.
+                // I don't really understand it. But the fact we have to use FairMutex is a bit of a smell, and potentially
+                // we are having races as to what "fair" means.
+                //
+                // We plan to rewrite much of this code soon to support incrementality, so for now, bodge it.
+                // If we can't get the lock in 100ms, just give up and try from scratch.
+                // Small delay plus rarely hit means this has no overall perf impact.
+                continue;
+            }
             let lock = module_state.steps.read().unwrap();
 
             // BIG WARNING: We do Step::Solutions.compute_next, NOT step.compute_next.
