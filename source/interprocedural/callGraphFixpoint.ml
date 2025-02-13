@@ -236,7 +236,7 @@ let compute
   let state =
     Fixpoint.record_initial_models
       ~scheduler
-      ~initial_callables:definitions
+      ~callables_to_analyze:definitions
       ~stubs:[]
         (* No need to initialize models for stubs, since we cannot build call graphs for them
            anyway. *)

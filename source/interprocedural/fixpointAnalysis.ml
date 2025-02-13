@@ -463,7 +463,13 @@ module Make (Analysis : ANALYSIS) = struct
 
 
   (* Save initial models in the shared memory. *)
-  let record_initial_models ~scheduler ~initial_models ~initial_callables ~stubs ~override_targets =
+  let record_initial_models
+      ~scheduler
+      ~initial_models
+      ~callables_to_analyze
+      ~stubs
+      ~override_targets
+    =
     let timer = Timer.start () in
     let shared_fixpoint = State.SharedFixpoint.create () in
     let add_initial_fixpoint_state target =
@@ -519,7 +525,7 @@ module Make (Analysis : ANALYSIS) = struct
     in
     let initial_models =
       add_models_for_targets
-        ~targets:(discard_targets_with_model initial_models initial_callables)
+        ~targets:(discard_targets_with_model initial_models callables_to_analyze)
         ~model:Analysis.initial_model
         initial_models
     in
@@ -530,7 +536,10 @@ module Make (Analysis : ANALYSIS) = struct
         initial_models
     in
     let initial_models =
-      add_models_for_targets ~targets:override_targets ~model:Analysis.empty_model initial_models
+      add_models_for_targets
+        ~targets:(discard_targets_with_model initial_models override_targets)
+        ~model:Analysis.empty_model
+        initial_models
     in
     Logger.initial_models_stored ~timer;
     {

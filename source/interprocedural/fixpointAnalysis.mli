@@ -253,7 +253,7 @@ module Make (Analysis : ANALYSIS) : sig
   val record_initial_models
     :  scheduler:Scheduler.t ->
     initial_models:SharedModels.t ->
-    initial_callables:Target.t list ->
+    callables_to_analyze:Target.t list ->
     stubs:Target.t list ->
     override_targets:Target.t list ->
     State.t

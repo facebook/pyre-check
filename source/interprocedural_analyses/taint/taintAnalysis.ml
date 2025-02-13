@@ -820,7 +820,7 @@ let run_taint_analysis
     TaintFixpoint.record_initial_models
       ~scheduler
       ~initial_models
-      ~initial_callables:(Interprocedural.FetchCallables.get_definitions initial_callables)
+      ~callables_to_analyze:(Interprocedural.FetchCallables.get_definitions initial_callables)
       ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
       ~override_targets
   in

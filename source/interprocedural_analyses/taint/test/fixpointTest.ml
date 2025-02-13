@@ -52,7 +52,7 @@ let assert_fixpoint
   let state =
     TaintFixpoint.record_initial_models
       ~scheduler:(Test.mock_scheduler ())
-      ~initial_callables:(FetchCallables.get_definitions initial_callables)
+      ~callables_to_analyze
       ~stubs
       ~override_targets
       ~initial_models
@@ -100,8 +100,7 @@ let assert_fixpoint
     List.iter ~f:(check_expectation ~pyre_api ~taint_configuration ~get_model ~get_errors) expect
   in
   TaintFixpoint.State.cleanup fixpoint.TaintFixpoint.state;
-  TestEnvironment.cleanup test_environment;
-  ()
+  TestEnvironment.cleanup test_environment
 
 
 let test_fixpoint context =
@@ -217,7 +216,7 @@ let test_fixpoint context =
     |}
     ~expect:
       {
-        iterations = 4;
+        iterations = 2;
         expect =
           [
             outcome
@@ -546,7 +545,7 @@ let test_overrides context =
     |}
     ~expect:
       {
-        iterations = 4;
+        iterations = 2;
         expect =
           [
             outcome

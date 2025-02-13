@@ -215,25 +215,27 @@ let build_whole_program_dependency_graph
     let callables_to_analyze =
       callables_kept
       |> List.filter ~f:(fun callable ->
-             Target.is_override callable || Hash_set.mem initial_callable_set callable)
+             Target.is_override callable
+             (* Since parameterized targets are created by higher order call graph building, they
+                are not included in `initial_callables`. *)
+             || Hash_set.mem
+                  initial_callable_set
+                  (callable |> Target.get_regular |> Target.from_regular))
       |> List.rev
     in
     { dependency_graph; override_targets; callables_kept; callables_to_analyze }
   in
-  let ({ dependency_graph; _ } as whole_program_dependency_graph) =
+  let callables_to_analyze =
     match prune with
     | PruneMethod.None ->
-        let dependency_graph = Reversed.reverse reverse_dependency_graph in
-        let callables_kept = FetchCallables.get_definitions initial_callables in
-        let callables_to_analyze = List.rev_append override_targets callables_kept in
-        { dependency_graph; override_targets; callables_kept; callables_to_analyze }
-    | PruneMethod.Internals ->
-        let callables_to_analyze = FetchCallables.get_internal_definitions initial_callables in
-        Reversed.prune reverse_dependency_graph ~callables_to_analyze
-        |> create_dependency_graph_from_prune_result
-    | PruneMethod.Entrypoints entrypoints ->
-        Reversed.prune reverse_dependency_graph ~callables_to_analyze:entrypoints
-        |> create_dependency_graph_from_prune_result
+        initial_callables |> FetchCallables.get_definitions |> List.rev_append override_targets
+    | PruneMethod.Internals -> FetchCallables.get_internal_definitions initial_callables
+    | PruneMethod.Entrypoints entrypoints -> entrypoints
+  in
+  let ({ dependency_graph; _ } as whole_program_dependency_graph) =
+    reverse_dependency_graph
+    |> Reversed.prune ~callables_to_analyze
+    |> create_dependency_graph_from_prune_result
   in
   let () =
     match static_analysis_configuration.Configuration.StaticAnalysis.save_results_to with

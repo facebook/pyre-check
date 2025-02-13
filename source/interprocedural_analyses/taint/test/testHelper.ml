@@ -906,7 +906,7 @@ let end_to_end_integration_test path context =
       TaintFixpoint.record_initial_models
         ~scheduler
         ~initial_models
-        ~initial_callables:(FetchCallables.get_definitions initial_callables)
+        ~callables_to_analyze
         ~stubs
         ~override_targets
     in
