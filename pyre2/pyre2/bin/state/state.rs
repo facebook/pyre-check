@@ -55,6 +55,7 @@ use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::util::display::number_thousands;
 use crate::util::enum_heap::EnumHeap;
+use crate::util::locked_map::LockedMap;
 use crate::util::prelude::SliceExt;
 use crate::util::uniques::UniqueFactory;
 
@@ -62,7 +63,7 @@ pub struct State {
     uniques: UniqueFactory,
     parallel: bool,
     stdlib: RwLock<SmallMap<(Config, LoaderId), Arc<Stdlib>>>,
-    modules: RwLock<SmallMap<Handle, Arc<ModuleState>>>,
+    modules: LockedMap<Handle, Arc<ModuleState>>,
     loaders: RwLock<SmallMap<LoaderId, Arc<LoaderFindCache<LoaderId>>>>,
     /// Items we still need to process. Stored in a max heap, so that
     /// the highest step (the module that is closest to being finished)
@@ -212,17 +213,7 @@ impl State {
     }
 
     fn get_module(&self, handle: &Handle) -> Arc<ModuleState> {
-        let lock = self.modules.read().unwrap();
-        if let Some(v) = lock.get(handle) {
-            return v.dupe();
-        }
-        drop(lock);
-        self.modules
-            .write()
-            .unwrap()
-            .entry(handle.dupe())
-            .or_default()
-            .dupe()
+        self.modules.ensure(handle, Default::default).dupe()
     }
 
     fn add_error(&self, handle: &Handle, range: TextRange, msg: String) {
@@ -329,7 +320,7 @@ impl State {
 
     pub fn collect_errors(&self) -> Vec<Error> {
         let mut errors = Vec::new();
-        for module in self.modules.read().unwrap().values() {
+        for module in self.modules.values() {
             let steps = module.steps.read().unwrap();
             if let Some(load) = steps.load.get() {
                 errors.extend(load.errors.collect());
@@ -339,13 +330,11 @@ impl State {
     }
 
     pub fn module_count(&self) -> usize {
-        self.modules.read().unwrap().len()
+        self.modules.len()
     }
 
     pub fn count_errors(&self) -> usize {
         self.modules
-            .read()
-            .unwrap()
             .values()
             .map(|x| {
                 x.steps
@@ -359,7 +348,7 @@ impl State {
     }
 
     pub fn print_errors(&self) {
-        for module in self.modules.read().unwrap().values() {
+        for module in self.modules.values() {
             let steps = module.steps.read().unwrap();
             if let Some(load) = steps.load.get() {
                 load.errors.print();
@@ -370,8 +359,6 @@ impl State {
     pub fn print_error_summary(&self, limit: usize) {
         let loads = self
             .modules
-            .read()
-            .unwrap()
             .values()
             .filter_map(|x| x.steps.read().unwrap().load.get().duped())
             .collect::<Vec<_>>();
@@ -486,13 +473,11 @@ impl State {
     }
 
     pub fn handles(&self) -> Vec<Handle> {
-        self.modules.read().unwrap().keys().cloned().collect()
+        self.modules.keys().cloned().collect()
     }
 
     pub fn get_bindings(&self, handle: &Handle) -> Option<Bindings> {
         self.modules
-            .read()
-            .unwrap()
             .get(handle)?
             .steps
             .read()
@@ -504,8 +489,6 @@ impl State {
 
     pub fn get_module_info(&self, handle: &Handle) -> Option<ModuleInfo> {
         self.modules
-            .read()
-            .unwrap()
             .get(handle)?
             .steps
             .read()
@@ -517,8 +500,6 @@ impl State {
 
     pub fn get_ast(&self, handle: &Handle) -> Option<Arc<ruff_python_ast::ModModule>> {
         self.modules
-            .read()
-            .unwrap()
             .get(handle)?
             .steps
             .read()
@@ -530,8 +511,6 @@ impl State {
 
     pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<Solutions>> {
         self.modules
-            .read()
-            .unwrap()
             .get(handle)?
             .steps
             .read()
@@ -555,7 +534,7 @@ impl State {
     }
 
     pub fn check_against_expectations(&self) -> anyhow::Result<()> {
-        for module in self.modules.read().unwrap().values() {
+        for module in self.modules.values() {
             let steps = module.steps.read().unwrap();
             let load = steps.load.get().unwrap();
             Expectation::parse(load.module_info.dupe(), load.module_info.contents())
