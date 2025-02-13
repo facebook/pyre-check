@@ -63,13 +63,13 @@ let statistics ~model_verification_errors =
   `Assoc ["model_verification_errors", `List model_verification_errors]
 
 
-let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callables ~fixpoint_state:_ =
-  let extract_errors callables =
+let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callables ~fixpoint_state =
+  let extract_errors ~fixpoint_state callables =
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     List.map
       ~f:(fun callable ->
         callable
-        |> TaintFixpoint.State.get_result
+        |> TaintFixpoint.State.ReadOnly.get_result fixpoint_state
         |> IssueHandle.SerializableMap.data
         |> List.map ~f:(Issue.to_error ~taint_configuration))
       callables
@@ -90,7 +90,7 @@ let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callable
     scheduler
     ~policy:scheduler_policy
     ~initial:[]
-    ~map:extract_errors
+    ~map:(extract_errors ~fixpoint_state:(TaintFixpoint.State.read_only fixpoint_state))
     ~reduce:List.cons
     ~inputs:callables
     ()
@@ -145,7 +145,11 @@ let fetch_and_externalize
       |> TaintFixpoint.State.ReadOnly.get_model fixpoint_state
       |> Option.value ~default:Model.empty_model
     in
-    let result = callable |> TaintFixpoint.State.get_result |> IssueHandle.SerializableMap.data in
+    let result =
+      callable
+      |> TaintFixpoint.State.ReadOnly.get_result fixpoint_state
+      |> IssueHandle.SerializableMap.data
+    in
     externalize
       ~taint_configuration
       ~fixpoint_state

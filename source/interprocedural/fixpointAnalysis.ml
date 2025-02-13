@@ -281,7 +281,7 @@ module Make (Analysis : ANALYSIS) = struct
   (* The fixpoint state, stored in shared memory. *)
   module State = struct
     module SharedResults =
-      Hack_parallel.Std.SharedMemory.WithCache.Make
+      Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
         (Target.SharedMemoryKey)
         (struct
           type t = Result.t
@@ -330,6 +330,7 @@ module Make (Analysis : ANALYSIS) = struct
     type t = {
       shared_fixpoint: SharedFixpoint.t;
       shared_models: SharedModels.t;
+      shared_results: SharedResults.t;
     }
 
     let get_new_model shared_models callable =
@@ -347,7 +348,10 @@ module Make (Analysis : ANALYSIS) = struct
 
 
     module ReadOnly = struct
-      type t = { shared_models: SharedModels.ReadOnly.t }
+      type t = {
+        shared_models: SharedModels.ReadOnly.t;
+        shared_results: SharedResults.t;
+      }
 
       let get_new_model { shared_models; _ } callable =
         SharedModels.ReadOnly.get shared_models ~cache:true callable
@@ -361,17 +365,14 @@ module Make (Analysis : ANALYSIS) = struct
         match get_new_model read_only callable with
         | Some _ as model -> model
         | None -> get_old_model read_only callable
+
+
+      let get_result { shared_results; _ } callable =
+        SharedResults.get shared_results callable |> Option.value ~default:Result.empty
     end
 
-    let read_only { shared_models; _ } =
-      { ReadOnly.shared_models = SharedModels.read_only shared_models }
-
-
-    let get_result callable = SharedResults.get callable |> Option.value ~default:Result.empty
-
-    let set_result callable result =
-      SharedResults.remove_batch (SharedResults.KeySet.singleton callable);
-      SharedResults.add callable result
+    let read_only { shared_models; shared_results; _ } =
+      { ReadOnly.shared_models = SharedModels.read_only shared_models; shared_results }
 
 
     type iteration_callable_result = {
@@ -385,7 +386,7 @@ module Make (Analysis : ANALYSIS) = struct
       additional_dependencies: DependencyGraph.t;
     }
 
-    let set_callable_result ~shared_models ~shared_fixpoint step callable state =
+    let set_callable_result ~shared_models ~shared_fixpoint ~shared_results step callable state =
       (* Separate diagnostics from state to speed up lookups, and cache fixpoint state
          separately. *)
       let shared_models =
@@ -394,7 +395,7 @@ module Make (Analysis : ANALYSIS) = struct
       (* Skip result writing unless necessary (e.g. overrides don't have results) *)
       let () =
         if Target.is_function_or_method callable then
-          SharedResults.add callable state.result
+          SharedResults.add shared_results callable state.result
       in
       let () =
         SharedFixpoint.add shared_fixpoint callable { is_partial = state.is_partial; step }
@@ -402,38 +403,31 @@ module Make (Analysis : ANALYSIS) = struct
       shared_models
 
 
-    let oldify { shared_models; shared_fixpoint } callable_set =
+    let oldify { shared_models; shared_fixpoint; shared_results } callable_set =
       let callable_set = SharedModels.KeySet.of_list callable_set in
       let shared_models = SharedModels.oldify_batch shared_models callable_set in
       let () = SharedFixpoint.oldify_batch shared_fixpoint callable_set in
 
       (* Old results are never looked up, so remove them. *)
-      let () = SharedResults.remove_batch callable_set in
+      let () = SharedResults.remove_batch shared_results callable_set in
       shared_models
 
 
-    let remove_old { shared_models; shared_fixpoint } callable_set =
+    let remove_old { shared_models; shared_fixpoint; _ } callable_set =
       let callable_set = SharedModels.KeySet.of_list callable_set in
       let shared_models = SharedModels.remove_old_batch shared_models callable_set in
       let () = SharedFixpoint.remove_old_batch shared_fixpoint callable_set in
       shared_models
 
 
-    let clear_results { shared_models; _ } =
-      shared_models
-      |> SharedModels.keys
-      |> SharedResults.KeySet.of_list
-      |> SharedResults.remove_batch
-
-
     let targets { shared_models; _ } = SharedModels.keys shared_models
 
     (** Remove the fixpoint state from the shared memory. This must be called before computing
         another fixpoint. *)
-    let cleanup ({ shared_models; shared_fixpoint } as state) =
+    let cleanup ({ shared_models; shared_fixpoint; shared_results } as state) =
       let targets = state |> targets |> SharedResults.KeySet.of_list in
       let () = SharedModels.cleanup ~clean_old:true shared_models in
-      let () = SharedResults.remove_batch targets in
+      let () = SharedResults.remove_batch shared_results targets in
       let () = SharedFixpoint.remove_batch shared_fixpoint targets in
       let () = SharedFixpoint.remove_old_batch shared_fixpoint targets in
       ()
@@ -539,7 +533,11 @@ module Make (Analysis : ANALYSIS) = struct
       add_models_for_targets ~targets:override_targets ~model:Analysis.empty_model initial_models
     in
     Logger.initial_models_stored ~timer;
-    { State.shared_models = initial_models; shared_fixpoint }
+    {
+      State.shared_models = initial_models;
+      shared_fixpoint;
+      shared_results = State.SharedResults.create ();
+    }
 
 
   let widen_if_necessary ~step ~callable ~previous_model ~new_model ~result ~additional_dependencies
@@ -720,6 +718,7 @@ module Make (Analysis : ANALYSIS) = struct
       ~max_iterations
       ~shared_models
       ~shared_fixpoint
+      ~shared_results
       ~override_graph
       ~context
       ~step:({ iteration; _ } as step)
@@ -747,7 +746,15 @@ module Make (Analysis : ANALYSIS) = struct
           Model.pp
           result.State.model
       in
-      let _ = State.set_callable_result ~shared_models ~shared_fixpoint step callable result in
+      let _ =
+        State.set_callable_result
+          ~shared_models
+          ~shared_fixpoint
+          ~shared_results
+          step
+          callable
+          result
+      in
       let additional_dependencies =
         DependencyGraph.merge result.State.additional_dependencies additional_dependencies
       in
@@ -840,7 +847,7 @@ module Make (Analysis : ANALYSIS) = struct
         ~iteration
         ~dependency_graph
         ~all_callables
-        ~state:({ State.shared_fixpoint; _ } as state)
+        ~state:({ State.shared_fixpoint; shared_results; _ } as state)
         callables_to_analyze
       =
       let number_of_callables = List.length callables_to_analyze in
@@ -863,6 +870,7 @@ module Make (Analysis : ANALYSIS) = struct
             ~max_iterations
             ~shared_models:shared_models_preserve_keys_handle
             ~shared_fixpoint
+            ~shared_results
             ~override_graph
             ~context
             ~step

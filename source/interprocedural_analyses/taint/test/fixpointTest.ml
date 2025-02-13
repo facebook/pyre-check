@@ -92,7 +92,9 @@ let assert_fixpoint
       (TaintFixpoint.State.read_only fixpoint.TaintFixpoint.state)
   in
   let get_errors callable =
-    TaintFixpoint.State.get_result callable |> IssueHandle.SerializableMap.data
+    callable
+    |> TaintFixpoint.State.ReadOnly.get_result (TaintFixpoint.State.read_only state)
+    |> IssueHandle.SerializableMap.data
   in
   let () =
     List.iter ~f:(check_expectation ~pyre_api ~taint_configuration ~get_model ~get_errors) expect

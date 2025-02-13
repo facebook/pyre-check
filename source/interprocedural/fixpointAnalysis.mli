@@ -226,15 +226,11 @@ module Make (Analysis : ANALYSIS) : sig
       type t
 
       val get_model : t -> Target.t -> Analysis.Model.t option
+
+      val get_result : t -> Target.t -> Analysis.Result.t
     end
 
     val read_only : t -> ReadOnly.t
-
-    val get_result : Target.t -> Analysis.Result.t
-
-    val set_result : Target.t -> Analysis.Result.t -> unit
-
-    val clear_results : t -> unit
 
     (** Remove the fixpoint state from the shared memory. This must be called before computing
         another fixpoint. *)
