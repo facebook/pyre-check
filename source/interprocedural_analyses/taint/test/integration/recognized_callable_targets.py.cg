@@ -7,7 +7,6 @@ Call dependencies
     "to_callable_target (fun)"
   ],
   "recognized_callable_targets.test_callable_target (fun)": [
-    "_test_source (fun)",
-    "recognized_callable_targets.callable_target@decorated (fun)"
+    "_test_source (fun)", "recognized_callable_targets.callable_target (fun)"
   ]
 }

@@ -1051,8 +1051,9 @@ let test_call_graph_of_define =
                              CallTarget.create_regular
                                ~return_type:(Some ReturnType.integer)
                                (Target.Regular.Function
-                                  { name = "test.callable_target"; kind = Decorated });
+                                  { name = "test.callable_target"; kind = Normal });
                            ]
+                         ~recognized_call:CallGraph.CallCallees.RecognizedCall.True
                          ())) );
              ]
            ();
@@ -1609,6 +1610,7 @@ let test_call_graph_of_define =
                                ~return_type:(Some ReturnType.integer)
                                (Target.Regular.Function { name = "test.f"; kind = Normal });
                            ]
+                         ~recognized_call:CallGraph.CallCallees.RecognizedCall.True
                          ())) );
              ]
            ();
@@ -1642,6 +1644,7 @@ let test_call_graph_of_define =
                                (Target.Regular.Method
                                   { class_name = "test.C"; method_name = "m"; kind = Normal });
                            ]
+                         ~recognized_call:CallGraph.CallCallees.RecognizedCall.True
                          ())) );
              ]
            ();

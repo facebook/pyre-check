@@ -168,6 +168,13 @@ end
 
 (** An aggregate of all possible callees at a call site. *)
 module CallCallees : sig
+  module RecognizedCall : sig
+    type t =
+      | True
+      | False
+      | Unknown
+  end
+
   type t = {
     (* Normal call targets. *)
     call_targets: CallTarget.t list;
@@ -183,6 +190,7 @@ module CallCallees : sig
     (* True if at least one callee could not be resolved.
      * Usually indicates missing type information at the call site. *)
     unresolved: Unresolved.t;
+    recognized_call: RecognizedCall.t;
   }
   [@@deriving eq, show]
 
@@ -193,6 +201,7 @@ module CallCallees : sig
     ?decorated_targets:CallTarget.t list ->
     ?higher_order_parameters:HigherOrderParameterMap.t ->
     ?unresolved:Unresolved.t ->
+    ?recognized_call:RecognizedCall.t ->
     unit ->
     t
 

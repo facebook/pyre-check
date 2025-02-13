@@ -911,6 +911,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         decorated_targets = _;
         higher_order_parameters = _;
         unresolved;
+        recognized_call = _;
       }
     =
     (* Set of sinks of combined source rules triggered (i.e, a source flowed to

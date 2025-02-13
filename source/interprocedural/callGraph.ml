@@ -628,6 +628,34 @@ end
 
 (** An aggregate of all possible callees at a call site. *)
 module CallCallees = struct
+  module RecognizedCall = struct
+    type t =
+      | True
+      | False
+      | Unknown
+    [@@deriving eq, show { with_path = false }, to_yojson]
+
+    let join left right =
+      match left, right with
+      | True, True -> True
+      | False, False -> False
+      | _, _ -> Unknown
+
+
+    let output_to_json = function
+      | False -> false
+      | True
+      | Unknown ->
+          true
+
+
+    let redirect_to_decorated = function
+      | True -> false
+      | Unknown (* It is unclear whether it is better to redirect or not. *)
+      | False ->
+          true
+  end
+
   type t = {
     (* Normal call targets. *)
     call_targets: CallTarget.t list;
@@ -643,6 +671,7 @@ module CallCallees = struct
     (* True if at least one callee could not be resolved.
      * Usually indicates missing type information at the call site. *)
     unresolved: Unresolved.t;
+    recognized_call: RecognizedCall.t;
   }
   [@@deriving eq, show { with_path = false }]
 
@@ -653,6 +682,7 @@ module CallCallees = struct
       ?(decorated_targets = [])
       ?(higher_order_parameters = HigherOrderParameterMap.empty)
       ?(unresolved = Unresolved.False)
+      ?(recognized_call = RecognizedCall.False)
       ()
     =
     {
@@ -662,6 +692,7 @@ module CallCallees = struct
       decorated_targets;
       higher_order_parameters;
       unresolved;
+      recognized_call;
     }
 
 
@@ -676,6 +707,7 @@ module CallCallees = struct
       decorated_targets = [];
       higher_order_parameters = HigherOrderParameterMap.empty;
       unresolved = Unresolved.True reason;
+      recognized_call = RecognizedCall.False;
     }
 
 
@@ -704,6 +736,7 @@ module CallCallees = struct
         decorated_targets = left_decorator_targets;
         higher_order_parameters = left_higher_order_parameters;
         unresolved = left_unresolved;
+        recognized_call = left_recognized_call;
       }
       {
         call_targets = right_call_targets;
@@ -712,6 +745,7 @@ module CallCallees = struct
         decorated_targets = right_decorator_targets;
         higher_order_parameters = right_higher_order_parameters;
         unresolved = right_unresolved;
+        recognized_call = right_recognized_call;
       }
     =
     let call_targets = List.rev_append left_call_targets right_call_targets in
@@ -722,6 +756,7 @@ module CallCallees = struct
       HigherOrderParameterMap.join left_higher_order_parameters right_higher_order_parameters
     in
     let unresolved = Unresolved.join left_unresolved right_unresolved in
+    let recognized_call = RecognizedCall.join left_recognized_call right_recognized_call in
     {
       call_targets;
       new_targets;
@@ -729,6 +764,7 @@ module CallCallees = struct
       decorated_targets;
       higher_order_parameters;
       unresolved;
+      recognized_call;
     }
 
 
@@ -740,6 +776,7 @@ module CallCallees = struct
         decorated_targets;
         higher_order_parameters;
         unresolved;
+        recognized_call;
       }
     =
     let call_targets = CallTarget.dedup_and_sort call_targets in
@@ -754,6 +791,7 @@ module CallCallees = struct
       decorated_targets;
       higher_order_parameters;
       unresolved;
+      recognized_call;
     }
 
 
@@ -777,6 +815,7 @@ module CallCallees = struct
         decorated_targets = decorator_targets_left;
         higher_order_parameters = higher_order_parameter_lefts;
         unresolved = unresolved_left;
+        recognized_call = recognized_call_left;
       }
       {
         call_targets = call_targets_right;
@@ -785,6 +824,7 @@ module CallCallees = struct
         decorated_targets = decorator_targets_right;
         higher_order_parameters = higher_order_parameter_rights;
         unresolved = unresolved_right;
+        recognized_call = recognized_call_right;
       }
     =
     List.equal CallTarget.equal_ignoring_types call_targets_left call_targets_right
@@ -795,6 +835,7 @@ module CallCallees = struct
          higher_order_parameter_lefts
          higher_order_parameter_rights
     && Unresolved.equal unresolved_left unresolved_right
+    && RecognizedCall.equal recognized_call_left recognized_call_right
 
 
   let is_method_of_class ~is_class_name callees =
@@ -879,6 +920,7 @@ module CallCallees = struct
         decorated_targets;
         higher_order_parameters;
         unresolved;
+        recognized_call;
       }
     =
     let bindings =
@@ -896,27 +938,35 @@ module CallCallees = struct
         bindings
     in
     let bindings =
-      JsonHelper.add_flag_if
-        "unresolved"
-        (Unresolved.to_json unresolved)
-        (Unresolved.is_unresolved unresolved)
-        bindings
+      bindings
+      |> JsonHelper.add_flag_if
+           "unresolved"
+           (Unresolved.to_json unresolved)
+           (Unresolved.is_unresolved unresolved)
+      |> JsonHelper.add_flag_if
+           "recognized_call"
+           (RecognizedCall.to_yojson recognized_call)
+           (RecognizedCall.output_to_json recognized_call)
     in
     `Assoc (List.rev bindings)
 
 
   let redirect_to_decorated
       ~decorators
-      ({ call_targets; higher_order_parameters; new_targets; init_targets; _ } as call_callees)
+      ({ call_targets; higher_order_parameters; new_targets; init_targets; recognized_call; _ } as
+      call_callees)
     =
-    {
-      call_callees with
-      call_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) call_targets;
-      higher_order_parameters =
-        HigherOrderParameterMap.redirect_to_decorated ~decorators higher_order_parameters;
-      new_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) new_targets;
-      init_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) init_targets;
-    }
+    if RecognizedCall.redirect_to_decorated recognized_call then
+      {
+        call_callees with
+        call_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) call_targets;
+        higher_order_parameters =
+          HigherOrderParameterMap.redirect_to_decorated ~decorators higher_order_parameters;
+        new_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) new_targets;
+        init_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) init_targets;
+      }
+    else
+      call_callees
 
 
   let drop_decorated_targets call_callees = { call_callees with decorated_targets = [] }
@@ -2456,7 +2506,7 @@ let resolve_recognized_callees
     ~callee_type
   =
   (* Special treatment for a set of hardcoded decorators returning callable classes. *)
-  match Node.value callee, callee_type with
+  (match Node.value callee, callee_type with
   | ( _,
       Type.Parametric
         {
@@ -2506,7 +2556,8 @@ let resolve_recognized_callees
               (Target.Regular.Function { name; kind = Normal } |> Target.from_regular);
           ]
         ()
-  | _ -> None
+  | _ -> None)
+  >>| fun call_callees -> { call_callees with recognized_call = CallCallees.RecognizedCall.True }
 
 
 let resolve_callee_ignoring_decorators

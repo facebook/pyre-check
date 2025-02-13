@@ -892,6 +892,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         decorated_targets = _;
         higher_order_parameters = _;
         unresolved;
+        recognized_call = _;
       }
     =
     let call_taint =
