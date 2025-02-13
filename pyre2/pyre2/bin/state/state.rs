@@ -173,7 +173,7 @@ impl State {
             if todo == Step::Answers && !self.retain_memory {
                 // We have captured the Ast, and must have already built Exports (we do it serially),
                 // so won't need the Ast again.
-                module_state.steps.write().unwrap().ast.clear();
+                module_state.steps.write().unwrap().ast.take();
             }
 
             let stdlib = self.get_stdlib(handle);
@@ -189,12 +189,16 @@ impl State {
                 retain_memory: self.retain_memory,
             });
             {
+                let mut to_drop = None;
                 let mut module_write = module_state.steps.write().unwrap();
                 set(&mut module_write);
                 if todo == Step::Solutions && !self.retain_memory {
                     // From now on we can use the answers directly, so evict the bindings/answers.
-                    module_write.answers.clear();
+                    to_drop = module_write.answers.take();
                 }
+                drop(module_write);
+                // Release the lock before dropping
+                drop(to_drop);
             }
             if todo == step {
                 break; // Fast path - avoid asking again since we just did it.

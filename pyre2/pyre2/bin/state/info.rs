@@ -23,8 +23,8 @@ impl<T> Default for Info<T> {
 }
 
 impl<T> Info<T> {
-    pub fn clear(&mut self) {
-        self.value = None;
+    pub fn take(&mut self) -> Option<T> {
+        self.value.take()
     }
 
     pub fn get(&self) -> Option<&T> {
