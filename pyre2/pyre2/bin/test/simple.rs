@@ -978,3 +978,21 @@ def f(c: C, x: int, y: str):
     y in c  # E: EXPECTED str <: int
     "#,
 );
+
+testcase!(
+    test_mangled_syntax,
+    r#"
+# This parse error results in two identical Identifiers,
+# which previously caused a panic.
+# It should probably not produce identical identifiers - https://github.com/astral-sh/ruff/issues/16140
+f"{None for y}" # E: Parse # E: Parse # E: Parse # E: Parse # E: Parse
+"#,
+);
+
+testcase!(
+    test_mangled_for,
+    r#"
+# This has identical Identifiers in the AST, which seems like the right AST.
+for # E: Parse
+"#,
+);

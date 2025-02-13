@@ -42,6 +42,13 @@ impl<'a> BindingsBuilder<'a> {
     ///
     /// This function is the the core scope lookup logic for binding creation.
     fn ensure_name(&mut self, name: &Identifier, value: Option<Binding>) {
+        if name.is_empty() {
+            // We only get empty identifiers if Ruff has done error correction,
+            // so there must be a parse error.
+            // Occasionally Ruff might give out the same Identifier twice in an error.
+            return;
+        }
+
         let key = Key::Usage(ShortIdentifier::new(name));
         match value {
             Some(value) => {
