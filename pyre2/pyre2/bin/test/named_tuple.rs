@@ -20,6 +20,9 @@ p = Pair(x=1, y="")
 x, y = p
 assert_type(x, int)
 assert_type(y, str)
+assert_type(p[0], int)
+assert_type(p[1], str)
+assert_type(p[:2], tuple[int, str])
     "#,
 );
 

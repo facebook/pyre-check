@@ -877,25 +877,14 @@
     "Line 39: Unexpected errors ['Invalid literal expression']"
   ],
   "namedtuples_define_class.py": [
-    "Line 32: Expected 1 errors",
-    "Line 33: Expected 1 errors",
     "Line 59: Expected 1 errors",
     "Line 79: Expected 1 errors",
     "Line 21: Unexpected errors ['No matching overload found']",
-    "Line 23: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 24: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 25: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 26: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 27: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 28: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 29: Unexpected errors ['assert_type(tuple[Any, ...], tuple[int, int]) failed']",
-    "Line 30: Unexpected errors ['assert_type(tuple[Any, ...], tuple[int, int, str]) failed']",
     "Line 35: Unexpected errors ['No matching overload found']",
     "Line 38: Unexpected errors ['No matching overload found']",
     "Line 41: Unexpected errors ['No matching overload found']",
     "Line 72: Unexpected errors ['No matching overload found']",
-    "Line 93: Unexpected errors ['No matching overload found']",
-    "Line 95: Unexpected errors ['assert_type(Any, float) failed']"
+    "Line 93: Unexpected errors ['No matching overload found']"
   ],
   "namedtuples_define_functional.py": [
     "Line 14: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]']",
@@ -920,16 +909,8 @@
     "Line 19: Unexpected errors ['No matching overload found']"
   ],
   "namedtuples_usage.py": [
-    "Line 34: Expected 1 errors",
-    "Line 35: Expected 1 errors",
     "Line 40: Expected 1 errors",
     "Line 19: Unexpected errors ['No matching overload found']",
-    "Line 27: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 28: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 29: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 30: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 31: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 32: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 60: Unexpected errors ['No matching overload found']"
   ],
   "narrowing_typeguard.py": [

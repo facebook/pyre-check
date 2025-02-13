@@ -11652,82 +11652,22 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 23,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
+      "line": 32,
       "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 23
+      "stop_column": 6,
+      "stop_line": 32
     },
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 24,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
+      "line": 33,
       "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 26,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 26
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 27
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(tuple[Any, ...], tuple[int, int]) failed",
-      "description": "assert_type(tuple[Any, ...], tuple[int, int]) failed",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(tuple[Any, ...], tuple[int, int, str]) failed",
-      "description": "assert_type(tuple[Any, ...], tuple[int, int, str]) failed",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 42,
-      "stop_line": 30
+      "stop_column": 6,
+      "stop_line": 33
     },
     {
       "code": -2,
@@ -11898,16 +11838,6 @@
       "name": "PyreError",
       "stop_column": 15,
       "stop_line": 93
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, float) failed",
-      "description": "assert_type(Any, float) failed",
-      "line": 95,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 95
     },
     {
       "code": -2,
@@ -12268,62 +12198,22 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 27,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
+      "line": 34,
       "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 27
+      "stop_column": 6,
+      "stop_line": 34
     },
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 28,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
+      "line": 35,
       "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 31,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 32,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 32
+      "stop_column": 6,
+      "stop_line": 35
     },
     {
       "code": -2,

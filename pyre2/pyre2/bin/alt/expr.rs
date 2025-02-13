@@ -852,79 +852,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::Type(box Type::SpecialForm(special)) => {
                         self.apply_special_form(special, xs, x.range, errors)
                     }
-                    Type::Tuple(Tuple::Concrete(elts)) if xs.len() == 1 => match &xs[0] {
-                        Expr::Slice(ExprSlice {
-                            lower: lower_expr,
-                            upper: upper_expr,
-                            step: None,
-                            ..
-                        }) => {
-                            let lower_literal = match lower_expr {
-                                Some(box expr) => {
-                                    let lower_type = self.expr_infer(expr, errors);
-                                    match &lower_type {
-                                        Type::Literal(Lit::Int(idx)) => Some(*idx),
-                                        _ => None,
-                                    }
-                                }
-                                None => Some(0),
-                            };
-                            let upper_literal = match upper_expr {
-                                Some(box expr) => {
-                                    let upper_type = self.expr_infer(expr, errors);
-                                    match &upper_type {
-                                        Type::Literal(Lit::Int(idx)) => Some(*idx),
-                                        _ => None,
-                                    }
-                                }
-                                None => Some(elts.len() as i64),
-                            };
-                            match (lower_literal, upper_literal) {
-                                (Some(lower), Some(upper))
-                                    if lower <= upper
-                                        && lower >= 0
-                                        && upper >= 0
-                                        && upper <= elts.len() as i64 =>
-                                {
-                                    Type::Tuple(Tuple::concrete(
-                                        elts[lower as usize..upper as usize].to_vec(),
-                                    ))
-                                }
-                                _ => self.todo(errors, "tuple slice", x),
-                            }
-                        }
-                        _ => {
-                            let idx_type = self.expr_infer(&xs[0], errors);
-                            match &idx_type {
-                                Type::Literal(Lit::Int(idx)) => {
-                                    let elt_idx = if *idx >= 0 {
-                                        *idx
-                                    } else {
-                                        elts.len() as i64 + *idx
-                                    } as usize;
-                                    if let Some(elt) = elts.get(elt_idx) {
-                                        elt.clone()
-                                    } else {
-                                        self.error(errors,
-                                        x.range,
-                                        format!(
-                                            "Index {idx} out of range for tuple with {} elements",
-                                            elts.len()
-                                        ),
-                                    )
-                                    }
-                                }
-                                _ => self.call_method_or_error(
-                                    &Type::Tuple(Tuple::Concrete(elts)),
-                                    &dunder::GETITEM,
-                                    x.range,
-                                    &[CallArg::Expr(&x.slice)],
-                                    &[],
-                                    errors,
-                                ),
-                            }
-                        }
-                    },
+                    Type::Tuple(Tuple::Concrete(elts)) if xs.len() == 1 => {
+                        self.infer_tuple_index(elts, &x.slice, x.range, errors)
+                    }
                     Type::Tuple(Tuple::Unbounded(elt)) if xs.len() == 1 => self
                         .call_method_or_error(
                             &Type::Tuple(Tuple::Unbounded(elt)),
@@ -935,6 +865,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             errors,
                         ),
                     Type::Any(style) => style.propagate(),
+                    Type::ClassType(cls)
+                        if let Some(elts) = self.named_tuple_element_types(&cls) =>
+                    {
+                        self.infer_tuple_index(elts, &x.slice, x.range, errors)
+                    }
                     Type::ClassType(_) => self.call_method_or_error(
                         &fun,
                         &dunder::GETITEM,
@@ -999,6 +934,91 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 x.range,
                 "IPython escapes are not supported".to_owned(),
             ),
+        }
+    }
+
+    /// When indexing/slicing concrete tuples with literals, try to infer a more precise type
+    fn infer_tuple_index(
+        &self,
+        elts: Vec<Type>,
+        slice: &Expr,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        let xs = Ast::unpack_slice(slice);
+        match &xs[0] {
+            Expr::Slice(ExprSlice {
+                lower: lower_expr,
+                upper: upper_expr,
+                step: None,
+                ..
+            }) => {
+                let lower_literal = match lower_expr {
+                    Some(box expr) => {
+                        let lower_type = self.expr_infer(expr, errors);
+                        match &lower_type {
+                            Type::Literal(Lit::Int(idx)) => Some(*idx),
+                            _ => None,
+                        }
+                    }
+                    None => Some(0),
+                };
+                let upper_literal = match upper_expr {
+                    Some(box expr) => {
+                        let upper_type = self.expr_infer(expr, errors);
+                        match &upper_type {
+                            Type::Literal(Lit::Int(idx)) => Some(*idx),
+                            _ => None,
+                        }
+                    }
+                    None => Some(elts.len() as i64),
+                };
+                match (lower_literal, upper_literal) {
+                    (Some(lower), Some(upper))
+                        if lower <= upper
+                            && lower >= 0
+                            && upper >= 0
+                            && upper <= elts.len() as i64 =>
+                    {
+                        Type::Tuple(Tuple::concrete(
+                            elts[lower as usize..upper as usize].to_vec(),
+                        ))
+                    }
+                    _ => self.todo(errors, "tuple slice", range),
+                }
+            }
+            _ => {
+                let idx_type = self.expr_infer(&xs[0], errors);
+                match &idx_type {
+                    Type::Literal(Lit::Int(idx)) => {
+                        let elt_idx = if *idx >= 0 {
+                            *idx
+                        } else {
+                            elts.len() as i64 + *idx
+                        } as usize;
+                        if let Some(elt) = elts.get(elt_idx) {
+                            elt.clone()
+                        } else {
+                            self.error(
+                                errors,
+                                range,
+                                format!(
+                                    "Index {idx} out of range for tuple with {} elements",
+                                    elts.len()
+                                ),
+                            )
+                        }
+                    }
+                    _ => self.call_method_or_error(
+                        &Type::Tuple(Tuple::Concrete(elts)),
+                        &dunder::GETITEM,
+                        range,
+                        &[CallArg::Expr(slice)],
+                        &[],
+                        errors,
+                    ),
+                }
+            }
         }
     }
 }
