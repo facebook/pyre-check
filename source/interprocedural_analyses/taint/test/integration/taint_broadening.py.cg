@@ -1,34 +1,79 @@
 @generated
 Call dependencies
-taint_broadening.$toplevel (fun) -> []
-taint_broadening.issue_collapse (fun) -> [_test_sink (fun) _test_source (fun)]
-taint_broadening.model_broadening_collapse_sink_width (fun) -> [_test_sink (fun)]
-taint_broadening.model_broadening_collapse_source_width (fun) -> [_test_source (fun) dict.__setitem__ (method)]
-taint_broadening.model_broadening_no_collapse_sink_width (fun) -> [_test_sink (fun)]
-taint_broadening.model_broadening_no_collapse_sink_width@decorated (fun) -> [taint_broadening.skip_model_broadening (fun)[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_sink_width (fun)]]
-taint_broadening.model_broadening_no_collapse_source_width (fun) -> [_test_source (fun) dict.__setitem__ (method)]
-taint_broadening.model_broadening_no_collapse_source_width@decorated (fun) -> [taint_broadening.skip_model_broadening (fun)[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_source_width (fun)]]
-taint_broadening.model_broadening_sink_no_collapse_depth (fun) -> [_test_sink (fun)]
-taint_broadening.model_broadening_source_no_collapse_depth (fun) -> [_test_source (fun) dict.__getitem__ (method)]
-taint_broadening.random_tito (fun) -> []
-taint_broadening.recursive_sink_parent (fun) -> [_test_sink (fun) taint_broadening.recursive_sink_parent (fun)]
-taint_broadening.recursive_sink_parent_attribute (fun) -> [_test_sink (fun) taint_broadening.recursive_sink_parent_attribute (fun)]
-taint_broadening.sink_a (fun) -> [_test_sink (fun)]
-taint_broadening.sink_taint_widening_collapse_depth (fun) -> [_test_sink (fun) object.__new__ (method) range.__init__ (method) range.__iter__ (method) typing.Iterator.__next__ (method)]
-taint_broadening.skip_model_broadening (fun) -> []
-taint_broadening.skip_model_broadening (fun)[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_sink_width (fun)] -> []
-taint_broadening.skip_model_broadening (fun)[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_source_width (fun)] -> []
-taint_broadening.skip_model_broadening (fun)[formal(f, position=0)=taint_broadening.tito_no_broadening_input_and_output_paths (fun)] -> []
-taint_broadening.source_taint_widening_collapse_depth (fun) -> [_test_source (fun) object.__new__ (method) range.__init__ (method) range.__iter__ (method) typing.Iterator.__next__ (method)]
-taint_broadening.test_different_tito_broadenings (fun) -> [_test_sink (fun) _test_source (fun) str.__str__ (method) str.join (method) taint_broadening.tito_broaden_input_and_output_paths (fun) taint_broadening.tito_broaden_input_paths_but_not_output_path (fun) typing.Mapping.keys (method)]
-taint_broadening.tito_broaden_input_and_output_paths (fun) -> [dict.__setitem__ (method)]
-taint_broadening.tito_broaden_input_and_output_paths_single_statement (fun) -> []
-taint_broadening.tito_broaden_input_path_common_prefix (fun) -> []
-taint_broadening.tito_broaden_input_paths_but_not_output_path (fun) -> [dict.__setitem__ (method)]
-taint_broadening.tito_broaden_output_path_common_prefix (fun) -> []
-taint_broadening.tito_broaden_output_paths_but_not_input_path (fun) -> [dict.__setitem__ (method) taint_broadening.random_tito (fun)]
-taint_broadening.tito_collapse_issue (fun) -> [_test_sink (fun) _test_source (fun) taint_broadening.tito (fun)]
-taint_broadening.tito_collapse_sink (fun) -> [_test_sink (fun) taint_broadening.tito (fun)]
-taint_broadening.tito_collapse_source (fun) -> [_test_source (fun) taint_broadening.tito (fun)]
-taint_broadening.tito_no_broadening_input_and_output_paths (fun) -> [dict.__setitem__ (method)]
-taint_broadening.tito_no_broadening_input_and_output_paths@decorated (fun) -> [taint_broadening.skip_model_broadening (fun)[formal(f, position=0)=taint_broadening.tito_no_broadening_input_and_output_paths (fun)]]
+{
+  "taint_broadening.issue_collapse (fun)": [
+    "_test_sink (fun)", "_test_source (fun)"
+  ],
+  "taint_broadening.model_broadening_collapse_sink_width (fun)": [
+    "_test_sink (fun)"
+  ],
+  "taint_broadening.model_broadening_collapse_source_width (fun)": [
+    "_test_source (fun)", "dict.__setitem__ (method)"
+  ],
+  "taint_broadening.model_broadening_no_collapse_sink_width (fun)": [
+    "_test_sink (fun)"
+  ],
+  "taint_broadening.model_broadening_no_collapse_sink_width@decorated (fun)": [
+    "taint_broadening.skip_model_broadening (fun)[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_sink_width (fun)]"
+  ],
+  "taint_broadening.model_broadening_no_collapse_source_width (fun)": [
+    "_test_source (fun)", "dict.__setitem__ (method)"
+  ],
+  "taint_broadening.model_broadening_no_collapse_source_width@decorated (fun)": [
+    "taint_broadening.skip_model_broadening (fun)[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_source_width (fun)]"
+  ],
+  "taint_broadening.model_broadening_sink_no_collapse_depth (fun)": [
+    "_test_sink (fun)"
+  ],
+  "taint_broadening.model_broadening_source_no_collapse_depth (fun)": [
+    "_test_source (fun)", "dict.__getitem__ (method)"
+  ],
+  "taint_broadening.recursive_sink_parent (fun)": [
+    "_test_sink (fun)", "taint_broadening.recursive_sink_parent (fun)"
+  ],
+  "taint_broadening.recursive_sink_parent_attribute (fun)": [
+    "_test_sink (fun)",
+    "taint_broadening.recursive_sink_parent_attribute (fun)"
+  ],
+  "taint_broadening.sink_a (fun)": [ "_test_sink (fun)" ],
+  "taint_broadening.sink_taint_widening_collapse_depth (fun)": [
+    "_test_sink (fun)", "object.__new__ (method)", "range.__init__ (method)",
+    "range.__iter__ (method)", "typing.Iterator.__next__ (method)"
+  ],
+  "taint_broadening.source_taint_widening_collapse_depth (fun)": [
+    "_test_source (fun)", "object.__new__ (method)",
+    "range.__init__ (method)", "range.__iter__ (method)",
+    "typing.Iterator.__next__ (method)"
+  ],
+  "taint_broadening.test_different_tito_broadenings (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "taint_broadening.tito_broaden_input_and_output_paths (fun)",
+    "taint_broadening.tito_broaden_input_paths_but_not_output_path (fun)",
+    "str.__str__ (method)", "str.join (method)",
+    "typing.Mapping.keys (method)"
+  ],
+  "taint_broadening.tito_broaden_input_and_output_paths (fun)": [
+    "dict.__setitem__ (method)"
+  ],
+  "taint_broadening.tito_broaden_input_paths_but_not_output_path (fun)": [
+    "dict.__setitem__ (method)"
+  ],
+  "taint_broadening.tito_broaden_output_paths_but_not_input_path (fun)": [
+    "taint_broadening.random_tito (fun)", "dict.__setitem__ (method)"
+  ],
+  "taint_broadening.tito_collapse_issue (fun)": [
+    "_test_sink (fun)", "_test_source (fun)", "taint_broadening.tito (fun)"
+  ],
+  "taint_broadening.tito_collapse_sink (fun)": [
+    "_test_sink (fun)", "taint_broadening.tito (fun)"
+  ],
+  "taint_broadening.tito_collapse_source (fun)": [
+    "_test_source (fun)", "taint_broadening.tito (fun)"
+  ],
+  "taint_broadening.tito_no_broadening_input_and_output_paths (fun)": [
+    "dict.__setitem__ (method)"
+  ],
+  "taint_broadening.tito_no_broadening_input_and_output_paths@decorated (fun)": [
+    "taint_broadening.skip_model_broadening (fun)[formal(f, position=0)=taint_broadening.tito_no_broadening_input_and_output_paths (fun)]"
+  ]
+}

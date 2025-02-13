@@ -1,6 +1,16 @@
 @generated
 Call dependencies
-first_index.$toplevel (fun) -> []
-first_index.alternate_fields (fun) -> [_test_sink (fun) _test_source (fun) dict.__getitem__ (method) int.__gt__ (method) int.__le__ (method)]
-first_index.local_fields (fun) -> [first_index.alternate_fields (fun) int.__gt__ (method) int.__le__ (method)]
-first_index.local_fields_hop (fun) -> [first_index.local_fields (fun) int.__gt__ (method) int.__le__ (method)]
+{
+  "first_index.alternate_fields (fun)": [
+    "_test_sink (fun)", "_test_source (fun)", "dict.__getitem__ (method)",
+    "int.__gt__ (method)", "int.__le__ (method)"
+  ],
+  "first_index.local_fields (fun)": [
+    "first_index.alternate_fields (fun)", "int.__gt__ (method)",
+    "int.__le__ (method)"
+  ],
+  "first_index.local_fields_hop (fun)": [
+    "first_index.local_fields (fun)", "int.__gt__ (method)",
+    "int.__le__ (method)"
+  ]
+}

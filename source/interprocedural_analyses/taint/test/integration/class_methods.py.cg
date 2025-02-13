@@ -1,42 +1,48 @@
 @generated
 Call dependencies
-class_methods.$toplevel (fun) -> []
-class_methods.C.$class_toplevel (method) -> []
-class_methods.C.abstract_class_method (method) -> []
-class_methods.C.abstract_class_method (override) -> []
-class_methods.C.abstract_method (method) -> []
-class_methods.C.abstract_method (override) -> []
-class_methods.C.class_abstractmethod (method) -> []
-class_methods.C.class_abstractmethod (override) -> []
-class_methods.C.class_method (method) -> [_test_sink (fun)]
-class_methods.C.my_abstract_property (method) -> []
-class_methods.C.my_abstract_property (override) -> []
-class_methods.C.my_abstract_property@setter (method) -> []
-class_methods.C.my_abstract_property@setter (override) -> []
-class_methods.C.one_hop_abstract_class_method (method) -> [class_methods.C.abstract_class_method (override)]
-class_methods.C.one_hop_abstract_method (method) -> [class_methods.C.abstract_method (method)]
-class_methods.C.one_hop_class_abstractmethod (method) -> [class_methods.C.class_abstractmethod (override)]
-class_methods.C.one_hop_class_method (method) -> [class_methods.C.class_method (method)]
-class_methods.C.one_hop_static_abstractmethod (method) -> [class_methods.C.static_abstractmethod (method)]
-class_methods.C.static_abstractmethod (method) -> [_test_sink (fun)]
-class_methods.D.$class_toplevel (method) -> []
-class_methods.D.abstract_class_method (method) -> [_test_sink (fun)]
-class_methods.D.abstract_class_method (override) -> []
-class_methods.D.abstract_method (method) -> [_test_sink (fun)]
-class_methods.D.abstract_method (override) -> []
-class_methods.D.class_abstractmethod (method) -> [_test_sink (fun)]
-class_methods.D.class_abstractmethod (override) -> []
-class_methods.D.my_abstract_property (method) -> []
-class_methods.D.my_abstract_property (override) -> []
-class_methods.D.my_abstract_property@setter (method) -> []
-class_methods.D.my_abstract_property@setter (override) -> []
-class_methods.ObscureClassMethodTito.$class_toplevel (method) -> []
-class_methods.ObscureClassMethodTito.__init__ (method) -> []
-class_methods.ObscureClassMethodTito.__init__ (override) -> []
-class_methods.Test.$class_toplevel (method) -> []
-class_methods.Test.foo (method) -> [_test_sink (fun)]
-class_methods.bar (fun) -> [_test_source (fun) class_methods.Test.foo (method)]
-class_methods.issue_with_abstract_class_method (fun) -> [_test_source (fun) class_methods.C.one_hop_abstract_class_method (method) class_methods.C.one_hop_abstract_method (method) class_methods.C.one_hop_class_abstractmethod (method) class_methods.C.one_hop_class_method (method) class_methods.C.one_hop_static_abstractmethod (method)]
-class_methods.issue_with_abstract_property (fun) -> [_test_sink (fun) _test_source (fun) class_methods.D.my_abstract_property (method) class_methods.D.my_abstract_property@setter (method) object.__init__ (method) object.__new__ (method)]
-class_methods.test_obscure_class_method_tito (fun) -> [_test_sink (fun) _test_source (fun) class_methods.ObscureClassMethodTito.__init__ (method) class_methods.ObscureClassMethodTito.method (method) object.__new__ (method)]
-object.__init__ (override) -> []
+{
+  "class_methods.C.class_method (method)": [ "_test_sink (fun)" ],
+  "class_methods.C.one_hop_abstract_class_method (method)": [
+    "class_methods.C.abstract_class_method (override)"
+  ],
+  "class_methods.C.one_hop_abstract_method (method)": [
+    "class_methods.C.abstract_method (method)"
+  ],
+  "class_methods.C.one_hop_class_abstractmethod (method)": [
+    "class_methods.C.class_abstractmethod (override)"
+  ],
+  "class_methods.C.one_hop_class_method (method)": [
+    "class_methods.C.class_method (method)"
+  ],
+  "class_methods.C.one_hop_static_abstractmethod (method)": [
+    "class_methods.C.static_abstractmethod (method)"
+  ],
+  "class_methods.C.static_abstractmethod (method)": [ "_test_sink (fun)" ],
+  "class_methods.D.abstract_class_method (method)": [ "_test_sink (fun)" ],
+  "class_methods.D.abstract_method (method)": [ "_test_sink (fun)" ],
+  "class_methods.D.class_abstractmethod (method)": [ "_test_sink (fun)" ],
+  "class_methods.Test.foo (method)": [ "_test_sink (fun)" ],
+  "class_methods.bar (fun)": [
+    "_test_source (fun)", "class_methods.Test.foo (method)"
+  ],
+  "class_methods.issue_with_abstract_class_method (fun)": [
+    "_test_source (fun)",
+    "class_methods.C.one_hop_abstract_class_method (method)",
+    "class_methods.C.one_hop_abstract_method (method)",
+    "class_methods.C.one_hop_class_abstractmethod (method)",
+    "class_methods.C.one_hop_class_method (method)",
+    "class_methods.C.one_hop_static_abstractmethod (method)"
+  ],
+  "class_methods.issue_with_abstract_property (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "class_methods.D.my_abstract_property (method)",
+    "class_methods.D.my_abstract_property@setter (method)",
+    "object.__init__ (method)", "object.__new__ (method)"
+  ],
+  "class_methods.test_obscure_class_method_tito (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "class_methods.ObscureClassMethodTito.__init__ (method)",
+    "class_methods.ObscureClassMethodTito.method (method)",
+    "object.__new__ (method)"
+  ]
+}

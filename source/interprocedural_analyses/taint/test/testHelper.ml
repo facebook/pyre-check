@@ -834,10 +834,12 @@ let end_to_end_integration_test path context =
     let create_call_graph_files call_graph =
       let actual =
         Format.asprintf
-          "@%s\nCall dependencies\n%a"
+          "@%s\nCall dependencies\n%s"
           "generated"
-          TargetGraph.pp
-          (CallGraph.WholeProgramCallGraph.to_target_graph call_graph)
+          (call_graph
+          |> CallGraph.WholeProgramCallGraph.to_target_graph
+          |> TargetGraph.to_json ~skip_empty_callees:true
+          |> Yojson.Safe.pretty_to_string)
       in
       create_expected_and_actual_files ~suffix:".cg" actual
     in

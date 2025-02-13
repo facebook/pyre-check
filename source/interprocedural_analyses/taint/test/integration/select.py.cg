@@ -1,10 +1,15 @@
 @generated
 Call dependencies
-select.$toplevel (fun) -> []
-select.first_index (fun) -> [_test_source (fun)]
-select.first_index_numeric (fun) -> [_test_source (fun)]
-select.first_index_unknown (fun) -> [_test_source (fun)]
-select.return_is_RCE (fun) -> [dict.get (method) django.http.Request.GET (object)]
-select.view_entry_field (fun) -> [eval (fun)]
-select.view_entry_get (fun) -> [dict.get (method) django.http.Request.GET (object) eval (fun)]
-select.view_entry_index (fun) -> [eval (fun)]
+{
+  "select.first_index (fun)": [ "_test_source (fun)" ],
+  "select.first_index_numeric (fun)": [ "_test_source (fun)" ],
+  "select.first_index_unknown (fun)": [ "_test_source (fun)" ],
+  "select.return_is_RCE (fun)": [
+    "dict.get (method)", "django.http.Request.GET (object)"
+  ],
+  "select.view_entry_field (fun)": [ "eval (fun)" ],
+  "select.view_entry_get (fun)": [
+    "eval (fun)", "dict.get (method)", "django.http.Request.GET (object)"
+  ],
+  "select.view_entry_index (fun)": [ "eval (fun)" ]
+}

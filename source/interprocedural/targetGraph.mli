@@ -12,3 +12,5 @@ val to_alist : ?key_order:[ `Decreasing | `Increasing ] -> t -> (Target.t * Targ
 val dump : path:PyrePath.t -> t -> unit
 
 val pp : Format.formatter -> t -> unit
+
+val to_json : skip_empty_callees:bool -> t -> Yojson.Safe.t

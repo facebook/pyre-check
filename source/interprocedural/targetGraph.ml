@@ -39,16 +39,32 @@ let dump ~path graph =
   path |> File.create ~content:(Buffer.contents buffer) |> File.write
 
 
+let show_target = Target.show_pretty_with_kind
+
+let to_sorted_alist edges =
+  let compare (left, _) (right, _) = String.compare (show_target left) (show_target right) in
+  edges |> Target.Map.Tree.to_alist |> List.sort ~compare
+
+
 let pp formatter edges =
   let pp_edge (callable, data) =
     let targets =
-      List.map data ~f:Target.show_pretty_with_kind
-      |> List.sort ~compare:String.compare
-      |> String.concat ~sep:" "
+      List.map data ~f:show_target |> List.sort ~compare:String.compare |> String.concat ~sep:" "
     in
     Format.fprintf formatter "%a -> [%s]\n" Target.pp_pretty_with_kind callable targets
   in
-  let compare (left, _) (right, _) =
-    String.compare (Target.show_pretty_with_kind left) (Target.show_pretty_with_kind right)
+  edges |> to_sorted_alist |> List.iter ~f:pp_edge
+
+
+let to_json ~skip_empty_callees edges =
+  let callees_to_json callees =
+    `List (List.map ~f:(fun target -> `String (show_target target)) callees)
   in
-  Target.Map.Tree.to_alist edges |> List.sort ~compare |> List.iter ~f:pp_edge
+  edges
+  |> to_sorted_alist
+  |> List.filter_map ~f:(fun (caller, callees) ->
+         if skip_empty_callees && List.is_empty callees then
+           None
+         else
+           Some (show_target caller, callees_to_json callees))
+  |> fun list -> `Assoc list

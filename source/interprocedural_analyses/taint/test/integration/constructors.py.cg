@@ -1,87 +1,104 @@
 @generated
 Call dependencies
-constructors.$toplevel (fun) -> []
-constructors.BaseConstructor.$class_toplevel (method) -> []
-constructors.BaseConstructor.__init__ (method) -> [_test_source (fun)]
-constructors.BaseConstructor.__init__ (override) -> []
-constructors.BothNewAndInit.$class_toplevel (method) -> []
-constructors.BothNewAndInit.__init__ (method) -> [_test_sink (fun)]
-constructors.BothNewAndInit.__init__ (override) -> []
-constructors.BothNewAndInit.__new__ (method) -> [_test_source (fun) object.__new__ (method) super.__init__ (method)]
-constructors.BothNewAndInit.__new__ (override) -> []
-constructors.ChildWithNew.$class_toplevel (method) -> []
-constructors.ChildWithNew.__new__ (method) -> [_test_sink (fun) object.__new__ (method)]
-constructors.ChildWithNew.__new__ (override) -> []
-constructors.ConstructorObscure.$class_toplevel (method) -> []
-constructors.ConstructorObscure.__init__ (override) -> []
-constructors.ConstructorTitoModelQuery.$class_toplevel (method) -> []
-constructors.ConstructorTitoModelQuery.__init__ (method) -> []
-constructors.ConstructorTitoModelQuery.__init__ (override) -> []
-constructors.ConstructorWithSourceModel.$class_toplevel (method) -> []
-constructors.ConstructorWithSourceModel.__init__ (method) -> []
-constructors.ConstructorWithSourceModel.__init__ (override) -> []
-constructors.ConstructorWithTitoModel.$class_toplevel (method) -> []
-constructors.ConstructorWithTitoModel.__init__ (method) -> []
-constructors.ConstructorWithTitoModel.__init__ (override) -> []
-constructors.DerivedConstructor.$class_toplevel (method) -> []
-constructors.DerivedConstructor.__init__ (method) -> [constructors.BaseConstructor.__init__ (method) object.__new__ (method) super.__init__ (method)]
-constructors.DerivedConstructor.__init__ (override) -> []
-constructors.DerivedConstructorTitoModelQuery.$class_toplevel (method) -> []
-constructors.DerivedConstructorTitoModelQuery.__init__ (method) -> [constructors.ConstructorTitoModelQuery.__init__ (method) object.__new__ (method) super.__init__ (method)]
-constructors.DerivedConstructorTitoModelQuery.__init__ (override) -> []
-constructors.DerivedConstructorWithTitoModel.$class_toplevel (method) -> []
-constructors.DerivedConstructorWithTitoModel.__init__ (method) -> [constructors.ConstructorWithTitoModel.__init__ (method) object.__new__ (method) super.__init__ (method)]
-constructors.DerivedConstructorWithTitoModel.__init__ (override) -> []
-constructors.HttpRequest.$class_toplevel (method) -> []
-constructors.InitWithModel.$class_toplevel (method) -> []
-constructors.InitWithModel.__init__ (override) -> []
-constructors.NewWithModel.$class_toplevel (method) -> []
-constructors.NewWithModel.__new__ (override) -> []
-constructors.ParentWithInit.$class_toplevel (method) -> []
-constructors.ParentWithInit.__init__ (method) -> []
-constructors.ParentWithInit.__init__ (override) -> []
-constructors.ParentWithNoConstructor.$class_toplevel (method) -> []
-constructors.ParentWithNoConstructor.__init__ (method) -> [object.__init__ (method) object.__new__ (method) super.__init__ (method)]
-constructors.ParentWithNoConstructor.__init__ (override) -> []
-constructors.ParentWithObscureConstructor.$class_toplevel (method) -> []
-constructors.ParentWithObscureConstructor.__init__ (method) -> [constructors.ConstructorObscure.__init__ (method) object.__new__ (method) super.__init__ (method)]
-constructors.ParentWithObscureConstructor.__init__ (override) -> []
-constructors.SanitizeParameterTaintInTaintOut.$class_toplevel (method) -> []
-constructors.SanitizeParameterTaintInTaintOut.__init__ (method) -> []
-constructors.SanitizeParameterTaintInTaintOut.__init__ (override) -> []
-constructors.SanitizeReturn.$class_toplevel (method) -> []
-constructors.SanitizeReturn.__init__ (method) -> [_test_source (fun)]
-constructors.SanitizeReturn.__init__ (override) -> []
-constructors.SanitizeSingleTraceSource.$class_toplevel (method) -> []
-constructors.SanitizeSingleTraceSource.__init__ (method) -> [_test_source (fun)]
-constructors.SanitizeSingleTraceSource.__init__ (override) -> []
-constructors.SanitizeTaintInTaintOut.$class_toplevel (method) -> []
-constructors.SanitizeTaintInTaintOut.__init__ (method) -> []
-constructors.SanitizeTaintInTaintOut.__init__ (override) -> []
-constructors.SanitizeTitoKindSpecific.$class_toplevel (method) -> []
-constructors.SanitizeTitoKindSpecific.__init__ (method) -> [_test_source (fun)]
-constructors.SanitizeTitoKindSpecific.__init__ (override) -> []
-constructors.SomeAPI.$class_toplevel (method) -> [str.__str__ (method)]
-constructors.SomeAPI.__init__ (method) -> []
-constructors.SomeAPI.__init__ (override) -> []
-constructors.SomeAPI.async_get_authenticated_user (method) -> [eval (fun)]
-constructors.SomeAPI.from_default_keys (method) -> [constructors.SomeAPI.__init__ (method) object.__new__ (method)]
-constructors.SourceInConstructor.$class_toplevel (method) -> []
-constructors.SourceInConstructor.__init__ (method) -> [_test_source (fun)]
-constructors.SourceInConstructor.__init__ (override) -> []
-constructors.test_both_new_and_init_callgraph (fun) -> [constructors.BothNewAndInit.__init__ (method) constructors.BothNewAndInit.__new__ (method)]
-constructors.test_class_stub (fun) -> [_test_sink (fun) _test_source (fun) object.__init__ (method) object.__new__ (method)]
-constructors.test_construction (fun) -> [constructors.SomeAPI.async_get_authenticated_user (method) constructors.SomeAPI.from_default_keys (method) dict.__getitem__ (method)]
-constructors.test_constructor_with_source_model (fun) -> [_test_sink (fun) constructors.ConstructorWithSourceModel.__init__ (method) object.__new__ (method)]
-constructors.test_constructor_with_tito_model (fun) -> [_test_sink (fun) _test_source (fun) constructors.DerivedConstructorWithTitoModel.__init__ (method) object.__new__ (method)]
-constructors.test_constructor_with_tito_model_query (fun) -> [_test_sink (fun) _test_source (fun) constructors.DerivedConstructorTitoModelQuery.__init__ (method) object.__new__ (method)]
-constructors.test_init_model (fun) -> [_test_sink (fun) _test_source (fun) constructors.InitWithModel.__init__ (method) object.__new__ (method)]
-constructors.test_new_model (fun) -> [_test_sink (fun) _test_source (fun) constructors.NewWithModel.__new__ (method) object.__init__ (method)]
-constructors.test_new_thing (fun) -> [_test_source (fun) constructors.ChildWithNew.__new__ (method) constructors.ParentWithInit.__init__ (method)]
-constructors.test_parent_with_no_constructor (fun) -> [_test_sink (fun) _test_source (fun) constructors.ParentWithNoConstructor.__init__ (method) object.__new__ (method)]
-constructors.test_parent_with_obscure_constructor (fun) -> [_test_sink (fun) _test_source (fun) constructors.ParentWithObscureConstructor.__init__ (method) object.__new__ (method)]
-constructors.test_source_in_constructor (fun) -> [_test_sink (fun) constructors.SourceInConstructor.__init__ (method) object.__new__ (method)]
-object.__init__ (override) -> []
-object.__new__ (override) -> []
-type.__init__ (override) -> []
-type.__new__ (override) -> []
+{
+  "constructors.BaseConstructor.__init__ (method)": [ "_test_source (fun)" ],
+  "constructors.BothNewAndInit.__init__ (method)": [ "_test_sink (fun)" ],
+  "constructors.BothNewAndInit.__new__ (method)": [
+    "_test_source (fun)", "object.__new__ (method)",
+    "super.__init__ (method)"
+  ],
+  "constructors.ChildWithNew.__new__ (method)": [
+    "_test_sink (fun)", "object.__new__ (method)"
+  ],
+  "constructors.DerivedConstructor.__init__ (method)": [
+    "constructors.BaseConstructor.__init__ (method)",
+    "object.__new__ (method)", "super.__init__ (method)"
+  ],
+  "constructors.DerivedConstructorTitoModelQuery.__init__ (method)": [
+    "constructors.ConstructorTitoModelQuery.__init__ (method)",
+    "object.__new__ (method)", "super.__init__ (method)"
+  ],
+  "constructors.DerivedConstructorWithTitoModel.__init__ (method)": [
+    "constructors.ConstructorWithTitoModel.__init__ (method)",
+    "object.__new__ (method)", "super.__init__ (method)"
+  ],
+  "constructors.ParentWithNoConstructor.__init__ (method)": [
+    "object.__init__ (method)", "object.__new__ (method)",
+    "super.__init__ (method)"
+  ],
+  "constructors.ParentWithObscureConstructor.__init__ (method)": [
+    "constructors.ConstructorObscure.__init__ (method)",
+    "object.__new__ (method)", "super.__init__ (method)"
+  ],
+  "constructors.SanitizeReturn.__init__ (method)": [ "_test_source (fun)" ],
+  "constructors.SanitizeSingleTraceSource.__init__ (method)": [
+    "_test_source (fun)"
+  ],
+  "constructors.SanitizeTitoKindSpecific.__init__ (method)": [
+    "_test_source (fun)"
+  ],
+  "constructors.SomeAPI.$class_toplevel (method)": [ "str.__str__ (method)" ],
+  "constructors.SomeAPI.async_get_authenticated_user (method)": [
+    "eval (fun)"
+  ],
+  "constructors.SomeAPI.from_default_keys (method)": [
+    "constructors.SomeAPI.__init__ (method)", "object.__new__ (method)"
+  ],
+  "constructors.SourceInConstructor.__init__ (method)": [
+    "_test_source (fun)"
+  ],
+  "constructors.test_both_new_and_init_callgraph (fun)": [
+    "constructors.BothNewAndInit.__init__ (method)",
+    "constructors.BothNewAndInit.__new__ (method)"
+  ],
+  "constructors.test_class_stub (fun)": [
+    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "constructors.test_construction (fun)": [
+    "constructors.SomeAPI.async_get_authenticated_user (method)",
+    "constructors.SomeAPI.from_default_keys (method)",
+    "dict.__getitem__ (method)"
+  ],
+  "constructors.test_constructor_with_source_model (fun)": [
+    "_test_sink (fun)",
+    "constructors.ConstructorWithSourceModel.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "constructors.test_constructor_with_tito_model (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "constructors.DerivedConstructorWithTitoModel.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "constructors.test_constructor_with_tito_model_query (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "constructors.DerivedConstructorTitoModelQuery.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "constructors.test_init_model (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "constructors.InitWithModel.__init__ (method)", "object.__new__ (method)"
+  ],
+  "constructors.test_new_model (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "constructors.NewWithModel.__new__ (method)", "object.__init__ (method)"
+  ],
+  "constructors.test_new_thing (fun)": [
+    "_test_source (fun)", "constructors.ChildWithNew.__new__ (method)",
+    "constructors.ParentWithInit.__init__ (method)"
+  ],
+  "constructors.test_parent_with_no_constructor (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "constructors.ParentWithNoConstructor.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "constructors.test_parent_with_obscure_constructor (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "constructors.ParentWithObscureConstructor.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "constructors.test_source_in_constructor (fun)": [
+    "_test_sink (fun)", "constructors.SourceInConstructor.__init__ (method)",
+    "object.__new__ (method)"
+  ]
+}

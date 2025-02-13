@@ -1,36 +1,53 @@
 @generated
 Call dependencies
-object.__init__ (override) -> []
-partial.$toplevel (fun) -> []
-partial.NestedDefineConstructor.$class_toplevel (method) -> []
-partial.NestedDefineConstructor.__init__ (method) -> []
-partial.NestedDefineConstructor.__init__ (override) -> []
-partial.NestedDefineConstructor.__init__@decorated (method) -> [object.__new__ (method) partial.NestedDefineDecorator.__init__ (method)]
-partial.NestedDefineDecorator.$class_toplevel (method) -> []
-partial.NestedDefineDecorator.__call__ (method) -> [typing.MutableMapping.pop (method)]
-partial.NestedDefineDecorator.__call__ (override) -> []
-partial.NestedDefineDecorator.__get__ (method) -> []
-partial.NestedDefineDecorator.__get__.wrapper (fun) -> [dict.__setitem__ (method) partial.NestedDefineDecorator.__call__ (method)]
-partial.NestedDefineDecorator.__init__ (method) -> []
-partial.NestedDefineDecorator.__init__ (override) -> []
-partial.PartialConstructor.$class_toplevel (method) -> []
-partial.PartialConstructor.__init__ (method) -> []
-partial.PartialConstructor.__init__ (override) -> []
-partial.PartialConstructor.__init__@decorated (method) -> [object.__new__ (method) partial.PartialDecorator.__init__ (method)]
-partial.PartialDecorator.$class_toplevel (method) -> []
-partial.PartialDecorator.__call__ (method) -> [typing.MutableMapping.pop (method)]
-partial.PartialDecorator.__call__ (override) -> []
-partial.PartialDecorator.__get__ (method) -> [partial.PartialDecorator.__call__ (method)]
-partial.PartialDecorator.__init__ (method) -> []
-partial.PartialDecorator.__init__ (override) -> []
-partial.a_flows_to_sink (fun) -> [_test_sink (fun)]
-partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)] -> [_test_sink (fun)]
-partial.dunder_call_nested_define_constructor (fun) -> []
-partial.dunder_call_partial_constructor (fun) -> [functools.partial.__call__ (method) object.__new__ (method)]
-partial.multiprocessing_not_tainted (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]
-partial.multiprocessing_tainted (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]
-partial.partial_application_with_benign (fun) -> [partial.a_flows_to_sink (fun) partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]]
-partial.partial_application_with_named_a (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun) partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]]
-partial.partial_application_with_named_b (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun) partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]]
-partial.partial_application_with_tainted (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun) partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]]
-type.__call__ (override) -> []
+{
+  "partial.NestedDefineConstructor.__init__@decorated (method)": [
+    "object.__new__ (method)",
+    "partial.NestedDefineDecorator.__init__ (method)"
+  ],
+  "partial.NestedDefineDecorator.__call__ (method)": [
+    "typing.MutableMapping.pop (method)"
+  ],
+  "partial.NestedDefineDecorator.__get__.wrapper (fun)": [
+    "dict.__setitem__ (method)",
+    "partial.NestedDefineDecorator.__call__ (method)"
+  ],
+  "partial.PartialConstructor.__init__@decorated (method)": [
+    "object.__new__ (method)", "partial.PartialDecorator.__init__ (method)"
+  ],
+  "partial.PartialDecorator.__call__ (method)": [
+    "typing.MutableMapping.pop (method)"
+  ],
+  "partial.PartialDecorator.__get__ (method)": [
+    "partial.PartialDecorator.__call__ (method)"
+  ],
+  "partial.a_flows_to_sink (fun)": [ "_test_sink (fun)" ],
+  "partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]": [
+    "_test_sink (fun)"
+  ],
+  "partial.dunder_call_partial_constructor (fun)": [
+    "functools.partial.__call__ (method)", "object.__new__ (method)"
+  ],
+  "partial.multiprocessing_not_tainted (fun)": [
+    "_test_source (fun)", "partial.a_flows_to_sink (fun)"
+  ],
+  "partial.multiprocessing_tainted (fun)": [
+    "_test_source (fun)", "partial.a_flows_to_sink (fun)"
+  ],
+  "partial.partial_application_with_benign (fun)": [
+    "partial.a_flows_to_sink (fun)",
+    "partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]"
+  ],
+  "partial.partial_application_with_named_a (fun)": [
+    "_test_source (fun)", "partial.a_flows_to_sink (fun)",
+    "partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]"
+  ],
+  "partial.partial_application_with_named_b (fun)": [
+    "_test_source (fun)", "partial.a_flows_to_sink (fun)",
+    "partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]"
+  ],
+  "partial.partial_application_with_tainted (fun)": [
+    "_test_source (fun)", "partial.a_flows_to_sink (fun)",
+    "partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]"
+  ]
+}

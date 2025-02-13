@@ -1,50 +1,39 @@
 @generated
 Call dependencies
-all_static_fields.$toplevel (fun) -> []
-all_static_fields.A.$class_toplevel (method) -> []
-all_static_fields.A.__init__ (method) -> []
-all_static_fields.A.__init__ (override) -> []
-all_static_fields.B.$class_toplevel (method) -> []
-all_static_fields.C.$class_toplevel (method) -> []
-all_static_fields.C.__init__ (method) -> [all_static_fields.A.__init__ (method) object.__new__ (method) super.__init__ (method)]
-all_static_fields.C.__init__ (override) -> []
-all_static_fields.D.$class_toplevel (method) -> []
-all_static_fields.D.__init__ (method) -> [all_static_fields.A.__init__ (method) object.__new__ (method) super.__init__ (method)]
-all_static_fields.D.__init__ (override) -> []
-all_static_fields.Dataclass.$class_toplevel (method) -> []
-all_static_fields.Empty.$class_toplevel (method) -> []
-all_static_fields.Empty.__init__ (method) -> []
-all_static_fields.Empty.__init__ (override) -> []
-all_static_fields.RegularClass.$class_toplevel (method) -> []
-all_static_fields.RegularClass.__init__ (method) -> []
-all_static_fields.RegularClass.__init__ (override) -> []
-all_static_fields.parameter_sink_b (fun) -> []
-all_static_fields.parameter_sink_builtin_parameters (fun) -> []
-all_static_fields.parameter_sink_c (fun) -> []
-all_static_fields.parameter_sink_d (fun) -> []
-all_static_fields.parameter_sink_dataclass (fun) -> []
-all_static_fields.parameter_sink_empty (fun) -> []
-all_static_fields.parameter_sink_optional_dataclass (fun) -> []
-all_static_fields.parameter_sink_optional_regular_class (fun) -> []
-all_static_fields.parameter_sink_regular_class (fun) -> []
-all_static_fields.parameter_sink_type (fun) -> []
-all_static_fields.parameter_sink_union_c_d (fun) -> []
-all_static_fields.parameter_sink_union_dataclass_regular (fun) -> []
-all_static_fields.parameter_sink_unnannotated (fun) -> []
-all_static_fields.return_source_async (fun) -> []
-all_static_fields.return_source_b (fun) -> [all_static_fields.C.__init__ (method) object.__new__ (method)]
-all_static_fields.return_source_builtin_int (fun) -> []
-all_static_fields.return_source_builtin_list (fun) -> []
-all_static_fields.return_source_c (fun) -> [all_static_fields.C.__init__ (method) object.__new__ (method)]
-all_static_fields.return_source_d (fun) -> [all_static_fields.D.__init__ (method) object.__new__ (method)]
-all_static_fields.return_source_dataclass (fun) -> [all_static_fields.Dataclass.__init__ (method) object.__new__ (method)]
-all_static_fields.return_source_empty (fun) -> [all_static_fields.Empty.__init__ (method) object.__new__ (method)]
-all_static_fields.return_source_optional_dataclass (fun) -> []
-all_static_fields.return_source_optional_regular_class (fun) -> []
-all_static_fields.return_source_regular_class (fun) -> [all_static_fields.RegularClass.__init__ (method) object.__new__ (method)]
-all_static_fields.return_source_type (fun) -> []
-all_static_fields.return_source_union_c_d (fun) -> [all_static_fields.D.__init__ (method) object.__new__ (method)]
-all_static_fields.return_source_union_dataclass_regular (fun) -> [all_static_fields.RegularClass.__init__ (method) object.__new__ (method)]
-all_static_fields.return_source_unnannotated (fun) -> []
-object.__init__ (override) -> []
-type.__init__ (override) -> []
+{
+  "all_static_fields.C.__init__ (method)": [
+    "all_static_fields.A.__init__ (method)", "object.__new__ (method)",
+    "super.__init__ (method)"
+  ],
+  "all_static_fields.D.__init__ (method)": [
+    "all_static_fields.A.__init__ (method)", "object.__new__ (method)",
+    "super.__init__ (method)"
+  ],
+  "all_static_fields.return_source_b (fun)": [
+    "all_static_fields.C.__init__ (method)", "object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_c (fun)": [
+    "all_static_fields.C.__init__ (method)", "object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_d (fun)": [
+    "all_static_fields.D.__init__ (method)", "object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_dataclass (fun)": [
+    "all_static_fields.Dataclass.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_empty (fun)": [
+    "all_static_fields.Empty.__init__ (method)", "object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_regular_class (fun)": [
+    "all_static_fields.RegularClass.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_union_c_d (fun)": [
+    "all_static_fields.D.__init__ (method)", "object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_union_dataclass_regular (fun)": [
+    "all_static_fields.RegularClass.__init__ (method)",
+    "object.__new__ (method)"
+  ]
+}
