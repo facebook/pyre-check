@@ -6,6 +6,7 @@
  */
 
 use clap::Parser;
+use tracing::debug;
 
 #[derive(Debug, Parser, Clone)]
 pub struct CommonArgs {
@@ -24,6 +25,7 @@ impl CommonArgs {
         // This fails if we call it twice, but we probably called it previously with the same
         // value, so don't worry about it.
         let _ = builder.build_global();
+        debug!("Running with `{}` threads", rayon::current_num_threads());
         self.threads != 1
     }
 }
