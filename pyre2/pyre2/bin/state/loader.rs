@@ -9,17 +9,16 @@ use std::fmt::Debug;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::RwLock;
 
 use anyhow::anyhow;
 use dupe::Dupe;
-use starlark_map::small_map::SmallMap;
 
 use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::util::arc_id::ArcId;
 use crate::util::display::commas_iter;
+use crate::util::locked_map::LockedMap;
 
 #[derive(Debug, Clone, Dupe)]
 pub struct FindError(Arc<anyhow::Error>);
@@ -76,19 +75,14 @@ impl LoaderId {
 #[derive(Debug)]
 pub struct LoaderFindCache<T> {
     loader: T,
-    cache: RwLock<SmallMap<ModuleName, Result<(ModulePath, ErrorStyle), FindError>>>,
+    cache: LockedMap<ModuleName, Result<(ModulePath, ErrorStyle), FindError>>,
 }
 
 impl<T: Loader> Loader for LoaderFindCache<T> {
     fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
-        {
-            if let Some(result) = self.cache.read().unwrap().get(&module) {
-                return result.dupe();
-            }
-        }
-        let res = self.loader.find(module.dupe());
-        self.cache.write().unwrap().insert(module, res.dupe());
-        res
+        self.cache
+            .ensure(&module, || self.loader.find(module))
+            .dupe()
     }
 
     fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
@@ -100,7 +94,7 @@ impl<T> LoaderFindCache<T> {
     pub fn new(loader: T) -> Self {
         Self {
             loader,
-            cache: RwLock::new(SmallMap::new()),
+            cache: Default::default(),
         }
     }
 }
