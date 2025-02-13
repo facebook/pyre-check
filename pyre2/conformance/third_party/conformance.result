@@ -894,7 +894,6 @@
     "Line 38: Unexpected errors ['No matching overload found']",
     "Line 41: Unexpected errors ['No matching overload found']",
     "Line 72: Unexpected errors ['No matching overload found']",
-    "Line 73: Unexpected errors ['EXPECTED PointWithName <: tuple[int, int, str]']",
     "Line 93: Unexpected errors ['No matching overload found']",
     "Line 95: Unexpected errors ['assert_type(Any, float) failed']"
   ],
@@ -918,10 +917,7 @@
     "Line 65: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]']"
   ],
   "namedtuples_type_compat.py": [
-    "Line 19: Unexpected errors ['No matching overload found']",
-    "Line 20: Unexpected errors ['EXPECTED Point <: tuple[int, int, str]']",
-    "Line 21: Unexpected errors ['EXPECTED Point <: tuple[Any, ...]']",
-    "Line 27: Unexpected errors ['EXPECTED Point <: tuple[float, float, str]']"
+    "Line 19: Unexpected errors ['No matching overload found']"
   ],
   "namedtuples_usage.py": [
     "Line 34: Expected 1 errors",

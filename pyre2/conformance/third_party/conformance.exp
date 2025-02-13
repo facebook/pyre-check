@@ -11891,16 +11891,6 @@
     },
     {
       "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED PointWithName <: tuple[int, int, str]",
-      "description": "EXPECTED PointWithName <: tuple[int, int, str]",
-      "line": 73,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 73
-    },
-    {
-      "code": -2,
       "column": 7,
       "concise_description": "No matching overload found",
       "description": "No matching overload found",
@@ -12245,26 +12235,6 @@
     },
     {
       "code": -2,
-      "column": 28,
-      "concise_description": "EXPECTED Point <: tuple[int, int, str]",
-      "description": "EXPECTED Point <: tuple[int, int, str]",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Point <: tuple[Any, ...]",
-      "description": "EXPECTED Point <: tuple[Any, ...]",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "EXPECTED Point <: tuple[int, int]",
       "description": "EXPECTED Point <: tuple[int, int]",
@@ -12282,16 +12252,6 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 23
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "EXPECTED Point <: tuple[float, float, str]",
-      "description": "EXPECTED Point <: tuple[float, float, str]",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 27
     }
   ],
   "namedtuples_usage.py": [

@@ -77,4 +77,8 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
     ) -> bool {
         self.0.is_attr_subset(got, want, is_subset)
     }
+
+    pub fn named_tuple_element_types(self, cls: &ClassType) -> Option<Vec<Type>> {
+        self.0.named_tuple_element_types(cls)
+    }
 }

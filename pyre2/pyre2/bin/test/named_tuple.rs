@@ -6,16 +6,35 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_named_tuple,
     r#"
+from typing import NamedTuple, assert_type
+class Pair(NamedTuple):
+    x: int
+    y: str
+p: Pair = Pair(1, "")
+p = Pair(x=1, y="")
+x, y = p
+assert_type(x, int)
+assert_type(y, str)
+    "#,
+);
+
+testcase!(
+    test_named_tuple_subtype,
+    r#"
 from typing import NamedTuple
 class Pair(NamedTuple):
     x: int
-    y: int
-p: Pair = Pair(1, 2)
-p = Pair(x=1, y=2)
+    y: str
+p: Pair = Pair(1, "")
+def func1(x: tuple[int | str, ...]) -> None: ...
+def func2(x: tuple[int, str]) -> None: ...
+func1(p)
+func2(p)
     "#,
 );
 
@@ -53,6 +72,20 @@ class Pair2[T](NamedTuple):
 def test(p: Pair, p2: Pair2[bytes]):
     reveal_type(p.__iter__)  # E: BoundMethod[Pair, (self: Pair) -> Iterable[int | str]]
     reveal_type(p2.__iter__)  # E: BoundMethod[Pair2[bytes], (self: Pair2[bytes]) -> Iterable[bytes | int]]
+    "#,
+);
+
+testcase_with_bug!(
+    "NamedTuple extends tuple[Any, ...], making it a subtype of too many things",
+    test_named_tuple_subclass,
+    r#"
+from typing import NamedTuple, Sequence, Never
+class Pair(NamedTuple):
+    x: int
+    y: str
+p: Pair = Pair(1, "")
+x1: Sequence[int|str] = p # should succeed
+x2: Sequence[Never] = p # should fail
     "#,
 );
 

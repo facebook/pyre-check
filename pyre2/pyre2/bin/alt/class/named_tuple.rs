@@ -6,7 +6,6 @@
  */
 
 use ruff_python_ast::name::Name;
-use ruff_text_size::TextRange;
 use starlark_map::smallmap;
 
 use crate::alt::answers::AnswersSolver;
@@ -17,7 +16,6 @@ use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::dunder;
-use crate::error::collector::ErrorCollector;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
@@ -41,27 +39,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         elements.iter().map(|e| e.0.clone()).collect()
     }
 
-    pub fn named_tuple_element_types(
-        &self,
-        cls: &ClassType,
-        range: TextRange,
-        errors: &ErrorCollector,
-    ) -> Option<Vec<Type>> {
+    pub fn named_tuple_element_types(&self, cls: &ClassType) -> Option<Vec<Type>> {
         let class_metadata = self.get_metadata_for_class(cls.class_object());
         let named_tuple_metadata = class_metadata.named_tuple_metadata()?;
         Some(
             named_tuple_metadata
                 .elements
                 .iter()
-                .map(|name| {
-                    self.type_of_attr_get_if_found(
-                        Type::ClassType(cls.clone()),
-                        name,
-                        range,
-                        errors,
-                        "NamedTuple::as_tuple_type",
-                    )
-                    .unwrap()
+                .filter_map(|name| {
+                    let attr = self.try_lookup_attr(Type::ClassType(cls.clone()), name)?;
+                    self.resolve_as_instance_method(attr)
                 })
                 .collect(),
         )

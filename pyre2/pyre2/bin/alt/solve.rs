@@ -229,7 +229,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         };
         match iterable {
             Type::ClassType(cls) | Type::Type(box Type::ClassType(cls)) => {
-                if let Some(elts) = self.named_tuple_element_types(cls, range, errors) {
+                if let Some(elts) = self.named_tuple_element_types(cls) {
                     vec![Iterable::FixedLen(elts.clone())]
                 } else {
                     vec![iterate_by_interface()]

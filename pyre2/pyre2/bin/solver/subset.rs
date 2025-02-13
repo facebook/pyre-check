@@ -389,6 +389,11 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             (Type::ClassDef(_), Type::Type(box Type::Any(_)))
             | (Type::Type(box Type::Any(_)), Type::ClassDef(_)) => true,
+            (Type::ClassType(cls), want @ Type::Tuple(_))
+                if let Some(elts) = self.type_order.named_tuple_element_types(cls) =>
+            {
+                self.is_subset_eq(&Type::Tuple(Tuple::Concrete(elts)), want)
+            }
             (Type::Tuple(Tuple::Concrete(lelts)), Type::Tuple(Tuple::Concrete(uelts))) => {
                 if lelts.len() == uelts.len() {
                     lelts
