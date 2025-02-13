@@ -881,8 +881,7 @@
     "Line 33: Expected 1 errors",
     "Line 59: Expected 1 errors",
     "Line 79: Expected 1 errors",
-    "Line 21: Unexpected errors ['EXPECTED Literal[1] <: Iterable[Any]', 'Expected 2 positional arguments, got 3']",
-    "Line 22: Unexpected errors ['assert_type(tuple[Any], Point) failed']",
+    "Line 21: Unexpected errors ['No matching overload found']",
     "Line 23: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 24: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 25: Unexpected errors ['assert_type(Any, str) failed']",
@@ -891,19 +890,13 @@
     "Line 28: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 29: Unexpected errors ['assert_type(tuple[Any, ...], tuple[int, int]) failed']",
     "Line 30: Unexpected errors ['assert_type(tuple[Any, ...], tuple[int, int, str]) failed']",
-    "Line 35: Unexpected errors ['EXPECTED Literal[1] <: Iterable[Any]', 'Expected 2 positional arguments, got 4']",
-    "Line 36: Unexpected errors ['assert_type(tuple[Any], Point) failed']",
-    "Line 38: Unexpected errors ['Unexpected keyword argument `x`', 'Unexpected keyword argument `y`']",
-    "Line 39: Unexpected errors ['assert_type(tuple[Any], Point) failed']",
-    "Line 41: Unexpected errors ['Unexpected keyword argument `x`', 'Unexpected keyword argument `y`', 'Unexpected keyword argument `units`']",
-    "Line 42: Unexpected errors ['assert_type(tuple[Any], Point) failed']",
-    "Line 72: Unexpected errors ['EXPECTED Literal[1] <: Iterable[Any]', 'Expected 2 positional arguments, got 4']",
-    "Line 73: Unexpected errors ['EXPECTED tuple[Any] <: tuple[int, int, str]']",
-    "Line 74: Unexpected errors ['assert_type(Any, str) failed', 'Object of class `tuple` has no attribute `name`']",
-    "Line 93: Unexpected errors [\"EXPECTED Literal[''] <: Iterable[Any]\", 'Expected 2 positional arguments, got 3']",
-    "Line 94: Unexpected errors ['assert_type(tuple[Any], Property[float]) failed']",
-    "Line 95: Unexpected errors ['assert_type(Any, float) failed']",
-    "Line 96: Unexpected errors ['assert_type(Any, float) failed', 'Object of class `tuple` has no attribute `value`']"
+    "Line 35: Unexpected errors ['No matching overload found']",
+    "Line 38: Unexpected errors ['No matching overload found']",
+    "Line 41: Unexpected errors ['No matching overload found']",
+    "Line 72: Unexpected errors ['No matching overload found']",
+    "Line 73: Unexpected errors ['EXPECTED PointWithName <: tuple[int, int, str]']",
+    "Line 93: Unexpected errors ['No matching overload found']",
+    "Line 95: Unexpected errors ['assert_type(Any, float) failed']"
   ],
   "namedtuples_define_functional.py": [
     "Line 14: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]']",
@@ -925,19 +918,18 @@
     "Line 65: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]']"
   ],
   "namedtuples_type_compat.py": [
-    "Line 19: Unexpected errors ['Unexpected keyword argument `x`', 'Unexpected keyword argument `y`', 'Unexpected keyword argument `units`']",
-    "Line 20: Unexpected errors ['EXPECTED tuple[Any] <: tuple[int, int, str]']",
-    "Line 21: Unexpected errors ['EXPECTED tuple[Any] <: tuple[Any, ...]']",
-    "Line 27: Unexpected errors ['EXPECTED tuple[Any] <: tuple[float, float, str]']"
+    "Line 19: Unexpected errors ['No matching overload found']",
+    "Line 20: Unexpected errors ['EXPECTED Point <: tuple[int, int, str]']",
+    "Line 21: Unexpected errors ['EXPECTED Point <: tuple[Any, ...]']",
+    "Line 27: Unexpected errors ['EXPECTED Point <: tuple[float, float, str]']"
   ],
   "namedtuples_usage.py": [
     "Line 34: Expected 1 errors",
     "Line 35: Expected 1 errors",
+    "Line 40: Expected 1 errors",
     "Line 52: Expected 1 errors",
     "Line 53: Expected 1 errors",
-    "Line 19: Unexpected errors ['EXPECTED Literal[1] <: Iterable[Any]', 'Expected 2 positional arguments, got 3']",
-    "Line 20: Unexpected errors ['assert_type(Any, int) failed', 'Object of class `tuple` has no attribute `x`']",
-    "Line 21: Unexpected errors ['assert_type(Any, str) failed', 'Object of class `tuple` has no attribute `units`']",
+    "Line 19: Unexpected errors ['No matching overload found']",
     "Line 27: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 28: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 29: Unexpected errors ['assert_type(Any, str) failed']",
@@ -946,7 +938,7 @@
     "Line 32: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 49: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 50: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 60: Unexpected errors ['EXPECTED Literal[1] <: Iterable[Any]', 'Expected 2 positional arguments, got 3']"
+    "Line 60: Unexpected errors ['No matching overload found']"
   ],
   "narrowing_typeguard.py": [
     "Line 102: Expected 1 errors",
@@ -1009,7 +1001,7 @@
   "protocols_definition.py": [
     "Line 117: Expected 1 errors",
     "Line 157: Expected 1 errors",
-    "Line 216: Unexpected errors ['EXPECTED tuple[Any] <: Template4']",
+    "Line 216: Unexpected errors ['No matching overload found']",
     "Line 217: Unexpected errors ['Missing argument `val1`']",
     "Line 281: Unexpected errors ['EXPECTED Concrete5_Good2 <: Template5']",
     "Line 284: Unexpected errors ['EXPECTED Concrete5_Good5 <: Template5']",

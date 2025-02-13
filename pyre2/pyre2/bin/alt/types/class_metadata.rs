@@ -34,7 +34,7 @@ pub struct ClassMetadata {
     metaclass: Metaclass,
     keywords: Keywords,
     typed_dict_metadata: Option<TypedDictMetadata>,
-    is_named_tuple: bool,
+    named_tuple_metadata: Option<NamedTupleMetadata>,
     enum_metadata: Option<EnumMetadata>,
     is_protocol: bool,
     dataclass_metadata: Option<DataclassMetadata>,
@@ -53,7 +53,7 @@ impl ClassMetadata {
         metaclass: Option<ClassType>,
         keywords: Vec<(Name, Type)>,
         typed_dict_metadata: Option<TypedDictMetadata>,
-        is_named_tuple: bool,
+        named_tuple_metadata: Option<NamedTupleMetadata>,
         enum_metadata: Option<EnumMetadata>,
         is_protocol: bool,
         dataclass_metadata: Option<DataclassMetadata>,
@@ -64,7 +64,7 @@ impl ClassMetadata {
             metaclass: Metaclass(metaclass),
             keywords: Keywords(keywords),
             typed_dict_metadata,
-            is_named_tuple,
+            named_tuple_metadata,
             enum_metadata,
             is_protocol,
             dataclass_metadata,
@@ -77,7 +77,7 @@ impl ClassMetadata {
             metaclass: Metaclass::default(),
             keywords: Keywords::default(),
             typed_dict_metadata: None,
-            is_named_tuple: false,
+            named_tuple_metadata: None,
             enum_metadata: None,
             is_protocol: false,
             dataclass_metadata: None,
@@ -101,8 +101,8 @@ impl ClassMetadata {
         self.typed_dict_metadata.as_ref()
     }
 
-    pub fn is_named_tuple(&self) -> bool {
-        self.is_named_tuple
+    pub fn named_tuple_metadata(&self) -> Option<&NamedTupleMetadata> {
+        self.named_tuple_metadata.as_ref()
     }
 
     pub fn enum_metadata(&self) -> Option<&EnumMetadata> {
@@ -237,6 +237,11 @@ pub struct EnumMetadata {
     pub cls: ClassType,
     /// Whether this enum inherits from enum.Flag.
     pub is_flag: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NamedTupleMetadata {
+    pub elements: Vec<Name>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

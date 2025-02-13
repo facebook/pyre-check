@@ -14,6 +14,23 @@ from typing import NamedTuple
 class Pair(NamedTuple):
     x: int
     y: int
+p: Pair = Pair(1, 2)
+p = Pair(x=1, y=2)
+    "#,
+);
+
+testcase!(
+    test_named_tuple_match,
+    r#"
+from typing import NamedTuple, assert_type
+class Pair(NamedTuple):
+    x: int
+    y: int
+def test(p: Pair):
+    match p:
+        case Pair(x, y):
+            assert_type(x, int)
+            assert_type(y, int)
     "#,
 );
 

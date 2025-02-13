@@ -717,6 +717,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Arc::new(fields)
         } else if let Some(fields) = self.get_dataclass_synthesized_fields(&cls) {
             Arc::new(fields)
+        } else if let Some(fields) = self.get_named_tuple_synthesized_fields(&cls) {
+            Arc::new(fields)
         } else {
             Arc::new(ClassSynthesizedFields::default())
         }

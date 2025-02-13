@@ -21,6 +21,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::DataclassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
+use crate::alt::types::class_metadata::NamedTupleMetadata;
 use crate::alt::types::class_metadata::TypedDictMetadata;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
@@ -77,7 +78,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         let mut is_typed_dict = false;
-        let mut is_named_tuple = false;
+        let mut named_tuple_metadata = None;
         let mut enum_metadata = None;
         let mut dataclass_metadata = None;
         let bases: Vec<BaseClass> = bases.map(|x| self.base_class_of(x, errors));
@@ -87,28 +88,35 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .filter_map(|x| match x {
                 BaseClass::Expr(x) => match self.expr_untype(x, errors) {
                     Type::ClassType(c) => {
-                        let cls = c.class_object();
-                        let class_metadata = self.get_metadata_for_class(cls);
-                        if class_metadata.is_typed_dict() {
+                        let base_cls = c.class_object();
+                        let base_class_metadata = self.get_metadata_for_class(base_cls);
+                        if base_class_metadata.is_typed_dict() {
                             is_typed_dict = true;
                         }
-                        if class_metadata.is_named_tuple()
-                        || cls.has_qname("typing", "NamedTuple")
+                        if base_cls.has_qname("typing", "NamedTuple")
                         {
-                            is_named_tuple = true;
+                            if named_tuple_metadata.is_none() {
+                                named_tuple_metadata = Some(NamedTupleMetadata {
+                                    elements: self.get_named_tuple_elements(cls)
+                                })
+                            }
+                        } else if let Some(base_named_tuple) = base_class_metadata.named_tuple_metadata() {
+                            if named_tuple_metadata.is_none() {
+                                named_tuple_metadata = Some(base_named_tuple.clone());
+                            }
                         }
-                        if is_protocol && !class_metadata.is_protocol() {
+                        if is_protocol && !base_class_metadata.is_protocol() {
                             self.error(errors,
                                 x.range(),
                                 "If `Protocol` is included as a base class, all other bases must be protocols.".to_owned(),
                             );
                         }
-                        if dataclass_metadata.is_none() && let Some(base_dataclass) = class_metadata.dataclass_metadata() {
+                        if dataclass_metadata.is_none() && let Some(base_dataclass) = base_class_metadata.dataclass_metadata() {
                             // If we inherit from a dataclass, inherit its metadata. Note that if this class is
                             // itself decorated with @dataclass, we'll compute new metadata and overwrite this.
                             dataclass_metadata = Some(base_dataclass.inherit());
                         }
-                        Some((c, class_metadata))
+                        Some((c, base_class_metadata))
                     }
                     Type::Tuple(Tuple::Concrete(ts)) => {
                         let class_ty = self.stdlib.tuple(self.unions(ts));
@@ -138,7 +146,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 _ => None,
             })
             .collect::<Vec<_>>();
-        if is_named_tuple && bases_with_metadata.len() > 1 {
+        if named_tuple_metadata.is_some() && bases_with_metadata.len() > 1 {
             self.error(
                 errors,
                 cls.name().range,
@@ -229,7 +237,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             metaclass,
             keywords,
             typed_dict_metadata,
-            is_named_tuple,
+            named_tuple_metadata,
             enum_metadata,
             is_protocol,
             dataclass_metadata,

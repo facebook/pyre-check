@@ -15,6 +15,7 @@ use dupe::Dupe;
 use parse_display::Display;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
+use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
 use crate::module::module_info::ModuleInfo;
@@ -34,6 +35,7 @@ pub struct Class(ArcId<ClassInner>);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassFieldProperties {
     pub is_annotated: bool,
+    pub range: Option<TextRange>,
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -155,6 +157,10 @@ impl Class {
             .fields
             .get(name)
             .map_or(false, |prop| prop.is_annotated)
+    }
+
+    pub fn field_decl_range(&self, name: &Name) -> Option<TextRange> {
+        self.0.fields.get(name).and_then(|prop| prop.range)
     }
 
     pub fn has_qname(&self, module: &str, name: &str) -> bool {

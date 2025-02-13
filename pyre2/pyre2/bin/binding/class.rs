@@ -135,6 +135,7 @@ impl<'a> BindingsBuilder<'a> {
                     name.clone(),
                     ClassFieldProperties {
                         is_annotated: stat_info.annot.is_some(),
+                        range: Some(stat_info.loc),
                     },
                 );
                 self.table.insert(
@@ -152,6 +153,7 @@ impl<'a> BindingsBuilder<'a> {
                                 name.clone(),
                                 ClassFieldProperties {
                                     is_annotated: annotation.is_some(),
+                                    range: None,
                                 },
                             );
                             self.table.insert(
@@ -236,6 +238,7 @@ impl<'a> BindingsBuilder<'a> {
                             member_name.clone(),
                             ClassFieldProperties {
                                 is_annotated: false,
+                                range: None,
                             },
                         );
                         self.table.insert(
