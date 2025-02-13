@@ -887,6 +887,40 @@
 {
   "kind": "model",
   "data": {
+    "callable": "higher_order_functions.CallableSource.__call__",
+    "filename": "higher_order_functions.py",
+    "callable_line": 134,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "higher_order_functions.py",
+              "line": 135,
+              "start": 15,
+              "end": 29
+            },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "higher_order_functions.apply",
     "filename": "higher_order_functions.py",
     "callable_line": 60,
@@ -1605,6 +1639,86 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 65, "start": 27, "end": 28 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.test_callable_class_to_obscure",
+    "filename": "higher_order_functions.py",
+    "callable_line": 138,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" },
+              { "always-via": "lambda" }
+            ],
+            "tito_positions": [ { "line": 143, "start": 24, "end": 25 } ],
+            "call": {
+              "position": {
+                "filename": "higher_order_functions.py",
+                "line": 143,
+                "start": 24,
+                "end": 25
+              },
+              "resolves_to": [
+                "higher_order_functions.CallableSource.__call__"
+              ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito",
+    "filename": "higher_order_functions.py",
+    "callable_line": 147,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito[formal(x, position=0)=higher_order_functions.CallableSource.__call__]",
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "tito": {}
           }
         ]

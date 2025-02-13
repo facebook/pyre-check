@@ -97,6 +97,7 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
             callable
             HigherOrderCallGraphForTest.pp
             call_graph)
+        ~pp_diff:(Test.diff ~print:HigherOrderCallGraphForTest.pp)
         expected_call_graph
         actual_call_graph);
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;

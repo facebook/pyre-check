@@ -3,6 +3,9 @@ Call dependencies
 {
   "higher_order_functions.C.method_to_sink (method)": [ "_test_sink (fun)" ],
   "higher_order_functions.C.self_to_sink (method)": [ "_test_sink (fun)" ],
+  "higher_order_functions.CallableSource.__call__ (method)": [
+    "_test_source (fun)"
+  ],
   "higher_order_functions.apply (fun)[formal(f, position=0)=_test_source (fun)]": [
     "_test_source (fun)"
   ],
@@ -66,6 +69,17 @@ Call dependencies
   ],
   "higher_order_functions.test_apply_tito (fun)": [
     "higher_order_functions.apply (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]"
+  ],
+  "higher_order_functions.test_callable_class_to_obscure (fun)": [
+    "higher_order_functions.test_callable_class_to_obscure.obscure_tito (fun)",
+    "higher_order_functions.CallableSource.__call__ (method)",
+    "higher_order_functions.CallableSource.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "higher_order_functions.test_callable_class_to_perfect_tito (fun)": [
+    "higher_order_functions.CallableSource.__init__ (method)",
+    "object.__new__ (method)",
+    "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito (fun)[formal(x, position=0)=higher_order_functions.CallableSource.__call__ (method)]"
   ],
   "higher_order_functions.test_conditional_apply_backward (fun)": [
     "higher_order_functions.conditional_apply (fun)[formal(f, position=0)=_test_sink (fun), formal(g, position=1)=higher_order_functions.safe (fun)]",

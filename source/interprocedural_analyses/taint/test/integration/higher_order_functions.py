@@ -125,3 +125,27 @@ def test_conditional_apply_backward(x):
     # TODO(T136838558): Handle conditional higher order functions.
     conditional_apply(safe, _test_sink, True, x)
     conditional_apply(safe, _test_sink, False, x)
+
+
+class CallableSource:
+    def __init__(self):
+        pass
+
+    def __call__(self) -> str:
+        return _test_source()
+
+
+def test_callable_class_to_obscure():
+    def obscure_tito(x):
+        ...
+
+    c = CallableSource()
+    return obscure_tito(c) # Expecting taint since obscure_tito could call the callable
+
+
+def test_callable_class_to_perfect_tito():
+    def perfect_tito(x: CallableSource) -> CallableSource:
+        return x
+
+    c = CallableSource()
+    return perfect_tito(c) # Expecting no taint since we see the body of perfect_tito
