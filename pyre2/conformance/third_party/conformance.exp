@@ -2409,46 +2409,6 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol1",
-      "description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol1",
-      "line": 99,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 99
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol2",
-      "description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol2",
-      "line": 100,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 100
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol3",
-      "description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol3",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol4",
-      "description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol4",
-      "line": 102,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 102
-    },
-    {
-      "code": -2,
-      "column": 19,
       "concise_description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol5",
       "description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol5",
       "line": 103,
@@ -2458,46 +2418,6 @@
     }
   ],
   "callables_protocol.py": [
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "EXPECTED (*bytes, *, max_len: int | None) -> list[bytes] <: Proto1",
-      "description": "EXPECTED (*bytes, *, max_len: int | None) -> list[bytes] <: Proto1",
-      "line": 34,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 34
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED (*bytes, *, max_items: int | None) -> list[bytes] <: Proto1",
-      "description": "EXPECTED (*bytes, *, max_items: int | None) -> list[bytes] <: Proto1",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED (*bytes) -> list[bytes] <: Proto1",
-      "description": "EXPECTED (*bytes) -> list[bytes] <: Proto1",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED (*bytes, *, max_len: str | None) -> list[bytes] <: Proto1",
-      "description": "EXPECTED (*bytes, *, max_len: str | None) -> list[bytes] <: Proto1",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 37
-    },
     {
       "code": -2,
       "column": 16,
@@ -2510,16 +2430,6 @@
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "EXPECTED (a: int, b: str) -> int <: Proto5",
-      "description": "EXPECTED (a: int, b: str) -> int <: Proto5",
-      "line": 109,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 109
-    },
-    {
-      "code": -2,
       "column": 18,
       "concise_description": "EXPECTED (*bytes, *, max_len: int | None) -> list[bytes] <: NotProto6",
       "description": "EXPECTED (*bytes, *, max_len: int | None) -> list[bytes] <: NotProto6",
@@ -2527,6 +2437,26 @@
       "name": "PyreError",
       "stop_column": 26,
       "stop_line": 121
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "EXPECTED (x: Any) -> Any <: Proto8",
+      "description": "EXPECTED (x: Any) -> Any <: Proto8",
+      "line": 168,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 168
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (x: int) -> Any <: Proto8",
+      "description": "EXPECTED (x: int) -> Any <: Proto8",
+      "line": 169,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 169
     },
     {
       "code": -2,
@@ -2570,46 +2500,6 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "EXPECTED (*Any, *, kwarg0: Any, kwarg1: Any) -> None <: Proto12",
-      "description": "EXPECTED (*Any, *, kwarg0: Any, kwarg1: Any) -> None <: Proto12",
-      "line": 258,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 258
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "EXPECTED (*Any, **Any) -> None <: Proto12",
-      "description": "EXPECTED (*Any, **Any) -> None <: Proto12",
-      "line": 259,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 259
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "EXPECTED (*Any, *, kwarg0: Any) -> None <: Proto12",
-      "description": "EXPECTED (*Any, *, kwarg0: Any) -> None <: Proto12",
-      "line": 260,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 260
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "EXPECTED (path: str) -> str <: Proto13_Default",
-      "description": "EXPECTED (path: str) -> str <: Proto13_Default",
-      "line": 283,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 283
-    },
-    {
-      "code": -2,
       "column": 27,
       "concise_description": "EXPECTED (path: str) -> str <: Proto13_Default",
       "description": "EXPECTED (path: str) -> str <: Proto13_Default",
@@ -2617,56 +2507,6 @@
       "name": "PyreError",
       "stop_column": 42,
       "stop_line": 284
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED (path: str) -> str <: Proto13_NoDefault",
-      "description": "EXPECTED (path: str) -> str <: Proto13_NoDefault",
-      "line": 286,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 286
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "EXPECTED (*, path: str) -> str <: Proto14_Default",
-      "description": "EXPECTED (*, path: str) -> str <: Proto14_Default",
-      "line": 310,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 310
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "EXPECTED (*, path: str) -> str <: Proto14_Default",
-      "description": "EXPECTED (*, path: str) -> str <: Proto14_Default",
-      "line": 311,
-      "name": "PyreError",
-      "stop_column": 42,
-      "stop_line": 311
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED (*, path: str) -> str <: Proto14_NoDefault",
-      "description": "EXPECTED (*, path: str) -> str <: Proto14_NoDefault",
-      "line": 312,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 312
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED (*, path: str) -> str <: Proto14_NoDefault",
-      "description": "EXPECTED (*, path: str) -> str <: Proto14_NoDefault",
-      "line": 313,
-      "name": "PyreError",
-      "stop_column": 44,
-      "stop_line": 313
     }
   ],
   "callables_subtyping.py": [
@@ -2719,16 +2559,6 @@
       "name": "PyreError",
       "stop_column": 27,
       "stop_line": 55
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED Standard2 <: KwOnly2",
-      "description": "EXPECTED Standard2 <: KwOnly2",
-      "line": 57,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 57
     },
     {
       "code": -2,
@@ -2882,26 +2712,6 @@
     },
     {
       "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED IntStrKwargs6 <: KwOnly6",
-      "description": "EXPECTED IntStrKwargs6 <: KwOnly6",
-      "line": 188,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 188
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED StrKwargs6 <: KwOnly6",
-      "description": "EXPECTED StrKwargs6 <: KwOnly6",
-      "line": 189,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 189
-    },
-    {
-      "code": -2,
       "column": 25,
       "concise_description": "EXPECTED StrKwargs6 <: IntStrKwargs6",
       "description": "EXPECTED StrKwargs6 <: IntStrKwargs6",
@@ -2919,16 +2729,6 @@
       "name": "PyreError",
       "stop_column": 35,
       "stop_line": 191
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "EXPECTED IntStrKwargs6 <: StrKwargs6",
-      "description": "EXPECTED IntStrKwargs6 <: StrKwargs6",
-      "line": 192,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 192
     },
     {
       "code": -2,
@@ -3009,16 +2809,6 @@
       "name": "PyreError",
       "stop_column": 27,
       "stop_line": 237
-    },
-    {
-      "code": -2,
-      "column": 25,
-      "concise_description": "EXPECTED DefaultArg8 <: NoDefaultArg8",
-      "description": "EXPECTED DefaultArg8 <: NoDefaultArg8",
-      "line": 239,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 239
     },
     {
       "code": -2,
@@ -17629,16 +17419,6 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED (**Unpack[TypedDict[ReadOnlyArgs]]) -> None <: Function",
-      "description": "EXPECTED (**Unpack[TypedDict[ReadOnlyArgs]]) -> None <: Function",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 36
     }
   ],
   "typeddicts_readonly_update.py": [

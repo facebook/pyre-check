@@ -11,6 +11,7 @@ use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use starlark_map::ordered_map::OrderedMap;
 
+use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
@@ -80,5 +81,22 @@ impl TypedDict {
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         self.1.visit_mut(&mut f);
         self.2.iter_mut().for_each(|(_, x)| f(&mut x.ty));
+    }
+
+    pub fn kw_param_info(&self) -> Vec<(Name, Type, Required)> {
+        self.fields()
+            .iter()
+            .map(|(name, field)| {
+                (
+                    name.clone(),
+                    field.ty.clone(),
+                    if field.required {
+                        Required::Required
+                    } else {
+                        Required::Optional
+                    },
+                )
+            })
+            .collect()
     }
 }

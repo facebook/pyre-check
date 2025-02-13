@@ -184,39 +184,30 @@
     "Line 188: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithInt, type[(int, ParamSpec(ParamSpec[P])) -> str]]\"]"
   ],
   "callables_kwargs.py": [
+    "Line 101: Expected 1 errors",
+    "Line 102: Expected 1 errors",
     "Line 111: Expected 1 errors",
-    "Line 122: Expected 1 errors",
-    "Line 99: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol1']",
-    "Line 100: Unexpected errors ['EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol2']"
+    "Line 122: Expected 1 errors"
   ],
   "callables_protocol.py": [
+    "Line 35: Expected 1 errors",
+    "Line 36: Expected 1 errors",
+    "Line 37: Expected 1 errors",
     "Line 67: Expected 1 errors",
     "Line 68: Expected 1 errors",
     "Line 69: Expected 1 errors",
     "Line 70: Expected 1 errors",
-    "Line 169: Expected 1 errors",
     "Line 186: Expected 1 errors",
     "Line 187: Expected 1 errors",
-    "Line 34: Unexpected errors ['EXPECTED (*bytes, *, max_len: int | None) -> list[bytes] <: Proto1']",
-    "Line 109: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: Proto5']",
-    "Line 196: Unexpected errors ['Missing argument `flush`']",
-    "Line 258: Unexpected errors ['EXPECTED (*Any, *, kwarg0: Any, kwarg1: Any) -> None <: Proto12']",
-    "Line 259: Unexpected errors ['EXPECTED (*Any, **Any) -> None <: Proto12']",
-    "Line 283: Unexpected errors ['EXPECTED (path: str) -> str <: Proto13_Default']",
-    "Line 286: Unexpected errors ['EXPECTED (path: str) -> str <: Proto13_NoDefault']",
-    "Line 310: Unexpected errors ['EXPECTED (*, path: str) -> str <: Proto14_Default']",
-    "Line 312: Unexpected errors ['EXPECTED (*, path: str) -> str <: Proto14_NoDefault']",
-    "Line 313: Unexpected errors ['EXPECTED (*, path: str) -> str <: Proto14_NoDefault']"
+    "Line 260: Expected 1 errors",
+    "Line 311: Expected 1 errors",
+    "Line 168: Unexpected errors ['EXPECTED (x: Any) -> Any <: Proto8']",
+    "Line 196: Unexpected errors ['Missing argument `flush`']"
   ],
   "callables_subtyping.py": [
     "Line 297: Expected 1 errors",
-    "Line 57: Unexpected errors ['EXPECTED Standard2 <: KwOnly2']",
-    "Line 188: Unexpected errors ['EXPECTED IntStrKwargs6 <: KwOnly6']",
-    "Line 189: Unexpected errors ['EXPECTED StrKwargs6 <: KwOnly6']",
-    "Line 192: Unexpected errors ['EXPECTED IntStrKwargs6 <: StrKwargs6']",
     "Line 211: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]",
     "Line 213: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]",
-    "Line 239: Unexpected errors ['EXPECTED DefaultArg8 <: NoDefaultArg8']",
     "Line 271: Unexpected errors ['EXPECTED Overloaded9 <: IntArg9']"
   ],
   "classes_classvar.py": [
@@ -1302,9 +1293,7 @@
     "Line 119: Expected 1 errors",
     "Line 132: Expected 1 errors"
   ],
-  "typeddicts_readonly_kwargs.py": [
-    "Line 36: Unexpected errors ['EXPECTED (**Unpack[TypedDict[ReadOnlyArgs]]) -> None <: Function']"
-  ],
+  "typeddicts_readonly_kwargs.py": [],
   "typeddicts_readonly_update.py": [
     "Line 34: Unexpected errors ['Object of class `Mapping` has no attribute `update`']"
   ],

@@ -343,6 +343,89 @@ def test_sync() -> Callable[[int], int]:
 );
 
 testcase!(
+    test_assignability_both_typed_dicts,
+    r#"
+from typing import TypedDict, Unpack, Protocol
+class TD1(TypedDict):
+    x: int
+class TD2(TypedDict):
+    x: int
+    y: int
+class P1(Protocol):
+    def __call__(self, **kwargs: Unpack[TD1]): ...
+class P2(Protocol):
+    def __call__(self, **kwargs: Unpack[TD2]): ...
+def test(accept_td1: P1, accept_td2: P2):
+    a: P1 = accept_td2  # E: EXPECTED P2 <: P1
+    b: P2 = accept_td1
+"#,
+);
+
+testcase!(
+    test_assignability_one_typed_dict,
+    r#"
+from typing import TypedDict, Unpack, NotRequired, Protocol
+class TD(TypedDict):
+    string: str
+    number: NotRequired[int]
+class P1(Protocol):
+    def __call__(self, **kwargs: Unpack[TD]): ...
+class P2(Protocol):
+    def __call__(self, *, string: str, number: int = ...): ...
+class P3(Protocol):
+    def __call__(self, string: str, number: int = ...): ...
+def test(accept_td: P1, kwonly_args: P2, regular_args: P3):
+    a: P2 = accept_td
+    b: P3 = accept_td  # E: EXPECTED P1 <: P3
+    c: P1 = kwonly_args  # E: EXPECTED P2 <: P1
+    d: P1 = regular_args   # E: EXPECTED P3 <: P1
+"#,
+);
+
+testcase!(
+    test_assignability_typed_dict_and_regular_kwargs,
+    r#"
+from typing import TypedDict, Unpack, NotRequired, Protocol
+class TD(TypedDict):
+    string: str
+    number: NotRequired[int]
+class P1(Protocol):
+    def __call__(self, **kwargs): ...
+class P2(Protocol):
+    def __call__(self, **kwargs: Unpack[TD]): ...
+class P3(Protocol):
+    def __call__(self, **kwargs: int | str): ...
+class P4(Protocol):
+    def __call__(self, **kwargs: int): ...
+def test(unannotated: P1, unpacked: P2, annotated: P3, annotated_wrong: P4):
+    a: P2 = unannotated
+    b: P2 = annotated
+    c: P2 = annotated_wrong  # E: EXPECTED P4 <: P2
+"#,
+);
+
+testcase!(
+    test_assignability_typed_dict_wrong_kwarg,
+    r#"
+from typing import TypedDict, Protocol, Required, NotRequired, Unpack
+class TD(TypedDict):
+    v1: Required[int]
+    v2: NotRequired[str]
+    v3: Required[str]
+def func1(**kwargs: Unpack[TD]) -> None: ...
+class P1(Protocol):
+    def __call__(self, *, v1: int, v2: int, v3: str) -> None:...
+class P2(Protocol):
+    def __call__(self, *, v1: int) -> None: ...
+class P3(Protocol):
+    def __call__(self, *, v1: int, v2: str, v4: str) -> None: ...
+x: P1 = func1  # E: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P1
+y: P2 = func1  # E: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P2
+z: P3 = func1  # E: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P3
+"#,
+);
+
+testcase!(
     test_function_vs_callable,
     r#"
 from typing import assert_type, Callable

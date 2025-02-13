@@ -1,9 +1,9 @@
 {
   "total": 133,
-  "pass": 11,
-  "fail": 122,
-  "pass_rate": 0.08,
-  "differences": 1077,
+  "pass": 12,
+  "fail": 121,
+  "pass_rate": 0.09,
+  "differences": 1067,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_order.py",
@@ -15,7 +15,8 @@
     "enums_member_names.py",
     "generics_syntax_compatibility.py",
     "specialtypes_promotions.py",
-    "tuples_type_form.py"
+    "tuples_type_form.py",
+    "typeddicts_readonly_kwargs.py"
   ],
   "failing": {
     "aliases_explicit.py": 20,
@@ -31,8 +32,8 @@
     "annotations_typeexpr.py": 5,
     "callables_annotation.py": 15,
     "callables_kwargs.py": 4,
-    "callables_protocol.py": 17,
-    "callables_subtyping.py": 9,
+    "callables_protocol.py": 13,
+    "callables_subtyping.py": 4,
     "classes_classvar.py": 10,
     "classes_override.py": 5,
     "constructors_call_init.py": 9,
@@ -135,7 +136,6 @@
     "typeddicts_readonly.py": 5,
     "typeddicts_readonly_consistency.py": 3,
     "typeddicts_readonly_inheritance.py": 6,
-    "typeddicts_readonly_kwargs.py": 1,
     "typeddicts_readonly_update.py": 1,
     "typeddicts_required.py": 8,
     "typeddicts_type_consistency.py": 8,

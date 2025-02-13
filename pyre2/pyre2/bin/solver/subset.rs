@@ -6,6 +6,8 @@
  */
 
 use itertools::izip;
+use starlark_map::small_map::SmallMap;
+use starlark_map::Hashed;
 
 use crate::alt::answers::LookupAnswer;
 use crate::dunder;
@@ -23,18 +25,20 @@ use crate::types::types::TParams;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
+    /// Can a function with l_args be called as a function with u_args?
     pub fn is_subset_param_list(&mut self, l_args: &[Param], u_args: &[Param]) -> bool {
         let mut l_args_iter = l_args.iter();
         let mut u_args_iter = u_args.iter();
         let mut l_arg = l_args_iter.next();
         let mut u_arg = u_args_iter.next();
+        // Handle positional args
         loop {
             match (l_arg, u_arg) {
                 (None, None) => return true,
                 (
-                    Some(Param::PosOnly(l, _) | Param::Pos(_, l, _)),
-                    Some(Param::PosOnly(u, Required::Required)),
-                ) => {
+                    Some(Param::PosOnly(l, l_req) | Param::Pos(_, l, l_req)),
+                    Some(Param::PosOnly(u, u_req)),
+                ) if (*u_req == Required::Required || *l_req == Required::Optional) => {
                     if self.is_subset_eq(u, l) {
                         l_arg = l_args_iter.next();
                         u_arg = u_args_iter.next();
@@ -42,10 +46,10 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         return false;
                     }
                 }
-                (
-                    Some(Param::Pos(l_name, l, Required::Required)),
-                    Some(Param::Pos(u_name, u, Required::Required)),
-                ) if l_name == u_name => {
+                (Some(Param::Pos(l_name, l, l_req)), Some(Param::Pos(u_name, u, u_req)))
+                    if l_name == u_name
+                        && (*u_req == Required::Required || *l_req == Required::Optional) =>
+                {
                     if self.is_subset_eq(u, l) {
                         l_arg = l_args_iter.next();
                         u_arg = u_args_iter.next();
@@ -57,11 +61,12 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     Some(
                         Param::PosOnly(_, Required::Optional)
                         | Param::Pos(_, _, Required::Optional)
-                        | Param::KwOnly(_, _, Required::Optional),
+                        | Param::KwOnly(_, _, Required::Optional)
+                        | Param::VarArg(_)
+                        | Param::Kwargs(_),
                     ),
                     None,
                 ) => return true,
-                (Some(Param::VarArg(_)), None) => return true,
                 (Some(Param::VarArg(l)), Some(Param::PosOnly(u, Required::Required))) => {
                     if self.is_subset_eq(u, l) {
                         u_arg = u_args_iter.next();
@@ -69,9 +74,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         return false;
                     }
                 }
-                (Some(Param::Kwargs(_)), None) => return true,
-                (Some(Param::VarArg(l)), Some(Param::VarArg(u)))
-                | (Some(Param::Kwargs(l)), Some(Param::Kwargs(u))) => {
+                (Some(Param::VarArg(l)), Some(Param::VarArg(u))) => {
                     if self.is_subset_eq(u, l) {
                         l_arg = l_args_iter.next();
                         u_arg = u_args_iter.next();
@@ -79,9 +82,99 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         return false;
                     }
                 }
+                (Some(_), Some(Param::KwOnly(_, _, _) | Param::Kwargs(_))) => {
+                    break;
+                }
                 _ => return false,
             }
         }
+        let mut l_keywords = SmallMap::new();
+        let mut l_kwargs = None;
+        for arg in Option::into_iter(l_arg).chain(l_args_iter) {
+            match arg {
+                Param::KwOnly(name, ty, required) | Param::Pos(name, ty, required) => {
+                    l_keywords.insert(name.clone(), (ty.clone(), *required));
+                }
+                Param::Kwargs(ty) => l_kwargs = Some(ty.clone()),
+                _ => (),
+            }
+        }
+        let mut u_keywords = SmallMap::new();
+        let mut u_kwargs = None;
+        for arg in Option::into_iter(u_arg).chain(u_args_iter) {
+            match arg {
+                Param::KwOnly(name, ty, required) => {
+                    u_keywords.insert(name.clone(), (ty.clone(), *required));
+                }
+                Param::Kwargs(ty) => u_kwargs = Some(ty.clone()),
+                _ => (),
+            }
+        }
+        let object_type = self
+            .type_order
+            .stdlib()
+            .object_class_type()
+            .clone()
+            .to_type();
+        // Expand typed dict kwargs if necessary, check regular kwargs
+        let l_kwargs = match (l_kwargs, u_kwargs) {
+            (
+                Some(Type::Unpack(box Type::TypedDict(box l_typed_dict))),
+                Some(Type::Unpack(box Type::TypedDict(box u_typed_dict))),
+            ) => {
+                for (name, ty, required) in l_typed_dict.kw_param_info() {
+                    l_keywords.insert(name, (ty, required));
+                }
+                for (name, ty, required) in u_typed_dict.kw_param_info() {
+                    u_keywords.insert(name, (ty, required));
+                }
+                Some(object_type)
+            }
+            (Some(Type::Unpack(box Type::TypedDict(box l_typed_dict))), _) => {
+                for (name, ty, required) in l_typed_dict.kw_param_info() {
+                    l_keywords.insert(name, (ty, required));
+                }
+                Some(object_type)
+            }
+            (l_kwargs @ Some(_), Some(Type::Unpack(box Type::TypedDict(box u_typed_dict)))) => {
+                for (name, ty, required) in u_typed_dict.kw_param_info() {
+                    u_keywords.insert(name, (ty, required));
+                }
+                l_kwargs
+            }
+            (Some(l), Some(u)) => {
+                if !self.is_subset_eq(&u, &l) {
+                    return false;
+                }
+                Some(l)
+            }
+            (None, Some(_)) => {
+                return false;
+            }
+            (l_kwargs, _) => l_kwargs,
+        };
+        // Handle keyword-only args
+        for (name, (u_ty, u_req)) in u_keywords.iter() {
+            if let Some((l_ty, l_req)) = l_keywords.shift_remove_hashed(Hashed::new(name)) {
+                if !(*u_req == Required::Required || l_req == Required::Optional)
+                    || !self.is_subset_eq(u_ty, &l_ty)
+                {
+                    return false;
+                }
+            } else if let Some(l_ty) = &l_kwargs {
+                if !self.is_subset_eq(u_ty, l_ty) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        for (_, (_, l_req)) in l_keywords.iter() {
+            if *l_req == Required::Required {
+                return false;
+            }
+        }
+        true
     }
 
     fn get_call_attr(&mut self, protocol: &ClassType) -> Option<Type> {
@@ -112,10 +205,13 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 && name == dunder::CALL
                 && let Some(want) = self.get_call_attr(&protocol)
             {
-                if let Type::BoundMethod(box method) = want
+                if let Type::BoundMethod(box ref method) = want
                     && let Some(want_no_self) = method.as_callable()
-                    && !self.is_subset_eq(&got, &want_no_self)
                 {
+                    if !self.is_subset_eq(&got, &want_no_self) {
+                        return false;
+                    }
+                } else if !self.is_subset_eq(&got, &want) {
                     return false;
                 }
             } else {
