@@ -16,6 +16,8 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::callable::CallArg;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::error::collector::ErrorCollector;
+use crate::types::callable::Param;
+use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::module::Module;
@@ -23,6 +25,7 @@ use crate::types::quantified::Quantified;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
 use crate::types::types::AnyStyle;
+use crate::types::types::BoundMethod;
 use crate::types::types::Decoration;
 use crate::types::types::Type;
 
@@ -347,6 +350,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             (_, AttributeInner::NoAccess(_)) => true,
             (AttributeInner::NoAccess(_), _) => false,
             (
+                AttributeInner::Property(_, _, _),
+                AttributeInner::ReadOnly(_) | AttributeInner::ReadWrite(_),
+            ) => false,
+            (
+                AttributeInner::ReadOnly(_),
+                AttributeInner::Property(_, Some(_), _) | AttributeInner::ReadWrite(_),
+            ) => false,
+            (
                 AttributeInner::ReadWrite(got @ Type::BoundMethod(_)),
                 AttributeInner::ReadWrite(want @ Type::BoundMethod(_)),
             ) => is_subset(got, want),
@@ -358,12 +369,39 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 AttributeInner::ReadOnly(want),
             ) => is_subset(got, want),
             (
-                AttributeInner::Property(_, None, _) | AttributeInner::ReadOnly(_),
-                AttributeInner::Property(_, Some(_), _) | AttributeInner::ReadWrite(_),
-            ) => false,
-            // TODO handle properties
-            (_, AttributeInner::Property(_, _, _)) => true,
-            (AttributeInner::Property(_, _, _), _) => true,
+                AttributeInner::ReadOnly(got) | AttributeInner::ReadWrite(got),
+                AttributeInner::Property(want, _, _),
+            ) => {
+                is_subset(
+                    // Synthesize a getter method
+                    &Type::BoundMethod(Box::new(BoundMethod {
+                        obj: Type::Any(AnyStyle::Implicit),
+                        func: Type::callable(
+                            vec![Param::Pos(
+                                Name::new("self"),
+                                Type::Any(AnyStyle::Implicit),
+                                Required::Required,
+                            )],
+                            got.clone(),
+                        ),
+                    })),
+                    want,
+                )
+            }
+            (
+                AttributeInner::Property(got_getter, got_setter, _),
+                AttributeInner::Property(want_getter, want_setter, _),
+            ) => {
+                if !is_subset(got_getter, want_getter) {
+                    false
+                } else {
+                    match (got_setter, want_setter) {
+                        (Some(got_setter), Some(want_setter)) => is_subset(got_setter, want_setter),
+                        (None, Some(_)) => false,
+                        (_, None) => true,
+                    }
+                }
+            }
         }
     }
 

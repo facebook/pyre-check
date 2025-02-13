@@ -1009,7 +1009,6 @@
   "protocols_definition.py": [
     "Line 117: Expected 1 errors",
     "Line 157: Expected 1 errors",
-    "Line 218: Expected 1 errors",
     "Line 216: Unexpected errors ['EXPECTED tuple[Any] <: Template4']",
     "Line 217: Unexpected errors ['Missing argument `val1`']",
     "Line 281: Unexpected errors ['EXPECTED Concrete5_Good2 <: Template5']",

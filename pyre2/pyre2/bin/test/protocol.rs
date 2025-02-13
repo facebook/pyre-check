@@ -71,22 +71,62 @@ def g(p: P) -> None:
 );
 
 testcase!(
-    test_protocol_readonly,
+    test_protocol_variance,
     r#"
 from typing import Protocol
-class P(Protocol):
+# read-write attributes
+class P1(Protocol):
     x: int
-class C1:
+class P2(Protocol):
+    x: object
+# read-only properties
+class P3(Protocol):
     @property
     def x(self) -> int: ...
-class C2:
+class P4(Protocol):
     @property
-    def x(self) -> int: ...
-    @x.setter
-    def x(self, value: int) -> None: ...
-p1: P = C1()  # E: EXPECTED C1 <: P
-p2: P = C2()
+    def x(self) -> object: ...
+def f(p1: P1, p2: P2, p3: P3, p4: P4):
+    # read-write attributes are invariant
+    x1: P1 = p2  # E: EXPECTED P2 <: P1
+    x2: P2 = p1  # E: EXPECTED P1 <: P2
+    # properties are covariant w/ the getter/setter types
+    x3: P3 = p4  # E: EXPECTED P4 <: P3
+    x4: P4 = p3
+    x5: P3 = p1
+    x6: P3 = p2  # E: EXPECTED P2 <: P3
+    x7: P4 = p1
+    x8: P4 = p2
  "#,
+);
+
+testcase!(
+    test_protocol_attr_subtype,
+    r#"
+from typing import Protocol
+class P1(Protocol):
+    @property
+    def x(self) -> int:
+        return 1
+    @x.setter
+    def x(self, y: int) -> None:
+        pass
+class P2(Protocol):
+    x: int
+class P3(Protocol):
+    @property
+    def x(self) -> int:
+        return 1
+def f(p1: P1, p2: P2, p3: P3):
+    x1: P1 = p2
+    # read-only properties can't be used as read-write properties
+    x2: P1 = p3  # E: EXPECTED P3 <: P1
+    # properties can't be used as regular attributes
+    x3: P2 = p1  # E: EXPECTED P1 <: P2
+    x4: P2 = p3  # E: EXPECTED P3 <: P2
+    x5: P3 = p1
+    x5: P3 = p2
+"#,
 );
 
 testcase!(
@@ -106,5 +146,89 @@ def f(proto: P[str]) -> None: ...
 def g(c1: C1, c2: C2) -> None:
     f(c1)  # E: EXPECTED C1 <: P[str]
     f(c2)
+"#,
+);
+
+testcase!(
+    test_protocol_property,
+    r#"
+from typing import Protocol
+class P1(Protocol):
+    @property
+    def foo(self) -> object:
+        return 1
+class C1:
+    @property
+    def foo(self) -> int:
+        return 1 
+a: P1 = C1()
+
+class P2(Protocol):
+    @property
+    def foo(self) -> int:
+        return 1
+class C2:
+    @property
+    def foo(self) -> object:
+        return 1 
+b: P2 = C2()  # E: EXPECTED C2 <: P2
+
+class P3(Protocol):
+    @property
+    def foo(self) -> object:
+        return 1
+    @foo.setter
+    def foo(self, val: object) -> None:
+        pass
+class C3:
+    @property
+    def foo(self) -> int:
+        return 1 
+    @foo.setter
+    def foo(self, val: int) -> None:
+        pass
+c: P3 = C3()  # E: EXPECTED C3 <: P3
+
+class P4(Protocol):
+    @property
+    def foo(self) -> object:
+        return 1
+    @foo.setter
+    def foo(self, val: int) -> None:
+        pass
+class C4:
+    @property
+    def foo(self) -> int:
+        return 1 
+    @foo.setter
+    def foo(self, val: object) -> None:
+        pass
+d: P4 = C4()
+
+class P5(Protocol):
+    @property
+    def foo(self) -> object:
+        return 1
+class C5:
+    @property
+    def foo(self) -> int:
+        return 1 
+    @foo.setter
+    def foo(self, val: object) -> None:
+        pass
+e: P5 = C5()
+
+class P6(Protocol):
+    @property
+    def foo(self) -> object:
+        return 1
+    @foo.setter
+    def foo(self, val: object) -> None:
+        pass
+class C6:
+    @property
+    def foo(self) -> int:
+        return 1
+f: P6 = C6()  # E: EXPECTED C6 <: P6
 "#,
 );

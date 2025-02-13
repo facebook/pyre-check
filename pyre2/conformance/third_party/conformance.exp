@@ -13338,6 +13338,16 @@
     {
       "code": -2,
       "column": 22,
+      "concise_description": "EXPECTED Concrete4_Bad1 <: Template4",
+      "description": "EXPECTED Concrete4_Bad1 <: Template4",
+      "line": 218,
+      "name": "PyreError",
+      "stop_column": 38,
+      "stop_line": 218
+    },
+    {
+      "code": -2,
+      "column": 22,
       "concise_description": "EXPECTED Concrete4_Bad2 <: Template4",
       "description": "EXPECTED Concrete4_Bad2 <: Template4",
       "line": 219,
