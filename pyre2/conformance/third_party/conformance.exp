@@ -143,16 +143,6 @@
     },
     {
       "code": -2,
-      "column": 26,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 79
-    },
-    {
-      "code": -2,
       "column": 21,
       "concise_description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
       "description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
@@ -190,16 +180,6 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 83
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 85,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 85
     },
     {
       "code": -2,
@@ -392,26 +372,6 @@
       "name": "PyreError",
       "stop_column": 28,
       "stop_line": 77
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 89,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 89
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 95,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 95
     },
     {
       "code": -2,
@@ -801,16 +761,6 @@
     },
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
       "description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
@@ -868,16 +818,6 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 43
     },
     {
       "code": -2,
@@ -1110,26 +1050,6 @@
       "name": "PyreError",
       "stop_column": 76,
       "stop_line": 47
-    },
-    {
-      "code": -2,
-      "column": 45,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 52,
-      "name": "PyreError",
-      "stop_column": 52,
-      "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 42,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 58,
-      "name": "PyreError",
-      "stop_column": 50,
-      "stop_line": 58
     }
   ],
   "aliases_variance.py": [
@@ -1146,16 +1066,6 @@
   ],
   "annotations_coroutines.py": [],
   "annotations_forward_refs.py": [
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 41
-    },
     {
       "code": -2,
       "column": 9,
@@ -1195,16 +1105,6 @@
       "name": "PyreError",
       "stop_column": 11,
       "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 47
     },
     {
       "code": -2,
@@ -1614,16 +1514,6 @@
   "annotations_typeexpr.py": [
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 15,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "assert_type(tuple[Any], tuple[Any, ...]) failed",
       "description": "assert_type(tuple[Any], tuple[Any, ...]) failed",
@@ -1640,16 +1530,6 @@
       "line": 88,
       "name": "PyreError",
       "stop_column": 16,
-      "stop_line": 88
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 88,
-      "name": "PyreError",
-      "stop_column": 21,
       "stop_line": 88
     },
     {
@@ -1691,16 +1571,6 @@
       "name": "PyreError",
       "stop_column": 11,
       "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 94,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 94
     },
     {
       "code": -2,
@@ -2734,16 +2604,6 @@
     },
     {
       "code": -2,
-      "column": 34,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 52,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "EXPECTED ProtoAImpl <: ProtoA",
       "description": "EXPECTED ProtoAImpl <: ProtoA",
@@ -2778,18 +2638,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Class5[Any], Class5[list[int]]) failed",
-      "description": "assert_type(Class5[Any], Class5[list[int]]) failed",
-      "line": 72,
-      "name": "PyreError",
-      "stop_column": 42,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class5[Any], Class5[set[str]]) failed",
-      "description": "assert_type(Class5[Any], Class5[set[str]]) failed",
+      "concise_description": "assert_type(Class5[list[int]], Class5[set[str]]) failed",
+      "description": "assert_type(Class5[list[int]], Class5[set[str]]) failed",
       "line": 74,
       "name": "PyreError",
       "stop_column": 42,
@@ -2797,12 +2647,32 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
+      "line": 74,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 74
+    },
+    {
+      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Class5[Any], Class5[float]) failed",
-      "description": "assert_type(Class5[Any], Class5[float]) failed",
+      "concise_description": "assert_type(Class5[list[int]], Class5[float]) failed",
+      "description": "assert_type(Class5[list[int]], Class5[float]) failed",
       "line": 75,
       "name": "PyreError",
       "stop_column": 40,
+      "stop_line": 75
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
+      "line": 75,
+      "name": "PyreError",
+      "stop_column": 19,
       "stop_line": 75
     },
     {
@@ -4739,16 +4609,6 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 68,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 68
-    },
-    {
-      "code": -2,
       "column": 52,
       "concise_description": "EXPECTED type[ConverterClass] <: (@_) -> @_",
       "description": "EXPECTED type[ConverterClass] <: (@_) -> @_",
@@ -5539,16 +5399,6 @@
     }
   ],
   "directives_cast.py": [
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 11,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 11
-    },
     {
       "code": -2,
       "column": 8,
@@ -6525,16 +6375,6 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 12,
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access __add__)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access __add__)",
       "line": 34,
@@ -6601,26 +6441,6 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 69
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 96,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 96
     },
     {
       "code": -2,
@@ -7543,26 +7363,6 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(Any, Self) failed",
-      "description": "assert_type(Any, Self) failed",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 9,
       "concise_description": "assert_type(ParentB, Self) failed",
       "description": "assert_type(ParentB, Self) failed",
       "line": 38,
@@ -7589,26 +7389,6 @@
       "name": "PyreError",
       "stop_column": 37,
       "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(Any, Self) failed",
-      "description": "assert_type(Any, Self) failed",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 44
     },
     {
       "code": -2,
@@ -11366,8 +11146,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, LiteralString) failed",
-      "description": "assert_type(Any, LiteralString) failed",
+      "concise_description": "assert_type(str, LiteralString) failed",
+      "description": "assert_type(str, LiteralString) failed",
       "line": 48,
       "name": "PyreError",
       "stop_column": 38,
@@ -11375,53 +11155,13 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, LiteralString) failed",
-      "description": "assert_type(Any, LiteralString) failed",
+      "concise_description": "assert_type(str, LiteralString) failed",
+      "description": "assert_type(str, LiteralString) failed",
       "line": 52,
       "name": "PyreError",
       "stop_column": 49,
       "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 52,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 53,
-      "name": "PyreError",
-      "stop_column": 44,
-      "stop_line": 53
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 53,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 53
     },
     {
       "code": -2,
@@ -11911,32 +11651,12 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 24,
       "name": "PyreError",
       "stop_column": 24,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 18,
       "stop_line": 24
     },
     {
@@ -11951,16 +11671,6 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, str) failed",
       "description": "assert_type(Any, str) failed",
@@ -11971,32 +11681,12 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 26,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 26
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 27,
       "name": "PyreError",
       "stop_column": 25,
-      "stop_line": 27
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 19,
       "stop_line": 27
     },
     {
@@ -12011,19 +11701,9 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, tuple[int, int]) failed",
-      "description": "assert_type(Any, tuple[int, int]) failed",
+      "concise_description": "assert_type(tuple[Any, ...], tuple[int, int]) failed",
+      "description": "assert_type(tuple[Any, ...], tuple[int, int]) failed",
       "line": 29,
       "name": "PyreError",
       "stop_column": 38,
@@ -12031,53 +11711,13 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, tuple[int, int, str]) failed",
-      "description": "assert_type(Any, tuple[int, int, str]) failed",
+      "concise_description": "assert_type(tuple[Any, ...], tuple[int, int, str]) failed",
+      "description": "assert_type(tuple[Any, ...], tuple[int, int, str]) failed",
       "line": 30,
       "name": "PyreError",
       "stop_column": 42,
       "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 32,
-      "name": "PyreError",
-      "stop_column": 6,
-      "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 33,
-      "name": "PyreError",
-      "stop_column": 6,
-      "stop_line": 33
     },
     {
       "code": -2,
@@ -12387,16 +12027,6 @@
       "line": 95,
       "name": "PyreError",
       "stop_column": 27,
-      "stop_line": 95
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 95,
-      "name": "PyreError",
-      "stop_column": 19,
       "stop_line": 95
     },
     {
@@ -12887,32 +12517,12 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 27
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 28,
       "name": "PyreError",
       "stop_column": 23,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 17,
       "stop_line": 28
     },
     {
@@ -12927,16 +12537,6 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, str) failed",
       "description": "assert_type(Any, str) failed",
@@ -12947,32 +12547,12 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 31,
       "name": "PyreError",
       "stop_column": 24,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 31,
-      "name": "PyreError",
-      "stop_column": 18,
       "stop_line": 31
     },
     {
@@ -12984,36 +12564,6 @@
       "name": "PyreError",
       "stop_column": 24,
       "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 32,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 34,
-      "name": "PyreError",
-      "stop_column": 6,
-      "stop_line": 34
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 6,
-      "stop_line": 35
     },
     {
       "code": -2,
@@ -13521,46 +13071,6 @@
     }
   ],
   "overloads_basic.py": [
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bytes) failed",
-      "description": "assert_type(Any, bytes) failed",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 36
-    },
     {
       "code": -2,
       "column": 1,
@@ -14312,16 +13822,6 @@
       "name": "PyreError",
       "stop_column": 24,
       "stop_line": 46
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 48
     },
     {
       "code": -2,
@@ -16316,26 +15816,6 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 1,
       "concise_description": "Object of class `Mapping` has no attribute `clear`",
       "description": "Object of class `Mapping` has no attribute `clear`",
       "line": 47,
@@ -16356,21 +15836,11 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, str | None) failed",
-      "description": "assert_type(Any, str | None) failed",
+      "concise_description": "assert_type(object | None, str | None) failed",
+      "description": "assert_type(object | None, str | None) failed",
       "line": 60,
       "name": "PyreError",
       "stop_column": 52,
-      "stop_line": 60
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 60,
-      "name": "PyreError",
-      "stop_column": 31,
       "stop_line": 60
     },
     {
@@ -16760,21 +16230,21 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "EXPECTED int | str <: str",
+      "description": "EXPECTED int | str <: str",
       "line": 91,
       "name": "PyreError",
-      "stop_column": 23,
+      "stop_column": 38,
       "stop_line": 91
     },
     {
       "code": -2,
       "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "EXPECTED int | str <: int",
+      "description": "EXPECTED int | str <: int",
       "line": 92,
       "name": "PyreError",
-      "stop_column": 22,
+      "stop_column": 33,
       "stop_line": 92
     },
     {
@@ -16790,51 +16260,41 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "EXPECTED int | str | None <: str | None",
+      "description": "EXPECTED int | str | None <: str | None",
       "line": 97,
       "name": "PyreError",
-      "stop_column": 30,
+      "stop_column": 38,
       "stop_line": 97
     },
     {
       "code": -2,
       "column": 14,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "EXPECTED int | str | None <: str",
+      "description": "EXPECTED int | str | None <: str",
       "line": 101,
       "name": "PyreError",
-      "stop_column": 23,
+      "stop_column": 31,
       "stop_line": 101
     },
     {
       "code": -2,
       "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "EXPECTED int | str <: int",
+      "description": "EXPECTED int | str <: int",
       "line": 103,
       "name": "PyreError",
-      "stop_column": 22,
+      "stop_column": 33,
       "stop_line": 103
     },
     {
       "code": -2,
-      "column": 19,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 105,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 105
-    },
-    {
-      "code": -2,
       "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "EXPECTED int | str <: int",
+      "description": "EXPECTED int | str <: int",
       "line": 107,
       "name": "PyreError",
-      "stop_column": 22,
+      "stop_column": 35,
       "stop_line": 107
     },
     {

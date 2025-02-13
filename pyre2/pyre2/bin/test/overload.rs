@@ -76,8 +76,7 @@ def test(o: P):
     "#,
 );
 
-testcase_with_bug!(
-    "Overloaded bound methods are not called correctly",
+testcase!(
     test_method,
     r#"
 from typing import assert_type, overload
@@ -91,6 +90,6 @@ class C:
         return x
 
 def test(o: C):
-    assert_type(o.m(1), int) # E: assert_type # E: No matching overload found
+    assert_type(o.m(1), int)
     "#,
 );

@@ -85,10 +85,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Vec::new(),
                 CallTarget::Overload(overloads.mapped(|ty| self.as_call_target(ty))),
             )),
-            Type::BoundMethod(box BoundMethod { obj, func }) => match self
-                .as_call_target(func.clone())
-            {
+            Type::BoundMethod(box BoundMethod { obj, func }) => match self.as_call_target(func) {
                 Some((gs, CallTarget::Callable(c))) => Some((gs, CallTarget::BoundMethod(obj, c))),
+                Some((gs, CallTarget::Overload(overloads))) => {
+                    let overloads = overloads.mapped(|x| match x {
+                        Some((gs2, CallTarget::Callable(c))) => {
+                            Some((gs2, CallTarget::BoundMethod(obj.clone(), c)))
+                        }
+                        _ => None,
+                    });
+                    Some((gs, CallTarget::Overload(overloads)))
+                }
                 _ => None,
             },
             Type::ClassDef(cls) => self.as_call_target(self.instantiate_fresh(&cls)),
