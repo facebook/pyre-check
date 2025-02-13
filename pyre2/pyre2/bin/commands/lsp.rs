@@ -292,6 +292,7 @@ impl<'a> Server<'a> {
                 diags.entry(path.to_owned()).or_default().push(Diagnostic {
                     range: source_range_to_range(e.source_range()),
                     severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+                    source: Some("Pyre2".to_owned()),
                     message: e.msg().to_owned(),
                     ..Default::default()
                 });
