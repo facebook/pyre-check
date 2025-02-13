@@ -3124,32 +3124,6 @@ let resolve_callees
     "Resolving function call `%a`"
     Expression.pp
     (Expression.Call call |> Node.create_with_default_location);
-  let higher_order_parameters =
-    let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
-      match
-        ( resolve_regular_callees
-            ~debug
-            ~pyre_in_context
-            ~override_graph
-            ~call_indexer
-            ~return_type:(return_type_for_call ~pyre_in_context ~callee:argument)
-            ~callee:argument,
-          argument )
-      with
-      | { CallCallees.call_targets = _ :: _ as regular_targets; unresolved; _ }, _ ->
-          Some { HigherOrderParameter.index; call_targets = regular_targets; unresolved }
-      | _, { Node.value = Expression.Lambda _; _ } ->
-          Some
-            {
-              HigherOrderParameter.index;
-              call_targets = [];
-              unresolved = Unresolved.True LambdaArgument;
-            }
-      | _ -> None
-    in
-    List.filter_mapi arguments ~f:get_higher_order_function_targets
-    |> HigherOrderParameterMap.from_list
-  in
   (* Resolving the return type can be costly, hence we prefer the annotation on the callee when
      possible. When that does not work, we fallback to a full resolution of the call expression
      (done lazily). *)
@@ -3167,6 +3141,79 @@ let resolve_callees
       ~call_indexer
       ~return_type
       ~callee
+  in
+  let higher_order_parameters =
+    let filter_implicit_dunder_calls ({ CallCallees.call_targets; _ } as callees) =
+      (* Heuristic: if a parameter is an instance of a callable class (i.e, a class with a `__call__` method),
+       * we only want to consider it a higher order parameter if we might miss a call to `__call__`.
+       * For instance, if the callee has no body or is not (type) annotated. *)
+      let rec loosely_less_equal_class class_name = function
+        | Type.Primitive name -> String.equal name class_name
+        | Type.Union list -> List.exists list ~f:(loosely_less_equal_class class_name)
+        | _ -> false
+      in
+      let parameter_has_annotation class_name = function
+        | { Node.value = { Parameter.annotation = Some annotation; _ }; _ }
+        (* we don't want to perform a true "less equal" check, since it's expensive.
+         * Let's use a cheap heuristic. *)
+          when loosely_less_equal_class
+                 class_name
+                 (Type.create
+                    ~variables:(fun _ -> None)
+                    ~aliases:(fun ?replace_unbound_parameters_with_any:_ _ -> None)
+                    annotation) ->
+            true
+        | _ -> false
+      in
+      let preserve_implicit_dunder_call = function
+        | {
+            CallTarget.implicit_dunder_call = true;
+            target =
+              Target.Regular
+                (Target.Regular.Method { class_name = callable_class; method_name = "__call__"; _ });
+            _;
+          } -> (
+            match regular_callees.call_targets with
+            | [callee] when Target.is_function_or_method callee.target ->
+                Target.get_module_and_definition
+                  ~pyre_api:(PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
+                  callee.target
+                >>| (fun (_, { Node.value = define; _ }) ->
+                      let { Define.signature = { Define.Signature.parameters; _ }; _ } = define in
+                      Define.is_stub define
+                      || not (List.exists parameters ~f:(parameter_has_annotation callable_class)))
+                |> Option.value ~default:true
+            | _ -> true)
+        | _ -> true
+      in
+      let call_targets = List.filter call_targets ~f:preserve_implicit_dunder_call in
+      { callees with call_targets }
+    in
+    let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
+      let callees =
+        resolve_regular_callees
+          ~debug
+          ~pyre_in_context
+          ~override_graph
+          ~call_indexer
+          ~return_type:(return_type_for_call ~pyre_in_context ~callee:argument)
+          ~callee:argument
+        |> filter_implicit_dunder_calls
+      in
+      match callees, argument with
+      | { CallCallees.call_targets = _ :: _ as regular_targets; unresolved; _ }, _ ->
+          Some { HigherOrderParameter.index; call_targets = regular_targets; unresolved }
+      | _, { Node.value = Expression.Lambda _; _ } ->
+          Some
+            {
+              HigherOrderParameter.index;
+              call_targets = [];
+              unresolved = Unresolved.True LambdaArgument;
+            }
+      | _ -> None
+    in
+    List.filter_mapi arguments ~f:get_higher_order_function_targets
+    |> HigherOrderParameterMap.from_list
   in
   { regular_callees with higher_order_parameters }
 

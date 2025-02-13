@@ -1712,23 +1712,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito[formal(x, position=0)=higher_order_functions.CallableSource.__call__]",
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "higher_order_functions.test_conditional_apply_backward",
     "filename": "higher_order_functions.py",
     "callable_line": 121,

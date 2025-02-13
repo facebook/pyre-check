@@ -6381,28 +6381,56 @@ let test_call_graph_of_define_foo_and_bar =
                              CallTarget.create_regular
                                (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
-                         ~higher_order_parameters:
-                           (HigherOrderParameterMap.from_list
-                              [
-                                {
-                                  index = 0;
-                                  call_targets =
-                                    [
-                                      CallTarget.create_regular
-                                        ~implicit_receiver:true
-                                        ~implicit_dunder_call:true
-                                        ~receiver_class:"test.A"
-                                        ~return_type:(Some ReturnType.integer)
-                                        (Target.Regular.Method
-                                           {
-                                             class_name = "test.A";
-                                             method_name = "__call__";
-                                             kind = Normal;
-                                           });
-                                    ];
-                                  unresolved = CallGraph.Unresolved.False;
-                                };
-                              ])
+                         ())) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+     from typing import Optional
+     class A:
+       def __call__(self) -> int:
+         return 0
+     def foo(x: Optional[A]):
+       pass
+     def bar():
+       a = A()
+       foo(a)
+  |}
+           ~define_name:"test.bar"
+           ~expected:
+             [
+               ( "9:6-9:9",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~init_targets:
+                           [
+                             CallTarget.create_regular
+                               ~implicit_receiver:true
+                               ~return_type:(Some ReturnType.none)
+                               (Target.Regular.Method
+                                  { class_name = "object"; method_name = "__init__"; kind = Normal });
+                           ]
+                         ~new_targets:
+                           [
+                             CallTarget.create_regular
+                               ~return_type:(Some ReturnType.any)
+                               ~is_static_method:true
+                               (Target.Regular.Method
+                                  { class_name = "object"; method_name = "__new__"; kind = Normal });
+                           ]
+                         ())) );
+               ( "10:2-10:8",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
                          ())) );
              ]
            ();
