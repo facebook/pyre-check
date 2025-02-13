@@ -41,4 +41,25 @@ val track_model_fetch
   f:(unit -> Model.t) ->
   Model.t
 
-val dump : max_number_expressions:int -> t -> unit
+module ApplyCallStep : sig
+  type t =
+    | ApplyCallForArgumentSinks
+    | ApplyCallForArgumentSources
+    | ApplyCallForReturn
+    | ApplyCallEffects
+    | CheckIssuesForArgument
+    | BuildTaintInTaintOutMapping
+    | ApplyTitoForArgument
+end
+
+val track_apply_call_step
+  :  profiler:t ->
+  analysis:analysis ->
+  step:ApplyCallStep.t ->
+  call_target:Interprocedural.Target.t ->
+  location:Location.t ->
+  argument:Expression.t option ->
+  f:(unit -> 'a) ->
+  'a
+
+val dump : max_number_expressions:int -> max_number_apply_call_steps:int -> t -> unit

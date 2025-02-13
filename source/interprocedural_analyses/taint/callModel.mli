@@ -56,6 +56,8 @@ module TaintInTaintOutMap : sig
 
   type t = (Sinks.t, TreeRootsPair.t) Map.Poly.t
 
+  val empty : t
+
   val fold : t -> init:'a -> f:(kind:Sinks.t -> pair:TreeRootsPair.t -> 'a -> 'a) -> 'a
 end
 

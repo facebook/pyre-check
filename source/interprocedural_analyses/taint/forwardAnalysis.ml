@@ -398,11 +398,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | CallModel.ImplicitArgument.Forward.None -> arguments, arguments_taint
     in
     let ({ Model.forward; _ } as taint_model) =
-      TaintProfiler.track_model_fetch
-        ~profiler
-        ~analysis:TaintProfiler.Forward
-        ~call_target:target
-        ~f:(fun () ->
+      TaintProfiler.track_model_fetch ~profiler ~analysis:Forward ~call_target:target ~f:(fun () ->
           CallModel.at_callsite
             ~pyre_in_context
             ~get_callee_model:FunctionContext.get_callee_model
@@ -530,38 +526,54 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             sanitize_matches;
           } )
       =
+      let track_apply_call_step step f =
+        TaintProfiler.track_apply_call_step
+          ~profiler
+          ~analysis:Forward
+          ~step
+          ~call_target:target
+          ~location:call_location
+          ~argument:(Some argument)
+          ~f
+      in
       let location =
         Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
       in
       let sink_trees =
-        CallModel.sink_trees_of_argument
-          ~pyre_in_context
-          ~transform_non_leaves:(fun _ tree -> tree)
-          ~model:taint_model
-          ~call_site
-          ~location
-          ~call_target
-          ~arguments
-          ~sink_matches
-          ~is_class_method
-          ~is_static_method
-          ~call_info_intervals
+        track_apply_call_step ApplyCallForArgumentSinks (fun () ->
+            CallModel.sink_trees_of_argument
+              ~pyre_in_context
+              ~transform_non_leaves:(fun _ tree -> tree)
+              ~model:taint_model
+              ~call_site
+              ~location
+              ~call_target
+              ~arguments
+              ~sink_matches
+              ~is_class_method
+              ~is_static_method
+              ~call_info_intervals)
       in
       let call_effects =
-        if apply_tito then
-          CallModel.taint_in_taint_out_mapping_for_argument
-            ~transform_non_leaves:(fun _ tito -> tito)
-            ~taint_configuration:FunctionContext.taint_configuration
-            ~ignore_local_return:(not is_result_used)
-            ~model:taint_model
-            ~callable:target
-            ~tito_matches
-            ~sanitize_matches
-          |> CallModel.TaintInTaintOutMap.fold
-               ~init:call_effects
-               ~f:(convert_tito_tree_to_taint ~argument ~argument_taint ~sink_trees)
-        else
-          call_effects
+        let taint_in_taint_out_map =
+          track_apply_call_step BuildTaintInTaintOutMapping (fun () ->
+              if apply_tito then
+                CallModel.taint_in_taint_out_mapping_for_argument
+                  ~transform_non_leaves:(fun _ tito -> tito)
+                  ~taint_configuration:FunctionContext.taint_configuration
+                  ~ignore_local_return:(not is_result_used)
+                  ~model:taint_model
+                  ~callable:target
+                  ~tito_matches
+                  ~sanitize_matches
+              else
+                CallModel.TaintInTaintOutMap.empty)
+        in
+        track_apply_call_step ApplyTitoForArgument (fun () ->
+            CallModel.TaintInTaintOutMap.fold
+              ~init:call_effects
+              ~f:(convert_tito_tree_to_taint ~argument ~argument_taint ~sink_trees)
+              taint_in_taint_out_map)
       in
 
       (* Add features to arguments. *)
@@ -590,38 +602,43 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
 
       let () =
-        List.iter sink_trees ~f:(fun { SinkTreeWithHandle.sink_tree; handle; _ } ->
-            (* Check for issues. *)
-            check_flow ~location ~sink_handle:handle ~source_tree:argument_taint ~sink_tree;
-            (* Check for issues for combined source rules. *)
-            check_triggered_flows
-              ~triggered_sinks_for_call
-              ~sink_handle:handle
-              ~location
-              ~source_tree:argument_taint
-              ~sink_tree;
-            ())
+        track_apply_call_step CheckIssuesForArgument (fun () ->
+            List.iter sink_trees ~f:(fun { SinkTreeWithHandle.sink_tree; handle; _ } ->
+                (* Check for issues. *)
+                check_flow ~location ~sink_handle:handle ~source_tree:argument_taint ~sink_tree;
+                (* Check for issues for combined source rules. *)
+                check_triggered_flows
+                  ~triggered_sinks_for_call
+                  ~sink_handle:handle
+                  ~location
+                  ~source_tree:argument_taint
+                  ~sink_tree;
+                ()))
       in
 
       (* Propagate generations *)
       let call_effects =
-        let add_generation_effect call_effects ({ AccessPath.root; _ } as generation_source_match) =
-          let source_tree =
-            CallModel.source_tree_of_argument
-              ~pyre_in_context
-              ~model:taint_model
-              ~call_site
-              ~location
-              ~call_target
-              ~arguments
-              ~is_class_method
-              ~is_static_method
-              ~call_info_intervals
-              ~generation_source_match
-          in
-          CallEffects.add ~kind:(Sinks.ParameterUpdate root) ~taint:source_tree call_effects
-        in
-        List.fold ~init:call_effects ~f:add_generation_effect generation_source_matches
+        track_apply_call_step ApplyCallForArgumentSources (fun () ->
+            let add_generation_effect
+                call_effects
+                ({ AccessPath.root; _ } as generation_source_match)
+              =
+              let source_tree =
+                CallModel.source_tree_of_argument
+                  ~pyre_in_context
+                  ~model:taint_model
+                  ~call_site
+                  ~location
+                  ~call_target
+                  ~arguments
+                  ~is_class_method
+                  ~is_static_method
+                  ~call_info_intervals
+                  ~generation_source_match
+              in
+              CallEffects.add ~kind:(Sinks.ParameterUpdate root) ~taint:source_tree call_effects
+            in
+            List.fold ~init:call_effects ~f:add_generation_effect generation_source_matches)
       in
 
       call_effects, state
@@ -641,21 +658,29 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     (* Compute return taint *)
     let result_generation_taint =
-      if is_result_used then
-        ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.generations
-        |> ForwardState.Tree.apply_call
-             ~pyre_in_context
-             ~call_site
-             ~location:
-               (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
-             ~callee:target
-             ~arguments
-             ~port:AccessPath.Root.LocalResult
-             ~is_class_method
-             ~is_static_method
-             ~call_info_intervals
-      else
-        ForwardState.Tree.empty
+      TaintProfiler.track_apply_call_step
+        ~profiler
+        ~analysis:Forward
+        ~step:ApplyCallForReturn
+        ~call_target:target
+        ~location:call_location
+        ~argument:None
+        ~f:(fun () ->
+          if is_result_used then
+            ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.generations
+            |> ForwardState.Tree.apply_call
+                 ~pyre_in_context
+                 ~call_site
+                 ~location:
+                   (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
+                 ~callee:target
+                 ~arguments
+                 ~port:AccessPath.Root.LocalResult
+                 ~is_class_method
+                 ~is_static_method
+                 ~call_info_intervals
+          else
+            ForwardState.Tree.empty)
     in
     let result_tito_taint = CallEffects.get call_effects ~kind:Sinks.LocalReturn in
     let result_taint = ForwardState.Tree.join result_generation_taint result_tito_taint in
@@ -762,7 +787,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       List.fold ~init:state ~f:propagate_captured_variables (ForwardState.roots forward.generations)
     in
-    let state = state |> apply_call_effects call_effects |> apply_captured_variable_side_effects in
+    let state =
+      TaintProfiler.track_apply_call_step
+        ~profiler
+        ~analysis:Forward
+        ~step:ApplyCallEffects
+        ~call_target:target
+        ~location:call_location
+        ~argument:None
+        ~f:(fun () ->
+          state |> apply_call_effects call_effects |> apply_captured_variable_side_effects)
+    in
     result_taint, state
 
 
@@ -2673,7 +2708,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let taint, state =
       TaintProfiler.track_expression_analysis
         ~profiler
-        ~analysis:TaintProfiler.Forward
+        ~analysis:Forward
         ~expression
         ~f:analyze_expression_inner
     in
@@ -3023,11 +3058,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let forward ~statement_key state ~statement =
-    TaintProfiler.track_statement_analysis
-      ~profiler
-      ~analysis:TaintProfiler.Forward
-      ~statement
-      ~f:(fun () ->
+    TaintProfiler.track_statement_analysis ~profiler ~analysis:Forward ~statement ~f:(fun () ->
         log
           "Forward analysis of statement: `%a`@,With forward state: %a"
           Statement.pp

@@ -402,11 +402,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | None -> arguments
     in
     let taint_model =
-      TaintProfiler.track_model_fetch
-        ~profiler
-        ~analysis:TaintProfiler.Backward
-        ~call_target:target
-        ~f:(fun () ->
+      TaintProfiler.track_model_fetch ~profiler ~analysis:Backward ~call_target:target ~f:(fun () ->
           CallModel.at_callsite
             ~pyre_in_context
             ~get_callee_model:FunctionContext.get_callee_model
@@ -596,6 +592,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           sanitize_matches;
         }
       =
+      let track_apply_call_step step f =
+        TaintProfiler.track_apply_call_step
+          ~profiler
+          ~analysis:Backward
+          ~step
+          ~call_target:target
+          ~location:call_location
+          ~argument:(Some argument)
+          ~f
+      in
       let location =
         Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
       in
@@ -612,35 +618,41 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         { sink_tree_with_handle with sink_tree }
       in
       let sink_trees =
-        CallModel.sink_trees_of_argument
-          ~pyre_in_context
-          ~transform_non_leaves
-          ~model:taint_model
-          ~call_site
-          ~location
-          ~call_target
-          ~arguments
-          ~sink_matches
-          ~is_class_method
-          ~is_static_method
-          ~call_info_intervals
-        |> List.map ~f:convert_partial_sinks_into_triggered
+        track_apply_call_step ApplyCallForArgumentSinks (fun () ->
+            CallModel.sink_trees_of_argument
+              ~pyre_in_context
+              ~transform_non_leaves
+              ~model:taint_model
+              ~call_site
+              ~location
+              ~call_target
+              ~arguments
+              ~sink_matches
+              ~is_class_method
+              ~is_static_method
+              ~call_info_intervals
+            |> List.map ~f:convert_partial_sinks_into_triggered)
       in
       let taint_in_taint_out =
-        if apply_tito then
-          CallModel.taint_in_taint_out_mapping_for_argument
-            ~transform_non_leaves
-            ~taint_configuration:FunctionContext.taint_configuration
-            ~ignore_local_return:(BackwardState.Tree.is_bottom call_taint)
-            ~model:taint_model
-            ~callable:target
-            ~tito_matches
-            ~sanitize_matches
-          |> CallModel.TaintInTaintOutMap.fold
-               ~init:BackwardState.Tree.empty
-               ~f:(convert_tito_tree_to_taint ~argument ~sink_trees)
-        else
-          BackwardState.Tree.empty
+        let taint_in_taint_out_map =
+          track_apply_call_step BuildTaintInTaintOutMapping (fun () ->
+              if apply_tito then
+                CallModel.taint_in_taint_out_mapping_for_argument
+                  ~transform_non_leaves
+                  ~taint_configuration:FunctionContext.taint_configuration
+                  ~ignore_local_return:(BackwardState.Tree.is_bottom call_taint)
+                  ~model:taint_model
+                  ~callable:target
+                  ~tito_matches
+                  ~sanitize_matches
+              else
+                CallModel.TaintInTaintOutMap.empty)
+        in
+        track_apply_call_step ApplyTitoForArgument (fun () ->
+            CallModel.TaintInTaintOutMap.fold
+              ~init:BackwardState.Tree.empty
+              ~f:(convert_tito_tree_to_taint ~argument ~sink_trees)
+              taint_in_taint_out_map)
       in
       let sink_taint = SinkTreeWithHandle.join sink_trees in
       let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
@@ -2384,7 +2396,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     TaintProfiler.track_expression_analysis
       ~profiler
-      ~analysis:TaintProfiler.Backward
+      ~analysis:Backward
       ~expression
       ~f:analyze_expression_inner
 
@@ -2595,11 +2607,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let backward ~statement_key state ~statement =
-    TaintProfiler.track_statement_analysis
-      ~profiler
-      ~analysis:TaintProfiler.Backward
-      ~statement
-      ~f:(fun () ->
+    TaintProfiler.track_statement_analysis ~profiler ~analysis:Backward ~statement ~f:(fun () ->
         log
           "Backward analysis of statement: `%a`@,With backward state: %a"
           Statement.pp

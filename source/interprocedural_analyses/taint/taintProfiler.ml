@@ -79,6 +79,55 @@ module FetchModelEvent = struct
   module Map = Map.Make (Key)
 end
 
+module ApplyCallStep = struct
+  type t =
+    | ApplyCallForArgumentSinks
+    | ApplyCallForArgumentSources
+    | ApplyCallForReturn
+    | ApplyCallEffects
+    | CheckIssuesForArgument
+    | BuildTaintInTaintOutMapping
+    | ApplyTitoForArgument
+  [@@deriving sexp, compare]
+
+  let pp_short formatter = function
+    | ApplyCallForArgumentSinks -> Format.fprintf formatter "apply-call-for-arg-sinks"
+    | ApplyCallForArgumentSources -> Format.fprintf formatter "apply-call-for-arg-sources"
+    | ApplyCallForReturn -> Format.fprintf formatter "apply-call-for-return"
+    | ApplyCallEffects -> Format.fprintf formatter "apply-call-effects"
+    | CheckIssuesForArgument -> Format.fprintf formatter "check-issues-for-arg"
+    | BuildTaintInTaintOutMapping -> Format.fprintf formatter "build-tito-map"
+    | ApplyTitoForArgument -> Format.fprintf formatter "apply-tito-for-arg"
+end
+
+module ApplyCallStepEvent = struct
+  type t = {
+    target: Interprocedural.Target.t;
+    location: Location.t;
+    analysis: analysis;
+    step: ApplyCallStep.t;
+    argument: Expression.t option;
+    seconds: float;
+  }
+
+  module Key = struct
+    type t = {
+      target: Interprocedural.Target.t;
+      location: Location.t;
+      analysis: analysis;
+      step: ApplyCallStep.t;
+      argument: Expression.t option;
+    }
+    [@@deriving sexp, compare]
+  end
+
+  let key { target; location; analysis; step; argument; _ } =
+    { Key.target; location; analysis; step; argument }
+
+
+  module Map = Map.Make (Key)
+end
+
 module ExpressionTimer = struct
   type t = {
     timer: Timer.t;
@@ -91,6 +140,7 @@ type profiler = {
   mutable statement_events: StatementEvent.t list;
   mutable expression_events: ExpressionEvent.t list;
   mutable fetch_model_events: FetchModelEvent.t list;
+  mutable apply_call_step_events: ApplyCallStepEvent.t list;
   whole_timer: Timer.t;
   mutable current_expression: ExpressionTimer.t;
 }
@@ -107,6 +157,7 @@ let create () =
       statement_events = [];
       expression_events = [];
       fetch_model_events = [];
+      apply_call_step_events = [];
       whole_timer = Timer.start ();
       current_expression = { timer = Timer.start (); accumulated = 0. };
     }
@@ -172,7 +223,20 @@ let track_model_fetch ~profiler ~analysis ~call_target ~f =
       model
 
 
-let dump ~max_number_expressions = function
+let track_apply_call_step ~profiler ~analysis ~step ~call_target ~location ~argument ~f =
+  match profiler with
+  | None -> f ()
+  | Some profiler ->
+      let timer = Timer.start () in
+      let result = f () in
+      let seconds = Timer.stop_in_sec timer in
+      profiler.apply_call_step_events <-
+        { target = call_target; location; analysis; step; argument; seconds }
+        :: profiler.apply_call_step_events;
+      result
+
+
+let dump ~max_number_expressions ~max_number_apply_call_steps = function
   | None -> ()
   | Some
       {
@@ -180,6 +244,7 @@ let dump ~max_number_expressions = function
         statement_events;
         expression_events;
         fetch_model_events;
+        apply_call_step_events;
         whole_timer;
         current_expression = _;
       } ->
@@ -371,4 +436,56 @@ let dump ~max_number_expressions = function
           Interprocedural.Target.pp_pretty
           target
       in
-      List.iter fetch_model_events ~f:display_model_row
+      List.iter fetch_model_events ~f:display_model_row;
+
+      Log.dump "Performance per apply call step:";
+      let add_apply_call_step_event map ({ ApplyCallStepEvent.seconds; _ } as event) =
+        Map.update map (ApplyCallStepEvent.key event) ~f:(function
+            | None -> [seconds]
+            | Some times -> seconds :: times)
+      in
+      let apply_call_step_events =
+        apply_call_step_events
+        |> List.fold ~f:add_apply_call_step_event ~init:ApplyCallStepEvent.Map.empty
+        |> Core.Map.to_alist
+        |> List.sort ~compare:(fun (_, left_times) (_, right_times) ->
+               let left_seconds = List.fold ~init:0.0 ~f:( +. ) left_times in
+               let right_seconds = List.fold ~init:0.0 ~f:( +. ) right_times in
+               Float.compare right_seconds left_seconds)
+      in
+      if List.length apply_call_step_events > max_number_apply_call_steps then
+        Log.dump
+          "WARNING: Showing the first %d apply call steps out of %d steps"
+          max_number_apply_call_steps
+          (List.length apply_call_step_events);
+      Log.dump
+        "| Line | Column | Analysis | Iterations | Total Time | Percent of Total Time | Target | \
+         Step | Argument |";
+      let display_apply_call_step_row
+          ({ ApplyCallStepEvent.Key.target; location; analysis; step; argument }, times)
+        =
+        let iterations = List.length times in
+        let seconds = List.fold ~init:0.0 ~f:( +. ) times in
+        let pp_option pp formatter = function
+          | None -> Format.fprintf formatter "None"
+          | Some value -> pp formatter value
+        in
+        Log.dump
+          "| %4d | %3d | %a | %2d | %8.3fs | %4.2f%% | %a | %a | %a"
+          location.start.line
+          location.start.column
+          analysis_pp
+          analysis
+          iterations
+          seconds
+          (seconds /. total_seconds *. 100.0)
+          Interprocedural.Target.pp_pretty
+          target
+          ApplyCallStep.pp_short
+          step
+          (pp_option Expression.pp)
+          argument
+      in
+      List.iter
+        (List.take apply_call_step_events max_number_apply_call_steps)
+        ~f:display_apply_call_step_row
