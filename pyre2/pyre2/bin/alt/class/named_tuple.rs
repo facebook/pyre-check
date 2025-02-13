@@ -6,6 +6,7 @@
  */
 
 use ruff_python_ast::name::Name;
+use ruff_text_size::TextRange;
 use starlark_map::smallmap;
 
 use crate::alt::answers::AnswersSolver;
@@ -16,12 +17,14 @@ use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::binding::binding::ClassFieldInitialization;
 use crate::dunder;
+use crate::error::collector::ErrorCollector;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
 use crate::types::class::Class;
+use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::tuple::Tuple;
 use crate::types::types::Type;
@@ -36,6 +39,32 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         elements.sort_by_key(|e| e.1.start());
         elements.iter().map(|e| e.0.clone()).collect()
+    }
+
+    pub fn named_tuple_element_types(
+        &self,
+        cls: &ClassType,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Option<Vec<Type>> {
+        let class_metadata = self.get_metadata_for_class(cls.class_object());
+        let named_tuple_metadata = class_metadata.named_tuple_metadata()?;
+        Some(
+            named_tuple_metadata
+                .elements
+                .iter()
+                .map(|name| {
+                    self.type_of_attr_get_if_found(
+                        Type::ClassType(cls.clone()),
+                        name,
+                        range,
+                        errors,
+                        "NamedTuple::as_tuple_type",
+                    )
+                    .unwrap()
+                })
+                .collect(),
+        )
     }
 
     fn get_named_tuple_new(&self, cls: &Class, elements: &Vec<Name>) -> ClassSynthesizedField {
@@ -61,6 +90,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ClassSynthesizedField::new(ty, false)
     }
 
+    fn get_named_tuple_iter(&self, cls: &Class, elements: &[Name]) -> ClassSynthesizedField {
+        let params = vec![Param::Pos(
+            Name::new("self"),
+            cls.self_type(),
+            Required::Required,
+        )];
+        let element_types: Vec<Type> = elements
+            .iter()
+            .map(|name| {
+                let ClassField(ClassFieldInner::Simple { ty, .. }) =
+                    self.get_class_member(cls, name).unwrap().value;
+                ty
+            })
+            .collect();
+        let ty = Type::Callable(
+            Box::new(Callable::list(
+                ParamList::new(params),
+                Type::ClassType(self.stdlib.iterable(self.unions(element_types))),
+            )),
+            CallableKind::Def,
+        );
+        ClassSynthesizedField::new(ty, false)
+    }
+
     fn get_named_tuple_match_args(&self, elements: &[Name]) -> ClassSynthesizedField {
         let ty = Type::Tuple(Tuple::Concrete(
             elements
@@ -80,6 +133,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Some(ClassSynthesizedFields::new(
             smallmap! { dunder::NEW => self.get_named_tuple_new(cls, &named_tuple.elements),
                 dunder::MATCH_ARGS => self.get_named_tuple_match_args(&named_tuple.elements),
+                dunder::ITER => self.get_named_tuple_iter(cls, &named_tuple.elements)
             },
         ))
     }

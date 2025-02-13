@@ -31,6 +31,28 @@ def test(p: Pair):
         case Pair(x, y):
             assert_type(x, int)
             assert_type(y, int)
+    match p:
+        case x, y:
+            assert_type(x, int)
+            assert_type(y, int)
+    "#,
+);
+
+testcase!(
+    test_named_tuple_iter,
+    r#"
+from typing import NamedTuple, reveal_type
+class Pair(NamedTuple):
+    x: int
+    y: str
+
+class Pair2[T](NamedTuple):
+    x: int
+    y: T
+    
+def test(p: Pair, p2: Pair2[bytes]):
+    reveal_type(p.__iter__)  # E: BoundMethod[Pair, (self: Pair) -> Iterable[int | str]]
+    reveal_type(p2.__iter__)  # E: BoundMethod[Pair2[bytes], (self: Pair2[bytes]) -> Iterable[bytes | int]]
     "#,
 );
 

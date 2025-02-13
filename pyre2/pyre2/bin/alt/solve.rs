@@ -228,8 +228,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }))
         };
         match iterable {
-            Type::ClassType(_) | Type::Type(box Type::ClassType(_)) => {
-                vec![iterate_by_interface()]
+            Type::ClassType(cls) | Type::Type(box Type::ClassType(cls)) => {
+                if let Some(elts) = self.named_tuple_element_types(cls, range, errors) {
+                    vec![Iterable::FixedLen(elts.clone())]
+                } else {
+                    vec![iterate_by_interface()]
+                }
             }
             Type::ClassDef(cls) => {
                 if self.get_metadata_for_class(cls).is_typed_dict() {

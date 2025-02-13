@@ -12398,22 +12398,22 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 49,
+      "concise_description": "Cannot unpack Point (of size 3) into 2 values",
+      "description": "Cannot unpack Point (of size 3) into 2 values",
+      "line": 52,
       "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 49
+      "stop_column": 7,
+      "stop_line": 52
     },
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 50,
+      "concise_description": "Cannot unpack Point (of size 3) into 4 values",
+      "description": "Cannot unpack Point (of size 3) into 4 values",
+      "line": 53,
       "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 50
+      "stop_column": 21,
+      "stop_line": 53
     },
     {
       "code": -2,
