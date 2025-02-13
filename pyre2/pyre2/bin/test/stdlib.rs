@@ -40,7 +40,7 @@ class Flag(Enum): ...
 "#;
 
 static BUILTINS: &str = r#"
-from typing import Any, Iterable, Iterator, MutableMapping, MutableSequence, MutableSet, Self, Sequence
+from typing import Any, Iterable, Iterator, MutableMapping, MutableSequence, MutableSet, Self, Sequence, overload
 class object:
     def __init__(self) -> None: ...
     def __new__(cls) -> Self: ...
@@ -111,6 +111,14 @@ def issubclass(cls: type, class_or_tuple: _ClassInfo, /) -> bool: ...
 class staticmethod: pass
 class classmethod: pass
 class property: pass
+
+class super:
+    @overload
+    def __init__(self, t: Any, obj: Any, /) -> None: ...
+    @overload
+    def __init__(self, t: Any, /) -> None: ...
+    @overload
+    def __init__(self) -> None: ...
 "#;
 
 static TYPING: &str = r#"

@@ -13,6 +13,7 @@ mod callable;
 mod class_keywords;
 mod class_overrides;
 mod class_subtyping;
+mod class_super;
 mod config;
 mod constructors;
 mod contextual;
