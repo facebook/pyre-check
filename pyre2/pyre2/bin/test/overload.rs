@@ -75,3 +75,22 @@ def test(o: P):
     assert_type(o.m(1), int) # E: assert_type # E: EXPECTED Literal[1] <: str
     "#,
 );
+
+testcase_with_bug!(
+    "Overloaded bound methods are not called correctly",
+    test_method,
+    r#"
+from typing import assert_type, overload
+
+class C:
+    @overload
+    def m(self, x: int) -> int: ...
+    @overload
+    def m(self, x: str) -> str: ...
+    def m(self, x: int | str) -> int | str:
+        return x
+
+def test(o: C):
+    assert_type(o.m(1), int) # E: assert_type # E: No matching overload found
+    "#,
+);
