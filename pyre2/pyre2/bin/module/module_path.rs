@@ -76,20 +76,24 @@ impl Display for ModulePath {
 }
 
 impl ModulePath {
+    fn new(details: ModulePathDetails) -> Self {
+        Self(Arc::new(details))
+    }
+
     pub fn filesystem(path: PathBuf) -> Self {
-        Self(Arc::new(ModulePathDetails::FileSystem(path)))
+        Self::new(ModulePathDetails::FileSystem(path))
     }
 
     pub fn namespace(path: PathBuf) -> Self {
-        Self(Arc::new(ModulePathDetails::Namespace(path)))
+        Self::new(ModulePathDetails::Namespace(path))
     }
 
     pub fn memory(path: PathBuf) -> Self {
-        Self(Arc::new(ModulePathDetails::Memory(path)))
+        Self::new(ModulePathDetails::Memory(path))
     }
 
     pub fn bundled_typeshed(relative_path: PathBuf) -> Self {
-        Self(Arc::new(ModulePathDetails::BundledTypeshed(relative_path)))
+        Self::new(ModulePathDetails::BundledTypeshed(relative_path))
     }
 
     pub fn is_init(&self) -> bool {
