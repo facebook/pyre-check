@@ -3,7 +3,7 @@
   "pass": 13,
   "fail": 120,
   "pass_rate": 0.1,
-  "differences": 1002,
+  "differences": 1001,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_order.py",
@@ -109,7 +109,7 @@
     "narrowing_typeis.py": 31,
     "overloads_basic.py": 2,
     "protocols_class_objects.py": 7,
-    "protocols_definition.py": 7,
+    "protocols_definition.py": 6,
     "protocols_explicit.py": 6,
     "protocols_generic.py": 3,
     "protocols_merging.py": 1,

@@ -977,7 +977,6 @@
     "Line 216: Unexpected errors ['No matching overload found']",
     "Line 217: Unexpected errors ['Missing argument `val1`']",
     "Line 281: Unexpected errors ['EXPECTED Concrete5_Good2 <: Template5']",
-    "Line 284: Unexpected errors ['EXPECTED Concrete5_Good5 <: Template5']",
     "Line 338: Unexpected errors ['Missing argument `val1`']"
   ],
   "protocols_explicit.py": [

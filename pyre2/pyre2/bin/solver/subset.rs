@@ -240,6 +240,11 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             {
                 self.is_subset_eq_impl(&l_no_self, want)
             }
+            (Type::Callable(_, _), Type::BoundMethod(box method))
+                if let Some(u_no_self) = method.as_callable() =>
+            {
+                self.is_subset_eq_impl(got, &u_no_self)
+            }
             (Type::BoundMethod(box l), Type::BoundMethod(box u))
                 if let Some(l_no_self) = l.as_callable()
                     && let Some(u_no_self) = u.as_callable() =>

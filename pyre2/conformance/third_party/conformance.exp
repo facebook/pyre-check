@@ -12967,16 +12967,6 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED Concrete5_Good5 <: Template5",
-      "description": "EXPECTED Concrete5_Good5 <: Template5",
-      "line": 284,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 284
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "EXPECTED Concrete5_Bad1 <: Template5",
       "description": "EXPECTED Concrete5_Bad1 <: Template5",

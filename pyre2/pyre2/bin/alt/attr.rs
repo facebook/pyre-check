@@ -16,8 +16,6 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::callable::CallArg;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::error::collector::ErrorCollector;
-use crate::types::callable::Param;
-use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::module::Module;
@@ -25,7 +23,6 @@ use crate::types::quantified::Quantified;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
 use crate::types::types::AnyStyle;
-use crate::types::types::BoundMethod;
 use crate::types::types::Decoration;
 use crate::types::types::Type;
 
@@ -374,17 +371,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ) => {
                 is_subset(
                     // Synthesize a getter method
-                    &Type::BoundMethod(Box::new(BoundMethod {
-                        obj: Type::Any(AnyStyle::Implicit),
-                        func: Type::callable(
-                            vec![Param::Pos(
-                                Name::new("self"),
-                                Type::Any(AnyStyle::Implicit),
-                                Required::Required,
-                            )],
-                            got.clone(),
-                        ),
-                    })),
+                    &Type::callable_ellipsis(got.clone()),
                     want,
                 )
             }

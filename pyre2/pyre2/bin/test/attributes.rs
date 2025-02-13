@@ -68,11 +68,36 @@ class Y:
     def foo(self) -> int:
         return 1
 def func(x: X):
-    # ignore the below error
-    x.foo = lambda: "hi"  # E: EXPECTED () -> Literal['hi'] <: BoundMethod[X, (self: X) -> object]
+    x.foo = lambda: "hi"
 y: Y = Y()
 func(y)
 y.foo()  # result is "hi"
+    "#,
+);
+
+testcase!(
+    test_callable_boundmethod_subset,
+    r#"
+from typing import Callable
+
+class C:
+    def f(self, x: int, /) -> str:
+        return ""
+class C2:
+    @classmethod
+    def f(cls, x: int, /) -> str:
+        return ""
+class C3:
+    @staticmethod
+    def f(x: int, /) -> str:
+        return ""
+def foo(x: Callable[[int], str], c: C, c2: C2, c3: C3):
+    C.f = x  # E: EXPECTED (int) -> str <: (C, int) -> str
+    c.f = x
+    C2.f = x
+    c2.f = x
+    C3.f = x
+    c3.f = x
     "#,
 );
 
