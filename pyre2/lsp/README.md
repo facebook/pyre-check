@@ -26,6 +26,11 @@ and in `client`.
 - Switch to the Debug viewlet.
 - Select `Launch Client` from the drop down.
 - Run the launch config.
+- By default, stderr of the language server will appear in the output pane of
+  VSCode under "Pyre2 language server".
+- Add `"pyre2.trace.server": "verbose"` to the VSCode config. Then all the LSP
+  JSON requests and responses will be logged together with stderr of language
+  server in the output pane.
 
 ## Installing
 

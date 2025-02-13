@@ -59,6 +59,15 @@
                         "lsp"
                     ],
                     "description": "Additional arguments that should be passed to the binary at pyre2.lspPath"
+                },
+                "pyre2.trace.server": {
+                    "type": "string",
+                    "description": "Set to 'verbose' to enable LSP trace in the console",
+                    "default": "off",
+                    "enum": [
+                        "off",
+                        "verbose"
+                    ]
                 }
             }
         }
