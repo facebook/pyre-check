@@ -49,7 +49,7 @@ class Box[T]:
         if x:
             return Box(self, self)  # ok
         else:
-            return Box(self, 42)  # E: EXPECTED Literal[42] <: Box[?_]
+            return Box(self, 42)  # E: EXPECTED Literal[42] <: Box[?_TypeVar]
 b = Box[int]("hello", "world")
 assert_type(b, Box[int])
 assert_type(b.wrap(True), Box[Box[int]])

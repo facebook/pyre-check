@@ -87,7 +87,7 @@
     "Line 84: Expected 1 errors",
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
-    "Line 9: Unexpected errors ['Expected a tuple, got `?_`']",
+    "Line 9: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
     "Line 82: Unexpected errors ['untype, got list[type[int] | type[str]]']"
   ],
   "aliases_typealiastype.py": [
@@ -147,8 +147,8 @@
     "Line 187: Unexpected errors ['EXPECTED None <: int']"
   ],
   "annotations_methods.py": [
-    "Line 19: Unexpected errors ['Expected a callable, got type[?_]']",
-    "Line 23: Unexpected errors ['Expected a callable, got type[?_]']",
+    "Line 19: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
+    "Line 23: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
     "Line 31: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: type[@_]']",
     "Line 36: Unexpected errors ['assert_type(Any, B) failed', 'EXPECTED type[B] <: type[@_]']",
     "Line 48: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: type[@_]']",
@@ -240,8 +240,8 @@
     "Line 62: Unexpected errors ['EXPECTED object <: Class4', 'Expected 0 positional arguments, got 1']"
   ],
   "constructors_call_new.py": [
-    "Line 16: Unexpected errors ['EXPECTED object <: Class1[?_]', 'Expected 0 positional arguments, got 1']",
-    "Line 29: Unexpected errors ['EXPECTED object <: Class2[?_]', 'Expected 0 positional arguments, got 1']",
+    "Line 16: Unexpected errors ['EXPECTED object <: Class1[?_TypeVar]', 'Expected 0 positional arguments, got 1']",
+    "Line 29: Unexpected errors ['EXPECTED object <: Class2[?_TypeVar]', 'Expected 0 positional arguments, got 1']",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', 'Missing argument `x`']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', 'Missing argument `x`']",
     "Line 98: Unexpected errors ['Expected 0 positional arguments, got 1', 'Expected argument after ** to be a mapping, got: Unknown']",
@@ -250,10 +250,10 @@
   "constructors_call_type.py": [
     "Line 25: Unexpected errors ['EXPECTED object <: Class1', 'Expected argument after ** to be a mapping, got: Unknown']",
     "Line 35: Unexpected errors ['EXPECTED object <: Class2', 'Expected 0 positional arguments, got 1']",
-    "Line 63: Unexpected errors ['Expected a callable, got type[?_]']",
-    "Line 71: Unexpected errors ['Expected a callable, got type[?_]']",
-    "Line 79: Unexpected errors ['Expected a callable, got type[?_]']",
-    "Line 80: Unexpected errors ['Expected a callable, got type[?_]']"
+    "Line 63: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
+    "Line 71: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
+    "Line 79: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
+    "Line 80: Unexpected errors ['Expected a callable, got type[?_TypeVar]']"
   ],
   "constructors_callable.py": [
     "Line 35: Unexpected errors ['EXPECTED type[Class1] <: (ParamSpec(@_)) -> @_']",
@@ -284,7 +284,7 @@
     "Line 161: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 164: Unexpected errors ['assert_type(Any, Class7[int]) failed', 'Unexpected ParamSpec type']",
     "Line 165: Unexpected errors ['assert_type(Any, Class7[str]) failed', 'Unexpected ParamSpec type']",
-    "Line 178: Unexpected errors ['EXPECTED object <: Class8[?_]', 'Expected 0 positional arguments, got 1']",
+    "Line 178: Unexpected errors ['EXPECTED object <: Class8[?_TypeVar]', 'Expected 0 positional arguments, got 1']",
     "Line 181: Unexpected errors ['EXPECTED type[Class8] <: (ParamSpec(@_)) -> @_']",
     "Line 182: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 183: Unexpected errors ['assert_type(Any, Class8[str]) failed', 'Unexpected ParamSpec type']",
@@ -489,7 +489,7 @@
     "Line 55: Expected 1 errors",
     "Line 121: Expected 1 errors",
     "Line 191: Expected 1 errors",
-    "Line 34: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access __add__)']",
+    "Line 34: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access __add__)']",
     "Line 67: Unexpected errors ['assert_type(MyStr, str) failed']",
     "Line 68: Unexpected errors ['assert_type(MyStr, str) failed', 'EXPECTED str <: MyStr']"
   ],
@@ -630,10 +630,10 @@
     "Line 46: Expected 1 errors",
     "Line 62: Expected 1 errors",
     "Line 66: Expected 1 errors",
-    "Line 14: Unexpected errors ['assert_type(type[?_], TypeVar) failed']",
-    "Line 15: Unexpected errors ['assert_type(type[?_], TypeVarTuple) failed']",
-    "Line 16: Unexpected errors ['assert_type(type[?_], ParamSpec) failed']",
-    "Line 33: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access capitalize)']"
+    "Line 14: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']",
+    "Line 15: Unexpected errors ['assert_type(type[?_TypeVarTuple], TypeVarTuple) failed']",
+    "Line 16: Unexpected errors ['assert_type(type[?_ParamSpec], ParamSpec) failed']",
+    "Line 33: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access capitalize)']"
   ],
   "generics_syntax_infer_variance.py": [
     "Line 28: Unexpected errors ['EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]']",
@@ -653,7 +653,7 @@
     "Line 61: Unexpected errors ['TODO: StmtNonlocal - Bindings::stmt']",
     "Line 66: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']",
     "Line 67: Unexpected errors ['assert_type(str, int) failed']",
-    "Line 116: Unexpected errors ['assert_type(type[?_], TypeVar) failed']"
+    "Line 116: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']"
   ],
   "generics_type_erasure.py": [
     "Line 56: Unexpected errors ['assert_type(Any, bytes) failed']"
@@ -663,16 +663,16 @@
     "Line 34: Expected 1 errors",
     "Line 75: Expected 1 errors",
     "Line 76: Expected 1 errors",
-    "Line 16: Unexpected errors ['Expected a tuple, got `?_`']",
+    "Line 16: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
     "Line 20: Unexpected errors ['assert_type(Any, tuple[int, str]) failed', \"EXPECTED Literal['a'] <: int\"]",
-    "Line 27: Unexpected errors ['Expected a tuple, got `?_`', 'Expected a tuple, got `?_`']",
+    "Line 27: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`', 'Expected a tuple, got `?_TypeVarTuple`']",
     "Line 31: Unexpected errors ['assert_type(Any, tuple[()]) failed']",
     "Line 32: Unexpected errors ['assert_type(Any, tuple[int, str]) failed']",
     "Line 47: Unexpected errors ['EXPECTED Literal[1] <: tuple[int, ...]', 'EXPECTED Literal[2] <: tuple[int, ...]', 'EXPECTED Literal[3] <: tuple[int, ...]', 'EXPECTED Literal[4] <: tuple[int, ...]', 'EXPECTED Literal[5] <: tuple[int, ...]']",
     "Line 55: Unexpected errors ['EXPECTED Literal[1] <: tuple[int, *str, str]', \"EXPECTED Literal[''] <: tuple[int, *str, str]\"]",
     "Line 56: Unexpected errors ['EXPECTED Literal[1] <: tuple[int, *str, str]', \"EXPECTED Literal[''] <: tuple[int, *str, str]\", \"EXPECTED Literal[''] <: tuple[int, *str, str]\", \"EXPECTED Literal[''] <: tuple[int, *str, str]\", \"EXPECTED Literal[''] <: tuple[int, *str, str]\"]",
     "Line 66: Unexpected errors ['EXPECTED Literal[1] <: tuple[int, str]', \"EXPECTED Literal['hello'] <: tuple[int, str]\"]",
-    "Line 70: Unexpected errors ['Expected a tuple, got `?_`']"
+    "Line 70: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']"
   ],
   "generics_typevartuple_basic.py": [
     "Line 52: Expected 1 errors",
@@ -683,25 +683,25 @@
     "Line 90: Expected 1 errors",
     "Line 99: Expected 1 errors",
     "Line 100: Expected 1 errors",
-    "Line 16: Unexpected errors ['Expected a tuple, got `?_`']",
-    "Line 24: Unexpected errors ['Expected a tuple, got `?_`']",
-    "Line 25: Unexpected errors ['Expected a tuple, got `?_`']",
-    "Line 27: Unexpected errors ['Expected a tuple, got `?_`']",
+    "Line 16: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
+    "Line 24: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
+    "Line 25: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
+    "Line 27: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
     "Line 36: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'untype, got NewType', 'untype, got NewType']",
     "Line 37: Unexpected errors ['Expected 1 type argument for class `Array`, got 3.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
     "Line 38: Unexpected errors ['Expected 1 type argument for class `Array`, got 4.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
-    "Line 54: Unexpected errors ['Expected a tuple, got `?_`']",
-    "Line 75: Unexpected errors ['Expected a tuple, got `?_`', 'Expected a tuple, got `?_`', 'Expected a tuple, got `?_`']",
+    "Line 54: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
+    "Line 75: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`', 'Expected a tuple, got `?_TypeVarTuple`', 'Expected a tuple, got `?_TypeVarTuple`']",
     "Line 84: Unexpected errors ['assert_type(Any, tuple[int]) failed']",
     "Line 97: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'Expected 1 type argument for class `Array`, got 2.', 'untype, got NewType', 'untype, got NewType']"
   ],
   "generics_typevartuple_callable.py": [
-    "Line 17: Unexpected errors ['Expected a tuple, got `?_`']",
+    "Line 17: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
     "Line 25: Unexpected errors ['EXPECTED (arg1: int, arg2: str) -> None <: (int) -> None']",
-    "Line 29: Unexpected errors ['Expected a tuple, got `?_`', 'Expected a tuple, got `?_`']",
+    "Line 29: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`', 'Expected a tuple, got `?_TypeVarTuple`']",
     "Line 41: Unexpected errors ['assert_type(Any, tuple[str, int, complex]) failed', 'EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (int, str, int) -> Error']",
     "Line 42: Unexpected errors ['assert_type(Any, tuple[str]) failed', 'EXPECTED (a: int, d: str) -> tuple[str] <: (int, str, @_) -> Error']",
-    "Line 45: Unexpected errors ['Expected a tuple, got `?_`', 'Expected a tuple, got `?_`']",
+    "Line 45: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`', 'Expected a tuple, got `?_TypeVarTuple`']",
     "Line 49: Unexpected errors ['assert_type(Any, tuple[float, str, complex]) failed']"
   ],
   "generics_typevartuple_concat.py": [
@@ -712,16 +712,16 @@
     "Line 40: Unexpected errors ['Expected 1 type argument for class `Array`, got 3.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
     "Line 42: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'untype, got NewType', 'untype, got NewType']",
     "Line 44: Unexpected errors ['Expected 1 type argument for class `Array`, got 4.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
-    "Line 47: Unexpected errors ['Expected a tuple, got `?_`', 'Expected a tuple, got `?_`']",
+    "Line 47: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`', 'Expected a tuple, got `?_TypeVarTuple`']",
     "Line 52: Unexpected errors ['assert_type(Any, tuple[int, bool, str]) failed']",
-    "Line 55: Unexpected errors ['Expected a tuple, got `?_`', 'Expected a tuple, got `?_`']"
+    "Line 55: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`', 'Expected a tuple, got `?_TypeVarTuple`']"
   ],
   "generics_typevartuple_overloads.py": [
     "Line 18: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'Expected 1 type argument for class `Array`, got 2.']",
     "Line 22: Unexpected errors ['Expected 1 type argument for class `Array`, got 3.', 'Expected 1 type argument for class `Array`, got 3.']",
     "Line 29: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'Expected 1 type argument for class `Array`, got 3.']",
-    "Line 30: Unexpected errors ['assert_type(Any, Array[?_]) failed', 'No matching overload found', 'Expected 1 type argument for class `Array`, got 2.']",
-    "Line 31: Unexpected errors ['assert_type(Any, Array[?_]) failed', 'No matching overload found', 'Expected 1 type argument for class `Array`, got 3.']"
+    "Line 30: Unexpected errors ['assert_type(Any, Array[?_TypeVar]) failed', 'No matching overload found', 'Expected 1 type argument for class `Array`, got 2.']",
+    "Line 31: Unexpected errors ['assert_type(Any, Array[?_TypeVar]) failed', 'No matching overload found', 'Expected 1 type argument for class `Array`, got 3.']"
   ],
   "generics_typevartuple_specialization.py": [
     "Line 127: Expected 1 errors",
@@ -749,12 +749,12 @@
     "Line 118: Unexpected errors ['Expected a tuple, got `TypeVarTuple[Ts]`']",
     "Line 119: Unexpected errors ['Expected a tuple, got `TypeVarTuple[Ts]`']",
     "Line 125: Unexpected errors ['Expected a tuple, got `TypeVarTuple[Ts]`']",
-    "Line 130: Unexpected errors ['Expected a tuple, got `?_`']",
+    "Line 130: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
     "Line 135: Unexpected errors ['assert_type(tuple[Any, Any, Any], tuple[tuple[()], str, bool]) failed']",
     "Line 136: Unexpected errors ['assert_type(tuple[Any, Any, Any], tuple[tuple[str], bool, float]) failed']",
     "Line 137: Unexpected errors ['assert_type(tuple[Any, Any, Any], tuple[tuple[str, bool], float, int]) failed']",
     "Line 140: Unexpected errors ['Expected a tuple, got `TypeVarTuple[Ts]`']",
-    "Line 143: Unexpected errors ['Expected a tuple, got `?_`']",
+    "Line 143: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
     "Line 148: Unexpected errors ['assert_type(tuple[Any, Any, Any, Any], tuple[tuple[()], str, bool, float]) failed']",
     "Line 149: Unexpected errors ['assert_type(tuple[Any, Any, Any, Any], tuple[tuple[bool], str, float, int]) failed']",
     "Line 152: Unexpected errors ['Expected a tuple, got `TypeVarTuple[Ts]`']",
@@ -773,7 +773,7 @@
   "generics_upper_bound.py": [
     "Line 24: Expected 1 errors",
     "Line 51: Expected 1 errors",
-    "Line 31: Unexpected errors ['EXPECTED ?_ <: Sized', 'EXPECTED ?_ <: Sized']"
+    "Line 31: Unexpected errors ['EXPECTED ?_TypeVar <: Sized', 'EXPECTED ?_TypeVar <: Sized']"
   ],
   "generics_variance.py": [
     "Line 77: Expected 1 errors",
@@ -879,10 +879,10 @@
   "narrowing_typeguard.py": [
     "Line 102: Expected 1 errors",
     "Line 107: Expected 1 errors",
-    "Line 17: Unexpected errors ['assert_type(tuple[?_, ?_], tuple[str, str]) failed']",
+    "Line 17: Unexpected errors ['assert_type(tuple[?_TypeVar, ?_TypeVar], tuple[str, str]) failed']",
     "Line 23: Unexpected errors ['EXPECTED list[object] <: Sized']",
     "Line 31: Unexpected errors ['EXPECTED type[int] <: type[@_]']",
-    "Line 32: Unexpected errors ['assert_type(set[?_], set[int]) failed']",
+    "Line 32: Unexpected errors ['assert_type(set[?_TypeVar], set[int]) failed']",
     "Line 72: Unexpected errors ['EXPECTED type[A] <: A']",
     "Line 76: Unexpected errors ['EXPECTED type[A] <: A']",
     "Line 89: Unexpected errors ['assert_type(A, B) failed']",
@@ -893,7 +893,7 @@
     "Line 110: Expected 1 errors",
     "Line 195: Expected 1 errors",
     "Line 199: Expected 1 errors",
-    "Line 15: Unexpected errors ['EXPECTED bool <: TypeIs[tuple[?_, ?_]]']",
+    "Line 15: Unexpected errors ['EXPECTED bool <: TypeIs[tuple[?_TypeVar, ?_TypeVar]]']",
     "Line 19: Unexpected errors ['assert_type(tuple[str, ...], tuple[str, str]) failed']",
     "Line 28: Unexpected errors ['EXPECTED bool <: TypeIs[Awaitable[Any]]']",
     "Line 35: Unexpected errors ['Expression is not awaitable']",
@@ -902,7 +902,7 @@
     "Line 49: Unexpected errors ['EXPECTED bool <: TypeIs[int]']",
     "Line 53: Unexpected errors ['EXPECTED bool <: TypeIs[int]']",
     "Line 56: Unexpected errors ['EXPECTED bool <: TypeIs[A]']",
-    "Line 59: Unexpected errors ['EXPECTED bool <: TypeIs[?_]']",
+    "Line 59: Unexpected errors ['EXPECTED bool <: TypeIs[?_TypeVar]']",
     "Line 72: Unexpected errors ['assert_type(object, int) failed']",
     "Line 75: Unexpected errors ['EXPECTED type[A] <: A']",
     "Line 76: Unexpected errors ['assert_type(object, int) failed']",
@@ -951,7 +951,7 @@
     "Line 165: Expected 1 errors"
   ],
   "protocols_generic.py": [
-    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_ (trying to access get_parent)']",
+    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access get_parent)']",
     "Line 144: Unexpected errors ['EXPECTED ConcreteHasProperty1 <: HasPropertyProto']",
     "Line 145: Unexpected errors ['EXPECTED ConcreteHasProperty2 <: HasPropertyProto']"
   ],
@@ -1007,7 +1007,7 @@
     "Line 92: Expected 1 errors",
     "Line 93: Expected 1 errors",
     "Line 36: Unexpected errors ['Invalid literal expression']",
-    "Line 81: Unexpected errors ['Expected a callable, got type[?_]']",
+    "Line 81: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
     "Line 98: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[int]`']",
     "Line 100: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Final[int]`']",
     "Line 110: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[int]`']",
@@ -1067,7 +1067,7 @@
   "specialtypes_promotions.py": [],
   "specialtypes_type.py": [
     "Line 70: Expected 1 errors",
-    "Line 39: Unexpected errors ['Expected a callable, got type[?_]']",
+    "Line 39: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
     "Line 44: Unexpected errors ['assert_type(Any, TeamUser) failed', 'EXPECTED type[TeamUser] <: type[@_]']",
     "Line 51: Unexpected errors ['Expected a callable, got type[BasicUser | ProUser]']",
     "Line 54: Unexpected errors ['EXPECTED type[BasicUser] <: type[BasicUser | ProUser]']",
@@ -1092,7 +1092,7 @@
     "Line 166: Unexpected errors ['EXPECTED type <: (int, int) -> int']",
     "Line 169: Unexpected errors ['EXPECTED type <: type[int]']",
     "Line 170: Unexpected errors ['EXPECTED type <: type[Any]']",
-    "Line 175: Unexpected errors ['EXPECTED type <: type[?_]']"
+    "Line 175: Unexpected errors ['EXPECTED type <: type[?_TypeVar]']"
   ],
   "tuples_type_compat.py": [
     "Line 29: Expected 1 errors",
@@ -1117,8 +1117,8 @@
   "tuples_unpacked.py": [
     "Line 59: Expected 1 errors",
     "Lines 60, 61: Expected error (tag 't14')",
-    "Line 49: Unexpected errors ['Expected a tuple, got `?_`']",
-    "Line 50: Unexpected errors ['Expected a tuple, got `?_`']"
+    "Line 49: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']",
+    "Line 50: Unexpected errors ['Expected a tuple, got `?_TypeVarTuple`']"
   ],
   "typeddicts_alt_syntax.py": [
     "Line 45: Expected 1 errors",

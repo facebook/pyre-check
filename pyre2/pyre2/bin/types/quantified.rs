@@ -13,6 +13,7 @@ use parse_display::Display;
 use crate::types::callable::ParamList;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
+use crate::types::tuple::Tuple;
 use crate::types::types::Type;
 use crate::util::uniques::Unique;
 use crate::util::uniques::UniqueFactory;
@@ -36,14 +37,20 @@ impl QuantifiedKind {
         match self {
             QuantifiedKind::TypeVar => Type::any_implicit(),
             QuantifiedKind::ParamSpec => Type::ParamSpecValue(ParamList::everything()),
-            QuantifiedKind::TypeVarTuple => Type::any_implicit(), // TODO
+            QuantifiedKind::TypeVarTuple => {
+                Type::Tuple(Tuple::Unbounded(Box::new(Type::any_implicit())))
+            }
         }
     }
 }
 
 impl Display for Quantified {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "?_")
+        match self.kind {
+            QuantifiedKind::TypeVar => write!(f, "?_TypeVar"),
+            QuantifiedKind::ParamSpec => write!(f, "?_ParamSpec"),
+            QuantifiedKind::TypeVarTuple => write!(f, "?_TypeVarTuple"),
+        }
     }
 }
 
