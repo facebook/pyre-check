@@ -10,6 +10,8 @@
 use std::path::Path;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
+use std::time::Duration;
+use std::time::Instant;
 
 use notify::recommended_watcher;
 use notify::Event;
@@ -37,7 +39,17 @@ impl Watcher {
         Ok(self.watcher.unwatch(path)?)
     }
 
-    pub fn wait(&mut self) -> anyhow::Result<Event> {
-        Ok(self.receiver.recv()??)
+    pub fn wait(&mut self) -> anyhow::Result<Vec<Event>> {
+        let mut res = Vec::new();
+        res.push(self.receiver.recv()??);
+        // Wait up to 0.1s to buffer up events
+        let end = Instant::now() + Duration::from_secs_f32(0.1);
+        while let Some(remaining) = end.checked_duration_since(Instant::now()) {
+            match self.receiver.recv_timeout(remaining) {
+                Ok(event) => res.push(event?),
+                Err(_) => break,
+            }
+        }
+        Ok(res)
     }
 }
