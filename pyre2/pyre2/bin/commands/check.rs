@@ -13,6 +13,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::str::FromStr;
+use std::thread;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -67,6 +68,9 @@ pub struct Args {
     /// Check all reachable modules, not just the ones that are passed in explicitly on CLI positional arguments.
     #[clap(long, short = 'a')]
     check_all: bool,
+    /// Watch for file changes and re-check them.
+    #[clap(long)]
+    watch: bool,
     /// Produce debugging information about the type checking process.
     #[clap(long)]
     debug_info: Option<PathBuf>,
@@ -144,6 +148,24 @@ impl OutputFormat {
 
 impl Args {
     pub fn run(self, allow_forget: bool) -> anyhow::Result<ExitCode> {
+        if self.watch {
+            self.run_watch()
+        } else {
+            self.run_inner(allow_forget)
+        }
+    }
+
+    fn run_watch(self) -> ! {
+        loop {
+            let res = self.clone().run_inner(false);
+            if let Err(e) = res {
+                eprintln!("{e:#}");
+            }
+            thread::sleep(Duration::from_secs(1));
+        }
+    }
+
+    fn run_inner(self, allow_forget: bool) -> anyhow::Result<ExitCode> {
         let args = self;
         let include = args.include;
 
