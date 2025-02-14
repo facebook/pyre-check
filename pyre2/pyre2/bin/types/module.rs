@@ -71,15 +71,6 @@ impl Module {
         }
     }
 
-    pub fn as_single_module(&self) -> Option<ModuleName> {
-        let module = ModuleName::from_string(self.path.join("."));
-        if self.modules.contains(&module) {
-            Some(module)
-        } else {
-            None
-        }
-    }
-
     pub fn path(&self) -> &[Name] {
         &self.path
     }

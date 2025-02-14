@@ -311,8 +311,7 @@ from foo import baz  # E: Could not import `baz` from `foo`
 "#,
 );
 
-testcase_with_bug!(
-    "TODO: foo.bar.x should exist and should be an int",
+testcase!(
     test_import_dunder_init_and_submodule,
     env_dunder_init_with_submodule(),
     r#"
@@ -320,30 +319,31 @@ from typing import assert_type
 import foo
 import foo.bar
 assert_type(foo.x, str)
-foo.bar.x # TODO # E: No attribute `bar` in module `foo`
+assert_type(foo.bar.x, int)
 "#,
 );
 
-testcase!(
+testcase_with_bug!(
+    "Attribute access on a module is not yet failable",
     test_import_dunder_init_without_submodule,
     env_dunder_init_with_submodule(),
     r#"
 from typing import assert_type
 import foo
 assert_type(foo.x, str)
-foo.bar.x # E: No attribute `bar` in module `foo`
+foo.bar.x # This should fail
 "#,
 );
 
 testcase_with_bug!(
-    "TODO: `foo.x` should be an error. The assert_type(foo.x) call should fail, but the error message is not great",
+    "TODO: `foo.x` should be an error. The assert_type(foo.x) call should fail",
     test_import_dunder_init_submodule_only,
     env_dunder_init_with_submodule(),
     r#"
 from typing import assert_type
 import foo.bar
-foo.x
-assert_type(foo.x, str) # E: assert_type(Module[foo.x], str) failed
+foo.x  # Should error
+assert_type(foo.x, str)  # Should error
 assert_type(foo.bar.x, int)
 "#,
 );
@@ -395,14 +395,15 @@ foo.bar.x # E: Object of class `str` has no attribute `x`
 "#,
 );
 
-testcase!(
+testcase_with_bug!(
+    "`foo.bar` is explicitly imported as module so it should be treated as a module.",
     test_import_dunder_init_overlap_submodule_only,
     env_dunder_init_overlap_submodule(),
     r#"
 from typing import assert_type
 import foo.bar
-assert_type(foo.bar, str) # E: assert_type(Module[foo.bar], str) failed
-assert_type(foo.bar.x, int)
+assert_type(foo.bar, str) # This should fail: foo.bar is a module, not a str
+foo.bar.x # This should not fail. The type is `int`. # E: Object of class `str` has no attribute `x`
 "#,
 );
 
@@ -449,13 +450,13 @@ fn env_blank() -> TestEnv {
     TestEnv::one("foo", "")
 }
 
-testcase!(
+testcase_with_bug!(
+    "Attribute access on a module is not yet failable",
     test_import_blank,
     env_blank(),
     r#"
 import foo
-
-x = foo.bar  # E: No attribute `bar` in module `foo`
+x = foo.bar  # Should be an error
 "#,
 );
 

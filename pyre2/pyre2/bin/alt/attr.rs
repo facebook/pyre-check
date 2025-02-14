@@ -16,6 +16,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::callable::CallArg;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::error::collector::ErrorCollector;
+use crate::module::module_name::ModuleName;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::module::Module;
@@ -513,13 +514,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn get_module_attr(&self, module: &Module, attr_name: &Name) -> Option<Type> {
-        match module.as_single_module() {
-            Some(module_name) => self.get_import(attr_name, module_name),
-            None => {
-                // TODO: This is fallable, but we don't detect it yet.
-                Some(module.push_path(attr_name.clone()).to_type())
-            }
-        }
+        let module_name = ModuleName::from_string(module.path().join("."));
+        self.get_import(attr_name, module_name).or(
+            // TODO: This is failable, but we don't detect it yet.
+            Some(module.push_path(attr_name.clone()).to_type()),
+        )
     }
 
     fn as_attribute_base(&self, ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
