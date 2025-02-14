@@ -20,13 +20,17 @@ x: X = X()
 }
 
 fn env_class_x_deeper() -> TestEnv {
-    TestEnv::one(
+    let mut t = TestEnv::new();
+    t.add_with_path("foo", "", "foo/__init__.pyi");
+    t.add_with_path(
         "foo.bar",
         r#"
 class X: ...
 x: X = X()
 "#,
-    )
+        "foo/bar.pyi",
+    );
+    t
 }
 
 testcase!(
@@ -105,8 +109,10 @@ y: X = x  # E: foo.X <: main.X
 
 fn env_imports_dot() -> TestEnv {
     let mut t = TestEnv::new();
-    t.add("foo.bar.baz", "from .qux import x");
-    t.add("foo.bar.qux", "x: int = 1");
+    t.add_with_path("foo", "", "foo/__init__.pyi");
+    t.add_with_path("foo.bar", "", "foo/bar/__init__.pyi");
+    t.add_with_path("foo.bar.baz", "from .qux import x", "foo/bar/baz.pyi");
+    t.add_with_path("foo.bar.qux", "x: int = 1", "foo/bar/qux.pyi");
     t
 }
 
@@ -177,8 +183,9 @@ assert_type(_y, Any)  # E: Could not find name `_y`
 
 fn env_import_different_submodules() -> TestEnv {
     let mut t = TestEnv::new();
-    t.add("foo.bar", "x: int = 1");
-    t.add("foo.baz", "x: str = 'a'");
+    t.add_with_path("foo", "", "foo/__init__.pyi");
+    t.add_with_path("foo.bar", "x: int = 1", "foo/bar.pyi");
+    t.add_with_path("foo.baz", "x: str = 'a'", "foo/baz.pyi");
     t
 }
 
@@ -248,13 +255,14 @@ z = y  # E: Could not find name `y`
 
 fn env_broken_export() -> TestEnv {
     let mut t = TestEnv::new();
-    t.add("foo", "from foo.bar import *");
-    t.add(
+    t.add_with_path("foo", "from foo.bar import *", "foo/__init__.pyi");
+    t.add_with_path(
         "foo.bar",
         r#"
 from foo import baz  # E: Could not import `baz` from `foo`
 __all__ = []
 "#,
+        "foo/bar.pyi",
     );
     t
 }
