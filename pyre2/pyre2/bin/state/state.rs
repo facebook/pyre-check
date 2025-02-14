@@ -379,11 +379,21 @@ impl State {
     }
 
     fn get_cached_loader(&self, loader: &LoaderId) -> Arc<LoaderFindCache<LoaderId>> {
+        if self.loaders.len() == 1 {
+            // Since we know our one must exist, we can shortcut
+            return self.loaders.first().unwrap().1.dupe();
+        }
+
         // Safe because we always fill these in before starting
         self.loaders.get(loader).unwrap().dupe()
     }
 
     fn get_stdlib(&self, handle: &Handle) -> Arc<Stdlib> {
+        if self.stdlib.len() == 1 {
+            // Since we know our one must exist, we can shortcut
+            return self.stdlib.first().unwrap().1.dupe();
+        }
+
         // Safe because we always run compute_stdlib first
         self.stdlib
             .get(&(handle.config().dupe(), handle.loader().dupe()))
