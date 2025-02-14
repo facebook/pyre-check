@@ -14,6 +14,7 @@ use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprSlice;
+use ruff_python_ast::ExprStarred;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Number;
 use ruff_python_ast::Operator;
@@ -916,7 +917,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ),
                 }
             }
-            Expr::Starred(_) => self.todo(errors, "Answers::expr_infer", x),
+            Expr::Starred(ExprStarred { value: box x, .. }) => {
+                let ty = self.expr_untype(x, errors);
+                Type::Unpack(Box::new(ty))
+            }
             Expr::Name(x) => match x.id.as_str() {
                 "" => Type::any_error(), // Must already have a parse error
                 "Any" => Type::type_form(Type::any_explicit()),

@@ -1469,6 +1469,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Ellipsis => Some(Type::Ellipsis), // A bit weird because of tuples, so just promote it
             Type::Any(style) => Some(style.propagate()),
             Type::TypeAlias(ta) => self.untype_opt(ta.as_type(), range),
+            Type::Unpack(box t) => Some(t),
             _ => None,
         }
     }
