@@ -32,13 +32,13 @@ pub struct Class(ArcId<ClassInner>);
 
 /// Simple properties of class fields that can be attached to the class definition. Note that this
 /// does not include the type of a field, which needs to be computed lazily to avoid a recursive loop.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct ClassFieldProperties {
     pub is_annotated: bool,
     pub range: Option<TextRange>,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone)]
 struct ClassInner {
     qname: QName,
     tparams: TParams,
@@ -75,6 +75,14 @@ impl ClassKind {
         }
     }
 }
+
+impl PartialEq for ClassInner {
+    fn eq(&self, other: &Self) -> bool {
+        self.qname == other.qname
+    }
+}
+
+impl Eq for ClassInner {}
 
 impl PartialOrd for ClassInner {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
