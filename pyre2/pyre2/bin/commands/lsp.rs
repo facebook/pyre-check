@@ -282,6 +282,17 @@ impl<'a> Server<'a> {
             })
             .collect::<Vec<_>>();
 
+        self.state.lock().unwrap().invalidate_load(
+            self.loader.dupe(),
+            &self
+                .open_files
+                .lock()
+                .unwrap()
+                .keys()
+                .cloned()
+                .collect::<Vec<_>>(),
+        );
+
         self.state.lock().unwrap().run(handles);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.lock().unwrap().keys() {

@@ -10,6 +10,7 @@
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use dupe::Dupe;
 
@@ -112,4 +113,46 @@ fn test_multiple_path() {
     state.print_errors();
     state.check_against_expectations().unwrap();
     assert_eq!(state.collect_errors().len(), 3);
+}
+
+#[test]
+fn test_in_memory_updated_content_recheck() {
+    #[derive(Debug)]
+    struct Load(Arc<Mutex<TestEnv>>);
+
+    impl Loader for Load {
+        fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+            self.0.lock().unwrap().find(module)
+        }
+
+        fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
+            self.0.lock().unwrap().load_from_memory(path)
+        }
+    }
+
+    let test_env = {
+        let mut test_env = TestEnv::new();
+        test_env.add("main", "unbound_name");
+        Arc::new(Mutex::new(test_env))
+    };
+    let load = Load(test_env.dupe());
+    let loader = LoaderId::new(load);
+
+    let mut state = State::new(true);
+    state.run(vec![Handle::new(
+        ModuleName::from_str("main"),
+        ModulePath::memory(PathBuf::from("main.py")),
+        TestEnv::config(),
+        loader.dupe(),
+    )]);
+    assert_eq!(state.collect_errors().len(), 1);
+    test_env.lock().unwrap().add("main", "bound_name = 3");
+    state.invalidate_load(loader.dupe(), &[PathBuf::from("main.py")]);
+    state.run(vec![Handle::new(
+        ModuleName::from_str("main"),
+        ModulePath::memory(PathBuf::from("main.py")),
+        TestEnv::config(),
+        loader.dupe(),
+    )]);
+    assert_eq!(state.collect_errors().len(), 0);
 }
