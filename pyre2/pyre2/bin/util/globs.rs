@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::path;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -12,12 +13,30 @@ use anyhow::Context;
 use starlark_map::small_set::SmallSet;
 
 use crate::util::fs_anyhow;
+use crate::util::prelude::SliceExt;
 
 pub struct Globs(Vec<String>);
 
 impl Globs {
     pub fn new(patterns: Vec<String>) -> Self {
         Self(patterns)
+    }
+
+    /// Given a glob pattern, return the directories that can contain files that match the pattern.
+    pub fn roots(&self) -> Vec<PathBuf> {
+        self.0.map(|pattern| {
+            let mut path = PathBuf::new();
+            for component in pattern.split(path::is_separator) {
+                if component.contains('*') {
+                    break;
+                }
+                path.push(component);
+            }
+            if path.extension().is_some() {
+                path.pop();
+            }
+            path
+        })
     }
 
     pub fn resolve(&self) -> anyhow::Result<Vec<PathBuf>> {
@@ -61,5 +80,29 @@ impl Globs {
             }
         }
         Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::*;
+
+    #[test]
+    fn test_roots() {
+        fn f(pattern: &str, root: &str) {
+            let globs = Globs::new(vec![pattern.to_owned()]);
+            assert_eq!(globs.roots(), vec![PathBuf::from(root)]);
+        }
+
+        f("project/**/files", "project");
+        f("**/files", "");
+        f("pattern", "pattern");
+        f("pattern.txt", "");
+        f("a/b", "a/b");
+        f("a/b/c.txt", "a/b");
+        f("a/b*/c", "a");
+        f("a/b/*.txt", "a/b");
     }
 }

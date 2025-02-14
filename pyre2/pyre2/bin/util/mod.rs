@@ -21,4 +21,5 @@ pub mod prelude;
 pub mod recurser;
 pub mod trace;
 pub mod uniques;
+pub mod watcher;
 pub mod with_hash;

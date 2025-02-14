@@ -13,7 +13,6 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::str::FromStr;
-use std::thread;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -47,6 +46,7 @@ use crate::util::fs_anyhow;
 use crate::util::globs::Globs;
 use crate::util::memory::MemoryUsageTrace;
 use crate::util::prelude::VecExt;
+use crate::util::watcher::Watcher;
 
 #[derive(Debug, Clone, ValueEnum, Default)]
 enum OutputFormat {
@@ -149,19 +149,24 @@ impl OutputFormat {
 impl Args {
     pub fn run(self, allow_forget: bool) -> anyhow::Result<ExitCode> {
         if self.watch {
-            self.run_watch()
+            self.run_watch()?;
+            Ok(ExitCode::SUCCESS)
         } else {
             self.run_inner(allow_forget)
         }
     }
 
-    fn run_watch(self) -> ! {
+    fn run_watch(self) -> anyhow::Result<()> {
+        let mut watch = Watcher::new()?;
+        for path in Globs::new(self.files.clone()).roots() {
+            watch.watch_dir(&path)?;
+        }
         loop {
             let res = self.clone().run_inner(false);
             if let Err(e) = res {
                 eprintln!("{e:#}");
             }
-            thread::sleep(Duration::from_secs(1));
+            watch.wait()?;
         }
     }
 
