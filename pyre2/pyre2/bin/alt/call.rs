@@ -366,7 +366,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     if let Some(call_target) = call_target {
                         let call_errors = ErrorCollector::new(ErrorStyle::Delayed);
                         let res = self.call_infer(call_target, args, keywords, range, &call_errors);
-                        if call_errors.len() == 0 {
+                        if call_errors.is_empty() {
                             return res;
                         }
                     }

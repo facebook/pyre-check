@@ -42,6 +42,11 @@ impl ModuleErrors {
         self.items.dedup();
     }
 
+    fn is_empty(&self) -> bool {
+        // No need to do cleanup if it's empty.
+        self.items.is_empty()
+    }
+
     fn len(&mut self) -> usize {
         self.cleanup();
         self.items.len()
@@ -97,6 +102,10 @@ impl ErrorCollector {
             msg,
             is_ignored,
         ));
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.errors.lock().unwrap().is_empty()
     }
 
     pub fn len(&self) -> usize {
