@@ -300,12 +300,11 @@
     "Line 22: Unexpected errors ['EXPECTED object <: Class1', 'Expected 0 positional arguments, got 1']"
   ],
   "dataclasses_descriptors.py": [
-    "Line 35: Unexpected errors ['Expected 0 positional arguments, got 1']",
+    "Line 35: Unexpected errors ['EXPECTED Literal[3] <: Desc1']",
     "Line 37: Unexpected errors ['assert_type(Desc1, int) failed']",
     "Line 61: Unexpected errors ['assert_type(Any, list[int]) failed', 'Instance-only attribute `x` of class `DC2` is not visible on the class']",
     "Line 62: Unexpected errors ['assert_type(Any, list[str]) failed', 'Instance-only attribute `y` of class `DC2` is not visible on the class']",
     "Line 63: Unexpected errors ['assert_type(Desc2[str], list[str]) failed']",
-    "Line 65: Unexpected errors ['Expected 0 positional arguments, got 3']",
     "Line 66: Unexpected errors ['assert_type(Desc2[int], int) failed']",
     "Line 67: Unexpected errors ['assert_type(Desc2[str], str) failed']",
     "Line 68: Unexpected errors ['assert_type(Desc2[str], str) failed']"
@@ -315,35 +314,31 @@
     "Line 35: Expected 1 errors",
     "Line 36: Expected 1 errors",
     "Line 38: Expected 1 errors",
-    "Line 30: Unexpected errors ['Unexpected keyword argument `final_no_default`', 'Unexpected keyword argument `final_with_default`']"
+    "Line 30: Unexpected errors ['Missing argument `final_classvar`']"
   ],
   "dataclasses_frozen.py": [
     "Lines 22, 23: Expected error (tag 'DC2')",
     "Lines 32, 33: Expected error (tag 'DC4')"
   ],
   "dataclasses_hash.py": [
+    "Line 15: Expected 1 errors",
     "Line 32: Expected 1 errors"
   ],
   "dataclasses_inheritance.py": [
     "Line 60: Expected 1 errors",
     "Line 64: Expected 1 errors",
-    "Line 23: Unexpected errors ['Expected 0 positional arguments, got 2']",
-    "Line 40: Unexpected errors ['Expected 0 positional arguments, got 3']"
+    "Line 25: Unexpected errors ['Missing argument `a`', 'Missing argument `b`']"
   ],
   "dataclasses_kwonly.py": [
-    "Line 17: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 18: Unexpected errors ['Unexpected keyword argument `a`']",
-    "Line 19: Unexpected errors ['Unexpected keyword argument `a`', 'Unexpected keyword argument `b`']",
-    "Line 20: Unexpected errors ['Expected 0 positional arguments, got 1', 'Unexpected keyword argument `b`']",
-    "Line 32: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 33: Unexpected errors ['Unexpected keyword argument `a`']",
-    "Line 34: Unexpected errors ['Unexpected keyword argument `a`', 'Unexpected keyword argument `b`']",
-    "Line 35: Unexpected errors ['Expected 0 positional arguments, got 1', 'Unexpected keyword argument `b`']",
+    "Line 17: Unexpected errors ['Missing argument `b`']",
+    "Line 18: Unexpected errors ['Missing argument `b`']",
+    "Line 32: Unexpected errors [\"EXPECTED Literal['hi'] <: int\"]",
+    "Line 33: Unexpected errors ['Missing argument `b`']",
+    "Line 35: Unexpected errors [\"EXPECTED Literal['hi'] <: int\", 'Multiple values for argument `b`']",
     "Line 47: Unexpected errors ['Missing argument `a`', 'Missing argument `b`', 'Expected 0 positional arguments, got 1']",
     "Line 48: Unexpected errors ['Missing argument `b`']",
     "Line 50: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 1']",
-    "Line 61: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 2']",
-    "Line 62: Unexpected errors ['Unexpected keyword argument `c`']"
+    "Line 61: Unexpected errors ['EXPECTED float <: int', 'Multiple values for argument `b`']"
   ],
   "dataclasses_order.py": [],
   "dataclasses_postinit.py": [
@@ -351,13 +346,12 @@
     "Line 28: Expected 1 errors",
     "Line 29: Expected 1 errors",
     "Line 36: Expected 1 errors",
-    "Line 23: Unexpected errors ['Expected 0 positional arguments, got 5']"
+    "Line 23: Unexpected errors ['EXPECTED Literal[3] <: InitVar[int]', \"EXPECTED Literal[''] <: InitVar[str]\"]"
   ],
   "dataclasses_slots.py": [
     "Line 25: Expected 1 errors",
     "Line 38: Expected 1 errors",
     "Lines 10, 11: Expected error (tag 'DC1')",
-    "Line 48: Unexpected errors ['Expected 0 positional arguments, got 2']",
     "Line 56: Unexpected errors ['Class `DC5` has no class attribute `__slots__`']",
     "Line 57: Unexpected errors ['Object of class `DC5` has no attribute `__slots__`']"
   ],
@@ -412,20 +406,17 @@
     "Line 100: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']"
   ],
   "dataclasses_usage.py": [
+    "Line 83: Expected 1 errors",
     "Lines 58, 61: Expected error (tag 'DC1')",
     "Lines 64, 67: Expected error (tag 'DC2')",
     "Lines 70, 73: Expected error (tag 'DC3')",
     "Line 25: Unexpected errors ['Missing argument `quantity_on_hand`']",
     "Line 35: Unexpected errors ['EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto']",
     "Line 72: Unexpected errors ['EXPECTED Literal[0] <: InitVar[int]']",
-    "Line 82: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 102: Unexpected errors ['Expected 0 positional arguments, got 1']",
+    "Line 102: Unexpected errors ['Missing argument `c`', \"EXPECTED Literal[''] <: int\"]",
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed']",
-    "Line 123: Unexpected errors ['Expected 0 positional arguments, got 1']",
-    "Line 194: Unexpected errors ['Unexpected keyword argument `prop_2`']",
-    "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']",
-    "Line 213: Unexpected errors ['assert_type(DC16[Any], DC16[int]) failed', 'Expected 0 positional arguments, got 1']",
-    "Line 220: Unexpected errors ['Expected 0 positional arguments, got 1']"
+    "Line 194: Unexpected errors ['Missing argument `prop_1`', 'Missing argument `prop_3`']",
+    "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']"
   ],
   "directives_assert_type.py": [
     "Line 24: Unexpected errors ['assert_type(ForwardReference, Any) failed', \"untype, got Literal['ForwardReference']\"]"
@@ -602,7 +593,7 @@
     "Line 45: Unexpected errors ['assert_type(ParentB, Self) failed', 'EXPECTED type[ChildB] <: ParentB']"
   ],
   "generics_self_attributes.py": [
-    "Line 29: Unexpected errors ['EXPECTED OrdinalLinkedList <: Self | None', 'Unexpected keyword argument `value`', 'Unexpected keyword argument `next`']"
+    "Line 29: Unexpected errors ['EXPECTED OrdinalLinkedList <: Self | None']"
   ],
   "generics_self_basic.py": [
     "Line 20: Expected 1 errors",

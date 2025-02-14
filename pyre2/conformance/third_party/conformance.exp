@@ -3850,8 +3850,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "concise_description": "EXPECTED Literal[3] <: Desc1",
+      "description": "EXPECTED Literal[3] <: Desc1",
       "line": 35,
       "name": "PyreError",
       "stop_column": 12,
@@ -3919,16 +3919,6 @@
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "Expected 0 positional arguments, got 3",
-      "description": "Expected 0 positional arguments, got 3",
-      "line": 65,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 65
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Desc2[int], int) failed",
       "description": "assert_type(Desc2[int], int) failed",
@@ -3961,22 +3951,12 @@
   "dataclasses_final.py": [
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "Unexpected keyword argument `final_no_default`",
-      "description": "Unexpected keyword argument `final_no_default`",
+      "column": 5,
+      "concise_description": "Missing argument `final_classvar`",
+      "description": "Missing argument `final_classvar`",
       "line": 30,
       "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "Unexpected keyword argument `final_with_default`",
-      "description": "Unexpected keyword argument `final_with_default`",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 51,
+      "stop_column": 6,
       "stop_line": 30
     },
     {
@@ -4012,116 +3992,75 @@
       "stop_line": 17
     }
   ],
-  "dataclasses_hash.py": [
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 15,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 15
-    }
-  ],
+  "dataclasses_hash.py": [],
   "dataclasses_inheritance.py": [
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 23,
+      "column": 9,
+      "concise_description": "Missing argument `a`",
+      "description": "Missing argument `a`",
+      "line": 25,
       "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 23
+      "stop_column": 12,
+      "stop_line": 25
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Expected 0 positional arguments, got 3",
-      "description": "Expected 0 positional arguments, got 3",
-      "line": 40,
+      "column": 9,
+      "concise_description": "Missing argument `b`",
+      "description": "Missing argument `b`",
+      "line": 25,
       "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 40
+      "stop_column": 12,
+      "stop_line": 25
     }
   ],
   "dataclasses_kwonly.py": [
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "column": 1,
+      "concise_description": "Missing argument `b`",
+      "description": "Missing argument `b`",
       "line": 17,
       "name": "PyreError",
-      "stop_column": 9,
+      "stop_column": 4,
       "stop_line": 17
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Unexpected keyword argument `a`",
-      "description": "Unexpected keyword argument `a`",
+      "column": 1,
+      "concise_description": "Missing argument `b`",
+      "description": "Missing argument `b`",
       "line": 18,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 4,
       "stop_line": 18
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Unexpected keyword argument `a`",
-      "description": "Unexpected keyword argument `a`",
-      "line": 19,
+      "column": 1,
+      "concise_description": "Missing argument `b`",
+      "description": "Missing argument `b`",
+      "line": 23,
       "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Unexpected keyword argument `b`",
-      "description": "Unexpected keyword argument `b`",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 9,
-      "stop_line": 20
+      "stop_column": 4,
+      "stop_line": 23
     },
     {
       "code": -2,
       "column": 11,
-      "concise_description": "Unexpected keyword argument `b`",
-      "description": "Unexpected keyword argument `b`",
-      "line": 20,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
+      "concise_description": "Expected 1 positional argument, got 2",
+      "description": "Expected 1 positional argument, got 2",
       "line": 23,
       "name": "PyreError",
-      "stop_column": 9,
+      "stop_column": 12,
       "stop_line": 23
     },
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "concise_description": "EXPECTED Literal['hi'] <: int",
+      "description": "EXPECTED Literal['hi'] <: int",
       "line": 32,
       "name": "PyreError",
       "stop_column": 9,
@@ -4129,39 +4068,19 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Unexpected keyword argument `a`",
-      "description": "Unexpected keyword argument `a`",
+      "column": 1,
+      "concise_description": "Missing argument `b`",
+      "description": "Missing argument `b`",
       "line": 33,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 4,
       "stop_line": 33
     },
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Unexpected keyword argument `a`",
-      "description": "Unexpected keyword argument `a`",
-      "line": 34,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 34
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Unexpected keyword argument `b`",
-      "description": "Unexpected keyword argument `b`",
-      "line": 34,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 34
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "concise_description": "EXPECTED Literal['hi'] <: int",
+      "description": "EXPECTED Literal['hi'] <: int",
       "line": 35,
       "name": "PyreError",
       "stop_column": 9,
@@ -4170,8 +4089,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "Unexpected keyword argument `b`",
-      "description": "Unexpected keyword argument `b`",
+      "concise_description": "Multiple values for argument `b`",
+      "description": "Multiple values for argument `b`",
       "line": 35,
       "name": "PyreError",
       "stop_column": 14,
@@ -4180,11 +4099,21 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
+      "concise_description": "EXPECTED Literal['hi'] <: int",
+      "description": "EXPECTED Literal['hi'] <: int",
       "line": 38,
       "name": "PyreError",
       "stop_column": 9,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "EXPECTED Literal[1] <: str",
+      "description": "EXPECTED Literal[1] <: str",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 12,
       "stop_line": 38
     },
     {
@@ -4279,33 +4208,23 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `a`",
-      "description": "Missing argument `a`",
+      "column": 9,
+      "concise_description": "EXPECTED float <: int",
+      "description": "EXPECTED float <: int",
       "line": 61,
       "name": "PyreError",
-      "stop_column": 4,
+      "stop_column": 12,
       "stop_line": 61
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
+      "column": 14,
+      "concise_description": "Multiple values for argument `b`",
+      "description": "Multiple values for argument `b`",
       "line": 61,
       "name": "PyreError",
-      "stop_column": 7,
+      "stop_column": 17,
       "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Unexpected keyword argument `c`",
-      "description": "Unexpected keyword argument `c`",
-      "line": 62,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 62
     }
   ],
   "dataclasses_order.py": [
@@ -4323,26 +4242,26 @@
   "dataclasses_postinit.py": [
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "Expected 0 positional arguments, got 5",
-      "description": "Expected 0 positional arguments, got 5",
+      "column": 17,
+      "concise_description": "EXPECTED Literal[3] <: InitVar[int]",
+      "description": "EXPECTED Literal[3] <: InitVar[int]",
       "line": 23,
       "name": "PyreError",
-      "stop_column": 12,
+      "stop_column": 18,
+      "stop_line": 23
+    },
+    {
+      "code": -2,
+      "column": 23,
+      "concise_description": "EXPECTED Literal[''] <: InitVar[str]",
+      "description": "EXPECTED Literal[''] <: InitVar[str]",
+      "line": 23,
+      "name": "PyreError",
+      "stop_column": 25,
       "stop_line": 23
     }
   ],
   "dataclasses_slots.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 6,
-      "stop_line": 48
-    },
     {
       "code": -2,
       "column": 1,
@@ -4381,16 +4300,6 @@
       "line": 69,
       "name": "PyreError",
       "stop_column": 17,
-      "stop_line": 69
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 69,
-      "name": "PyreError",
-      "stop_column": 6,
       "stop_line": 69
     }
   ],
@@ -5207,26 +5116,6 @@
     },
     {
       "code": -2,
-      "column": 10,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 82,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 82
-    },
-    {
-      "code": -2,
-      "column": 10,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 83,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 83
-    },
-    {
-      "code": -2,
       "column": 14,
       "concise_description": "No matching overload found",
       "description": "No matching overload found",
@@ -5237,9 +5126,19 @@
     },
     {
       "code": -2,
+      "column": 7,
+      "concise_description": "Missing argument `c`",
+      "description": "Missing argument `c`",
+      "line": 102,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 102
+    },
+    {
+      "code": -2,
       "column": 11,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "concise_description": "EXPECTED Literal[''] <: int",
+      "description": "EXPECTED Literal[''] <: int",
       "line": 102,
       "name": "PyreError",
       "stop_column": 13,
@@ -5257,22 +5156,12 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 123,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 123
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
+      "column": 8,
+      "concise_description": "Expected 1 positional argument, got 2",
+      "description": "Expected 1 positional argument, got 2",
       "line": 127,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 9,
       "stop_line": 127
     },
     {
@@ -5297,12 +5186,22 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Unexpected keyword argument `prop_2`",
-      "description": "Unexpected keyword argument `prop_2`",
+      "column": 8,
+      "concise_description": "Missing argument `prop_1`",
+      "description": "Missing argument `prop_1`",
       "line": 194,
       "name": "PyreError",
-      "stop_column": 26,
+      "stop_column": 12,
+      "stop_line": 194
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Missing argument `prop_3`",
+      "description": "Missing argument `prop_3`",
+      "line": 194,
+      "name": "PyreError",
+      "stop_column": 12,
       "stop_line": 194
     },
     {
@@ -5314,36 +5213,6 @@
       "name": "PyreError",
       "stop_column": 26,
       "stop_line": 205
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(DC16[Any], DC16[int]) failed",
-      "description": "assert_type(DC16[Any], DC16[int]) failed",
-      "line": 213,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 213
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 213,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 213
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 220,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 220
     }
   ],
   "directives_assert_type.py": [
@@ -7444,32 +7313,22 @@
   "generics_self_attributes.py": [
     {
       "code": -2,
-      "column": 24,
-      "concise_description": "Unexpected keyword argument `value`",
-      "description": "Unexpected keyword argument `value`",
+      "column": 38,
+      "concise_description": "Missing argument `next`",
+      "description": "Missing argument `next`",
       "line": 26,
       "name": "PyreError",
-      "stop_column": 31,
+      "stop_column": 53,
       "stop_line": 26
     },
     {
       "code": -2,
-      "column": 33,
-      "concise_description": "Unexpected keyword argument `next`",
-      "description": "Unexpected keyword argument `next`",
+      "column": 38,
+      "concise_description": "EXPECTED LinkedList[int] <: Self | None",
+      "description": "EXPECTED LinkedList[int] <: Self | None",
       "line": 26,
       "name": "PyreError",
       "stop_column": 62,
-      "stop_line": 26
-    },
-    {
-      "code": -2,
-      "column": 54,
-      "concise_description": "Unexpected keyword argument `value`",
-      "description": "Unexpected keyword argument `value`",
-      "line": 26,
-      "name": "PyreError",
-      "stop_column": 61,
       "stop_line": 26
     },
     {
@@ -7484,52 +7343,12 @@
     },
     {
       "code": -2,
-      "column": 33,
-      "concise_description": "Unexpected keyword argument `value`",
-      "description": "Unexpected keyword argument `value`",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 42,
-      "concise_description": "Unexpected keyword argument `next`",
-      "description": "Unexpected keyword argument `next`",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 51,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
       "column": 15,
       "concise_description": "EXPECTED LinkedList[int] <: Self | None",
       "description": "EXPECTED LinkedList[int] <: Self | None",
       "line": 32,
       "name": "PyreError",
       "stop_column": 50,
-      "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 31,
-      "concise_description": "Unexpected keyword argument `value`",
-      "description": "Unexpected keyword argument `value`",
-      "line": 32,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 40,
-      "concise_description": "Unexpected keyword argument `next`",
-      "description": "Unexpected keyword argument `next`",
-      "line": 32,
-      "name": "PyreError",
-      "stop_column": 49,
       "stop_line": 32
     }
   ],
@@ -8102,16 +7921,6 @@
       "line": 129,
       "name": "PyreError",
       "stop_column": 64,
-      "stop_line": 129
-    },
-    {
-      "code": -2,
-      "column": 62,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 129,
-      "name": "PyreError",
-      "stop_column": 63,
       "stop_line": 129
     },
     {
@@ -10946,16 +10755,6 @@
       "line": 130,
       "name": "PyreError",
       "stop_column": 64,
-      "stop_line": 130
-    },
-    {
-      "code": -2,
-      "column": 62,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 130,
-      "name": "PyreError",
-      "stop_column": 63,
       "stop_line": 130
     },
     {

@@ -463,6 +463,8 @@ impl Type {
             Type::Callable(_, kind) => Some(CalleeKind::Callable(*kind)),
             Type::ClassDef(c) => Some(CalleeKind::Class(c.kind())),
             Type::Forall(_, t) => t.callee_kind(),
+            // TODO(rechen): We should have one callee kind per overloaded function rather than one per overload signature.
+            Type::Overload(vs) => vs.first().callee_kind(),
             _ => None,
         }
     }
