@@ -948,7 +948,7 @@ pub enum ClassFieldInitialization {
     Instance,
 }
 
-/// Binding for a class field, which is any attribute of a class defined in
+/// Binding for a class field, which is any attribute (including methods) of a class defined in
 /// either the class body or in method (like `__init__`) that we recognize as
 /// defining instance attributes.
 #[derive(Clone, Debug)]
