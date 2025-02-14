@@ -260,7 +260,7 @@ from dataclasses import dataclass
 class C:
     x: int
 C(x=0)  # OK
-C(0)  # E: Expected 0 positional arguments
+C(0)  # E: Missing argument `x`  # E: Expected 0 positional arguments
 assert_type(C.__match_args__, tuple[()])
     "#,
 );
@@ -277,7 +277,7 @@ class C:
     y: str
 C(0, y="1")  # OK
 C(x=0, y="1")  # OK
-C(0, "1")  # E: Expected 1 positional argument
+C(0, "1")  # E: Missing argument `y`  # E: Expected 1 positional argument
 assert_type(C.__match_args__, tuple[Literal["x"]])
     "#,
 );
@@ -325,7 +325,19 @@ from dataclasses import dataclass, field
 class C:
     x: int = field(init=False)
     y: str
-C(y="")  # Should be OK  # E: Missing argument
+C(y="")  # OK
 C(x=0, y="")  # Should be an error: Unexpected keyword argument `x`
+    "#,
+);
+
+testcase!(
+    test_default,
+    r#"
+from dataclasses import dataclass
+@dataclass
+class C:
+    x: int = 0
+C()  # OK
+C(x=1)  # OK
     "#,
 );

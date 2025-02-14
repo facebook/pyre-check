@@ -1938,6 +1938,16 @@
     },
     {
       "code": -2,
+      "column": 11,
+      "concise_description": "Missing argument `v2`",
+      "description": "Missing argument `v2`",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
       "column": 32,
       "concise_description": "Unexpected keyword argument `v4`",
       "description": "Unexpected keyword argument `v4`",
@@ -3901,16 +3911,6 @@
   "dataclasses_final.py": [
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Missing argument `final_classvar`",
-      "description": "Missing argument `final_classvar`",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 6,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Instance-only attribute `final_no_default` of class `D` is not visible on the class",
       "description": "Instance-only attribute `final_no_default` of class `D` is not visible on the class",
@@ -3943,59 +3943,8 @@
     }
   ],
   "dataclasses_hash.py": [],
-  "dataclasses_inheritance.py": [
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Missing argument `a`",
-      "description": "Missing argument `a`",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 25
-    }
-  ],
+  "dataclasses_inheritance.py": [],
   "dataclasses_kwonly.py": [
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 17,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 17
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 18,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 18
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 23
-    },
     {
       "code": -2,
       "column": 11,
@@ -4005,6 +3954,16 @@
       "name": "PyreError",
       "stop_column": 12,
       "stop_line": 23
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Missing argument `a`",
+      "description": "Missing argument `a`",
+      "line": 32,
+      "name": "PyreError",
+      "stop_column": 4,
+      "stop_line": 32
     },
     {
       "code": -2,
@@ -4019,12 +3978,12 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 33,
+      "concise_description": "Missing argument `a`",
+      "description": "Missing argument `a`",
+      "line": 35,
       "name": "PyreError",
       "stop_column": 4,
-      "stop_line": 33
+      "stop_line": 35
     },
     {
       "code": -2,
@@ -4068,26 +4027,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `a`",
-      "description": "Missing argument `a`",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -4098,26 +4037,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `a`",
-      "description": "Missing argument `a`",
-      "line": 50,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 50
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -4125,26 +4044,6 @@
       "name": "PyreError",
       "stop_column": 9,
       "stop_line": 50
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `a`",
-      "description": "Missing argument `a`",
-      "line": 53,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 53
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 53,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 53
     },
     {
       "code": -2,
@@ -4155,6 +4054,16 @@
       "name": "PyreError",
       "stop_column": 9,
       "stop_line": 53
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Missing argument `c`",
+      "description": "Missing argument `c`",
+      "line": 61,
+      "name": "PyreError",
+      "stop_column": 4,
+      "stop_line": 61
     },
     {
       "code": -2,
@@ -4976,16 +4885,6 @@
   "dataclasses_usage.py": [
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Missing argument `quantity_on_hand`",
-      "description": "Missing argument `quantity_on_hand`",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
       "column": 30,
       "concise_description": "EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto",
       "description": "EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto",
@@ -4997,22 +4896,12 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "Missing argument `quantity_on_hand`",
-      "description": "Missing argument `quantity_on_hand`",
+      "concise_description": "Missing argument `unit_price`",
+      "description": "Missing argument `unit_price`",
       "line": 50,
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 50
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "Missing argument `quantity_on_hand`",
-      "description": "Missing argument `quantity_on_hand`",
-      "line": 51,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 51
     },
     {
       "code": -2,
@@ -5046,6 +4935,16 @@
     },
     {
       "code": -2,
+      "column": 6,
+      "concise_description": "Missing argument `b`",
+      "description": "Missing argument `b`",
+      "line": 82,
+      "name": "PyreError",
+      "stop_column": 9,
+      "stop_line": 82
+    },
+    {
+      "code": -2,
       "column": 14,
       "concise_description": "No matching overload found",
       "description": "No matching overload found",
@@ -5057,8 +4956,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "Missing argument `c`",
-      "description": "Missing argument `c`",
+      "concise_description": "Missing argument `b`",
+      "description": "Missing argument `b`",
       "line": 102,
       "name": "PyreError",
       "stop_column": 10,
@@ -5113,26 +5012,6 @@
       "name": "PyreError",
       "stop_column": 7,
       "stop_line": 179
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Missing argument `prop_1`",
-      "description": "Missing argument `prop_1`",
-      "line": 194,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 194
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Missing argument `prop_3`",
-      "description": "Missing argument `prop_3`",
-      "line": 194,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 194
     },
     {
       "code": -2,
@@ -7191,16 +7070,6 @@
     }
   ],
   "generics_self_attributes.py": [
-    {
-      "code": -2,
-      "column": 38,
-      "concise_description": "Missing argument `next`",
-      "description": "Missing argument `next`",
-      "line": 26,
-      "name": "PyreError",
-      "stop_column": 53,
-      "stop_line": 26
-    },
     {
       "code": -2,
       "column": 38,
@@ -12156,16 +12025,6 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "Missing argument `val1`",
-      "description": "Missing argument `val1`",
-      "line": 217,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 217
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "EXPECTED Concrete4_Bad1 <: Template4",
       "description": "EXPECTED Concrete4_Bad1 <: Template4",
@@ -12246,16 +12105,6 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "Missing argument `val1`",
-      "description": "Missing argument `val1`",
-      "line": 338,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 338
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "EXPECTED Concrete6_Bad1 <: Template6",
       "description": "EXPECTED Concrete6_Bad1 <: Template6",
@@ -12273,16 +12122,6 @@
       "name": "PyreError",
       "stop_column": 36,
       "stop_line": 340
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "Missing argument `val1`",
-      "description": "Missing argument `val1`",
-      "line": 341,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 341
     }
   ],
   "protocols_explicit.py": [

@@ -128,8 +128,8 @@ impl ClassField {
             ty, initialization, ..
         }) = self;
         let required = match initialization {
-            ClassFieldInitialization::Class => Required::Required,
-            ClassFieldInitialization::Instance => Required::Optional,
+            ClassFieldInitialization::Class => Required::Optional,
+            ClassFieldInitialization::Instance => Required::Required,
         };
         if kw_only {
             Param::KwOnly(name.clone(), ty, required)
