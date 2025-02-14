@@ -126,13 +126,12 @@ assert_type(x, int)
 "#,
 );
 
-testcase_with_bug!(
-    "False negative",
+testcase!(
     test_access_nonexistent_module,
     env_imports_dot(),
     r#"
 import foo.bar.baz
-foo.qux.wibble.wobble # TODO: error
+foo.qux.wibble.wobble # E: No attribute `qux` in module `foo`
 "#,
 );
 
@@ -331,7 +330,7 @@ testcase_with_bug!(
 from typing import assert_type
 import foo
 assert_type(foo.x, str)
-foo.bar.x # This should fail
+foo.bar.x # This should fail: `bar` has not been imported/loaded yet
 "#,
 );
 
@@ -407,6 +406,24 @@ foo.bar.x # This should not fail. The type is `int`. # E: Object of class `str` 
 "#,
 );
 
+fn env_dunder_init_reexport_submodule() -> TestEnv {
+    let mut t = TestEnv::new();
+    t.add_with_path("foo", "from .bar import x", "foo/__init__.pyi");
+    t.add_with_path("foo.bar", "x: int = 0", "foo/bar.pyi");
+    t
+}
+
+testcase!(
+    test_import_dunder_init_reexport_submodule,
+    env_dunder_init_reexport_submodule(),
+    r#"
+from typing import assert_type
+import foo
+assert_type(foo.x, int)
+assert_type(foo.bar.x, int)  # This is fine: `bar` is loaded when we import from `foo` and run `foo/__init__.pyi`
+"#,
+);
+
 fn env_export_all_wrongly() -> TestEnv {
     TestEnv::one(
         "foo",
@@ -450,13 +467,12 @@ fn env_blank() -> TestEnv {
     TestEnv::one("foo", "")
 }
 
-testcase_with_bug!(
-    "Attribute access on a module is not yet failable",
+testcase!(
     test_import_blank,
     env_blank(),
     r#"
 import foo
-x = foo.bar  # Should be an error
+x = foo.bar  # E: No attribute `bar` in module `foo`
 "#,
 );
 

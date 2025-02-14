@@ -538,8 +538,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(Type::any_error())
             }
             Some(exports) => self.get_exported_type(&exports, module_name, attr_name).or(
-                // TODO: This is failable, but we don't detect it yet.
-                Some(module.push_path(attr_name.clone()).to_type()),
+                // `module_name` could also refer to a package, in which case we need to check if
+                // `module_name.attr_name` is a submodule.
+                // TODO(grievejia): This is still not totally correct as it assumes that submodule `attr_name`
+                // is always accessible even if `module_name/__init__.py` (if exists) does not export that.
+                self.get_module_exports(module_name.append(attr_name))
+                    .map(|_| module.push_path(attr_name.clone()).to_type()),
             ),
         }
     }
