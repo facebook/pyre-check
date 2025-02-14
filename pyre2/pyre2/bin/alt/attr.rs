@@ -15,6 +15,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::callable::CallArg;
 use crate::alt::types::class_metadata::EnumMetadata;
+use crate::binding::binding::KeyExport;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_name::ModuleName;
 use crate::types::class::Class;
@@ -510,6 +511,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => Some(attr),
             _ => None,
+        }
+    }
+
+    fn get_import(&self, name: &Name, from: ModuleName) -> Option<Type> {
+        if let Ok(exports) = self.exports.get(from) {
+            if exports.contains(name, self.exports) {
+                Some(
+                    self.get_from_module(from, &KeyExport(name.clone()))
+                        .arc_clone(),
+                )
+            } else {
+                None
+            }
+        } else {
+            // We have already errored on `m` when loading the module. No need to emit error again.
+            Some(Type::any_error())
         }
     }
 

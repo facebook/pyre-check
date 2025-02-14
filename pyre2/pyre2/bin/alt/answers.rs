@@ -154,7 +154,6 @@ impl DisplayWith<ModuleInfo> for Solutions {
 
 #[derive(Clone)]
 pub struct AnswersSolver<'a, Ans: LookupAnswer> {
-    exports: &'a dyn LookupExport,
     answers: &'a Ans,
     current: &'a Answers,
     // The base solver is only used to reset the error collector at binding
@@ -162,6 +161,7 @@ pub struct AnswersSolver<'a, Ans: LookupAnswer> {
     // along the call stack instead.
     base_errors: &'a ErrorCollector,
     bindings: &'a Bindings,
+    pub exports: &'a dyn LookupExport,
     pub uniques: &'a UniqueFactory,
     pub recurser: &'a Recurser<Var>,
     pub stdlib: &'a Stdlib,
@@ -697,21 +697,5 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn error(&self, errors: &ErrorCollector, range: TextRange, msg: String) -> Type {
         errors.add(self.module_info(), range, msg);
         Type::any_error()
-    }
-
-    pub fn get_import(&self, name: &Name, from: ModuleName) -> Option<Type> {
-        if let Ok(exports) = self.exports.get(from) {
-            if exports.contains(name, self.exports) {
-                Some(
-                    self.get_from_module(from, &KeyExport(name.clone()))
-                        .arc_clone(),
-                )
-            } else {
-                None
-            }
-        } else {
-            // We have already errored on `m` when loading the module. No need to emit error again.
-            Some(Type::any_error())
-        }
     }
 }
