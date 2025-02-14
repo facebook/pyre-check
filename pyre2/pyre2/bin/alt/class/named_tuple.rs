@@ -63,12 +63,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for name in elements {
             let ClassField(ClassFieldInner::Simple {
                 ty, initialization, ..
-            }) = self.get_class_member(cls, name).unwrap().value;
+            }) = &*self.get_class_member(cls, name).unwrap().value;
             let required = match initialization {
                 ClassFieldInitialization::Class => Required::Optional,
                 ClassFieldInitialization::Instance => Required::Required,
             };
-            params.push(Param::Pos(name.clone(), ty, required));
+            params.push(Param::Pos(name.clone(), ty.clone(), required));
         }
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), cls.self_type())),
@@ -87,8 +87,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .iter()
             .map(|name| {
                 let ClassField(ClassFieldInner::Simple { ty, .. }) =
-                    self.get_class_member(cls, name).unwrap().value;
-                ty
+                    &*self.get_class_member(cls, name).unwrap().value;
+                ty.clone()
             })
             .collect();
         let ty = Type::Callable(

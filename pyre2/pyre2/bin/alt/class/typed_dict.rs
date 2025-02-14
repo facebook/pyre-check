@@ -151,7 +151,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             qualifiers,
                         }),
                     ..
-                }) = self.get_class_member(cls, name).unwrap().value
+                }) = &*self.get_class_member(cls, name).unwrap().value
                 {
                     Some((
                         name.clone(),
@@ -186,7 +186,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )];
         for (name, _) in fields {
             let field = self.get_class_member(cls, name).unwrap().value;
-            params.push(field.as_param(name, true));
+            params.push(Arc::unwrap_or_clone(field).as_param(name, true));
         }
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), Type::None)),

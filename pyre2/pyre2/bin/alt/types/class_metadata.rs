@@ -136,7 +136,7 @@ impl ClassMetadata {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassSynthesizedField {
-    pub inner: ClassField,
+    pub inner: Arc<ClassField>,
     /// Should the synthesized field ovewrite a user-defined field of the same name defined on the same class?
     pub overwrite: bool,
 }
@@ -150,12 +150,12 @@ impl Display for ClassSynthesizedField {
 impl ClassSynthesizedField {
     pub fn new(ty: Type, overwrite: bool) -> Self {
         Self {
-            inner: ClassField(ClassFieldInner::Simple {
+            inner: Arc::new(ClassField(ClassFieldInner::Simple {
                 ty,
                 annotation: None,
                 initialization: ClassFieldInitialization::Class,
                 readonly: false,
-            }),
+            })),
             overwrite,
         }
     }
@@ -176,7 +176,9 @@ impl ClassSynthesizedFields {
 
     pub fn visit_type_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         for field in self.0.values_mut() {
-            field.inner.visit_type_mut(f);
+            let mut v = (*field.inner).clone();
+            v.visit_type_mut(f);
+            field.inner = Arc::new(v);
         }
     }
 }

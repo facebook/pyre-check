@@ -26,10 +26,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Some(ClassField(ClassFieldInner::Simple {
             ty: Type::Literal(lit),
             ..
-        })) = self.get_class_field(cls, name)
+        })) = self.get_class_field(cls, name).as_deref()
             && matches!(&lit, Lit::Enum(box (lit_cls, ..)) if lit_cls.class_object() == cls)
         {
-            Some(lit)
+            Some(lit.clone())
         } else {
             None
         }
@@ -84,13 +84,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for name in cls.fields() {
             if let Some(ClassField(ClassFieldInner::Simple {
                 ty, initialization, ..
-            })) = self.get_class_field(cls, name)
+            })) = self.get_class_field(cls, name).as_deref()
             {
-                if self.is_valid_enum_member(name, &ty, initialization) {
+                if self.is_valid_enum_member(name, ty, *initialization) {
                     let lit = Type::Literal(Lit::Enum(Box::new((
                         enum_metadata.cls.clone(),
                         name.clone(),
-                        ty,
+                        ty.clone(),
                     ))));
                     fields.insert(name.clone(), ClassSynthesizedField::new(lit, true));
                 }

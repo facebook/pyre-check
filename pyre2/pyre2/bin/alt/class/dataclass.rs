@@ -76,7 +76,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn iter_fields(&self, cls: &Class, fields: &SmallSet<Name>) -> Vec<(Name, ClassField, bool)> {
         let mut kw_only = false;
         fields.iter().filter_map(|name| {
-            let field @ ClassField(ClassFieldInner::Simple { ty, .. }) = &self.get_class_member(cls, name).unwrap().value;
+            let field @ ClassField(ClassFieldInner::Simple { ty, .. }) = &*self.get_class_member(cls, name).unwrap().value;
             // A field with type KW_ONLY is a sentinel value that indicates that the remaining
             // fields should be keyword-only params in the generated `__init__`.
             if matches!(ty, Type::ClassType(cls) if cls.class_object().has_qname("dataclasses", "KW_ONLY")) {

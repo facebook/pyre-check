@@ -522,7 +522,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ClassField::new(ty.clone(), ann.cloned(), initialization, readonly)
     }
 
-    pub fn get_class_field(&self, cls: &Class, name: &Name) -> Option<ClassField> {
+    pub fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Arc<ClassField>> {
         let synthesized_fields = self.get_from_class(
             cls,
             &KeyClassSynthesizedFields(ShortIdentifier::new(cls.name())),
@@ -531,15 +531,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Some(synth) = synth
             && synth.overwrite
         {
-            Some(synth.inner.clone())
+            Some(synth.inner.dupe())
         } else if cls.contains(name) {
             let field = self.get_from_class(
                 cls,
                 &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
             );
-            Some((*field).clone())
+            Some(field)
         } else {
-            synth.map(|f| f.inner.clone())
+            synth.map(|f| f.inner.dupe())
         }
     }
 
@@ -547,7 +547,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         cls: &Class,
         name: &Name,
-    ) -> Option<WithDefiningClass<ClassField>> {
+    ) -> Option<WithDefiningClass<Arc<ClassField>>> {
         if let Some(field) = self.get_class_field(cls, name) {
             Some(WithDefiningClass {
                 value: field,
@@ -559,7 +559,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .filter_map(|ancestor| {
                     self.get_class_field(ancestor.class_object(), name)
                         .map(|field| WithDefiningClass {
-                            value: field.instantiate_for(ancestor),
+                            value: Arc::new(field.instantiate_for(ancestor)),
                             defining_class: ancestor.class_object().dupe(),
                         })
                 })
@@ -568,7 +568,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     // Get every member of a class, including those declared in parent classes.
-    fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (ClassField, Class)> {
+    fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (Arc<ClassField>, Class)> {
         let mut members = SmallMap::new();
         for name in cls.fields() {
             if let Some(field) = self.get_class_field(cls, name) {
@@ -582,7 +582,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         members.insert(
                             name.clone(),
                             (
-                                field.instantiate_for(ancestor),
+                                Arc::new(field.instantiate_for(ancestor)),
                                 ancestor.class_object().dupe(),
                             ),
                         );
@@ -602,7 +602,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
-            .map(|member| member.value.as_instance_attribute(cls))
+            .map(|member| Arc::unwrap_or_clone(member.value).as_instance_attribute(cls))
     }
 
     /// Gets an attribute from a class definition.
@@ -614,7 +614,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
     pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<Attribute> {
         let member = self.get_class_member(cls, name)?.value;
-        Some(member.as_class_attribute(cls))
+        Some(Arc::unwrap_or_clone(member).as_class_attribute(cls))
     }
 
     /// Get the class's `__new__` method.
@@ -629,7 +629,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // class construction; we only care about `__new__` if it is overridden.
             None
         } else {
-            new_member.value.as_raw_special_method_type(cls)
+            Arc::unwrap_or_clone(new_member.value).as_raw_special_method_type(cls)
         }
     }
 
@@ -643,7 +643,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if !(overrides_new
             && init_method.defined_on(self.stdlib.object_class_type().class_object()))
         {
-            init_method.value.as_special_method_type(cls)
+            Arc::unwrap_or_clone(init_method.value).as_special_method_type(cls)
         } else {
             None
         }
@@ -659,7 +659,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // so we can skip analyzing it at the type level.
             None
         } else {
-            attr.value.as_special_method_type(metaclass)
+            Arc::unwrap_or_clone(attr.value).as_special_method_type(metaclass)
         }
     }
 }
