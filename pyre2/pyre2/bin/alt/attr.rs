@@ -17,6 +17,7 @@ use crate::alt::callable::CallArg;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyExport;
 use crate::error::collector::ErrorCollector;
+use crate::export::exports::Exports;
 use crate::module::module_name::ModuleName;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
@@ -514,28 +515,33 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn get_import(&self, name: &Name, from: ModuleName) -> Option<Type> {
-        if let Ok(exports) = self.exports.get(from) {
-            if exports.contains(name, self.exports) {
-                Some(
-                    self.get_from_module(from, &KeyExport(name.clone()))
-                        .arc_clone(),
-                )
-            } else {
-                None
-            }
+    fn get_module_exports(&self, module_name: ModuleName) -> Option<Exports> {
+        self.exports.get(module_name).ok()
+    }
+
+    fn get_exported_type(&self, exports: &Exports, from: ModuleName, name: &Name) -> Option<Type> {
+        if exports.contains(name, self.exports) {
+            Some(
+                self.get_from_module(from, &KeyExport(name.clone()))
+                    .arc_clone(),
+            )
         } else {
-            // We have already errored on `m` when loading the module. No need to emit error again.
-            Some(Type::any_error())
+            None
         }
     }
 
     fn get_module_attr(&self, module: &Module, attr_name: &Name) -> Option<Type> {
         let module_name = ModuleName::from_string(module.path().join("."));
-        self.get_import(attr_name, module_name).or(
-            // TODO: This is failable, but we don't detect it yet.
-            Some(module.push_path(attr_name.clone()).to_type()),
-        )
+        match self.get_module_exports(module_name) {
+            None => {
+                // We have already errored on `m` when loading the module. No need to emit error again.
+                Some(Type::any_error())
+            }
+            Some(exports) => self.get_exported_type(&exports, module_name, attr_name).or(
+                // TODO: This is failable, but we don't detect it yet.
+                Some(module.push_path(attr_name.clone()).to_type()),
+            ),
+        }
     }
 
     fn as_attribute_base(&self, ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
