@@ -26,6 +26,8 @@ pub enum Tuple {
     Concrete(Vec<Type>),
     // tuple[t1, ...]
     Unbounded(Box<Type>),
+    // tuple[t1, t2, *t3, t4, t5]
+    Unpacked(Box<(Vec<Type>, Type, Vec<Type>)>),
 }
 
 impl Tuple {
@@ -35,6 +37,10 @@ impl Tuple {
 
     pub fn unbounded(elt: Type) -> Self {
         Self::Unbounded(Box::new(elt))
+    }
+
+    pub fn unpacked(prefix: Vec<Type>, middle: Type, suffix: Vec<Type>) -> Self {
+        Self::Unpacked(Box::new((prefix, middle, suffix)))
     }
 
     pub fn fmt_with_type<'a, D: Display + 'a>(
@@ -50,7 +56,21 @@ impl Tuple {
                     format!("{}", commas_iter(|| elts.iter().map(&wrap)))
                 }
             }
-            Self::Unbounded(ty) => format!("{}, ...", wrap(ty)),
+            Self::Unbounded(box ty) => format!("{}, ...", wrap(ty)),
+            Self::Unpacked(box (prefix, unpacked, suffix)) => {
+                let prefix = if prefix.is_empty() {
+                    "".to_owned()
+                } else {
+                    format!("{}, ", commas_iter(|| prefix.iter().map(&wrap)))
+                };
+                let suffix = if suffix.is_empty() {
+                    "".to_owned()
+                } else {
+                    format!(", {}", commas_iter(|| suffix.iter().map(&wrap)))
+                };
+                let unpacked = format!("*{}", wrap(unpacked));
+                format!("{}{}{}", prefix, unpacked, suffix)
+            }
         };
         write!(f, "tuple[{content}]")
     }
@@ -59,6 +79,13 @@ impl Tuple {
         match self {
             Self::Concrete(elts) => elts.iter().for_each(f),
             Self::Unbounded(ty) => f(ty),
+            Self::Unpacked(box (prefix, ty, suffix)) => {
+                prefix
+                    .iter()
+                    .chain(std::iter::once(ty))
+                    .chain(suffix.iter())
+                    .for_each(f);
+            }
         }
     }
 
@@ -66,6 +93,13 @@ impl Tuple {
         match self {
             Self::Concrete(elts) => elts.iter_mut().for_each(f),
             Self::Unbounded(ty) => f(ty),
+            Self::Unpacked(box (prefix, ty, suffix)) => {
+                prefix
+                    .iter_mut()
+                    .chain(std::iter::once(ty))
+                    .chain(suffix.iter_mut())
+                    .for_each(f);
+            }
         }
     }
 }

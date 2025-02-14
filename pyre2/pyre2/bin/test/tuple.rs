@@ -72,6 +72,28 @@ def test(x: tuple[int, str], y: tuple[int, ...], z: tuple[Any, ...]) -> None:
 );
 
 testcase!(
+    test_unpacked_solve,
+    r#"
+from typing import Any
+def test(a: tuple[int, bool, str], b: tuple[Any, ...], c: tuple[int, *tuple[bool, ...], str]) -> None:
+  x1: tuple[int, *tuple[bool, ...], str] = a
+  x2: tuple[int, *tuple[bool | str, ...]] = a
+  x3: tuple[*tuple[int | bool, ...], str] = a
+  x4: tuple[int, bool, *tuple[str, ...]] = a
+  x5: tuple[*tuple[int, ...], bool, str] = a
+  x6: tuple[int, *tuple[bool, ...], str] = b
+  x7: tuple[int, *tuple[bool, ...], str] = c
+  x8: tuple[int, *tuple[bool | str, ...]] = c
+  x9: tuple[*tuple[int | bool, ...], str] = c
+  x10: tuple[*tuple[int], *tuple[bool], *tuple[str]] = a
+  x11: tuple[int, *tuple[bool, str]] = a
+  x12: tuple[*tuple[int, bool, str]] = a
+  x13: tuple[*tuple[int, ...], *tuple[bool], *tuple[str]] = a
+  x14: tuple[*tuple[int, ...], *tuple[bool, ...], *tuple[str]] = a  # E: Only one unbounded tuple is allowed to be unpacked
+"#,
+);
+
+testcase!(
     test_slice_literal,
     r#"
 from typing import assert_type, Literal

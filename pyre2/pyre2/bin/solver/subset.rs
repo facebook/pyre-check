@@ -6,6 +6,8 @@
  */
 
 use itertools::izip;
+use itertools::EitherOrBoth;
+use itertools::Itertools;
 use starlark_map::small_map::SmallMap;
 use starlark_map::Hashed;
 
@@ -221,6 +223,90 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         true
     }
 
+    pub fn is_subset_tuple(&mut self, got: &Tuple, want: &Tuple) -> bool {
+        match (got, want) {
+            (Tuple::Concrete(lelts), Tuple::Concrete(uelts)) => {
+                if lelts.len() == uelts.len() {
+                    lelts
+                        .iter()
+                        .zip(uelts)
+                        .all(|(l, u)| self.is_subset_eq(l, u))
+                } else {
+                    false
+                }
+            }
+            (Tuple::Unbounded(box Type::Any(_)), _) => true,
+            (Tuple::Concrete(lelts), Tuple::Unbounded(box u)) => {
+                lelts.iter().all(|l| self.is_subset_eq(l, u))
+            }
+            (Tuple::Unbounded(box l), Tuple::Unbounded(box u)) => self.is_subset_eq(l, u),
+            (Tuple::Concrete(lelts), Tuple::Unpacked(box (u_prefix, u_middle, u_suffix))) => {
+                if lelts.len() < u_prefix.len() + u_suffix.len() {
+                    false
+                } else {
+                    lelts.iter().enumerate().all(|(idx, l)| {
+                        if idx < u_prefix.len() {
+                            self.is_subset_eq(l, &u_prefix[idx])
+                        } else if idx >= lelts.len() - u_suffix.len() {
+                            self.is_subset_eq(l, &u_suffix[idx + u_suffix.len() - lelts.len()])
+                        } else {
+                            self.is_subset_eq(l, u_middle)
+                        }
+                    })
+                }
+            }
+            (Tuple::Unbounded(box l), Tuple::Unpacked(box (u_prefix, u_middle, u_suffix))) => {
+                u_prefix.iter().all(|u| self.is_subset_eq(l, u))
+                    && self.is_subset_eq(l, u_middle)
+                    && u_suffix.iter().all(|u| self.is_subset_eq(l, u))
+            }
+            (Tuple::Unpacked(box (l_prefix, l_middle, l_suffix)), Tuple::Unbounded(box u)) => {
+                l_prefix.iter().all(|l| self.is_subset_eq(l, u))
+                    && self.is_subset_eq(l_middle, u)
+                    && l_suffix.iter().all(|l| self.is_subset_eq(l, u))
+            }
+            (Tuple::Unpacked(box (l_prefix, l_middle, l_suffix)), Tuple::Concrete(uelts)) => {
+                if uelts.len() < l_prefix.len() + l_suffix.len() {
+                    false
+                } else {
+                    uelts.iter().enumerate().all(|(idx, u)| {
+                        if idx < l_prefix.len() {
+                            self.is_subset_eq(&l_prefix[idx], u)
+                        } else if idx >= uelts.len() - l_suffix.len() {
+                            self.is_subset_eq(&l_suffix[idx + l_suffix.len() - uelts.len()], u)
+                        } else {
+                            self.is_subset_eq(l_middle, u)
+                        }
+                    })
+                }
+            }
+            (
+                Tuple::Unpacked(box (l_prefix, l_middle, l_suffix)),
+                Tuple::Unpacked(box (u_prefix, u_middle, u_suffix)),
+            ) => {
+                l_prefix
+                    .iter()
+                    .zip_longest(u_prefix.iter())
+                    .all(|pair| match pair {
+                        EitherOrBoth::Both(l, u) => self.is_subset_eq(l, u),
+                        EitherOrBoth::Left(l) => self.is_subset_eq(l, u_middle),
+                        EitherOrBoth::Right(u) => self.is_subset_eq(l_middle, u),
+                    })
+                    && self.is_subset_eq(l_middle, u_middle)
+                    && l_suffix
+                        .iter()
+                        .rev()
+                        .zip_longest(u_suffix.iter().rev())
+                        .all(|pair| match pair {
+                            EitherOrBoth::Both(l, u) => self.is_subset_eq(l, u),
+                            EitherOrBoth::Left(l) => self.is_subset_eq(l, u_middle),
+                            EitherOrBoth::Right(u) => self.is_subset_eq(l_middle, u),
+                        })
+            }
+            _ => false,
+        }
+    }
+
     /// Implementation of subset equality for Type, other than Var.
     pub fn is_subset_eq_impl(&mut self, got: &Type, want: &Type) -> bool {
         match (got, want) {
@@ -401,23 +487,8 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             {
                 self.is_subset_eq(&Type::Tuple(Tuple::Concrete(elts)), want)
             }
-            (Type::Tuple(Tuple::Concrete(lelts)), Type::Tuple(Tuple::Concrete(uelts))) => {
-                if lelts.len() == uelts.len() {
-                    lelts
-                        .iter()
-                        .zip(uelts)
-                        .all(|(l, u)| self.is_subset_eq(l, u))
-                } else {
-                    false
-                }
-            }
-            (Type::Tuple(Tuple::Unbounded(box Type::Any(_))), Type::Tuple(_)) => true,
-            (Type::Tuple(Tuple::Concrete(lelts)), Type::Tuple(Tuple::Unbounded(box u))) => {
-                lelts.iter().all(|l| self.is_subset_eq(l, u))
-            }
-            (Type::Tuple(Tuple::Unbounded(box l)), Type::Tuple(Tuple::Unbounded(box u))) => {
-                self.is_subset_eq(l, u)
-            }
+            (Type::Tuple(l), Type::Tuple(u)) => self.is_subset_tuple(l, u),
+
             (Type::Tuple(Tuple::Concrete(left_elts)), _) => {
                 let tuple_type = self
                     .type_order
@@ -428,6 +499,13 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             (Type::Tuple(Tuple::Unbounded(box left_elt)), _) => {
                 let tuple_type = self.type_order.stdlib().tuple(left_elt.clone()).to_type();
+                self.is_subset_eq(&tuple_type, want)
+            }
+            (Type::Tuple(Tuple::Unpacked(box (prefix, middle, suffix))), _) => {
+                let mut elts = prefix.clone();
+                elts.push(middle.clone());
+                elts.extend(suffix.clone());
+                let tuple_type = self.type_order.stdlib().tuple(unions(elts)).to_type();
                 self.is_subset_eq(&tuple_type, want)
             }
             (Type::Literal(lit), Type::LiteralString) => lit.is_string(),

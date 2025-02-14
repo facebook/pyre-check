@@ -6,6 +6,7 @@
  */
 
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprStarred;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
@@ -47,19 +48,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 arguments.map(|arg| self.expr_untype(arg, errors)),
             )),
             SpecialForm::Tuple => {
-                let types: Vec<Type> = arguments.map(|x| self.expr_untype(x, errors));
-                match types.as_slice() {
-                    [Type::Ellipsis, Type::Ellipsis] => self.error(
-                        errors,
-                        arguments[0].range(),
-                        "Invalid position for `...`".to_owned(),
-                    ),
-                    [t, Type::Ellipsis] => {
-                        Type::type_form(Type::Tuple(Tuple::unbounded(t.clone())))
-                    }
-                    _ => {
-                        for (index, value) in arguments.iter().enumerate() {
-                            if matches!(types[index], Type::Ellipsis) {
+                // TODO (yangdanny) implement star unpack
+                let mut prefix: Vec<Type> = Vec::new();
+                let mut suffix: Vec<Type> = Vec::new();
+                let mut middle: Option<Type> = None;
+                for value in arguments.iter() {
+                    match value {
+                        Expr::EllipsisLiteral(_) => {
+                            if let [t] = prefix.as_slice()
+                                && middle.is_none()
+                            {
+                                return Type::type_form(Type::Tuple(Tuple::unbounded(t.clone())));
+                            } else {
                                 return self.error(
                                     errors,
                                     value.range(),
@@ -67,8 +67,64 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 );
                             }
                         }
-                        Type::type_form(Type::Tuple(Tuple::concrete(types)))
+                        Expr::Starred(ExprStarred { box value, .. }) => {
+                            match self.expr_untype(value, errors) {
+                                Type::Tuple(Tuple::Concrete(elts)) => {
+                                    if middle.is_none() {
+                                        prefix.extend(elts)
+                                    } else {
+                                        suffix.extend(elts)
+                                    }
+                                }
+                                Type::Tuple(Tuple::Unbounded(box ty)) => {
+                                    if middle.is_none() {
+                                        middle = Some(ty)
+                                    } else {
+                                        return self.error(
+                                            errors,
+                                            value.range(),
+                                            "Only one unbounded tuple is allowed to be unpacked"
+                                                .to_owned(),
+                                        );
+                                    }
+                                }
+                                Type::Tuple(Tuple::Unpacked(box (pre, mid, suff))) => {
+                                    if middle.is_none() {
+                                        prefix.extend(pre);
+                                        middle = Some(mid);
+                                        suffix.extend(suff)
+                                    } else {
+                                        return self.error(
+                                            errors,
+                                            value.range(),
+                                            "Only one unbounded tuple is allowed to be unpacked"
+                                                .to_owned(),
+                                        );
+                                    }
+                                }
+                                t => {
+                                    return self.error(
+                                        errors,
+                                        value.range(),
+                                        format!("Expected a tuple, got `{}`", t),
+                                    );
+                                }
+                            }
+                        }
+                        _ => {
+                            let ty = self.expr_untype(value, errors);
+                            if middle.is_none() {
+                                prefix.push(ty)
+                            } else {
+                                suffix.push(ty)
+                            }
+                        }
                     }
+                }
+                if let Some(middle) = middle {
+                    Type::type_form(Type::Tuple(Tuple::unpacked(prefix, middle, suffix)))
+                } else {
+                    Type::type_form(Type::Tuple(Tuple::concrete(prefix)))
                 }
             }
             SpecialForm::Literal => {

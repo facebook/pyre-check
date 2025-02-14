@@ -566,6 +566,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     stdlib.tuple(self.unions(elements))
                 }))
             }
+            Type::Tuple(Tuple::Unpacked(box (prefix, middle, suffix))) => {
+                let mut elements = prefix;
+                elements.push(middle);
+                elements.extend(suffix);
+                Some(AttributeBase::ClassInstance(
+                    stdlib.tuple(self.unions(elements)),
+                ))
+            }
             Type::LiteralString => Some(AttributeBase::ClassInstance(stdlib.str())),
             Type::Literal(lit) => {
                 Some(AttributeBase::ClassInstance(lit.general_class_type(stdlib)))
