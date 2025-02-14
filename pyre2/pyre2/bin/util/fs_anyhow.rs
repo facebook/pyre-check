@@ -6,6 +6,7 @@
  */
 
 use std::fs;
+use std::fs::ReadDir;
 use std::path::Path;
 
 use anyhow::Context as _;
@@ -20,4 +21,8 @@ pub fn read(path: &Path) -> anyhow::Result<Vec<u8>> {
 
 pub fn write(path: &Path, contents: &[u8]) -> Result<(), anyhow::Error> {
     fs::write(path, contents).with_context(|| format!("When writing file `{}`", path.display()))
+}
+
+pub fn read_dir(path: &Path) -> anyhow::Result<ReadDir> {
+    fs::read_dir(path).with_context(|| format!("When reading directory `{}`", path.display()))
 }
