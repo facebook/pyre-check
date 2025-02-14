@@ -84,7 +84,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for name in cls.fields() {
             if let Some(ClassField(ClassFieldInner::Simple {
                 ty, initialization, ..
-            })) = self.get_class_field(cls, name).as_deref()
+            })) = self.get_class_field_non_synthesized(cls, name).as_deref()
             {
                 if self.is_valid_enum_member(name, ty, *initialization) {
                     let lit = Type::Literal(Lit::Enum(Box::new((

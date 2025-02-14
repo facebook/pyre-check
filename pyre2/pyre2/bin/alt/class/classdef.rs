@@ -522,6 +522,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ClassField::new(ty.clone(), ann.cloned(), initialization, readonly)
     }
 
+    pub fn get_class_field_non_synthesized(
+        &self,
+        cls: &Class,
+        name: &Name,
+    ) -> Option<Arc<ClassField>> {
+        if cls.contains(name) {
+            let field = self.get_from_class(
+                cls,
+                &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
+            );
+            Some(field)
+        } else {
+            None
+        }
+    }
+
     pub fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Arc<ClassField>> {
         let synthesized_fields = self.get_from_class(
             cls,
@@ -532,11 +548,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             && synth.overwrite
         {
             Some(synth.inner.dupe())
-        } else if cls.contains(name) {
-            let field = self.get_from_class(
-                cls,
-                &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
-            );
+        } else if let Some(field) = self.get_class_field_non_synthesized(cls, name) {
             Some(field)
         } else {
             synth.map(|f| f.inner.dupe())
