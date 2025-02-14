@@ -2110,16 +2110,6 @@
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "EXPECTED (x: Any) -> Any <: Proto8",
-      "description": "EXPECTED (x: Any) -> Any <: Proto8",
-      "line": 168,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 168
-    },
-    {
-      "code": -2,
       "column": 7,
       "concise_description": "EXPECTED (x: int) -> Any <: Proto8",
       "description": "EXPECTED (x: int) -> Any <: Proto8",
@@ -2502,26 +2492,6 @@
     },
     {
       "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED Overloaded9 <: IntArg9",
-      "description": "EXPECTED Overloaded9 <: IntArg9",
-      "line": 271,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 271
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED Overloaded9 <: StrArg9",
-      "description": "EXPECTED Overloaded9 <: StrArg9",
-      "line": 272,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 272
-    },
-    {
-      "code": -2,
       "column": 21,
       "concise_description": "EXPECTED Overloaded9 <: FloatArg9",
       "description": "EXPECTED Overloaded9 <: FloatArg9",
@@ -2529,16 +2499,6 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 273
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "EXPECTED IntStrArg10 <: Overloaded10",
-      "description": "EXPECTED IntStrArg10 <: Overloaded10",
-      "line": 296,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 296
     },
     {
       "code": -2,
@@ -4558,16 +4518,6 @@
     },
     {
       "code": -2,
-      "column": 41,
-      "concise_description": "EXPECTED Overload[(s: str) -> int, (s: list[str]) -> int] <: (@_) -> @_",
-      "description": "EXPECTED Overload[(s: str) -> int, (s: list[str]) -> int] <: (@_) -> @_",
-      "line": 103,
-      "name": "PyreError",
-      "stop_column": 61,
-      "stop_line": 103
-    },
-    {
-      "code": -2,
       "column": 52,
       "concise_description": "EXPECTED type[dict] <: (@_) -> @_",
       "description": "EXPECTED type[dict] <: (@_) -> @_",
@@ -4698,16 +4648,6 @@
     }
   ],
   "dataclasses_transform_field.py": [
-    {
-      "code": -2,
-      "column": 61,
-      "concise_description": "EXPECTED tuple[Overload[(*, default: str | None, resolver: () -> Any, init: bool) -> Any, (*, default: str | None, resolver: None, init: bool) -> Any], (*, init: bool, kw_only: bool) -> Any] <: tuple[(...) -> Any | type[Any], ...]",
-      "description": "EXPECTED tuple[Overload[(*, default: str | None, resolver: () -> Any, init: bool) -> Any, (*, default: str | None, resolver: None, init: bool) -> Any], (*, init: bool, kw_only: bool) -> Any] <: tuple[(...) -> Any | type[Any], ...]",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 77,
-      "stop_line": 48
-    },
     {
       "code": -2,
       "column": 16,
@@ -11792,16 +11732,6 @@
     },
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED Literal['Point5'] <: Iterable[Any]",
-      "description": "EXPECTED Literal['Point5'] <: Iterable[Any]",
-      "line": 33,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
       "column": 31,
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
@@ -11849,16 +11779,6 @@
       "name": "PyreError",
       "stop_column": 14,
       "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "EXPECTED Literal['Point6'] <: Iterable[Any]",
-      "description": "EXPECTED Literal['Point6'] <: Iterable[Any]",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 39
     },
     {
       "code": -2,
@@ -13413,16 +13333,6 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 118
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED Literal['N'] <: Iterable[Any]",
-      "description": "EXPECTED Literal['N'] <: Iterable[Any]",
-      "line": 131,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 131
     },
     {
       "code": -2,

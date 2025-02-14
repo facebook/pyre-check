@@ -206,7 +206,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 && let Some(want) = self.get_call_attr(&protocol)
             {
                 if let Type::BoundMethod(box ref method) = want
-                    && let Some(want_no_self) = method.as_callable()
+                    && let Some(want_no_self) = method.to_callable()
                 {
                     if !self.is_subset_eq(&got, &want_no_self) {
                         return false;
@@ -233,21 +233,23 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             (Type::Union(ls), u) => ls.iter().all(|l| self.is_subset_eq(l, u)),
             (l, Type::Intersect(us)) => us.iter().all(|u| self.is_subset_eq(l, u)),
+            (l, Type::Overload(us)) => us.iter().all(|u| self.is_subset_eq(l, u)),
             (l, Type::Union(us)) => us.iter().any(|u| self.is_subset_eq(l, u)),
             (Type::Intersect(ls), u) => ls.iter().any(|l| self.is_subset_eq(l, u)),
+            (Type::Overload(ls), u) => ls.iter().any(|l| self.is_subset_eq(l, u)),
             (Type::BoundMethod(box method), Type::Callable(_, _))
-                if let Some(l_no_self) = method.as_callable() =>
+                if let Some(l_no_self) = method.to_callable() =>
             {
                 self.is_subset_eq_impl(&l_no_self, want)
             }
             (Type::Callable(_, _), Type::BoundMethod(box method))
-                if let Some(u_no_self) = method.as_callable() =>
+                if let Some(u_no_self) = method.to_callable() =>
             {
                 self.is_subset_eq_impl(got, &u_no_self)
             }
             (Type::BoundMethod(box l), Type::BoundMethod(box u))
-                if let Some(l_no_self) = l.as_callable()
-                    && let Some(u_no_self) = u.as_callable() =>
+                if let Some(l_no_self) = l.to_callable()
+                    && let Some(u_no_self) = u.to_callable() =>
             {
                 self.is_subset_eq_impl(&l_no_self, &u_no_self)
             }

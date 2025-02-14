@@ -195,15 +195,11 @@
     "Line 69: Expected 1 errors",
     "Line 70: Expected 1 errors",
     "Line 260: Expected 1 errors",
-    "Line 311: Expected 1 errors",
-    "Line 168: Unexpected errors ['EXPECTED (x: Any) -> Any <: Proto8']"
+    "Line 311: Expected 1 errors"
   ],
   "callables_subtyping.py": [
     "Line 211: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]",
-    "Line 213: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]",
-    "Line 271: Unexpected errors ['EXPECTED Overloaded9 <: IntArg9']",
-    "Line 272: Unexpected errors ['EXPECTED Overloaded9 <: StrArg9']",
-    "Line 296: Unexpected errors ['EXPECTED IntStrArg10 <: Overloaded10']"
+    "Line 213: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]"
   ],
   "classes_classvar.py": [
     "Line 45: Expected 1 errors",
@@ -371,7 +367,6 @@
     "Line 118: Expected 1 errors",
     "Line 29: Unexpected errors ['EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]']",
     "Line 102: Unexpected errors ['EXPECTED type[ConverterClass] <: (@_) -> @_']",
-    "Line 103: Unexpected errors ['EXPECTED Overload[(s: str) -> int, (s: list[str]) -> int] <: (@_) -> @_']",
     "Line 104: Unexpected errors ['EXPECTED type[dict] <: (@_) -> @_']",
     "Line 112: Unexpected errors ['Expected 0 positional arguments, got 5']",
     "Line 114: Unexpected errors [\"EXPECTED Literal['f1'] <: int\"]",
@@ -381,7 +376,6 @@
     "Line 132: Unexpected errors ['EXPECTED type[str] <: () -> str | None']"
   ],
   "dataclasses_transform_field.py": [
-    "Line 48: Unexpected errors ['EXPECTED tuple[Overload[(*, default: str | None, resolver: () -> Any, init: bool) -> Any, (*, default: str | None, resolver: None, init: bool) -> Any], (*, init: bool, kw_only: bool) -> Any] <: tuple[(...) -> Any | type[Any], ...]']",
     "Line 60: Unexpected errors ['Unexpected keyword argument `name`']",
     "Line 77: Unexpected errors ['Unexpected keyword argument `name`']"
   ],
@@ -886,10 +880,10 @@
     "Line 25: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point3, type[tuple[Any, ...]]]']",
     "Line 29: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point4, type[tuple[Any, ...]]]']",
     "Line 30: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point4, type[tuple[Any, ...]]]']",
-    "Line 33: Unexpected errors [\"EXPECTED Literal['Point5'] <: Iterable[Any]\", 'Expected 2 positional arguments, got 3']",
+    "Line 33: Unexpected errors ['Expected 2 positional arguments, got 3']",
     "Line 34: Unexpected errors ['Expected a callable, got tuple[Any]']",
     "Line 35: Unexpected errors ['Expected a callable, got tuple[Any]']",
-    "Line 39: Unexpected errors [\"EXPECTED Literal['Point6'] <: Iterable[Any]\", 'Expected 2 positional arguments, got 3']",
+    "Line 39: Unexpected errors ['Expected 2 positional arguments, got 3']",
     "Line 40: Unexpected errors ['Expected a callable, got tuple[Any]']",
     "Line 41: Unexpected errors ['Expected a callable, got tuple[Any]']",
     "Line 57: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT4, type[tuple[Any, ...]]]']",
@@ -1058,7 +1052,7 @@
     "Line 149: Expected 1 errors",
     "Line 152: Expected 1 errors",
     "Line 155: Expected 1 errors",
-    "Line 131: Unexpected errors [\"EXPECTED Literal['N'] <: Iterable[Any]\", 'Expected 2 positional arguments, got 3']",
+    "Line 131: Unexpected errors ['Expected 2 positional arguments, got 3']",
     "Line 133: Unexpected errors ['Expected a callable, got tuple[Any]']",
     "Line 139: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']"
   ],

@@ -232,3 +232,26 @@ class C6:
 f: P6 = C6()  # E: EXPECTED C6 <: P6
 "#,
 );
+
+testcase!(
+    test_protocol_overload,
+    r#"
+from typing import Protocol, overload
+
+class P(Protocol):
+    @overload
+    def foo(self, x: int) -> int: ...
+    @overload
+    def foo(self, x: str) -> str: ...
+
+class C1:
+    @overload
+    def foo(self, x: int) -> int: ...
+    @overload
+    def foo(self, x: str) -> str: ...
+    def foo(self, x: int | str) -> int | str:
+        return x
+
+x1: P = C1() # OK
+"#,
+);

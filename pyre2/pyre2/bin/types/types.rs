@@ -284,23 +284,8 @@ pub struct BoundMethod {
 }
 
 impl BoundMethod {
-    pub fn as_callable(&self) -> Option<Type> {
-        if let Type::Callable(
-            box Callable {
-                params: Params::List(params),
-                ret,
-            },
-            _,
-        ) = &self.func
-            && !params.is_empty()
-        {
-            Some(Type::Callable(
-                Box::new(Callable::list(params.tail(), ret.clone())),
-                CallableKind::Anon,
-            ))
-        } else {
-            None
-        }
+    pub fn to_callable(&self) -> Option<Type> {
+        self.func.to_unbound_callable()
     }
 }
 
@@ -450,6 +435,28 @@ impl Type {
             Type::Forall(_, box t) | Type::BoundMethod(box BoundMethod { func: t, .. }) => {
                 t.as_typeguard()
             }
+            _ => None,
+        }
+    }
+
+    // Convert a bound method into a callable by stripping the first argument.
+    // TODO: Does not handle generics.
+    pub fn to_unbound_callable(&self) -> Option<Type> {
+        match self {
+            Type::Callable(
+                box Callable {
+                    params: Params::List(params),
+                    ret,
+                },
+                _,
+            ) if !params.is_empty() => Some(Type::Callable(
+                Box::new(Callable::list(params.tail(), ret.clone())),
+                CallableKind::Anon,
+            )),
+            Type::Overload(overloads) => overloads
+                .try_mapped_ref(|x| x.to_unbound_callable().ok_or(()))
+                .ok()
+                .map(Type::Overload),
             _ => None,
         }
     }
