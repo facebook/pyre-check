@@ -413,6 +413,13 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
                     ~right:left_annotation
                   |> List.concat_map
                        ~f:(solve_parameters_with_constraints ~left_parameters ~right_parameters)
+              else if left.default then
+                (* left has a default, so skip it and try to match right to the next param in the
+                   list *)
+                solve_parameters_with_constraints
+                  ~left_parameters
+                  ~right_parameters:all_right_parameters
+                  constraints
               else
                 impossible
           | ( CallableParamType.Variable (Concrete left_annotation) :: _,

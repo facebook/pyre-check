@@ -153,6 +153,18 @@ let test_check_implementation =
            {|
       from typing import overload
       @overload
+      def f(x: str | None = ...) -> None: ...
+      @overload
+      def f(*, y: int | None = ...) -> None: ...
+      def f(x: str | None = None, *, y: int | None = None) -> None:
+          pass
+    |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+      from typing import overload
+      @overload
       def foo(bar: object) -> None:
         pass
       def foo(bar: int) -> None:
@@ -191,9 +203,6 @@ let test_check_implementation =
           return 1
     |}
            ["Incompatible overload [43]: At least two overload signatures must be present."];
-      (* TODO(T65594835) Pyre should accept this, but does not recognize that if named-only
-         arguments appear with default values in the implementation, any of the named arguments
-         appearing in an overload is compatible. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -205,11 +214,7 @@ let test_check_implementation =
       def f(*, b: Optional[int] = None, a: Optional[int] = None) -> int:
           return 5
     |}
-           [
-             "Incompatible overload [43]: The implementation of `f` does not accept all possible \
-              arguments of overload defined on line `5`.";
-             "Incompatible overload [43]: At least two overload signatures must be present.";
-           ];
+           ["Incompatible overload [43]: At least two overload signatures must be present."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
