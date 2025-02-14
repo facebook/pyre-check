@@ -55,6 +55,7 @@ impl Debug for ClassInner {
     }
 }
 
+#[derive(Debug)]
 pub enum ClassKind {
     StaticMethod,
     ClassMethod,

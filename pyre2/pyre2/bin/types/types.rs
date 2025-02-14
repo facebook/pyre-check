@@ -271,6 +271,7 @@ impl Decoration {
     }
 }
 
+#[derive(Debug)]
 pub enum CalleeKind {
     Callable(CallableKind),
     Class(ClassKind),
