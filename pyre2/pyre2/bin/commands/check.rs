@@ -166,7 +166,12 @@ impl Args {
             if let Err(e) = res {
                 eprintln!("{e:#}");
             }
-            watch.wait()?;
+            loop {
+                let events = watch.wait()?;
+                if events.iter().any(|x| !x.kind.is_access()) {
+                    break;
+                }
+            }
         }
     }
 
