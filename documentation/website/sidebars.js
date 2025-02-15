@@ -241,6 +241,7 @@ module.exports = {
           'fb/pysa-tasks-backlog',
           'fb/pysa-quality-analyzer',
           'fb/pysa-sandcastle-internals',
+          'fb/ocaml-profiling',
         ],
       },
     ]),
