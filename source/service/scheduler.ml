@@ -174,16 +174,16 @@ let map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs () =
       let number_of_chunks =
         Policy.divide_work ~number_of_workers ~number_of_tasks:(List.length inputs) policy
       in
-      if number_of_chunks = 1 then
-        sequential_map_reduce ()
-      else
-        let map inputs = (fun () -> map inputs) |> run_process in
-        MultiWorker.call
-          (Some workers)
-          ~job:map
-          ~merge:reduce
-          ~neutral:initial
-          ~next:(Hack_parallel.Std.Bucket.make ~num_workers:number_of_chunks inputs)
+      (* Important: even when number_of_chunks=1, we should still schedule the jobs on a separate
+         worker. Otherwise, the main process might use an excessive amount of memory, especially if
+         it is long lived (e.g, pysa). *)
+      let map inputs = (fun () -> map inputs) |> run_process in
+      MultiWorker.call
+        (Some workers)
+        ~job:map
+        ~merge:reduce
+        ~neutral:initial
+        ~next:(Hack_parallel.Std.Bucket.make ~num_workers:number_of_chunks inputs)
   | SequentialScheduler -> sequential_map_reduce ()
 
 
