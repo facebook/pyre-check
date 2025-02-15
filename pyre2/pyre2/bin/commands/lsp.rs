@@ -282,7 +282,7 @@ impl<'a> Server<'a> {
             })
             .collect::<Vec<_>>();
 
-        self.state.lock().unwrap().invalidate_load(
+        self.state.lock().unwrap().invalidate_memory(
             self.loader.dupe(),
             &self
                 .open_files

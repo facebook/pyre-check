@@ -147,7 +147,7 @@ fn test_in_memory_updated_content_recheck() {
     )]);
     assert_eq!(state.collect_errors().len(), 1);
     test_env.lock().unwrap().add("main", "bound_name = 3");
-    state.invalidate_load(loader.dupe(), &[PathBuf::from("main.py")]);
+    state.invalidate_memory(loader.dupe(), &[PathBuf::from("main.py")]);
     state.run(vec![Handle::new(
         ModuleName::from_str("main"),
         ModulePath::memory(PathBuf::from("main.py")),

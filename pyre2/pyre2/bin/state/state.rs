@@ -563,9 +563,9 @@ impl State {
         self.invalidate_everything();
     }
 
-    /// Called if the `load` portion of loading might have changed.
-    /// Specify which files might have changed.
-    pub fn invalidate_load(&mut self, loader: LoaderId, files: &[PathBuf]) {
+    /// Called if the `load_from_memory` portion of loading might have changed.
+    /// Specify which in-memory files might have changed.
+    pub fn invalidate_memory(&mut self, loader: LoaderId, files: &[PathBuf]) {
         let _ = loader;
         let _ = files;
         self.invalidate_everything();
