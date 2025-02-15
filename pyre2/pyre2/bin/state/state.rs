@@ -112,6 +112,7 @@ struct ModuleState {
     // is still waiting for `bar` and we are unable to make progress.
     lock: FairMutex<()>,
     steps: RwLock<ModuleSteps>,
+    dependencies: Mutex<SmallSet<ModuleName>>,
 }
 
 impl State {
@@ -186,7 +187,7 @@ impl State {
                 loader: &*loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
-                lookup: &self.lookup(handle),
+                lookup: &self.lookup(handle, module_state.dupe()),
                 retain_memory: self.retain_memory,
             });
             {
@@ -229,9 +230,10 @@ impl State {
         load.errors.add(&load.module_info, range, msg);
     }
 
-    fn lookup<'a>(&'a self, handle: &Handle) -> StateHandle<'a> {
+    fn lookup<'a>(&'a self, handle: &Handle, module_state: Arc<ModuleState>) -> StateHandle<'a> {
         StateHandle {
             state: self,
+            module_state,
             handle: handle.dupe(),
         }
     }
@@ -239,7 +241,7 @@ impl State {
     fn lookup_stdlib(&self, handle: &Handle, name: &Name) -> Option<Class> {
         if !self
             .lookup_export(handle)
-            .contains(name, &self.lookup(handle))
+            .contains(name, &self.lookup(handle, self.get_module(handle)))
         {
             self.add_error(
                 handle,
@@ -306,7 +308,7 @@ impl State {
             )
         };
         let stdlib = self.get_stdlib(handle);
-        let lookup = self.lookup(handle);
+        let lookup = self.lookup(handle, module_state);
         answers.1.solve_key(
             &lookup,
             &lookup,
@@ -600,10 +602,17 @@ impl State {
 struct StateHandle<'a> {
     state: &'a State,
     handle: Handle,
+    /// Used to set the dependency field, without requiring another Arc
+    module_state: Arc<ModuleState>,
 }
 
 impl<'a> LookupExport for StateHandle<'a> {
     fn get(&self, module: ModuleName) -> Result<Exports, FindError> {
+        self.module_state
+            .dependencies
+            .lock()
+            .unwrap()
+            .insert(module);
         Ok(self
             .state
             .lookup_export(&self.state.import_handle(&self.handle, module)?))
@@ -621,6 +630,11 @@ impl<'a> LookupAnswer for StateHandle<'a> {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
+        self.module_state
+            .dependencies
+            .lock()
+            .unwrap()
+            .insert(module);
         // The unwrap is safe because we must have said there were no exports,
         // so no one can be trying to get at them
         let handle = self.state.import_handle(&self.handle, module).unwrap();
