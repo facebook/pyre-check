@@ -606,16 +606,20 @@ struct StateHandle<'a> {
     module_state: Arc<ModuleState>,
 }
 
-impl<'a> LookupExport for StateHandle<'a> {
-    fn get(&self, module: ModuleName) -> Result<Exports, FindError> {
+impl<'a> StateHandle<'a> {
+    fn import_handle(&self, module: ModuleName) -> Result<Handle, FindError> {
         self.module_state
             .dependencies
             .lock()
             .unwrap()
             .insert(module);
-        Ok(self
-            .state
-            .lookup_export(&self.state.import_handle(&self.handle, module)?))
+        self.state.import_handle(&self.handle, module)
+    }
+}
+
+impl<'a> LookupExport for StateHandle<'a> {
+    fn get(&self, module: ModuleName) -> Result<Exports, FindError> {
+        Ok(self.state.lookup_export(&self.import_handle(module)?))
     }
 }
 
@@ -630,14 +634,9 @@ impl<'a> LookupAnswer for StateHandle<'a> {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
-        self.module_state
-            .dependencies
-            .lock()
-            .unwrap()
-            .insert(module);
         // The unwrap is safe because we must have said there were no exports,
         // so no one can be trying to get at them
-        let handle = self.state.import_handle(&self.handle, module).unwrap();
+        let handle = self.import_handle(module).unwrap();
         self.state.lookup_answer(&handle, k)
     }
 }
