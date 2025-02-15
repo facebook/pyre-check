@@ -561,6 +561,7 @@ let assert_update
         in
         UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes
           read_only
+          ~scheduler:(Test.mock_scheduler ())
           ~global_module_paths_api
         |> assert_equal ~printer:(List.to_string ~f:Fn.id) expectation
     | `Global (global_name, dependency, expectation) ->

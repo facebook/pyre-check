@@ -152,9 +152,9 @@ module ReadOnly : sig
     Ast.Reference.t ->
     Module.UnannotatedGlobal.t option
 
-  val all_classes : t -> string list
+  val all_classes : t -> scheduler:Scheduler.t -> string list
 
-  val all_unannotated_globals : t -> Ast.Reference.t list
+  val all_unannotated_globals : t -> scheduler:Scheduler.t -> Ast.Reference.t list
 end
 
 module InContext : sig

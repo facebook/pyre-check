@@ -412,7 +412,11 @@ let initialize_models
   in
 
   let models =
-    ClassModels.infer ~pyre_api ~user_models:(SharedModels.read_only models)
+    ClassModels.infer
+      ~scheduler
+      ~scheduler_policies
+      ~pyre_api
+      ~user_models:(SharedModels.read_only models)
     |> SharedModels.join_with_registry_sequential models ~model_join:Model.join_user_models
   in
 

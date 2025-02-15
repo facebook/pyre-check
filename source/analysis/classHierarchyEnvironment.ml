@@ -383,11 +383,13 @@ module ReadOnly = struct
 
   (* This function is not used in production, but in the past it has been useful to run it after
      incremental updates when debugging bugs in incremental logic *)
-  let check_integrity read_only ~global_module_paths_api =
+  let check_integrity read_only ~scheduler ~global_module_paths_api =
     let class_names =
       alias_environment read_only
       |> TypeAliasEnvironment.ReadOnly.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes ~global_module_paths_api
+      |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes
+           ~scheduler
+           ~global_module_paths_api
     in
     ClassHierarchy.check_integrity (class_hierarchy read_only) ~class_names
 end

@@ -79,10 +79,15 @@ module ReadOnly : sig
    * powering IDEs.
    *)
   module GlobalApis : sig
-    val all_classes : t -> global_module_paths_api:GlobalModulePathsApi.t -> Type.Primitive.t list
+    val all_classes
+      :  t ->
+      scheduler:Scheduler.t ->
+      global_module_paths_api:GlobalModulePathsApi.t ->
+      Type.Primitive.t list
 
     val all_unannotated_globals
       :  t ->
+      scheduler:Scheduler.t ->
       global_module_paths_api:GlobalModulePathsApi.t ->
       Reference.t list
   end

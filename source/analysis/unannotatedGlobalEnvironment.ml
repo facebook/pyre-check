@@ -420,18 +420,33 @@ module ReadOnly = struct
    * powering IDEs.
    *)
   module GlobalApis = struct
-    let all_classes read_only ~global_module_paths_api =
+    let all_classes read_only ~scheduler ~global_module_paths_api =
       let class_names_for_qualifier qualifier =
         get_module_components read_only qualifier
         >>| (fun { Module.Components.class_summaries; _ } ->
               Identifier.Map.Tree.keys class_summaries)
         |> Option.value ~default:[]
       in
-      GlobalModulePathsApi.explicit_qualifiers global_module_paths_api
-      |> List.concat_map ~f:class_names_for_qualifier
+      let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
+      let scheduler_policy =
+        Scheduler.Policy.fixed_chunk_count
+          ~minimum_chunks_per_worker:1
+          ~minimum_chunk_size:1
+          ~preferred_chunks_per_worker:1
+          ()
+      in
+      let map = List.concat_map ~f:class_names_for_qualifier in
+      Scheduler.map_reduce
+        scheduler
+        ~policy:scheduler_policy
+        ~initial:[]
+        ~map
+        ~reduce:List.append
+        ~inputs:qualifiers
+        ()
 
 
-    let all_unannotated_globals read_only ~global_module_paths_api =
+    let all_unannotated_globals read_only ~scheduler ~global_module_paths_api =
       let unannotated_global_names_for_qualifier qualifier =
         get_module_components read_only qualifier
         >>| (fun { Module.Components.unannotated_globals; _ } ->
@@ -445,8 +460,23 @@ module ReadOnly = struct
         unannotated_global_names_for_qualifier qualifier
         |> List.map ~f:local_name_to_fully_qualified_reference
       in
-      GlobalModulePathsApi.explicit_qualifiers global_module_paths_api
-      |> List.concat_map ~f:qualified_unannotated_global_names
+      let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
+      let scheduler_policy =
+        Scheduler.Policy.fixed_chunk_count
+          ~minimum_chunks_per_worker:1
+          ~minimum_chunk_size:1
+          ~preferred_chunks_per_worker:1
+          ()
+      in
+      let map = List.concat_map ~f:qualified_unannotated_global_names in
+      Scheduler.map_reduce
+        scheduler
+        ~policy:scheduler_policy
+        ~initial:[]
+        ~map
+        ~reduce:List.append
+        ~inputs:qualifiers
+        ()
   end
 end
 

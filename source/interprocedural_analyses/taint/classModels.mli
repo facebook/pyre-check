@@ -6,6 +6,8 @@
  *)
 
 val infer
-  :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+  :  scheduler:Scheduler.t ->
+  scheduler_policies:Configuration.SchedulerPolicies.t ->
+  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
   user_models:SharedModels.ReadOnly.t ->
   Registry.t

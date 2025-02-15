@@ -225,6 +225,7 @@ module ScheduleIdentifier : sig
     | CallableModelQueries
     | AttributeModelQueries
     | GlobalModelQueries
+    | InferClassModels
     | GlobalConstants
     | CallGraph
     | OverrideGraph

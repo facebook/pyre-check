@@ -44,7 +44,7 @@ module FeatureSet = struct
     }
 end
 
-let infer ~pyre_api ~user_models =
+let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
   let step_logger =
     StepLogger.start
       ~start_message:"Computing inferred models"
@@ -340,9 +340,30 @@ let infer ~pyre_api ~user_models =
     >>| compute_models class_name
     |> Option.value ~default:[]
   in
-  let all_classes = PyrePysaEnvironment.ReadOnly.all_classes pyre_api in
+  let all_classes = PyrePysaEnvironment.ReadOnly.all_classes pyre_api ~scheduler in
   let models =
-    List.concat_map all_classes ~f:inferred_models |> Registry.of_alist ~join:Model.join_user_models
+    let scheduler_policy =
+      Scheduler.Policy.from_configuration_or_default
+        scheduler_policies
+        Configuration.ScheduleIdentifier.InferClassModels
+        ~default:
+          (Scheduler.Policy.fixed_chunk_size
+             ~minimum_chunks_per_worker:1
+             ~minimum_chunk_size:1
+             ~preferred_chunk_size:5000
+             ())
+    in
+    let map classes =
+      List.concat_map classes ~f:inferred_models |> Registry.of_alist ~join:Model.join_user_models
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
+      ~initial:Registry.empty
+      ~map
+      ~reduce:(Registry.merge ~join:Model.join_user_models)
+      ~inputs:all_classes
+      ()
   in
   let () = StepLogger.finish ~integers:["models", Registry.size models] step_logger in
   models

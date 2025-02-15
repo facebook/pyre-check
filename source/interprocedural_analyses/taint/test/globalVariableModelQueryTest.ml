@@ -89,7 +89,9 @@ let test_find_globals =
       }
     in
     let actual =
-      ModelQueryExecution.GlobalVariableQueryExecutor.get_globals ~pyre_api
+      ModelQueryExecution.GlobalVariableQueryExecutor.get_globals
+        ~scheduler:(Test.mock_scheduler ())
+        ~pyre_api
       |> List.map ~f:Target.object_name
       |> List.filter ~f:is_uninteresting_global
       |> List.map ~f:add_type_annotation

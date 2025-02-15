@@ -637,7 +637,11 @@ let initialize
         models, model_query_results
   in
   let initial_models =
-    ClassModels.infer ~pyre_api ~user_models:(SharedModels.read_only user_models)
+    ClassModels.infer
+      ~scheduler
+      ~scheduler_policies:Configuration.SchedulerPolicies.empty
+      ~pyre_api
+      ~user_models:(SharedModels.read_only user_models)
     |> SharedModels.join_with_registry_sequential user_models ~model_join:Model.join_user_models
   in
   (* Overrides must be done first, as they influence the call targets. *)

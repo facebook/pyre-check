@@ -93,7 +93,10 @@ module AttributeQueryExecutor : sig
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
-  val get_attributes : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Interprocedural.Target.t list
+  val get_attributes
+    :  scheduler:Scheduler.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    Interprocedural.Target.t list
 
   val make_modelable
     :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
@@ -118,7 +121,10 @@ module GlobalVariableQueryExecutor : sig
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
-  val get_globals : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Interprocedural.Target.t list
+  val get_globals
+    :  scheduler:Scheduler.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    Interprocedural.Target.t list
 
   val make_modelable
     :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->

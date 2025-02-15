@@ -1132,6 +1132,7 @@ let rec process_request_exn
                 ~f:load_modules
                 ~inputs:(GlobalModulePathsApi.explicit_qualifiers global_module_paths_api);
               UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes
+                ~scheduler
                 ~global_module_paths_api
                 (TypeEnvironment.ReadOnly.unannotated_global_environment type_environment)
               |> List.map ~f:Reference.create

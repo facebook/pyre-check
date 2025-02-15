@@ -40,6 +40,7 @@ module HierarchyReadOnly : sig
      incremental updates when debugging bugs in incremental logic *)
   val check_integrity
     :  t ->
+    scheduler:Scheduler.t ->
     global_module_paths_api:GlobalModulePathsApi.t ->
     (unit, ClassHierarchy.CheckIntegrityError.t) result
 end

@@ -613,6 +613,7 @@ module ScheduleIdentifier = struct
     | CallableModelQueries
     | AttributeModelQueries
     | GlobalModelQueries
+    | InferClassModels
     | GlobalConstants
     | CallGraph
     | OverrideGraph
@@ -632,6 +633,7 @@ module ScheduleIdentifier = struct
     | "callable_model_queries" -> Some CallableModelQueries
     | "attribute_model_queries" -> Some AttributeModelQueries
     | "global_model_queries" -> Some GlobalModelQueries
+    | "infer_class_models" -> Some InferClassModels
     | "global_constants" -> Some GlobalConstants
     | "call_graph" -> Some CallGraph
     | "override_graph" -> Some OverrideGraph
@@ -652,6 +654,7 @@ module ScheduleIdentifier = struct
     | CallableModelQueries -> "callable_model_queries"
     | AttributeModelQueries -> "attribute_model_queries"
     | GlobalModelQueries -> "global_model_queries"
+    | InferClassModels -> "infer_class_models"
     | GlobalConstants -> "global_constants"
     | CallGraph -> "call_graph"
     | OverrideGraph -> "override_graph"

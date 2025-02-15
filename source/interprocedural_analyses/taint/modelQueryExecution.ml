@@ -1950,7 +1950,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
 end)
 
 module AttributeQueryExecutor = struct
-  let get_attributes ~pyre_api =
+  let get_attributes ~scheduler ~pyre_api =
     let () = Log.info "Fetching all attributes..." in
     let get_class_attributes class_name =
       let class_summary =
@@ -1975,8 +1975,23 @@ module AttributeQueryExecutor = struct
           in
           Identifier.SerializableMap.fold get_target_from_attributes all_attributes []
     in
-    let all_classes = PyrePysaEnvironment.ReadOnly.all_classes pyre_api in
-    List.concat_map all_classes ~f:get_class_attributes
+    let all_classes = PyrePysaEnvironment.ReadOnly.all_classes pyre_api ~scheduler in
+    let scheduler_policy =
+      Scheduler.Policy.fixed_chunk_count
+        ~minimum_chunks_per_worker:1
+        ~minimum_chunk_size:1
+        ~preferred_chunks_per_worker:1
+        ()
+    in
+    let map = List.concat_map ~f:get_class_attributes in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
+      ~initial:[]
+      ~map
+      ~reduce:List.append
+      ~inputs:all_classes
+      ()
 
 
   include MakeQueryExecutor (struct
@@ -2024,7 +2039,7 @@ module AttributeQueryExecutor = struct
 end
 
 module GlobalVariableQueryExecutor = struct
-  let get_globals ~pyre_api =
+  let get_globals ~scheduler ~pyre_api =
     let () = Log.info "Fetching all globals..." in
     let filter_global global_reference =
       match PyrePysaEnvironment.ReadOnly.get_unannotated_global pyre_api global_reference with
@@ -2033,7 +2048,7 @@ module GlobalVariableQueryExecutor = struct
           true
       | _ -> false
     in
-    PyrePysaEnvironment.ReadOnly.all_unannotated_globals pyre_api
+    PyrePysaEnvironment.ReadOnly.all_unannotated_globals pyre_api ~scheduler
     |> List.filter ~f:filter_global
     |> List.map ~f:Target.create_object
 
@@ -2131,7 +2146,7 @@ let generate_models_from_queries
   (* Generate models for attributes. *)
   let execution_result =
     if not (List.is_empty attribute_queries) then
-      let attributes = AttributeQueryExecutor.get_attributes ~pyre_api in
+      let attributes = AttributeQueryExecutor.get_attributes ~scheduler ~pyre_api in
       AttributeQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
         ~pyre_api
@@ -2150,7 +2165,7 @@ let generate_models_from_queries
   (* Generate models for globals. *)
   let execution_result =
     if not (List.is_empty global_queries) then
-      let globals = GlobalVariableQueryExecutor.get_globals ~pyre_api in
+      let globals = GlobalVariableQueryExecutor.get_globals ~scheduler ~pyre_api in
       GlobalVariableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
         ~pyre_api
