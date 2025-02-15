@@ -565,7 +565,6 @@ impl State {
 
     /// Called if the `load` portion of loading might have changed.
     /// Specify which files might have changed.
-    #[expect(dead_code)]
     pub fn invalidate_load(&mut self, loader: LoaderId, files: &[PathBuf]) {
         let _ = loader;
         let _ = files;
