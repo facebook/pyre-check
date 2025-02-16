@@ -117,7 +117,7 @@ pub struct Flow {
     pub no_next: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FlowStyle {
     /// Am I initialized, or am I the result of `x: int`?
     Annotated { is_initialized: bool },

@@ -537,12 +537,18 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn merge_flow_style(&mut self, styles: SmallSet<Option<&FlowStyle>>) -> Option<FlowStyle> {
-        if styles.len() == 1 {
-            return styles.first().unwrap().cloned();
+    fn merge_flow_style(&mut self, styles: Vec<Option<&FlowStyle>>) -> Option<FlowStyle> {
+        // If these are all identical, return the identical ones.
+        // Otherwise give up and return None, since not clear how to merge otherwise.
+        let mut it = styles.into_iter();
+        let first = it.next()??;
+        for x in it {
+            if x? != first {
+                // TODO: Merging of flow style is hacky. What properties should be merged?
+                return None;
+            }
         }
-        // TODO: Merging of flow style is hacky. What properties should be merged?
-        None
+        Some(first.clone())
     }
 
     pub fn merge_flow(&mut self, mut xs: Vec<Flow>, range: TextRange) -> Flow {
@@ -564,11 +570,10 @@ impl<'a> BindingsBuilder<'a> {
             .collect::<SmallSet<_>>();
         let mut res = SmallMap::with_capacity(names.len());
         for name in names.into_iter() {
-            let (values, styles): (SmallSet<Idx<Key>>, SmallSet<Option<&FlowStyle>>) =
-                visible_branches
-                    .iter()
-                    .flat_map(|x| x.info.get(name.key()).map(|x| (x.key, x.style.as_ref())))
-                    .unzip();
+            let (values, styles): (SmallSet<Idx<Key>>, Vec<Option<&FlowStyle>>) = visible_branches
+                .iter()
+                .flat_map(|x| x.info.get(name.key()).map(|x| (x.key, x.style.as_ref())))
+                .unzip();
             let style = self.merge_flow_style(styles);
             let key = self
                 .table
