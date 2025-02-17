@@ -198,6 +198,20 @@ ys: list[A] = takes_int("") if False else [B()] # E: EXPECTED Literal[''] <: int
 );
 
 testcase_with_bug!(
+    "We don't contextually type the yield expression",
+    test_context_yield,
+    r#"
+from typing import Generator, Iterator
+class A: ...
+class B(A): ...
+def gen() -> Generator[list[A], None, None]:
+    yield [B()] # E: EXPECTED list[B] <: list[A]
+def iter() -> Iterator[list[A]]:
+    yield [B()] # E: EXPECTED list[B] <: list[A]
+"#,
+);
+
+testcase_with_bug!(
     "TODO: We do not currently validate assignments in multi-target assigns. Depending how we fix it, contextual typing may not work",
     test_context_assign_unpacked_tuple,
     r#"
