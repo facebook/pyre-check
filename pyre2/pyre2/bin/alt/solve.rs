@@ -1380,31 +1380,46 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn solve_yield(&self, x: &BindingYield, errors: &ErrorCollector) -> Arc<YieldResult> {
-        // TODO: Keep track of whether the function is async in the binding, decompose hint
-        // appropriately instead of just trying both.
-        let annot = x.0.map(|k| self.get_idx(k));
-        let hint = annot.as_ref().and_then(|x| x.ty.as_ref()).and_then(|ty| {
-            if let Some((yield_ty, send_ty, _)) = self.decompose_generator(ty) {
-                Some((yield_ty, send_ty))
-            } else {
-                self.decompose_async_generator(ty)
+        match x {
+            BindingYield::Yield(annot, x) => {
+                // TODO: Keep track of whether the function is async in the binding, decompose hint
+                // appropriately instead of just trying both.
+                let annot = annot.map(|k| self.get_idx(k));
+                let hint = annot.as_ref().and_then(|x| x.ty.as_ref()).and_then(|ty| {
+                    if let Some((yield_ty, send_ty, _)) = self.decompose_generator(ty) {
+                        Some((yield_ty, send_ty))
+                    } else {
+                        self.decompose_async_generator(ty)
+                    }
+                });
+                if let Some((yield_hint, send_ty)) = hint {
+                    let yield_ty = if let Some(expr) = x.value.as_ref() {
+                        self.expr(expr, Some(&yield_hint), errors)
+                    } else {
+                        self.check_type(&yield_hint, &Type::None, x.range, errors)
+                    };
+                    Arc::new(YieldResult { yield_ty, send_ty })
+                } else {
+                    let yield_ty = if let Some(expr) = x.value.as_ref() {
+                        self.expr(expr, None, errors)
+                    } else {
+                        Type::None
+                    };
+                    let send_ty = Type::any_implicit();
+                    Arc::new(YieldResult { yield_ty, send_ty })
+                }
             }
-        });
-        if let Some((yield_hint, send_ty)) = hint {
-            let yield_ty = if let Some(expr) = x.1.value.as_ref() {
-                self.expr(expr, Some(&yield_hint), errors)
-            } else {
-                self.check_type(&yield_hint, &Type::None, x.1.range, errors)
-            };
-            Arc::new(YieldResult { yield_ty, send_ty })
-        } else {
-            let yield_ty = if let Some(expr) = x.1.value.as_ref() {
-                self.expr(expr, None, errors)
-            } else {
-                Type::None
-            };
-            let send_ty = Type::any_implicit();
-            Arc::new(YieldResult { yield_ty, send_ty })
+            BindingYield::Invalid(x) => {
+                if let Some(expr) = x.value.as_ref() {
+                    self.expr(expr, None, errors);
+                }
+                self.error(
+                    errors,
+                    x.range,
+                    "Invalid `yield` outside of a function".to_owned(),
+                );
+                Arc::new(YieldResult::any_error())
+            }
         }
     }
 
@@ -1413,36 +1428,49 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         x: &BindingYieldFrom,
         errors: &ErrorCollector,
     ) -> Arc<YieldFromResult> {
-        // TODO: Error if the function is async
-        let annot = x.0.map(|k| self.get_idx(k));
-        let want = annot.as_ref().and_then(|x| x.ty.as_ref());
+        match x {
+            BindingYieldFrom::YieldFrom(annot, x) => {
+                // TODO: Error if the function is async
+                let annot = annot.map(|k| self.get_idx(k));
+                let want = annot.as_ref().and_then(|x| x.ty.as_ref());
 
-        let mut ty = self.expr(&x.1.value, None, errors);
-        let res = if let Some(generator) = self.unwrap_generator(&ty) {
-            YieldFromResult::from_generator(generator)
-        } else if let Some(yield_ty) = self.unwrap_iterable(&ty) {
-            // Promote the type to a generator for the check below to succeed.
-            // Per PEP-380, if None is sent to the delegating generator, the
-            // iterator's __next__() method is called, so promote to a generator
-            // with a `None` send type.
-            // TODO: This might cause confusing type errors.
-            ty = self
-                .stdlib
-                .generator(yield_ty.clone(), Type::None, Type::None)
-                .to_type();
-            YieldFromResult::from_iterable(yield_ty)
-        } else {
-            ty = self.error(
-                errors,
-                x.1.range,
-                format!("yield from value must be iterable, got `{ty}`"),
-            );
-            YieldFromResult::any_error()
-        };
-        if let Some(want) = want {
-            self.check_type(want, &ty, x.1.range, errors);
+                let mut ty = self.expr(&x.value, None, errors);
+                let res = if let Some(generator) = self.unwrap_generator(&ty) {
+                    YieldFromResult::from_generator(generator)
+                } else if let Some(yield_ty) = self.unwrap_iterable(&ty) {
+                    // Promote the type to a generator for the check below to succeed.
+                    // Per PEP-380, if None is sent to the delegating generator, the
+                    // iterator's __next__() method is called, so promote to a generator
+                    // with a `None` send type.
+                    // TODO: This might cause confusing type errors.
+                    ty = self
+                        .stdlib
+                        .generator(yield_ty.clone(), Type::None, Type::None)
+                        .to_type();
+                    YieldFromResult::from_iterable(yield_ty)
+                } else {
+                    ty = self.error(
+                        errors,
+                        x.range,
+                        format!("yield from value must be iterable, got `{ty}`"),
+                    );
+                    YieldFromResult::any_error()
+                };
+                if let Some(want) = want {
+                    self.check_type(want, &ty, x.range, errors);
+                }
+                Arc::new(res)
+            }
+            BindingYieldFrom::Invalid(x) => {
+                self.expr(&x.value, None, errors);
+                self.error(
+                    errors,
+                    x.range,
+                    "Invalid `yield from` outside of a function".to_owned(),
+                );
+                Arc::new(YieldFromResult::any_error())
+            }
         }
-        Arc::new(res)
     }
 
     /// Unwraps a type, originally evaluated as a value, so that it can be used as a type annotation.

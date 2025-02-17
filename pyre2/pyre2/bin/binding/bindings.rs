@@ -32,6 +32,8 @@ use vec1::Vec1;
 
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingLegacyTypeParam;
+use crate::binding::binding::BindingYield;
+use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClass;
@@ -215,6 +217,22 @@ impl Bindings {
             builder.inject_builtins();
         }
         builder.stmts(x);
+        // Create dummy bindings for any invalid yield/yield from expressions.
+        let (func_info, _) = builder.functions.split_off_first();
+        for x in func_info.yields {
+            match x {
+                Either::Left(x) => {
+                    builder
+                        .table
+                        .insert(KeyYield(x.range), BindingYield::Invalid(x));
+                }
+                Either::Right(x) => {
+                    builder
+                        .table
+                        .insert(KeyYieldFrom(x.range), BindingYieldFrom::Invalid(x));
+                }
+            }
+        }
         let last_scope = builder.scopes.finish();
         for (k, static_info) in last_scope.stat.0 {
             let info = last_scope.flow.info.get(&k);

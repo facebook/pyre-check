@@ -238,15 +238,15 @@ impl<'a> BindingsBuilder<'a> {
                     // Add binding to get the send type for a yield expression.
                     Either::Left(
                         self.table
-                            .insert(KeyYield(x.range), BindingYield(return_ann, x)),
+                            .insert(KeyYield(x.range), BindingYield::Yield(return_ann, x)),
                     )
                 }
                 Either::Right(x) => {
                     // Add binding to get the return type for a yield from expression.
-                    Either::Right(
-                        self.table
-                            .insert(KeyYieldFrom(x.range), BindingYieldFrom(return_ann, x)),
-                    )
+                    Either::Right(self.table.insert(
+                        KeyYieldFrom(x.range),
+                        BindingYieldFrom::YieldFrom(return_ann, x),
+                    ))
                 }
             })
             .into_boxed_slice();

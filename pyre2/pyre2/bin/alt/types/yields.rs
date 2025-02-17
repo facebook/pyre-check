@@ -31,6 +31,13 @@ impl YieldResult {
         }
     }
 
+    pub fn any_error() -> Self {
+        YieldResult {
+            yield_ty: Type::any_error(),
+            send_ty: Type::any_error(),
+        }
+    }
+
     pub fn visit_mut(&mut self, mut f: impl FnMut(&mut Type)) {
         self.yield_ty.visit_mut(&mut f);
         self.send_ty.visit_mut(&mut f);

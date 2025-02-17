@@ -278,3 +278,11 @@ async def test() -> None:
     await Foo()  # E: Expression is not awaitable
 "#,
 );
+
+testcase!(
+    test_invalid_global_yield,
+    r#"
+yield 0  # E: Invalid `yield` outside of a function
+yield from 0  # E: Invalid `yield from` outside of a function
+"#,
+);

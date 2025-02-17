@@ -987,21 +987,45 @@ impl DisplayWith<Bindings> for BindingLegacyTypeParam {
 }
 
 #[derive(Clone, Debug)]
-pub struct BindingYield(pub Option<Idx<KeyAnnotation>>, pub ExprYield);
+pub enum BindingYield {
+    Yield(Option<Idx<KeyAnnotation>>, ExprYield),
+    Invalid(ExprYield),
+}
+
+impl BindingYield {
+    fn expr(&self) -> &ExprYield {
+        match self {
+            Self::Yield(_, x) => x,
+            Self::Invalid(x) => x,
+        }
+    }
+}
 
 impl DisplayWith<Bindings> for BindingYield {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         let m = ctx.module_info();
-        write!(f, "{}", m.display(&self.1))
+        write!(f, "{}", m.display(&self.expr()))
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct BindingYieldFrom(pub Option<Idx<KeyAnnotation>>, pub ExprYieldFrom);
+pub enum BindingYieldFrom {
+    YieldFrom(Option<Idx<KeyAnnotation>>, ExprYieldFrom),
+    Invalid(ExprYieldFrom),
+}
+
+impl BindingYieldFrom {
+    fn expr(&self) -> &ExprYieldFrom {
+        match self {
+            Self::YieldFrom(_, x) => x,
+            Self::Invalid(x) => x,
+        }
+    }
+}
 
 impl DisplayWith<Bindings> for BindingYieldFrom {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         let m = ctx.module_info();
-        write!(f, "{}", m.display(&self.1))
+        write!(f, "{}", m.display(&self.expr()))
     }
 }
