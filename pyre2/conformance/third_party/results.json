@@ -3,7 +3,7 @@
   "pass": 12,
   "fail": 121,
   "pass_rate": 0.09,
-  "differences": 930,
+  "differences": 928,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_order.py",
@@ -27,7 +27,7 @@
     "aliases_typealiastype.py": 26,
     "aliases_variance.py": 3,
     "annotations_forward_refs.py": 12,
-    "annotations_generators.py": 6,
+    "annotations_generators.py": 4,
     "annotations_methods.py": 8,
     "annotations_typeexpr.py": 5,
     "callables_annotation.py": 15,

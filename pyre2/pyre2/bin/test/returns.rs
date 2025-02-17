@@ -105,28 +105,25 @@ def f() -> int:
 testcase!(
     test_return_none_should_fail,
     r#"
-
 def does_not_fail() -> None:
     return None
 
-def f(b: bool) -> int: 
+def f(b: bool) -> int: # E: EXPECTED None <: int
     if b:
         return 1
     else:
-        does_not_fail() # E: Expr has type None but should have type int
+        does_not_fail()
 "#,
 );
 
 testcase!(
     test_return_should_fail,
     r#"
-
 def fail():
     pass
 
-def f() -> int:
-   fail() # E: Expr has type None but should have type int
-
+def f() -> int: # E: EXPECTED None <: int
+   fail()
 "#,
 );
 

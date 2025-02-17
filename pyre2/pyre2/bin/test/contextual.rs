@@ -218,17 +218,16 @@ ys: list[A] = takes_int("") if False else [B()] # E: EXPECTED Literal[''] <: int
 "#,
 );
 
-testcase_with_bug!(
-    "We don't contextually type the yield expression",
+testcase!(
     test_context_yield,
     r#"
 from typing import Generator, Iterator
 class A: ...
 class B(A): ...
 def gen() -> Generator[list[A], None, None]:
-    yield [B()] # E: EXPECTED list[B] <: list[A]
+    yield [B()]
 def iter() -> Iterator[list[A]]:
-    yield [B()] # E: EXPECTED list[B] <: list[A]
+    yield [B()]
 "#,
 );
 

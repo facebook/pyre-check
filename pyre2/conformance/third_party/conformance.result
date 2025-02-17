@@ -139,10 +139,8 @@
     "Line 96: Unexpected errors ['assert_type(Any, int) failed']"
   ],
   "annotations_generators.py": [
-    "Line 86: Expected 1 errors",
-    "Line 91: Expected 1 errors",
-    "Line 149: Unexpected errors ['EXPECTED list[int] <: Generator[int, None, None]']",
-    "Line 150: Unexpected errors ['EXPECTED list[int] <: Generator[int, None, None]']",
+    "Line 87: Expected 1 errors",
+    "Line 92: Expected 1 errors",
     "Line 182: Unexpected errors ['assert_type(() -> AsyncIterator[int], () -> Coroutine[Any, Any, AsyncIterator[int]]) failed']",
     "Line 187: Unexpected errors ['EXPECTED None <: int']"
   ],

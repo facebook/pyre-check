@@ -34,6 +34,8 @@ macro_rules! table {
             $($vis)* annotations: $t<KeyAnnotation>,
             $($vis)* class_metadata: $t<KeyClassMetadata>,
             $($vis)* legacy_tparams: $t<KeyLegacyTypeParam>,
+            $($vis)* yields: $t<KeyYield>,
+            $($vis)* yield_froms: $t<KeyYieldFrom>,
         }
 
         impl $crate::binding::table::TableKeyed<Key> for $name {
@@ -96,6 +98,18 @@ macro_rules! table {
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.legacy_tparams }
         }
 
+        impl $crate::binding::table::TableKeyed<KeyYield> for $name {
+            type Value = $t<KeyYield>;
+            fn get(&self) -> &Self::Value { &self.yields }
+            fn get_mut(&mut self) -> &mut Self::Value { &mut self.yields }
+        }
+
+        impl $crate::binding::table::TableKeyed<KeyYieldFrom> for $name {
+            type Value = $t<KeyYieldFrom>;
+            fn get(&self) -> &Self::Value { &self.yield_froms }
+            fn get_mut(&mut self) -> &mut Self::Value { &mut self.yield_froms }
+        }
+
         impl $name {
             #[allow(dead_code)]
             fn get<K>(&self) -> &<Self as $crate::binding::table::TableKeyed<K>>::Value
@@ -129,6 +143,8 @@ macro_rules! table_for_each(
         $f(&($e).annotations);
         $f(&($e).class_metadata);
         $f(&($e).legacy_tparams);
+        $f(&($e).yields);
+        $f(&($e).yield_froms);
     };
 );
 
@@ -145,6 +161,8 @@ macro_rules! table_mut_for_each(
         $f(&mut ($e).annotations);
         $f(&mut ($e).class_metadata);
         $f(&mut ($e).legacy_tparams);
+        $f(&mut ($e).yields);
+        $f(&mut ($e).yield_froms);
     };
 );
 
@@ -161,5 +179,7 @@ macro_rules! table_try_for_each(
         $f(&($e).annotations)?;
         $f(&($e).class_metadata)?;
         $f(&($e).legacy_tparams)?;
+        $f(&($e).yields)?;
+        $f(&($e).yield_froms)?;
     };
 );

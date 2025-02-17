@@ -1200,13 +1200,13 @@
   "annotations_generators.py": [
     {
       "code": -2,
-      "column": 1,
+      "column": 21,
       "concise_description": "EXPECTED None <: C",
       "description": "EXPECTED None <: C",
       "line": 51,
       "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 57
+      "stop_column": 39,
+      "stop_line": 51
     },
     {
       "code": -2,
@@ -1220,7 +1220,7 @@
     },
     {
       "code": -2,
-      "column": 9,
+      "column": 15,
       "concise_description": "EXPECTED Literal[3] <: A",
       "description": "EXPECTED Literal[3] <: A",
       "line": 57,
@@ -1230,7 +1230,7 @@
     },
     {
       "code": -2,
-      "column": 9,
+      "column": 15,
       "concise_description": "EXPECTED Literal[3] <: A",
       "description": "EXPECTED Literal[3] <: A",
       "line": 66,
@@ -1250,7 +1250,7 @@
     },
     {
       "code": -2,
-      "column": 5,
+      "column": 11,
       "concise_description": "EXPECTED B <: A",
       "description": "EXPECTED B <: A",
       "line": 75,
@@ -1260,29 +1260,29 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Yield expression found but the function has an incompatible annotation `int`",
-      "description": "Yield expression found but the function has an incompatible annotation `int`",
-      "line": 87,
+      "column": 21,
+      "concise_description": "Generator function should return `Generator`",
+      "description": "Generator function should return `Generator`",
+      "line": 86,
       "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 87
+      "stop_column": 24,
+      "stop_line": 86
+    },
+    {
+      "code": -2,
+      "column": 27,
+      "concise_description": "Async generator function should return `AsyncGenerator`",
+      "description": "Async generator function should return `AsyncGenerator`",
+      "line": 91,
+      "name": "PyreError",
+      "stop_column": 30,
+      "stop_line": 91
     },
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Yield expression found but the function has an incompatible annotation `int`",
-      "description": "Yield expression found but the function has an incompatible annotation `int`",
-      "line": 92,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED Iterator[A] <: Iterator[B]",
-      "description": "EXPECTED Iterator[A] <: Iterator[B]",
+      "concise_description": "EXPECTED Generator[A, None, None] <: Iterator[B]",
+      "description": "EXPECTED Generator[A, None, None] <: Iterator[B]",
       "line": 118,
       "name": "PyreError",
       "stop_column": 29,
@@ -1291,8 +1291,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED list[int] <: Iterator[B]",
-      "description": "EXPECTED list[int] <: Iterator[B]",
+      "concise_description": "EXPECTED Generator[int, None, None] <: Iterator[B]",
+      "description": "EXPECTED Generator[int, None, None] <: Iterator[B]",
       "line": 119,
       "name": "PyreError",
       "stop_column": 19,
@@ -1307,26 +1307,6 @@
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 135
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED list[int] <: Generator[int, None, None]",
-      "description": "EXPECTED list[int] <: Generator[int, None, None]",
-      "line": 149,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 149
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED list[int] <: Generator[int, None, None]",
-      "description": "EXPECTED list[int] <: Generator[int, None, None]",
-      "line": 150,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 150
     },
     {
       "code": -2,
@@ -12841,13 +12821,13 @@
   "specialtypes_never.py": [
     {
       "code": -2,
-      "column": 1,
+      "column": 22,
       "concise_description": "EXPECTED None <: NoReturn",
       "description": "EXPECTED None <: NoReturn",
       "line": 19,
       "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 21
+      "stop_column": 30,
+      "stop_line": 19
     },
     {
       "code": -2,

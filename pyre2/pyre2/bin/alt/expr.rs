@@ -31,6 +31,8 @@ use crate::alt::call::CallTarget;
 use crate::alt::callable::CallArg;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
+use crate::binding::binding::KeyYield;
+use crate::binding::binding::KeyYieldFrom;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::graph::index::Idx;
@@ -610,27 +612,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => self.error(errors, x.range, "Expression is not awaitable".to_owned()),
                 }
             }
-            Expr::Yield(x) => {
-                let yield_expr_type = &self
-                    .get(&Key::YieldTypeOfYieldAnnotation(x.range))
-                    .arc_clone();
-                let yield_value = Ast::yield_or_none(x);
-                let inferred_expr_type = &self.expr_infer(&yield_value, errors);
-
-                self.check_type(yield_expr_type, inferred_expr_type, x.range, errors);
-
-                self.get(&Key::SendTypeOfYieldAnnotation(x.range()))
-                    .arc_clone()
-            }
-            Expr::YieldFrom(y) => {
-                let inferred_expr_type = &self.expr_infer(&y.value, errors);
-                let final_generator_type = &*self.get(&Key::TypeOfYieldAnnotation(x.range()));
-
-                self.check_type(final_generator_type, inferred_expr_type, x.range(), errors);
-
-                self.get(&Key::ReturnTypeOfYieldAnnotation(x.range()))
-                    .arc_clone()
-            }
+            Expr::Yield(x) => self.get(&KeyYield(x.range)).send_ty.clone(),
+            Expr::YieldFrom(x) => self.get(&KeyYieldFrom(x.range)).return_ty.clone(),
             Expr::Compare(x) => {
                 let left = self.expr_infer(&x.left, errors);
                 let comparisons = x.ops.iter().zip(x.comparators.iter());

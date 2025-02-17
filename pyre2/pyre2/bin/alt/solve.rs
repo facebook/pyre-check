@@ -9,6 +9,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::TypeParam;
@@ -29,6 +30,8 @@ use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::decorated_function::DecoratedFunction;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
+use crate::alt::types::yields::YieldFromResult;
+use crate::alt::types::yields::YieldResult;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -38,6 +41,8 @@ use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
+use crate::binding::binding::BindingYield;
+use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::EmptyAnswer;
 use crate::binding::binding::FunctionBinding;
@@ -734,181 +739,119 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()), errors)
             }
-            Binding::Generator(yield_type, return_type) => {
-                let yield_type = self.solve_binding_inner(yield_type, errors);
-                let return_type = self.solve_binding_inner(return_type, errors);
-                self.stdlib
-                    .generator(yield_type, Type::any_implicit(), return_type)
-                    .to_type()
-            }
-            Binding::AsyncGenerator(yield_type) => {
-                let yield_type = self.solve_binding_inner(yield_type, errors);
-                self.stdlib
-                    .async_generator(yield_type, Type::any_implicit())
-                    .to_type()
-            }
-            Binding::SendTypeOfYieldAnnotation(ann, range) => {
-                let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
-                match gen_ann {
-                    Some(gen_ann) => {
-                        let gen_type = gen_ann.get_type();
-                        // try to interpret the annotation as a generator
-                        if let Some((_, send_type, _)) = self.decompose_generator(gen_type) {
-                            send_type
-                        }
-                        // try to interpret the annotation as an async generator
-                        else if let Some((_, send_type)) =
-                            self.decompose_async_generator(gen_type)
-                        {
-                            send_type
-                        } else {
-                            self.error(errors, *range, format!("Yield expression found but the function has an incompatible annotation `{gen_type}`"))
-                        }
+            Binding::ReturnTypeAnnotated(x) => {
+                let ty = self.get_idx(x.annot).get_type().clone();
+                let implicit_return = self.get_idx(x.implicit_return);
+                if x.is_async && x.is_generator {
+                    if self.decompose_async_generator(&ty).is_none() {
+                        self.error(
+                            errors,
+                            x.range,
+                            "Async generator function should return `AsyncGenerator`".to_owned(),
+                        );
                     }
-
-                    None => Type::any_explicit(),
-                }
-            }
-            Binding::YieldTypeOfYieldAnnotation(ann, range, is_async) => {
-                let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
-                match gen_ann {
-                    Some(gen_ann) => {
-                        let gen_type = gen_ann.get_type();
-                        if let Some((yield_type, _, _)) = self.decompose_generator(gen_type) {
-                            // check type annotation against async flag
-                            if *is_async {
-                                self.error(errors, *range, format!("Return type of generator must be compatible with `{gen_type}`"))
-                            } else {
-                                yield_type
-                            }
-                        } else if let Some((yield_type, _)) =
-                            self.decompose_async_generator(gen_type)
-                        {
-                            // check type annotation against async flag
-                            if !*is_async {
-                                self.error(errors, *range, format!("Return type of generator must be compatible with `{gen_type}`"))
-                            } else {
-                                yield_type
-                            }
-                        } else {
-                            self.error(errors, *range, format!("Yield expression found but the function has an incompatible annotation `{gen_type}`"))
-                        }
+                } else if x.is_generator {
+                    if let Some((_, _, return_ty)) = self.decompose_generator(&ty) {
+                        self.check_type(&return_ty, &implicit_return, x.range, errors);
+                    } else {
+                        self.error(
+                            errors,
+                            x.range,
+                            "Generator function should return `Generator`".to_owned(),
+                        );
                     }
-
-                    None => Type::any_explicit(),
+                } else {
+                    self.check_type(&ty, &implicit_return, x.range, errors);
                 }
+                ty
             }
-            Binding::ReturnTypeOfYieldAnnotation(ann, range) => {
-                let gen_ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
-                match gen_ann {
-                    Some(gen_ann) => {
-                        let gen_type = gen_ann.get_type();
-
-                        if let Some((_, _, return_type)) = self.decompose_generator(gen_type) {
-                            return_type
-                        } else {
-                            self.error(errors, *range, format!("YieldFrom expression found but the function has an incompatible annotation `{gen_type}`"))
-                        }
-                    }
-
-                    None => Type::any_explicit(),
-                }
-            }
-            Binding::YieldTypeOfYield(x) => match &x.value {
-                Some(x) => self.expr(x, None, errors),
-                None => Type::None,
-            },
-            Binding::YieldTypeOfYieldFrom(x) => {
-                let gen_type = self.expr(&x.value, None, errors);
-                self.decompose_generator(&gen_type)
-                    .map_or(Type::any_implicit(), |(y, _, _)| y)
-            }
-            Binding::AsyncReturnType(x) => {
-                let expr_type = self.expr(&x.0, None, errors);
-                let return_type = self.solve_binding_inner(&x.1, errors);
-
-                if self.is_async_generator(&return_type) && !expr_type.is_none() {
-                    self.error(errors,
-                        x.0.range(),
-                        format!("Return statement with type `{expr_type}` is not allowed in async generator "),
+            Binding::ReturnTypeInferred(x) => {
+                let returns = x.returns.iter().map(|k| self.get_idx(*k).arc_clone());
+                let implicit_return = self.get_idx(x.implicit_return);
+                // TODO: It should always be a no-op to include a `Type::Never` in unions, but
+                // `simple::test_solver_variables` fails if we do, because `solver::unions` does
+                // `is_subset_eq` to force free variables, causing them to be equated to
+                // `Type::Never` instead of becoming `Type::Any`.
+                let return_ty = if implicit_return.is_never() {
+                    self.unions(returns.collect())
+                } else {
+                    self.unions(
+                        returns
+                            .chain(std::iter::once(implicit_return.arc_clone()))
+                            .collect(),
                     )
+                };
+                if x.yields.is_empty() {
+                    if x.is_async {
+                        // TODO: Use the more precise `types.CoroutineType` instead.
+                        self.stdlib
+                            .coroutine(Type::any_implicit(), Type::any_implicit(), return_ty)
+                            .to_type()
+                    } else {
+                        return_ty
+                    }
                 } else {
-                    return_type
+                    let yield_ty = self.unions(
+                        x.yields
+                            .iter()
+                            .map(|x| match x {
+                                Either::Left(k) => self.get_idx(*k).yield_ty.clone(),
+                                Either::Right(k) => self.get_idx(*k).yield_ty.clone(),
+                            })
+                            .collect(),
+                    );
+                    if x.is_async {
+                        self.stdlib
+                            .async_generator(yield_ty, Type::any_implicit())
+                            .to_type()
+                    } else {
+                        self.stdlib
+                            .generator(yield_ty, Type::any_implicit(), return_ty)
+                            .to_type()
+                    }
                 }
             }
-            Binding::ReturnExpr(ann, e, has_yields) => {
-                let ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
-                let hint = ann.as_ref().and_then(|x| x.ty.as_ref());
+            Binding::ReturnExplicit(x) => {
+                let annot = x.annot.map(|k| self.get_idx(k));
+                let hint = annot.as_ref().and_then(|ann| ann.ty.as_ref());
 
-                if *has_yields {
-                    let hint = match hint {
-                        Some(t) => {
-                            let decomposed = self.decompose_generator(t);
-                            decomposed.map(|(_, _, r)| r)
-                        }
-                        None => None,
-                    };
-                    self.expr(e, hint.as_ref(), errors)
-                } else if matches!(hint, Some(Type::TypeGuard(_))) {
-                    self.expr(e, Some(&Type::ClassType(self.stdlib.bool())), errors)
+                if let Some(expr) = &x.expr {
+                    if x.is_async && x.is_generator {
+                        self.expr(expr, None, errors);
+                        self.error(
+                            errors,
+                            expr.range(),
+                            "Return statement with value is not allowed in async generator"
+                                .to_owned(),
+                        )
+                    } else if x.is_generator {
+                        let hint =
+                            hint.and_then(|ty| self.decompose_generator(ty).map(|(_, _, r)| r));
+                        self.expr(expr, hint.as_ref(), errors)
+                    } else if matches!(hint, Some(Type::TypeGuard(_))) {
+                        let hint = Some(Type::ClassType(self.stdlib.bool()));
+                        self.expr(expr, hint.as_ref(), errors)
+                    } else {
+                        self.expr(expr, hint, errors)
+                    }
                 } else {
-                    self.expr(e, hint, errors)
+                    Type::None
                 }
             }
-            Binding::ReturnExprWithNone(ann, expr_range, has_yields, last_statement_types) => {
-                let ann: Option<Arc<Annotation>> = ann.map(|k| self.get_idx(k));
-                let hint = ann.as_ref().and_then(|x| x.ty.as_ref());
-
-                let all_never = last_statement_types
-                    .iter()
-                    .all(|k| self.get_idx(*k).is_never());
-
-                if all_never {
-                    // if all branches to the function are NoReturn, then infer Never
+            Binding::ReturnImplicit(x) => {
+                // TODO: This is a bit of a hack. We want to implement Pyright's behavior where
+                // stub functions allow any annotation, but we also infer a `Never` return type
+                // instead of `None`. Instead, we should just ignore the implicit return for stub
+                // functions when solving Binding::ReturnTypeAnnotated. Unfortunately, this leads
+                // to another issue (see comment on Binding::ReturnTypeInferred).
+                if x.function_kind == FunctionKind::Stub
+                    || x.last_exprs
+                        .as_ref()
+                        .is_some_and(|xs| xs.iter().all(|k| self.get_idx(*k).is_never()))
+                {
                     Type::never()
-                } else if *has_yields {
-                    match &hint {
-                        Some(t) => {
-                            let decomposed = self.decompose_generator(t);
-                            let return_type = decomposed.map(|(_, _, r)| r);
-                            if return_type.is_some_and(|x| x != Type::None) {
-                                self.error(
-                                    errors,
-                                    *expr_range,
-                                    format!("Expected None, got generator type {}", t),
-                                )
-                            } else {
-                                Type::None
-                            }
-                        }
-                        None => Type::None,
-                    }
-                } else if matches!(hint, Some(Type::TypeGuard(_))) {
-                    self.error(
-                        errors,
-                        *expr_range,
-                        "This function has an implicit `None` return but claims to return a `TypeGuard`".to_owned(),
-                    )
                 } else {
-                    match hint {
-                        Some(t) => {
-                            if t.is_none() {
-                                Type::None
-                            } else if !self
-                                .solver()
-                                .is_subset_eq(&Type::None, t, self.type_order())
-                            {
-                                self.error(
-                                    errors,
-                                    *expr_range,
-                                    format!("Expr has type None but should have type {}", t),
-                                )
-                            } else {
-                                Type::None
-                            }
-                        }
-                        None => Type::None,
-                    }
+                    Type::None
                 }
             }
             Binding::ExceptionHandler(box ann, is_star) => {
@@ -1434,6 +1377,72 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             None
         }
+    }
+
+    pub fn solve_yield(&self, x: &BindingYield, errors: &ErrorCollector) -> Arc<YieldResult> {
+        // TODO: Keep track of whether the function is async in the binding, decompose hint
+        // appropriately instead of just trying both.
+        let annot = x.0.map(|k| self.get_idx(k));
+        let hint = annot.as_ref().and_then(|x| x.ty.as_ref()).and_then(|ty| {
+            if let Some((yield_ty, send_ty, _)) = self.decompose_generator(ty) {
+                Some((yield_ty, send_ty))
+            } else {
+                self.decompose_async_generator(ty)
+            }
+        });
+        if let Some((yield_hint, send_ty)) = hint {
+            let yield_ty = if let Some(expr) = x.1.value.as_ref() {
+                self.expr(expr, Some(&yield_hint), errors)
+            } else {
+                self.check_type(&yield_hint, &Type::None, x.1.range, errors)
+            };
+            Arc::new(YieldResult { yield_ty, send_ty })
+        } else {
+            let yield_ty = if let Some(expr) = x.1.value.as_ref() {
+                self.expr(expr, None, errors)
+            } else {
+                Type::None
+            };
+            let send_ty = Type::any_implicit();
+            Arc::new(YieldResult { yield_ty, send_ty })
+        }
+    }
+
+    pub fn solve_yield_from(
+        &self,
+        x: &BindingYieldFrom,
+        errors: &ErrorCollector,
+    ) -> Arc<YieldFromResult> {
+        // TODO: Error if the function is async
+        let annot = x.0.map(|k| self.get_idx(k));
+        let want = annot.as_ref().and_then(|x| x.ty.as_ref());
+
+        let mut ty = self.expr(&x.1.value, None, errors);
+        let res = if let Some(generator) = self.unwrap_generator(&ty) {
+            YieldFromResult::from_generator(generator)
+        } else if let Some(yield_ty) = self.unwrap_iterable(&ty) {
+            // Promote the type to a generator for the check below to succeed.
+            // Per PEP-380, if None is sent to the delegating generator, the
+            // iterator's __next__() method is called, so promote to a generator
+            // with a `None` send type.
+            // TODO: This might cause confusing type errors.
+            ty = self
+                .stdlib
+                .generator(yield_ty.clone(), Type::None, Type::None)
+                .to_type();
+            YieldFromResult::from_iterable(yield_ty)
+        } else {
+            ty = self.error(
+                errors,
+                x.1.range,
+                format!("yield from value must be iterable, got `{ty}`"),
+            );
+            YieldFromResult::any_error()
+        };
+        if let Some(want) = want {
+            self.check_type(want, &ty, x.1.range, errors);
+        }
+        Arc::new(res)
     }
 
     /// Unwraps a type, originally evaluated as a value, so that it can be used as a type annotation.

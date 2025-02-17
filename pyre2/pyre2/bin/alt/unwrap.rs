@@ -83,6 +83,34 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    pub fn unwrap_generator(&self, ty: &Type) -> Option<(Type, Type, Type)> {
+        let yield_ty = self.fresh_var();
+        let send_ty = self.fresh_var();
+        let return_ty = self.fresh_var();
+        let generator_ty = self
+            .stdlib
+            .generator(yield_ty.to_type(), send_ty.to_type(), return_ty.to_type())
+            .to_type();
+        if self.is_subset_eq(ty, &generator_ty) {
+            let yield_ty: Type = self.expand_var(yield_ty);
+            let send_ty = self.expand_var(send_ty);
+            let return_ty = self.expand_var(return_ty);
+            Some((yield_ty, send_ty, return_ty))
+        } else {
+            None
+        }
+    }
+
+    pub fn unwrap_iterable(&self, ty: &Type) -> Option<Type> {
+        let iter_ty = self.fresh_var();
+        let iterable_ty = self.stdlib.iterable(iter_ty.to_type()).to_type();
+        if self.is_subset_eq(ty, &iterable_ty) {
+            Some(self.expand_var(iter_ty))
+        } else {
+            None
+        }
+    }
+
     pub fn decompose_dict(&self, ty: &Type) -> Option<UnwrappedDict> {
         let key = self.fresh_var();
         let value = self.fresh_var();

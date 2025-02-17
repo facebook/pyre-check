@@ -42,6 +42,8 @@ use crate::binding::binding::KeyExpect;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyFunction;
 use crate::binding::binding::KeyLegacyTypeParam;
+use crate::binding::binding::KeyYield;
+use crate::binding::binding::KeyYieldFrom;
 use crate::binding::binding::Keyed;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::scope::Flow;

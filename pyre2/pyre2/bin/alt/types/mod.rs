@@ -8,3 +8,4 @@
 pub mod class_metadata;
 pub mod decorated_function;
 pub mod legacy_lookup;
+pub mod yields;

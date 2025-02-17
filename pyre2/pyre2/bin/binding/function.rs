@@ -14,18 +14,24 @@ use ruff_python_ast::Parameters;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtExpr;
 use ruff_python_ast::StmtFunctionDef;
-use ruff_python_ast::StmtReturn;
 use ruff_text_size::Ranged;
-use starlark_map::small_set::SmallSet;
 
 use crate::ast::Ast;
+use crate::binding::binding::AnnotatedReturn;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
+use crate::binding::binding::BindingYield;
+use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::FunctionKind;
+use crate::binding::binding::ImplicitReturn;
+use crate::binding::binding::InferredReturn;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyFunction;
+use crate::binding::binding::KeyYield;
+use crate::binding::binding::KeyYieldFrom;
+use crate::binding::binding::ReturnExplicit;
 use crate::binding::bindings::BindingsBuilder;
 use crate::binding::bindings::FuncInfo;
 use crate::binding::bindings::LegacyTParamBuilder;
@@ -38,6 +44,8 @@ use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
+use crate::util::prelude::SliceExt;
+use crate::util::prelude::VecExt;
 
 impl<'a> BindingsBuilder<'a> {
     fn parameters(&mut self, x: &mut Parameters, self_type: Option<Idx<Key>>) {
@@ -142,33 +150,23 @@ impl<'a> BindingsBuilder<'a> {
         }
         self.ensure_type_opt(return_annotation.as_deref_mut(), &mut legacy);
 
-        let return_ann = return_annotation.clone().map(|x| {
-            self.table.insert(
-                KeyAnnotation::ReturnAnnotation(ShortIdentifier::new(&func_name)),
-                BindingAnnotation::AnnotateExpr(*x, self_type),
+        let return_ann_range = return_annotation.map(|x| {
+            (
+                x.range(),
+                self.table.insert(
+                    KeyAnnotation::ReturnAnnotation(ShortIdentifier::new(&func_name)),
+                    BindingAnnotation::AnnotateExpr(*x, self_type),
+                ),
             )
         });
+        let return_ann = return_ann_range.as_ref().map(|(_, key)| *key);
 
-        let never = function_last_expressions(&body, self.config);
-        let mut return_never_keys: Vec<Idx<Key>> = Vec::new();
-        if let Some(exprs) = &never {
-            return_never_keys.reserve(exprs.len());
-            for expr in exprs {
-                let k: Key = Key::StmtExpr(expr.range());
-                let k_to_idx = self.table.types.0.insert(k);
-                return_never_keys.push(k_to_idx);
-            }
-        }
-        let never_is_empty = never == Some(Vec::new());
-        let never_is_none = never.is_none();
-        // synthesize none value here to avoid cloning later
-        let fake_none_value = StmtReturn {
-            range: match never.as_deref() {
-                Some([x]) => x.range(), // Try and narrow the range
-                _ => x.range,
-            },
-            value: None,
-        };
+        // Collect the keys of terminal expressions. Used to determine the implicit return type.
+        let last_exprs = function_last_expressions(&body, self.config);
+        let last_expr_keys = last_exprs.map(|x| {
+            x.map(|x| self.table.types.0.insert(Key::StmtExpr(x.range())))
+                .into_boxed_slice()
+        });
 
         let legacy_tparam_builder = legacy.unwrap();
         legacy_tparam_builder.add_name_definitions(self);
@@ -205,156 +203,73 @@ impl<'a> BindingsBuilder<'a> {
         let is_async = x.is_async;
 
         let accumulate = self.functions.pop().unwrap();
+        let is_generator = !accumulate.yields.is_empty();
 
-        let mut return_expr_keys = SmallSet::with_capacity(accumulate.returns.len());
-        let has_yields = !accumulate.yields.is_empty();
-
-        if !accumulate.returns.is_empty() {
-            if never_is_none {
-                let key = self.table.insert(
-                    Key::ReturnExpressionWithNone(ShortIdentifier::new(&func_name), x.range),
-                    Binding::ReturnExpr(
-                        return_ann,
-                        Box::new(Ast::return_or_none_owned(fake_none_value.clone())),
-                        has_yields,
-                    ),
-                );
-                return_expr_keys.insert(key);
-            }
-
-            if !(never_is_empty || never_is_none) {
-                let key = self.table.insert(
-                    Key::ReturnExpressionWithNone(
-                        ShortIdentifier::new(&func_name),
-                        x.clone().range,
-                    ),
-                    Binding::ReturnExprWithNone(
-                        return_ann,
-                        fake_none_value.range(),
-                        has_yields,
-                        return_never_keys.clone(),
-                    ),
-                );
-                return_expr_keys.insert(key);
-            }
-
-            for x in accumulate.returns.clone() {
-                let key = self.table.insert(
-                    Key::ReturnExpression(ShortIdentifier::new(&func_name), x.range),
-                    Binding::ReturnExpr(
-                        return_ann,
-                        Box::new(Ast::return_or_none_owned(x)),
-                        has_yields,
-                    ),
-                );
-                return_expr_keys.insert(key);
-            }
-        }
-
-        if accumulate.returns.is_empty() && kind == FunctionKind::Impl {
-            // Note that we special case ellipse even in non-interface, as that is what Pyright does.
-            if never_is_none {
-                let key = self.table.insert(
-                    Key::ReturnExpressionWithNone(ShortIdentifier::new(&func_name), x.range),
-                    Binding::ReturnExpr(
-                        return_ann,
-                        Box::new(Ast::return_or_none_owned(fake_none_value.clone())),
-                        has_yields,
-                    ),
-                );
-                return_expr_keys.insert(key);
-            } else if !never_is_empty {
-                let key = self.table.insert(
-                    Key::ReturnExpression(ShortIdentifier::new(&func_name), x.range),
-                    Binding::ReturnExprWithNone(
-                        return_ann,
-                        fake_none_value.range(),
-                        has_yields,
-                        return_never_keys,
-                    ),
-                );
-                return_expr_keys.insert(key);
-            }
-        }
-
-        let mut return_type = Binding::phi(return_expr_keys);
-        if has_yields {
-            let mut yield_expr_keys = SmallSet::with_capacity(accumulate.yields.len());
-            for x in accumulate.yields.clone() {
-                // create the appropriate bindings depending on whether we see a yield or a yieldFrom
-                // not all bindings are needed for all exprs
-                match x {
-                    Either::Left(x) => {
-                        let key = self.table.insert(
-                            Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range),
-                            // collect the value of the yield expression.
-                            Binding::YieldTypeOfYield(x.clone()),
-                        );
-                        yield_expr_keys.insert(key);
-
-                        self.table.insert(
-                            Key::SendTypeOfYieldAnnotation(x.range),
-                            // collect the value of the yield expression.
-                            Binding::SendTypeOfYieldAnnotation(return_ann, x.range),
-                        );
-                        self.table.insert(
-                            Key::YieldTypeOfYieldAnnotation(x.range),
-                            // collect the yield value of the yield expression.
-                            Binding::YieldTypeOfYieldAnnotation(return_ann, x.range, is_async),
-                        );
-                    }
-
-                    Either::Right(x) => {
-                        let key = self.table.insert(
-                            Key::YieldTypeOfYield(ShortIdentifier::new(&func_name), x.range),
-                            // collect the value of the yield expression.
-                            Binding::YieldTypeOfYieldFrom(x.clone()),
-                        );
-                        yield_expr_keys.insert(key);
-
-                        self.table.insert(
-                            Key::ReturnTypeOfYieldAnnotation(x.range),
-                            // collect the value of the yield expression.
-                            Binding::ReturnTypeOfYieldAnnotation(return_ann, x.range),
-                        );
-                    }
-                }
-            }
-            let yield_type = Binding::phi(yield_expr_keys);
-            if is_async {
-                // combine the original (syntactic) return type and the yield type to analyze later and obtain the final return type.
-                return_type = Binding::AsyncGenerator(Box::new(yield_type));
-
-                // if our function is async, then record the overall return type and bind it to each return type
-                // this way, we can later check if the return expr gives a value and raise an error if so
-                for x in accumulate.returns {
-                    self.table.insert(
-                        Key::AsyncReturnType(x.range),
-                        Binding::AsyncReturnType(Box::new((
-                            Ast::return_or_none_owned(x),
-                            return_type.clone(),
-                        ))),
-                    );
-                }
-            } else {
-                // combine the original (syntactic) return type and the yield type to analyze later and obtain the final return type.
-                return_type = Binding::Generator(Box::new(yield_type), Box::new(return_type));
-            }
-        }
-        if let Some(ann) = return_ann {
-            return_type = Binding::AnnotatedType(ann, Box::new(return_type));
-        }
-        self.table.insert(
-            Key::ReturnType(ShortIdentifier::new(&func_name)),
-            return_type.clone(),
+        // Implicit return
+        let implicit_return = self.table.insert(
+            Key::ReturnImplicit(ShortIdentifier::new(&func_name)),
+            Binding::ReturnImplicit(ImplicitReturn {
+                last_exprs: last_expr_keys,
+                function_kind: kind,
+            }),
         );
 
-        for x in accumulate.yields {
-            self.table.insert(
-                Key::TypeOfYieldAnnotation(x.either(|x| x.range, |x| x.range)),
-                return_type.clone(),
-            );
-        }
+        // Collect the keys of explicit returns.
+        let return_keys = accumulate
+            .returns
+            .into_map(|x| {
+                self.table.insert(
+                    Key::ReturnExplicit(ShortIdentifier::new(&func_name), x.range),
+                    Binding::ReturnExplicit(ReturnExplicit {
+                        annot: return_ann,
+                        expr: x.value,
+                        is_generator,
+                        is_async,
+                    }),
+                )
+            })
+            .into_boxed_slice();
+
+        // Collect the keys of yield expressions.
+        let yield_keys = accumulate
+            .yields
+            .into_map(|x| match x {
+                Either::Left(x) => {
+                    // Add binding to get the send type for a yield expression.
+                    Either::Left(
+                        self.table
+                            .insert(KeyYield(x.range), BindingYield(return_ann, x)),
+                    )
+                }
+                Either::Right(x) => {
+                    // Add binding to get the return type for a yield from expression.
+                    Either::Right(
+                        self.table
+                            .insert(KeyYieldFrom(x.range), BindingYieldFrom(return_ann, x)),
+                    )
+                }
+            })
+            .into_boxed_slice();
+
+        let return_type = match return_ann_range {
+            Some((range, annot)) => Binding::ReturnTypeAnnotated(AnnotatedReturn {
+                annot,
+                range,
+                implicit_return,
+                is_generator: !yield_keys.is_empty(),
+                is_async: x.is_async,
+            }),
+            None => Binding::ReturnTypeInferred(InferredReturn {
+                returns: return_keys,
+                implicit_return,
+                yields: yield_keys,
+                is_async: x.is_async,
+            }),
+        };
+        self.table.insert(
+            Key::ReturnType(ShortIdentifier::new(&func_name)),
+            return_type,
+        );
 
         let function_idx = self.table.insert(
             KeyFunction(ShortIdentifier::new(&func_name)),

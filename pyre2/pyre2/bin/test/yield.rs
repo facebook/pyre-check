@@ -200,24 +200,22 @@ class Yield: pass
 class Send: pass
 
 
-def my_generator() -> AsyncGenerator[Yield, Send]:
-    s = yield Yield() # E:  Return type of generator must be compatible with `AsyncGenerator[Yield, Send]`
+def my_generator() -> AsyncGenerator[Yield, Send]: # E: Generator function should return `Generator`
+    s = yield Yield()
     assert_type(s, Send)
 
 "#,
 );
 
-testcase_with_bug!(
-    "TODO zeina: The type here should be AsyncGenerator[Literal[2], Any]].",
+testcase!(
     test_async_generator_basic_inference,
     r#"
 from typing import assert_type, Any, Literal, AsyncGenerator
 
 async def async_count_up_to(): 
     yield 2
-    return 4 # E:  Return statement with type `Literal[4]` is not allowed in async generator 
+    return 4 # E: Return statement with value is not allowed in async generator
 assert_type(async_count_up_to(), AsyncGenerator[Literal[2], Any])
-
 "#,
 );
 

@@ -171,8 +171,7 @@ class ParamSpecKwargs:
 class TypeVarTuple:
     def __init__(self, name: str) -> None: ...
 
-def reveal_type(obj, /):
-    return obj
+def reveal_type(obj: _T, /) -> _T: ...
 
 _T = TypeVar('_T')
 _T_co = TypeVar('_T_co', covariant=True)

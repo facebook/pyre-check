@@ -20,6 +20,8 @@ use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::decorated_function::DecoratedFunction;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
+use crate::alt::types::yields::YieldFromResult;
+use crate::alt::types::yields::YieldResult;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClass;
@@ -28,6 +30,8 @@ use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
+use crate::binding::binding::BindingYield;
+use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::EmptyAnswer;
 use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::Key;
@@ -40,6 +44,8 @@ use crate::binding::binding::KeyExpect;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyFunction;
 use crate::binding::binding::KeyLegacyTypeParam;
+use crate::binding::binding::KeyYield;
+use crate::binding::binding::KeyYieldFrom;
 use crate::binding::binding::Keyed;
 use crate::binding::bindings::BindingEntry;
 use crate::binding::bindings::BindingTable;
@@ -274,6 +280,24 @@ impl SolveRecursive for KeyLegacyTypeParam {
         v.not_parameter_mut().into_iter().for_each(f);
     }
 }
+impl SolveRecursive for KeyYield {
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        // In practice, we should never have recursive bindings with yield.
+        YieldResult::recursive()
+    }
+    fn visit_type_mut(v: &mut YieldResult, f: &mut dyn FnMut(&mut Type)) {
+        v.visit_mut(f);
+    }
+}
+impl SolveRecursive for KeyYieldFrom {
+    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
+        // In practice, we should never have recursive bindings with yield from.
+        YieldFromResult::recursive()
+    }
+    fn visit_type_mut(v: &mut YieldFromResult, f: &mut dyn FnMut(&mut Type)) {
+        v.visit_mut(f);
+    }
+}
 
 pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
     fn solve(
@@ -433,6 +457,30 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyLegacyTypeParam {
         _errors: &ErrorCollector,
     ) -> Arc<LegacyTypeParameterLookup> {
         answers.solve_legacy_tparam(binding)
+    }
+
+    fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyYield {
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &BindingYield,
+        errors: &ErrorCollector,
+    ) -> Arc<YieldResult> {
+        answers.solve_yield(binding, errors)
+    }
+
+    fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}
+}
+
+impl<Ans: LookupAnswer> Solve<Ans> for KeyYieldFrom {
+    fn solve(
+        answers: &AnswersSolver<Ans>,
+        binding: &BindingYieldFrom,
+        errors: &ErrorCollector,
+    ) -> Arc<YieldFromResult> {
+        answers.solve_yield_from(binding, errors)
     }
 
     fn recursive(_answers: &AnswersSolver<Ans>) -> Self::Recursive {}

@@ -11,6 +11,7 @@ use std::fmt::Display;
 use std::hash::Hash;
 
 use dupe::Dupe;
+use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
@@ -32,6 +33,8 @@ use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::decorated_function::DecoratedFunction;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
+use crate::alt::types::yields::YieldFromResult;
+use crate::alt::types::yields::YieldResult;
 use crate::binding::bindings::Bindings;
 use crate::binding::narrow::NarrowOp;
 use crate::graph::index::Idx;
@@ -61,6 +64,8 @@ mod check_size {
     assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
     assert_eq_size!(KeyClassMetadata, [usize; 1]);
     assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
+    assert_eq_size!(KeyYield, [usize; 1]);
+    assert_eq_size!(KeyYieldFrom, [usize; 1]);
 
     assert_eq_size!(Binding, [usize; 9]);
     assert_eq_size!(BindingExpect, [usize; 8]);
@@ -70,6 +75,8 @@ mod check_size {
     assert_eq_size!(BindingClassField, [usize; 15]);
     assert_eq_size!(BindingClassSynthesizedFields, [u8; 4]); // Equivalent to 0.5 usize
     assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
+    assert_eq_size!(BindingYield, [usize; 3]);
+    assert_eq_size!(BindingYieldFrom, [usize; 3]);
 }
 
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
@@ -122,6 +129,14 @@ impl Keyed for KeyLegacyTypeParam {
     type Value = BindingLegacyTypeParam;
     type Answer = LegacyTypeParameterLookup;
 }
+impl Keyed for KeyYield {
+    type Value = BindingYield;
+    type Answer = YieldResult;
+}
+impl Keyed for KeyYieldFrom {
+    type Value = BindingYieldFrom;
+    type Answer = YieldFromResult;
+}
 
 /// Keys that refer to a `Type`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -134,23 +149,10 @@ pub enum Key {
     Definition(ShortIdentifier),
     /// I am the self type for a particular class.
     SelfType(ShortIdentifier),
-    /// The final type of a yield expression.
-    TypeOfYieldAnnotation(TextRange),
-    /// The send type of a yield expression.
-    SendTypeOfYieldAnnotation(TextRange),
-    /// The return type of a yield expression.
-    ReturnTypeOfYieldAnnotation(TextRange),
-    /// The return type of an async function.
-    AsyncReturnType(TextRange),
-    /// The return type of a yield expression.
-    YieldTypeOfYieldAnnotation(TextRange),
-    /// return expression key for use when checking an annotation against none
-    #[allow(dead_code)]
-    ReturnExpressionWithNone(ShortIdentifier, TextRange),
     /// The type at a specific return point.
-    ReturnExpression(ShortIdentifier, TextRange),
-    /// The type yielded inside of a specific yield expression inside a function.
-    YieldTypeOfYield(ShortIdentifier, TextRange),
+    ReturnExplicit(ShortIdentifier, TextRange),
+    /// The implicit return type of a function, either Type::None or Type::Never.
+    ReturnImplicit(ShortIdentifier),
     /// The actual type of the return for a function.
     ReturnType(ShortIdentifier),
     /// The type of the return for a function after taking generators into account.
@@ -182,14 +184,8 @@ impl Ranged for Key {
             Self::Import(_, r) => *r,
             Self::Definition(x) => x.range(),
             Self::SelfType(x) => x.range(),
-            Self::TypeOfYieldAnnotation(x) => x.range(),
-            Self::AsyncReturnType(x) => x.range(),
-            Self::SendTypeOfYieldAnnotation(x) => x.range(),
-            Self::ReturnTypeOfYieldAnnotation(x) => x.range(),
-            Self::YieldTypeOfYieldAnnotation(x) => x.range(),
-            Self::ReturnExpression(_, r) => *r,
-            Self::ReturnExpressionWithNone(_, r) => *r,
-            Self::YieldTypeOfYield(_, r) => *r,
+            Self::ReturnExplicit(_, r) => *r,
+            Self::ReturnImplicit(x) => x.range(),
             Self::ReturnType(x) => x.range(),
             Self::Usage(x) => x.range(),
             Self::Anon(r) => *r,
@@ -207,31 +203,6 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::Import(n, r) => write!(f, "import {n} {r:?}"),
             Self::Definition(x) => write!(f, "{} {:?}", ctx.display(x), x.range()),
             Self::SelfType(x) => write!(f, "self {} {:?}", ctx.display(x), x.range()),
-            Self::TypeOfYieldAnnotation(x) => {
-                write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
-            }
-            Self::SendTypeOfYieldAnnotation(x) => {
-                write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
-            }
-            Self::YieldTypeOfYieldAnnotation(x) => {
-                write!(
-                    f,
-                    "yield type of yield annotation{} {:?}",
-                    ctx.display(x),
-                    x.range()
-                )
-            }
-            Self::ReturnTypeOfYieldAnnotation(x) => {
-                write!(f, "send type of yield {} {:?}", ctx.display(x), x.range())
-            }
-            Self::AsyncReturnType(x) => {
-                write!(
-                    f,
-                    "async generator return type {} {:?}",
-                    ctx.display(x),
-                    x.range()
-                )
-            }
             Self::Usage(x) => write!(f, "use {} {:?}", ctx.display(x), x.range()),
             Self::Anon(r) => write!(f, "anon {r:?}"),
             Self::StmtExpr(r) => write!(f, "stmt expr {r:?}"),
@@ -239,14 +210,11 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::Narrow(n, r1, r2) => write!(f, "narrow {n} {r1:?} {r2:?}"),
             Self::Anywhere(n, r) => write!(f, "anywhere {n} {r:?}"),
             Self::ReturnType(x) => write!(f, "return {} {:?}", ctx.display(x), x.range()),
-            Self::ReturnExpression(x, i) => {
+            Self::ReturnExplicit(x, i) => {
                 write!(f, "return {} {:?} @ {i:?}", ctx.display(x), x.range())
             }
-            Self::ReturnExpressionWithNone(x, i) => {
-                write!(f, "return {} {:?} @ {i:?}", ctx.display(x), x.range())
-            }
-            Self::YieldTypeOfYield(x, i) => {
-                write!(f, "yield {} {:?} @ {i:?}", ctx.display(x), x.range())
+            Self::ReturnImplicit(x) => {
+                write!(f, "return implicit {} {:?}", ctx.display(x), x.range())
             }
         }
     }
@@ -513,6 +481,36 @@ impl DisplayWith<ModuleInfo> for KeyLegacyTypeParam {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct KeyYield(pub TextRange);
+
+impl Ranged for KeyYield {
+    fn range(&self) -> TextRange {
+        self.0
+    }
+}
+
+impl DisplayWith<ModuleInfo> for KeyYield {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
+        write!(f, "{} {:?}", ctx.display(&self.0), self.0.range())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct KeyYieldFrom(pub TextRange);
+
+impl Ranged for KeyYieldFrom {
+    fn range(&self) -> TextRange {
+        self.0
+    }
+}
+
+impl DisplayWith<ModuleInfo> for KeyYieldFrom {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
+        write!(f, "{} {:?}", ctx.display(&self.0), self.0.range())
+    }
+}
+
 #[derive(Clone, Copy, Dupe, Debug)]
 pub enum UnpackedPosition {
     /// Zero-based index
@@ -574,35 +572,60 @@ pub struct ClassBinding {
 }
 
 #[derive(Clone, Debug)]
+pub struct ReturnExplicit {
+    pub annot: Option<Idx<KeyAnnotation>>,
+    pub expr: Option<Box<Expr>>,
+    pub is_generator: bool,
+    pub is_async: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct AnnotatedReturn {
+    pub annot: Idx<KeyAnnotation>,
+    /// The range of the return annotation.
+    pub range: TextRange,
+    pub implicit_return: Idx<Key>,
+    pub is_generator: bool,
+    pub is_async: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct InferredReturn {
+    /// The returns from the function.
+    pub returns: Box<[Idx<Key>]>,
+    pub implicit_return: Idx<Key>,
+    /// The explicit yields from the function. Left for `yield`, Right for `yield from`.
+    /// If this is non-empty, the function is a generator.
+    pub yields: Box<[Either<Idx<KeyYield>, Idx<KeyYieldFrom>>]>,
+    pub is_async: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct ImplicitReturn {
+    /// Terminal statements in the function control flow, used to determine whether the
+    /// function has an implicit `None` return.
+    /// When `None`, the function always has an implicit `None` return. When `Some(xs)`,
+    /// the function has an implicit `None` return if there exists a non-`Never` in this
+    /// list.
+    pub last_exprs: Option<Box<[Idx<Key>]>>,
+    /// Ignore the implicit return type for stub functions (returning `...`). This is
+    /// unsafe, but is convenient and matches Pyright's behavior.
+    pub function_kind: FunctionKind,
+}
+
+#[derive(Clone, Debug)]
 pub enum Binding {
     /// An expression, optionally with a Key saying what the type must be.
     /// The Key must be a type of types, e.g. `Type::Type`.
     Expr(Option<Idx<KeyAnnotation>>, Expr),
     /// An expression returned from a function.
-    /// The `bool` is whether the function has `yield` within it.
-    ReturnExpr(Option<Idx<KeyAnnotation>>, Box<Expr>, bool),
-    /// An expression returned from a function.
-    /// A `bool` to indicate function has `yield` within it.
-    /// An optional return annotation
-    /// A vector of all types of last statements in a function body  
-    #[allow(dead_code)]
-    ReturnExprWithNone(Option<Idx<KeyAnnotation>>, TextRange, bool, Vec<Idx<Key>>),
-    /// An expression returned from a function.
-    SendTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
-    /// Return type of yield
-    ReturnTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange),
-    /// Yield type of yield annotation with a flag to indicate if the surrounding function is async
-    YieldTypeOfYieldAnnotation(Option<Idx<KeyAnnotation>>, TextRange, bool),
-    /// A grouping of both the yield expression types and the return type.
-    /// Yield type of yield annotation
-    AsyncReturnType(Box<(Expr, Binding)>),
-    Generator(Box<Binding>, Box<Binding>),
-    /// Yield expression type from an async generator
-    AsyncGenerator(Box<Binding>),
-    /// Actual value of yield expression
-    YieldTypeOfYield(ExprYield),
-    /// Actual value of yield from expression
-    YieldTypeOfYieldFrom(ExprYieldFrom),
+    ReturnExplicit(ReturnExplicit),
+    /// The implicit return from a function.
+    ReturnImplicit(ImplicitReturn),
+    /// The annotated return type of a function.
+    ReturnTypeAnnotated(AnnotatedReturn),
+    /// The inferred return type of a function.
+    ReturnTypeInferred(InferredReturn),
     /// A value in an iterable expression, e.g. IterableValue(\[1\]) represents 1.
     IterableValue(Option<Idx<KeyAnnotation>>, Expr),
     /// A value produced by entering a context manager.
@@ -690,64 +713,22 @@ impl DisplayWith<Bindings> for Binding {
         let m = ctx.module_info();
         match self {
             Self::Expr(None, x) => write!(f, "{}", m.display(x)),
-            Self::ReturnExpr(Some(y), x, _) => {
-                write!(f, "{} {}", ctx.display(*y), m.display(x))
-            }
-            Self::ReturnExpr(None, x, _) => {
-                write!(f, "{}", m.display(x))
-            }
-            Self::ReturnExprWithNone(Some(y), _, _, _) => {
-                write!(f, "ReturnExprwithNone, {}", ctx.display(*y))
-            }
-            Self::ReturnExprWithNone(None, _, _, _) => {
-                write!(f, "ReturnExprwithNone")
-            }
             Self::Expr(Some(k), x) => {
                 write!(f, "{}: {}", ctx.display(*k), m.display(x))
             }
-            Self::Generator(box target, box iterable) => {
-                write!(
-                    f,
-                    "Generator(Yield: {}, Return: {})",
-                    target.display_with(ctx),
-                    iterable.display_with(ctx)
-                )
+            Self::ReturnExplicit(x) => {
+                if let Some(annot) = x.annot {
+                    write!(f, "{} ", ctx.display(annot))?
+                }
+                if let Some(expr) = x.expr.as_ref() {
+                    write!(f, "{}", m.display(expr))
+                } else {
+                    write!(f, "return")
+                }
             }
-            Self::AsyncReturnType(x) => {
-                write!(
-                    f,
-                    "AsyncReturn(return expr {}, return annotation {})",
-                    m.display(&x.0),
-                    x.1.display_with(ctx)
-                )
-            }
-            Self::AsyncGenerator(box target) => {
-                write!(
-                    f,
-                    "AsyncGenerator(AsyncYield: {})",
-                    target.display_with(ctx)
-                )
-            }
-            self::Binding::SendTypeOfYieldAnnotation(Some(x), _) => {
-                write!(f, "annotation containing send type {}", ctx.display(*x))
-            }
-            self::Binding::SendTypeOfYieldAnnotation(None, _) => {
-                write!(f, "no annotation so send type is Any")
-            }
-            self::Binding::ReturnTypeOfYieldAnnotation(Some(x), _) => {
-                write!(f, "annotation containing send type {}", ctx.display(*x))
-            }
-            self::Binding::ReturnTypeOfYieldAnnotation(None, _) => {
-                write!(f, "no annotation so send type is Any")
-            }
-            self::Binding::YieldTypeOfYieldAnnotation(Some(x), _, _) => {
-                write!(f, "annotation containing yield type {}", ctx.display(*x))
-            }
-            self::Binding::YieldTypeOfYieldAnnotation(None, _, _) => {
-                write!(f, "no annotation so yield type is Any")
-            }
-            Self::YieldTypeOfYield(x) => write!(f, "yield expr {}", m.display(x)),
-            Self::YieldTypeOfYieldFrom(x) => write!(f, "yield expr from {}", m.display(x)),
+            Self::ReturnImplicit(_) => write!(f, "implicit return"),
+            Self::ReturnTypeAnnotated(_) => write!(f, "annotated return type"),
+            Self::ReturnTypeInferred(_) => write!(f, "inferred return type"),
             Self::IterableValue(None, x) => write!(f, "iter {}", m.display(x)),
             Self::IterableValue(Some(k), x) => {
                 write!(f, "iter {}: {}", ctx.display(*k), m.display(x))
@@ -1002,5 +983,25 @@ pub struct BindingLegacyTypeParam(pub Idx<Key>);
 impl DisplayWith<Bindings> for BindingLegacyTypeParam {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         write!(f, "legacy_type_param {}", ctx.display(self.0))
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct BindingYield(pub Option<Idx<KeyAnnotation>>, pub ExprYield);
+
+impl DisplayWith<Bindings> for BindingYield {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        let m = ctx.module_info();
+        write!(f, "{}", m.display(&self.1))
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct BindingYieldFrom(pub Option<Idx<KeyAnnotation>>, pub ExprYieldFrom);
+
+impl DisplayWith<Bindings> for BindingYieldFrom {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        let m = ctx.module_info();
+        write!(f, "{}", m.display(&self.1))
     }
 }

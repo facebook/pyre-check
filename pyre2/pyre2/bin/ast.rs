@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::borrow::Cow;
 use std::slice;
 
 use ruff_python_ast::DictItem;
@@ -14,7 +13,6 @@ use ruff_python_ast::ExprBooleanLiteral;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprNoneLiteral;
 use ruff_python_ast::ExprStringLiteral;
-use ruff_python_ast::ExprYield;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::ModModule;
 use ruff_python_ast::Parameter;
@@ -26,7 +24,6 @@ use ruff_python_ast::PySourceType;
 use ruff_python_ast::Singleton;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtIf;
-use ruff_python_ast::StmtReturn;
 use ruff_python_ast::StringFlags;
 use ruff_python_parser::parse_expression_range;
 use ruff_python_parser::parse_unchecked_source;
@@ -257,20 +254,6 @@ impl Ast {
         let mut res = Vec::new();
         f(x, &mut res);
         res
-    }
-
-    pub fn return_or_none_owned(x: StmtReturn) -> Expr {
-        match x.value {
-            Some(x) => *x,
-            None => Expr::NoneLiteral(ExprNoneLiteral { range: x.range }),
-        }
-    }
-
-    pub fn yield_or_none<'b>(x: &'b ExprYield) -> Cow<'b, Expr> {
-        match &x.value {
-            Some(x) => Cow::Borrowed(&**x),
-            None => Cow::Owned(Expr::NoneLiteral(ExprNoneLiteral { range: x.range })),
-        }
     }
 
     pub fn pattern_match_singleton_to_expr(x: &PatternMatchSingleton) -> Expr {
