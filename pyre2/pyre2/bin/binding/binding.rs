@@ -47,6 +47,7 @@ use crate::types::class::ClassFieldProperties;
 use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
+use crate::util::display::commas_iter;
 use crate::util::display::DisplayWith;
 
 #[cfg(target_pointer_width = "64")]
@@ -828,11 +829,7 @@ impl DisplayWith<Bindings> for Binding {
                     f,
                     "type {}[{}] = {}",
                     name,
-                    params
-                        .iter()
-                        .map(|p| format!("{}", p.name()))
-                        .collect::<Vec<_>>()
-                        .join(", "),
+                    commas_iter(|| params.iter().map(|p| format!("{}", p.name()))),
                     expr.display_with(ctx.module_info())
                 )
             }
