@@ -273,6 +273,14 @@ impl BindingTable {
     {
         let entry = self.get_mut::<K>();
         let idx = entry.0.insert(key);
+        self.insert_idx(idx, value)
+    }
+
+    pub fn insert_idx<K: Keyed>(&mut self, idx: Idx<K>, value: K::Value) -> Idx<K>
+    where
+        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+    {
+        let entry = self.get_mut::<K>();
         let existing = entry.1.insert(idx, value);
         if let Some(existing) = existing {
             panic!(
