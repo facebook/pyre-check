@@ -333,10 +333,6 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             let yield_type = Binding::phi(yield_expr_keys);
-            self.table.insert(
-                Key::YieldTypeOfGenerator(ShortIdentifier::new(&func_name)),
-                yield_type.clone(),
-            );
             if is_async {
                 // combine the original (syntactic) return type and the yield type to analyze later and obtain the final return type.
                 return_type = Binding::AsyncGenerator(Box::new(yield_type));

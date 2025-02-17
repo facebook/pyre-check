@@ -151,8 +151,6 @@ pub enum Key {
     ReturnExpression(ShortIdentifier, TextRange),
     /// The type yielded inside of a specific yield expression inside a function.
     YieldTypeOfYield(ShortIdentifier, TextRange),
-    /// The type of the yield value.
-    YieldTypeOfGenerator(ShortIdentifier),
     /// The actual type of the return for a function.
     ReturnType(ShortIdentifier),
     /// The type of the return for a function after taking generators into account.
@@ -192,7 +190,6 @@ impl Ranged for Key {
             Self::ReturnExpression(_, r) => *r,
             Self::ReturnExpressionWithNone(_, r) => *r,
             Self::YieldTypeOfYield(_, r) => *r,
-            Self::YieldTypeOfGenerator(x) => x.range(),
             Self::ReturnType(x) => x.range(),
             Self::Usage(x) => x.range(),
             Self::Anon(r) => *r,
@@ -251,7 +248,6 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::YieldTypeOfYield(x, i) => {
                 write!(f, "yield {} {:?} @ {i:?}", ctx.display(x), x.range())
             }
-            Self::YieldTypeOfGenerator(x) => write!(f, "yield {} {:?}", ctx.display(x), x.range()),
         }
     }
 }
