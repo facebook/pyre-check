@@ -174,6 +174,21 @@ xs: dict[A, X] = {B(): Y() for _ in [0]}
 "#,
 );
 
+testcase_with_bug!(
+    "We should push context into generator expressions",
+    test_context_generator_expr,
+    r#"
+from typing import Generator, Iterable
+class A: ...
+class B(A): ...
+x0 = ([B()] for _ in [0])
+x1a: Generator[list[A], None, None] = x0 # E: EXPECTED Generator[list[B], None, None] <: Generator[list[A], None, None]
+x1b: Generator[list[A], None, None] = ([B()] for _ in [0]) # TODO # E: EXPECTED Generator[list[B], None, None] <: Generator[list[A], None, None]
+x2a: Iterable[list[A]] = x0 # E: EXPECTED Generator[list[B], None, None] <: Iterable[list[A]]
+x2b: Iterable[list[A]] = ([B()] for _ in [0]) # TODO # E: EXPECTED Generator[list[B], None, None] <: Iterable[list[A]]
+"#,
+);
+
 testcase!(
     test_context_if_expr,
     r#"
