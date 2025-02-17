@@ -48,7 +48,7 @@ impl<'a> BindingsBuilder<'a> {
         self.scopes.push(Scope::annotation());
 
         let class_key = KeyClass(ShortIdentifier::new(&x.name));
-        let definition_key = self.table.classes.0.insert(class_key.clone());
+        let definition_key = self.table.classes.0.insert(class_key);
 
         x.type_params.iter_mut().for_each(|x| {
             self.type_params(x);
@@ -188,8 +188,8 @@ impl<'a> BindingsBuilder<'a> {
             Binding::ClassDef(definition_key, decorators.into_boxed_slice()),
             None,
         );
-        self.table.insert(
-            class_key,
+        self.table.insert_idx(
+            definition_key,
             BindingClass::ClassDef(Box::new(ClassBinding {
                 def: x,
                 fields,
