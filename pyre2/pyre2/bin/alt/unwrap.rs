@@ -138,6 +138,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         }
     }
+
     pub fn decompose_async_generator(&self, ty: &Type) -> Option<(Type, Type)> {
         let yield_ty = self.fresh_var();
         let send_ty = self.fresh_var();
@@ -155,6 +156,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         }
     }
+
     pub fn decompose_tuple(&self, ty: &Type) -> Option<Type> {
         let elem = self.fresh_var();
         let tuple_type = self.stdlib.tuple(elem.to_type()).to_type();

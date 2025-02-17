@@ -183,9 +183,15 @@ class A: ...
 class B(A): ...
 x0 = ([B()] for _ in [0])
 x1a: Generator[list[A], None, None] = x0 # E: EXPECTED Generator[list[B], None, None] <: Generator[list[A], None, None]
-x1b: Generator[list[A], None, None] = ([B()] for _ in [0]) # TODO # E: EXPECTED Generator[list[B], None, None] <: Generator[list[A], None, None]
+x1b: Generator[list[A], None, None] = ([B()] for _ in [0])
 x2a: Iterable[list[A]] = x0 # E: EXPECTED Generator[list[B], None, None] <: Iterable[list[A]]
-x2b: Iterable[list[A]] = ([B()] for _ in [0]) # TODO # E: EXPECTED Generator[list[B], None, None] <: Iterable[list[A]]
+x2b: Iterable[list[A]] = ([B()] for _ in [0])
+
+# In theory, we should allow this, since the generator expression accepts _any_ send type,
+# but both Mypy and Pyright assume that the send type is `None`.
+x3: Generator[int, int, None] = (1 for _ in [1]) # E: EXPECTED None <: int
+
+x4: Generator[int, None, int] = (1 for _ in [1]) # E: EXPECTED int <: None
 "#,
 );
 

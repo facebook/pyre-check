@@ -587,11 +587,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Generator(x) => {
+                let hint = hint.and_then(|ty| self.decompose_generator(ty));
                 self.ifs_infer(&x.generators, errors);
-                let yield_ty = self.expr_infer(&x.elt, errors);
-                self.stdlib
-                    .generator(yield_ty, Type::None, Type::None)
-                    .to_type()
+                if let Some((yield_ty, send_ty, return_ty)) = hint {
+                    self.expr(&x.elt, Some(&yield_ty), errors);
+                    self.check_type(&send_ty, &Type::None, x.range, errors);
+                    self.check_type(&Type::None, &return_ty, x.range, errors);
+                    self.stdlib
+                        .generator(yield_ty, send_ty, return_ty)
+                        .to_type()
+                } else {
+                    let yield_ty = self.expr_infer(&x.elt, errors);
+                    self.stdlib
+                        .generator(yield_ty, Type::None, Type::None)
+                        .to_type()
+                }
             }
             Expr::Await(x) => {
                 let awaiting_ty = self.expr_infer(&x.value, errors);
