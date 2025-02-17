@@ -95,9 +95,9 @@ impl<'a> BindingsBuilder<'a> {
             KeyClassMetadata(ShortIdentifier::new(&x.name)),
             BindingClassMetadata {
                 def: definition_key,
-                bases: bases.clone(),
-                keywords,
-                decorators: decorators.clone(),
+                bases: bases.clone().into_boxed_slice(),
+                keywords: keywords.into_boxed_slice(),
+                decorators: decorators.clone().into_boxed_slice(),
             },
         );
         self.table.insert(
@@ -211,9 +211,9 @@ impl<'a> BindingsBuilder<'a> {
             KeyClassMetadata(ShortIdentifier::new(&class_name)),
             BindingClassMetadata {
                 def: definition_key,
-                bases: vec![Expr::Name(base_name)],
-                keywords: vec![],
-                decorators: vec![],
+                bases: Box::new([Expr::Name(base_name)]),
+                keywords: Box::new([]),
+                decorators: Box::new([]),
             },
         );
         self.table.insert(

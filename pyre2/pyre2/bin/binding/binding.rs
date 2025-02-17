@@ -71,7 +71,7 @@ mod check_size {
     assert_eq_size!(BindingExpect, [usize; 8]);
     assert_eq_size!(BindingAnnotation, [usize; 9]);
     assert_eq_size!(BindingClass, [usize; 8]);
-    assert_eq_size!(BindingClassMetadata, [usize; 10]);
+    assert_eq_size!(BindingClassMetadata, [usize; 7]);
     assert_eq_size!(BindingClassField, [usize; 15]);
     assert_eq_size!(BindingClassSynthesizedFields, [u8; 4]); // Equivalent to 0.5 usize
     assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
@@ -958,15 +958,15 @@ impl DisplayWith<Bindings> for BindingClassSynthesizedFields {
 /// includes the MRO, the class keywords, and the metaclass).
 ///
 /// The `Key` points to the definition of the class.
-/// The `Vec<Expr>` contains the base classes from the class header.
-/// The `Vec<(Name, Expr)>` contains the class keywords from the class header.
-/// The `Vec<Idx<Key>>` points to the class's decorators.
+/// The `[Expr]` contains the base classes from the class header.
+/// The `[(Name, Expr)]` contains the class keywords from the class header.
+/// The `[Idx<Key>]` points to the class's decorators.
 #[derive(Clone, Debug)]
 pub struct BindingClassMetadata {
     pub def: Idx<KeyClass>,
-    pub bases: Vec<Expr>,
-    pub keywords: Vec<(Name, Expr)>,
-    pub decorators: Vec<Idx<Key>>,
+    pub bases: Box<[Expr]>,
+    pub keywords: Box<[(Name, Expr)]>,
+    pub decorators: Box<[Idx<Key>]>,
 }
 
 impl DisplayWith<Bindings> for BindingClassMetadata {
