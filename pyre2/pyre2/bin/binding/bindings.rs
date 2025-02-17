@@ -233,6 +233,18 @@ impl Bindings {
                 }
             }
         }
+        for x in func_info.returns {
+            if let Some(x) = x.value {
+                builder
+                    .table
+                    .insert(Key::Anon(x.range()), Binding::Expr(None, *x));
+            }
+            errors.add(
+                &module_info,
+                x.range,
+                "Invalid `return` outside of a function".to_owned(),
+            );
+        }
         let last_scope = builder.scopes.finish();
         for (k, static_info) in last_scope.stat.0 {
             let info = last_scope.flow.info.get(&k);

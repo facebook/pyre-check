@@ -996,3 +996,11 @@ testcase!(
 for # E: Parse
 "#,
 );
+
+testcase!(
+    test_invalid_return,
+    r#"
+def f(x: str): ...
+return f(0) # E: Invalid `return` outside of a function # E: EXPECTED Literal[0] <: str
+"#,
+);
