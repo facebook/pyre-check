@@ -150,7 +150,7 @@ pub enum Key {
     /// I am the self type for a particular class.
     SelfType(ShortIdentifier),
     /// The type at a specific return point.
-    ReturnExplicit(ShortIdentifier, TextRange),
+    ReturnExplicit(TextRange),
     /// The implicit return type of a function, either Type::None or Type::Never.
     ReturnImplicit(ShortIdentifier),
     /// The actual type of the return for a function.
@@ -184,7 +184,7 @@ impl Ranged for Key {
             Self::Import(_, r) => *r,
             Self::Definition(x) => x.range(),
             Self::SelfType(x) => x.range(),
-            Self::ReturnExplicit(_, r) => *r,
+            Self::ReturnExplicit(r) => *r,
             Self::ReturnImplicit(x) => x.range(),
             Self::ReturnType(x) => x.range(),
             Self::Usage(x) => x.range(),
@@ -210,9 +210,7 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::Narrow(n, r1, r2) => write!(f, "narrow {n} {r1:?} {r2:?}"),
             Self::Anywhere(n, r) => write!(f, "anywhere {n} {r:?}"),
             Self::ReturnType(x) => write!(f, "return {} {:?}", ctx.display(x), x.range()),
-            Self::ReturnExplicit(x, i) => {
-                write!(f, "return {} {:?} @ {i:?}", ctx.display(x), x.range())
-            }
+            Self::ReturnExplicit(r) => write!(f, "return {r:?}"),
             Self::ReturnImplicit(x) => {
                 write!(f, "return implicit {} {:?}", ctx.display(x), x.range())
             }

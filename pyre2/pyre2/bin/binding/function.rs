@@ -219,7 +219,7 @@ impl<'a> BindingsBuilder<'a> {
             .returns
             .into_map(|x| {
                 self.table.insert(
-                    Key::ReturnExplicit(ShortIdentifier::new(&func_name), x.range),
+                    Key::ReturnExplicit(x.range),
                     Binding::ReturnExplicit(ReturnExplicit {
                         annot: return_ann,
                         expr: x.value,
