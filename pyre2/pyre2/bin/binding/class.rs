@@ -190,12 +190,12 @@ impl<'a> BindingsBuilder<'a> {
         );
         self.table.insert_idx(
             definition_key,
-            BindingClass::ClassDef(Box::new(ClassBinding {
+            BindingClass::ClassDef(ClassBinding {
                 def: x,
                 fields,
                 bases: bases.into_boxed_slice(),
                 legacy_tparams: legacy_tparams.into_boxed_slice(),
-            })),
+            }),
         );
     }
 

@@ -70,7 +70,7 @@ mod check_size {
     assert_eq_size!(Binding, [usize; 9]);
     assert_eq_size!(BindingExpect, [usize; 8]);
     assert_eq_size!(BindingAnnotation, [usize; 9]);
-    assert_eq_size!(BindingClass, [usize; 8]);
+    assert_eq_size!(BindingClass, [usize; 21]);
     assert_eq_size!(BindingClassMetadata, [usize; 7]);
     assert_eq_size!(BindingClassField, [usize; 15]);
     assert_eq_size!(BindingClassSynthesizedFields, [u8; 4]); // Equivalent to 0.5 usize
@@ -901,7 +901,7 @@ impl DisplayWith<Bindings> for BindingAnnotation {
 /// Binding for a class.
 #[derive(Clone, Debug)]
 pub enum BindingClass {
-    ClassDef(Box<ClassBinding>),
+    ClassDef(ClassBinding),
     FunctionalClassDef(Identifier, SmallMap<Name, ClassFieldProperties>),
 }
 
