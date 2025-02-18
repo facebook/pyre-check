@@ -67,7 +67,7 @@ pub enum ClassKind {
 
 impl ClassKind {
     fn from_qname(qname: &QName) -> Self {
-        match (qname.module.name().as_str(), qname.name.id.as_str()) {
+        match (qname.module_name().as_str(), qname.id().as_str()) {
             ("builtins", "staticmethod") => Self::StaticMethod,
             ("builtins", "classmethod") => Self::ClassMethod,
             ("builtins", "property") => Self::Property,
@@ -99,7 +99,7 @@ impl Ord for ClassInner {
 
 impl Display for ClassInner {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "class {}", self.qname.name)?;
+        write!(f, "class {}", self.qname.id())?;
         if !self.tparams.is_empty() {
             write!(f, "[{}]", commas_iter(|| self.tparams.iter()))?;
         }
@@ -133,7 +133,7 @@ impl Class {
     }
 
     pub fn short_identifier(&self) -> ShortIdentifier {
-        ShortIdentifier::new(&self.0.qname.name)
+        self.0.qname.short_identifier()
     }
 
     pub fn range(&self) -> TextRange {
@@ -141,7 +141,7 @@ impl Class {
     }
 
     pub fn name(&self) -> &Name {
-        &self.0.qname.name.id
+        self.0.qname.id()
     }
 
     pub fn qname(&self) -> &QName {
@@ -163,7 +163,7 @@ impl Class {
     }
 
     pub fn module_info(&self) -> &ModuleInfo {
-        &self.0.qname.module
+        self.0.qname.module_info()
     }
 
     pub fn fields(&self) -> impl Iterator<Item = &Name> {
@@ -182,7 +182,7 @@ impl Class {
     }
 
     pub fn has_qname(&self, module: &str, name: &str) -> bool {
-        self.0.qname.module.name().as_str() == module && self.0.qname.name.id == name
+        self.0.qname.module_name().as_str() == module && self.0.qname.id() == name
     }
 }
 

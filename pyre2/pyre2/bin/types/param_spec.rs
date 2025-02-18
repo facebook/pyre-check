@@ -22,7 +22,7 @@ pub struct ParamSpec(ArcId<ParamSpecInner>);
 
 impl Display for ParamSpec {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0.qname.name)
+        write!(f, "{}", self.0.qname.id())
     }
 }
 

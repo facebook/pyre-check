@@ -26,7 +26,7 @@ pub struct TypeVar(ArcId<TypeVarInner>);
 
 impl Display for TypeVar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0.qname.name)
+        write!(f, "{}", self.0.qname.id())
     }
 }
 

@@ -19,12 +19,13 @@ use ruff_text_size::TextSize;
 
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::module::short_identifier::ShortIdentifier;
 
 /// A name, plus where it is defined.
 #[derive(Clone)]
 pub struct QName {
-    pub name: Identifier,
-    pub module: ModuleInfo,
+    name: Identifier,
+    module: ModuleInfo,
 }
 
 impl Debug for QName {
@@ -85,6 +86,18 @@ impl QName {
 
     pub fn range(&self) -> TextRange {
         self.name.range
+    }
+
+    pub fn short_identifier(&self) -> ShortIdentifier {
+        ShortIdentifier::new(&self.name)
+    }
+
+    pub fn module_info(&self) -> &ModuleInfo {
+        &self.module
+    }
+
+    pub fn module_name(&self) -> ModuleName {
+        self.module.name()
     }
 
     pub fn fmt_name(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

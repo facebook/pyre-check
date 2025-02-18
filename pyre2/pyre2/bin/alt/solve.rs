@@ -1168,7 +1168,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         if matches!(&**expr, Expr::Call(_))
                             && let Some(tvar) = t.as_tvar_declaration() =>
                     {
-                        let tvar_name = &tvar.name.id;
+                        let tvar_name = tvar.id();
                         if *name != *tvar_name && *tvar_name != UNKNOWN {
                             self.error(
                                 errors,

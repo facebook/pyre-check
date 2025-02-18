@@ -41,7 +41,7 @@ struct ClassInfo {
 impl ClassInfo {
     fn new(qname: &QName) -> Self {
         Self {
-            info: smallmap! {qname.module.name() => Some(qname.range())},
+            info: smallmap! {qname.module_name() => Some(qname.range())},
         }
     }
 
@@ -52,7 +52,7 @@ impl ClassInfo {
     }
 
     fn update(&mut self, qname: &QName) {
-        match self.info.entry(qname.module.name()) {
+        match self.info.entry(qname.module_name()) {
             Entry::Vacant(e) => {
                 e.insert(Some(qname.range()));
             }
@@ -65,7 +65,7 @@ impl ClassInfo {
     }
 
     fn fmt(&self, qname: &QName, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let module_name = qname.module.name();
+        let module_name = qname.module_name();
         match self.info.get(&module_name) {
             Some(None) | None => qname.fmt_with_location(f),
             _ if self.info.len() > 1 => qname.fmt_with_module(f),
