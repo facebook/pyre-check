@@ -112,7 +112,7 @@ struct ModuleState {
     lock: FairMutex<()>,
     steps: RwLock<ModuleSteps>,
     handle: Handle,
-    dependencies: RwLock<SmallMap<ModuleName, ModulePath>>,
+    dependencies: RwLock<SmallMap<ModuleName, Arc<ModuleState>>>,
 }
 
 impl ModuleState {
@@ -617,33 +617,21 @@ struct StateHandle<'a> {
 }
 
 impl<'a> StateHandle<'a> {
-    fn get_path(&self, module: ModuleName) -> Result<ModulePath, FindError> {
-        if let Some(path) = self.module_state.dependencies.read().unwrap().get(&module) {
-            return Ok(path.dupe());
+    fn get_module(&self, module: ModuleName) -> Result<Arc<ModuleState>, FindError> {
+        if let Some(res) = self.module_state.dependencies.read().unwrap().get(&module) {
+            return Ok(res.dupe());
         }
 
-        let path = self
+        let handle = self
             .state
-            .get_cached_find(self.module_state.handle.loader(), module)?;
+            .import_handle(&self.module_state.handle, module)?;
+        let res = self.state.get_module(&handle);
         self.module_state
             .dependencies
             .write()
             .unwrap()
-            .insert(module, path.dupe());
-        Ok(path)
-    }
-
-    fn import_handle(&self, module: ModuleName) -> Result<Handle, FindError> {
-        Ok(Handle::new(
-            module,
-            self.get_path(module)?,
-            self.module_state.handle.config().dupe(),
-            self.module_state.handle.loader().dupe(),
-        ))
-    }
-
-    fn get_module(&self, module: ModuleName) -> Result<Arc<ModuleState>, FindError> {
-        Ok(self.state.get_module(&self.import_handle(module)?))
+            .insert(module, res.dupe());
+        Ok(res)
     }
 }
 
