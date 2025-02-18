@@ -544,10 +544,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Some(class_type) = class_type {
             let got = class_field.clone().as_instance_attribute(&class_type);
 
-            let parents = self
-                .get_metadata_for_class(class)
-                .bases_with_metadata()
-                .clone();
+            let metadata = self.get_metadata_for_class(class);
+            let parents = metadata.bases_with_metadata();
 
             for (parent, parent_metadata) in parents {
                 // todo zeina: skip dataclasses. Look into them next.
@@ -558,10 +556,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     continue;
                 }
 
-                if let Some(want) = self
-                    .type_order()
-                    .try_lookup_attr(parent.clone().self_type(), name)
-                {
+                if let Some(want) = self.type_order().try_lookup_attr(parent.self_type(), name) {
                     let attr_check = self.is_attr_subset(&got, &want, &mut |got, want| {
                         self.solver().is_subset_eq(got, want, self.type_order())
                     });
