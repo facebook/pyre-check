@@ -68,7 +68,7 @@ pub struct State {
     /// Items we still need to process. Stored in a max heap, so that
     /// the highest step (the module that is closest to being finished)
     /// gets picked first, ensuring we release its memory quickly.
-    todo: Mutex<EnumHeap<Step, Handle>>,
+    todo: Mutex<EnumHeap<Step, Arc<ModuleState>>>,
 
     // Set to true to keep data around forever.
     retain_memory: bool,
@@ -220,7 +220,7 @@ impl State {
         if computed && let Some(next) = step.next() {
             // For a large benchmark, LIFO is 10Gb retained, FIFO is 13Gb.
             // Perhaps we are getting to the heart of the graph with LIFO?
-            self.todo.lock().unwrap().push_lifo(next, handle.dupe());
+            self.todo.lock().unwrap().push_lifo(next, module_state);
         }
     }
 
@@ -444,7 +444,7 @@ impl State {
                 None => break,
             };
             drop(lock);
-            self.demand(&x, Step::last());
+            self.demand(&x.handle, Step::last());
         }
     }
 
@@ -462,7 +462,7 @@ impl State {
         {
             let mut lock = self.todo.lock().unwrap();
             for h in handles {
-                lock.push_fifo(Step::first(), h);
+                lock.push_fifo(Step::first(), self.get_module(&h));
             }
         }
 
