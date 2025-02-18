@@ -307,14 +307,13 @@ def test(kwargs: Mapping[str, int]):
 "#,
 );
 
-testcase_with_bug!(
-    "Should be allowed to splat a dict subclass",
+testcase!(
     test_splat_kwargs_subclass,
     r#"
 class Counter[T](dict[T, int]): ...
 def f(**kwargs: int): ...
 def test(c: Counter[str]):
-    f(**c) # E: Expected argument after ** to be a mapping, got: Counter[str]
+    f(**c)
 "#,
 );
 

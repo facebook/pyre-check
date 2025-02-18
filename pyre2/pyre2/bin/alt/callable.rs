@@ -15,7 +15,6 @@ use starlark_map::small_map::SmallMap;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::solve::Iterable;
-use crate::alt::unwrap::UnwrappedDict;
 use crate::error::collector::ErrorCollector;
 use crate::types::callable::Callable;
 use crate::types::callable::Param;
@@ -329,8 +328,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             });
                         })
                     } else {
-                        match self.decompose_dict(&ty) {
-                            Some(UnwrappedDict { key, value }) => {
+                        match self.unwrap_mapping(&ty) {
+                            Some((key, value)) => {
                                 if self.solver().is_subset_eq(
                                     &key,
                                     &self.stdlib.str().to_type(),

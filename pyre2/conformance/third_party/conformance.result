@@ -243,11 +243,11 @@
     "Line 29: Unexpected errors ['EXPECTED object <: Class2[?_TypeVar]', 'Expected 0 positional arguments, got 1']",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', 'Missing argument `x`']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', 'Missing argument `x`']",
-    "Line 98: Unexpected errors ['Expected 0 positional arguments, got 1', 'Expected argument after ** to be a mapping, got: Unknown']",
+    "Line 98: Unexpected errors ['Expected 0 positional arguments, got 1']",
     "Line 104: Unexpected errors ['assert_type(object, Class7) failed']"
   ],
   "constructors_call_type.py": [
-    "Line 25: Unexpected errors ['EXPECTED object <: Class1', 'Expected argument after ** to be a mapping, got: Unknown']",
+    "Line 25: Unexpected errors ['EXPECTED object <: Class1']",
     "Line 35: Unexpected errors ['EXPECTED object <: Class2', 'Expected 0 positional arguments, got 1']",
     "Line 63: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
     "Line 71: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",

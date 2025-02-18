@@ -73,6 +73,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .is_subset_eq(&async_generator_ty, ty, self.type_order())
     }
 
+    pub fn unwrap_mapping(&self, ty: &Type) -> Option<(Type, Type)> {
+        let key = self.fresh_var();
+        let value = self.fresh_var();
+        let dict_type = self
+            .stdlib
+            .mapping(key.to_type(), value.to_type())
+            .to_type();
+        if self.is_subset_eq(ty, &dict_type) {
+            Some((self.expand_var(key), self.expand_var(value)))
+        } else {
+            None
+        }
+    }
+
     pub fn unwrap_awaitable(&self, ty: &Type) -> Option<Type> {
         let var = self.fresh_var();
         let awaitable_ty = self.stdlib.awaitable(var.to_type()).to_type();
