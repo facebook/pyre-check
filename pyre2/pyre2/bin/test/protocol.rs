@@ -21,7 +21,7 @@ class C2:
     x: str
 class C3(P, C1): ...
 class C4(P):
-    y: int
+    y: int # E: Class member `y` overrides parent class `P` in an inconsistent manner
 class C5:
     x: int
     y: int

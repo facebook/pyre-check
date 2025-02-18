@@ -533,7 +533,55 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let readonly = metadata
             .dataclass_metadata()
             .map_or(false, |dataclass| dataclass.kws.frozen);
-        ClassField::new(ty.clone(), ann.cloned(), initialization, readonly)
+        let class_field = ClassField::new(ty.clone(), ann.cloned(), initialization, readonly);
+
+        // check if this attribute is compatible with the parent attribute
+        let class_type = match class.self_type() {
+            Type::ClassType(class_type) => Some(class_type),
+            _ => None,
+        };
+
+        if let Some(class_type) = class_type {
+            let got = class_field.clone().as_instance_attribute(&class_type);
+
+            let parents = self
+                .get_metadata_for_class(class)
+                .bases_with_metadata()
+                .clone();
+
+            for (parent, parent_metadata) in parents {
+                // todo zeina: skip dataclasses. Look into them next.
+                if metadata.dataclass_metadata().is_some()
+                    || parent_metadata.dataclass_metadata().is_some()
+                    || (name.starts_with('_') && name.ends_with('_'))
+                {
+                    continue;
+                }
+
+                if let Some(want) = self
+                    .type_order()
+                    .try_lookup_attr(parent.clone().self_type(), name)
+                {
+                    let attr_check = self.is_attr_subset(&got, &want, &mut |got, want| {
+                        self.solver().is_subset_eq(got, want, self.type_order())
+                    });
+
+                    if !attr_check {
+                        self.error(
+                            errors,
+                            range,
+                            format!(
+                                "Class member `{}` overrides parent class `{}` in an inconsistent manner",
+                                name,
+                                parent.name()
+                            ),
+                        );
+                    }
+                }
+            }
+        };
+
+        class_field
     }
 
     pub fn get_class_field_non_synthesized(

@@ -210,7 +210,9 @@
     "Line 67: Expected 1 errors",
     "Line 71: Expected 1 errors",
     "Line 105: Expected 1 errors",
-    "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']"
+    "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']",
+    "Line 152: Unexpected errors ['Class member `y` overrides parent class `ProtoB` in an inconsistent manner']",
+    "Line 153: Unexpected errors ['Class member `z` overrides parent class `ProtoB` in an inconsistent manner']"
   ],
   "classes_override.py": [
     "Line 53: Expected 1 errors",
@@ -934,12 +936,26 @@
     "Line 281: Unexpected errors ['EXPECTED Concrete5_Good2 <: Template5']"
   ],
   "protocols_explicit.py": [
-    "Line 56: Expected 1 errors",
     "Line 60: Expected 1 errors",
     "Line 90: Expected 1 errors",
     "Line 110: Expected 1 errors",
     "Line 135: Expected 1 errors",
-    "Line 165: Expected 1 errors"
+    "Line 165: Expected 1 errors",
+    "Line 57: Unexpected errors ['Class member `other` overrides parent class `RGB` in an inconsistent manner']",
+    "Line 85: Unexpected errors ['Class member `cm1` overrides parent class `Proto1` in an inconsistent manner']",
+    "Line 86: Unexpected errors ['Class member `im1` overrides parent class `Proto1` in an inconsistent manner']",
+    "Line 87: Unexpected errors ['Class member `im3` overrides parent class `Proto1` in an inconsistent manner']",
+    "Line 94: Unexpected errors ['Class member `cm1` overrides parent class `Proto1` in an inconsistent manner']",
+    "Line 95: Unexpected errors ['Class member `im1` overrides parent class `Proto1` in an inconsistent manner']",
+    "Line 102: Unexpected errors ['Class member `cm1` overrides parent class `Proto1` in an inconsistent manner']",
+    "Line 105: Unexpected errors ['Class member `im1` overrides parent class `Proto1` in an inconsistent manner']",
+    "Line 106: Unexpected errors ['Class member `cm10` overrides parent class `Proto3` in an inconsistent manner']",
+    "Line 107: Unexpected errors ['Class member `cm11` overrides parent class `Proto3` in an inconsistent manner']",
+    "Line 114: Unexpected errors ['Class member `cm1` overrides parent class `Proto1` in an inconsistent manner']",
+    "Line 115: Unexpected errors ['Class member `cm10` overrides parent class `Proto3` in an inconsistent manner']",
+    "Line 118: Unexpected errors ['Class member `im1` overrides parent class `Proto1` in an inconsistent manner']",
+    "Line 120: Unexpected errors ['Class member `cm11` overrides parent class `Proto3` in an inconsistent manner']",
+    "Line 157: Unexpected errors ['Class member `method1` overrides parent class `Proto7` in an inconsistent manner']"
   ],
   "protocols_generic.py": [
     "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access get_parent)']",
@@ -1028,7 +1044,6 @@
   "qualifiers_final_decorator.py": [
     "Line 21: Expected 1 errors",
     "Line 56: Expected 1 errors",
-    "Line 118: Expected 1 errors",
     "Lines 59, 60: Expected error (tag 'method2')",
     "Lines 63, 64: Expected error (tag 'method3')",
     "Lines 67, 75: Expected error (tag 'method4')",
@@ -1127,8 +1142,7 @@
     "Line 26: Unexpected errors [\"Invalid key for TypedDict `Movie`, got `Literal['name', 'year']`\"]"
   ],
   "typeddicts_inheritance.py": [
-    "Line 65: Expected 1 errors",
-    "Lines 54, 55: Expected error (tag 'Y1')"
+    "Line 65: Expected 1 errors"
   ],
   "typeddicts_operations.py": [
     "Line 60: Unexpected errors ['assert_type(object | None, str | None) failed']",
@@ -1147,12 +1161,13 @@
     "Line 79: Unexpected errors ['EXPECTED TypedDict[C2] <: TypedDict[A2]']"
   ],
   "typeddicts_readonly_inheritance.py": [
-    "Line 50: Expected 1 errors",
     "Line 94: Expected 1 errors",
     "Line 98: Expected 1 errors",
     "Line 106: Expected 1 errors",
     "Line 119: Expected 1 errors",
-    "Line 132: Expected 1 errors"
+    "Line 132: Expected 1 errors",
+    "Line 49: Unexpected errors ['Class member `albums` overrides parent class `AlbumCollection` in an inconsistent manner']",
+    "Line 76: Unexpected errors ['Class member `ident` overrides parent class `OptionalIdent` in an inconsistent manner']"
   ],
   "typeddicts_readonly_kwargs.py": [],
   "typeddicts_readonly_update.py": [

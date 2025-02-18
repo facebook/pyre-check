@@ -2581,6 +2581,26 @@
       "name": "PyreError",
       "stop_column": 25,
       "stop_line": 134
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Class member `y` overrides parent class `ProtoB` in an inconsistent manner",
+      "description": "Class member `y` overrides parent class `ProtoB` in an inconsistent manner",
+      "line": 152,
+      "name": "PyreError",
+      "stop_column": 6,
+      "stop_line": 152
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Class member `z` overrides parent class `ProtoB` in an inconsistent manner",
+      "description": "Class member `z` overrides parent class `ProtoB` in an inconsistent manner",
+      "line": 153,
+      "name": "PyreError",
+      "stop_column": 6,
+      "stop_line": 153
     }
   ],
   "classes_override.py": [],
@@ -12104,6 +12124,166 @@
       "name": "PyreError",
       "stop_column": 28,
       "stop_line": 27
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Class member `rgb` overrides parent class `RGB` in an inconsistent manner",
+      "description": "Class member `rgb` overrides parent class `RGB` in an inconsistent manner",
+      "line": 56,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Class member `other` overrides parent class `RGB` in an inconsistent manner",
+      "description": "Class member `other` overrides parent class `RGB` in an inconsistent manner",
+      "line": 57,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 57
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Class member `cm1` overrides parent class `Proto1` in an inconsistent manner",
+      "description": "Class member `cm1` overrides parent class `Proto1` in an inconsistent manner",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 85
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Class member `im1` overrides parent class `Proto1` in an inconsistent manner",
+      "description": "Class member `im1` overrides parent class `Proto1` in an inconsistent manner",
+      "line": 86,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 86
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Class member `im3` overrides parent class `Proto1` in an inconsistent manner",
+      "description": "Class member `im3` overrides parent class `Proto1` in an inconsistent manner",
+      "line": 87,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 87
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Class member `cm1` overrides parent class `Proto1` in an inconsistent manner",
+      "description": "Class member `cm1` overrides parent class `Proto1` in an inconsistent manner",
+      "line": 94,
+      "name": "PyreError",
+      "stop_column": 8,
+      "stop_line": 94
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Class member `im1` overrides parent class `Proto1` in an inconsistent manner",
+      "description": "Class member `im1` overrides parent class `Proto1` in an inconsistent manner",
+      "line": 95,
+      "name": "PyreError",
+      "stop_column": 8,
+      "stop_line": 95
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Class member `cm1` overrides parent class `Proto1` in an inconsistent manner",
+      "description": "Class member `cm1` overrides parent class `Proto1` in an inconsistent manner",
+      "line": 102,
+      "name": "PyreError",
+      "stop_column": 8,
+      "stop_line": 102
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Class member `im1` overrides parent class `Proto1` in an inconsistent manner",
+      "description": "Class member `im1` overrides parent class `Proto1` in an inconsistent manner",
+      "line": 105,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 105
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Class member `cm10` overrides parent class `Proto3` in an inconsistent manner",
+      "description": "Class member `cm10` overrides parent class `Proto3` in an inconsistent manner",
+      "line": 106,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 106
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Class member `cm11` overrides parent class `Proto3` in an inconsistent manner",
+      "description": "Class member `cm11` overrides parent class `Proto3` in an inconsistent manner",
+      "line": 107,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 107
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Class member `cm1` overrides parent class `Proto1` in an inconsistent manner",
+      "description": "Class member `cm1` overrides parent class `Proto1` in an inconsistent manner",
+      "line": 114,
+      "name": "PyreError",
+      "stop_column": 8,
+      "stop_line": 114
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Class member `cm10` overrides parent class `Proto3` in an inconsistent manner",
+      "description": "Class member `cm10` overrides parent class `Proto3` in an inconsistent manner",
+      "line": 115,
+      "name": "PyreError",
+      "stop_column": 9,
+      "stop_line": 115
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Class member `im1` overrides parent class `Proto1` in an inconsistent manner",
+      "description": "Class member `im1` overrides parent class `Proto1` in an inconsistent manner",
+      "line": 118,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 118
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Class member `cm11` overrides parent class `Proto3` in an inconsistent manner",
+      "description": "Class member `cm11` overrides parent class `Proto3` in an inconsistent manner",
+      "line": 120,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 120
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Class member `method1` overrides parent class `Proto7` in an inconsistent manner",
+      "description": "Class member `method1` overrides parent class `Proto7` in an inconsistent manner",
+      "line": 157,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 157
     }
   ],
   "protocols_generic.py": [
@@ -12724,6 +12904,16 @@
       "name": "PyreError",
       "stop_column": 53,
       "stop_line": 8
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Class member `method` overrides parent class `Base5_2` in an inconsistent manner",
+      "description": "Class member `method` overrides parent class `Base5_2` in an inconsistent manner",
+      "line": 118,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 118
     }
   ],
   "specialtypes_any.py": [
@@ -13828,6 +14018,16 @@
       "name": "PyreError",
       "stop_column": 19,
       "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 4,
+      "concise_description": "Class member `x` overrides parent class `X1` in an inconsistent manner",
+      "description": "Class member `x` overrides parent class `X1` in an inconsistent manner",
+      "line": 55,
+      "name": "PyreError",
+      "stop_column": 5,
+      "stop_line": 55
     }
   ],
   "typeddicts_operations.py": [
@@ -14129,6 +14329,26 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "Class member `albums` overrides parent class `AlbumCollection` in an inconsistent manner",
+      "description": "Class member `albums` overrides parent class `AlbumCollection` in an inconsistent manner",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Class member `alt` overrides parent class `AlbumCollection` in an inconsistent manner",
+      "description": "Class member `alt` overrides parent class `AlbumCollection` in an inconsistent manner",
+      "line": 50,
+      "name": "PyreError",
+      "stop_column": 8,
+      "stop_line": 50
+    },
+    {
+      "code": -2,
       "column": 19,
       "concise_description": "Missing required key `name` for TypedDict `RequiredName`",
       "description": "Missing required key `name` for TypedDict `RequiredName`",
@@ -14136,6 +14356,16 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 65
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Class member `ident` overrides parent class `OptionalIdent` in an inconsistent manner",
+      "description": "Class member `ident` overrides parent class `OptionalIdent` in an inconsistent manner",
+      "line": 76,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 76
     },
     {
       "code": -2,

@@ -25,8 +25,7 @@ class ChildB(ParentB):
  "#,
 );
 
-testcase_with_bug!(
-    "Todo: Method f overrides class A in an incompatible manner",
+testcase!(
     test_override_basic_method,
     r#"
  
@@ -35,22 +34,25 @@ class A:
         return x + y
 
 class B(A):
-    def f(self, x:int, y:int) -> int:
+    def f(self, x:int, y:int) -> int: # E: Class member `f` overrides parent class `A` in an inconsistent manner
         return x + y        
  "#,
 );
 
-testcase_with_bug!(
-    "Todo: wrong field override",
+testcase!(
     test_override_basic_field,
     r#"
 class A:
-    x:int
-    y:bool
+    x: int
+    y: bool
+    z: bool
 
 class B(A):
-    x:int
-    y:str  
+    pass
+
+class C(B):
+    x: int
+    y: str # E: Class member `y` overrides parent class `B` in an inconsistent manner
  "#,
 );
 

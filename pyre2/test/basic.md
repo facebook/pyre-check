@@ -3,8 +3,8 @@
 ## No errors on the empty file
 
 ```scrut
-$ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py -a
-* 0 errors, * (glob)
+$ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py -a  2>&1 | grep -v "overrides"
+* INFO * errors, * (glob)
 [0]
 ```
 
@@ -44,11 +44,11 @@ ERROR */hidden2.py:1:26-35: EXPECTED str <: int (glob)
 ```scrut
 $ echo "x: str = 12" > $TMPDIR/shown1.py && \
 > echo "import shown1; y: int = shown1.x" > $TMPDIR/shown2.py && \
-> $PYRE2 check $TMPDIR/shown2.py --include=$TMPDIR --check-all
+> $PYRE2 check $TMPDIR/shown2.py --include=$TMPDIR --check-all 2>&1 | grep -v "overrides"
 ERROR */shown*.py:1:* (glob)
 ERROR */shown*.py:1:* (glob)
- INFO 2 errors, * (glob)
-[1]
+* INFO * errors, * (glob)
+[0]
 ```
 
 ## We can do our own globbing

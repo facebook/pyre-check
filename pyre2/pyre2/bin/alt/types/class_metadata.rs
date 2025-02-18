@@ -38,6 +38,7 @@ pub struct ClassMetadata {
     enum_metadata: Option<EnumMetadata>,
     is_protocol: bool,
     dataclass_metadata: Option<DataclassMetadata>,
+    bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
 }
 
 impl Display for ClassMetadata {
@@ -60,7 +61,7 @@ impl ClassMetadata {
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         ClassMetadata {
-            mro: Mro::new(cls, bases_with_metadata, errors),
+            mro: Mro::new(cls, bases_with_metadata.clone(), errors),
             metaclass: Metaclass(metaclass),
             keywords: Keywords(keywords),
             typed_dict_metadata,
@@ -68,6 +69,7 @@ impl ClassMetadata {
             enum_metadata,
             is_protocol,
             dataclass_metadata,
+            bases_with_metadata,
         }
     }
 
@@ -81,6 +83,7 @@ impl ClassMetadata {
             enum_metadata: None,
             is_protocol: false,
             dataclass_metadata: None,
+            bases_with_metadata: Vec::new(),
         }
     }
 
@@ -107,6 +110,10 @@ impl ClassMetadata {
 
     pub fn enum_metadata(&self) -> Option<&EnumMetadata> {
         self.enum_metadata.as_ref()
+    }
+
+    pub fn bases_with_metadata(&self) -> &Vec<(ClassType, Arc<ClassMetadata>)> {
+        &self.bases_with_metadata
     }
 
     pub fn is_protocol(&self) -> bool {
