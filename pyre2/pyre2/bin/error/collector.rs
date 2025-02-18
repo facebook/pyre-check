@@ -104,6 +104,10 @@ impl ErrorCollector {
         ));
     }
 
+    pub fn style(&self) -> ErrorStyle {
+        self.style
+    }
+
     pub fn is_empty(&self) -> bool {
         self.errors.lock().unwrap().is_empty()
     }

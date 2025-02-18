@@ -52,6 +52,7 @@ use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
 use crate::error::collector::ErrorCollector;
+use crate::error::style::ErrorStyle;
 use crate::export::exports::LookupExport;
 use crate::graph::calculation::Calculation;
 use crate::graph::index::Idx;
@@ -539,10 +540,12 @@ impl Answers {
                 items.reserve(answers.bindings.keys::<K>().len());
             }
             for idx in answers.bindings.keys::<K>() {
-                let v = answers.get_idx(idx);
-                if retain {
-                    let k = answers.bindings.idx_to_key(idx);
-                    items.insert(k.clone(), v.dupe());
+                if retain || answers.base_errors.style() == ErrorStyle::Delayed {
+                    let v = answers.get_idx(idx);
+                    if retain {
+                        let k = answers.bindings.idx_to_key(idx);
+                        items.insert(k.clone(), v.dupe());
+                    }
                 }
             }
         }
