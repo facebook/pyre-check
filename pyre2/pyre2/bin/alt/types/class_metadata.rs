@@ -60,8 +60,9 @@ impl ClassMetadata {
         dataclass_metadata: Option<DataclassMetadata>,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
+        let mro = Mro::new(cls, &bases_with_metadata, errors);
         ClassMetadata {
-            mro: Mro::new(cls, bases_with_metadata.clone(), errors),
+            mro,
             metaclass: Metaclass(metaclass),
             keywords: Keywords(keywords),
             typed_dict_metadata,
@@ -331,7 +332,7 @@ impl Mro {
     /// `Generic`, `Protocol`, and `object`.
     pub fn new(
         cls: &Class,
-        bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
+        bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
         errors: &ErrorCollector,
     ) -> Self {
         match Linearization::new(cls, bases_with_metadata, errors) {
@@ -398,7 +399,7 @@ impl Linearization {
     /// - One consisting of the base classes themselves in the order defined.
     fn new(
         cls: &Class,
-        bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
+        bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
         errors: &ErrorCollector,
     ) -> Linearization {
         let bases = match Vec1::try_from_vec(
