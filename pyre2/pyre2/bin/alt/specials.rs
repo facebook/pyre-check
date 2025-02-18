@@ -134,10 +134,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         x,
                         self.module_info(),
                         &|enum_name, member_name| {
-                            let key = self
-                                .bindings()
-                                .key_to_idx(&Key::Usage(ShortIdentifier::new(&enum_name)));
-                            let ty = self.get_idx(key);
+                            let ty = self.get(&Key::Usage(ShortIdentifier::new(&enum_name)));
                             let cls = match &*ty {
                                 Type::ClassDef(c) => c,
                                 _ => {
