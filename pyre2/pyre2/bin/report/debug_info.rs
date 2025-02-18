@@ -11,8 +11,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use starlark_map::small_map::SmallMap;
 
-use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
+use crate::alt::answers::SolutionsTable;
 use crate::binding::binding::Keyed;
 use crate::binding::bindings::BindingEntry;
 use crate::binding::bindings::BindingTable;
@@ -52,7 +52,7 @@ struct Error {
 }
 
 impl DebugInfo {
-    pub fn new(modules: &[(&ModuleInfo, &ErrorCollector, &Bindings, &Solutions)]) -> Self {
+    pub fn new(modules: &[(&ModuleInfo, &ErrorCollector, &Bindings, &SolutionsTable)]) -> Self {
         fn f<K: Keyed>(
             t: &SolutionsEntry<K>,
             module_info: &ModuleInfo,

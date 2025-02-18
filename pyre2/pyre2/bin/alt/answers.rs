@@ -117,10 +117,10 @@ pub type SolutionsEntry<K> = SmallMap<K, Arc<<K as Keyed>::Answer>>;
 
 table!(
     #[derive(Default, Debug, Clone)]
-    pub struct Solutions(pub SolutionsEntry)
+    pub struct SolutionsTable(pub SolutionsEntry)
 );
 
-impl DisplayWith<ModuleInfo> for Solutions {
+impl DisplayWith<ModuleInfo> for SolutionsTable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
         fn go<K: Keyed>(
             entry: &SolutionsEntry<K>,
@@ -165,7 +165,7 @@ pub trait LookupAnswer: Sized {
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
-        Solutions: TableKeyed<K, Value = SolutionsEntry<K>>;
+        SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>;
 }
 
 impl Answers {
@@ -205,8 +205,8 @@ impl Answers {
         stdlib: &Stdlib,
         uniques: &UniqueFactory,
         exported_only: bool,
-    ) -> Solutions {
-        let mut res = Solutions::default();
+    ) -> SolutionsTable {
+        let mut res = SolutionsTable::default();
 
         fn pre_solve<Ans: LookupAnswer, K: Solve<Ans>>(
             items: &mut SolutionsEntry<K>,
@@ -307,7 +307,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
-        Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
+        SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         if module == self.module_info().name() {
             self.get(k)
@@ -324,7 +324,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
-        Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
+        SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         self.get_from_module(cls.module_info().name(), k)
     }

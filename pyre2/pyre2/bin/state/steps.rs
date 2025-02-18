@@ -16,7 +16,7 @@ use ruff_text_size::TextRange;
 
 use crate::alt::answers::Answers;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::answers::Solutions;
+use crate::alt::answers::SolutionsTable;
 use crate::binding::bindings::Bindings;
 use crate::config::Config;
 use crate::error::collector::ErrorCollector;
@@ -57,7 +57,7 @@ pub struct ModuleSteps {
     pub ast: Info<Arc<ModModule>>,
     pub exports: Info<Exports>,
     pub answers: Info<Arc<(Bindings, Answers)>>,
-    pub solutions: Info<Arc<Solutions>>,
+    pub solutions: Info<Arc<SolutionsTable>>,
 }
 
 #[derive(
@@ -220,7 +220,7 @@ impl Step {
         ctx: &Context<Lookup>,
         load: Arc<Load>,
         answers: Arc<(Bindings, Answers)>,
-    ) -> Arc<Solutions> {
+    ) -> Arc<SolutionsTable> {
         Arc::new(answers.1.solve(
             ctx.lookup,
             ctx.lookup,

@@ -24,8 +24,8 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
+use crate::alt::answers::SolutionsTable;
 use crate::alt::traits::Solve;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::Keyed;
@@ -302,7 +302,7 @@ impl State {
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
-        Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
+        SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         {
             // if we happen to have solutions available, use them instead
@@ -534,7 +534,7 @@ impl State {
             .duped()
     }
 
-    pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<Solutions>> {
+    pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<SolutionsTable>> {
         self.modules
             .get(handle)?
             .steps
@@ -653,7 +653,7 @@ impl<'a> LookupAnswer for StateHandle<'a> {
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
-        Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
+        SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         // The unwrap is safe because we must have said there were no exports,
         // so no one can be trying to get at them
