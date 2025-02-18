@@ -32,7 +32,8 @@
   pyrelib.data_structures
   pyrelib.taintAnalysisFeatureStats
   pyrelib.watchman
-  pyrelib.saved_state))
+  pyrelib.saved_state
+  pyrelib.perfProfiler))
 
 (library
  (name taintAnalysis)

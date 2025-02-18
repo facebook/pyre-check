@@ -2894,7 +2894,7 @@ let remove_unmatched_partial_sinks
 
 
 let run
-    ?(profiler = TaintProfiler.none)
+    ?(profiler = TaintProfiler.disabled)
     ~taint_configuration
     ~string_combine_partial_sink_tree
     ~pyre_api

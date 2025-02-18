@@ -8,6 +8,8 @@
 (* TaintProfiler: a small helper to track the performance of the forward or
  * backward taint analysis of a callable. *)
 
+(* Core shadows/deprecates the stdlib Unix module. *)
+module CamlUnix = Unix
 open Ast
 open Core
 open Pyre
@@ -143,14 +145,28 @@ type profiler = {
   mutable apply_call_step_events: ApplyCallStepEvent.t list;
   whole_timer: Timer.t;
   mutable current_expression: ExpressionTimer.t;
+  perf_profiler: PerfProfiler.t;
 }
 
 type t = profiler option
 
 (* A profiler that does nothing. *)
-let none = None
+let disabled = None
 
-let create () =
+let start ~callable () =
+  Log.dump "Starting to profile the analysis of %a" Interprocedural.Target.pp_pretty callable;
+
+  let perf_profiler =
+    PerfProfiler.start
+      ~filename:
+        (Format.asprintf
+           "perf.taint-analysis.%a.%d.data"
+           Interprocedural.Target.pp_pretty
+           callable
+           (Int.of_float (CamlUnix.time ())))
+      ()
+  in
+
   Some
     {
       step_events = [];
@@ -160,6 +176,7 @@ let create () =
       apply_call_step_events = [];
       whole_timer = Timer.start ();
       current_expression = { timer = Timer.start (); accumulated = 0. };
+      perf_profiler;
     }
 
 
@@ -236,7 +253,7 @@ let track_apply_call_step ~profiler ~analysis ~step ~call_target ~location ~argu
       result
 
 
-let dump ~max_number_expressions ~max_number_apply_call_steps = function
+let stop ~max_number_expressions ~max_number_apply_call_steps = function
   | None -> ()
   | Some
       {
@@ -247,8 +264,10 @@ let dump ~max_number_expressions ~max_number_apply_call_steps = function
         apply_call_step_events;
         whole_timer;
         current_expression = _;
+        perf_profiler;
       } ->
       let total_seconds = Timer.stop_in_sec whole_timer in
+      PerfProfiler.stop perf_profiler;
       Log.dump "Performance metrics:";
       Log.dump "Total time: %.2fs" total_seconds;
 

@@ -64,3 +64,9 @@
   pyrelib.timer
   pyrelib.statistics
   hack_parallel))
+
+(library
+ (name perfProfiler)
+ (public_name pyrelib.perfProfiler)
+ (modules perfProfiler)
+ (libraries pyrelib.log))

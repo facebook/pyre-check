@@ -14,9 +14,9 @@ type analysis =
 type t
 
 (* A profiler that does nothing. *)
-val none : t
+val disabled : t
 
-val create : unit -> t
+val start : callable:Interprocedural.Target.t -> unit -> t
 
 val track_duration : profiler:t -> name:string -> f:(unit -> 'a) -> 'a
 
@@ -62,4 +62,4 @@ val track_apply_call_step
   f:(unit -> 'a) ->
   'a
 
-val dump : max_number_expressions:int -> max_number_apply_call_steps:int -> t -> unit
+val stop : max_number_expressions:int -> max_number_apply_call_steps:int -> t -> unit
