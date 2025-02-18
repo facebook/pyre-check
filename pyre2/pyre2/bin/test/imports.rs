@@ -322,15 +322,14 @@ assert_type(foo.bar.x, int)
 "#,
 );
 
-testcase_with_bug!(
-    "Attribute access on a module is not yet failable",
+testcase!(
     test_import_dunder_init_without_submodule,
     env_dunder_init_with_submodule(),
     r#"
 from typing import assert_type
 import foo
 assert_type(foo.x, str)
-foo.bar.x # This should fail: `bar` has not been imported/loaded yet
+foo.bar.x  # E: No attribute `bar` in module `foo`
 "#,
 );
 
@@ -408,19 +407,20 @@ foo.bar.x # This should not fail. The type is `int`. # E: Object of class `str` 
 
 fn env_dunder_init_reexport_submodule() -> TestEnv {
     let mut t = TestEnv::new();
-    t.add_with_path("foo", "from .bar import x", "foo/__init__.pyi");
-    t.add_with_path("foo.bar", "x: int = 0", "foo/bar.pyi");
+    t.add_with_path("foo", "from .bar import x", "foo/__init__.py");
+    t.add_with_path("foo.bar", "x: int = 0", "foo/bar.py");
     t
 }
 
-testcase!(
+testcase_with_bug!(
+    "We currently don't model auto re-exporting submodules in __init__.py",
     test_import_dunder_init_reexport_submodule,
     env_dunder_init_reexport_submodule(),
     r#"
 from typing import assert_type
 import foo
 assert_type(foo.x, int)
-assert_type(foo.bar.x, int)  # This is fine: `bar` is loaded when we import from `foo` and run `foo/__init__.pyi`
+foo.bar.x  # E: No attribute `bar` in module `foo`
 "#,
 );
 

@@ -537,14 +537,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // We have already errored on `m` when loading the module. No need to emit error again.
                 Some(Type::any_error())
             }
-            Some(exports) => self.get_exported_type(&exports, module_name, attr_name).or(
-                // `module_name` could also refer to a package, in which case we need to check if
-                // `module_name.attr_name` is a submodule.
-                // TODO(grievejia): This is still not totally correct as it assumes that submodule `attr_name`
-                // is always accessible even if `module_name/__init__.py` (if exists) does not export that.
-                self.get_module_exports(module_name.append(attr_name))
-                    .map(|_| module.push_path(attr_name.clone()).to_type()),
-            ),
+            Some(exports) => self
+                .get_exported_type(&exports, module_name, attr_name)
+                .or_else(|| {
+                    // `module_name` could also refer to a package, in which case we need to check if
+                    // `module_name.attr_name`:
+                    // - Has been imported directly. Unless `module_name` re-exports `attr_name` from itself
+                    //   (in which can `attr_name` will be included in the exports map), we want to make sure that
+                    //   `module_name.attr_name` is only valid when there's an explicit `import module_name.attr_name`
+                    //   statement. Just importing `module_name` shouldn't automatically make the submodule name
+                    //   `module_name.attr_name` accessible.
+                    // - Actually exists as a submodule on the filesystem.
+                    let submodule = module.push_path(attr_name.clone());
+                    let submodule_name = module_name.append(attr_name);
+                    if submodule.is_imported_directly()
+                        && self.get_module_exports(submodule_name).is_some()
+                    {
+                        Some(submodule.to_type())
+                    } else {
+                        None
+                    }
+                }),
         }
     }
 

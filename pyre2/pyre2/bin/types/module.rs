@@ -90,4 +90,9 @@ impl Module {
         modules.extend(m.modules.iter().copied());
         self.modules = Arc::new(modules);
     }
+
+    pub fn is_imported_directly(&self) -> bool {
+        self.modules
+            .contains(&ModuleName::from_string(self.path.join(".")))
+    }
 }
