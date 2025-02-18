@@ -120,7 +120,10 @@ table!(
     pub struct SolutionsTable(pub SolutionsEntry)
 );
 
-impl DisplayWith<ModuleInfo> for SolutionsTable {
+#[derive(Default, Debug, Clone)]
+pub struct Solutions(pub SolutionsTable);
+
+impl DisplayWith<ModuleInfo> for Solutions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
         fn go<K: Keyed>(
             entry: &SolutionsEntry<K>,
@@ -136,7 +139,7 @@ impl DisplayWith<ModuleInfo> for SolutionsTable {
             Ok(())
         }
 
-        table_try_for_each!(self, |x| go(x, f, ctx));
+        table_try_for_each!(&self.0, |x| go(x, f, ctx));
         Ok(())
     }
 }
@@ -205,7 +208,7 @@ impl Answers {
         stdlib: &Stdlib,
         uniques: &UniqueFactory,
         exported_only: bool,
-    ) -> SolutionsTable {
+    ) -> Solutions {
         let mut res = SolutionsTable::default();
 
         fn pre_solve<Ans: LookupAnswer, K: Solve<Ans>>(
@@ -255,7 +258,7 @@ impl Answers {
             }
         }
         table_mut_for_each!(&mut res, |items| post_solve(items, &self.solver));
-        res
+        Solutions(res)
     }
 
     pub fn solve_key<Ans: LookupAnswer, K: Solve<Ans>>(

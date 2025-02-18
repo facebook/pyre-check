@@ -24,6 +24,7 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
 use crate::alt::answers::SolutionsTable;
 use crate::alt::traits::Solve;
@@ -307,7 +308,7 @@ impl State {
         {
             // if we happen to have solutions available, use them instead
             if let Some(solutions) = module_state.steps.read().unwrap().solutions.get() {
-                return TableKeyed::<K>::get(&**solutions).get(key).unwrap().dupe();
+                return TableKeyed::<K>::get(&solutions.0).get(key).unwrap().dupe();
             }
         }
 
@@ -315,7 +316,7 @@ impl State {
         let (load, answers) = {
             let steps = module_state.steps.read().unwrap();
             if let Some(solutions) = steps.solutions.get() {
-                return TableKeyed::<K>::get(&**solutions).get(key).unwrap().dupe();
+                return TableKeyed::<K>::get(&solutions.0).get(key).unwrap().dupe();
             }
             (
                 steps.load.get().unwrap().dupe(),
@@ -534,7 +535,7 @@ impl State {
             .duped()
     }
 
-    pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<SolutionsTable>> {
+    pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<Solutions>> {
         self.modules
             .get(handle)?
             .steps

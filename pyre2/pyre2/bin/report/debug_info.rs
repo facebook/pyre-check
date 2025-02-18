@@ -11,8 +11,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use starlark_map::small_map::SmallMap;
 
+use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
-use crate::alt::answers::SolutionsTable;
 use crate::binding::binding::Keyed;
 use crate::binding::bindings::BindingEntry;
 use crate::binding::bindings::BindingTable;
@@ -52,7 +52,7 @@ struct Error {
 }
 
 impl DebugInfo {
-    pub fn new(modules: &[(&ModuleInfo, &ErrorCollector, &Bindings, &SolutionsTable)]) -> Self {
+    pub fn new(modules: &[(&ModuleInfo, &ErrorCollector, &Bindings, &Solutions)]) -> Self {
         fn f<K: Keyed>(
             t: &SolutionsEntry<K>,
             module_info: &ModuleInfo,
@@ -78,7 +78,7 @@ impl DebugInfo {
                 .iter()
                 .map(|(module_info, errors, bindings, solutions)| {
                     let mut res = Vec::new();
-                    table_for_each!(solutions, |t| f(t, module_info, bindings, &mut res));
+                    table_for_each!(&solutions.0, |t| f(t, module_info, bindings, &mut res));
                     let errors = errors.collect().map(|e| Error {
                         location: e.source_range().to_string(),
                         message: e.msg().to_owned(),

@@ -21,6 +21,7 @@ pub fn get_class_metadata(name: &str, handle: &Handle, state: &State) -> Arc<Cla
 
     let res = get_class(name, handle, state).and_then(|cls| {
         let x = solutions
+            .0
             .class_metadata
             .get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
         x.cloned()

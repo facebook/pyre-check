@@ -27,7 +27,7 @@ use crate::visitors::Visitors;
 
 impl State {
     pub fn get_type(&self, handle: &Handle, key: &Key) -> Option<Arc<Type>> {
-        self.get_solutions(handle)?.types.get(key).duped()
+        self.get_solutions(handle)?.0.types.get(key).duped()
     }
 
     fn identifier_at(&self, handle: &Handle, position: TextSize) -> Option<Identifier> {
