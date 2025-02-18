@@ -36,7 +36,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // FIXME: Really want to check if the Var is constrained in any way.
         // No way to do that currently, but this is close.
         let res = self.expand_var(var);
-        if res == var.to_type() {
+        if matches!(res, Type::Var(..)) {
             None
         } else {
             Some(res)
