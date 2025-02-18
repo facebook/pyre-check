@@ -463,7 +463,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Dict(x) => {
-                let unwrapped_hint = hint.and_then(|ty| self.decompose_dict(ty));
+                let dict_hint = hint.and_then(|ty| self.decompose_dict(ty));
                 let flattened_items = Ast::flatten_dict_items(&x.items);
                 if let Some(hint @ Type::TypedDict(box typed_dict)) = hint {
                     self.check_dict_items_against_typed_dict(
@@ -473,26 +473,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                     );
                     hint.clone()
-                } else if let Some(hint) = unwrapped_hint {
+                } else if let Some(dict_hint) = dict_hint {
                     flattened_items.iter().for_each(|x| match &x.key {
                         Some(key) => {
-                            self.expr(key, Some(&hint.key), errors);
-                            self.expr(&x.value, Some(&hint.value), errors);
+                            self.expr(key, Some(&dict_hint.key), errors);
+                            self.expr(&x.value, Some(&dict_hint.value), errors);
                         }
                         None => {
-                            self.expr(
-                                &x.value,
-                                Some(
-                                    &self
-                                        .stdlib
-                                        .dict(hint.key.clone(), hint.value.clone())
-                                        .to_type(),
-                                ),
-                                errors,
-                            );
+                            let ty = self.expr_infer_with_hint(&x.value, hint, errors);
+                            if let Some((key_ty, value_ty)) = self.unwrap_mapping(&ty) {
+                                self.check_type(&key_ty, &dict_hint.key, x.range(), errors);
+                                self.check_type(&value_ty, &dict_hint.value, x.range(), errors);
+                            } else {
+                                self.error(
+                                    errors,
+                                    x.value.range(),
+                                    format!("Expected a mapping, got {}", ty),
+                                );
+                            }
                         }
                     });
-                    hint.to_type(self.stdlib)
+                    dict_hint.to_type(self.stdlib)
                 } else if x.is_empty() {
                     let key_ty = self.solver().fresh_contained(self.uniques).to_type();
                     let value_ty = self.solver().fresh_contained(self.uniques).to_type();
@@ -510,15 +511,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             value_tys.push(value_t);
                         }
                         None => {
-                            let value_t = self.expr(&x.value, None, errors);
-                            if let Some(unwrapped) = self.decompose_dict(&value_t) {
-                                key_tys.push(unwrapped.key);
-                                value_tys.push(unwrapped.value);
+                            let ty = self.expr(&x.value, None, errors);
+                            if let Some((key_ty, value_ty)) = self.unwrap_mapping(&ty) {
+                                key_tys.push(key_ty);
+                                value_tys.push(value_ty);
                             } else {
                                 self.error(
                                     errors,
                                     x.value.range(),
-                                    format!("Expected a dict, got {}", value_t),
+                                    format!("Expected a mapping, got {}", ty),
                                 );
                             }
                         }
