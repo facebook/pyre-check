@@ -254,7 +254,7 @@ impl State {
     fn lookup_stdlib(&self, handle: &Handle, name: &Name) -> Option<Class> {
         let module_state = self.get_module(handle);
         if !self
-            .lookup_export(handle)
+            .lookup_export(&module_state)
             .contains(name, &self.lookup(module_state.dupe()))
         {
             self.add_error(
@@ -268,7 +268,7 @@ impl State {
             return None;
         }
 
-        let t = self.lookup_answer(handle, &KeyExport(name.clone()));
+        let t = self.lookup_answer(module_state.dupe(), &KeyExport(name.clone()));
         match t.arc_clone() {
             Type::ClassDef(cls) => Some(cls),
             ty => {
@@ -285,16 +285,15 @@ impl State {
         }
     }
 
-    fn lookup_export(&self, handle: &Handle) -> Exports {
-        let m = self.get_module(handle);
-        self.demand(&m, Step::Exports);
-        let lock = m.steps.read().unwrap();
+    fn lookup_export(&self, module_state: &Arc<ModuleState>) -> Exports {
+        self.demand(module_state, Step::Exports);
+        let lock = module_state.steps.read().unwrap();
         lock.exports.get().unwrap().dupe()
     }
 
     fn lookup_answer<'b, K: Solve<StateHandle<'b>> + Keyed<EXPORTED = true>>(
         &'b self,
-        handle: &Handle,
+        module_state: Arc<ModuleState>,
         key: &K,
     ) -> Arc<<K as Keyed>::Answer>
     where
@@ -302,7 +301,6 @@ impl State {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         Solutions: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
-        let module_state = self.get_module(handle);
         {
             // if we happen to have solutions available, use them instead
             if let Some(solutions) = module_state.steps.read().unwrap().solutions.get() {
@@ -321,7 +319,7 @@ impl State {
                 steps.answers.get().unwrap().dupe(),
             )
         };
-        let stdlib = self.get_stdlib(handle);
+        let stdlib = self.get_stdlib(&module_state.handle);
         let lookup = self.lookup(module_state);
         answers.1.solve_key(
             &lookup,
@@ -643,11 +641,15 @@ impl<'a> StateHandle<'a> {
             self.module_state.handle.loader().dupe(),
         ))
     }
+
+    fn get_module(&self, module: ModuleName) -> Result<Arc<ModuleState>, FindError> {
+        Ok(self.state.get_module(&self.import_handle(module)?))
+    }
 }
 
 impl<'a> LookupExport for StateHandle<'a> {
     fn get(&self, module: ModuleName) -> Result<Exports, FindError> {
-        Ok(self.state.lookup_export(&self.import_handle(module)?))
+        Ok(self.state.lookup_export(&self.get_module(module)?))
     }
 }
 
@@ -664,7 +666,7 @@ impl<'a> LookupAnswer for StateHandle<'a> {
     {
         // The unwrap is safe because we must have said there were no exports,
         // so no one can be trying to get at them
-        let handle = self.import_handle(module).unwrap();
-        self.state.lookup_answer(&handle, k)
+        let module_state = self.get_module(module).unwrap();
+        self.state.lookup_answer(module_state, k)
     }
 }
