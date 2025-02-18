@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::sync::Arc;
+
 use dupe::Dupe;
+use dupe::OptionDupedExt;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
@@ -23,8 +26,8 @@ use crate::types::types::Type;
 use crate::visitors::Visitors;
 
 impl State {
-    pub fn get_type(&self, handle: &Handle, key: &Key) -> Option<Type> {
-        self.get_solutions(handle)?.types.get(key).cloned()
+    pub fn get_type(&self, handle: &Handle, key: &Key) -> Option<Arc<Type>> {
+        self.get_solutions(handle)?.types.get(key).duped()
     }
 
     fn identifier_at(&self, handle: &Handle, position: TextSize) -> Option<Identifier> {
@@ -43,7 +46,7 @@ impl State {
         res
     }
 
-    pub fn hover(&self, handle: &Handle, position: TextSize) -> Option<Type> {
+    pub fn hover(&self, handle: &Handle, position: TextSize) -> Option<Arc<Type>> {
         let id = self.identifier_at(handle, position)?;
         self.get_type(handle, &Key::Usage(ShortIdentifier::new(&id)))
     }

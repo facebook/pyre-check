@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::sync::Arc;
+
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::binding::binding::KeyClassMetadata;
 use crate::module::short_identifier::ShortIdentifier;
@@ -14,7 +16,7 @@ use crate::test::util::get_class;
 use crate::test::util::mk_state;
 use crate::testcase;
 
-pub fn get_class_metadata(name: &str, handle: &Handle, state: &State) -> ClassMetadata {
+pub fn get_class_metadata(name: &str, handle: &Handle, state: &State) -> Arc<ClassMetadata> {
     let solutions = state.get_solutions(handle).unwrap();
 
     let res = get_class(name, handle, state).and_then(|cls| {

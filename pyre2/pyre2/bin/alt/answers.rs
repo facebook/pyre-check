@@ -130,7 +130,7 @@ impl DisplayWith<Bindings> for Answers {
     }
 }
 
-pub type SolutionsEntry<K> = SmallMap<K, <K as Keyed>::Answer>;
+pub type SolutionsEntry<K> = SmallMap<K, Arc<<K as Keyed>::Answer>>;
 
 table!(
     #[derive(Default, Debug, Clone)]
@@ -542,7 +542,7 @@ impl Answers {
                 let k = answers.bindings.idx_to_key(idx);
                 let v = answers.get(k);
                 if retain {
-                    items.insert(k.clone(), Arc::unwrap_or_clone(v));
+                    items.insert(k.clone(), v.dupe());
                 }
             }
         }
@@ -565,7 +565,9 @@ impl Answers {
         // Now force all types to be fully resolved.
         fn post_solve<K: SolveRecursive>(items: &mut SolutionsEntry<K>, solver: &Solver) {
             for v in items.values_mut() {
-                K::visit_type_mut(v, &mut |x| solver.deep_force_mut(x));
+                let mut vv = (**v).clone();
+                K::visit_type_mut(&mut vv, &mut |x| solver.deep_force_mut(x));
+                *v = Arc::new(vv);
             }
         }
         table_mut_for_each!(&mut res, |items| post_solve(items, &self.solver));
