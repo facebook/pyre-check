@@ -35,6 +35,9 @@ pub struct Exports(Arc<ExportsInner>);
 #[derive(Debug, Default)]
 struct ExportsInner {
     /// The underlying definitions.
+    /// Note that these aren't actually required, once we have calculated the other fields,
+    /// but they take up very little space, so not worth the hassle to detect when
+    /// calculation completes.
     definitions: Definitions,
     /// Names that are available via `from <this_module> import *`
     wildcard: Calculation<Arc<SmallSet<Name>>>,
