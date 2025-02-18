@@ -112,7 +112,7 @@ struct ModuleState {
     // is still waiting for `bar` and we are unable to make progress.
     lock: FairMutex<()>,
     steps: RwLock<ModuleSteps>,
-    dependencies: Mutex<SmallSet<ModuleName>>,
+    dependencies: RwLock<SmallMap<ModuleName, ModulePath>>,
 }
 
 impl State {
@@ -607,13 +607,27 @@ struct StateHandle<'a> {
 }
 
 impl<'a> StateHandle<'a> {
-    fn import_handle(&self, module: ModuleName) -> Result<Handle, FindError> {
+    fn get_path(&self, module: ModuleName) -> Result<ModulePath, FindError> {
+        if let Some(path) = self.module_state.dependencies.read().unwrap().get(&module) {
+            return Ok(path.dupe());
+        }
+
+        let path = self.state.get_cached_find(self.handle.loader(), module)?;
         self.module_state
             .dependencies
-            .lock()
+            .write()
             .unwrap()
-            .insert(module);
-        self.state.import_handle(&self.handle, module)
+            .insert(module, path.dupe());
+        Ok(path)
+    }
+
+    fn import_handle(&self, module: ModuleName) -> Result<Handle, FindError> {
+        Ok(Handle::new(
+            module,
+            self.get_path(module)?,
+            self.handle.config().dupe(),
+            self.handle.loader().dupe(),
+        ))
     }
 }
 
