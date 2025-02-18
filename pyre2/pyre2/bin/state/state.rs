@@ -26,7 +26,7 @@ use crate::alt::answers::AnswerTable;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
-use crate::alt::answers::Solve;
+use crate::alt::traits::Solve;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::Keyed;
 use crate::binding::bindings::BindingEntry;

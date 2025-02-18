@@ -14,5 +14,6 @@ pub mod expr;
 pub mod narrow;
 pub mod solve;
 pub mod specials;
+pub mod traits;
 pub mod types;
 pub mod unwrap;
