@@ -92,3 +92,28 @@ class B(A):
         return 1
  "#,
 );
+
+testcase_with_bug!(
+    "Todo: consistent override",
+    test_default_value_consistent,
+    r#"
+class A:
+    x: int
+
+class B(A):
+    def __init__(self) -> None:
+        self.x = 0 # E:  Class member `x` overrides parent class `A` in an inconsistent manner
+ "#,
+);
+
+testcase!(
+    test_default_value_inconsistent,
+    r#"
+class A:
+    x: str
+
+class B(A):
+    def __init__(self) -> None:
+        self.x = 0 # E: Class member `x` overrides parent class `A` in an inconsistent manner
+ "#,
+);
