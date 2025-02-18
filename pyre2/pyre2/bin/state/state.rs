@@ -232,9 +232,8 @@ impl State {
             .dupe()
     }
 
-    fn add_error(&self, handle: &Handle, range: TextRange, msg: String) {
-        let load = self
-            .get_module(handle)
+    fn add_error(&self, module_state: &Arc<ModuleState>, range: TextRange, msg: String) {
+        let load = module_state
             .steps
             .read()
             .unwrap()
@@ -253,16 +252,17 @@ impl State {
     }
 
     fn lookup_stdlib(&self, handle: &Handle, name: &Name) -> Option<Class> {
+        let module_state = self.get_module(handle);
         if !self
             .lookup_export(handle)
-            .contains(name, &self.lookup(self.get_module(handle)))
+            .contains(name, &self.lookup(module_state.dupe()))
         {
             self.add_error(
-                handle,
+                &module_state,
                 TextRange::default(),
                 format!(
                     "Stdlib import failure, was expecting `{}` to contain `{name}`",
-                    handle.module()
+                    module_state.handle.module()
                 ),
             );
             return None;
@@ -273,11 +273,11 @@ impl State {
             Type::ClassDef(cls) => Some(cls),
             ty => {
                 self.add_error(
-                    handle,
+                    &module_state,
                     TextRange::default(),
                     format!(
                         "Did not expect non-class type `{ty}` for stdlib import `{}.{name}`",
-                        handle.module()
+                        module_state.handle.module()
                     ),
                 );
                 None
