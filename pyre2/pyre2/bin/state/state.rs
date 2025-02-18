@@ -148,8 +148,7 @@ impl State {
         ))
     }
 
-    fn demand(&self, handle: &Handle, step: Step) {
-        let module_state = self.get_module(handle);
+    fn demand(&self, module_state: &Arc<ModuleState>, step: Step) {
         let mut computed = false;
         loop {
             let lock = module_state.steps.read().unwrap();
@@ -189,12 +188,12 @@ impl State {
                 module_state.steps.write().unwrap().ast.take();
             }
 
-            let stdlib = self.get_stdlib(handle);
-            let loader = self.get_cached_loader(handle.loader());
+            let stdlib = self.get_stdlib(&module_state.handle);
+            let loader = self.get_cached_loader(module_state.handle.loader());
             let set = compute(&Context {
-                module: handle.module(),
-                path: handle.path(),
-                config: handle.config(),
+                module: module_state.handle.module(),
+                path: module_state.handle.path(),
+                config: module_state.handle.config(),
                 loader: &*loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
@@ -220,7 +219,10 @@ impl State {
         if computed && let Some(next) = step.next() {
             // For a large benchmark, LIFO is 10Gb retained, FIFO is 13Gb.
             // Perhaps we are getting to the heart of the graph with LIFO?
-            self.todo.lock().unwrap().push_lifo(next, module_state);
+            self.todo
+                .lock()
+                .unwrap()
+                .push_lifo(next, module_state.dupe());
         }
     }
 
@@ -284,8 +286,8 @@ impl State {
     }
 
     fn lookup_export(&self, handle: &Handle) -> Exports {
-        self.demand(handle, Step::Exports);
         let m = self.get_module(handle);
+        self.demand(&m, Step::Exports);
         let lock = m.steps.read().unwrap();
         lock.exports.get().unwrap().dupe()
     }
@@ -308,7 +310,7 @@ impl State {
             }
         }
 
-        self.demand(handle, Step::Answers);
+        self.demand(&module_state, Step::Answers);
         let (load, answers) = {
             let steps = module_state.steps.read().unwrap();
             if let Some(solutions) = steps.solutions.get() {
@@ -444,7 +446,7 @@ impl State {
                 None => break,
             };
             drop(lock);
-            self.demand(&x.handle, Step::last());
+            self.demand(&x, Step::last());
         }
     }
 
