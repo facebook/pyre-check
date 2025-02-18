@@ -74,7 +74,6 @@ pub struct State {
     retain_memory: bool,
 }
 
-#[derive(Default)]
 struct ModuleState {
     // BIG WARNING: This must be a FairMutex or we are exposed to deadlocks.
     //
@@ -112,7 +111,19 @@ struct ModuleState {
     // is still waiting for `bar` and we are unable to make progress.
     lock: FairMutex<()>,
     steps: RwLock<ModuleSteps>,
+    handle: Handle,
     dependencies: RwLock<SmallMap<ModuleName, ModulePath>>,
+}
+
+impl ModuleState {
+    fn new(handle: Handle) -> Self {
+        Self {
+            lock: Default::default(),
+            steps: Default::default(),
+            handle,
+            dependencies: Default::default(),
+        }
+    }
 }
 
 impl State {
@@ -187,7 +198,7 @@ impl State {
                 loader: &*loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
-                lookup: &self.lookup(handle, module_state.dupe()),
+                lookup: &self.lookup(module_state.dupe()),
                 retain_memory: self.retain_memory,
             });
             {
@@ -214,7 +225,9 @@ impl State {
     }
 
     fn get_module(&self, handle: &Handle) -> Arc<ModuleState> {
-        self.modules.ensure(handle, Default::default).dupe()
+        self.modules
+            .ensure(handle, || Arc::new(ModuleState::new(handle.dupe())))
+            .dupe()
     }
 
     fn add_error(&self, handle: &Handle, range: TextRange, msg: String) {
@@ -230,18 +243,17 @@ impl State {
         load.errors.add(&load.module_info, range, msg);
     }
 
-    fn lookup<'a>(&'a self, handle: &Handle, module_state: Arc<ModuleState>) -> StateHandle<'a> {
+    fn lookup<'a>(&'a self, module_state: Arc<ModuleState>) -> StateHandle<'a> {
         StateHandle {
             state: self,
             module_state,
-            handle: handle.dupe(),
         }
     }
 
     fn lookup_stdlib(&self, handle: &Handle, name: &Name) -> Option<Class> {
         if !self
             .lookup_export(handle)
-            .contains(name, &self.lookup(handle, self.get_module(handle)))
+            .contains(name, &self.lookup(self.get_module(handle)))
         {
             self.add_error(
                 handle,
@@ -308,7 +320,7 @@ impl State {
             )
         };
         let stdlib = self.get_stdlib(handle);
-        let lookup = self.lookup(handle, module_state);
+        let lookup = self.lookup(module_state);
         answers.1.solve_key(
             &lookup,
             &lookup,
@@ -601,8 +613,6 @@ impl State {
 
 struct StateHandle<'a> {
     state: &'a State,
-    handle: Handle,
-    /// Used to set the dependency field, without requiring another Arc
     module_state: Arc<ModuleState>,
 }
 
@@ -612,7 +622,9 @@ impl<'a> StateHandle<'a> {
             return Ok(path.dupe());
         }
 
-        let path = self.state.get_cached_find(self.handle.loader(), module)?;
+        let path = self
+            .state
+            .get_cached_find(self.module_state.handle.loader(), module)?;
         self.module_state
             .dependencies
             .write()
@@ -625,8 +637,8 @@ impl<'a> StateHandle<'a> {
         Ok(Handle::new(
             module,
             self.get_path(module)?,
-            self.handle.config().dupe(),
-            self.handle.loader().dupe(),
+            self.module_state.handle.config().dupe(),
+            self.module_state.handle.loader().dupe(),
         ))
     }
 }
