@@ -149,7 +149,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if named_tuple_metadata.is_some() && bases_with_metadata.len() > 1 {
             self.error(
                 errors,
-                cls.name().range,
+                cls.range(),
                 "Named tuples do not support multiple inheritance".to_owned(),
             );
         }
@@ -169,7 +169,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         };
         let base_metaclasses = bases_with_metadata
             .iter()
-            .filter_map(|(b, metadata)| metadata.metaclass().map(|m| (&b.name().id, m)))
+            .filter_map(|(b, metadata)| metadata.metaclass().map(|m| (b.name(), m)))
             .collect::<Vec<_>>();
         let metaclass = self.calculate_metaclass(
             cls,
@@ -185,11 +185,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.type_order(),
             ) {
                 if !cls.tparams().is_empty() {
-                    self.error(
-                        errors,
-                        cls.name().range,
-                        "Enums may not be generic.".to_owned(),
-                    );
+                    self.error(errors, cls.range(), "Enums may not be generic.".to_owned());
                 }
                 enum_metadata = Some(EnumMetadata {
                     // A generic enum is an error, but we create Any type args anyway to handle it gracefully.
@@ -206,7 +202,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             if is_typed_dict {
                 self.error(
                     errors,
-                    cls.name().range,
+                    cls.range(),
                     "Typed dictionary definitions may not specify a metaclass.".to_owned(),
                 );
             }
@@ -227,7 +223,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             && let Some(bad) = bases_with_metadata.iter().find(|x| !x.1.is_typed_dict())
         {
             self.error(errors,
-                cls.name().range,
+                cls.range(),
                 format!("`{}` is not a typed dictionary. Typed dictionary definitions may only extend other typed dictionaries.", bad.0),
             );
         }
@@ -428,10 +424,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .is_subset_eq(&metaclass_type, &base_metaclass_type, self.type_order())
             {
                 self.error(errors,
-                    cls.name().range,
+                    cls.range(),
                     format!(
                         "Class `{}` has metaclass `{}` which is not a subclass of metaclass `{}` from base class `{}`",
-                        cls.name().id,
+                        cls.name(),
                         metaclass_type,
                         base_metaclass_type,
                         base_name,
@@ -461,7 +457,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         raw_metaclass.range(),
                         format!(
                             "Metaclass of `{}` has type `{}` which is not a subclass of `type`",
-                            cls.name().id,
+                            cls.name(),
                             Type::ClassType(meta),
                         ),
                     );
@@ -471,10 +467,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ty => {
                 self.error(
                     errors,
-                    cls.name().range,
+                    cls.range(),
                     format!(
                         "Metaclass of `{}` has type `{}` is not a simple class type.",
-                        cls.name().id,
+                        cls.name(),
                         ty,
                     ),
                 );

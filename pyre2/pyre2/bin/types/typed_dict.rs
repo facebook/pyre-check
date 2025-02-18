@@ -50,7 +50,7 @@ impl TypedDict {
     }
 
     pub fn name(&self) -> &Name {
-        &self.0.name().id
+        self.0.name()
     }
 
     pub fn fields(&self) -> &OrderedMap<Name, TypedDictField> {

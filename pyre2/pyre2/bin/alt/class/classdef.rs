@@ -34,7 +34,6 @@ use crate::binding::binding::KeyLegacyTypeParam;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::graph::index::Idx;
-use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
@@ -312,7 +311,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn get_metadata_for_class(&self, cls: &Class) -> Arc<ClassMetadata> {
-        self.get_from_class(cls, &KeyClassMetadata(ShortIdentifier::new(cls.name())))
+        self.get_from_class(cls, &KeyClassMetadata(cls.short_identifier()))
     }
 
     fn get_enum_from_class(&self, cls: &Class) -> Option<EnumMetadata> {
@@ -528,10 +527,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         name: &Name,
     ) -> Option<Arc<ClassField>> {
         if cls.contains(name) {
-            let field = self.get_from_class(
-                cls,
-                &KeyClassField(ShortIdentifier::new(cls.name()), name.clone()),
-            );
+            let field =
+                self.get_from_class(cls, &KeyClassField(cls.short_identifier(), name.clone()));
             Some(field)
         } else {
             None
@@ -539,10 +536,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Arc<ClassField>> {
-        let synthesized_fields = self.get_from_class(
-            cls,
-            &KeyClassSynthesizedFields(ShortIdentifier::new(cls.name())),
-        );
+        let synthesized_fields =
+            self.get_from_class(cls, &KeyClassSynthesizedFields(cls.short_identifier()));
         let synth = synthesized_fields.get(name);
         if let Some(synth) = synth
             && synth.overwrite

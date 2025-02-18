@@ -428,7 +428,7 @@ impl Linearization {
                 } => {
                     errors.add(
                         cls.module_info(),
-                        cls.name().range,
+                        cls.range(),
                         format!(
                             "Class `{}` inheriting from `{}` creates a cycle.",
                             ClassName(cls.qname()),
@@ -505,7 +505,7 @@ impl Linearization {
                 let first_candidate = &ancestor_chains.first().unwrap().0.last().class_object();
                 errors.add(
                     cls.module_info(),
-                    cls.name().range,
+                    cls.range(),
                     format!(
                         "Class `{}` has a nonlinearizable inheritance chain detected at `{}`.",
                         ClassName(cls.qname()),

@@ -19,6 +19,7 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
 use crate::module::module_info::ModuleInfo;
+use crate::module::short_identifier::ShortIdentifier;
 use crate::types::qname::QName;
 use crate::types::quantified::Quantified;
 use crate::types::types::TParams;
@@ -131,8 +132,16 @@ impl Class {
         self.0.fields.contains_key(name)
     }
 
-    pub fn name(&self) -> &Identifier {
-        &self.0.qname.name
+    pub fn short_identifier(&self) -> ShortIdentifier {
+        ShortIdentifier::new(&self.0.qname.name)
+    }
+
+    pub fn range(&self) -> TextRange {
+        self.0.qname.range()
+    }
+
+    pub fn name(&self) -> &Name {
+        &self.0.qname.name.id
     }
 
     pub fn qname(&self) -> &QName {
@@ -311,7 +320,7 @@ impl ClassType {
         Substitution(tparams.quantified().zip(targs.iter().cloned()).collect())
     }
 
-    pub fn name(&self) -> &Identifier {
+    pub fn name(&self) -> &Name {
         self.0.name()
     }
 
