@@ -28,6 +28,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
+use crate::state::dirty::Dirty;
 use crate::state::info::Info;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
@@ -53,6 +54,7 @@ pub struct Load {
 
 #[derive(Debug, Default)]
 pub struct ModuleSteps {
+    pub dirty: Dirty,
     pub load: Info<Arc<Load>>,
     pub ast: Info<Arc<ModModule>>,
     pub exports: Info<Exports>,

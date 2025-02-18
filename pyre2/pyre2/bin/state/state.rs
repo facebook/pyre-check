@@ -43,6 +43,7 @@ use crate::export::exports::LookupExport;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
+use crate::module::module_path::ModulePathDetails;
 use crate::report::debug_info::DebugInfo;
 use crate::state::handle::Handle;
 use crate::state::loader::FindError;
@@ -155,6 +156,10 @@ impl State {
         let mut computed = false;
         loop {
             let lock = module_state.steps.read().unwrap();
+            if lock.dirty.is_dirty() {
+                panic!("Should make the code not dirty");
+            }
+
             match Step::Solutions.compute_next(&lock) {
                 Some(todo) if todo <= step => {}
                 _ => break,
@@ -576,16 +581,32 @@ impl State {
     /// Called if the `find` portion of loading might have changed.
     /// E.g. you have include paths, and a new file appeared earlier on the path.
     #[expect(dead_code)]
-    pub fn invalidate_find(&mut self, loader: LoaderId) {
-        let _ = loader;
+    pub fn invalidate_find(&mut self, loader: &LoaderId) {
+        if let Some(cache) = self.loaders.get_mut(loader) {
+            *cache = Arc::new(LoaderFindCache::new(loader.dupe()));
+        }
+        for (handle, module_state) in self.modules.iter_unordered() {
+            if handle.loader() == loader {
+                module_state.steps.write().unwrap().dirty.set_dirty_find();
+            }
+        }
+
         self.invalidate_everything();
     }
 
     /// Called if the `load_from_memory` portion of loading might have changed.
     /// Specify which in-memory files might have changed.
     pub fn invalidate_memory(&mut self, loader: LoaderId, files: &[PathBuf]) {
-        let _ = loader;
-        let _ = files;
+        let files = SmallSet::from_iter(files);
+        for (handle, module_state) in self.modules.iter_unordered() {
+            if handle.loader() == &loader
+                && let ModulePathDetails::Memory(x) = handle.path().details()
+                && files.contains(x)
+            {
+                module_state.steps.write().unwrap().dirty.set_dirty_load();
+            }
+        }
+
         self.invalidate_everything();
     }
 
@@ -594,7 +615,15 @@ impl State {
     /// You must use the same absolute/relative paths as were given by `find`.
     #[expect(dead_code)]
     pub fn invalidate_disk(&mut self, files: &[PathBuf]) {
-        let _ = files;
+        let files = SmallSet::from_iter(files);
+        for (handle, module_state) in self.modules.iter_unordered() {
+            if let ModulePathDetails::FileSystem(x) = handle.path().details()
+                && files.contains(x)
+            {
+                module_state.steps.write().unwrap().dirty.set_dirty_load();
+            }
+        }
+
         self.invalidate_everything();
     }
 
