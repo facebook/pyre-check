@@ -3170,14 +3170,19 @@ let resolve_callees
             true
         | _ -> false
       in
-      let preserve_implicit_dunder_call = function
+      let preserve_implicit_dunder_call ({ CallTarget.target; _ } as higher_order_callee) =
+        let target =
+          target |> Target.get_regular |> Target.Regular.override_to_method |> Target.from_regular
+        in
+        let higher_order_callee = { higher_order_callee with CallTarget.target } in
+        match higher_order_callee with
         | {
-            CallTarget.implicit_dunder_call = true;
-            target =
-              Target.Regular
-                (Target.Regular.Method { class_name = callable_class; method_name = "__call__"; _ });
-            _;
-          } -> (
+         CallTarget.implicit_dunder_call = true;
+         target =
+           Target.Regular
+             (Target.Regular.Method { class_name = callable_class; method_name = "__call__"; _ });
+         _;
+        } -> (
             match regular_callees.call_targets with
             | [callee] when Target.is_function_or_method callee.target ->
                 Target.get_module_and_definition

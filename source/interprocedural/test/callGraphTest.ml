@@ -6434,6 +6434,59 @@ let test_call_graph_of_define_foo_and_bar =
                          ())) );
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+     from typing import Optional
+     class A:
+       def __call__(self) -> int:
+         return 0
+     class B(A):
+       def __call__(self) -> int:
+         return 1
+     def foo(x: Optional[A]):
+       pass
+     def bar():
+       a = A()
+       foo(a)
+  |}
+           ~define_name:"test.bar"
+           ~expected:
+             [
+               ( "12:6-12:9",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~init_targets:
+                           [
+                             CallTarget.create_regular
+                               ~implicit_receiver:true
+                               ~return_type:(Some ReturnType.none)
+                               (Target.Regular.Method
+                                  { class_name = "object"; method_name = "__init__"; kind = Normal });
+                           ]
+                         ~new_targets:
+                           [
+                             CallTarget.create_regular
+                               ~return_type:(Some ReturnType.any)
+                               ~is_static_method:true
+                               (Target.Regular.Method
+                                  { class_name = "object"; method_name = "__new__"; kind = Normal });
+                           ]
+                         ())) );
+               ( "13:2-13:8",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ();
     ]
 
 
