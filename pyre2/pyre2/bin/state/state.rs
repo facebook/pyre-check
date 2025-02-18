@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -56,6 +57,7 @@ use crate::types::types::Type;
 use crate::util::display::number_thousands;
 use crate::util::enum_heap::EnumHeap;
 use crate::util::locked_map::LockedMap;
+use crate::util::no_hash::BuildNoHash;
 use crate::util::prelude::SliceExt;
 use crate::util::uniques::UniqueFactory;
 
@@ -112,7 +114,7 @@ struct ModuleState {
     lock: FairMutex<()>,
     steps: RwLock<ModuleSteps>,
     handle: Handle,
-    dependencies: RwLock<SmallMap<ModuleName, Arc<ModuleState>>>,
+    dependencies: RwLock<HashMap<ModuleName, Arc<ModuleState>, BuildNoHash>>,
 }
 
 impl ModuleState {
