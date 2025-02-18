@@ -847,6 +847,7 @@ let run_taint_analysis
             get_define_call_graph
               (Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs);
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
+          decorator_inlined = true;
         }
       ~callables_to_analyze
       ~max_iterations:100

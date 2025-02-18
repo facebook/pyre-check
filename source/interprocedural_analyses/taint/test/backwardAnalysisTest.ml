@@ -67,6 +67,7 @@ let assert_taint ~context source expected =
         ~get_callee_model:(Registry.get models)
         ~existing_model:Model.empty_model
         ~triggered_sinks:(Issue.TriggeredSinkForBackward.create ())
+        ~decorator_inlined:false
         ()
     in
     let model = { Model.empty_model with backward } in
@@ -1594,29 +1595,6 @@ let test_constructor_argument_tito context =
     ]
 
 
-let test_decorator context =
-  assert_taint
-    ~context
-    {|
-      @_strip_first_parameter_
-      def decorated(self, into_sink):
-        _test_sink(into_sink)
-
-      def using_decorated(into_decorated):
-        decorated(into_decorated)
-    |}
-    [
-      outcome
-        ~kind:`Function
-        ~parameter_sinks:[{ name = "into_sink"; sinks = [Sinks.NamedSink "Test"] }]
-        "qualifier.decorated";
-      outcome
-        ~kind:`Function
-        ~parameter_sinks:[{ name = "into_decorated"; sinks = [Sinks.NamedSink "Test"] }]
-        "qualifier.using_decorated";
-    ]
-
-
 let test_assignment context =
   assert_taint
     ~context
@@ -1721,7 +1699,6 @@ let () =
          "comprehensions" >:: test_comprehensions;
          "concatenate_taint_in_taint_out" >:: test_concatenate_taint_in_taint_out;
          "constructor_argument_tito" >:: test_constructor_argument_tito;
-         "decorator" >:: test_decorator;
          "dictionary" >:: test_dictionary;
          "for_loops" >:: test_for_loops;
          "lambda" >:: test_lambda;

@@ -137,6 +137,7 @@ def return_foo() -> Foo:
 
 
 def call_return_foo() -> None:
+    # TODO(T215330919): False negative
     foo = return_foo()
     _test_sink(foo.return_source())
 

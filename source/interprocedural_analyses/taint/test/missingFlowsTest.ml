@@ -82,6 +82,7 @@ let assert_fixpoint
           get_define_call_graph;
           global_constants =
             GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only;
+          decorator_inlined = false;
         }
       ~callables_to_analyze
       ~max_iterations:100

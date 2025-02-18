@@ -25,5 +25,6 @@ val run
   get_callee_model:(Interprocedural.Target.t -> Model.t option) ->
   existing_model:Model.t ->
   triggered_sinks:Issue.TriggeredSinkForBackward.t ->
+  decorator_inlined:bool ->
   unit ->
   Model.Backward.t

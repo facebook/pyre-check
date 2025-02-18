@@ -174,7 +174,12 @@ module CallableToDecoratorsMap = struct
       "property";
       "dataclass";
       "partial";
+      "functools.cache";
+      "functools.cached_property";
       "functools.lru_cache";
+      "functools.total_ordering";
+      "functools.singledispatch";
+      "functools.wraps";
       "enum.verify";
       "enum.unique";
       "typing.final";
@@ -4449,7 +4454,7 @@ module HigherOrderCallGraph = struct
                     } ->
                     let parameters_roots, parameters_targets =
                       captures
-                      |> List.map ~f:(fun { Define.Capture.name; _ } ->
+                      |> List.filter_map ~f:(fun { Define.Capture.name; _ } ->
                              let captured = State.create_root_from_identifier name in
                              log
                                "Inner function `%a` captures `%a`"
@@ -4457,26 +4462,40 @@ module HigherOrderCallGraph = struct
                                delocalized_name
                                TaintAccessPath.Root.pp
                                captured;
-                             ( captured,
+                             let parameter_targets =
                                state
                                |> State.get captured
                                |> CallTarget.Set.elements
-                               |> List.map ~f:CallTarget.target ))
+                               |> List.map ~f:CallTarget.target
+                             in
+                             (* Sometimes a captured variable does not have a record in `state`, but
+                                we still want to create a callee with the captured variables that
+                                have records in `state`. *)
+                             if List.is_empty parameter_targets then
+                               None
+                             else
+                               Some (captured, parameter_targets))
                       |> List.unzip
                     in
-                    parameters_targets
-                    |> Algorithms.cartesian_product
-                    |> List.map ~f:(fun parameters_targets ->
-                           Target.Parameterized
-                             {
-                               regular = regular_target;
-                               parameters =
-                                 parameters_targets
-                                 |> List.zip_exn parameters_roots
-                                 |> Target.ParameterMap.of_alist_exn;
-                             }
-                           |> CallTarget.create)
-                    |> CallTarget.Set.of_list
+                    if List.is_empty parameters_targets then
+                      regular_target
+                      |> Target.from_regular
+                      |> CallTarget.create
+                      |> CallTarget.Set.singleton
+                    else
+                      parameters_targets
+                      |> Algorithms.cartesian_product
+                      |> List.map ~f:(fun parameters_targets ->
+                             Target.Parameterized
+                               {
+                                 regular = regular_target;
+                                 parameters =
+                                   parameters_targets
+                                   |> List.zip_exn parameters_roots
+                                   |> Target.ParameterMap.of_alist_exn;
+                               }
+                             |> CallTarget.create)
+                      |> CallTarget.Set.of_list
                 | _ ->
                     regular_target
                     |> Target.from_regular

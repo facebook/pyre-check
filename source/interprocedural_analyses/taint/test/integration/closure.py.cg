@@ -10,20 +10,21 @@ Call dependencies
     "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]"
   ],
   "closure.async_nonlocal_closure_tito_with_decorator (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "closure.async_tito (fun)"
+    "_test_sink (fun)", "_test_source (fun)",
+    "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]",
+    "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)]"
   ],
-  "closure.async_nonlocal_closure_tito_with_decorator.inner (fun)": [
-    "closure.async_nonlocal_closure_tito_with_decorator.inner._inlined_decorator (fun)",
-    "closure.async_nonlocal_closure_tito_with_decorator.inner._inlined_decorator (fun)[local($local_closure?async_nonlocal_closure_tito_with_decorator?inner$_original_function)=closure.async_nonlocal_closure_tito_with_decorator.inner._original_function (fun)]"
-  ],
-  "closure.async_nonlocal_closure_tito_with_decorator.inner._inlined_decorator (fun)": [
-    "closure.async_nonlocal_closure_tito_with_decorator.inner._original_function (fun)"
-  ],
-  "closure.async_nonlocal_closure_tito_with_decorator.inner._inlined_decorator (fun)[local($local_closure?async_nonlocal_closure_tito_with_decorator?inner$_original_function)=closure.async_nonlocal_closure_tito_with_decorator.inner._original_function (fun)]": [
-    "closure.async_nonlocal_closure_tito_with_decorator.inner._original_function (fun)"
+  "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)": [
+    "closure.decorator (fun)"
   ],
   "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]": [
     "closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)"
+  ],
+  "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]": [
+    "closure.async_nonlocal_closure_tito_with_decorator.inner (fun)"
+  ],
+  "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)]": [
+    "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)"
   ],
   "closure.closure (fun)": [
     "object.__init__ (method)", "object.__new__ (method)"

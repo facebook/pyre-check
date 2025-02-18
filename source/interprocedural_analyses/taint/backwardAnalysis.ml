@@ -395,8 +395,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          _;
        } as call_target)
     =
+    let implicit_argument =
+      CallGraph.ImplicitArgument.implicit_argument ~is_implicit_new call_target
+    in
     let arguments =
-      match CallGraph.ImplicitArgument.implicit_argument ~is_implicit_new call_target with
+      match implicit_argument with
       | CalleeBase -> { Call.Argument.name = None; value = Option.value_exn self } :: arguments
       | Callee -> { Call.Argument.name = None; value = callee } :: arguments
       | None -> arguments
@@ -693,7 +696,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     (* Extract the taint for implicit arguments. *)
     let implicit_argument_taint, arguments_taint =
-      match CallGraph.ImplicitArgument.implicit_argument ~is_implicit_new call_target with
+      match implicit_argument with
       | CalleeBase -> (
           match arguments_taint with
           | self_taint :: arguments_taint ->
@@ -2908,6 +2911,7 @@ let run
     ~get_callee_model
     ~existing_model
     ~triggered_sinks
+    ~decorator_inlined
     ()
   =
   let timer = Timer.start () in
@@ -2915,7 +2919,12 @@ let run
      the forward analysis, because in case a decorator changes the parameters of the decorated
      function, the user-defined models of the function may no longer be applicable to the resultant
      function of the application (e.g., T132302522). *)
-  let define = PyrePysaEnvironment.ReadOnly.decorated_define pyre_api define in
+  let define =
+    if decorator_inlined then
+      PyrePysaEnvironment.ReadOnly.decorated_define pyre_api define
+    else
+      define
+  in
   let define_name =
     PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define)
   in

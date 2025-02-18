@@ -40,8 +40,8 @@ def foo_with_sink(x: int) -> None:
     print(x)
 
 
-async def with_logging_async(
-    f: Callable[[str], Awaitable[None]]
+def with_logging_async(
+    f: Callable[[str], Awaitable[None]],
 ) -> Callable[[str], Awaitable[None]]:
     async def inner(y: str) -> None:
         try:
@@ -128,7 +128,7 @@ def foo_using_decorator_factory(x: str) -> None:
 
 
 def with_logging_first_parameter(
-    f: Callable[Concatenate[int, P], None]
+    f: Callable[Concatenate[int, P], None],
 ) -> Callable[Concatenate[int, P], None]:
     def inner(first_parameter: int, *args: P.args, **kwargs: P.kwargs) -> None:
         if first_parameter != 42:
@@ -146,7 +146,7 @@ def foo_log_first_parameter(x: int, y: str) -> None:
 
 
 def with_logging_helper_functions(
-    f: Callable[P, Awaitable[None]]
+    f: Callable[P, Awaitable[None]],
 ) -> Callable[P, Awaitable[None]]:
     async def inner(*args: P.args, **kwargs: P.kwargs) -> None:
         try:
@@ -191,7 +191,7 @@ class Foo:
 
     @with_logging_args_kwargs_no_sink
     def self_has_generic_type(self: T, other: T, x: str) -> None:
-        other.bar(x)
+        other.bar(x=x)  # Sink is on the keyword argument
 
     @classmethod
     @with_logging_args_kwargs_no_sink
@@ -204,7 +204,7 @@ async def main() -> None:
     foo_with_sink(_test_source())
     await foo_async(_test_source())
 
-    foo_args_kwargs(_test_source())
+    foo_args_kwargs(x=_test_source())  # Sink is on the keyword argument
 
     # No issue because the taint is on the second parameter.
     foo_args_kwargs_with_sink(_test_source(), 0)
@@ -221,9 +221,10 @@ async def main() -> None:
 
     Foo().foo(_test_source())
 
-    Foo().bar(_test_source())
+    Foo().bar(x=_test_source())  # Sink is on the keyword argument
 
-    Foo().self_has_generic_type(Foo(), _test_source())
+    # Sink is on the keyword argument
+    Foo().self_has_generic_type(other=Foo(), x=_test_source())
 
     Foo.some_class_method(_test_source())
 
@@ -233,7 +234,7 @@ def discard_second_parameter_inner(first_parameter: int) -> None:
 
 
 def discard_second_parameter_non_inlineable(
-    f: Callable[[int, str], None]
+    f: Callable[[int, str], None],
 ) -> Callable[[int], None]:
     # Return a function not defined here, to prevent from inlining decorators
     return discard_second_parameter_inner
@@ -264,3 +265,21 @@ def second_parameter_source_inlineable_decorator_with_inner(
         _test_sink(arg2)
 
     inner()  # Issue here
+
+
+def _strip_first_parameter_(
+    f: Callable[Concatenate[int, P], None],
+) -> Callable[Concatenate[P], None]:
+    def inner(*args: P.args, **kwargs: P.kwargs) -> None:
+        f(0, *args, **kwargs)
+
+    return inner
+
+
+@_strip_first_parameter_
+def decorated(self, into_sink) -> None:
+    _test_sink(into_sink)
+
+
+def using_decorated(into_decorated):
+    decorated(into_decorated)

@@ -71,6 +71,7 @@ let assert_fixpoint
           class_interval_graph = class_interval_graph_shared_memory;
           get_define_call_graph;
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
+          decorator_inlined = false;
         }
       ~callables_to_analyze
       ~max_iterations:100

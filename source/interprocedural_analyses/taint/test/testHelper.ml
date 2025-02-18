@@ -503,7 +503,7 @@ let set_up_decorator_preprocessing ~handle models =
     |> Option.value ~default:Reference.SerializableMap.empty
   in
   PyrePysaLogic.DecoratorPreprocessing.setup_preprocessing
-    { actions = decorator_actions; enable_inlining = true; enable_discarding = true }
+    { actions = decorator_actions; enable_inlining = false; enable_discarding = true }
 
 
 let initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_source =
@@ -931,6 +931,7 @@ let end_to_end_integration_test path context =
             get_define_call_graph;
             global_constants =
               Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
+            decorator_inlined = false;
           }
         ~callables_to_analyze
         ~max_iterations:100

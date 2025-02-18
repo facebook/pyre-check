@@ -1701,6 +1701,52 @@
 {
   "kind": "model",
   "data": {
+    "callable": "closure.async_nonlocal_closure_tito_with_decorator.inner",
+    "filename": "closure.py",
+    "callable_line": 381,
+    "tito": [
+      {
+        "port": "captured_variable($parameter$y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "captured_variable($parameter$x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[0]": 3 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "captured_variable($local_closure?async_nonlocal_closure_tito_with_decorator$z)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[2]": 3 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "closure.async_tito",
     "filename": "closure.py",
     "callable_line": 373,

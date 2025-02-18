@@ -868,6 +868,57 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def decorator(f):
+       def foo():
+         bar()
+         f()
+         return
+       def bar():
+         return
+       return foo  # Test the closure of `foo`
+     @decorator
+     def baz():
+       return
+     def main():
+       baz()
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "14:2-14:7",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create
+                                     (create_parameterized_target
+                                        ~regular:
+                                          (Target.Regular.Function
+                                             { name = "test.decorator.foo"; kind = Normal })
+                                        ~parameters:
+                                          [
+                                            ( AccessPath.Root.Variable "$parameter$f",
+                                              Target.Regular.Function
+                                                { name = "test.baz"; kind = Normal }
+                                              |> Target.from_regular );
+                                          ]);
+                                 ]
+                               ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
     ]
 
 
