@@ -3866,7 +3866,15 @@ module DecoratorResolution = struct
 
     let decorated_callables = Target.Map.keys
 
-    let resolve_batch_exn ~debug ~pyre_api ~override_graph ~decorators callables =
+    let resolve_batch_exn
+        ~debug
+        ~pyre_api
+        ~scheduler
+        ~scheduler_policy
+        ~override_graph
+        ~decorators
+        callables
+      =
       let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
       let resolve callable =
         match
@@ -3882,11 +3890,23 @@ module DecoratorResolution = struct
         | Undecorated ->
             None
       in
-      callables
-      |> List.filter_map ~f:resolve
-      |> List.map ~f:(fun ({ DecoratorDefine.callable; _ } as decorator_define) ->
-             callable, decorator_define)
-      |> Target.Map.of_alist_exn
+      let map callables =
+        callables
+        |> List.filter_map ~f:resolve
+        |> List.map ~f:(fun ({ DecoratorDefine.callable; _ } as decorator_define) ->
+               callable, decorator_define)
+        |> Target.Map.of_alist_exn
+      in
+      Scheduler.map_reduce
+        scheduler
+        ~policy:scheduler_policy
+        ~initial:empty
+        ~map
+        ~reduce:
+          (Target.Map.union (fun callable _ _ ->
+               failwithf "Unexpected: %s" (Target.show_pretty_with_kind callable) ()))
+        ~inputs:callables
+        ()
 
 
     let get_module_and_definition ~callable decorator_defines =

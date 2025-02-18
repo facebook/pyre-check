@@ -456,6 +456,8 @@ module DecoratorResolution : sig
     val resolve_batch_exn
       :  debug:bool ->
       pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+      scheduler:Scheduler.t ->
+      scheduler_policy:Scheduler.Policy.t ->
       override_graph:OverrideGraph.SharedMemory.t ->
       decorators:CallableToDecoratorsMap.t ->
       Target.t list ->

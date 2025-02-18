@@ -666,10 +666,13 @@ let initialize
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
   let decorators = CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions in
+  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
   let decorator_resolution =
     CallGraph.DecoratorResolution.Results.resolve_batch_exn
       ~debug:false
       ~pyre_api
+      ~scheduler
+      ~scheduler_policy
       ~override_graph:override_graph_shared_memory
       ~decorators
       definitions
@@ -696,7 +699,6 @@ let initialize
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
   in
-  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
   let ({ CallGraphFixpoint.whole_program_call_graph; get_define_call_graph; _ } as
       call_graph_fixpoint_state)
     =

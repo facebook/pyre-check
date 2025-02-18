@@ -29,17 +29,21 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
   let definitions = FetchCallables.get_definitions initial_callables in
   let decorators = CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions in
+  let scheduler = Test.mock_scheduler () in
+  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
   let decorator_resolution =
     CallGraph.DecoratorResolution.Results.resolve_batch_exn
       ~debug:false
       ~pyre_api
+      ~scheduler
+      ~scheduler_policy
       ~override_graph:override_graph_shared_memory
       ~decorators
       definitions
   in
   let ({ SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
     SharedMemory.build_whole_program_call_graph
-      ~scheduler:(Test.mock_scheduler ())
+      ~scheduler
       ~static_analysis_configuration
       ~pyre_api
       ~resolve_module_path:None
@@ -61,20 +65,14 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
   in
   let fixpoint_state =
     CallGraphFixpoint.compute
-      ~scheduler:(Test.mock_scheduler ())
-      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~scheduler
+      ~scheduler_policy
       ~pyre_api
       ~call_graph
       ~dependency_graph
       ~override_graph_shared_memory
       ~initial_callables
-      ~decorator_resolution:
-        (CallGraph.DecoratorResolution.Results.resolve_batch_exn
-           ~debug:false
-           ~pyre_api
-           ~override_graph:override_graph_shared_memory
-           ~decorators
-           definitions)
+      ~decorator_resolution
       ~max_iterations
   in
   List.iter expected ~f:(fun { Expected.callable; call_graph; returned_callables } ->
