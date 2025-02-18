@@ -540,7 +540,7 @@ impl Answers {
             }
             for idx in answers.bindings.keys::<K>() {
                 let k = answers.bindings.idx_to_key(idx);
-                let v = answers.get(k);
+                let v = answers.get_idx(idx);
                 if retain {
                     items.insert(k.clone(), v.dupe());
                 }
