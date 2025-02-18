@@ -5336,6 +5336,16 @@
     },
     {
       "code": -2,
+      "column": 14,
+      "concise_description": "EXPECTED int <: str",
+      "description": "EXPECTED int <: str",
+      "line": 19,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 19
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "assert_type(Any, Color) failed",
       "description": "assert_type(Any, Color) failed",
@@ -13359,26 +13369,6 @@
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "`tuple[int, *str, int]` is not iterable",
-      "description": "`tuple[int, *str, int]` is not iterable",
-      "line": 93,
-      "name": "PyreError",
-      "stop_column": 18,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "`tuple[int, *str, int]` is not iterable",
-      "description": "`tuple[int, *str, int]` is not iterable",
-      "line": 93,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int]) failed",
       "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int]) failed",
@@ -13395,36 +13385,6 @@
       "line": 97,
       "name": "PyreError",
       "stop_column": 20,
-      "stop_line": 97
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "`tuple[int, *str, int]` is not iterable",
-      "description": "`tuple[int, *str, int]` is not iterable",
-      "line": 97,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 97
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "`tuple[int, *str, int]` is not iterable",
-      "description": "`tuple[int, *str, int]` is not iterable",
-      "line": 97,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 97
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "`tuple[int, *str, int]` is not iterable",
-      "description": "`tuple[int, *str, int]` is not iterable",
-      "line": 97,
-      "name": "PyreError",
-      "stop_column": 19,
       "stop_line": 97
     },
     {
@@ -13455,46 +13415,6 @@
       "line": 101,
       "name": "PyreError",
       "stop_column": 23,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "`tuple[int, *str, int]` is not iterable",
-      "description": "`tuple[int, *str, int]` is not iterable",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "`tuple[int, *str, int]` is not iterable",
-      "description": "`tuple[int, *str, int]` is not iterable",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "`tuple[int, *str, int]` is not iterable",
-      "description": "`tuple[int, *str, int]` is not iterable",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 101
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "`tuple[int, *str, int]` is not iterable",
-      "description": "`tuple[int, *str, int]` is not iterable",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 22,
       "stop_line": 101
     },
     {

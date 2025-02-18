@@ -31,6 +31,7 @@ pub const NAME: Name = Name::new_static("__name__");
 pub const NE: Name = Name::new_static("__ne__");
 pub const NEG: Name = Name::new_static("__neg__");
 pub const NEW: Name = Name::new_static("__new__");
+#[allow(dead_code)]
 pub const NEXT: Name = Name::new_static("__next__");
 pub const POS: Name = Name::new_static("__pos__");
 pub const SETITEM: Name = Name::new_static("__setitem__");

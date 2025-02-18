@@ -444,7 +444,7 @@
   "directives_version_platform.py": [],
   "enums_behaviors.py": [
     "Line 39: Expected 1 errors",
-    "Line 19: Unexpected errors ['EXPECTED EnumMeta <: type[@_]']",
+    "Line 19: Unexpected errors ['EXPECTED EnumMeta <: type[@_]', 'EXPECTED int <: str']",
     "Line 20: Unexpected errors ['assert_type(Any, Color) failed']",
     "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for class `Color`, got 1.', \"untype, got Literal['RED']\"]",
     "Line 27: Unexpected errors ['assert_type(Enum, Color) failed']"
@@ -1092,11 +1092,11 @@
     "Line 74: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int]) failed']",
     "Line 78: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, int] | tuple[str, str]) failed']",
     "Line 82: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, str, int]) failed']",
-    "Line 93: Unexpected errors ['Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 2) into 1 value', '`tuple[int, *str, int]` is not iterable', '`tuple[int, *str, int]` is not iterable']",
+    "Line 93: Unexpected errors ['Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 2) into 1 value']",
     "Line 95: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int]) failed']",
-    "Line 97: Unexpected errors ['Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 1) into 2 values', '`tuple[int, *str, int]` is not iterable', '`tuple[int, *str, int]` is not iterable', '`tuple[int, *str, int]` is not iterable']",
+    "Line 97: Unexpected errors ['Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 1) into 2 values']",
     "Line 99: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, int] | tuple[str, str]) failed']",
-    "Line 101: Unexpected errors ['Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 1) into 3 values', 'Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 2) into 3 values', '`tuple[int, *str, int]` is not iterable', '`tuple[int, *str, int]` is not iterable', '`tuple[int, *str, int]` is not iterable', '`tuple[int, *str, int]` is not iterable']",
+    "Line 101: Unexpected errors ['Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 1) into 3 values', 'Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 2) into 3 values']",
     "Line 103: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, str, int]) failed']",
     "Line 115: Unexpected errors ['assert_type(tuple[int | str, int | str], tuple[int | str, str]) failed']",
     "Line 117: Unexpected errors ['assert_type(tuple[int | str, int | str], tuple[int | str, int]) failed']"

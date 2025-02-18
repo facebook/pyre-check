@@ -719,9 +719,9 @@ class B:
         return self
     __next__: str
 def f(x: A, y: B):
-    for _ in x:  # E: Expected `__iter__` to be a callable, got bool
+    for _ in x:  # E: Type `A` is not iterable
         pass
-    for _ in y:  # E: Expected `__next__` to be a callable, got str
+    for _ in y:  # E: Type `B` is not iterable
         pass
     "#,
 );
@@ -733,7 +733,7 @@ class A:
     def __iter__(self) -> None:
         return None
 def f(x: A):
-    for _ in x:  # E: `None` has no attribute `__next__`
+    for _ in x:  # E: Type `A` is not iterable
         pass
     "#,
 );
