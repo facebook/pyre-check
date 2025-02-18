@@ -539,9 +539,9 @@ impl Answers {
                 items.reserve(answers.bindings.keys::<K>().len());
             }
             for idx in answers.bindings.keys::<K>() {
-                let k = answers.bindings.idx_to_key(idx);
                 let v = answers.get_idx(idx);
                 if retain {
+                    let k = answers.bindings.idx_to_key(idx);
                     items.insert(k.clone(), v.dupe());
                 }
             }
