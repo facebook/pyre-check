@@ -308,7 +308,7 @@ impl State {
         {
             // if we happen to have solutions available, use them instead
             if let Some(solutions) = module_state.steps.read().unwrap().solutions.get() {
-                return TableKeyed::<K>::get(&solutions.0).get(key).unwrap().dupe();
+                return solutions.get(key).unwrap().dupe();
             }
         }
 
@@ -316,7 +316,7 @@ impl State {
         let (load, answers) = {
             let steps = module_state.steps.read().unwrap();
             if let Some(solutions) = steps.solutions.get() {
-                return TableKeyed::<K>::get(&solutions.0).get(key).unwrap().dupe();
+                return solutions.get(key).unwrap().dupe();
             }
             (
                 steps.load.get().unwrap().dupe(),

@@ -20,10 +20,7 @@ pub fn get_class_metadata(name: &str, handle: &Handle, state: &State) -> Arc<Cla
     let solutions = state.get_solutions(handle).unwrap();
 
     let res = get_class(name, handle, state).and_then(|cls| {
-        let x = solutions
-            .0
-            .class_metadata
-            .get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
+        let x = solutions.get(&KeyClassMetadata(ShortIdentifier::new(cls.name())));
         x.cloned()
     });
     res.unwrap_or_else(|| panic!("No MRO for {name}"))

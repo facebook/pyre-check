@@ -226,12 +226,7 @@ pub fn mk_state(code: &str) -> (Handle, State) {
 pub fn get_class(name: &str, handle: &Handle, state: &State) -> Option<Class> {
     let solutions = state.get_solutions(handle).unwrap();
 
-    match solutions
-        .0
-        .exports
-        .get(&KeyExport(Name::new(name)))
-        .map(|x| &**x)
-    {
+    match solutions.get(&KeyExport(Name::new(name))).map(|x| &**x) {
         Some(Type::ClassDef(cls)) => Some(cls.dupe()),
         _ => None,
     }

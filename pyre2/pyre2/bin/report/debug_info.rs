@@ -78,7 +78,7 @@ impl DebugInfo {
                 .iter()
                 .map(|(module_info, errors, bindings, solutions)| {
                     let mut res = Vec::new();
-                    table_for_each!(&solutions.0, |t| f(t, module_info, bindings, &mut res));
+                    table_for_each!(solutions.table(), |t| f(t, module_info, bindings, &mut res));
                     let errors = errors.collect().map(|e| Error {
                         location: e.source_range().to_string(),
                         message: e.msg().to_owned(),

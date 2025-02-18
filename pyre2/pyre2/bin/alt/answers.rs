@@ -121,7 +121,7 @@ table!(
 );
 
 #[derive(Default, Debug, Clone)]
-pub struct Solutions(pub SolutionsTable);
+pub struct Solutions(SolutionsTable);
 
 impl DisplayWith<ModuleInfo> for Solutions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
@@ -141,6 +141,19 @@ impl DisplayWith<ModuleInfo> for Solutions {
 
         table_try_for_each!(&self.0, |x| go(x, f, ctx));
         Ok(())
+    }
+}
+
+impl Solutions {
+    pub fn table(&self) -> &SolutionsTable {
+        &self.0
+    }
+
+    pub fn get<K: Keyed>(&self, key: &K) -> Option<&Arc<<K as Keyed>::Answer>>
+    where
+        SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
+    {
+        self.0.get().get(key)
     }
 }
 
