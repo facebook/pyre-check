@@ -187,7 +187,8 @@ impl State {
             if todo == Step::Answers && !self.retain_memory {
                 // We have captured the Ast, and must have already built Exports (we do it serially),
                 // so won't need the Ast again.
-                module_state.steps.write().unwrap().ast.take();
+                let to_drop = module_state.steps.write().unwrap().ast.take();
+                drop(to_drop);
             }
 
             let stdlib = self.get_stdlib(&module_state.handle);
