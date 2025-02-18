@@ -606,6 +606,31 @@ assert_type({"foo": 1, **{"bar": "bar"}}, dict[str, int | str])
 "#,
 );
 
+testcase_with_bug!(
+    "Unpacking a mapping with dict hint should work",
+    test_dict_unpack_mapping,
+    r#"
+from typing import Mapping, assert_type
+def test(m: Mapping[str, int]) -> None:
+    x1: dict[str, int] = {**m} # TODO # E: EXPECTED Mapping[str, int] <: dict[str, int]
+    x2: dict[int, int] = {**m} # TODO # E: EXPECTED Mapping[str, int] <: dict[int, int]
+    assert_type({"foo": 1, **m}, dict[str, int])
+"#,
+);
+
+testcase_with_bug!(
+    "Should be allowed to splat a dict subclass",
+    test_dict_unpack_subclass,
+    r#"
+from typing import assert_type
+class Counter[T](dict[T, int]): ...
+def test(c: Counter[str]) -> None:
+    x1: dict[str, int] = {**c}
+    x2: dict[int, int] = {**c}  # TODO # E: EXPECTED Counter[str] <: dict[int, int]
+    assert_type({"foo": 1, **c}, dict[str, int])  # TODO # E: Expected a dict, got Counter[str]
+"#,
+);
+
 testcase!(
     test_iterable,
     r#"
