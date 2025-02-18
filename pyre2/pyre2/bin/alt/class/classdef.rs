@@ -12,6 +12,7 @@ use std::sync::Arc;
 use dupe::Dupe;
 use itertools::EitherOrBoth;
 use itertools::Itertools;
+use parse_display::Display;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
@@ -26,7 +27,6 @@ use crate::alt::attr::Attribute;
 use crate::alt::attr::NoAccessReason;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
-use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::KeyClassField;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyClassSynthesizedFields;
@@ -48,6 +48,21 @@ use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::display::count;
 use crate::util::prelude::SliceExt;
+
+/// Correctly analyzing which attributes are visible on class objects, as well
+/// as handling method binding correctly, requires distinguishing which fields
+/// are assigned values in the class body.
+#[derive(Clone, Copy, Debug, Display, PartialEq, Eq)]
+pub enum ClassFieldInitialization {
+    Class,
+    Instance,
+}
+
+impl ClassFieldInitialization {
+    pub fn recursive() -> Self {
+        ClassFieldInitialization::Class
+    }
+}
 
 /// Raw information about an attribute declared somewhere in a class. We need to
 /// know whether it is initialized in the class body in order to determine
@@ -84,7 +99,7 @@ impl ClassField {
         Self(ClassFieldInner::Simple {
             ty: Type::any_implicit(),
             annotation: None,
-            initialization: ClassFieldInitialization::Class,
+            initialization: ClassFieldInitialization::recursive(),
             readonly: false,
         })
     }

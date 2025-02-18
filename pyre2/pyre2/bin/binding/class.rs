@@ -20,13 +20,14 @@ use starlark_map::small_map::SmallMap;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingClass;
 use crate::binding::binding::BindingClassField;
+use crate::binding::binding::BindingClassFieldInitialization;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::ClassBinding;
-use crate::binding::binding::ClassFieldInitialization;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyClassField;
+use crate::binding::binding::KeyClassFieldInitialization;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyClassSynthesizedFields;
 use crate::binding::bindings::BindingsBuilder;
@@ -47,7 +48,8 @@ impl<'a> BindingsBuilder<'a> {
 
         self.scopes.push(Scope::annotation());
 
-        let class_key = KeyClass(ShortIdentifier::new(&x.name));
+        let class_name = ShortIdentifier::new(&x.name);
+        let class_key = KeyClass(class_name.clone());
         let definition_key = self.table.classes.0.insert(class_key);
 
         x.type_params.iter_mut().for_each(|x| {
@@ -92,7 +94,7 @@ impl<'a> BindingsBuilder<'a> {
         });
 
         self.table.insert(
-            KeyClassMetadata(ShortIdentifier::new(&x.name)),
+            KeyClassMetadata(class_name.clone()),
             BindingClassMetadata {
                 def: definition_key,
                 bases: bases.clone().into_boxed_slice(),
@@ -101,7 +103,7 @@ impl<'a> BindingsBuilder<'a> {
             },
         );
         self.table.insert(
-            KeyClassSynthesizedFields(ShortIdentifier::new(&x.name)),
+            KeyClassSynthesizedFields(class_name.clone()),
             BindingClassSynthesizedFields(definition_key),
         );
 
@@ -118,11 +120,13 @@ impl<'a> BindingsBuilder<'a> {
         for (name, info) in last_scope.flow.info.iter() {
             // A name with flow info but not static info is a reference to something that's not a class field.
             if let Some(stat_info) = last_scope.stat.0.get(name) {
-                let initialization = if info.is_initialized() {
-                    ClassFieldInitialization::Class
-                } else {
-                    ClassFieldInitialization::Instance
+                let binding_initialization = BindingClassFieldInitialization {
+                    is_initialized: info.is_initialized(),
                 };
+                let initialization = self.table.insert(
+                    KeyClassFieldInitialization(class_name.clone(), name.clone()),
+                    binding_initialization,
+                );
                 let binding = BindingClassField {
                     class: definition_key,
                     name: name.clone(),
@@ -138,10 +142,8 @@ impl<'a> BindingsBuilder<'a> {
                         range: Some(stat_info.loc),
                     },
                 );
-                self.table.insert(
-                    KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
-                    binding,
-                );
+                self.table
+                    .insert(KeyClassField(class_name.clone(), name.clone()), binding);
             }
         }
         if let ScopeKind::ClassBody(body) = last_scope.kind {
@@ -156,15 +158,21 @@ impl<'a> BindingsBuilder<'a> {
                                     range: None,
                                 },
                             );
+                            let initialization = self.table.insert(
+                                KeyClassFieldInitialization(class_name.clone(), name.clone()),
+                                BindingClassFieldInitialization {
+                                    is_initialized: false,
+                                },
+                            );
                             self.table.insert(
-                                KeyClassField(ShortIdentifier::new(&x.name), name.clone()),
+                                KeyClassField(class_name.clone(), name.clone()),
                                 BindingClassField {
                                     class: definition_key,
                                     name,
                                     value,
                                     annotation,
                                     range,
-                                    initialization: ClassFieldInitialization::Instance,
+                                    initialization,
                                 },
                             );
                         } else if annotation.is_some() {
@@ -178,8 +186,7 @@ impl<'a> BindingsBuilder<'a> {
         }
 
         let self_binding = Binding::SelfType(definition_key);
-        self.table
-            .insert(Key::SelfType(ShortIdentifier::new(&x.name)), self_binding);
+        self.table.insert(Key::SelfType(class_name), self_binding);
 
         let legacy_tparams = legacy_tparam_builder.lookup_keys(self);
 
@@ -205,10 +212,11 @@ impl<'a> BindingsBuilder<'a> {
         base_name: ExprName,
         members: &[Expr],
     ) {
-        let class_key = KeyClass(ShortIdentifier::new(&class_name));
+        let short_class_name = ShortIdentifier::new(&class_name);
+        let class_key = KeyClass(short_class_name.clone());
         let definition_key = self.table.classes.0.insert(class_key.clone());
         self.table.insert(
-            KeyClassMetadata(ShortIdentifier::new(&class_name)),
+            KeyClassMetadata(short_class_name.clone()),
             BindingClassMetadata {
                 def: definition_key,
                 bases: Box::new([Expr::Name(base_name)]),
@@ -217,7 +225,7 @@ impl<'a> BindingsBuilder<'a> {
             },
         );
         self.table.insert(
-            KeyClassSynthesizedFields(ShortIdentifier::new(&class_name)),
+            KeyClassSynthesizedFields(short_class_name.clone()),
             BindingClassSynthesizedFields(definition_key),
         );
         let mut fields = SmallMap::new();
@@ -241,15 +249,24 @@ impl<'a> BindingsBuilder<'a> {
                                 range: None,
                             },
                         );
+                        let initialization = self.table.insert(
+                            KeyClassFieldInitialization(
+                                short_class_name.clone(),
+                                member_name.clone(),
+                            ),
+                            BindingClassFieldInitialization {
+                                is_initialized: true,
+                            },
+                        );
                         self.table.insert(
-                            KeyClassField(ShortIdentifier::new(&class_name), member_name.clone()),
+                            KeyClassField(short_class_name.clone(), member_name.clone()),
                             BindingClassField {
                                 class: definition_key,
                                 name: member_name,
                                 value: Binding::AnyType(AnyStyle::Implicit),
                                 annotation: None,
                                 range: x.range(),
-                                initialization: ClassFieldInitialization::Class,
+                                initialization,
                             },
                         );
                     } else {
@@ -260,10 +277,8 @@ impl<'a> BindingsBuilder<'a> {
             _ => self.error(class_name.range, "TODO enum functional syntax".to_owned()),
         }
         let self_binding = Binding::SelfType(definition_key);
-        self.table.insert(
-            Key::SelfType(ShortIdentifier::new(&class_name)),
-            self_binding,
-        );
+        self.table
+            .insert(Key::SelfType(short_class_name), self_binding);
         self.bind_definition(
             &class_name,
             Binding::ClassDef(definition_key, Box::new([])),

@@ -26,6 +26,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::UNKNOWN;
 use crate::alt::callable::CallArg;
 use crate::alt::class::classdef::ClassField;
+use crate::alt::class::classdef::ClassFieldInitialization;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::decorated_function::DecoratedFunction;
@@ -37,6 +38,7 @@ use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClass;
 use crate::binding::binding::BindingClassField;
+use crate::binding::binding::BindingClassFieldInitialization;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::BindingExpect;
@@ -657,11 +659,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &field.name,
             value_ty.as_ref(),
             annotation.as_deref(),
-            field.initialization,
+            *self.get_idx(field.initialization),
             &self.get_idx(field.class),
             field.range,
             errors,
         ))
+    }
+
+    pub fn solve_class_field_initialization(
+        &self,
+        initialization: &BindingClassFieldInitialization,
+    ) -> Arc<ClassFieldInitialization> {
+        Arc::new(if initialization.is_initialized {
+            ClassFieldInitialization::Class
+        } else {
+            ClassFieldInitialization::Instance
+        })
     }
 
     pub fn solve_class_synthesized_fields(
