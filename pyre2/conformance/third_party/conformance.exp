@@ -4915,13 +4915,13 @@
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 82,
+      "column": 13,
+      "concise_description": "Expected 1 positional argument, got 2",
+      "description": "Expected 1 positional argument, got 2",
+      "line": 83,
       "name": "PyreError",
-      "stop_column": 9,
-      "stop_line": 82
+      "stop_column": 14,
+      "stop_line": 83
     },
     {
       "code": -2,

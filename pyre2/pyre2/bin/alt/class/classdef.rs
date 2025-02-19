@@ -12,7 +12,6 @@ use std::sync::Arc;
 use dupe::Dupe;
 use itertools::EitherOrBoth;
 use itertools::Itertools;
-use parse_display::Display;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
@@ -25,6 +24,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::Attribute;
 use crate::alt::attr::NoAccessReason;
+use crate::alt::class::dataclass::DataclassFieldProperties;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyClassField;
@@ -52,15 +52,24 @@ use crate::util::prelude::SliceExt;
 /// Correctly analyzing which attributes are visible on class objects, as well
 /// as handling method binding correctly, requires distinguishing which fields
 /// are assigned values in the class body.
-#[derive(Clone, Copy, Debug, Display, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ClassFieldInitialization {
-    Class,
+    Class(Option<DataclassFieldProperties>),
     Instance,
+}
+
+impl Display for ClassFieldInitialization {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Class(_) => write!(f, "initialized in body"),
+            Self::Instance => write!(f, "not initialized in body"),
+        }
+    }
 }
 
 impl ClassFieldInitialization {
     pub fn recursive() -> Self {
-        ClassFieldInitialization::Class
+        ClassFieldInitialization::Class(None)
     }
 }
 
@@ -142,7 +151,7 @@ impl ClassField {
             ty, initialization, ..
         }) = self;
         let required = match initialization {
-            ClassFieldInitialization::Class => Required::Optional,
+            ClassFieldInitialization::Class(_) => Required::Optional,
             ClassFieldInitialization::Instance => Required::Required,
         };
         if kw_only {
@@ -164,7 +173,7 @@ impl ClassField {
     fn as_raw_special_method_type(self, cls: &ClassType) -> Option<Type> {
         match self.instantiate_for(cls).0 {
             ClassFieldInner::Simple { ty, .. } => match self.initialization() {
-                ClassFieldInitialization::Class => Some(ty),
+                ClassFieldInitialization::Class(_) => Some(ty),
                 ClassFieldInitialization::Instance => None,
             },
         }
@@ -183,7 +192,7 @@ impl ClassField {
     fn as_instance_attribute(self, cls: &ClassType) -> Attribute {
         match self.instantiate_for(cls).0 {
             ClassFieldInner::Simple { ty, readonly, .. } => match self.initialization() {
-                ClassFieldInitialization::Class => bind_instance_attribute(cls, ty),
+                ClassFieldInitialization::Class(_) => bind_instance_attribute(cls, ty),
                 ClassFieldInitialization::Instance if readonly => Attribute::read_only(ty),
                 ClassFieldInitialization::Instance => Attribute::read_write(ty),
             },
@@ -197,7 +206,7 @@ impl ClassField {
                 ..
             } => Attribute::no_access(NoAccessReason::ClassUseOfInstanceAttribute(cls.clone())),
             ClassFieldInner::Simple {
-                initialization: ClassFieldInitialization::Class,
+                initialization: ClassFieldInitialization::Class(_),
                 ty,
                 ..
             } => {
@@ -264,13 +273,7 @@ impl Display for ClassField {
         match &self.0 {
             ClassFieldInner::Simple {
                 ty, initialization, ..
-            } => {
-                let initialized = match initialization {
-                    ClassFieldInitialization::Class => "initialized in body",
-                    ClassFieldInitialization::Instance => "not initialized in body",
-                };
-                write!(f, "@{} ({})", ty, initialized)
-            }
+            } => write!(f, "@{ty} ({initialization})"),
         }
     }
 }
@@ -515,7 +518,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
-        if metadata.is_typed_dict() && matches!(initialization, ClassFieldInitialization::Class) {
+        if metadata.is_typed_dict() && matches!(initialization, ClassFieldInitialization::Class(_))
+        {
             self.error(
                 errors,
                 range,

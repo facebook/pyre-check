@@ -316,8 +316,7 @@ class C:
     "#,
 );
 
-testcase_with_bug!(
-    "TODO",
+testcase!(
     test_dataclasses_field,
     r#"
 from dataclasses import dataclass, field
@@ -326,7 +325,7 @@ class C:
     x: int = field(init=False)
     y: str
 C(y="")  # OK
-C(x=0, y="")  # Should be an error: Unexpected keyword argument `x`
+C(x=0, y="")  # E: Unexpected keyword argument `x`
     "#,
 );
 

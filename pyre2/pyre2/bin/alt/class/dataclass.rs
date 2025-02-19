@@ -14,6 +14,7 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::class::classdef::ClassField;
+use crate::alt::class::classdef::ClassFieldInitialization;
 use crate::alt::class::classdef::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedField;
@@ -29,6 +30,12 @@ use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::tuple::Tuple;
 use crate::types::types::Type;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DataclassFieldProperties {
+    pub init: bool,
+    pub kw_only: bool,
+}
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Gets dataclass fields for an `@dataclass`-decorated class.
@@ -73,17 +80,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Some(ClassSynthesizedFields::new(fields))
     }
 
-    fn iter_fields(&self, cls: &Class, fields: &SmallSet<Name>) -> Vec<(Name, ClassField, bool)> {
+    fn iter_fields(
+        &self,
+        cls: &Class,
+        fields: &SmallSet<Name>,
+    ) -> Vec<(Name, ClassField, DataclassFieldProperties)> {
         let mut kw_only = false;
         fields.iter().filter_map(|name| {
-            let field @ ClassField(ClassFieldInner::Simple { ty, .. }) = &*self.get_class_member(cls, name).unwrap().value;
+            let field @ ClassField(ClassFieldInner::Simple { ty, initialization, .. }) = &*self.get_class_member(cls, name).unwrap().value;
+            let mut props = DataclassFieldProperties { init: true, kw_only };
+            if let ClassFieldInitialization::Class(Some(field_props)) = initialization {
+                props.init = field_props.init;
+            }
             // A field with type KW_ONLY is a sentinel value that indicates that the remaining
             // fields should be keyword-only params in the generated `__init__`.
             if matches!(ty, Type::ClassType(cls) if cls.class_object().has_qname("dataclasses", "KW_ONLY")) {
                 kw_only = true;
                 None
             } else {
-                Some((name.clone(), field.clone(), kw_only))
+                Some((name.clone(), field.clone(), props))
             }
         }).collect()
     }
@@ -100,8 +115,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             cls.self_type(),
             Required::Required,
         )];
-        for (name, field, field_kw_only) in self.iter_fields(cls, fields) {
-            params.push(field.as_param(&name, kw_only || field_kw_only));
+        for (name, field, field_props) in self.iter_fields(cls, fields) {
+            if field_props.init {
+                params.push(field.as_param(&name, kw_only || field_props.kw_only));
+            }
         }
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), Type::None)),
@@ -123,8 +140,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let filtered_fields = self.iter_fields(cls, fields);
             filtered_fields
                 .iter()
-                .filter_map(|(name, _, field_kw_only)| {
-                    if *field_kw_only {
+                .filter_map(|(name, _, field_props)| {
+                    if field_props.kw_only {
                         None
                     } else {
                         Some(Type::Literal(Lit::String(name.as_str().into())))

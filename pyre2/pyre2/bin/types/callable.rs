@@ -139,6 +139,7 @@ pub enum CallableKind {
     IsInstance,
     IsSubclass,
     Dataclass(DataclassKeywords),
+    DataclassField,
     ClassMethod,
     Overload,
     Def,
@@ -365,6 +366,7 @@ impl CallableKind {
             ("builtins", "issubclass") => Self::IsSubclass,
             ("builtins", "classmethod") => Self::ClassMethod,
             ("dataclasses", "dataclass") => Self::Dataclass(DataclassKeywords::default()),
+            ("dataclasses", "field") => Self::DataclassField,
             ("typing", "overload") => Self::Overload,
             _ => Self::Def,
         }

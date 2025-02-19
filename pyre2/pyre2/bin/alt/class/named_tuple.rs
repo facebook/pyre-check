@@ -65,7 +65,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ty, initialization, ..
             }) = &*self.get_class_member(cls, name).unwrap().value;
             let required = match initialization {
-                ClassFieldInitialization::Class => Required::Optional,
+                ClassFieldInitialization::Class(_) => Required::Optional,
                 ClassFieldInitialization::Instance => Required::Required,
             };
             params.push(Param::Pos(name.clone(), ty.clone(), required));

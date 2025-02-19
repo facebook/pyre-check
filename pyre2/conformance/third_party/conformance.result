@@ -395,13 +395,11 @@
     "Line 100: Unexpected errors ['Unexpected keyword argument `id`', 'Unexpected keyword argument `name`']"
   ],
   "dataclasses_usage.py": [
-    "Line 83: Expected 1 errors",
     "Lines 58, 61: Expected error (tag 'DC1')",
     "Lines 64, 67: Expected error (tag 'DC2')",
     "Lines 70, 73: Expected error (tag 'DC3')",
     "Line 35: Unexpected errors ['EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto']",
     "Line 72: Unexpected errors ['EXPECTED Literal[0] <: InitVar[int]']",
-    "Line 82: Unexpected errors ['Missing argument `b`']",
     "Line 102: Unexpected errors ['Missing argument `b`', \"EXPECTED Literal[''] <: int\"]",
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed']",
     "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']"

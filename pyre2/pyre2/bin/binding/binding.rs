@@ -965,7 +965,6 @@ impl DisplayWith<Bindings> for BindingClassField {
 pub enum ClassFieldInitialValue {
     /// The field has an initial value. Stores the expression that the field is assigned to.
     /// None means that we have something that isn't an assignment to an expression, like a function.
-    #[expect(dead_code)]
     Class(Option<Expr>),
     /// The field does not have an initial value.
     Instance,
@@ -974,7 +973,6 @@ pub enum ClassFieldInitialValue {
 /// Binding for information about how a class field is initialized.
 #[derive(Clone, Debug)]
 pub struct BindingClassFieldInitialization {
-    #[expect(dead_code)]
     pub class_metadata: Idx<KeyClassMetadata>,
     pub initial_value: ClassFieldInitialValue,
 }

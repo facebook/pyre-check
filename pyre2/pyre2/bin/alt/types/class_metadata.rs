@@ -161,7 +161,7 @@ impl ClassSynthesizedField {
             inner: Arc::new(ClassField(ClassFieldInner::Simple {
                 ty,
                 annotation: None,
-                initialization: ClassFieldInitialization::Class,
+                initialization: ClassFieldInitialization::Class(None),
                 readonly: false,
             })),
             overwrite,
