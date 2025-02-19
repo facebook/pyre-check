@@ -11915,12 +11915,12 @@
   "protocols_definition.py": [
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED Literal[1] <: SupportsClose",
-      "description": "EXPECTED Literal[1] <: SupportsClose",
+      "column": 11,
+      "concise_description": "EXPECTED list[int] <: Iterable[SupportsClose]",
+      "description": "EXPECTED list[int] <: Iterable[SupportsClose]",
       "line": 30,
       "name": "PyreError",
-      "stop_column": 13,
+      "stop_column": 14,
       "stop_line": 30
     },
     {
@@ -13761,12 +13761,12 @@
     },
     {
       "code": -2,
-      "column": 10,
-      "concise_description": "EXPECTED Literal[''] <: int",
-      "description": "EXPECTED Literal[''] <: int",
+      "column": 6,
+      "concise_description": "EXPECTED tuple[Literal[1], Literal['']] <: tuple[int, int]",
+      "description": "EXPECTED tuple[Literal[1], Literal['']] <: tuple[int, int]",
       "line": 15,
       "name": "PyreError",
-      "stop_column": 12,
+      "stop_column": 13,
       "stop_line": 15
     },
     {

@@ -343,7 +343,7 @@ testcase!(
     r#"
 x: list[int] = []
 x += [1]
-x += ["foo"]  # E: EXPECTED Literal['foo'] <: int
+x += ["foo"]  # E: EXPECTED list[str] <: list[int]
 "#,
 );
 
@@ -352,10 +352,10 @@ testcase!(
     r#"
 def foo(y: list[int]) -> None:
     y += [1]
-    y += ["foo"]  # E: EXPECTED Literal['foo'] <: int
+    y += ["foo"]  # E: EXPECTED list[str] <: list[int]
     z: list[int] = []
     z += [1]
-    z += ["foo"]  # E: EXPECTED Literal['foo'] <: int
+    z += ["foo"]  # E: EXPECTED list[str] <: list[int]
 "#,
 );
 
@@ -370,7 +370,7 @@ class C:
 
 c: C = C()
 c.foo += [1]
-c.foo += ["foo"]  # E: EXPECTED Literal['foo'] <: int
+c.foo += ["foo"]  # E: EXPECTED list[str] <: list[int]
 "#,
 );
 
@@ -383,7 +383,7 @@ class C:
     def __init__(self) -> None:
         self.foo = []
         self.foo += [1]
-        self.foo += ["foo"]  # E: EXPECTED Literal['foo'] <: int
+        self.foo += ["foo"]  # E: EXPECTED list[str] <: list[int]
 "#,
 );
 
@@ -393,7 +393,7 @@ testcase!(
 x: list[list[int]] = []
 x += [[1]]
 x[0] += [1]
-x += [1]  # E: EXPECTED Literal[1] <: list[int]
+x += [1]  # E: EXPECTED list[int] <: list[list[int]]
 "#,
 );
 

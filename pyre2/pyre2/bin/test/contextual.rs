@@ -119,10 +119,10 @@ testcase!(
     r#"
 from typing import Iterable, MutableSet, Literal
 x1: set[int] = {1}
-x2: set[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
-x3: set[Literal[1]] = {2}  # E: EXPECTED Literal[2] <: Literal[1]
+x2: set[int] = {'oops'}  # E: EXPECTED set[str] <: set[int]
+x3: set[Literal[1]] = {2}  # E: EXPECTED set[int] <: set[Literal[1]]
 x4: MutableSet[int] = {1}
-x5: MutableSet[int] = {'oops'}  # E: EXPECTED Literal['oops'] <: int
+x5: MutableSet[int] = {'oops'}  # E: EXPECTED set[str] <: MutableSet[int]
 x6: Iterable[int] = {1}
 x7: object = {1}
 x8: list[int] = {1}  # E: EXPECTED set[int] <: list[int]
@@ -134,11 +134,11 @@ testcase!(
     r#"
 from typing import Iterable, MutableMapping, Literal
 x1: dict[str, int] = {"a": 1}
-x2: dict[str, int] = {"a": "oops"}  # E: EXPECTED Literal['oops'] <: int
-x3: dict[str, Literal[1]] = {"a": 2} # E: EXPECTED Literal[2] <: Literal[1]
+x2: dict[str, int] = {"a": "oops"}  # E: EXPECTED dict[str, str] <: dict[str, int]
+x3: dict[str, Literal[1]] = {"a": 2} # E: EXPECTED dict[str, int] <: dict[str, Literal[1]]
 x4: MutableMapping[str, int] = {"a": 1}
 x5: Iterable[str] = {"a": 1}
-x6: Iterable[int] = {"oops": 1}  # E: EXPECTED Literal['oops'] <: int
+x6: Iterable[int] = {"oops": 1}  # E: EXPECTED dict[str, int] <: Iterable[int]
 x7: Iterable[Literal[4]] = {4: "a"}
 x8: object = {"a": 1}
 x9: list[str] = {"a": 1}  # E: EXPECTED dict[str, int] <: list[str]
@@ -189,9 +189,9 @@ x2b: Iterable[list[A]] = ([B()] for _ in [0])
 
 # In theory, we should allow this, since the generator expression accepts _any_ send type,
 # but both Mypy and Pyright assume that the send type is `None`.
-x3: Generator[int, int, None] = (1 for _ in [1]) # E: EXPECTED None <: int
+x3: Generator[int, int, None] = (1 for _ in [1]) # E: Generator[Literal[1], None, None] <: Generator[int, int, None]
 
-x4: Generator[int, None, int] = (1 for _ in [1]) # E: EXPECTED int <: None
+x4: Generator[int, None, int] = (1 for _ in [1]) # E: Generator[Literal[1], None, None] <: Generator[int, None, int]
 "#,
 );
 

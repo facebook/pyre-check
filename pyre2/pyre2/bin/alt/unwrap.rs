@@ -7,25 +7,8 @@
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::types::class::ClassType;
-use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::types::types::Var;
-
-pub struct UnwrappedDict {
-    pub key: Type,
-    pub value: Type,
-}
-
-impl UnwrappedDict {
-    pub fn to_class_type(self, stdlib: &Stdlib) -> ClassType {
-        stdlib.dict(self.key, self.value)
-    }
-
-    pub fn to_type(self, stdlib: &Stdlib) -> Type {
-        self.to_class_type(stdlib).to_type()
-    }
-}
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn fresh_var(&self) -> Var {
@@ -40,16 +23,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         } else {
             Some(res)
-        }
-    }
-
-    fn expand_var_pair_opt(&self, var1: Var, var2: Var) -> Option<(Type, Type)> {
-        let res1 = self.expand_var(var1);
-        let res2 = self.expand_var(var2);
-        if res1 == var1.to_type() && res2 == var2.to_type() {
-            None
-        } else {
-            Some((res1, res2))
         }
     }
 
@@ -125,15 +98,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn decompose_dict(&self, ty: &Type) -> Option<UnwrappedDict> {
+    pub fn decompose_dict(&self, ty: &Type) -> (Option<Type>, Option<Type>) {
         let key = self.fresh_var();
         let value = self.fresh_var();
         let dict_type = self.stdlib.dict(key.to_type(), value.to_type()).to_type();
         if self.is_subset_eq(&dict_type, ty) {
-            let (key, value) = self.expand_var_pair_opt(key, value)?;
-            Some(UnwrappedDict { key, value })
+            let key = self.expand_var_opt(key);
+            let value = self.expand_var_opt(value);
+            (key, value)
         } else {
-            None
+            (None, None)
         }
     }
 
@@ -152,6 +126,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let list_type = self.stdlib.list(elem.to_type()).to_type();
         if self.is_subset_eq(&list_type, ty) {
             self.expand_var_opt(elem)
+        } else {
+            None
+        }
+    }
+
+    pub fn decompose_generator_yield(&self, ty: &Type) -> Option<Type> {
+        let yield_ty = self.fresh_var();
+        let generator_ty = self
+            .stdlib
+            .generator(
+                yield_ty.to_type(),
+                self.fresh_var().to_type(),
+                self.fresh_var().to_type(),
+            )
+            .to_type();
+        if self.is_subset_eq(&generator_ty, ty) {
+            self.expand_var_opt(yield_ty)
         } else {
             None
         }

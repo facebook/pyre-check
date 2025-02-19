@@ -141,7 +141,7 @@ from typing import Iterable, Literal
 x1: Iterable[Literal['ok']] = ("ok",)
 x2: Iterable = ("ok",)
 x3: object = ("ok",)
-x4: Iterable[int] = ("err",)  # E: EXPECTED Literal['err'] <: int
+x4: Iterable[int] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: Iterable[int]
 x5: list[int] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: list[int]
     "#,
 );
