@@ -20,6 +20,7 @@ use vec1::Vec1;
 
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
+use crate::binding::binding::ClassFieldInitialValue;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClassMetadata;
@@ -144,11 +145,15 @@ pub struct FlowInfo {
 }
 
 impl FlowInfo {
-    pub fn is_initialized(&self) -> bool {
+    pub fn as_initial_value(&self) -> ClassFieldInitialValue {
         match self.style.as_ref() {
-            Some(FlowStyle::Annotated { is_initialized, .. }) => *is_initialized,
-            Some(FlowStyle::AnnotatedClassField { initial_value }) => initial_value.is_some(),
-            _ => true,
+            Some(FlowStyle::AnnotatedClassField {
+                initial_value: Some(e),
+            }) => ClassFieldInitialValue::Class(Some(e.clone())),
+            Some(FlowStyle::AnnotatedClassField {
+                initial_value: None,
+            }) => ClassFieldInitialValue::Instance,
+            _ => ClassFieldInitialValue::Class(None),
         }
     }
 }

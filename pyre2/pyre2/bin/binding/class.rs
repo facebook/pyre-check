@@ -24,6 +24,7 @@ use crate::binding::binding::BindingClassFieldInitialization;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::ClassBinding;
+use crate::binding::binding::ClassFieldInitialValue;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyClassField;
@@ -93,7 +94,7 @@ impl<'a> BindingsBuilder<'a> {
             }
         });
 
-        self.table.insert(
+        let metadata_key = self.table.insert(
             KeyClassMetadata(class_name.clone()),
             BindingClassMetadata {
                 def: definition_key,
@@ -121,7 +122,8 @@ impl<'a> BindingsBuilder<'a> {
             // A name with flow info but not static info is a reference to something that's not a class field.
             if let Some(stat_info) = last_scope.stat.0.get(name) {
                 let binding_initialization = BindingClassFieldInitialization {
-                    is_initialized: info.is_initialized(),
+                    class_metadata: metadata_key,
+                    initial_value: info.as_initial_value(),
                 };
                 let initialization = self.table.insert(
                     KeyClassFieldInitialization(class_name.clone(), name.clone()),
@@ -161,7 +163,8 @@ impl<'a> BindingsBuilder<'a> {
                             let initialization = self.table.insert(
                                 KeyClassFieldInitialization(class_name.clone(), name.clone()),
                                 BindingClassFieldInitialization {
-                                    is_initialized: false,
+                                    class_metadata: metadata_key,
+                                    initial_value: ClassFieldInitialValue::Instance,
                                 },
                             );
                             self.table.insert(
@@ -215,7 +218,7 @@ impl<'a> BindingsBuilder<'a> {
         let short_class_name = ShortIdentifier::new(&class_name);
         let class_key = KeyClass(short_class_name.clone());
         let definition_key = self.table.classes.0.insert(class_key.clone());
-        self.table.insert(
+        let metadata_key = self.table.insert(
             KeyClassMetadata(short_class_name.clone()),
             BindingClassMetadata {
                 def: definition_key,
@@ -255,7 +258,8 @@ impl<'a> BindingsBuilder<'a> {
                                 member_name.clone(),
                             ),
                             BindingClassFieldInitialization {
-                                is_initialized: true,
+                                class_metadata: metadata_key,
+                                initial_value: ClassFieldInitialValue::Class(None),
                             },
                         );
                         self.table.insert(

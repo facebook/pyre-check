@@ -45,6 +45,7 @@ use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
+use crate::binding::binding::ClassFieldInitialValue;
 use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::EmptyAnswer;
 use crate::binding::binding::FunctionBinding;
@@ -670,10 +671,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         initialization: &BindingClassFieldInitialization,
     ) -> Arc<ClassFieldInitialization> {
-        Arc::new(if initialization.is_initialized {
-            ClassFieldInitialization::Class
-        } else {
-            ClassFieldInitialization::Instance
+        Arc::new(match initialization.initial_value {
+            ClassFieldInitialValue::Class(_) => ClassFieldInitialization::Class,
+            ClassFieldInitialValue::Instance => ClassFieldInitialization::Instance,
         })
     }
 

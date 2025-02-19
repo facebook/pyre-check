@@ -75,7 +75,7 @@ mod check_size {
     assert_eq_size!(BindingAnnotation, [usize; 9]);
     assert_eq_size!(BindingClass, [usize; 21]);
     assert_eq_size!(BindingClassMetadata, [usize; 7]);
-    assert_eq_size!(BindingClassFieldInitialization, [u8; 1]); // Equivalent to 0.125 usize
+    assert_eq_size!(BindingClassFieldInitialization, [usize; 9]);
     assert_eq_size!(BindingClassField, [usize; 15]);
     assert_eq_size!(BindingClassSynthesizedFields, [u8; 4]); // Equivalent to 0.5 usize
     assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
@@ -960,15 +960,32 @@ impl DisplayWith<Bindings> for BindingClassField {
     }
 }
 
+/// The value that the class field is initialized to.
+#[derive(Clone, Debug)]
+pub enum ClassFieldInitialValue {
+    /// The field has an initial value. Stores the expression that the field is assigned to.
+    /// None means that we have something that isn't an assignment to an expression, like a function.
+    #[expect(dead_code)]
+    Class(Option<Expr>),
+    /// The field does not have an initial value.
+    Instance,
+}
+
 /// Binding for information about how a class field is initialized.
 #[derive(Clone, Debug)]
 pub struct BindingClassFieldInitialization {
-    pub is_initialized: bool,
+    #[expect(dead_code)]
+    pub class_metadata: Idx<KeyClassMetadata>,
+    pub initial_value: ClassFieldInitialValue,
 }
 
 impl DisplayWith<Bindings> for BindingClassFieldInitialization {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, _ctx: &Bindings) -> fmt::Result {
-        write!(f, "class field initialization {}", self.is_initialized)
+        let description = match self.initial_value {
+            ClassFieldInitialValue::Class(_) => "class",
+            ClassFieldInitialValue::Instance => "instance",
+        };
+        write!(f, "class field initialized in {}", description)
     }
 }
 
