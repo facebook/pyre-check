@@ -213,11 +213,11 @@
     "Line 153: Unexpected errors ['Class member `z` overrides parent class `ProtoB` in an inconsistent manner']"
   ],
   "classes_override.py": [
-    "Line 53: Expected 1 errors",
     "Line 79: Expected 1 errors",
     "Line 84: Expected 1 errors",
     "Line 89: Expected 1 errors",
-    "Lines 56, 65: Expected error (tag 'method4')"
+    "Lines 56, 65: Expected error (tag 'method4')",
+    "Line 101: Unexpected errors ['Class member `method1` is marked as an override, but no parent class has a matching attribute']"
   ],
   "constructors_call_init.py": [
     "Line 42: Expected 1 errors",

@@ -9,7 +9,7 @@ use crate::testcase;
 use crate::testcase_with_bug;
 
 testcase_with_bug!(
-    "todo: parent can derive from Any. This program is well-typed. Add decorator to typeshed",
+    "todo: parent can derive from Any",
     test_override_any,
     r#"
 from typing import override, Any
@@ -20,7 +20,7 @@ class ParentB(Any):
 
 class ChildB(ParentB):
     @override
-    def method1(self) -> None:  # OK
+    def method1(self) -> None:  # E: Class member `method1` is marked as an override, but no parent class has a matching attribute
         pass        
  "#,
 );
@@ -75,8 +75,7 @@ class A:
  "#,
 );
 
-testcase_with_bug!(
-    "Todo: should raise an error because method does not exist in base class",
+testcase!(
     test_no_base_override,
     r#"
 from typing import override
@@ -88,7 +87,7 @@ class A:
 
 class B(A):
     @override
-    def method2(self) -> int:  
+    def method2(self) -> int: # E: Class member `method2` is marked as an override, but no parent class has a matching attribute
         return 1
  "#,
 );

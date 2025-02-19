@@ -152,6 +152,9 @@ impl<'a> TypeDisplayContext<'a> {
             Decoration::StaticMethod(box ty) => {
                 write!(f, "staticmethod[{}]", self.display(ty))
             }
+            Decoration::Override(box ty) => {
+                write!(f, "override[{}]", self.display(ty))
+            }
             Decoration::ClassMethod(box ty) => {
                 write!(f, "classmethod[{}]", self.display(ty))
             }

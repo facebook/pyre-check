@@ -143,6 +143,7 @@ pub enum CallableKind {
     DataclassField,
     ClassMethod,
     Overload,
+    Override,
     Def,
     Anon,
 }
@@ -372,6 +373,8 @@ impl CallableKind {
             ("dataclasses", "dataclass") => Self::Dataclass(Box::new(BoolKeywords::new())),
             ("dataclasses", "field") => Self::DataclassField,
             ("typing", "overload") => Self::Overload,
+            ("typing", "override") => Self::Override,
+
             _ => Self::Def,
         }
     }

@@ -296,6 +296,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(CalleeKind::Callable(CallableKind::Overload)) => {
                 *overload = true;
             }
+            Some(CalleeKind::Callable(CallableKind::Override)) => {
+                // if an override decorator exists, then update the callable kind
+                return Type::Decoration(Decoration::Override(Box::new(decoratee)));
+            }
             _ => {}
         }
         match &*ty_decorator {

@@ -501,6 +501,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> ClassField {
         let metadata = self.get_metadata_for_class(class);
+
+        let (is_override, value_ty) = match value_ty {
+            Type::Decoration(Decoration::Override(ty)) => (true, ty.as_ref()),
+            _ => (false, value_ty),
+        };
+
         if let Some(enum_) = self.get_enum_from_class(class)
             && self.is_valid_enum_member(name, value_ty, &initialization)
         {
@@ -551,6 +557,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let metadata = self.get_metadata_for_class(class);
             let parents = metadata.bases_with_metadata();
 
+            let mut parent_attr_found = false;
+
             for (parent, parent_metadata) in parents {
                 // todo zeina: skip dataclasses. Look into them next.
                 if metadata.dataclass_metadata().is_some()
@@ -561,6 +569,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
 
                 if let Some(want) = self.type_order().try_lookup_attr(parent.self_type(), name) {
+                    parent_attr_found = true;
                     let attr_check = self.is_attr_subset(&got, &want, &mut |got, want| {
                         self.solver().is_subset_eq(got, want, self.type_order())
                     });
@@ -577,6 +586,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         );
                     }
                 }
+            }
+            if is_override && !parent_attr_found {
+                self.error(
+                    errors,
+                    range,
+                    format!(
+                        "Class member `{}` is marked as an override, but no parent class has a matching attribute",
+                        name,
+        ),
+    );
             }
         };
 

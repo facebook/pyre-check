@@ -242,6 +242,7 @@ pub enum Decoration {
     // that takes a value and makes it the property getter, returning the result)
     PropertySetterDecorator(Box<Type>),
     EnumMember(Box<Type>),
+    Override(Box<Type>),
 }
 
 impl Decoration {
@@ -255,6 +256,7 @@ impl Decoration {
             }
             Self::PropertySetterDecorator(ty) => f(ty),
             Self::EnumMember(ty) => f(ty),
+            Self::Override(ty) => f(ty),
         }
     }
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
@@ -267,6 +269,7 @@ impl Decoration {
             }
             Self::PropertySetterDecorator(ty) => f(ty),
             Self::EnumMember(ty) => f(ty),
+            Self::Override(ty) => f(ty),
         }
     }
 }
