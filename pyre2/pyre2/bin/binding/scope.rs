@@ -117,10 +117,12 @@ pub struct Flow {
     pub no_next: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum FlowStyle {
     /// Am I initialized, or am I the result of `x: int`?
     Annotated { is_initialized: bool },
+    /// Am I a type-annotated assignment in a class body?
+    AnnotatedClassField { initial_value: Option<Expr> },
     /// Am I the result of an import (which needs merging).
     /// E.g. `import foo.bar` and `import foo.baz` need merging.
     /// The `ModuleName` will be the most recent entry.
@@ -145,6 +147,7 @@ impl FlowInfo {
     pub fn is_initialized(&self) -> bool {
         match self.style.as_ref() {
             Some(FlowStyle::Annotated { is_initialized, .. }) => *is_initialized,
+            Some(FlowStyle::AnnotatedClassField { initial_value }) => initial_value.is_some(),
             _ => true,
         }
     }

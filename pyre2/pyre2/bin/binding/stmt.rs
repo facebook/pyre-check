@@ -27,6 +27,7 @@ use crate::binding::bindings::BindingsBuilder;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::scope::FlowStyle;
 use crate::binding::scope::LoopExit;
+use crate::binding::scope::ScopeKind;
 use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::module::module_name::ModuleName;
@@ -151,20 +152,29 @@ impl<'a> BindingsBuilder<'a> {
                     };
                     let ann_key = self.table.insert(ann_key, ann_val);
 
-                    let (value, is_initialized) = if let Some(value) = x.value {
+                    let flow_style =
+                        if matches!(self.scopes.current().kind, ScopeKind::ClassBody(_)) {
+                            let initial_value = x.value.as_deref().cloned();
+                            FlowStyle::AnnotatedClassField { initial_value }
+                        } else {
+                            FlowStyle::Annotated {
+                                is_initialized: x.value.is_some(),
+                            }
+                        };
+                    let binding_value = if let Some(value) = x.value {
                         // Treat a name as initialized, but skip actually checking the value, if we are assigning `...` in a stub.
                         if self.module_info.path().is_interface()
                             && matches!(&*value, Expr::EllipsisLiteral(_))
                         {
-                            (None, true)
+                            None
                         } else {
-                            (Some(value), true)
+                            Some(value)
                         }
                     } else {
-                        (None, false)
+                        None
                     };
 
-                    let binding = if let Some(mut value) = value {
+                    let binding = if let Some(mut value) = binding_value {
                         // Handle forward references in explicit type aliases.
                         if self.as_special_export(&x.annotation) == Some(SpecialExport::TypeAlias) {
                             self.ensure_type(&mut value, &mut None);
@@ -178,11 +188,8 @@ impl<'a> BindingsBuilder<'a> {
                             Box::new(Binding::AnyType(AnyStyle::Implicit)),
                         )
                     };
-                    if let Some(ann) = self.bind_definition(
-                        &name,
-                        binding,
-                        Some(FlowStyle::Annotated { is_initialized }),
-                    ) && ann != ann_key
+                    if let Some(ann) = self.bind_definition(&name, binding, Some(flow_style))
+                        && ann != ann_key
                     {
                         self.table.insert(
                             KeyExpect(name.range),

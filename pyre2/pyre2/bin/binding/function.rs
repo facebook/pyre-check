@@ -83,7 +83,7 @@ impl<'a> BindingsBuilder<'a> {
                 &name.id,
                 bind_key,
                 Some(FlowStyle::Annotated {
-                    is_initialized: true,
+                    is_initialized: x.default().is_some(),
                 }),
             );
         }

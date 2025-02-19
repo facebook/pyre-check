@@ -1027,3 +1027,11 @@ def f(x: str): ...
 return f(0) # E: Invalid `return` outside of a function # E: EXPECTED Literal[0] <: str
 "#,
 );
+
+testcase!(
+    test_class_field_init_error,
+    r#"
+class C:
+    x: int = oops  # E: Could not find name `oops`
+    "#,
+);
