@@ -150,7 +150,7 @@ impl Solutions {
         &self.0
     }
 
-    pub fn get<K: Keyed>(&self, key: &K) -> Option<&Arc<<K as Keyed>::Answer>>
+    pub fn get<K: Keyed<EXPORTED = true>>(&self, key: &K) -> Option<&Arc<<K as Keyed>::Answer>>
     where
         SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
