@@ -377,7 +377,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             let ty = self
                                 .get(&Key::Definition(ShortIdentifier::new(p.name())))
                                 .arc_clone();
-                            Param::Pos(p.name().clone().id, ty, Required::Required)
+                            Param::Pos(p.name().id.clone(), ty, Required::Required)
                         })
                         .collect()
                 } else {
