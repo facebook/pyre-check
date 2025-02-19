@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -16,6 +17,10 @@ use std::time::Instant;
 use anyhow::anyhow;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
+use ruff_source_file::LineIndex;
+use ruff_source_file::OneIndexed;
+use ruff_text_size::TextRange;
+use ruff_text_size::TextSize;
 use starlark_map::small_map::SmallMap;
 
 use crate::binding::binding::KeyExport;
@@ -158,6 +163,113 @@ impl TestEnv {
             )
         })
     }
+}
+
+pub fn code_frame_of_source_at_range(source: &str, range: TextRange) -> String {
+    let index = LineIndex::from_source_text(source);
+    let start_loc = index.source_location(range.start(), source);
+    let end_loc = index.source_location(range.end(), source);
+    if start_loc.row == end_loc.row {
+        let full_line = source.lines().nth(start_loc.row.to_zero_indexed()).unwrap();
+        format!(
+            "{} | {}\n{}   {}{}",
+            start_loc.row,
+            full_line,
+            " ".repeat(start_loc.row.to_string().len()),
+            " ".repeat(start_loc.column.to_zero_indexed()),
+            "^".repeat(end_loc.column.to_zero_indexed() - start_loc.column.to_zero_indexed())
+        )
+    } else {
+        panic!("Computing multi-line code frame is unsupported for now.")
+    }
+}
+
+pub fn code_frame_of_source_at_position(source: &str, position: TextSize) -> String {
+    code_frame_of_source_at_range(
+        source,
+        TextRange::new(position, position.checked_add(TextSize::new(1)).unwrap()),
+    )
+}
+
+/// Given `source`, this function will find all the positions pointed by the special `# ^` comments.
+///
+/// e.g. for
+/// ```
+/// Line 1: x = 42
+/// Line 2: #    ^
+/// ```
+///
+/// The position will be the position of `2` in Line 1.
+pub fn extract_cursors_for_test(source: &str) -> Vec<TextSize> {
+    let mut ranges = Vec::new();
+    let mut prev_line = "";
+    let index = LineIndex::from_source_text(source);
+    for (line_index, line_str) in source.lines().enumerate() {
+        for (row_index, _) in line_str.match_indices('^') {
+            if prev_line.len() <= row_index {
+                panic!("Invald cursor at {}:{}", line_index, row_index);
+            }
+            let position = index.offset(
+                OneIndexed::from_zero_indexed(line_index - 1),
+                OneIndexed::from_zero_indexed(row_index),
+                source,
+            );
+            ranges.push(position);
+        }
+        prev_line = line_str;
+    }
+    ranges
+}
+
+pub fn mk_multi_file_state(
+    files: &[(&'static str, &str)],
+    assert_zero_errors: bool,
+) -> (HashMap<&'static str, Handle>, State) {
+    let mut test_env = TestEnv::new();
+    for (name, code) in files {
+        test_env.add(name, code);
+    }
+    let (state, handle) = test_env.to_state();
+    if assert_zero_errors {
+        assert_eq!(state.count_errors(), 0);
+    }
+    let mut handles = HashMap::new();
+    for (name, _) in files {
+        handles.insert(*name, handle(name));
+    }
+    (handles, state)
+}
+
+pub fn mk_multi_file_state_assert_no_errors(
+    files: &[(&'static str, &str)],
+) -> (HashMap<&'static str, Handle>, State) {
+    mk_multi_file_state(files, true)
+}
+
+/// Given a list of `files`, extract the location pointed by the special `#   ^` comments
+/// (See `extract_cursors_for_test`), and perform the operation defined by `get_report`.
+/// A human-readable report of the results of all specified operations will be returned.
+pub fn get_batched_lsp_operations_report(
+    files: &[(&'static str, &str)],
+    get_report: impl Fn(&State, &Handle, TextSize) -> String,
+) -> String {
+    let (handles, state) = mk_multi_file_state_assert_no_errors(files);
+    let mut report = String::new();
+    for (name, code) in files {
+        report.push_str("# ");
+        report.push_str(name);
+        report.push_str(".py\n");
+        let handle = handles.get(name).unwrap();
+        for position in extract_cursors_for_test(code) {
+            report.push_str(&code_frame_of_source_at_position(code, position));
+            report.push('\n');
+            report.push_str(&get_report(&state, handle, position));
+            report.push_str("\n\n");
+        }
+        report.push('\n');
+    }
+
+    report
 }
 
 impl Loader for TestEnv {
