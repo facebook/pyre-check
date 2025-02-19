@@ -89,7 +89,7 @@ def test(a: tuple[int, bool, str], b: tuple[Any, ...], c: tuple[int, *tuple[bool
   x11: tuple[int, *tuple[bool, str]] = a
   x12: tuple[*tuple[int, bool, str]] = a
   x13: tuple[*tuple[int, ...], *tuple[bool], *tuple[str]] = a
-  x14: tuple[*tuple[int, ...], *tuple[bool, ...], *tuple[str]] = a  # E: Only one unbounded tuple is allowed to be unpacked
+  x14: tuple[*tuple[int, ...], *tuple[bool, ...], *tuple[str]] = a  # E: Only one unbounded type is allowed to be unpacked
 "#,
 );
 

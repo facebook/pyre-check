@@ -691,16 +691,6 @@
   "aliases_type_statement.py": [
     {
       "code": -2,
-      "column": 60,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 9,
-      "name": "PyreError",
-      "stop_column": 62,
-      "stop_line": 9
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Object of class `TypeAliasType` has no attribute `bit_count`",
       "description": "Object of class `TypeAliasType` has no attribute `bit_count`",
@@ -920,16 +910,6 @@
       "name": "PyreError",
       "stop_column": 83,
       "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 73,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "line": 22,
-      "name": "PyreError",
-      "stop_column": 75,
-      "stop_line": 22
     },
     {
       "code": -2,
@@ -7840,19 +7820,9 @@
   "generics_typevartuple_args.py": [
     {
       "code": -2,
-      "column": 41,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 16,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 16
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, tuple[int, str]) failed",
-      "description": "assert_type(Any, tuple[int, str]) failed",
+      "concise_description": "assert_type(int, tuple[int, str]) failed",
+      "description": "assert_type(int, tuple[int, str]) failed",
       "line": 20,
       "name": "PyreError",
       "stop_column": 52,
@@ -7870,32 +7840,22 @@
     },
     {
       "code": -2,
-      "column": 40,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 42,
-      "stop_line": 27
-    },
-    {
-      "code": -2,
-      "column": 84,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 86,
-      "stop_line": 27
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Any, tuple[()]) failed",
       "description": "assert_type(Any, tuple[()]) failed",
       "line": 31,
       "name": "PyreError",
       "stop_column": 43,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
+      "column": 25,
+      "concise_description": "EXPECTED Env <: tuple[*@_, Env]",
+      "description": "EXPECTED Env <: tuple[*@_, Env]",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 30,
       "stop_line": 31
     },
     {
@@ -7907,6 +7867,76 @@
       "name": "PyreError",
       "stop_column": 56,
       "stop_line": 32
+    },
+    {
+      "code": -2,
+      "column": 25,
+      "concise_description": "EXPECTED Literal[0] <: tuple[*@_, Env]",
+      "description": "EXPECTED Literal[0] <: tuple[*@_, Env]",
+      "line": 32,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 32
+    },
+    {
+      "code": -2,
+      "column": 28,
+      "concise_description": "EXPECTED Literal[''] <: tuple[*@_, Env]",
+      "description": "EXPECTED Literal[''] <: tuple[*@_, Env]",
+      "line": 32,
+      "name": "PyreError",
+      "stop_column": 30,
+      "stop_line": 32
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "EXPECTED Env <: tuple[*@_, Env]",
+      "description": "EXPECTED Env <: tuple[*@_, Env]",
+      "line": 32,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 32
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED Literal[0] <: tuple[*@_, Env]",
+      "description": "EXPECTED Literal[0] <: tuple[*@_, Env]",
+      "line": 33,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 33
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED Literal[''] <: tuple[*@_, Env]",
+      "description": "EXPECTED Literal[''] <: tuple[*@_, Env]",
+      "line": 33,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 33
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED Literal[0] <: tuple[*@_, Env]",
+      "description": "EXPECTED Literal[0] <: tuple[*@_, Env]",
+      "line": 34,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 34
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED Literal[''] <: tuple[*@_, Env]",
+      "description": "EXPECTED Literal[''] <: tuple[*@_, Env]",
+      "line": 34,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 34
     },
     {
       "code": -2,
@@ -7991,8 +8021,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED Literal[1] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[1] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[1] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[1] <: tuple[int, *tuple[str, ...], str]",
       "line": 55,
       "name": "PyreError",
       "stop_column": 8,
@@ -8001,8 +8031,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
       "line": 55,
       "name": "PyreError",
       "stop_column": 12,
@@ -8011,8 +8041,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED Literal[1] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[1] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[1] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[1] <: tuple[int, *tuple[str, ...], str]",
       "line": 56,
       "name": "PyreError",
       "stop_column": 8,
@@ -8021,8 +8051,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
       "line": 56,
       "name": "PyreError",
       "stop_column": 12,
@@ -8031,8 +8061,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
       "line": 56,
       "name": "PyreError",
       "stop_column": 16,
@@ -8041,8 +8071,8 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
       "line": 56,
       "name": "PyreError",
       "stop_column": 20,
@@ -8051,8 +8081,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
       "line": 56,
       "name": "PyreError",
       "stop_column": 24,
@@ -8061,8 +8091,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED Literal[1] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[1] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[1] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[1] <: tuple[int, *tuple[str, ...], str]",
       "line": 57,
       "name": "PyreError",
       "stop_column": 8,
@@ -8071,8 +8101,8 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "EXPECTED Literal[1] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[1] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[1] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[1] <: tuple[int, *tuple[str, ...], str]",
       "line": 57,
       "name": "PyreError",
       "stop_column": 11,
@@ -8081,8 +8111,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
       "line": 57,
       "name": "PyreError",
       "stop_column": 15,
@@ -8091,8 +8121,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED Literal[1] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[1] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[1] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[1] <: tuple[int, *tuple[str, ...], str]",
       "line": 58,
       "name": "PyreError",
       "stop_column": 8,
@@ -8101,8 +8131,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
-      "description": "EXPECTED Literal[''] <: tuple[int, *str, str]",
+      "concise_description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
+      "description": "EXPECTED Literal[''] <: tuple[int, *tuple[str, ...], str]",
       "line": 59,
       "name": "PyreError",
       "stop_column": 9,
@@ -8140,305 +8170,295 @@
     },
     {
       "code": -2,
-      "column": 25,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 70,
+      "column": 13,
+      "concise_description": "EXPECTED tuple[Literal[1]] <: tuple[Literal[0]]",
+      "description": "EXPECTED tuple[Literal[1]] <: tuple[Literal[0]]",
+      "line": 74,
       "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 70
+      "stop_column": 17,
+      "stop_line": 74
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED tuple[Literal[1], Literal[2]] <: tuple[Literal[0]]",
+      "description": "EXPECTED tuple[Literal[1], Literal[2]] <: tuple[Literal[0]]",
+      "line": 75,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 75
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED tuple[Literal['1']] <: tuple[Literal[0]]",
+      "description": "EXPECTED tuple[Literal['1']] <: tuple[Literal[0]]",
+      "line": 76,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 76
     }
   ],
   "generics_typevartuple_basic.py": [
     {
       "code": -2,
-      "column": 33,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 16,
+      "column": 5,
+      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
+      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "line": 36,
       "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 16
+      "stop_column": 25,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 19,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
+      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Expected 1 type argument for class `Array`, got 4.",
+      "description": "Expected 1 type argument for class `Array`, got 4.",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 38,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 30,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
+      "description": "Expected 1 type argument for class `Array`, got 2.",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 25,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 19,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
+      "description": "Expected 1 type argument for class `Array`, got 3.",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Expected 1 type argument for class `Array`, got 4.",
+      "description": "Expected 1 type argument for class `Array`, got 4.",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 38,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 30,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 44
     },
     {
       "code": -2,
       "column": 38,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 35,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 40,
-      "stop_line": 27
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 26,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 37,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 4.",
-      "description": "Expected 1 type argument for class `Array`, got 4.",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 2.",
-      "description": "Expected 1 type argument for class `Array`, got 2.",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 17,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 3.",
-      "description": "Expected 1 type argument for class `Array`, got 3.",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
-      "column": 26,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 43,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 43
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Expected 1 type argument for class `Array`, got 4.",
-      "description": "Expected 1 type argument for class `Array`, got 4.",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 24,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "untype, got NewType",
-      "description": "untype, got NewType",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
+      "concise_description": "EXPECTED tuple[?_TypeVarTuple] <: ?_TypeVarTuple",
+      "description": "EXPECTED tuple[?_TypeVarTuple] <: ?_TypeVarTuple",
       "line": 54,
       "name": "PyreError",
-      "stop_column": 34,
+      "stop_column": 43,
       "stop_line": 54
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED ?_TypeVarTuple <: tuple[?_TypeVarTuple]",
+      "description": "EXPECTED ?_TypeVarTuple <: tuple[?_TypeVarTuple]",
+      "line": 57,
+      "name": "PyreError",
+      "stop_column": 27,
+      "stop_line": 57
     },
     {
       "code": -2,
@@ -8472,43 +8492,53 @@
     },
     {
       "code": -2,
-      "column": 24,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 75
-    },
-    {
-      "code": -2,
-      "column": 42,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 44,
-      "stop_line": 75
-    },
-    {
-      "code": -2,
-      "column": 57,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 59,
-      "stop_line": 75
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, tuple[int]) failed",
-      "description": "assert_type(Any, tuple[int]) failed",
+      "concise_description": "assert_type(tuple[Literal[0]], tuple[int]) failed",
+      "description": "assert_type(tuple[Literal[0]], tuple[int]) failed",
       "line": 84,
       "name": "PyreError",
       "stop_column": 43,
       "stop_line": 84
+    },
+    {
+      "code": -2,
+      "column": 25,
+      "concise_description": "EXPECTED tuple[Literal[1]] <: tuple[Literal[0]]",
+      "description": "EXPECTED tuple[Literal[1]] <: tuple[Literal[0]]",
+      "line": 84,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 84
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED tuple[float] <: tuple[Literal[0]]",
+      "description": "EXPECTED tuple[float] <: tuple[Literal[0]]",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 85
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED tuple[Literal[1]] <: tuple[Literal[0]]",
+      "description": "EXPECTED tuple[Literal[1]] <: tuple[Literal[0]]",
+      "line": 87,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 87
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED tuple[Literal['0']] <: tuple[Literal[0]]",
+      "description": "EXPECTED tuple[Literal['0']] <: tuple[Literal[0]]",
+      "line": 89,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 89
     },
     {
       "code": -2,
@@ -8584,22 +8614,22 @@
   "generics_typevartuple_callable.py": [
     {
       "code": -2,
-      "column": 68,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 17,
-      "name": "PyreError",
-      "stop_column": 70,
-      "stop_line": 17
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "EXPECTED (arg1: int, arg2: str) -> None <: (int) -> None",
       "description": "EXPECTED (arg1: int, arg2: str) -> None <: (int) -> None",
       "line": 25,
       "name": "PyreError",
       "stop_column": 21,
+      "stop_line": 25
+    },
+    {
+      "code": -2,
+      "column": 28,
+      "concise_description": "EXPECTED tuple[Literal[0], Literal['']] <: int",
+      "description": "EXPECTED tuple[Literal[0], Literal['']] <: int",
+      "line": 25,
+      "name": "PyreError",
+      "stop_column": 35,
       "stop_line": 25
     },
     {
@@ -8614,29 +8644,19 @@
     },
     {
       "code": -2,
-      "column": 48,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 29,
+      "column": 28,
+      "concise_description": "EXPECTED tuple[Literal[''], Literal[0]] <: int",
+      "description": "EXPECTED tuple[Literal[''], Literal[0]] <: int",
+      "line": 26,
       "name": "PyreError",
-      "stop_column": 50,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 64,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 66,
-      "stop_line": 29
+      "stop_column": 35,
+      "stop_line": 26
     },
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, tuple[str, int, complex]) failed",
-      "description": "assert_type(Any, tuple[str, int, complex]) failed",
+      "concise_description": "assert_type(tuple[*tuple[str, int], complex], tuple[str, int, complex]) failed",
+      "description": "assert_type(tuple[*tuple[str, int], complex], tuple[str, int, complex]) failed",
       "line": 41,
       "name": "PyreError",
       "stop_column": 56,
@@ -8645,8 +8665,8 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (int, str, int) -> Error",
-      "description": "EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (int, str, int) -> Error",
+      "concise_description": "EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (int, tuple[str, int], complex) -> tuple[complex, *tuple[str, int]]",
+      "description": "EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (int, tuple[str, int], complex) -> tuple[complex, *tuple[str, int]]",
       "line": 41,
       "name": "PyreError",
       "stop_column": 28,
@@ -8655,8 +8675,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, tuple[str]) failed",
-      "description": "assert_type(Any, tuple[str]) failed",
+      "concise_description": "assert_type(tuple[*tuple[()], str], tuple[str]) failed",
+      "description": "assert_type(tuple[*tuple[()], str], tuple[str]) failed",
       "line": 42,
       "name": "PyreError",
       "stop_column": 42,
@@ -8665,8 +8685,8 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "EXPECTED (a: int, d: str) -> tuple[str] <: (int, str, @_) -> Error",
-      "description": "EXPECTED (a: int, d: str) -> tuple[str] <: (int, str, @_) -> Error",
+      "concise_description": "EXPECTED (a: int, d: str) -> tuple[str] <: (int, tuple[()], str) -> tuple[str, *tuple[()]]",
+      "description": "EXPECTED (a: int, d: str) -> tuple[str] <: (int, tuple[()], str) -> tuple[str, *tuple[()]]",
       "line": 42,
       "name": "PyreError",
       "stop_column": 28,
@@ -8674,32 +8694,52 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 53,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 55,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, tuple[float, str, complex]) failed",
-      "description": "assert_type(Any, tuple[float, str, complex]) failed",
+      "concise_description": "assert_type(tuple[Any, *Any], tuple[float, str, complex]) failed",
+      "description": "assert_type(tuple[Any, *Any], tuple[float, str, complex]) failed",
       "line": 49,
       "name": "PyreError",
       "stop_column": 63,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 19,
+      "concise_description": "EXPECTED Literal[1] <: tuple[int, *@_, @_]",
+      "description": "EXPECTED Literal[1] <: tuple[int, *@_, @_]",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "EXPECTED Literal[''] <: tuple[int, *@_, @_]",
+      "description": "EXPECTED Literal[''] <: tuple[int, *@_, @_]",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "EXPECTED complex <: tuple[int, *@_, @_]",
+      "description": "EXPECTED complex <: tuple[int, *@_, @_]",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 28,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 30,
+      "concise_description": "EXPECTED float <: tuple[int, *@_, @_]",
+      "description": "EXPECTED float <: tuple[int, *@_, @_]",
+      "line": 49,
+      "name": "PyreError",
+      "stop_column": 33,
       "stop_line": 49
     }
   ],
@@ -8926,29 +8966,9 @@
     },
     {
       "code": -2,
-      "column": 34,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
-      "column": 52,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 54,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, tuple[int, bool, str]) failed",
-      "description": "assert_type(Any, tuple[int, bool, str]) failed",
+      "concise_description": "assert_type(tuple[int, *tuple[Literal['a', True]]], tuple[int, bool, str]) failed",
+      "description": "assert_type(tuple[int, *tuple[Literal['a', True]]], tuple[int, bool, str]) failed",
       "line": 52,
       "name": "PyreError",
       "stop_column": 38,
@@ -8956,23 +8976,33 @@
     },
     {
       "code": -2,
-      "column": 47,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 55,
+      "column": 12,
+      "concise_description": "EXPECTED tuple[Unpack[Error], Error] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
+      "description": "EXPECTED tuple[Unpack[Error], Error] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
+      "line": 56,
       "name": "PyreError",
-      "stop_column": 49,
-      "stop_line": 55
+      "stop_column": 30,
+      "stop_line": 56
     },
     {
       "code": -2,
-      "column": 62,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 55,
+      "column": 14,
+      "concise_description": "Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]",
+      "description": "Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]",
+      "line": 56,
       "name": "PyreError",
-      "stop_column": 64,
-      "stop_line": 55
+      "stop_column": 21,
+      "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 23,
+      "concise_description": "Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]",
+      "description": "Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]",
+      "line": 56,
+      "name": "PyreError",
+      "stop_column": 29,
+      "stop_line": 56
     }
   ],
   "generics_typevartuple_overloads.py": [
@@ -9170,13 +9200,13 @@
     },
     {
       "code": -2,
-      "column": 24,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "line": 41,
+      "column": 14,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTuple, type[tuple[int, *TypeVarTuple[Ts]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTuple, type[tuple[int, *TypeVarTuple[Ts]]]]",
+      "line": 45,
       "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 41
+      "stop_column": 35,
+      "stop_line": 45
     },
     {
       "code": -2,
@@ -9217,6 +9247,16 @@
       "name": "PyreError",
       "stop_column": 43,
       "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTuple, type[tuple[int, *TypeVarTuple[Ts]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTuple, type[tuple[int, *TypeVarTuple[Ts]]]]",
+      "line": 50,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 50
     },
     {
       "code": -2,
@@ -9300,13 +9340,23 @@
     },
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "line": 89,
+      "column": 14,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[VariadicTuple, type[tuple[TypeVar[T], *TypeVarTuple[Ts]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[VariadicTuple, type[tuple[TypeVar[T], *TypeVarTuple[Ts]]]]",
+      "line": 92,
       "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 89
+      "stop_column": 37,
+      "stop_line": 92
+    },
+    {
+      "code": -2,
+      "column": 42,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[VariadicTuple, type[tuple[TypeVar[T], *TypeVarTuple[Ts]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[VariadicTuple, type[tuple[TypeVar[T], *TypeVarTuple[Ts]]]]",
+      "line": 92,
+      "name": "PyreError",
+      "stop_column": 62,
+      "stop_line": 92
     },
     {
       "code": -2,
@@ -9331,8 +9381,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, tuple[Any, *Any]) failed",
-      "description": "assert_type(Any, tuple[Any, *Any]) failed",
+      "concise_description": "assert_type(tuple[TypeVar[T], *TypeVarTuple[Ts]], tuple[Any, *tuple[Any, ...]]) failed",
+      "description": "assert_type(tuple[TypeVar[T], *TypeVarTuple[Ts]], tuple[Any, *tuple[Any, ...]]) failed",
       "line": 95,
       "name": "PyreError",
       "stop_column": 49,
@@ -9340,13 +9390,23 @@
     },
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts1]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts1]`",
-      "line": 101,
+      "column": 20,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTupleVar, type[tuple[int, *TypeVarTuple[Ts1]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTupleVar, type[tuple[int, *TypeVarTuple[Ts1]]]]",
+      "line": 102,
       "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 101
+      "stop_column": 44,
+      "stop_line": 102
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTupleVar, type[tuple[int, *TypeVarTuple[Ts1]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTupleVar, type[tuple[int, *TypeVarTuple[Ts1]]]]",
+      "line": 103,
+      "name": "PyreError",
+      "stop_column": 52,
+      "stop_line": 103
     },
     {
       "code": -2,
@@ -9380,73 +9440,73 @@
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "line": 117,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 117
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "line": 118,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 118
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "line": 119,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 119
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
+      "column": 27,
+      "concise_description": "Only one unbounded type is allowed to be unpacked",
+      "description": "Only one unbounded type is allowed to be unpacked",
       "line": 121,
       "name": "PyreError",
-      "stop_column": 20,
+      "stop_column": 29,
       "stop_line": 121
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
+      "column": 27,
+      "concise_description": "Only one unbounded type is allowed to be unpacked",
+      "description": "Only one unbounded type is allowed to be unpacked",
       "line": 122,
       "name": "PyreError",
-      "stop_column": 20,
+      "stop_column": 42,
       "stop_line": 122
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "line": 125,
+      "column": 5,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]",
+      "line": 127,
       "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 125
+      "stop_column": 13,
+      "stop_line": 127
     },
     {
       "code": -2,
-      "column": 48,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
+      "column": 14,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]",
       "line": 130,
       "name": "PyreError",
-      "stop_column": 50,
+      "stop_column": 30,
       "stop_line": 130
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]",
+      "line": 134,
+      "name": "PyreError",
+      "stop_column": 28,
+      "stop_line": 134
+    },
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]",
+      "line": 134,
+      "name": "PyreError",
+      "stop_column": 54,
+      "stop_line": 134
+    },
+    {
+      "code": -2,
+      "column": 59,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]",
+      "line": 134,
+      "name": "PyreError",
+      "stop_column": 85,
+      "stop_line": 134
     },
     {
       "code": -2,
@@ -9480,23 +9540,33 @@
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "line": 140,
+      "column": 14,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA8, type[tuple[TypeVar[T1], *TypeVarTuple[Ts], TypeVar[T2], TypeVar[T3]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA8, type[tuple[TypeVar[T1], *TypeVarTuple[Ts], TypeVar[T2], TypeVar[T3]]]]",
+      "line": 143,
       "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 140
+      "stop_column": 34,
+      "stop_line": 143
     },
     {
       "code": -2,
-      "column": 52,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 143,
+      "column": 15,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA8, type[tuple[TypeVar[T1], *TypeVarTuple[Ts], TypeVar[T2], TypeVar[T3]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA8, type[tuple[TypeVar[T1], *TypeVarTuple[Ts], TypeVar[T2], TypeVar[T3]]]]",
+      "line": 147,
       "name": "PyreError",
-      "stop_column": 54,
-      "stop_line": 143
+      "stop_column": 36,
+      "stop_line": 147
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA8, type[tuple[TypeVar[T1], *TypeVarTuple[Ts], TypeVar[T2], TypeVar[T3]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA8, type[tuple[TypeVar[T1], *TypeVarTuple[Ts], TypeVar[T2], TypeVar[T3]]]]",
+      "line": 147,
+      "name": "PyreError",
+      "stop_column": 67,
+      "stop_line": 147
     },
     {
       "code": -2,
@@ -9520,19 +9590,39 @@
     },
     {
       "code": -2,
-      "column": 14,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts]`",
-      "line": 152,
+      "column": 8,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA9, type[tuple[*TypeVarTuple[Ts], TypeVar[T1]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA9, type[tuple[*TypeVarTuple[Ts], TypeVar[T1]]]]",
+      "line": 153,
       "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 152
+      "stop_column": 29,
+      "stop_line": 153
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA9, type[tuple[*TypeVarTuple[Ts], TypeVar[T1]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA9, type[tuple[*TypeVarTuple[Ts], TypeVar[T1]]]]",
+      "line": 156,
+      "name": "PyreError",
+      "stop_column": 50,
+      "stop_line": 156
+    },
+    {
+      "code": -2,
+      "column": 55,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA9, type[tuple[*TypeVarTuple[Ts], TypeVar[T1]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA9, type[tuple[*TypeVarTuple[Ts], TypeVar[T1]]]]",
+      "line": 156,
+      "name": "PyreError",
+      "stop_column": 81,
+      "stop_line": 156
     },
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, tuple[*int, int]) failed",
-      "description": "assert_type(Any, tuple[*int, int]) failed",
+      "concise_description": "assert_type(Any, tuple[*tuple[int, ...], int]) failed",
+      "description": "assert_type(Any, tuple[*tuple[int, ...], int]) failed",
       "line": 157,
       "name": "PyreError",
       "stop_column": 49,
@@ -9541,8 +9631,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, tuple[*int, str]) failed",
-      "description": "assert_type(Any, tuple[*int, str]) failed",
+      "concise_description": "assert_type(Any, tuple[*tuple[int, ...], str]) failed",
+      "description": "assert_type(Any, tuple[*tuple[int, ...], str]) failed",
       "line": 158,
       "name": "PyreError",
       "stop_column": 49,
@@ -9551,8 +9641,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Any, tuple[*int, str]) failed",
-      "description": "assert_type(Any, tuple[*int, str]) failed",
+      "concise_description": "assert_type(Any, tuple[*tuple[int, ...], str]) failed",
+      "description": "assert_type(Any, tuple[*tuple[int, ...], str]) failed",
       "line": 159,
       "name": "PyreError",
       "stop_column": 49,
@@ -9560,13 +9650,13 @@
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "Expected a tuple, got `TypeVarTuple[Ts1]`",
-      "description": "Expected a tuple, got `TypeVarTuple[Ts1]`",
-      "line": 162,
+      "column": 8,
+      "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA11, type[tuple[TypeVar[T], *TypeVarTuple[Ts1]]]]",
+      "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA11, type[tuple[TypeVar[T], *TypeVarTuple[Ts1]]]]",
+      "line": 163,
       "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 162
+      "stop_column": 18,
+      "stop_line": 163
     }
   ],
   "generics_typevartuple_unpack.py": [
@@ -13480,6 +13570,16 @@
     {
       "code": -2,
       "column": 10,
+      "concise_description": "EXPECTED tuple[int, *tuple[int, ...]] <: tuple[int]",
+      "description": "EXPECTED tuple[int, *tuple[int, ...]] <: tuple[int]",
+      "line": 32,
+      "name": "PyreError",
+      "stop_column": 12,
+      "stop_line": 32
+    },
+    {
+      "code": -2,
+      "column": 10,
       "concise_description": "EXPECTED tuple[int, ...] <: tuple[int]",
       "description": "EXPECTED tuple[int, ...] <: tuple[int]",
       "line": 33,
@@ -13520,8 +13620,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int]) failed",
-      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int]) failed",
+      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed",
+      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed",
       "line": 74,
       "name": "PyreError",
       "stop_column": 37,
@@ -13530,8 +13630,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, int] | tuple[str, str]) failed",
-      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, int] | tuple[str, str]) failed",
+      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, int] | tuple[str, str]) failed",
+      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, int] | tuple[str, str]) failed",
       "line": 78,
       "name": "PyreError",
       "stop_column": 60,
@@ -13540,8 +13640,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, str, int]) failed",
-      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, str, int]) failed",
+      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, str, int]) failed",
+      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, str, int]) failed",
       "line": 82,
       "name": "PyreError",
       "stop_column": 47,
@@ -13550,8 +13650,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 2) into 1 value",
-      "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 2) into 1 value",
+      "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 2) into 1 value",
+      "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 2) into 1 value",
       "line": 93,
       "name": "PyreError",
       "stop_column": 18,
@@ -13560,8 +13660,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int]) failed",
-      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int]) failed",
+      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed",
+      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed",
       "line": 95,
       "name": "PyreError",
       "stop_column": 41,
@@ -13570,8 +13670,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 1) into 2 values",
-      "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 1) into 2 values",
+      "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 1) into 2 values",
+      "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 1) into 2 values",
       "line": 97,
       "name": "PyreError",
       "stop_column": 20,
@@ -13580,8 +13680,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, int] | tuple[str, str]) failed",
-      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, int] | tuple[str, str]) failed",
+      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, int] | tuple[str, str]) failed",
+      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, int] | tuple[str, str]) failed",
       "line": 99,
       "name": "PyreError",
       "stop_column": 64,
@@ -13590,8 +13690,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 1) into 3 values",
-      "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 1) into 3 values",
+      "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 1) into 3 values",
+      "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 1) into 3 values",
       "line": 101,
       "name": "PyreError",
       "stop_column": 23,
@@ -13600,8 +13700,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 2) into 3 values",
-      "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *str, int] (of size 2) into 3 values",
+      "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 2) into 3 values",
+      "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 2) into 3 values",
       "line": 101,
       "name": "PyreError",
       "stop_column": 23,
@@ -13610,8 +13710,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, str, int]) failed",
-      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *str, int], tuple[int, str, int]) failed",
+      "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, str, int]) failed",
+      "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, str, int]) failed",
       "line": 103,
       "name": "PyreError",
       "stop_column": 51,
@@ -13639,6 +13739,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "assert_type(Sequence[int | tuple[str, ...]], Sequence[int | str]) failed",
+      "description": "assert_type(Sequence[int | tuple[str, ...]], Sequence[int | str]) failed",
+      "line": 139,
+      "name": "PyreError",
+      "stop_column": 51,
+      "stop_line": 139
+    },
+    {
+      "code": -2,
       "column": 6,
       "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal['']] <: tuple[int, str]",
       "description": "EXPECTED tuple[Literal[1], Literal[''], Literal['']] <: tuple[int, str]",
@@ -13650,8 +13760,8 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "EXPECTED tuple[Literal[1], Literal[1], Literal['']] <: tuple[int, *str]",
-      "description": "EXPECTED tuple[Literal[1], Literal[1], Literal['']] <: tuple[int, *str]",
+      "concise_description": "EXPECTED tuple[Literal[1], Literal[1], Literal['']] <: tuple[int, *tuple[str, ...]]",
+      "description": "EXPECTED tuple[Literal[1], Literal[1], Literal['']] <: tuple[int, *tuple[str, ...]]",
       "line": 149,
       "name": "PyreError",
       "stop_column": 16,
@@ -13660,8 +13770,8 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[int, *str]",
-      "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[int, *str]",
+      "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[int, *tuple[str, ...]]",
+      "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[int, *tuple[str, ...]]",
       "line": 150,
       "name": "PyreError",
       "stop_column": 16,
@@ -13670,8 +13780,8 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal['']] <: tuple[int, *str, int]",
-      "description": "EXPECTED tuple[Literal[1], Literal[''], Literal['']] <: tuple[int, *str, int]",
+      "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal['']] <: tuple[int, *tuple[str, ...], int]",
+      "description": "EXPECTED tuple[Literal[1], Literal[''], Literal['']] <: tuple[int, *tuple[str, ...], int]",
       "line": 156,
       "name": "PyreError",
       "stop_column": 17,
@@ -13680,8 +13790,8 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[''], float] <: tuple[int, *str, int]",
-      "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[''], float] <: tuple[int, *str, int]",
+      "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[''], float] <: tuple[int, *tuple[str, ...], int]",
+      "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[''], float] <: tuple[int, *tuple[str, ...], int]",
       "line": 157,
       "name": "PyreError",
       "stop_column": 22,
@@ -13690,8 +13800,8 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[*str, int]",
-      "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[*str, int]",
+      "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[*tuple[str, ...], int]",
+      "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[*tuple[str, ...], int]",
       "line": 162,
       "name": "PyreError",
       "stop_column": 16,
@@ -13700,8 +13810,8 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "EXPECTED tuple[Literal[''], Literal[''], float] <: tuple[*str, int]",
-      "description": "EXPECTED tuple[Literal[''], Literal[''], float] <: tuple[*str, int]",
+      "concise_description": "EXPECTED tuple[Literal[''], Literal[''], float] <: tuple[*tuple[str, ...], int]",
+      "description": "EXPECTED tuple[Literal[''], Literal[''], float] <: tuple[*tuple[str, ...], int]",
       "line": 163,
       "name": "PyreError",
       "stop_column": 19,
@@ -13720,8 +13830,8 @@
     {
       "code": -2,
       "column": 50,
-      "concise_description": "EXPECTED tuple[str, str] <: tuple[str, str, str, *str]",
-      "description": "EXPECTED tuple[str, str] <: tuple[str, str, str, *str]",
+      "concise_description": "EXPECTED tuple[str, str] <: tuple[str, str, str, *tuple[str, ...]]",
+      "description": "EXPECTED tuple[str, str] <: tuple[str, str, str, *tuple[str, ...]]",
       "line": 171,
       "name": "PyreError",
       "stop_column": 51,
@@ -13730,8 +13840,8 @@
     {
       "code": -2,
       "column": 50,
-      "concise_description": "EXPECTED tuple[str, str] <: tuple[*str, str, str, str]",
-      "description": "EXPECTED tuple[str, str] <: tuple[*str, str, str, str]",
+      "concise_description": "EXPECTED tuple[str, str] <: tuple[*tuple[str, ...], str, str, str]",
+      "description": "EXPECTED tuple[str, str] <: tuple[*tuple[str, ...], str, str, str]",
       "line": 175,
       "name": "PyreError",
       "stop_column": 51,
@@ -13834,8 +13944,8 @@
     {
       "code": -2,
       "column": 30,
-      "concise_description": "Only one unbounded tuple is allowed to be unpacked",
-      "description": "Only one unbounded tuple is allowed to be unpacked",
+      "concise_description": "Only one unbounded type is allowed to be unpacked",
+      "description": "Only one unbounded type is allowed to be unpacked",
       "line": 40,
       "name": "PyreError",
       "stop_column": 45,
@@ -13844,8 +13954,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "Only one unbounded tuple is allowed to be unpacked",
-      "description": "Only one unbounded tuple is allowed to be unpacked",
+      "concise_description": "Only one unbounded type is allowed to be unpacked",
+      "description": "Only one unbounded type is allowed to be unpacked",
       "line": 41,
       "name": "PyreError",
       "stop_column": 58,
@@ -13853,29 +13963,9 @@
     },
     {
       "code": -2,
-      "column": 21,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
-      "line": 50,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 50
-    },
-    {
-      "code": -2,
       "column": 34,
-      "concise_description": "Expected a tuple, got `?_TypeVarTuple`",
-      "description": "Expected a tuple, got `?_TypeVarTuple`",
+      "concise_description": "Only one unbounded type is allowed to be unpacked",
+      "description": "Only one unbounded type is allowed to be unpacked",
       "line": 51,
       "name": "PyreError",
       "stop_column": 36,

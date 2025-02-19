@@ -18,12 +18,21 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::literal::Lit;
+use crate::types::quantified::QuantifiedKind;
 use crate::types::special_form::SpecialForm;
 use crate::types::tuple::Tuple;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
+    fn extra_unpack_error(&self, errors: &ErrorCollector, range: TextRange) -> Type {
+        self.error(
+            errors,
+            range,
+            "Only one unbounded type is allowed to be unpacked".to_owned(),
+        )
+    }
+
     pub fn apply_special_form(
         &self,
         special_form: SpecialForm,
@@ -48,7 +57,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 arguments.map(|arg| self.expr_untype(arg, errors)),
             )),
             SpecialForm::Tuple => {
-                // TODO (yangdanny) implement star unpack
                 let mut prefix: Vec<Type> = Vec::new();
                 let mut suffix: Vec<Type> = Vec::new();
                 let mut middle: Option<Type> = None;
@@ -68,7 +76,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         }
                         Expr::Starred(ExprStarred { box value, .. }) => {
-                            match self.expr_untype(value, errors) {
+                            let unpacked_type = self.expr_untype(value, errors);
+                            match unpacked_type {
                                 Type::Tuple(Tuple::Concrete(elts)) => {
                                     if middle.is_none() {
                                         prefix.extend(elts)
@@ -76,16 +85,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                         suffix.extend(elts)
                                     }
                                 }
-                                Type::Tuple(Tuple::Unbounded(box ty)) => {
+                                Type::Tuple(Tuple::Unbounded(_)) => {
                                     if middle.is_none() {
-                                        middle = Some(ty)
+                                        middle = Some(unpacked_type)
                                     } else {
-                                        return self.error(
-                                            errors,
-                                            value.range(),
-                                            "Only one unbounded tuple is allowed to be unpacked"
-                                                .to_owned(),
-                                        );
+                                        return self.extra_unpack_error(errors, value.range());
                                     }
                                 }
                                 Type::Tuple(Tuple::Unpacked(box (pre, mid, suff))) => {
@@ -94,19 +98,33 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                         middle = Some(mid);
                                         suffix.extend(suff)
                                     } else {
-                                        return self.error(
-                                            errors,
-                                            value.range(),
-                                            "Only one unbounded tuple is allowed to be unpacked"
-                                                .to_owned(),
-                                        );
+                                        return self.extra_unpack_error(errors, value.range());
                                     }
                                 }
-                                t => {
+                                Type::Quantified(ref q)
+                                    if q.kind() == QuantifiedKind::TypeVarTuple =>
+                                {
+                                    if middle.is_none() {
+                                        middle = Some(unpacked_type)
+                                    } else {
+                                        return self.extra_unpack_error(errors, value.range());
+                                    }
+                                }
+                                Type::TypeVarTuple(_) => {
+                                    if middle.is_none() {
+                                        middle = Some(unpacked_type)
+                                    } else {
+                                        return self.extra_unpack_error(errors, value.range());
+                                    }
+                                }
+                                _ => {
                                     return self.error(
                                         errors,
                                         value.range(),
-                                        format!("Expected a tuple, got `{}`", t),
+                                        format!(
+                                            "Expected a tuple or type var tuple, got `{}`",
+                                            unpacked_type
+                                        ),
                                     );
                                 }
                             }
@@ -122,7 +140,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
                 if let Some(middle) = middle {
-                    Type::type_form(Type::Tuple(Tuple::unpacked(prefix, middle, suffix)))
+                    Type::type_form(Tuple::unpacked(prefix, middle, suffix))
                 } else {
                     Type::type_form(Type::Tuple(Tuple::concrete(prefix)))
                 }

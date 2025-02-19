@@ -26,7 +26,7 @@ pub enum Tuple {
     Concrete(Vec<Type>),
     // tuple[t1, ...]
     Unbounded(Box<Type>),
-    // tuple[t1, t2, *t3, t4, t5]
+    // tuple[t1, t2, *t3, t4, t5], where t3 must be a type var tuple or unbounded tuple
     Unpacked(Box<(Vec<Type>, Type, Vec<Type>)>),
 }
 
@@ -39,8 +39,11 @@ impl Tuple {
         Self::Unbounded(Box::new(elt))
     }
 
-    pub fn unpacked(prefix: Vec<Type>, middle: Type, suffix: Vec<Type>) -> Self {
-        Self::Unpacked(Box::new((prefix, middle, suffix)))
+    pub fn unpacked(prefix: Vec<Type>, middle: Type, suffix: Vec<Type>) -> Type {
+        if prefix.is_empty() && suffix.is_empty() {
+            return middle;
+        }
+        Type::Tuple(Self::Unpacked(Box::new((prefix, middle, suffix))))
     }
 
     pub fn fmt_with_type<'a, D: Display + 'a>(

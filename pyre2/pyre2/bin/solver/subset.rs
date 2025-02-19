@@ -244,64 +244,98 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 if lelts.len() < u_prefix.len() + u_suffix.len() {
                     false
                 } else {
+                    let mut l_middle = Vec::new();
                     lelts.iter().enumerate().all(|(idx, l)| {
                         if idx < u_prefix.len() {
                             self.is_subset_eq(l, &u_prefix[idx])
                         } else if idx >= lelts.len() - u_suffix.len() {
                             self.is_subset_eq(l, &u_suffix[idx + u_suffix.len() - lelts.len()])
                         } else {
-                            self.is_subset_eq(l, u_middle)
+                            l_middle.push(l.clone());
+                            true
                         }
-                    })
+                    }) && self.is_subset_eq(&Type::Tuple(Tuple::Concrete(l_middle)), u_middle)
                 }
             }
             (Tuple::Unbounded(box l), Tuple::Unpacked(box (u_prefix, u_middle, u_suffix))) => {
                 u_prefix.iter().all(|u| self.is_subset_eq(l, u))
-                    && self.is_subset_eq(l, u_middle)
                     && u_suffix.iter().all(|u| self.is_subset_eq(l, u))
+                    && self.is_subset_eq(&Type::Tuple(got.clone()), u_middle)
             }
             (Tuple::Unpacked(box (l_prefix, l_middle, l_suffix)), Tuple::Unbounded(box u)) => {
                 l_prefix.iter().all(|l| self.is_subset_eq(l, u))
-                    && self.is_subset_eq(l_middle, u)
                     && l_suffix.iter().all(|l| self.is_subset_eq(l, u))
+                    && self.is_subset_eq(l_middle, &Type::Tuple(want.clone()))
             }
             (Tuple::Unpacked(box (l_prefix, l_middle, l_suffix)), Tuple::Concrete(uelts)) => {
                 if uelts.len() < l_prefix.len() + l_suffix.len() {
                     false
                 } else {
+                    let mut u_middle = Vec::new();
                     uelts.iter().enumerate().all(|(idx, u)| {
                         if idx < l_prefix.len() {
                             self.is_subset_eq(&l_prefix[idx], u)
                         } else if idx >= uelts.len() - l_suffix.len() {
                             self.is_subset_eq(&l_suffix[idx + l_suffix.len() - uelts.len()], u)
                         } else {
-                            self.is_subset_eq(l_middle, u)
+                            u_middle.push(u.clone());
+                            true
                         }
-                    })
+                    }) && self.is_subset_eq(l_middle, &Type::Tuple(Tuple::Concrete(u_middle)))
                 }
             }
             (
                 Tuple::Unpacked(box (l_prefix, l_middle, l_suffix)),
                 Tuple::Unpacked(box (u_prefix, u_middle, u_suffix)),
             ) => {
-                l_prefix
+                // Invariant: 0-2 of these are non-empty
+                // l_before and u_before cannot both be non-empty
+                // l_after and u_after cannot both be non-empty
+                let mut l_before = Vec::new();
+                let mut l_after = Vec::new();
+                let mut u_before = Vec::new();
+                let mut u_after = Vec::new();
+                if !(l_prefix
                     .iter()
                     .zip_longest(u_prefix.iter())
                     .all(|pair| match pair {
                         EitherOrBoth::Both(l, u) => self.is_subset_eq(l, u),
-                        EitherOrBoth::Left(l) => self.is_subset_eq(l, u_middle),
-                        EitherOrBoth::Right(u) => self.is_subset_eq(l_middle, u),
+                        EitherOrBoth::Left(l) => {
+                            l_before.push(l.clone());
+                            true
+                        }
+                        EitherOrBoth::Right(u) => {
+                            u_before.push(u.clone());
+                            true
+                        }
                     })
-                    && self.is_subset_eq(l_middle, u_middle)
                     && l_suffix
                         .iter()
                         .rev()
                         .zip_longest(u_suffix.iter().rev())
                         .all(|pair| match pair {
                             EitherOrBoth::Both(l, u) => self.is_subset_eq(l, u),
-                            EitherOrBoth::Left(l) => self.is_subset_eq(l, u_middle),
-                            EitherOrBoth::Right(u) => self.is_subset_eq(l_middle, u),
-                        })
+                            EitherOrBoth::Left(l) => {
+                                l_after.push(l.clone());
+                                true
+                            }
+                            EitherOrBoth::Right(u) => {
+                                u_after.push(u.clone());
+                                true
+                            }
+                        }))
+                {
+                    return false;
+                }
+                l_after.reverse();
+                u_after.reverse();
+                self.is_subset_eq(
+                    &Tuple::unpacked(l_before, l_middle.clone(), l_after),
+                    u_middle,
+                ) && self.is_subset_eq(
+                    l_middle,
+                    &Tuple::unpacked(u_before, u_middle.clone(), u_after),
+                )
             }
             _ => false,
         }
