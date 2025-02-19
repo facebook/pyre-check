@@ -246,14 +246,12 @@ pub fn mk_multi_file_state_assert_no_errors(
     mk_multi_file_state(files, true)
 }
 
-/// Given a list of `files`, extract the location pointed by the special `#   ^` comments
-/// (See `extract_cursors_for_test`), and perform the operation defined by `get_report`.
-/// A human-readable report of the results of all specified operations will be returned.
-pub fn get_batched_lsp_operations_report(
+fn get_batched_lsp_operations_report_helper(
     files: &[(&'static str, &str)],
+    assert_zero_errors: bool,
     get_report: impl Fn(&State, &Handle, TextSize) -> String,
 ) -> String {
-    let (handles, state) = mk_multi_file_state_assert_no_errors(files);
+    let (handles, state) = mk_multi_file_state(files, assert_zero_errors);
     let mut report = String::new();
     for (name, code) in files {
         report.push_str("# ");
@@ -270,6 +268,23 @@ pub fn get_batched_lsp_operations_report(
     }
 
     report
+}
+
+/// Given a list of `files`, extract the location pointed by the special `#   ^` comments
+/// (See `extract_cursors_for_test`), and perform the operation defined by `get_report`.
+/// A human-readable report of the results of all specified operations will be returned.
+pub fn get_batched_lsp_operations_report(
+    files: &[(&'static str, &str)],
+    get_report: impl Fn(&State, &Handle, TextSize) -> String,
+) -> String {
+    get_batched_lsp_operations_report_helper(files, true, get_report)
+}
+
+pub fn get_batched_lsp_operations_report_allow_error(
+    files: &[(&'static str, &str)],
+    get_report: impl Fn(&State, &Handle, TextSize) -> String,
+) -> String {
+    get_batched_lsp_operations_report_helper(files, false, get_report)
 }
 
 impl Loader for TestEnv {
