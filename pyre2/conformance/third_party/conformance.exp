@@ -3927,16 +3927,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 32,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 32
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
@@ -3944,16 +3934,6 @@
       "name": "PyreError",
       "stop_column": 9,
       "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 33,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 33
     },
     {
       "code": -2,
@@ -3980,16 +3960,6 @@
       "column": 1,
       "concise_description": "Missing argument `a`",
       "description": "Missing argument `a`",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 4,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
       "line": 38,
       "name": "PyreError",
       "stop_column": 4,
@@ -5022,16 +4992,6 @@
       "name": "PyreError",
       "stop_column": 7,
       "stop_line": 179
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Missing argument `prop_3`",
-      "description": "Missing argument `prop_3`",
-      "line": 194,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 194
     },
     {
       "code": -2,

@@ -363,3 +363,30 @@ C(1)  # E: Missing argument `x`  # E: Expected 0 positional arguments
 C(x=1)  # OK
     "#,
 );
+
+testcase!(
+    test_field_default,
+    r#"
+from dataclasses import dataclass, field
+from typing import Callable
+
+@dataclass
+class C1:
+    x: int = field(default=0)
+C1()  # OK
+C1(x=1)  # OK
+
+factory: Callable[[], int] = lambda: 0
+
+@dataclass
+class C2:
+    x: int = field(default_factory=factory)
+C2()  # OK
+C2(x=1)  # OK
+
+@dataclass
+class C3:
+    x: int = field(default="oops")  # E: EXPECTED str <: int
+    y: str = field(default_factory=factory)  # E: EXPECTED int <: str
+    "#,
+);

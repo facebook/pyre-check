@@ -323,8 +323,7 @@
     "Line 64: Expected 1 errors"
   ],
   "dataclasses_kwonly.py": [
-    "Line 32: Unexpected errors ['Missing argument `a`', 'Missing argument `b`', 'Expected 0 positional arguments, got 1']",
-    "Line 33: Unexpected errors ['Missing argument `b`']",
+    "Line 32: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 1']",
     "Line 35: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 1']",
     "Line 47: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 1']",
     "Line 50: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 1']",
@@ -401,7 +400,6 @@
     "Line 72: Unexpected errors ['EXPECTED Literal[0] <: InitVar[int]']",
     "Line 102: Unexpected errors ['Missing argument `b`', \"EXPECTED Literal[''] <: int\"]",
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed']",
-    "Line 194: Unexpected errors ['Missing argument `prop_3`']",
     "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']"
   ],
   "directives_assert_type.py": [

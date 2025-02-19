@@ -70,6 +70,7 @@ use crate::types::annotation::Qualifier;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
+use crate::types::callable::DataclassKeywords;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
@@ -699,8 +700,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Some(CalleeKind::Callable(CallableKind::DataclassField))
                     ) {
                         for kw in keywords {
-                            let val = self.expr_infer(&kw.value, &ignore_errors);
-                            props.set_keyword(kw.arg.as_ref(), val);
+                            if let Some(id) = &kw.arg
+                                && (id.id == DataclassKeywords::DEFAULT.0
+                                    || id.id == "default_factory")
+                            {
+                                props.set(DataclassKeywords::DEFAULT.0, true);
+                            } else {
+                                let val = self.expr_infer(&kw.value, &ignore_errors);
+                                props.set_keyword(kw.arg.as_ref(), val);
+                            }
                         }
                     }
                     ClassFieldInitialization::Class(Some(props))
