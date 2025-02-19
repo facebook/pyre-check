@@ -4935,26 +4935,6 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "Missing argument `b`",
-      "description": "Missing argument `b`",
-      "line": 102,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 102
-    },
-    {
-      "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED Literal[''] <: int",
-      "description": "EXPECTED Literal[''] <: int",
-      "line": 102,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 102
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed",
       "description": "assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed",

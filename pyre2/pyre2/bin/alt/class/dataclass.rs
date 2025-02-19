@@ -20,6 +20,7 @@ use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
+use crate::types::annotation::Qualifier;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
@@ -91,7 +92,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Vec<(Name, ClassField, BoolKeywords)> {
         let mut kw_only = false;
         fields.iter().filter_map(|name| {
-            let field @ ClassField(ClassFieldInner::Simple { ty, initialization, .. }) = &*self.get_class_member(cls, name).unwrap().value;
+            let field @ ClassField(ClassFieldInner::Simple { ty, annotation, initialization, .. }) = &*self.get_class_member(cls, name).unwrap().value;
+            if let Some(annot) = annotation && annot.qualifiers.contains(&Qualifier::ClassVar) {
+                return None; // Class variables are not dataclass fields
+            }
             let mut props = match initialization {
                 ClassFieldInitialization::Class(Some(field_props)) => field_props.clone(),
                 ClassFieldInitialization::Class(None) => {

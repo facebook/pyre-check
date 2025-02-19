@@ -390,3 +390,16 @@ class C3:
     y: str = field(default_factory=factory)  # E: EXPECTED int <: str
     "#,
 );
+
+testcase!(
+    test_classvar,
+    r#"
+from typing import ClassVar
+from dataclasses import dataclass
+@dataclass
+class C:
+    x: ClassVar[int] = 0
+C()  # OK
+C(x=1)  # E: Unexpected keyword argument `x`
+    "#,
+);

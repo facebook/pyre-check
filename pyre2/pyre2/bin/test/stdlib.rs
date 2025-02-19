@@ -147,6 +147,7 @@ Required: _SpecialForm
 NotRequired: _SpecialForm
 ReadOnly: _SpecialForm
 Concatenate: _SpecialForm
+ClassVar: _SpecialForm
 
 def assert_type(x, y) -> None: ...
 
