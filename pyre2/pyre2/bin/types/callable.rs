@@ -173,6 +173,10 @@ impl BoolKeywords {
         let (name, default) = name_and_default;
         *(self.0.get(name).unwrap_or(default))
     }
+
+    pub fn set(&mut self, name: Name, value: bool) {
+        self.0.insert(name, value);
+    }
 }
 
 /// Namespace for keyword names and defaults.

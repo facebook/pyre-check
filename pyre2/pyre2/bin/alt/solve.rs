@@ -29,7 +29,6 @@ use crate::alt::answers::UNKNOWN;
 use crate::alt::callable::CallArg;
 use crate::alt::class::classdef::ClassField;
 use crate::alt::class::classdef::ClassFieldInitialization;
-use crate::alt::class::dataclass::DataclassFieldProperties;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::decorated_function::DecoratedFunction;
@@ -68,8 +67,10 @@ use crate::module::module_path::ModuleStyle;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
+use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
+use crate::types::callable::DataclassKeywords;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
@@ -665,7 +666,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &field.name,
             value_ty.as_ref(),
             annotation.as_deref(),
-            *self.get_idx(field.initialization),
+            (*self.get_idx(field.initialization)).clone(),
             &self.get_idx(field.class),
             field.range,
             errors,
@@ -682,10 +683,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ClassFieldInitialValue::Class(Some(e)) => {
                 let metadata = self.get_idx(initialization.class_metadata);
                 if metadata.dataclass_metadata().is_some() {
-                    let mut props = DataclassFieldProperties {
-                        init: true,
-                        kw_only: false,
-                    };
+                    let mut props = BoolKeywords::new();
                     // If this field was created via a call to a dataclass field specifier, extract field properties from the call.
                     if let Expr::Call(ExprCall {
                         range: _,
@@ -703,12 +701,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ) {
                             for kw in keywords {
                                 if let Some(id) = &kw.arg
-                                    && id.as_str() == "init"
+                                    && id.id == DataclassKeywords::INIT.0
                                 {
                                     let val = self.expr_infer(&kw.value, &ignore_errors);
-                                    if matches!(val, Type::Literal(Lit::Bool(false))) {
-                                        props.init = false;
-                                    }
+                                    props.set_keyword(kw.arg.as_ref(), val);
                                     break;
                                 }
                             }

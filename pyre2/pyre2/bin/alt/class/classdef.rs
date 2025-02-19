@@ -24,7 +24,6 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::Attribute;
 use crate::alt::attr::NoAccessReason;
-use crate::alt::class::dataclass::DataclassFieldProperties;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyClassField;
@@ -35,6 +34,7 @@ use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::graph::index::Idx;
 use crate::types::annotation::Annotation;
+use crate::types::callable::BoolKeywords;
 use crate::types::callable::DataclassKeywords;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
@@ -53,9 +53,10 @@ use crate::util::prelude::SliceExt;
 /// Correctly analyzing which attributes are visible on class objects, as well
 /// as handling method binding correctly, requires distinguishing which fields
 /// are assigned values in the class body.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ClassFieldInitialization {
-    Class(Option<DataclassFieldProperties>),
+    /// If this is a dataclass field, BoolKeywords stores the field's dataclass properties.
+    Class(Option<BoolKeywords>),
     Instance,
 }
 
@@ -127,7 +128,7 @@ impl ClassField {
 
     fn initialization(&self) -> ClassFieldInitialization {
         match &self.0 {
-            ClassFieldInner::Simple { initialization, .. } => *initialization,
+            ClassFieldInner::Simple { initialization, .. } => initialization.clone(),
         }
     }
 
@@ -141,7 +142,7 @@ impl ClassField {
             } => Self(ClassFieldInner::Simple {
                 ty: cls.instantiate_member(ty.clone()),
                 annotation: annotation.clone(),
-                initialization: *initialization,
+                initialization: initialization.clone(),
                 readonly: *readonly,
             }),
         }
@@ -503,7 +504,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> ClassField {
         let metadata = self.get_metadata_for_class(class);
         if let Some(enum_) = self.get_enum_from_class(class)
-            && self.is_valid_enum_member(name, value_ty, initialization)
+            && self.is_valid_enum_member(name, value_ty, &initialization)
         {
             if annotation.is_some() {
                 self.error(errors,range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));

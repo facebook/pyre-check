@@ -45,7 +45,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         name: &Name,
         ty: &Type,
-        initialization: ClassFieldInitialization,
+        initialization: &ClassFieldInitialization,
     ) -> bool {
         // Names starting but not ending with __ are private
         // Names starting and ending with _ are reserved by the enum
@@ -55,7 +55,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             return false;
         }
         // Enum members must be initialized on the class
-        if initialization == ClassFieldInitialization::Instance {
+        if *initialization == ClassFieldInitialization::Instance {
             return false;
         }
         match ty {
@@ -86,7 +86,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ty, initialization, ..
             })) = self.get_class_field_non_synthesized(cls, name).as_deref()
             {
-                if self.is_valid_enum_member(name, ty, *initialization) {
+                if self.is_valid_enum_member(name, ty, initialization) {
                     let lit = Type::Literal(Lit::Enum(Box::new((
                         enum_metadata.cls.clone(),
                         name.clone(),
