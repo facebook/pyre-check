@@ -9,7 +9,6 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
-use std::sync::Mutex;
 
 use clap::Parser;
 use dupe::Dupe;
@@ -77,6 +76,7 @@ use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
+use crate::util::lock::Mutex;
 use crate::util::prelude::VecExt;
 
 #[derive(Debug, Parser, Clone)]
@@ -151,7 +151,7 @@ struct LspLoader {
 
 impl Loader for LspLoader {
     fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
-        for path in self.open_files.lock().unwrap().keys() {
+        for path in self.open_files.lock().keys() {
             if module_from_path(path, &self.search_roots) == module {
                 return Ok((ModulePath::memory(path.clone()), ErrorStyle::Delayed));
             }
@@ -166,7 +166,7 @@ impl Loader for LspLoader {
     }
 
     fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
-        Some(self.open_files.lock().unwrap().get(path)?.1.dupe())
+        Some(self.open_files.lock().get(path)?.1.dupe())
     }
 }
 
@@ -270,7 +270,6 @@ impl<'a> Server<'a> {
         let handles = self
             .open_files
             .lock()
-            .unwrap()
             .keys()
             .map(|x| {
                 Handle::new(
@@ -282,23 +281,17 @@ impl<'a> Server<'a> {
             })
             .collect::<Vec<_>>();
 
-        self.state.lock().unwrap().invalidate_memory(
+        self.state.lock().invalidate_memory(
             self.loader.dupe(),
-            &self
-                .open_files
-                .lock()
-                .unwrap()
-                .keys()
-                .cloned()
-                .collect::<Vec<_>>(),
+            &self.open_files.lock().keys().cloned().collect::<Vec<_>>(),
         );
 
-        self.state.lock().unwrap().run(handles);
+        self.state.lock().run(handles);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
-        for x in self.open_files.lock().unwrap().keys() {
+        for x in self.open_files.lock().keys() {
             diags.insert(x.as_path().to_owned(), Vec::new());
         }
-        for e in self.state.lock().unwrap().collect_errors() {
+        for e in self.state.lock().collect_errors() {
             if let Some(path) = to_real_path(e.path()) {
                 diags.entry(path.to_owned()).or_default().push(Diagnostic {
                     range: source_range_to_range(e.source_range()),
@@ -320,7 +313,7 @@ impl<'a> Server<'a> {
     }
 
     fn did_open(&self, params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
-        self.open_files.lock().unwrap().insert(
+        self.open_files.lock().insert(
             params.text_document.uri.to_file_path().unwrap(),
             (
                 params.text_document.version,
@@ -333,7 +326,7 @@ impl<'a> Server<'a> {
     fn did_change(&self, params: DidChangeTextDocumentParams) -> anyhow::Result<()> {
         // We asked for Sync full, so can just grab all the text from params
         let change = params.content_changes.into_iter().next().unwrap();
-        self.open_files.lock().unwrap().insert(
+        self.open_files.lock().insert(
             params.text_document.uri.to_file_path().unwrap(),
             (params.text_document.version, Arc::new(change.text)),
         );
@@ -343,7 +336,6 @@ impl<'a> Server<'a> {
     fn did_close(&self, params: DidCloseTextDocumentParams) -> anyhow::Result<()> {
         self.open_files
             .lock()
-            .unwrap()
             .shift_remove(&params.text_document.uri.to_file_path().unwrap());
         self.publish_diagnostics(params.text_document.uri, Vec::new(), None);
         Ok(())
@@ -352,7 +344,7 @@ impl<'a> Server<'a> {
     fn make_handle(&self, uri: &Url) -> Handle {
         let path = uri.to_file_path().unwrap();
         let module = module_from_path(&path, &self.include);
-        let module_path = if self.open_files.lock().unwrap().contains_key(&path) {
+        let module_path = if self.open_files.lock().contains_key(&path) {
             ModulePath::memory(path)
         } else {
             ModulePath::filesystem(path)
@@ -361,7 +353,7 @@ impl<'a> Server<'a> {
     }
 
     fn goto_definition(&self, params: GotoDefinitionParams) -> Option<GotoDefinitionResponse> {
-        let state = self.state.lock().unwrap();
+        let state = self.state.lock();
         let handle = self.make_handle(&params.text_document_position_params.text_document.uri);
         let info = state.get_module_info(&handle)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
@@ -383,7 +375,7 @@ impl<'a> Server<'a> {
     }
 
     fn hover(&self, params: HoverParams) -> Option<Hover> {
-        let state = self.state.lock().unwrap();
+        let state = self.state.lock();
         let handle = self.make_handle(&params.text_document_position_params.text_document.uri);
         let info = state.get_module_info(&handle)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
@@ -398,7 +390,7 @@ impl<'a> Server<'a> {
     }
 
     fn inlay_hints(&self, params: InlayHintParams) -> Option<Vec<InlayHint>> {
-        let state = self.state.lock().unwrap();
+        let state = self.state.lock();
         let handle = self.make_handle(&params.text_document.uri);
         let info = state.get_module_info(&handle)?;
         let t = state.inlay_hints(&handle)?;

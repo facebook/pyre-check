@@ -5,13 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::sync::Mutex;
 use std::thread;
 use std::thread::ThreadId;
 
 use dupe::Dupe;
 use starlark_map::small_set::SmallSet;
 use starlark_map::smallset;
+
+use crate::util::lock::Mutex;
 
 /// Recursive calculations by the same thread return None, but
 /// if they are different threads they may start calculating.
@@ -56,7 +57,7 @@ impl<T, R> Calculation<T, R> {
 impl<T: Dupe, R: Dupe> Calculation<T, R> {
     /// Get the value if it has been calculated.
     pub fn get(&self) -> Option<T> {
-        let lock = self.0.lock().unwrap();
+        let lock = self.0.lock();
         match &*lock {
             Status::Calculated(v) => Some(v.dupe()),
             _ => None,
@@ -82,7 +83,7 @@ impl<T: Dupe, R: Dupe> Calculation<T, R> {
         calculate: impl FnOnce() -> T,
         recursive: impl FnOnce() -> R,
     ) -> Result<(T, Option<R>), R> {
-        let mut lock = self.0.lock().unwrap();
+        let mut lock = self.0.lock();
         let thread = thread::current().id();
         match &mut *lock {
             Status::NotCalculated => {
@@ -104,7 +105,7 @@ impl<T: Dupe, R: Dupe> Calculation<T, R> {
         }
         drop(lock);
         let result = calculate();
-        let mut lock = self.0.lock().unwrap();
+        let mut lock = self.0.lock();
         match &mut *lock {
             Status::NotCalculated => {
                 unreachable!("Should have started calculating before we finished")

@@ -10,7 +10,6 @@
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::Mutex;
 
 use dupe::Dupe;
 
@@ -25,6 +24,7 @@ use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
 use crate::test::util::TestEnv;
+use crate::util::lock::Mutex;
 use crate::util::prelude::SliceExt;
 
 #[test]
@@ -122,11 +122,11 @@ fn test_in_memory_updated_content_recheck() {
 
     impl Loader for Load {
         fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
-            self.0.lock().unwrap().find(module)
+            self.0.lock().find(module)
         }
 
         fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
-            self.0.lock().unwrap().load_from_memory(path)
+            self.0.lock().load_from_memory(path)
         }
     }
 
@@ -146,7 +146,7 @@ fn test_in_memory_updated_content_recheck() {
         loader.dupe(),
     )]);
     assert_eq!(state.collect_errors().len(), 1);
-    test_env.lock().unwrap().add("main", "bound_name = 3");
+    test_env.lock().add("main", "bound_name = 3");
     state.invalidate_memory(loader.dupe(), &[PathBuf::from("main.py")]);
     state.run(vec![Handle::new(
         ModuleName::from_str("main"),

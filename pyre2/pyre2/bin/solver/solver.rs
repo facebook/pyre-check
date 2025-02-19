@@ -9,7 +9,6 @@ use std::collections::HashSet;
 use std::fmt;
 use std::fmt::Display;
 use std::mem;
-use std::sync::RwLock;
 
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
@@ -29,6 +28,7 @@ use crate::types::quantified::QuantifiedKind;
 use crate::types::simplify::unions;
 use crate::types::types::Type;
 use crate::types::types::Var;
+use crate::util::lock::RwLock;
 use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
@@ -83,7 +83,7 @@ pub struct Solver {
 
 impl Display for Solver {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (x, y) in self.variables.read().unwrap().iter() {
+        for (x, y) in self.variables.read().iter() {
             writeln!(f, "{x} = {y}")?;
         }
         Ok(())
@@ -124,7 +124,7 @@ impl Solver {
                 if let Some(Variable::Answer(w)) = {
                     // Important we bind this lock in an inner scope, so it is dropped before
                     // we call expand_with_limit again.
-                    let lock = self.variables.read().unwrap();
+                    let lock = self.variables.read();
                     lock.get(x).cloned()
                 } {
                     *t = w;
@@ -142,7 +142,7 @@ impl Solver {
     /// and returns that answer. Note that if the `Var` is already bound to something that contains a
     /// `Var` (including itself), then we will return the answer.
     pub fn force_var(&self, v: Var) -> Type {
-        let mut lock = self.variables.write().unwrap();
+        let mut lock = self.variables.write();
         match lock.entry(v) {
             Entry::Occupied(ref e) if let Variable::Answer(t) = e.get() => t.clone(),
             e => {
@@ -202,17 +202,14 @@ impl Solver {
     /// e.g. `[]` with an unknown type of element.
     pub fn fresh_contained(&self, uniques: &UniqueFactory) -> Var {
         let v = Var::new(uniques);
-        self.variables
-            .write()
-            .unwrap()
-            .insert(v, Variable::Contained);
+        self.variables.write().insert(v, Variable::Contained);
         v
     }
 
     // Generate a fresh variable used to decompose a type, e.g. getting T from Awaitable[T]
     pub fn fresh_unwrap(&self, uniques: &UniqueFactory) -> Var {
         let v = Var::new(uniques);
-        self.variables.write().unwrap().insert(v, Variable::Unwrap);
+        self.variables.write().insert(v, Variable::Unwrap);
         v
     }
 
@@ -230,7 +227,7 @@ impl Solver {
                 .zip(vs.iter().map(|x| x.to_type()))
                 .collect(),
         );
-        let mut lock = self.variables.write().unwrap();
+        let mut lock = self.variables.write();
         for (v, q) in vs.iter().zip(qs) {
             lock.insert(*v, Variable::Quantified(q.kind()));
         }
@@ -241,7 +238,7 @@ impl Solver {
     /// after the generic has completed, the variable `T` now behaves more like an empty container
     /// than a generic. If it hasn't been solved, make that switch.
     pub fn finish_quantified(&self, vs: &[Var]) {
-        let mut lock = self.variables.write().unwrap();
+        let mut lock = self.variables.write();
         for v in vs {
             let e = lock.entry(*v).or_default();
             if matches!(*e, Variable::Quantified(_)) {
@@ -253,10 +250,7 @@ impl Solver {
     /// Generate a fresh variable used to tie recursive bindings.
     pub fn fresh_recursive(&self, uniques: &UniqueFactory) -> Var {
         let v = Var::new(uniques);
-        self.variables
-            .write()
-            .unwrap()
-            .insert(v, Variable::Recursive);
+        self.variables.write().insert(v, Variable::Recursive);
         v
     }
 
@@ -364,7 +358,7 @@ impl Solver {
             }
         }
 
-        let mut lock = self.variables.write().unwrap();
+        let mut lock = self.variables.write();
         match lock.get(&v) {
             Some(Variable::Answer(got)) => {
                 let got = got.clone();
@@ -421,7 +415,7 @@ pub struct Subset<'a, Ans: LookupAnswer> {
 
 impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
     pub fn lookup_param_spec_var(&self, v: Var) -> Option<Type> {
-        let lock = self.solver.variables.read().unwrap();
+        let lock = self.solver.variables.read();
         match lock.get(&v) {
             Some(Variable::Answer(t)) => Some(t.clone()),
             _ => None,
@@ -429,7 +423,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
     }
 
     pub fn set_param_spec_var(&self, v: Var, t: ParamList) {
-        let mut lock = self.solver.variables.write().unwrap();
+        let mut lock = self.solver.variables.write();
         lock.insert(v, Variable::Answer(Type::ParamSpecValue(t)));
     }
 
@@ -458,7 +452,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         match (got, want) {
             _ if got == want => true,
             (Type::Var(v1), Type::Var(v2)) => {
-                let mut variables = self.solver.variables.write().unwrap();
+                let mut variables = self.solver.variables.write();
                 match (
                     variables.get(v1).cloned().unwrap_or_default(),
                     variables.get(v2).cloned().unwrap_or_default(),
@@ -495,7 +489,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 }
             }
             (Type::Var(v1), t2) => {
-                let mut variables = self.solver.variables.write().unwrap();
+                let mut variables = self.solver.variables.write();
                 match variables.get(v1).cloned().unwrap_or_default() {
                     Variable::Answer(t1) => {
                         drop(variables);
@@ -509,7 +503,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 }
             }
             (t1, Type::Var(v2)) => {
-                let mut variables = self.solver.variables.write().unwrap();
+                let mut variables = self.solver.variables.write();
                 match variables.get(v2).cloned().unwrap_or_default() {
                     Variable::Answer(t2) => {
                         drop(variables);

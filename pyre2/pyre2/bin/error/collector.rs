@@ -8,7 +8,6 @@
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
-use std::sync::Mutex;
 
 use dupe::Dupe;
 use ruff_text_size::Ranged;
@@ -19,6 +18,7 @@ use tracing::error;
 use crate::error::error::Error;
 use crate::error::style::ErrorStyle;
 use crate::module::module_info::ModuleInfo;
+use crate::util::lock::Mutex;
 
 #[derive(Debug, Default, Clone)]
 struct ModuleErrors {
@@ -68,7 +68,7 @@ pub struct ErrorCollector {
 
 impl Display for ErrorCollector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for err in self.errors.lock().unwrap().iter() {
+        for err in self.errors.lock().iter() {
             writeln!(f, "ERROR: {err}")?;
         }
         Ok(())
@@ -89,7 +89,7 @@ impl ErrorCollector {
             return;
         }
         if self.style != ErrorStyle::Never {
-            self.errors.lock().unwrap().push(err);
+            self.errors.lock().push(err);
         }
     }
 
@@ -109,21 +109,21 @@ impl ErrorCollector {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.errors.lock().unwrap().is_empty()
+        self.errors.lock().is_empty()
     }
 
     pub fn len(&self) -> usize {
-        self.errors.lock().unwrap().len()
+        self.errors.lock().len()
     }
 
     pub fn collect(&self) -> Vec<Error> {
-        self.errors.lock().unwrap().iter().cloned().collect()
+        self.errors.lock().iter().cloned().collect()
     }
 
     pub fn summarise<'a>(xs: impl Iterator<Item = &'a ErrorCollector>) -> Vec<(String, usize)> {
         let mut map = SmallMap::new();
         for x in xs {
-            for err in x.errors.lock().unwrap().iter() {
+            for err in x.errors.lock().iter() {
                 // Lots of error messages have names in them, e.g. "Can't find module `foo`".
                 // We want to summarise those together, so replace bits of text inside `...` with `...`.
                 let clean_msg = err
@@ -153,7 +153,7 @@ impl ErrorCollector {
     }
 
     pub fn print(&self) {
-        for err in self.errors.lock().unwrap().iter() {
+        for err in self.errors.lock().iter() {
             error!("{err}");
         }
     }

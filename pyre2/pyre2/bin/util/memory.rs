@@ -9,7 +9,6 @@ use std::cmp;
 use std::fmt;
 use std::fmt::Display;
 use std::sync::Arc;
-use std::sync::Mutex;
 use std::thread::sleep;
 use std::thread::spawn;
 use std::time::Duration;
@@ -19,6 +18,7 @@ use human_bytes::human_bytes;
 use memory_stats::memory_stats;
 
 use crate::util::display::commas_iter;
+use crate::util::lock::Mutex;
 
 #[derive(
     Debug, Clone, Copy, Dupe, Default, PartialEq, Eq, PartialOrd, Ord, Hash
@@ -127,7 +127,7 @@ impl MemoryUsageTrace {
         spawn(move || {
             loop {
                 sleep(frequency);
-                let mut lock = state2.lock().unwrap();
+                let mut lock = state2.lock();
                 if lock.0 {
                     break;
                 }
@@ -138,7 +138,7 @@ impl MemoryUsageTrace {
     }
 
     pub fn stop(&mut self) {
-        let mut lock = self.state.lock().unwrap();
+        let mut lock = self.state.lock();
         if !lock.0 {
             lock.0 = true;
             // If we were running before, make sure we capture a final snapshot
@@ -148,6 +148,6 @@ impl MemoryUsageTrace {
 
     /// Won't necessarily be a single MemoryUsage, but the peak across many.
     pub fn peak(&self) -> MemoryUsage {
-        self.state.lock().unwrap().1.clone()
+        self.state.lock().1.clone()
     }
 }
