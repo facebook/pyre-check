@@ -233,6 +233,8 @@ test(1, 2, 3, *[4]) # OK
 testcase!(
     test_splat_union,
     r#"
+from typing import Iterable
+
 def test(x: int, y: int, z: int): ...
 
 def fixed_same_len_ok(xs: tuple[int, int, int] | tuple[int, int, int]):

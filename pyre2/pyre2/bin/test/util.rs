@@ -75,8 +75,17 @@ macro_rules! testcase_with_bug {
     };
 }
 
-fn default_path(module: ModuleName) -> PathBuf {
-    PathBuf::from(format!("{}.py", module.as_str().replace('.', "/")))
+enum TestPathStyle {
+    Source,
+    Stub,
+}
+
+fn default_path(module: ModuleName, style: TestPathStyle) -> PathBuf {
+    let ext = match style {
+        TestPathStyle::Source => "py",
+        TestPathStyle::Stub => "pyi",
+    };
+    PathBuf::from(format!("{}.{}", module.as_str().replace('.', "/"), ext))
 }
 
 #[derive(Debug, Default, Clone)]
@@ -101,7 +110,7 @@ impl TestEnv {
 
     pub fn add(&mut self, name: &str, code: &str) {
         let module_name = ModuleName::from_str(name);
-        let relative_path = ModulePath::memory(default_path(module_name));
+        let relative_path = ModulePath::memory(default_path(module_name, TestPathStyle::Source));
         self.0
             .insert(module_name, (relative_path, Some(code.to_owned())));
     }
@@ -157,7 +166,10 @@ impl Loader for TestEnv {
         if let Some((path, _)) = self.0.get(&module) {
             Ok((path.dupe(), style))
         } else if lookup_test_stdlib(module).is_some() {
-            Ok((ModulePath::memory(default_path(module)), style))
+            Ok((
+                ModulePath::memory(default_path(module, TestPathStyle::Stub)),
+                style,
+            ))
         } else {
             Err(FindError::new(anyhow!("Module not given in test suite")))
         }

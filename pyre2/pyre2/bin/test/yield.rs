@@ -222,7 +222,7 @@ assert_type(async_count_up_to(), AsyncGenerator[Literal[2], Any])
 testcase!(
     test_inferring_generators_that_return_generators,
     r#"
-from typing import Generator, assert_type
+from typing import Any, Generator, assert_type
 
 def generator() -> Generator[int, None, None]: ...
 

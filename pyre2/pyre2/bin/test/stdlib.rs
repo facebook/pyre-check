@@ -11,7 +11,7 @@
 use crate::module::module_name::ModuleName;
 
 static ENUM: &str = r#"
-from typing import Any
+from typing import Any, Iterator
 _magic_enum_attr = property
 class EnumMeta(type):
     def __iter__[EnumMemberT](self: type[EnumMemberT]) -> Iterator[EnumMemberT]: ...
