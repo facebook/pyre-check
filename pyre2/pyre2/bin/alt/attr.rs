@@ -19,6 +19,8 @@ use crate::binding::binding::KeyExport;
 use crate::error::collector::ErrorCollector;
 use crate::export::exports::Exports;
 use crate::module::module_name::ModuleName;
+use crate::types::callable::Param;
+use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::module::Module;
@@ -368,15 +370,33 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 AttributeInner::ReadOnly(got) | AttributeInner::ReadWrite(got),
                 AttributeInner::ReadOnly(want),
             ) => is_subset(got, want),
-            (
-                AttributeInner::ReadOnly(got) | AttributeInner::ReadWrite(got),
-                AttributeInner::Property(want, _, _),
-            ) => {
+            (AttributeInner::ReadOnly(got), AttributeInner::Property(want, _, _)) => {
                 is_subset(
                     // Synthesize a getter method
                     &Type::callable_ellipsis(got.clone()),
                     want,
                 )
+            }
+            (AttributeInner::ReadWrite(got), AttributeInner::Property(want, want_setter, _)) => {
+                if !is_subset(
+                    // Synthesize a getter method
+                    &Type::callable_ellipsis(got.clone()),
+                    want,
+                ) {
+                    return false;
+                }
+                if let Some(want_setter) = want_setter {
+                    // Synthesize a setter method
+                    is_subset(
+                        want_setter,
+                        &Type::callable(
+                            vec![Param::PosOnly(got.clone(), Required::Required)],
+                            Type::None,
+                        ),
+                    )
+                } else {
+                    true
+                }
             }
             (
                 AttributeInner::Property(got_getter, got_setter, _),

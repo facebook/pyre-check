@@ -117,7 +117,29 @@ class P3(Protocol):
     @property
     def x(self) -> int:
         return 1
-def f(p1: P1, p2: P2, p3: P3):
+class P4(Protocol):
+    @property
+    def x(self) -> int:
+        return 1
+    @x.setter
+    def x(self, y: object) -> None:
+        pass
+class P5(Protocol):
+    @property
+    def x(self) -> int:
+        return 1
+    @x.setter
+    def x(self, y: str) -> None:
+        pass
+class ExtendsInt(int): ...
+class P6(Protocol):
+    @property
+    def x(self) -> int:
+        return 1
+    @x.setter
+    def x(self, y: ExtendsInt) -> None:
+        pass
+def f(p1: P1, p2: P2, p3: P3, p4: P4):
     x1: P1 = p2
     # read-only properties can't be used as read-write properties
     x2: P1 = p3  # E: EXPECTED P3 <: P1
@@ -125,7 +147,11 @@ def f(p1: P1, p2: P2, p3: P3):
     x3: P2 = p1  # E: EXPECTED P1 <: P2
     x4: P2 = p3  # E: EXPECTED P3 <: P2
     x5: P3 = p1
-    x5: P3 = p2
+    x6: P3 = p2
+    # setter type compatibility
+    x7: P4 = p2
+    x8: P5 = p2  # E: EXPECTED P2 <: P5
+    x9: P6 = p2  # E: EXPECTED P2 <: P6
 "#,
 );
 
