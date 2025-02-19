@@ -34,7 +34,7 @@ pub fn module_from_path(path: &Path, includes: &[PathBuf]) -> ModuleName {
         if out.is_empty() {
             (ModuleName::from_str("main"), false)
         } else {
-            (ModuleName::from_string(out.join(".")), true)
+            (ModuleName::from_parts(out), true)
         }
     }
 

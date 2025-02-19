@@ -8,6 +8,7 @@
 use std::ffi::OsString;
 use std::fmt;
 use std::fmt::Debug;
+use std::fmt::Display;
 use std::hash::Hash;
 use std::path::Path;
 
@@ -109,6 +110,10 @@ impl ModuleName {
         Self::from_str(x)
     }
 
+    pub fn from_parts(parts: impl IntoIterator<Item = impl Display + AsRef<str>>) -> Self {
+        Self::from_string(itertools::join(parts, "."))
+    }
+
     pub fn from_relative_path(path: &Path) -> anyhow::Result<Self> {
         let mut components = Vec::new();
         for raw_component in path.components() {
@@ -135,7 +140,7 @@ impl ModuleName {
                 }
             }
         }
-        Ok(ModuleName::from_string(itertools::join(components, ".")))
+        Ok(ModuleName::from_parts(components))
     }
 
     pub fn append(self, name: &Name) -> Self {
@@ -160,14 +165,10 @@ impl ModuleName {
         for _ in 0..dots {
             components.pop()?;
         }
-        let mut s = components.join(".");
         if let Some(suffix) = suffix {
-            if !s.is_empty() {
-                s.push('.');
-            }
-            s.push_str(suffix);
+            components.push(suffix.clone());
         }
-        Some(ModuleName::from_string(s))
+        Some(ModuleName::from_parts(components))
     }
 
     pub fn as_str(&self) -> &str {

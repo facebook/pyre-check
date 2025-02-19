@@ -551,7 +551,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn get_module_attr(&self, module: &Module, attr_name: &Name) -> Option<Type> {
-        let module_name = ModuleName::from_string(module.path().join("."));
+        let module_name = ModuleName::from_parts(module.path());
         match self.get_module_exports(module_name) {
             None => {
                 // We have already errored on `m` when loading the module. No need to emit error again.

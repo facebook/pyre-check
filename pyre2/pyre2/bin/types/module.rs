@@ -92,7 +92,6 @@ impl Module {
     }
 
     pub fn is_imported_directly(&self) -> bool {
-        self.modules
-            .contains(&ModuleName::from_string(self.path.join(".")))
+        self.modules.contains(&ModuleName::from_parts(self.path()))
     }
 }
