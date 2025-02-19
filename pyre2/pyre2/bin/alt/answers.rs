@@ -301,6 +301,13 @@ impl Answers {
         };
         solver.get(key)
     }
+
+    pub fn get_idx<K: Keyed + SolveRecursive>(&self, k: Idx<K>) -> Option<Arc<K::Answer>>
+    where
+        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
+    {
+        self.table.get::<K>().get(k)?.get()
+    }
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {

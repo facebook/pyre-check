@@ -8,7 +8,6 @@
 use std::sync::Arc;
 
 use dupe::Dupe;
-use dupe::OptionDupedExt;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
@@ -27,7 +26,8 @@ use crate::visitors::Visitors;
 
 impl State {
     pub fn get_type(&self, handle: &Handle, key: &Key) -> Option<Arc<Type>> {
-        self.get_solutions(handle)?.get(key).duped()
+        let idx = self.get_bindings(handle)?.key_to_idx(key);
+        self.get_answers(handle)?.get_idx(idx)
     }
 
     fn identifier_at(&self, handle: &Handle, position: TextSize) -> Option<Identifier> {

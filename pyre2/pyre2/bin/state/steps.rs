@@ -57,7 +57,7 @@ pub struct ModuleSteps {
     pub load: Option<Arc<Load>>,
     pub ast: Option<Arc<ModModule>>,
     pub exports: Option<Exports>,
-    pub answers: Option<Arc<(Bindings, Answers)>>,
+    pub answers: Option<Arc<(Bindings, Arc<Answers>)>>,
     pub solutions: Option<Arc<Solutions>>,
 }
 
@@ -203,7 +203,7 @@ impl Step {
         load: Arc<Load>,
         ast: Arc<ModModule>,
         exports: Exports,
-    ) -> Arc<(Bindings, Answers)> {
+    ) -> Arc<(Bindings, Arc<Answers>)> {
         let bindings = Bindings::new(
             Arc::unwrap_or_clone(ast).body,
             load.module_info.dupe(),
@@ -214,13 +214,13 @@ impl Step {
             ctx.uniques,
         );
         let answers = Answers::new(&bindings);
-        Arc::new((bindings, answers))
+        Arc::new((bindings, Arc::new(answers)))
     }
 
     fn solutions<Lookup: LookupExport + LookupAnswer>(
         ctx: &Context<Lookup>,
         load: Arc<Load>,
-        answers: Arc<(Bindings, Answers)>,
+        answers: Arc<(Bindings, Arc<Answers>)>,
     ) -> Arc<Solutions> {
         Arc::new(answers.1.solve(
             ctx.lookup,

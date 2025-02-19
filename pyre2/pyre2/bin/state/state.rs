@@ -20,6 +20,7 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
+use crate::alt::answers::Answers;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
@@ -496,6 +497,16 @@ impl State {
             .map(|x| x.0.dupe())
     }
 
+    pub fn get_answers(&self, handle: &Handle) -> Option<Arc<Answers>> {
+        self.modules
+            .get(handle)?
+            .steps
+            .read()
+            .answers
+            .as_ref()
+            .map(|x| x.1.dupe())
+    }
+
     pub fn get_module_info(&self, handle: &Handle) -> Option<ModuleInfo> {
         self.modules
             .get(handle)?
@@ -510,6 +521,7 @@ impl State {
         self.modules.get(handle)?.steps.read().ast.dupe()
     }
 
+    #[allow(dead_code)]
     pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<Solutions>> {
         self.modules.get(handle)?.steps.read().solutions.dupe()
     }
