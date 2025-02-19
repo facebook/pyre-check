@@ -42,7 +42,6 @@ pub struct Context<'a, Lookup> {
     pub uniques: &'a UniqueFactory,
     pub stdlib: &'a Stdlib,
     pub lookup: &'a Lookup,
-    pub retain_memory: bool,
 }
 
 #[derive(Debug)]
@@ -229,7 +228,6 @@ impl Step {
             &load.errors,
             ctx.stdlib,
             ctx.uniques,
-            !ctx.retain_memory,
         ))
     }
 }

@@ -117,6 +117,7 @@ impl DisplayWith<Bindings> for Answers {
 pub type SolutionsEntry<K> = SmallMap<K, Arc<<K as Keyed>::Answer>>;
 
 table!(
+    // Only the exported keys are stored in the solutions table.
     #[derive(Default, Debug, Clone)]
     pub struct SolutionsTable(pub SolutionsEntry)
 );
@@ -221,29 +222,28 @@ impl Answers {
         errors: &ErrorCollector,
         stdlib: &Stdlib,
         uniques: &UniqueFactory,
-        exported_only: bool,
     ) -> Solutions {
         let mut res = SolutionsTable::default();
 
         fn pre_solve<Ans: LookupAnswer, K: Solve<Ans>>(
             items: &mut SolutionsEntry<K>,
             answers: &AnswersSolver<Ans>,
-            exported_only: bool,
         ) where
             AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         {
-            let retain = K::EXPORTED || !exported_only;
-            if retain {
+            if K::EXPORTED {
                 items.reserve(answers.bindings.keys::<K>().len());
             }
+            if !K::EXPORTED && answers.base_errors.style() == ErrorStyle::Never {
+                // No point doing anything here.
+                return;
+            }
             for idx in answers.bindings.keys::<K>() {
-                if retain || answers.base_errors.style() == ErrorStyle::Delayed {
-                    let v = answers.get_idx(idx);
-                    if retain {
-                        let k = answers.bindings.idx_to_key(idx);
-                        items.insert(k.clone(), v.dupe());
-                    }
+                let v = answers.get_idx(idx);
+                if K::EXPORTED {
+                    let k = answers.bindings.idx_to_key(idx);
+                    items.insert(k.clone(), v.dupe());
                 }
             }
         }
@@ -257,11 +257,7 @@ impl Answers {
             recurser: &Recurser::new(),
             current: self,
         };
-        table_mut_for_each!(&mut res, |items| pre_solve(
-            items,
-            &answers_solver,
-            exported_only
-        ));
+        table_mut_for_each!(&mut res, |items| pre_solve(items, &answers_solver));
 
         // Now force all types to be fully resolved.
         fn post_solve<K: SolveRecursive>(items: &mut SolutionsEntry<K>, solver: &Solver) {

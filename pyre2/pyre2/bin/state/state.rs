@@ -207,7 +207,6 @@ impl State {
                 uniques: &self.uniques,
                 stdlib: &stdlib,
                 lookup: &self.lookup(module_state.dupe()),
-                retain_memory: self.retain_memory,
             });
             {
                 let mut to_drop = None;
