@@ -340,3 +340,14 @@ C()  # OK
 C(x=1)  # OK
     "#,
 );
+
+testcase!(
+    test_field_is_not_default,
+    r#"
+from dataclasses import dataclass, field
+@dataclass
+class C:
+    x: int = field()
+C()  # E: Missing argument `x`
+    "#,
+);

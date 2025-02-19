@@ -148,13 +148,11 @@ impl ClassField {
         }
     }
 
-    pub fn as_param(self, name: &Name, kw_only: bool) -> Param {
-        let ClassField(ClassFieldInner::Simple {
-            ty, initialization, ..
-        }) = self;
-        let required = match initialization {
-            ClassFieldInitialization::Class(_) => Required::Optional,
-            ClassFieldInitialization::Instance => Required::Required,
+    pub fn as_param(self, name: &Name, default: bool, kw_only: bool) -> Param {
+        let ClassField(ClassFieldInner::Simple { ty, .. }) = self;
+        let required = match default {
+            true => Required::Optional,
+            false => Required::Required,
         };
         if kw_only {
             Param::KwOnly(name.clone(), ty, required)

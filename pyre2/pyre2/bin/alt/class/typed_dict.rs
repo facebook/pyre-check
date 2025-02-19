@@ -19,6 +19,7 @@ use starlark_map::smallmap;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::class::classdef::ClassField;
+use crate::alt::class::classdef::ClassFieldInitialization;
 use crate::alt::class::classdef::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedField;
@@ -186,7 +187,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )];
         for (name, _) in fields {
             let field = self.get_class_member(cls, name).unwrap().value;
-            params.push(Arc::unwrap_or_clone(field).as_param(name, true));
+            let default = matches!(
+                &*field,
+                ClassField(ClassFieldInner::Simple {
+                    initialization: ClassFieldInitialization::Class(_),
+                    ..
+                })
+            );
+            params.push(Arc::unwrap_or_clone(field).as_param(name, default, true));
         }
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), Type::None)),

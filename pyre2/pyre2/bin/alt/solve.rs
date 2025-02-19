@@ -682,31 +682,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ClassFieldInitialValue::Class(None) => ClassFieldInitialization::Class(None),
             ClassFieldInitialValue::Class(Some(e)) => {
                 let metadata = self.get_idx(initialization.class_metadata);
-                if metadata.dataclass_metadata().is_some() {
-                    let mut props = BoolKeywords::new();
-                    // If this field was created via a call to a dataclass field specifier, extract field properties from the call.
-                    if let Expr::Call(ExprCall {
+                // If this field was created via a call to a dataclass field specifier, extract field properties from the call.
+                if metadata.dataclass_metadata().is_some()
+                    && let Expr::Call(ExprCall {
                         range: _,
                         func,
                         arguments: Arguments { keywords, .. },
                     }) = e
-                    {
-                        // We already type-checked this expression as part of computing the type for the ClassField,
-                        // so we can ignore any errors encountered here.
-                        let ignore_errors = ErrorCollector::new(ErrorStyle::Never);
-                        let func_ty = self.expr_infer(func, &ignore_errors);
-                        if matches!(
-                            func_ty.callee_kind(),
-                            Some(CalleeKind::Callable(CallableKind::DataclassField))
-                        ) {
-                            for kw in keywords {
-                                if let Some(id) = &kw.arg
-                                    && id.id == DataclassKeywords::INIT.0
-                                {
-                                    let val = self.expr_infer(&kw.value, &ignore_errors);
-                                    props.set_keyword(kw.arg.as_ref(), val);
-                                    break;
-                                }
+                {
+                    let mut props = BoolKeywords::new();
+                    // We already type-checked this expression as part of computing the type for the ClassField,
+                    // so we can ignore any errors encountered here.
+                    let ignore_errors = ErrorCollector::new(ErrorStyle::Never);
+                    let func_ty = self.expr_infer(func, &ignore_errors);
+                    if matches!(
+                        func_ty.callee_kind(),
+                        Some(CalleeKind::Callable(CallableKind::DataclassField))
+                    ) {
+                        for kw in keywords {
+                            if let Some(id) = &kw.arg
+                                && id.id == DataclassKeywords::INIT.0
+                            {
+                                let val = self.expr_infer(&kw.value, &ignore_errors);
+                                props.set_keyword(kw.arg.as_ref(), val);
+                                break;
                             }
                         }
                     }

@@ -188,6 +188,9 @@ impl DataclassKeywords {
     pub const FROZEN: (Name, bool) = (Name::new_static("frozen"), false);
     pub const MATCH_ARGS: (Name, bool) = (Name::new_static("match_args"), true);
     pub const KW_ONLY: (Name, bool) = (Name::new_static("kw_only"), false);
+    /// We combine default and default_factory into a single "default" keyword indicating whether
+    /// the field has a default. The default value isn't stored.
+    pub const DEFAULT: (Name, bool) = (Name::new_static("default"), false);
 }
 
 impl Callable {

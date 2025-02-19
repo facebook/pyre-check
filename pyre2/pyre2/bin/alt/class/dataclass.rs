@@ -92,11 +92,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut kw_only = false;
         fields.iter().filter_map(|name| {
             let field @ ClassField(ClassFieldInner::Simple { ty, initialization, .. }) = &*self.get_class_member(cls, name).unwrap().value;
-            let mut props = BoolKeywords::new();
+            let mut props = match initialization {
+                ClassFieldInitialization::Class(Some(field_props)) => field_props.clone(),
+                ClassFieldInitialization::Class(None) => {
+                    let mut kws = BoolKeywords::new();
+                    kws.set(DataclassKeywords::DEFAULT.0, true);
+                    kws
+                }
+                ClassFieldInitialization::Instance => BoolKeywords::new()
+            };
             props.set(DataclassKeywords::KW_ONLY.0, kw_only);
-            if let ClassFieldInitialization::Class(Some(field_props)) = initialization {
-                props.set(DataclassKeywords::INIT.0, field_props.is_set(&DataclassKeywords::INIT));
-            }
             // A field with type KW_ONLY is a sentinel value that indicates that the remaining
             // fields should be keyword-only params in the generated `__init__`.
             if matches!(ty, Type::ClassType(cls) if cls.class_object().has_qname("dataclasses", "KW_ONLY")) {
@@ -124,6 +129,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             if field_props.is_set(&DataclassKeywords::INIT) {
                 params.push(field.as_param(
                     &name,
+                    field_props.is_set(&DataclassKeywords::DEFAULT),
                     kw_only || field_props.is_set(&DataclassKeywords::KW_ONLY),
                 ));
             }
