@@ -35,6 +35,7 @@ use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::graph::index::Idx;
 use crate::types::annotation::Annotation;
+use crate::types::callable::DataclassKeywords;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
@@ -534,9 +535,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             (value_ty, None)
         };
-        let readonly = metadata
-            .dataclass_metadata()
-            .map_or(false, |dataclass| dataclass.kws.frozen);
+        let readonly = metadata.dataclass_metadata().map_or(false, |dataclass| {
+            dataclass.kws.is_set(&DataclassKeywords::FROZEN)
+        });
         let class_field = ClassField::new(ty.clone(), ann.cloned(), initialization, readonly);
 
         // check if this attribute is compatible with the parent attribute

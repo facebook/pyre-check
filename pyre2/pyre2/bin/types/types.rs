@@ -467,7 +467,7 @@ impl Type {
 
     pub fn callee_kind(&self) -> Option<CalleeKind> {
         match self {
-            Type::Callable(_, kind) => Some(CalleeKind::Callable(*kind)),
+            Type::Callable(_, kind) => Some(CalleeKind::Callable(kind.clone())),
             Type::ClassDef(c) => Some(CalleeKind::Class(c.kind())),
             Type::Forall(_, t) => t.callee_kind(),
             // TODO(rechen): We should have one callee kind per overloaded function rather than one per overload signature.

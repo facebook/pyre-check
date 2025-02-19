@@ -18,9 +18,9 @@ use crate::alt::callable::CallArg;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::error::style::ErrorStyle;
+use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
-use crate::types::callable::DataclassKeywords;
 use crate::types::callable::Params;
 use crate::types::class::ClassType;
 use crate::types::typed_dict::TypedDict;
@@ -376,11 +376,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         };
         self.solver().finish_quantified(&call_target.0);
         if is_dataclass && let Type::Callable(c, _) = res {
-            let mut kws = DataclassKeywords::default();
+            let mut kws = BoolKeywords::new();
             for kw in keywords {
                 kws.set_keyword(kw.arg.as_ref(), self.expr_infer(&kw.value, errors));
             }
-            Type::Callable(c, CallableKind::Dataclass(kws))
+            Type::Callable(c, CallableKind::Dataclass(Box::new(kws)))
         } else {
             res
         }

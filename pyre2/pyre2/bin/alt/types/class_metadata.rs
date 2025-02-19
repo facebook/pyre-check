@@ -20,7 +20,7 @@ use crate::alt::class::classdef::ClassField;
 use crate::alt::class::classdef::ClassFieldInitialization;
 use crate::alt::class::classdef::ClassFieldInner;
 use crate::error::collector::ErrorCollector;
-use crate::types::callable::DataclassKeywords;
+use crate::types::callable::BoolKeywords;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::qname::QName;
@@ -258,7 +258,7 @@ pub struct NamedTupleMetadata {
 pub struct DataclassMetadata {
     /// The dataclass fields, e.g., `{'x'}` for `@dataclass class C: x: int`.
     pub fields: SmallSet<Name>,
-    pub kws: DataclassKeywords,
+    pub kws: BoolKeywords,
 }
 
 impl DataclassMetadata {
@@ -269,7 +269,7 @@ impl DataclassMetadata {
             // Dataclass fields are inherited.
             fields: self.fields.clone(),
             // The remaining metadata are irrelevant, so just set them to some sensible-seeming value.
-            kws: self.kws,
+            kws: self.kws.clone(),
         }
     }
 }

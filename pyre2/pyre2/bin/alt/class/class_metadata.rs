@@ -215,7 +215,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let dataclass_fields = self.get_dataclass_fields(cls, &bases_with_metadata);
                 dataclass_metadata = Some(DataclassMetadata {
                     fields: dataclass_fields,
-                    kws,
+                    kws: *kws,
                 });
             }
         }

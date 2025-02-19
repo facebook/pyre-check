@@ -22,6 +22,7 @@ use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
+use crate::types::callable::DataclassKeywords;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
@@ -62,19 +63,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let metadata = self.get_metadata_for_class(cls);
         let dataclass = metadata.dataclass_metadata()?;
         let mut fields = SmallMap::new();
-        if dataclass.kws.init {
+        if dataclass.kws.is_set(&DataclassKeywords::INIT) {
             fields.insert(
                 dunder::INIT,
-                self.get_dataclass_init(cls, &dataclass.fields, dataclass.kws.kw_only),
+                self.get_dataclass_init(
+                    cls,
+                    &dataclass.fields,
+                    dataclass.kws.is_set(&DataclassKeywords::KW_ONLY),
+                ),
             );
         }
-        if dataclass.kws.order {
+        if dataclass.kws.is_set(&DataclassKeywords::ORDER) {
             fields.extend(self.get_dataclass_rich_comparison_methods(cls));
         }
-        if dataclass.kws.match_args {
+        if dataclass.kws.is_set(&DataclassKeywords::MATCH_ARGS) {
             fields.insert(
                 dunder::MATCH_ARGS,
-                self.get_dataclass_match_args(cls, &dataclass.fields, dataclass.kws.kw_only),
+                self.get_dataclass_match_args(
+                    cls,
+                    &dataclass.fields,
+                    dataclass.kws.is_set(&DataclassKeywords::KW_ONLY),
+                ),
             );
         }
         Some(ClassSynthesizedFields::new(fields))
