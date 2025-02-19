@@ -8,7 +8,6 @@
 pub mod dirty;
 pub mod handle;
 pub mod ide;
-pub mod info;
 pub mod loader;
 pub mod state;
 pub mod steps;

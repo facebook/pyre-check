@@ -29,7 +29,6 @@ use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
 use crate::state::dirty::Dirty;
-use crate::state::info::Info;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
 use crate::util::fs_anyhow;
@@ -55,11 +54,11 @@ pub struct Load {
 #[derive(Debug, Default)]
 pub struct ModuleSteps {
     pub dirty: Dirty,
-    pub load: Info<Arc<Load>>,
-    pub ast: Info<Arc<ModModule>>,
-    pub exports: Info<Exports>,
-    pub answers: Info<Arc<(Bindings, Answers)>>,
-    pub solutions: Info<Arc<Solutions>>,
+    pub load: Option<Arc<Load>>,
+    pub ast: Option<Arc<ModModule>>,
+    pub exports: Option<Exports>,
+    pub answers: Option<Arc<(Bindings, Answers)>>,
+    pub solutions: Option<Arc<Solutions>>,
 }
 
 #[derive(
@@ -89,11 +88,11 @@ macro_rules! compute_step {
     (<$ty:ty> $output:ident = $($input:ident),*) => {
         ComputeStep(Box::new(|steps: &ModuleSteps| {
             let _ = steps; // Not used if $input is empty.
-            $(let $input = steps.$input.get().unwrap().dupe();)*
+            $(let $input = steps.$input.dupe().unwrap();)*
             Box::new(move |ctx: &Context<$ty>| {
-                let info = Info::with(move || Step::$output(ctx, $($input),*));
+                let res = Step::$output(ctx, $($input),*);
                 Box::new(move |steps: &mut ModuleSteps| {
-                    steps.$output = info;
+                    steps.$output = Some(res);
                 })
             })
         }))
