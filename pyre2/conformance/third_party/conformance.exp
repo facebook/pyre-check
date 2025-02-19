@@ -3927,9 +3927,19 @@
     },
     {
       "code": -2,
+      "column": 1,
+      "concise_description": "Missing argument `b`",
+      "description": "Missing argument `b`",
+      "line": 32,
+      "name": "PyreError",
+      "stop_column": 4,
+      "stop_line": 32
+    },
+    {
+      "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED Literal['hi'] <: int",
-      "description": "EXPECTED Literal['hi'] <: int",
+      "concise_description": "Expected 0 positional arguments, got 1",
+      "description": "Expected 0 positional arguments, got 1",
       "line": 32,
       "name": "PyreError",
       "stop_column": 9,
@@ -3958,8 +3968,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED Literal['hi'] <: int",
-      "description": "EXPECTED Literal['hi'] <: int",
+      "concise_description": "Expected 0 positional arguments, got 1",
+      "description": "Expected 0 positional arguments, got 1",
       "line": 35,
       "name": "PyreError",
       "stop_column": 9,
@@ -3967,32 +3977,32 @@
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "Multiple values for argument `b`",
-      "description": "Multiple values for argument `b`",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED Literal['hi'] <: int",
-      "description": "EXPECTED Literal['hi'] <: int",
+      "column": 1,
+      "concise_description": "Missing argument `a`",
+      "description": "Missing argument `a`",
       "line": 38,
       "name": "PyreError",
-      "stop_column": 9,
+      "stop_column": 4,
       "stop_line": 38
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "EXPECTED Literal[1] <: str",
-      "description": "EXPECTED Literal[1] <: str",
+      "column": 1,
+      "concise_description": "Missing argument `b`",
+      "description": "Missing argument `b`",
       "line": 38,
       "name": "PyreError",
-      "stop_column": 12,
+      "stop_column": 4,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Expected 0 positional arguments, got 2",
+      "description": "Expected 0 positional arguments, got 2",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 9,
       "stop_line": 38
     },
     {

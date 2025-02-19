@@ -70,7 +70,6 @@ use crate::types::annotation::Qualifier;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
-use crate::types::callable::DataclassKeywords;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
@@ -700,13 +699,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Some(CalleeKind::Callable(CallableKind::DataclassField))
                     ) {
                         for kw in keywords {
-                            if let Some(id) = &kw.arg
-                                && id.id == DataclassKeywords::INIT.0
-                            {
-                                let val = self.expr_infer(&kw.value, &ignore_errors);
-                                props.set_keyword(kw.arg.as_ref(), val);
-                                break;
-                            }
+                            let val = self.expr_infer(&kw.value, &ignore_errors);
+                            props.set_keyword(kw.arg.as_ref(), val);
                         }
                     }
                     ClassFieldInitialization::Class(Some(props))

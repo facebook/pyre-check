@@ -101,7 +101,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 ClassFieldInitialization::Instance => BoolKeywords::new()
             };
-            props.set(DataclassKeywords::KW_ONLY.0, kw_only);
+            if kw_only {
+                props.set(DataclassKeywords::KW_ONLY.0, true);
+            }
             // A field with type KW_ONLY is a sentinel value that indicates that the remaining
             // fields should be keyword-only params in the generated `__init__`.
             if matches!(ty, Type::ClassType(cls) if cls.class_object().has_qname("dataclasses", "KW_ONLY")) {

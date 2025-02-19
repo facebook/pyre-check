@@ -351,3 +351,15 @@ class C:
 C()  # E: Missing argument `x`
     "#,
 );
+
+testcase!(
+    test_field_kw_only,
+    r#"
+from dataclasses import dataclass, field
+@dataclass
+class C:
+    x: int = field(kw_only=True)
+C(1)  # E: Missing argument `x`  # E: Expected 0 positional arguments
+C(x=1)  # OK
+    "#,
+);

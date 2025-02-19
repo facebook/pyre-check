@@ -323,9 +323,9 @@
     "Line 64: Expected 1 errors"
   ],
   "dataclasses_kwonly.py": [
-    "Line 32: Unexpected errors ['Missing argument `a`', \"EXPECTED Literal['hi'] <: int\"]",
+    "Line 32: Unexpected errors ['Missing argument `a`', 'Missing argument `b`', 'Expected 0 positional arguments, got 1']",
     "Line 33: Unexpected errors ['Missing argument `b`']",
-    "Line 35: Unexpected errors ['Missing argument `a`', \"EXPECTED Literal['hi'] <: int\", 'Multiple values for argument `b`']",
+    "Line 35: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 1']",
     "Line 47: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 1']",
     "Line 50: Unexpected errors ['Missing argument `a`', 'Expected 0 positional arguments, got 1']",
     "Line 61: Unexpected errors ['Missing argument `c`', 'EXPECTED float <: int', 'Multiple values for argument `b`']"
