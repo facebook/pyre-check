@@ -187,7 +187,7 @@ pub trait LookupAnswer: Sized {
 }
 
 impl Answers {
-    pub fn new(bindings: &Bindings) -> Self {
+    pub fn new(bindings: &Bindings, solver: Solver) -> Self {
         fn presize<K: SolveRecursive>(items: &mut AnswerEntry<K>, bindings: &Bindings)
         where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -201,10 +201,7 @@ impl Answers {
         let mut table = AnswerTable::default();
         table_mut_for_each!(&mut table, |items| presize(items, bindings));
 
-        Self {
-            solver: Solver::new(),
-            table,
-        }
+        Self { solver, table }
     }
 
     #[expect(dead_code)]

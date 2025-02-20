@@ -69,11 +69,13 @@ use crate::graph::index_map::IndexMap;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::solver::solver::Solver;
 use crate::table;
 use crate::table_for_each;
 use crate::table_try_for_each;
 use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
+use crate::types::types::Var;
 use crate::util::display::DisplayWith;
 use crate::util::uniques::UniqueFactory;
 
@@ -120,6 +122,7 @@ pub struct BindingsBuilder<'a> {
     pub lookup: &'a dyn LookupExport,
     pub config: &'a Config,
     errors: &'a ErrorCollector,
+    solver: &'a Solver,
     uniques: &'a UniqueFactory,
     pub scopes: Scopes,
     pub functions: Vec1<FuncInfo>,
@@ -194,10 +197,27 @@ impl Bindings {
         self.0.table.get::<K>().0.items().map(|(k, _)| k)
     }
 
+    pub fn get_lambda_param(&self, name: &Identifier) -> Var {
+        let b = self.get(self.key_to_idx(&Key::Definition(ShortIdentifier::new(name))));
+        if let Binding::LambdaParameter(var) = b {
+            *var
+        } else {
+            panic!(
+                "Internal error: unexpected binding for lambda parameter `{}` @  {:?}: {}, module={}, path={}",
+                &name.id,
+                name.range,
+                b.display_with(self),
+                self.module_info().name(),
+                self.module_info().path(),
+            )
+        }
+    }
+
     pub fn new(
         x: Vec<Stmt>,
         module_info: ModuleInfo,
         exports: Exports,
+        solver: &Solver,
         lookup: &dyn LookupExport,
         config: &Config,
         errors: &ErrorCollector,
@@ -208,6 +228,7 @@ impl Bindings {
             lookup,
             config,
             errors,
+            solver,
             uniques,
             scopes: Scopes::module(),
             functions: Vec1::new(FuncInfo::default()),
@@ -517,6 +538,19 @@ impl<'a> BindingsBuilder<'a> {
                 self.scopes.update_flow_info(name, binding_key, None);
             }
         }
+    }
+
+    pub fn bind_lambda_param(&mut self, name: &Identifier) {
+        let var = self.solver.fresh_contained(self.uniques);
+        let bind_key = self.table.insert(
+            Key::Definition(ShortIdentifier::new(name)),
+            Binding::LambdaParameter(var),
+        );
+        self.scopes
+            .current_mut()
+            .stat
+            .add(name.id.clone(), name.range, None);
+        self.bind_key(&name.id, bind_key, None);
     }
 
     /// Helper for loops, inserts a phi key for every name in the given flow.

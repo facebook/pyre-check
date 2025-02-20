@@ -27,7 +27,6 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::UNKNOWN;
 use crate::alt::call::CallStyle;
-use crate::alt::call::CallTarget;
 use crate::alt::callable::CallArg;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
@@ -366,47 +365,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 })
             }
             Expr::Lambda(lambda) => {
-                let hint_callable = hint.and_then(|ty| {
-                    if let Some((_, CallTarget::Callable(c))) = self.as_call_target(ty.clone()) {
-                        Some(c)
-                    } else {
-                        None
+                let mut param_vars = Vec::new();
+                if let Some(parameters) = &lambda.parameters {
+                    param_vars.reserve(parameters.len());
+                    for x in parameters.iter() {
+                        param_vars.push(self.bindings().get_lambda_param(x.name()));
                     }
-                });
-                let parameters: Vec<Param> = if let Some(parameters) = &lambda.parameters {
-                    // TODO: use callable hint parameters to check body
-                    (**parameters)
-                        .iter()
-                        .map(|p| {
-                            let ty = self
-                                .get(&Key::Definition(ShortIdentifier::new(p.name())))
-                                .arc_clone();
-                            Param::Pos(p.name().id.clone(), ty, Required::Required)
-                        })
-                        .collect()
-                } else {
-                    vec![]
-                };
-                if let Some(callable) = hint_callable {
-                    let inferred_callable = Type::Callable(
-                        Box::new(Callable {
-                            params: Params::List(ParamList::new(parameters)),
-                            ret: self.expr(&lambda.body, Some(&callable.ret), errors),
-                        }),
-                        CallableKind::Anon,
-                    );
-                    let wanted_callable = Type::Callable(Box::new(callable), CallableKind::Anon);
-                    self.check_type(&wanted_callable, &inferred_callable, x.range(), errors);
-                    wanted_callable
-                } else {
-                    Type::Callable(
-                        Box::new(Callable {
-                            params: Params::List(ParamList::new(parameters)),
-                            ret: self.expr_infer(&lambda.body, errors),
-                        }),
-                        CallableKind::Anon,
-                    )
                 }
+                let return_hint = hint
+                    .iter()
+                    .flat_map(|ty| self.decompose_lambda(ty, &param_vars))
+                    .next();
+                let params = param_vars
+                    .iter()
+                    .zip(lambda.parameters.iter().flatten())
+                    .map(|(var, p)| {
+                        Param::Pos(
+                            p.name().id.clone(),
+                            self.solver().force_var(*var),
+                            Required::Required,
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                let params = Params::List(ParamList::new(params));
+                let ret = self.expr_infer_with_hint(&lambda.body, return_hint.as_ref(), errors);
+                Type::Callable(Box::new(Callable { params, ret }), CallableKind::Anon)
             }
             Expr::If(x) => {
                 // TODO: Support type refinement

@@ -28,6 +28,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
+use crate::solver::solver::Solver;
 use crate::state::dirty::Dirty;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
@@ -203,16 +204,18 @@ impl Step {
         ast: Arc<ModModule>,
         exports: Exports,
     ) -> Arc<(Bindings, Arc<Answers>)> {
+        let solver = Solver::new();
         let bindings = Bindings::new(
             Arc::unwrap_or_clone(ast).body,
             load.module_info.dupe(),
             exports,
+            &solver,
             ctx.lookup,
             ctx.config,
             &load.errors,
             ctx.uniques,
         );
-        let answers = Answers::new(&bindings);
+        let answers = Answers::new(&bindings, solver);
         Arc::new((bindings, Arc::new(answers)))
     }
 

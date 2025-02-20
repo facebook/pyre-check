@@ -1277,6 +1277,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.attr_infer(&binding_ty, &attr.id, attr.range, errors)
             }
             Binding::Decorator(expr) => self.expr_infer(expr, errors),
+            Binding::LambdaParameter(var) => var.to_type(),
         }
     }
 

@@ -231,6 +231,26 @@ def iter() -> Iterator[list[A]]:
 "#,
 );
 
+testcase!(
+    test_context_lambda_return,
+    r#"
+from typing import Callable
+class A: ...
+class B(A): ...
+f: Callable[[], list[A]] = lambda: [B()]
+"#,
+);
+
+// We want to contextually type lambda params even when there is an arity mismatch.
+testcase!(
+    test_context_lambda_arity,
+    r#"
+from typing import Callable, reveal_type
+f: Callable[[int], None] = lambda x, y: None # E: EXPECTED (x: int, y: Unknown) -> None <: (int) -> None
+g: Callable[[int, int], None] = lambda x: None # E: EXPECTED (x: int) -> None <: (int, int) -> None
+"#,
+);
+
 testcase_with_bug!(
     "TODO: We do not currently validate assignments in multi-target assigns. Depending how we fix it, contextual typing may not work",
     test_context_assign_unpacked_tuple,

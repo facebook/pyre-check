@@ -75,20 +75,11 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn bind_lambda(&mut self, lambda: &ExprLambda) {
+    pub fn bind_lambda(&mut self, lambda: &ExprLambda) {
         self.scopes.push(Scope::function());
         if let Some(parameters) = &lambda.parameters {
             for x in parameters.iter() {
-                let name = x.name();
-                let bind_key = self.table.insert(
-                    Key::Definition(ShortIdentifier::new(name)),
-                    Binding::AnyType(AnyStyle::Implicit),
-                );
-                self.scopes
-                    .current_mut()
-                    .stat
-                    .add(name.id.clone(), name.range, None);
-                self.bind_key(&name.id, bind_key, None);
+                self.bind_lambda_param(x.name());
             }
         }
     }

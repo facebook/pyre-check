@@ -173,7 +173,6 @@ impl SolveRecursive for KeyYieldFrom {
         v.visit_mut(f);
     }
 }
-
 pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
     fn solve(
         answers: &AnswersSolver<Ans>,

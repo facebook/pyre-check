@@ -6,10 +6,8 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
-testcase_with_bug!(
-    "Need to use type from hint when analyzing body of lambda",
+testcase!(
     test_lambda,
     r#"
 from typing import Callable, reveal_type
@@ -17,13 +15,12 @@ f1 = lambda x: 1
 reveal_type(f1)  # E: revealed type: (x: Unknown) -> Literal[1]
 f2 = lambda x: reveal_type(x)  # E: revealed type: Unknown
 f3: Callable[[int], int] = lambda x: 1
-reveal_type(f3)  # E: revealed type: (int) -> int
-f4: Callable[[int], None] = lambda x: reveal_type(x)  # E: revealed type: Unknown
+reveal_type(f3)  # E: revealed type: (x: int) -> Literal[1]
+f4: Callable[[int], None] = lambda x: reveal_type(x)  # E: revealed type: int
 f5: Callable[[int], int] = lambda x: x
-f6: Callable[[int], int] = lambda x: "foo"  # E: EXPECTED Literal['foo'] <: int
-f7: Callable[[int, int], int] = lambda x: 1  # E: EXPECTED (x: Unknown) -> Literal[1] <: (int, int) -> int
-# this is a bug, when we analyze the body of the lambda `x` doesn't use the type from the hint
-f8: Callable[[int], int] = lambda x: x + "foo"
+f6: Callable[[int], int] = lambda x: "foo"  # E: EXPECTED (x: int) -> Literal['foo'] <: (int) -> int
+f7: Callable[[int, int], int] = lambda x: 1  # E: EXPECTED (x: int) -> Literal[1] <: (int, int) -> int
+f8: Callable[[int], int] = lambda x: x + "foo" # E: EXPECTED Literal['foo'] <: int
 "#,
 );
 

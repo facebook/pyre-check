@@ -7,6 +7,8 @@
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::types::callable::Param;
+use crate::types::callable::Required;
 use crate::types::types::Type;
 use crate::types::types::Var;
 
@@ -126,6 +128,34 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let list_type = self.stdlib.list(elem.to_type()).to_type();
         if self.is_subset_eq(&list_type, ty) {
             self.expand_var_opt(elem)
+        } else {
+            None
+        }
+    }
+
+    pub fn decompose_lambda(&self, ty: &Type, param_vars: &[Var]) -> Option<Type> {
+        let return_ty = self.fresh_var();
+        // Note that parameters are optional and we add a `*args: Any`. This is to ensure that
+        // our callable_ty is compatible with _any_ callable type hint. This is because we want
+        // contextual typing for lambda params even if the callable signature doesn't match the
+        // hint.
+        //
+        // For example, `f: Callable[[int], None] = lambda x y: ...` should give a contextual
+        // hint for `x`, even though the number of params doesn't line up.
+        //
+        // Why? Well, this behavior gives more stability for transiently-invalid code. For example,
+        // imagine you have a contextually typed lambda, and you add a parameter to it, which
+        // causes an error. Without this permissiveness, the checking of the body of the lambda
+        // will be affected, because we lose contextual type information for the existing params.
+        let params = param_vars
+            .iter()
+            .map(|var| Param::PosOnly(var.to_type(), Required::Optional))
+            .chain(std::iter::once(Param::VarArg(Type::any_implicit())))
+            .collect::<Vec<_>>();
+        let callable_ty = Type::callable(params, return_ty.to_type());
+
+        if self.is_subset_eq(&callable_ty, ty) {
+            self.expand_var_opt(return_ty)
         } else {
             None
         }

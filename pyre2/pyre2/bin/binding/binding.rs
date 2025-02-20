@@ -48,6 +48,7 @@ use crate::types::class::ClassFieldProperties;
 use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
+use crate::types::types::Var;
 use crate::util::display::commas_iter;
 use crate::util::display::DisplayWith;
 
@@ -724,6 +725,8 @@ pub enum Binding {
     ExceptionHandler(Box<Expr>, bool),
     /// Binding for an `@decorator` decoration on a function or class
     Decorator(Expr),
+    /// Binding for a lambda parameter.
+    LambdaParameter(Var),
 }
 
 impl Binding {
@@ -891,6 +894,7 @@ impl DisplayWith<Bindings> for Binding {
                 )
             }
             Self::Decorator(e) => write!(f, "decorator {}", m.display(e)),
+            Self::LambdaParameter(_) => write!(f, "lambda parameter"),
         }
     }
 }
