@@ -671,8 +671,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let cls = self.get_idx(fields.0);
         if let Some(fields) = self.get_typed_dict_synthesized_fields(&cls) {
             Arc::new(fields)
-        } else if let Some(fields) = self.get_enum_synthesized_fields(&cls) {
-            Arc::new(fields)
         } else if let Some(fields) = self.get_dataclass_synthesized_fields(&cls) {
             Arc::new(fields)
         } else if let Some(fields) = self.get_named_tuple_synthesized_fields(&cls) {

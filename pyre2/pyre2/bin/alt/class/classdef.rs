@@ -45,6 +45,7 @@ use crate::types::class::Class;
 use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
+use crate::types::literal::Lit;
 use crate::types::tuple::Tuple;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::BoundMethod;
@@ -600,7 +601,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             _ => (false, value_ty),
         };
 
-        if let Some(enum_) = self.get_enum_from_class(class)
+        let value_ty = if let Some(enum_) = metadata.enum_metadata()
             && self.is_valid_enum_member(name, value_ty, &initialization)
         {
             if annotation.is_some() {
@@ -616,7 +617,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(errors,range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name));
                 }
             }
-        }
+
+            &Type::Literal(Lit::Enum(Box::new((
+                enum_.cls.clone(),
+                name.clone(),
+                value_ty.clone(),
+            ))))
+        } else {
+            value_ty
+        };
         if metadata.is_typed_dict() && matches!(initialization, ClassFieldInitialization::Class(_))
         {
             self.error(
