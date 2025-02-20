@@ -1,9 +1,9 @@
 {
   "total": 133,
-  "pass": 13,
-  "fail": 120,
-  "pass_rate": 0.1,
-  "differences": 889,
+  "pass": 14,
+  "fail": 119,
+  "pass_rate": 0.11,
+  "differences": 888,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -16,6 +16,7 @@
     "enums_expansion.py",
     "enums_member_names.py",
     "generics_syntax_compatibility.py",
+    "overloads_basic.py",
     "specialtypes_promotions.py",
     "typeddicts_readonly_kwargs.py"
   ],
@@ -106,7 +107,6 @@
     "namedtuples_usage.py": 3,
     "narrowing_typeguard.py": 9,
     "narrowing_typeis.py": 31,
-    "overloads_basic.py": 1,
     "protocols_class_objects.py": 8,
     "protocols_definition.py": 5,
     "protocols_explicit.py": 6,

@@ -154,3 +154,22 @@ assert_type(f(), None)
 f(0, 0) # E: No matching overload found
 "#,
 );
+
+testcase!(
+    test_only_one_overload,
+    r#"
+from typing import overload, Protocol
+
+@overload
+def f(x: int) -> int: ...  # E: Overloaded function needs at least two signatures
+def f(x: int) -> int:
+    return x
+
+@overload
+def g(x: int) -> int: ...  # E: Overloaded function must have an implementation  # E: Overloaded function needs at least two signatures
+
+class P(Protocol):
+    @overload
+    def m(x: int) -> int: ...  # E: Overloaded function needs at least two signatures
+"#,
+);

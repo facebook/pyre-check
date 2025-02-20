@@ -1077,21 +1077,41 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 "Overloaded function must have an implementation".to_owned(),
                             );
                         }
-                        acc.reverse();
-                        Type::Overload(acc)
+                        if acc.len() == 1 {
+                            self.error(
+                                errors,
+                                first.id_range,
+                                "Overloaded function needs at least two signatures".to_owned(),
+                            );
+                            acc.split_off_first().0
+                        } else {
+                            acc.reverse();
+                            Type::Overload(acc)
+                        }
                     } else {
                         ty
                     }
                 } else {
                     let mut acc = Vec::new();
+                    let mut first = def;
                     while let Some(def) = self.step_overload_pred(&mut pred) {
                         acc.push(def.ty.clone());
+                        first = def;
                     }
                     acc.reverse();
-                    if let Ok(overloads) = Vec1::try_from_vec(acc) {
-                        Type::Overload(overloads)
+                    if let Ok(defs) = Vec1::try_from_vec(acc) {
+                        if defs.len() == 1 {
+                            self.error(
+                                errors,
+                                first.id_range,
+                                "Overloaded function needs at least two signatures".to_owned(),
+                            );
+                            defs.split_off_first().0
+                        } else {
+                            Type::Overload(defs)
+                        }
                     } else {
-                        def.ty.clone()
+                        first.ty.clone()
                     }
                 }
             }
