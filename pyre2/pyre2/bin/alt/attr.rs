@@ -136,7 +136,7 @@ impl NoAccessReason {
 impl LookupResult {
     /// We found a simple attribute type.
     ///
-    /// This means we assume it is both readable and writeable with that type.
+    /// This means we assume it is both readable and writable with that type.
     ///
     /// TODO(stroxler) The uses of this eventually need to be audited, but we
     /// need to prioiritize the class logic first.
