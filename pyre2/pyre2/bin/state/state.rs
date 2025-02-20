@@ -79,7 +79,7 @@ pub struct State {
 }
 
 struct ModuleData {
-    steps: UpgradeLock<ModuleState>,
+    steps: UpgradeLock<Step, ModuleState>,
     handle: Handle,
     dependencies: RwLock<HashMap<ModuleName, Arc<ModuleData>, BuildNoHash>>,
 }
@@ -130,21 +130,22 @@ impl State {
                 panic!("Should make the code not dirty");
             }
 
-            if reader.steps.available(step) {
-                break;
-            }
-            let mut exclusive = match reader.exclusive() {
+            let todo = match reader.steps.next_step() {
+                Some(todo) if todo <= step => todo,
+                _ => break,
+            };
+            let mut exclusive = match reader.exclusive(todo) {
                 Some(exclusive) => exclusive,
                 None => {
                     // The world changed, we should check again
                     continue;
                 }
             };
-
             let todo = match exclusive.steps.next_step() {
                 Some(todo) if todo <= step => todo,
                 _ => break,
             };
+
             computed = true;
             let compute = todo.compute().0(&exclusive.steps);
             if todo == Step::Answers && !self.retain_memory {
@@ -541,7 +542,12 @@ impl State {
         }
         for (handle, module_data) in self.modules.iter_unordered() {
             if handle.loader() == loader {
-                module_data.steps.write().unwrap().dirty.set_dirty_find();
+                module_data
+                    .steps
+                    .write(Step::Load)
+                    .unwrap()
+                    .dirty
+                    .set_dirty_find();
             }
         }
 
@@ -557,7 +563,12 @@ impl State {
                 && let ModulePathDetails::Memory(x) = handle.path().details()
                 && files.contains(x)
             {
-                module_data.steps.write().unwrap().dirty.set_dirty_load();
+                module_data
+                    .steps
+                    .write(Step::Load)
+                    .unwrap()
+                    .dirty
+                    .set_dirty_load();
             }
         }
 
@@ -574,7 +585,12 @@ impl State {
             if let ModulePathDetails::FileSystem(x) = handle.path().details()
                 && files.contains(x)
             {
-                module_data.steps.write().unwrap().dirty.set_dirty_load();
+                module_data
+                    .steps
+                    .write(Step::Load)
+                    .unwrap()
+                    .dirty
+                    .set_dirty_load();
             }
         }
 

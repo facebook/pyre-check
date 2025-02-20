@@ -26,76 +26,92 @@ use crate::util::exclusive_lock::ExclusiveLockGuard;
 ///
 /// The aim is to allow other readers, even though you are mutating
 /// a subset of the state.
-#[derive(Debug, Default)]
-pub struct UpgradeLock<T> {
+///
+/// When upgrading to an exclusive lock, you provide a value which must
+/// match the currently locked value, or you will be rejected.
+/// See the documentation around `ExclusiveLock` for more details.
+#[derive(Debug)]
+pub struct UpgradeLock<E, T> {
     /// The underling lock used for read/write operations
     value: RwLock<T>,
     /// The thing providing exclusivity. None means noone has exclusivity.
     /// Some means someone is exclusive and will signal after they finish.
-    exclusive: ExclusiveLock,
+    exclusive: ExclusiveLock<E>,
 }
 
-pub struct UpgradeLockReadGuard<'a, T> {
+impl<E, T: Default> Default for UpgradeLock<E, T> {
+    fn default() -> Self {
+        Self {
+            value: RwLock::default(),
+            exclusive: ExclusiveLock::default(),
+        }
+    }
+}
+
+pub struct UpgradeLockReadGuard<'a, E, T> {
     read: RwLockReadGuard<'a, T>,
-    inner: &'a UpgradeLock<T>,
+    inner: &'a UpgradeLock<E, T>,
 }
 
-pub struct UpgradeLockExclusiveGuard<'a, T> {
+pub struct UpgradeLockExclusiveGuard<'a, E, T> {
     read: RwLockReadGuard<'a, T>,
-    exclusive: ExclusiveLockGuard<'a>,
-    inner: &'a UpgradeLock<T>,
+    exclusive: ExclusiveLockGuard<'a, E>,
+    inner: &'a UpgradeLock<E, T>,
 }
 
-pub struct UpgradeLockWriteGuard<'a, T> {
+pub struct UpgradeLockWriteGuard<'a, E, T> {
     write: RwLockWriteGuard<'a, T>,
-    exclusive: ExclusiveLockGuard<'a>,
-    inner: &'a UpgradeLock<T>,
+    exclusive: ExclusiveLockGuard<'a, E>,
+    inner: &'a UpgradeLock<E, T>,
 }
 
-impl<T> Deref for UpgradeLockReadGuard<'_, T> {
+impl<E, T> Deref for UpgradeLockReadGuard<'_, E, T> {
     type Target = T;
     fn deref(&self) -> &T {
         self.read.deref()
     }
 }
 
-impl<T> Deref for UpgradeLockExclusiveGuard<'_, T> {
+impl<E, T> Deref for UpgradeLockExclusiveGuard<'_, E, T> {
     type Target = T;
     fn deref(&self) -> &T {
         self.read.deref()
     }
 }
 
-impl<T> Deref for UpgradeLockWriteGuard<'_, T> {
+impl<E, T> Deref for UpgradeLockWriteGuard<'_, E, T> {
     type Target = T;
     fn deref(&self) -> &T {
         self.write.deref()
     }
 }
 
-impl<T> DerefMut for UpgradeLockWriteGuard<'_, T> {
+impl<E, T> DerefMut for UpgradeLockWriteGuard<'_, E, T> {
     fn deref_mut(&mut self) -> &mut T {
         self.write.deref_mut()
     }
 }
 
-impl<T> UpgradeLock<T> {
-    pub fn read(&self) -> UpgradeLockReadGuard<T> {
+impl<E, T> UpgradeLock<E, T> {
+    pub fn read(&self) -> UpgradeLockReadGuard<E, T> {
         UpgradeLockReadGuard {
             read: self.value.read().unwrap(),
             inner: self,
         }
     }
 
-    pub fn write(&self) -> Option<UpgradeLockWriteGuard<T>> {
-        Some(self.read().exclusive()?.write())
+    pub fn write(&self, value: E) -> Option<UpgradeLockWriteGuard<E, T>>
+    where
+        E: PartialEq,
+    {
+        Some(self.read().exclusive(value)?.write())
     }
 }
 
-impl<'a, T> UpgradeLockReadGuard<'a, T> {
-    pub fn exclusive(self) -> Option<UpgradeLockExclusiveGuard<'a, T>> {
+impl<'a, E: PartialEq, T> UpgradeLockReadGuard<'a, E, T> {
+    pub fn exclusive(self, value: E) -> Option<UpgradeLockExclusiveGuard<'a, E, T>> {
         drop(self.read);
-        let exclusive = self.inner.exclusive.lock()?;
+        let exclusive = self.inner.exclusive.lock(value)?;
         let read = self.inner.value.read().unwrap();
         Some(UpgradeLockExclusiveGuard {
             read,
@@ -105,8 +121,8 @@ impl<'a, T> UpgradeLockReadGuard<'a, T> {
     }
 }
 
-impl<'a, T> UpgradeLockExclusiveGuard<'a, T> {
-    pub fn write(self) -> UpgradeLockWriteGuard<'a, T> {
+impl<'a, E, T> UpgradeLockExclusiveGuard<'a, E, T> {
+    pub fn write(self) -> UpgradeLockWriteGuard<'a, E, T> {
         drop(self.read);
         let write = self.inner.value.write().unwrap();
         UpgradeLockWriteGuard {
@@ -117,8 +133,8 @@ impl<'a, T> UpgradeLockExclusiveGuard<'a, T> {
     }
 }
 
-impl<'a, T> UpgradeLockWriteGuard<'a, T> {
-    pub fn exclusive(self) -> UpgradeLockExclusiveGuard<'a, T> {
+impl<'a, E, T> UpgradeLockWriteGuard<'a, E, T> {
+    pub fn exclusive(self) -> UpgradeLockExclusiveGuard<'a, E, T> {
         // there is currently no downgrade on a write lock (it's experimental, but not in our version)
         // so we have to release the write then reacquire the read
         drop(self.write);

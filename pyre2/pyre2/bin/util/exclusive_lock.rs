@@ -17,39 +17,52 @@ use crate::util::lock::Mutex;
 /// Like a normal lock, but anyone who attempts to take the lock will block until the lock is
 /// released, and then not take the lock. They are expected to retry (after checking they
 /// still need the lock).
-#[derive(Debug, Default)]
-pub struct ExclusiveLock {
-    exclusive: Mutex<Option<Arc<Once>>>,
+#[derive(Debug)]
+pub struct ExclusiveLock<T> {
+    exclusive: Mutex<Option<Arc<(T, Once)>>>,
 }
 
-pub struct ExclusiveLockGuard<'a> {
-    inner: Option<&'a ExclusiveLock>,
+impl<T> Default for ExclusiveLock<T> {
+    fn default() -> Self {
+        Self {
+            exclusive: Mutex::new(None),
+        }
+    }
 }
 
-impl<'a> Drop for ExclusiveLockGuard<'a> {
+pub struct ExclusiveLockGuard<'a, T> {
+    inner: Option<&'a ExclusiveLock<T>>,
+}
+
+impl<'a, T> Drop for ExclusiveLockGuard<'a, T> {
     fn drop(&mut self) {
         if let Some(inner) = self.inner.take() {
             let mut lock = inner.exclusive.lock();
             if let Some(once) = &*lock {
-                once.call_once(|| ());
+                once.1.call_once(|| ());
                 *lock = None;
             }
         }
     }
 }
 
-impl ExclusiveLock {
-    pub fn lock(&self) -> Option<ExclusiveLockGuard> {
+impl<T: PartialEq> ExclusiveLock<T> {
+    /// If the lock is not held, take it and return a guard.
+    /// If the lock is held, and the value matches, wait for the lock to be released then return None.
+    /// If the lock is held, and the value does not match, return None immediately.
+    pub fn lock(&self, value: T) -> Option<ExclusiveLockGuard<T>> {
         let mut exclusive = self.exclusive.lock();
         match &*exclusive {
             None => {
-                *exclusive = Some(Arc::new(Once::new()));
+                *exclusive = Some(Arc::new((value, Once::new())));
                 Some(ExclusiveLockGuard { inner: Some(self) })
             }
             Some(m) => {
                 let m = m.dupe();
                 drop(exclusive);
-                m.wait();
+                if m.0 == value {
+                    m.1.wait();
+                }
                 None
             }
         }

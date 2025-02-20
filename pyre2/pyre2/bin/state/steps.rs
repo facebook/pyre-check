@@ -71,10 +71,6 @@ impl Steps {
             Some(last) => last.next(),
         }
     }
-
-    pub fn available(&self, want: Step) -> bool {
-        self.last_step.map_or(false, |x| x >= want)
-    }
 }
 
 #[derive(
