@@ -8,7 +8,6 @@
 open Core
 open OUnit2
 
-
 module StringKey = struct
   type t = string
 
@@ -27,49 +26,26 @@ module StringValue = struct
   let description = "string for testing"
 end
 
-module StringStringTable = Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make (StringKey) (StringValue)
+module StringStringTable =
+  Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make (StringKey) (StringValue)
 
 let test_first_class _ =
   (* Initialize a table, set and check a value *)
   let table0 = StringStringTable.create () in
-  assert_equal
-    ~cmp:(Option.equal String.equal)
-    (StringStringTable.get table0 "x")
-    None;
+  assert_equal ~cmp:(Option.equal String.equal) (StringStringTable.get table0 "x") None;
   StringStringTable.add table0 "x" "x0";
-  assert_equal
-    ~cmp:(Option.equal String.equal)
-    (StringStringTable.get table0 "x")
-    (Some "x0");
+  assert_equal ~cmp:(Option.equal String.equal) (StringStringTable.get table0 "x") (Some "x0");
   (* Initialize a second table, set and check the same value and another *)
   let table1 = StringStringTable.create () in
-  assert_equal
-    ~cmp:(Option.equal String.equal)
-    (StringStringTable.get table1 "x")
-    None;
+  assert_equal ~cmp:(Option.equal String.equal) (StringStringTable.get table1 "x") None;
   StringStringTable.add table1 "x" "x1";
-  assert_equal
-    ~cmp:(Option.equal String.equal)
-    (StringStringTable.get table1 "x")
-    (Some "x1");
-  assert_equal
-    ~cmp:(Option.equal String.equal)
-    (StringStringTable.get table1 "y")
-    None;
+  assert_equal ~cmp:(Option.equal String.equal) (StringStringTable.get table1 "x") (Some "x1");
+  assert_equal ~cmp:(Option.equal String.equal) (StringStringTable.get table1 "y") None;
   StringStringTable.add table1 "y" "y1";
-  assert_equal
-    ~cmp:(Option.equal String.equal)
-    (StringStringTable.get table1 "y")
-    (Some "y1");
+  assert_equal ~cmp:(Option.equal String.equal) (StringStringTable.get table1 "y") (Some "y1");
   (* Make sure the value in table1 did not interfere with table0 *)
-  assert_equal
-    ~cmp:(Option.equal String.equal)
-    (StringStringTable.get table0 "x")
-    (Some "x0");
-  assert_equal
-    ~cmp:(Option.equal String.equal)
-    (StringStringTable.get table0 "y")
-    None;
+  assert_equal ~cmp:(Option.equal String.equal) (StringStringTable.get table0 "x") (Some "x0");
+  assert_equal ~cmp:(Option.equal String.equal) (StringStringTable.get table0 "y") None;
   (* Check a batched operation, since we use different wrappers to build these functions *)
   let actual =
     StringStringTable.KeySet.of_list ["x"; "y"; "z"]
@@ -77,7 +53,7 @@ let test_first_class _ =
     |> StringStringTable.KeyMap.elements
     |> List.sort ~compare:[%compare: string * string option]
   in
-  let expected = [("x", Some "x1"); ("y", Some "y1"); ("z", None)] in
+  let expected = ["x", Some "x1"; "y", Some "y1"; "z", None] in
   assert_equal
     ~cmp:[%eq: (string * string option) list]
     ~printer:[%show: (string * string option) list]
@@ -85,9 +61,5 @@ let test_first_class _ =
     actual;
   ()
 
-let () =
-  "shared_memory"
-  >::: [
-         "first_class" >:: test_first_class;
-       ]
-  |> Test.run
+
+let () = "shared_memory" >::: ["first_class" >:: test_first_class] |> Test.run
