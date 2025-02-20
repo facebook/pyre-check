@@ -42,3 +42,67 @@ Hover Result: `(x: list[int], y: str, z: Literal[42]) -> list[int]`
         report.trim(),
     );
 }
+
+#[test]
+fn attribute_tests() {
+    let code = r#"
+class MyClass:
+  x = 5
+c1 = MyClass()
+c1.x
+#  ^
+
+class MyClassWithImplicitField:
+  def __init__(self, name: str):
+    self.name = name
+
+c2 = MyClassWithImplicitField("")
+c2.name
+#  ^
+
+class ExtendsMyClass(MyClass):
+  y = 6
+c3 = ExtendsMyClass()
+c3.x
+#  ^
+c3.y
+#  ^
+
+class Union1:
+  x = 5
+
+class Union2:
+  x = 6
+
+c4: Union1 | Union2 = Union1()
+c4.x
+#  ^
+"#;
+    let report = get_batched_lsp_operations_report(&[("main", code)], get_test_report);
+    assert_eq!(
+        r#"
+# main.py
+5 | c1.x
+       ^
+Hover Result: `Literal[5]`
+
+13 | c2.name
+        ^
+Hover Result: `str`
+
+19 | c3.x
+        ^
+Hover Result: `Literal[5]`
+
+21 | c3.y
+        ^
+Hover Result: `Literal[6]`
+
+31 | c4.x
+        ^
+Hover Result: `Literal[5]`
+"#
+        .trim(),
+        report.trim(),
+    );
+}

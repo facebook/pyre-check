@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use dupe::Dupe;
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
@@ -30,6 +31,10 @@ impl State {
         self.get_answers(handle)?.get_idx(idx)
     }
 
+    fn get_type_from_trace(&self, handle: &Handle, range: TextRange) -> Option<Arc<Type>> {
+        self.get_answers(handle)?.get_trace(range)
+    }
+
     fn identifier_at(&self, handle: &Handle, position: TextSize) -> Option<Identifier> {
         let mod_module = self.get_ast(handle)?;
         fn f(x: &Expr, find: TextSize, res: &mut Option<Identifier>) {
@@ -46,9 +51,28 @@ impl State {
         res
     }
 
+    fn attribute_at(&self, handle: &Handle, position: TextSize) -> Option<ExprAttribute> {
+        let mod_module = self.get_ast(handle)?;
+        fn f(x: &Expr, find: TextSize, res: &mut Option<ExprAttribute>) {
+            if let Expr::Attribute(x) = x
+                && x.attr.range.contains_inclusive(find)
+            {
+                *res = Some(x.clone());
+            } else {
+                Visitors::visit_expr(x, |x| f(x, find, res));
+            }
+        }
+        let mut res = None;
+        Visitors::visit_mod_expr(&mod_module, |x| f(x, position, &mut res));
+        res
+    }
+
     pub fn hover(&self, handle: &Handle, position: TextSize) -> Option<Arc<Type>> {
-        let id = self.identifier_at(handle, position)?;
-        self.get_type(handle, &Key::Usage(ShortIdentifier::new(&id)))
+        if let Some(id) = self.identifier_at(handle, position) {
+            return self.get_type(handle, &Key::Usage(ShortIdentifier::new(&id)));
+        }
+        let attribute = self.attribute_at(handle, position)?;
+        self.get_type_from_trace(handle, attribute.range)
     }
 
     fn key_to_definition(
