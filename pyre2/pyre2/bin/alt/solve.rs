@@ -11,9 +11,7 @@ use std::sync::Arc;
 use dupe::Dupe;
 use itertools::Either;
 use ruff_python_ast::name::Name;
-use ruff_python_ast::Arguments;
 use ruff_python_ast::Expr;
-use ruff_python_ast::ExprCall;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
@@ -28,7 +26,6 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::UNKNOWN;
 use crate::alt::callable::CallArg;
 use crate::alt::class::classdef::ClassField;
-use crate::alt::class::classdef::ClassFieldInitialization;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::decorated_function::DecoratedFunction;
@@ -46,7 +43,6 @@ use crate::binding::binding::BindingExpect;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
-use crate::binding::binding::ClassFieldInitialValue;
 use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::EmptyAnswer;
 use crate::binding::binding::FunctionBinding;
@@ -60,16 +56,13 @@ use crate::binding::binding::UnpackedPosition;
 use crate::dunder;
 use crate::dunder::inplace_dunder;
 use crate::error::collector::ErrorCollector;
-use crate::error::style::ErrorStyle;
 use crate::graph::index::Idx;
 use crate::module::module_path::ModuleStyle;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
-use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
-use crate::types::callable::DataclassKeywords;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
@@ -81,7 +74,6 @@ use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
 use crate::types::type_var::Variance;
 use crate::types::types::AnyStyle;
-use crate::types::types::CalleeKind;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -661,63 +653,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Arc<ClassField> {
         let value_ty = self.solve_binding(&field.value, errors);
         let annotation = field.annotation.map(|a| self.get_idx(a));
-        let class = self.get_idx(field.class);
-        let metadata = self.get_metadata_for_class(&class);
         Arc::new(self.calculate_class_field(
             &field.name,
             value_ty.as_ref(),
             annotation.as_deref(),
-            self.get_class_field_initialization(&metadata, &field.initial_value),
-            &class,
+            &field.initial_value,
+            &self.get_idx(field.class),
             field.range,
             errors,
         ))
-    }
-
-    fn get_class_field_initialization(
-        &self,
-        metadata: &ClassMetadata,
-        initial_value: &ClassFieldInitialValue,
-    ) -> ClassFieldInitialization {
-        match initial_value {
-            ClassFieldInitialValue::Instance => ClassFieldInitialization::Instance,
-            ClassFieldInitialValue::Class(None) => ClassFieldInitialization::Class(None),
-            ClassFieldInitialValue::Class(Some(e)) => {
-                // If this field was created via a call to a dataclass field specifier, extract field properties from the call.
-                if metadata.dataclass_metadata().is_some()
-                    && let Expr::Call(ExprCall {
-                        range: _,
-                        func,
-                        arguments: Arguments { keywords, .. },
-                    }) = e
-                {
-                    let mut props = BoolKeywords::new();
-                    // We already type-checked this expression as part of computing the type for the ClassField,
-                    // so we can ignore any errors encountered here.
-                    let ignore_errors = ErrorCollector::new(ErrorStyle::Never);
-                    let func_ty = self.expr_infer(func, &ignore_errors);
-                    if matches!(
-                        func_ty.callee_kind(),
-                        Some(CalleeKind::Callable(CallableKind::DataclassField))
-                    ) {
-                        for kw in keywords {
-                            if let Some(id) = &kw.arg
-                                && (id.id == DataclassKeywords::DEFAULT.0
-                                    || id.id == "default_factory")
-                            {
-                                props.set(DataclassKeywords::DEFAULT.0, true);
-                            } else {
-                                let val = self.expr_infer(&kw.value, &ignore_errors);
-                                props.set_keyword(kw.arg.as_ref(), val);
-                            }
-                        }
-                    }
-                    ClassFieldInitialization::Class(Some(props))
-                } else {
-                    ClassFieldInitialization::Class(None)
-                }
-            }
-        }
     }
 
     pub fn solve_class_synthesized_fields(
