@@ -93,8 +93,7 @@ def test(o: C):
     "#,
 );
 
-testcase_with_bug!(
-    "Only errors between args and params affect overload resolution",
+testcase!(
     test_overload_arg_errors,
     r#"
 from typing import overload, assert_type
@@ -108,7 +107,7 @@ def f(x: int | str) -> int | str: ...
 def g(x: str) -> int: ...
 def h(x: str) -> str: ...
 
-assert_type(f(g(0)), int) # E: No matching overload found # E: assert_type
-assert_type(f(h(0)), str) # E: No matching overload found # E: assert_type
+assert_type(f(g(0)), int) # E: EXPECTED Literal[0] <: str
+assert_type(f(h(0)), str) # E: EXPECTED Literal[0] <: str
 "#,
 );

@@ -711,12 +711,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "column": 7,
+      "concise_description": "Object of class `TypeAliasType` has no attribute `other_attrib`",
+      "description": "Object of class `TypeAliasType` has no attribute `other_attrib`",
       "line": 23,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 30,
       "stop_line": 23
     },
     {
@@ -923,12 +923,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "column": 7,
+      "concise_description": "Object of class `TypeAliasType` has no attribute `other_attrib`",
+      "description": "Object of class `TypeAliasType` has no attribute `other_attrib`",
       "line": 32,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 30,
       "stop_line": 32
     },
     {
@@ -2100,12 +2100,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "column": 7,
+      "concise_description": "Object of class `Proto9` has no attribute `other_attribute2`",
+      "description": "Object of class `Proto9` has no attribute `other_attribute2`",
       "line": 197,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 32,
       "stop_line": 197
     },
     {
@@ -7260,12 +7260,12 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "column": 19,
+      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)",
+      "description": "TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)",
       "line": 60,
       "name": "PyreError",
-      "stop_column": 18,
+      "stop_column": 31,
       "stop_line": 60
     },
     {
@@ -10721,22 +10721,22 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "column": 7,
+      "concise_description": "Index 3 out of range for tuple with 3 elements",
+      "description": "Index 3 out of range for tuple with 3 elements",
       "line": 32,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 12,
       "stop_line": 32
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "column": 7,
+      "concise_description": "Index -4 out of range for tuple with 3 elements",
+      "description": "Index -4 out of range for tuple with 3 elements",
       "line": 33,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 13,
       "stop_line": 33
     },
     {
@@ -11247,22 +11247,22 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "column": 7,
+      "concise_description": "Index 3 out of range for tuple with 3 elements",
+      "description": "Index 3 out of range for tuple with 3 elements",
       "line": 34,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 11,
       "stop_line": 34
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "column": 7,
+      "concise_description": "Index -4 out of range for tuple with 3 elements",
+      "description": "Index -4 out of range for tuple with 3 elements",
       "line": 35,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 12,
       "stop_line": 35
     },
     {
@@ -13755,12 +13755,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "column": 13,
+      "concise_description": "TypedDict `Movie` does not have key `other`",
+      "description": "TypedDict `Movie` does not have key `other`",
       "line": 26,
       "name": "PyreError",
-      "stop_column": 6,
+      "stop_column": 20,
       "stop_line": 26
     },
     {

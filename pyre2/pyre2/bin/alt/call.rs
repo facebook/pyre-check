@@ -348,25 +348,82 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
+        self.call_infer_inner(call_target, args, keywords, range, errors, errors)
+    }
+
+    // TODO: This function depends on an invariant that overloads only contain functions and bound
+    // methods, never a constructor or another overload. See assertions marked with "Hack" below.
+    // This is all quite hacky ("very very very grim," says Neil).
+    fn call_infer_inner(
+        &self,
+        call_target: (Vec<Var>, CallTarget),
+        args: &[CallArg],
+        keywords: &[Keyword],
+        range: TextRange,
+        arg_errors: &ErrorCollector,
+        call_errors: &ErrorCollector,
+    ) -> Type {
         let is_dataclass = matches!(call_target.1, CallTarget::Dataclass(_));
         let res = match call_target.1 {
-            CallTarget::Class(cls) => self.construct_class(cls, args, keywords, range, errors),
+            CallTarget::Class(cls) => {
+                // Hack
+                assert!(
+                    std::ptr::eq(arg_errors, call_errors),
+                    "unexpected constructor inside overload"
+                );
+                self.construct_class(cls, args, keywords, range, arg_errors)
+            }
             CallTarget::TypedDict(td) => {
-                self.construct_typed_dict(td, args, keywords, range, errors)
+                // Hack
+                assert!(
+                    std::ptr::eq(arg_errors, call_errors),
+                    "unexpected TypedDict constructor inside overload"
+                );
+                self.construct_typed_dict(td, args, keywords, range, arg_errors)
             }
             CallTarget::BoundMethod(obj, c) => {
                 let first_arg = CallArg::Type(&obj, range);
-                self.callable_infer(c, Some(first_arg), args, keywords, range, errors)
+                self.callable_infer(
+                    c,
+                    Some(first_arg),
+                    args,
+                    keywords,
+                    range,
+                    arg_errors,
+                    call_errors,
+                )
             }
-            CallTarget::Callable(callable) | CallTarget::Dataclass(callable) => {
-                self.callable_infer(callable, None, args, keywords, range, errors)
-            }
+            CallTarget::Callable(callable) | CallTarget::Dataclass(callable) => self
+                .callable_infer(
+                    callable,
+                    None,
+                    args,
+                    keywords,
+                    range,
+                    arg_errors,
+                    call_errors,
+                ),
             CallTarget::Overload(overloads) => {
+                // Hack
+                assert!(
+                    std::ptr::eq(arg_errors, call_errors),
+                    "unexpected nested overload"
+                );
+                let errors = arg_errors;
                 for call_target in overloads.into_iter() {
                     if let Some(call_target) = call_target {
+                        let arg_errors = ErrorCollector::new(ErrorStyle::Delayed);
                         let call_errors = ErrorCollector::new(ErrorStyle::Delayed);
-                        let res = self.call_infer(call_target, args, keywords, range, &call_errors);
+                        let res = self.call_infer_inner(
+                            call_target,
+                            args,
+                            keywords,
+                            range,
+                            &arg_errors,
+                            &call_errors,
+                        );
                         if call_errors.is_empty() {
+                            errors.extend(arg_errors);
                             return res;
                         }
                     }
@@ -378,7 +435,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if is_dataclass && let Type::Callable(c, _) = res {
             let mut kws = BoolKeywords::new();
             for kw in keywords {
-                kws.set_keyword(kw.arg.as_ref(), self.expr_infer(&kw.value, errors));
+                kws.set_keyword(kw.arg.as_ref(), self.expr_infer(&kw.value, arg_errors));
             }
             Type::Callable(c, CallableKind::Dataclass(Box::new(kws)))
         } else {

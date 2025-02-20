@@ -603,7 +603,7 @@
     "Line 15: Unexpected errors ['Expected a callable, got ReturnsSelf']",
     "Line 30: Unexpected errors ['EXPECTED ReturnsSelf <: type[ReturnsSelf]']",
     "Line 50: Unexpected errors ['EXPECTED (self: CallableAttribute) -> int <: (Self) -> int']",
-    "Line 60: Unexpected errors ['No matching overload found']",
+    "Line 60: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)']",
     "Line 63: Unexpected errors ['EXPECTED HasNestedFunction <: Self']",
     "Line 93: Unexpected errors ['Object of class `Foo3` has no attribute `child_value`']"
   ],

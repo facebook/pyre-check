@@ -25,6 +25,10 @@ impl<T> Mutex<T> {
     pub fn lock(&self) -> sync::MutexGuard<'_, T> {
         self.0.lock().unwrap()
     }
+
+    pub fn into_inner(self) -> T {
+        self.0.into_inner().unwrap()
+    }
 }
 
 #[derive(Debug, Default)]

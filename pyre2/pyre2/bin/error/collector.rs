@@ -33,6 +33,11 @@ impl ModuleErrors {
         self.items.push(err);
     }
 
+    fn extend(&mut self, errs: ModuleErrors) {
+        self.clean = false;
+        self.items.extend(errs.items);
+    }
+
     fn cleanup(&mut self) {
         if self.clean {
             return;
@@ -81,6 +86,10 @@ impl ErrorCollector {
             style,
             errors: Mutex::new(Default::default()),
         }
+    }
+
+    pub fn extend(&self, other: ErrorCollector) {
+        self.errors.lock().extend(other.errors.into_inner());
     }
 
     pub fn add_error(&self, err: Error) {

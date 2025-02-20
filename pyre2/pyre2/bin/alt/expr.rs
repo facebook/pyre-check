@@ -96,10 +96,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn expr(&self, x: &Expr, check: Option<&Type>, errors: &ErrorCollector) -> Type {
-        match check {
-            Some(want) if !want.is_any() => {
+        self.expr_with_separate_check_errors(x, check.map(|ty| (ty, errors)), errors)
+    }
+
+    pub fn expr_with_separate_check_errors(
+        &self,
+        x: &Expr,
+        check: Option<(&Type, &ErrorCollector)>,
+        errors: &ErrorCollector,
+    ) -> Type {
+        match &check {
+            Some((want, check_errors)) if !want.is_any() => {
                 let got = self.expr_infer_with_hint(x, Some(want), errors);
-                self.check_type(want, &got, x.range(), errors)
+                self.check_type(want, &got, x.range(), check_errors)
             }
             _ => self.expr_infer(x, errors),
         }
