@@ -11750,6 +11750,16 @@
       "name": "PyreError",
       "stop_column": 6,
       "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Overloaded function must have an implementation",
+      "description": "Overloaded function must have an implementation",
+      "line": 75,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 75
     }
   ],
   "protocols_class_objects.py": [

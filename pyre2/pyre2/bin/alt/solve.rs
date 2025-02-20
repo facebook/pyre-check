@@ -1062,11 +1062,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     // This function is decorated with @overload. We should warn if this function is actually called anywhere.
                     let successor = self.bindings().get(*idx).successor;
                     let ty = def.ty.clone();
-                    if skip_implementation && successor.is_none() {
+                    if successor.is_none() {
                         // This is the last definition in the chain. We should produce an overload type.
                         let mut acc = Vec1::new(ty);
-                        while let Some(ty) = self.step_overload_pred(&mut pred) {
-                            acc.push(ty);
+                        let mut first = def;
+                        while let Some(def) = self.step_overload_pred(&mut pred) {
+                            acc.push(def.ty.clone());
+                            first = def;
+                        }
+                        if !skip_implementation {
+                            self.error(
+                                errors,
+                                first.id_range,
+                                "Overloaded function must have an implementation".to_owned(),
+                            );
                         }
                         acc.reverse();
                         Type::Overload(acc)
@@ -1075,8 +1084,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 } else {
                     let mut acc = Vec::new();
-                    while let Some(ty) = self.step_overload_pred(&mut pred) {
-                        acc.push(ty);
+                    while let Some(def) = self.step_overload_pred(&mut pred) {
+                        acc.push(def.ty.clone());
                     }
                     acc.reverse();
                     if let Ok(overloads) = Vec1::try_from_vec(acc) {
@@ -1366,17 +1375,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for x in x.decorators.iter().rev() {
             ty = self.apply_decorator(*x, ty, &mut is_overload, errors)
         }
-        Arc::new(DecoratedFunction { ty, is_overload })
+        Arc::new(DecoratedFunction {
+            id_range: x.def.name.range,
+            ty,
+            is_overload,
+        })
     }
 
     // Given the index to a function binding, return the previous function binding, if any.
-    pub fn step_overload_pred(&self, pred: &mut Option<Idx<Key>>) -> Option<Type> {
+    pub fn step_overload_pred(
+        &self,
+        pred: &mut Option<Idx<Key>>,
+    ) -> Option<Arc<DecoratedFunction>> {
         let pred_idx = (*pred)?;
         if let Binding::Function(idx, pred_, _) = self.bindings().get(pred_idx) {
             let def = self.get_idx(*idx);
             if def.is_overload {
                 *pred = *pred_;
-                Some(def.ty.clone())
+                Some(def)
             } else {
                 None
             }

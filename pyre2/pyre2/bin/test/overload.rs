@@ -111,3 +111,19 @@ assert_type(f(g(0)), int) # E: EXPECTED Literal[0] <: str
 assert_type(f(h(0)), str) # E: EXPECTED Literal[0] <: str
 "#,
 );
+
+testcase!(
+    test_overload_missing_implementation,
+    r#"
+from typing import overload, assert_type
+
+@overload
+def f(x: int) -> int: ... # E: Overloaded function must have an implementation
+@overload
+def f(x: str) -> str: ...
+
+# still behaves like an overload
+assert_type(f(0), int)
+assert_type(f(""), str)
+"#,
+);

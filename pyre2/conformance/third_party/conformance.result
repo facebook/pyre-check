@@ -882,8 +882,7 @@
     "Line 200: Unexpected errors ['EXPECTED bool <: TypeIs[list[int]]']"
   ],
   "overloads_basic.py": [
-    "Lines 62, 63: Expected error (tag 'func1')",
-    "Lines 74, 75: Expected error (tag 'func2')"
+    "Lines 62, 63: Expected error (tag 'func1')"
   ],
   "protocols_class_objects.py": [
     "Line 29: Expected 1 errors",

@@ -3,7 +3,7 @@
   "pass": 13,
   "fail": 120,
   "pass_rate": 0.1,
-  "differences": 890,
+  "differences": 889,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -106,7 +106,7 @@
     "namedtuples_usage.py": 3,
     "narrowing_typeguard.py": 9,
     "narrowing_typeis.py": 31,
-    "overloads_basic.py": 2,
+    "overloads_basic.py": 1,
     "protocols_class_objects.py": 8,
     "protocols_definition.py": 5,
     "protocols_explicit.py": 6,

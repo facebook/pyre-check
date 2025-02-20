@@ -9,6 +9,8 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 
+use ruff_text_size::TextRange;
+
 use crate::types::types::Type;
 
 /// The type of a function definition after decorators are applied. Metadata arising from the
@@ -16,6 +18,7 @@ use crate::types::types::Type;
 /// decorators can produce any type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DecoratedFunction {
+    pub id_range: TextRange,
     pub ty: Type,
     pub is_overload: bool,
 }
@@ -29,6 +32,7 @@ impl Display for DecoratedFunction {
 impl DecoratedFunction {
     pub fn recursive() -> Self {
         DecoratedFunction {
+            id_range: TextRange::default(),
             ty: Type::any_implicit(),
             is_overload: false,
         }
