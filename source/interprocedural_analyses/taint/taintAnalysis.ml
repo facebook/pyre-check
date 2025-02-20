@@ -532,6 +532,7 @@ let run_taint_analysis
          saved_state;
          compute_coverage = compute_coverage_flag;
          scheduler_policies;
+         inline_decorators;
          _;
        } as static_analysis_configuration)
     ~lookup_source
@@ -869,7 +870,7 @@ let run_taint_analysis
             get_define_call_graph
               (Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs);
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
-          decorator_inlined = true;
+          decorator_inlined = inline_decorators;
         }
       ~callables_to_analyze
       ~max_iterations:100
