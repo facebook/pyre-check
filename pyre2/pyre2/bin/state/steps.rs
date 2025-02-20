@@ -52,11 +52,28 @@ pub struct Load {
 
 #[derive(Debug, Default)]
 pub struct Steps {
+    /// The last step that was computed.
+    /// None means no steps have been computed yet.
+    last_step: Option<Step>,
     pub load: Option<Arc<Load>>,
     pub ast: Option<Arc<ModModule>>,
     pub exports: Option<Exports>,
     pub answers: Option<Arc<(Bindings, Arc<Answers>)>>,
     pub solutions: Option<Arc<Solutions>>,
+}
+
+impl Steps {
+    // The next step to compute, if any.
+    pub fn next_step(&self) -> Option<Step> {
+        match self.last_step {
+            None => Some(Step::first()),
+            Some(last) => last.next(),
+        }
+    }
+
+    pub fn available(&self, want: Step) -> bool {
+        self.last_step.map_or(false, |x| x >= want)
+    }
 }
 
 #[derive(
@@ -80,7 +97,7 @@ pub struct ComputeStep<Lookup: LookupExport + LookupAnswer>(
 );
 
 macro_rules! compute_step {
-    (<$ty:ty> $output:ident = $($input:ident),*) => {
+    (<$ty:ty> $alt:ident $output:ident = $($input:ident),*) => {
         ComputeStep(Box::new(|steps: &Steps| {
             let _ = steps; // Not used if $input is empty.
             $(let $input = steps.$input.dupe().unwrap();)*
@@ -88,6 +105,7 @@ macro_rules! compute_step {
                 let res = Step::$output(ctx, $($input),*);
                 Box::new(move |steps: &mut Steps| {
                     steps.$output = Some(res);
+                    steps.last_step = Some(Step::$alt);
                 })
             })
         }))
@@ -95,16 +113,6 @@ macro_rules! compute_step {
 }
 
 impl Step {
-    pub fn check(self, steps: &Steps) -> bool {
-        match self {
-            Step::Load => steps.load.is_some(),
-            Step::Ast => steps.ast.is_some(),
-            Step::Exports => steps.exports.is_some(),
-            Step::Answers => steps.answers.is_some(),
-            Step::Solutions => steps.solutions.is_some(),
-        }
-    }
-
     pub fn first() -> Self {
         Sequence::first().unwrap()
     }
@@ -113,28 +121,13 @@ impl Step {
         Sequence::last().unwrap()
     }
 
-    /// If you want to have access to the given step, the next step to compute is returned.
-    /// None means the step is already available.
-    pub fn compute_next(self, steps: &Steps) -> Option<Self> {
-        if self.check(steps) {
-            return None;
-        }
-        let mut res = self;
-        while let Some(prev) = res.previous()
-            && !prev.check(steps)
-        {
-            res = prev;
-        }
-        Some(res)
-    }
-
     pub fn compute<Lookup: LookupExport + LookupAnswer>(self) -> ComputeStep<Lookup> {
         match self {
-            Step::Load => compute_step!(<Lookup> load =),
-            Step::Ast => compute_step!(<Lookup> ast = load),
-            Step::Exports => compute_step!(<Lookup> exports = load, ast),
-            Step::Answers => compute_step!(<Lookup> answers = load, ast, exports),
-            Step::Solutions => compute_step!(<Lookup> solutions = load, answers),
+            Step::Load => compute_step!(<Lookup> Load load =),
+            Step::Ast => compute_step!(<Lookup> Ast ast = load),
+            Step::Exports => compute_step!(<Lookup> Exports exports = load, ast),
+            Step::Answers => compute_step!(<Lookup> Answers answers = load, ast, exports),
+            Step::Solutions => compute_step!(<Lookup> Solutions solutions = load, answers),
         }
     }
 

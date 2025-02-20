@@ -130,9 +130,8 @@ impl State {
                 panic!("Should make the code not dirty");
             }
 
-            match Step::Solutions.compute_next(&reader.steps) {
-                Some(todo) if todo <= step => {}
-                _ => break,
+            if reader.steps.available(step) {
+                break;
             }
             let mut exclusive = match reader.exclusive() {
                 Some(exclusive) => exclusive,
@@ -142,12 +141,7 @@ impl State {
                 }
             };
 
-            // BIG WARNING: We do Step::Solutions.compute_next, NOT step.compute_next.
-            // The reason being that we may evict Answers, and later ask for Answers,
-            // which would then say Answers needed to be computed. But because we only ever
-            // evict earlier things in the list when computing later things, if we always
-            // ask from the end we get the right thing, not the evicted thing.
-            let todo = match Step::Solutions.compute_next(&exclusive.steps) {
+            let todo = match exclusive.steps.next_step() {
                 Some(todo) if todo <= step => todo,
                 _ => break,
             };
