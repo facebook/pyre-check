@@ -198,6 +198,8 @@ module NoCache : sig
        are discarded. *)
     val add : key -> value -> unit
 
+    val add_old : key -> value -> unit
+
     (* Api to read and remove from the table *)
     val get : key -> value option
 
@@ -381,16 +383,30 @@ module FirstClassWithKeys : sig
 
     val fold_sequential : t -> init:'a -> f:(key:key -> value:value -> 'a -> 'a) -> 'a
 
+    type map_parallel_state
+
     val map_parallel_keys
       :  t ->
-      map_reduce:(map:(key list -> unit) -> inputs:key list -> unit -> unit) ->
+      map_reduce:
+        (initial:map_parallel_state ->
+        map:(key list -> map_parallel_state) ->
+        reduce:(map_parallel_state -> map_parallel_state -> map_parallel_state) ->
+        inputs:key list ->
+        unit ->
+        map_parallel_state) ->
       f:(key:key -> value:value -> value) ->
       keys:key list ->
       t
 
     val map_parallel
       :  t ->
-      map_reduce:(map:(key list -> unit) -> inputs:key list -> unit -> unit) ->
+      map_reduce:
+        (initial:map_parallel_state ->
+        map:(key list -> map_parallel_state) ->
+        reduce:(map_parallel_state -> map_parallel_state -> map_parallel_state) ->
+        inputs:key list ->
+        unit ->
+        map_parallel_state) ->
       f:(key:key -> value:value -> value) ->
       t
 
@@ -432,8 +448,6 @@ module FirstClassWithKeys : sig
       val get : t -> cache:bool -> key -> value option
 
       val get_old : t -> key -> value option
-
-      val set : t -> cache:bool -> key -> value -> t
 
       val set_new : t -> cache:bool -> key -> value -> t
     end

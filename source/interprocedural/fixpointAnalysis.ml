@@ -250,9 +250,7 @@ module Make (Analysis : ANALYSIS) = struct
           ~preferred_chunk_size:1000
           ()
       in
-      let map_reduce =
-        Scheduler.map_reduce scheduler ~policy ~initial:() ~reduce:(fun () () -> ())
-      in
+      let map_reduce = Scheduler.map_reduce scheduler ~policy in
       T.map_parallel_keys
         models
         ~map_reduce

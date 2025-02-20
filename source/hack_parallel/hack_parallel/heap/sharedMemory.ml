@@ -521,6 +521,8 @@ functor
 
 (* Same as new, but for old values *)
 module Old : functor (Key : Key) (Value : ValueType) (_ : module type of Raw (Key) (Value)) -> sig
+  val add : Key.old -> Value.t -> unit
+
   val get : Key.old -> Value.t option
 
   val remove : Key.old -> unit
@@ -536,6 +538,8 @@ functor
   (Raw : module type of Raw (Key) (Value))
   ->
   struct
+    let add key value = Raw.add (Key.md5_old key) value
+
     let get key =
       let key = Key.md5_old key in
       if Raw.mem key then
@@ -598,6 +602,8 @@ module NoCache = struct
        are discarded. *)
     val add : key -> value -> unit
 
+    val add_old : key -> value -> unit
+
     (* Api to read and remove from the table *)
     val get : key -> value option
 
@@ -633,6 +639,8 @@ module NoCache = struct
     module Old = Old (Key) (Value) (New.Raw)
 
     let add x y = New.add (Key.make Value.prefix x) y
+
+    let add_old x y = Old.add (Key.make_old Value.prefix x) y
 
     let get_exn x = New.get_exn (Key.make Value.prefix x)
 
@@ -999,6 +1007,9 @@ module WithCache = struct
       Cache.add x y
 
 
+    (* Old objects are not cached -- see `get_old`. *)
+    let add_old = Direct.add_old
+
     let get_no_cache = Direct.get
 
     let write_around x y =
@@ -1218,6 +1229,8 @@ module FirstClass = struct
 
       let add = with_convert_key Global.add
 
+      let add_old = with_convert_key Global.add_old
+
       let mem = with_convert_key Global.mem
 
       let remove = with_convert_key Global.remove
@@ -1306,16 +1319,30 @@ module FirstClassWithKeys = struct
 
     val fold_sequential : t -> init:'a -> f:(key:key -> value:value -> 'a -> 'a) -> 'a
 
+    type map_parallel_state
+
     val map_parallel_keys
       :  t ->
-      map_reduce:(map:(key list -> unit) -> inputs:key list -> unit -> unit) ->
+      map_reduce:
+        (initial:map_parallel_state ->
+        map:(key list -> map_parallel_state) ->
+        reduce:(map_parallel_state -> map_parallel_state -> map_parallel_state) ->
+        inputs:key list ->
+        unit ->
+        map_parallel_state) ->
       f:(key:key -> value:value -> value) ->
       keys:key list ->
       t
 
     val map_parallel
       :  t ->
-      map_reduce:(map:(key list -> unit) -> inputs:key list -> unit -> unit) ->
+      map_reduce:
+        (initial:map_parallel_state ->
+        map:(key list -> map_parallel_state) ->
+        reduce:(map_parallel_state -> map_parallel_state -> map_parallel_state) ->
+        inputs:key list ->
+        unit ->
+        map_parallel_state) ->
       f:(key:key -> value:value -> value) ->
       t
 
@@ -1357,8 +1384,6 @@ module FirstClassWithKeys = struct
       val get : t -> cache:bool -> key -> value option
 
       val get_old : t -> key -> value option
-
-      val set : t -> cache:bool -> key -> value -> t
 
       val set_new : t -> cache:bool -> key -> value -> t
     end
@@ -1499,17 +1524,39 @@ module FirstClassWithKeys = struct
         keys
 
 
-    let map_parallel_keys ({ Handle.first_class_handle; _ } as handle) ~map_reduce ~f ~keys =
-      let map key =
+    type map_parallel_state = key list
+
+    let map_parallel_keys
+        ({ Handle.first_class_handle; _ } as handle)
+        ~(map_reduce :
+           initial:map_parallel_state ->
+           map:(key list -> map_parallel_state) ->
+           reduce:(map_parallel_state -> map_parallel_state -> map_parallel_state) ->
+           inputs:key list ->
+           unit ->
+           map_parallel_state)
+        ~f
+        ~keys
+      =
+      (* Ideally, we first remove the record from `New` and then add a different record into `New`,
+         so that we do not keep the existing record around. However a worker is disallowed to call
+         `hh_remove` -- only the master process is allowed. Below is an alternative. *)
+      let add_old_and_accumulate_written_keys sofar key =
         match FirstClass.get_no_cache first_class_handle key with
         | Some value ->
             let value = f ~key ~value in
-            let () = FirstClass.remove first_class_handle key in
-            let () = FirstClass.write_around first_class_handle key value in
-            ()
-        | None -> ()
+            FirstClass.add_old first_class_handle key value;
+            key :: sofar
+        | None -> sofar
       in
-      let () = map_reduce ~map:(List.iter ~f:map) ~inputs:keys () in
+      map_reduce
+        ~initial:[]
+        ~map:(List.fold ~init:[] ~f:add_old_and_accumulate_written_keys)
+        ~inputs:keys
+        ~reduce:List.rev_append
+        ()
+      |> KeySet.of_list
+      |> FirstClass.revive_batch first_class_handle;
       handle
 
 
@@ -1610,23 +1657,6 @@ module FirstClassWithKeys = struct
 
 
       let get_old = FirstClass.get_old
-
-      (* Update the value for an existing key *)
-      let set handle ~cache key value =
-        let () =
-          (* Sanity check *)
-          if not (FirstClass.mem handle key) then
-            failwith "invariant failure: key not present in shared memory"
-        in
-        let () = FirstClass.remove handle key in
-        let () =
-          if cache then
-            FirstClass.add handle key value
-          else
-            FirstClass.write_around handle key value
-        in
-        handle
-
 
       (* Set a 'new' value for a key that was oldified. *)
       let set_new handle ~cache key value =
