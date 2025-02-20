@@ -314,10 +314,7 @@
     "Lines 22, 23: Expected error (tag 'DC2')",
     "Lines 32, 33: Expected error (tag 'DC4')"
   ],
-  "dataclasses_hash.py": [
-    "Line 15: Expected 1 errors",
-    "Line 32: Expected 1 errors"
-  ],
+  "dataclasses_hash.py": [],
   "dataclasses_inheritance.py": [
     "Line 60: Expected 1 errors",
     "Line 64: Expected 1 errors"

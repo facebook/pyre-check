@@ -82,6 +82,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ),
             );
         }
+        // See rules for `__hash__` creation under "unsafe_hash":
+        // https://docs.python.org/3/library/dataclasses.html#module-contents
+        if dataclass.kws.is_set(&DataclassKeywords::UNSAFE_HASH)
+            || (dataclass.kws.is_set(&DataclassKeywords::EQ)
+                && dataclass.kws.is_set(&DataclassKeywords::FROZEN))
+        {
+            fields.insert(dunder::HASH, self.get_dataclass_hash(cls));
+        } else if dataclass.kws.is_set(&DataclassKeywords::EQ) {
+            fields.insert(dunder::HASH, ClassSynthesizedField::new(Type::None, false));
+        }
         Some(ClassSynthesizedFields::new(fields))
     }
 
@@ -192,5 +202,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .iter()
             .map(|name| (name.clone(), field.clone()))
             .collect()
+    }
+
+    fn get_dataclass_hash(&self, cls: &Class) -> ClassSynthesizedField {
+        let params = vec![Param::Pos(
+            Name::new("self"),
+            cls.self_type(),
+            Required::Required,
+        )];
+        let ret = self.stdlib.int().to_type();
+        ClassSynthesizedField::new(
+            Type::Callable(
+                Box::new(Callable::list(ParamList::new(params), ret)),
+                CallableKind::Def,
+            ),
+            false,
+        )
     }
 }

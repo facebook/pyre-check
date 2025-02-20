@@ -192,6 +192,8 @@ impl DataclassKeywords {
     /// We combine default and default_factory into a single "default" keyword indicating whether
     /// the field has a default. The default value isn't stored.
     pub const DEFAULT: (Name, bool) = (Name::new_static("default"), false);
+    pub const EQ: (Name, bool) = (Name::new_static("eq"), true);
+    pub const UNSAFE_HASH: (Name, bool) = (Name::new_static("unsafe_hash"), false);
 }
 
 impl Callable {

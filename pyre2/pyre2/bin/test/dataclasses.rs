@@ -403,3 +403,45 @@ C()  # OK
 C(x=1)  # E: Unexpected keyword argument `x`
     "#,
 );
+
+testcase!(
+    test_hashable,
+    r#"
+from typing import Hashable
+from dataclasses import dataclass
+
+class Unhashable:
+    __hash__ = None
+
+def f(x: Hashable):
+    pass
+
+# When eq=frozen=True, __hash__ is implicitly created
+@dataclass(eq=True, frozen=True)
+class D1(Unhashable):
+    pass
+f(D1())  # OK
+
+# When eq=True, frozen=False, __hash__ is set to None
+@dataclass(eq=True, frozen=False)
+class D2:
+    pass
+f(D2())  # E: EXPECTED D2 <: Hashable
+
+# When eq=False, __hash__ is untouched
+@dataclass(eq=False)
+class D3:
+    pass
+@dataclass(eq=False)
+class D4(Unhashable):
+    pass
+f(D3())  # OK
+f(D4())  # E: EXPECTED D4 <: Hashable
+
+# unsafe_hash=True forces __hash__ to be created
+@dataclass(eq=False, unsafe_hash=True)
+class D5(Unhashable):
+    pass
+f(D5())  # OK
+    "#,
+);
