@@ -6,7 +6,6 @@
  */
 
 use ruff_python_ast::Expr;
-use ruff_python_ast::ExprStarred;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
@@ -18,7 +17,6 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::literal::Lit;
-use crate::types::quantified::QuantifiedKind;
 use crate::types::special_form::SpecialForm;
 use crate::types::tuple::Tuple;
 use crate::types::types::Type;
@@ -61,76 +59,66 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let mut suffix: Vec<Type> = Vec::new();
                 let mut middle: Option<Type> = None;
                 for value in arguments.iter() {
-                    match value {
-                        Expr::EllipsisLiteral(_) => {
-                            if let [t] = prefix.as_slice()
-                                && middle.is_none()
-                            {
-                                return Type::type_form(Type::Tuple(Tuple::unbounded(t.clone())));
+                    if matches!(value, Expr::EllipsisLiteral(_)) {
+                        if let [t] = prefix.as_slice()
+                            && middle.is_none()
+                        {
+                            return Type::type_form(Type::Tuple(Tuple::unbounded(t.clone())));
+                        } else {
+                            return self.error(
+                                errors,
+                                value.range(),
+                                "Invalid position for `...`".to_owned(),
+                            );
+                        }
+                    }
+                    let ty = self.expr_untype(value, errors);
+                    match ty {
+                        Type::Unpack(box Type::Tuple(Tuple::Concrete(elts))) => {
+                            if middle.is_none() {
+                                prefix.extend(elts)
                             } else {
-                                return self.error(
-                                    errors,
-                                    value.range(),
-                                    "Invalid position for `...`".to_owned(),
-                                );
+                                suffix.extend(elts)
                             }
                         }
-                        Expr::Starred(ExprStarred { box value, .. }) => {
-                            let unpacked_type = self.expr_untype(value, errors);
-                            match unpacked_type {
-                                Type::Tuple(Tuple::Concrete(elts)) => {
-                                    if middle.is_none() {
-                                        prefix.extend(elts)
-                                    } else {
-                                        suffix.extend(elts)
-                                    }
-                                }
-                                Type::Tuple(Tuple::Unbounded(_)) => {
-                                    if middle.is_none() {
-                                        middle = Some(unpacked_type)
-                                    } else {
-                                        return self.extra_unpack_error(errors, value.range());
-                                    }
-                                }
-                                Type::Tuple(Tuple::Unpacked(box (pre, mid, suff))) => {
-                                    if middle.is_none() {
-                                        prefix.extend(pre);
-                                        middle = Some(mid);
-                                        suffix.extend(suff)
-                                    } else {
-                                        return self.extra_unpack_error(errors, value.range());
-                                    }
-                                }
-                                Type::Quantified(ref q)
-                                    if q.kind() == QuantifiedKind::TypeVarTuple =>
-                                {
-                                    if middle.is_none() {
-                                        middle = Some(unpacked_type)
-                                    } else {
-                                        return self.extra_unpack_error(errors, value.range());
-                                    }
-                                }
-                                Type::TypeVarTuple(_) => {
-                                    if middle.is_none() {
-                                        middle = Some(unpacked_type)
-                                    } else {
-                                        return self.extra_unpack_error(errors, value.range());
-                                    }
-                                }
-                                _ => {
-                                    return self.error(
-                                        errors,
-                                        value.range(),
-                                        format!(
-                                            "Expected a tuple or type var tuple, got `{}`",
-                                            unpacked_type
-                                        ),
-                                    );
-                                }
+                        Type::Unpack(box ty @ Type::Tuple(Tuple::Unbounded(_))) => {
+                            if middle.is_none() {
+                                middle = Some(ty)
+                            } else {
+                                return self.extra_unpack_error(errors, value.range());
                             }
+                        }
+                        Type::Unpack(box Type::Tuple(Tuple::Unpacked(box (pre, mid, suff)))) => {
+                            if middle.is_none() {
+                                prefix.extend(pre);
+                                middle = Some(mid);
+                                suffix.extend(suff)
+                            } else {
+                                return self.extra_unpack_error(errors, value.range());
+                            }
+                        }
+                        Type::Unpack(box ty) if ty.is_kind_type_var_tuple() => {
+                            if middle.is_none() {
+                                middle = Some(ty)
+                            } else {
+                                return self.extra_unpack_error(errors, value.range());
+                            }
+                        }
+                        Type::Unpack(box ty) => {
+                            return self.error(
+                                errors,
+                                value.range(),
+                                format!("Expected a tuple or type var tuple, got `{}`", ty),
+                            );
+                        }
+                        ty if ty.is_kind_type_var_tuple() => {
+                            return self.error(
+                                errors,
+                                value.range(),
+                                format!("Type var tuple `{}` must be unpacked", ty),
+                            );
                         }
                         _ => {
-                            let ty = self.expr_untype(value, errors);
                             if middle.is_none() {
                                 prefix.push(ty)
                             } else {

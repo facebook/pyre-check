@@ -652,16 +652,12 @@
   ],
   "generics_typevartuple_basic.py": [
     "Line 52: Expected 1 errors",
-    "Line 53: Expected 1 errors",
-    "Line 56: Expected 1 errors",
     "Line 59: Expected 1 errors",
     "Line 90: Expected 1 errors",
     "Line 99: Expected 1 errors",
     "Line 36: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'EXPECTED Array[tuple[int, ...]] <: Array[tuple[Error, Error]]']",
     "Line 37: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'EXPECTED Array[tuple[int, ...]] <: Array[tuple[Error, Error, Error]]']",
     "Line 38: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'EXPECTED Array[tuple[int, ...]] <: Array[tuple[Error, Error, Error, Error]]']",
-    "Line 54: Unexpected errors ['EXPECTED tuple[?_TypeVarTuple] <: tuple[*?_TypeVarTuple]']",
-    "Line 57: Unexpected errors ['EXPECTED tuple[*?_TypeVarTuple] <: tuple[?_TypeVarTuple]']",
     "Line 84: Unexpected errors ['assert_type(tuple[*tuple[Literal[0], ...]], tuple[int]) failed', 'EXPECTED tuple[Literal[1]] <: tuple[*tuple[Literal[0], ...]]']",
     "Line 85: Unexpected errors ['EXPECTED tuple[float] <: tuple[*tuple[Literal[0], ...]]']",
     "Line 87: Unexpected errors ['EXPECTED tuple[Literal[1]] <: tuple[*tuple[Literal[0], ...]]']",
@@ -1065,10 +1061,7 @@
     "Line 43: Expected 1 errors",
     "Line 44: Expected 1 errors"
   ],
-  "tuples_unpacked.py": [
-    "Line 59: Expected 1 errors",
-    "Lines 60, 61: Expected error (tag 't14')"
-  ],
+  "tuples_unpacked.py": [],
   "typeddicts_alt_syntax.py": [
     "Line 45: Expected 1 errors",
     "Line 10: Unexpected errors ['Expected a callable, got type[TypedDict]']",

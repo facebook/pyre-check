@@ -1,9 +1,9 @@
 {
   "total": 133,
-  "pass": 14,
-  "fail": 119,
+  "pass": 15,
+  "fail": 118,
   "pass_rate": 0.11,
-  "differences": 888,
+  "differences": 882,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -18,6 +18,7 @@
     "generics_syntax_compatibility.py",
     "overloads_basic.py",
     "specialtypes_promotions.py",
+    "tuples_unpacked.py",
     "typeddicts_readonly_kwargs.py"
   ],
   "failing": {
@@ -87,7 +88,7 @@
     "generics_syntax_scoping.py": 9,
     "generics_type_erasure.py": 1,
     "generics_typevartuple_args.py": 8,
-    "generics_typevartuple_basic.py": 15,
+    "generics_typevartuple_basic.py": 11,
     "generics_typevartuple_callable.py": 4,
     "generics_typevartuple_concat.py": 10,
     "generics_typevartuple_overloads.py": 2,
@@ -127,7 +128,6 @@
     "specialtypes_type.py": 27,
     "tuples_type_compat.py": 14,
     "tuples_type_form.py": 2,
-    "tuples_unpacked.py": 2,
     "typeddicts_alt_syntax.py": 3,
     "typeddicts_class_syntax.py": 5,
     "typeddicts_final.py": 1,

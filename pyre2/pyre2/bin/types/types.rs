@@ -425,6 +425,14 @@ impl Type {
         matches!(self, Type::Any(_))
     }
 
+    pub fn is_kind_type_var_tuple(&self) -> bool {
+        match self {
+            Type::TypeVarTuple(_) => true,
+            Type::Quantified(q) if q.is_type_var_tuple() => true,
+            _ => false,
+        }
+    }
+
     pub fn as_tvar_declaration(&self) -> Option<&QName> {
         match self {
             Type::TypeVar(t) => Some(t.qname()),

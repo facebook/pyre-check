@@ -8484,23 +8484,23 @@
     },
     {
       "code": -2,
-      "column": 38,
-      "concise_description": "EXPECTED tuple[?_TypeVarTuple] <: tuple[*?_TypeVarTuple]",
-      "description": "EXPECTED tuple[?_TypeVarTuple] <: tuple[*?_TypeVarTuple]",
-      "line": 54,
+      "column": 37,
+      "concise_description": "Type var tuple `?_TypeVarTuple` must be unpacked",
+      "description": "Type var tuple `?_TypeVarTuple` must be unpacked",
+      "line": 53,
       "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 54
+      "stop_column": 42,
+      "stop_line": 53
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED tuple[*?_TypeVarTuple] <: tuple[?_TypeVarTuple]",
-      "description": "EXPECTED tuple[*?_TypeVarTuple] <: tuple[?_TypeVarTuple]",
-      "line": 57,
+      "column": 34,
+      "concise_description": "Type var tuple `?_TypeVarTuple` must be unpacked",
+      "description": "Type var tuple `?_TypeVarTuple` must be unpacked",
+      "line": 56,
       "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 57
+      "stop_column": 39,
+      "stop_line": 56
     },
     {
       "code": -2,
@@ -9352,7 +9352,7 @@
     },
     {
       "code": -2,
-      "column": 27,
+      "column": 26,
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 121,
@@ -9362,7 +9362,7 @@
     },
     {
       "code": -2,
-      "column": 27,
+      "column": 26,
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 122,
@@ -13565,7 +13565,7 @@
   "tuples_unpacked.py": [
     {
       "code": -2,
-      "column": 30,
+      "column": 29,
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 40,
@@ -13575,7 +13575,7 @@
     },
     {
       "code": -2,
-      "column": 43,
+      "column": 42,
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 41,
@@ -13585,13 +13585,33 @@
     },
     {
       "code": -2,
-      "column": 34,
+      "column": 33,
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 51,
       "name": "PyreError",
       "stop_column": 36,
       "stop_line": 51
+    },
+    {
+      "code": -2,
+      "column": 37,
+      "concise_description": "Only one unbounded type is allowed to be unpacked",
+      "description": "Only one unbounded type is allowed to be unpacked",
+      "line": 59,
+      "name": "PyreError",
+      "stop_column": 60,
+      "stop_line": 59
+    },
+    {
+      "code": -2,
+      "column": 50,
+      "concise_description": "Only one unbounded type is allowed to be unpacked",
+      "description": "Only one unbounded type is allowed to be unpacked",
+      "line": 61,
+      "name": "PyreError",
+      "stop_column": 73,
+      "stop_line": 61
     }
   ],
   "typeddicts_alt_syntax.py": [
