@@ -41,6 +41,7 @@ use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
 use crate::report::debug_info::DebugInfo;
+use crate::state::dirty::Dirty;
 use crate::state::handle::Handle;
 use crate::state::loader::FindError;
 use crate::state::loader::Loader;
@@ -78,9 +79,15 @@ pub struct State {
 }
 
 struct ModuleData {
-    steps: UpgradeLock<Steps>,
+    steps: UpgradeLock<ModuleState>,
     handle: Handle,
     dependencies: RwLock<HashMap<ModuleName, Arc<ModuleData>, BuildNoHash>>,
+}
+
+#[derive(Default)]
+struct ModuleState {
+    dirty: Dirty,
+    steps: Steps,
 }
 
 impl ModuleData {
@@ -123,7 +130,7 @@ impl State {
                 panic!("Should make the code not dirty");
             }
 
-            match Step::Solutions.compute_next(&reader) {
+            match Step::Solutions.compute_next(&reader.steps) {
                 Some(todo) if todo <= step => {}
                 _ => break,
             }
@@ -140,18 +147,18 @@ impl State {
             // which would then say Answers needed to be computed. But because we only ever
             // evict earlier things in the list when computing later things, if we always
             // ask from the end we get the right thing, not the evicted thing.
-            let todo = match Step::Solutions.compute_next(&exclusive) {
+            let todo = match Step::Solutions.compute_next(&exclusive.steps) {
                 Some(todo) if todo <= step => todo,
                 _ => break,
             };
             computed = true;
-            let compute = todo.compute().0(&exclusive);
+            let compute = todo.compute().0(&exclusive.steps);
             if todo == Step::Answers && !self.retain_memory {
                 // We have captured the Ast, and must have already built Exports (we do it serially),
                 // so won't need the Ast again.
                 let to_drop;
                 let mut writer = exclusive.write();
-                to_drop = writer.ast.take();
+                to_drop = writer.steps.ast.take();
                 exclusive = writer.exclusive();
                 drop(to_drop);
             }
@@ -170,10 +177,10 @@ impl State {
             {
                 let mut to_drop = None;
                 let mut writer = exclusive.write();
-                set(&mut writer);
+                set(&mut writer.steps);
                 if todo == Step::Solutions && !self.retain_memory {
                     // From now on we can use the answers directly, so evict the bindings/answers.
-                    to_drop = writer.answers.take();
+                    to_drop = writer.steps.answers.take();
                 }
                 drop(writer);
                 // Release the lock before dropping
@@ -197,7 +204,7 @@ impl State {
     }
 
     fn add_error(&self, module_data: &Arc<ModuleData>, range: TextRange, msg: String) {
-        let load = module_data.steps.read().load.dupe().unwrap();
+        let load = module_data.steps.read().steps.load.dupe().unwrap();
         load.errors.add(&load.module_info, range, msg);
     }
 
@@ -245,7 +252,7 @@ impl State {
     fn lookup_export(&self, module_data: &Arc<ModuleData>) -> Exports {
         self.demand(module_data, Step::Exports);
         let lock = module_data.steps.read();
-        lock.exports.dupe().unwrap()
+        lock.steps.exports.dupe().unwrap()
     }
 
     fn lookup_answer<'b, K: Solve<StateHandle<'b>> + Keyed<EXPORTED = true>>(
@@ -260,7 +267,7 @@ impl State {
     {
         {
             // if we happen to have solutions available, use them instead
-            if let Some(solutions) = &module_data.steps.read().solutions {
+            if let Some(solutions) = &module_data.steps.read().steps.solutions {
                 return solutions.get(key).unwrap().dupe();
             }
         }
@@ -268,10 +275,13 @@ impl State {
         self.demand(&module_data, Step::Answers);
         let (load, answers) = {
             let steps = module_data.steps.read();
-            if let Some(solutions) = &steps.solutions {
+            if let Some(solutions) = &steps.steps.solutions {
                 return solutions.get(key).unwrap().dupe();
             }
-            (steps.load.dupe().unwrap(), steps.answers.dupe().unwrap())
+            (
+                steps.steps.load.dupe().unwrap(),
+                steps.steps.answers.dupe().unwrap(),
+            )
         };
         let stdlib = self.get_stdlib(&module_data.handle);
         let lookup = self.lookup(module_data);
@@ -290,7 +300,7 @@ impl State {
         let mut errors = Vec::new();
         for module in self.modules.values() {
             let steps = module.steps.read();
-            if let Some(load) = &steps.load {
+            if let Some(load) = &steps.steps.load {
                 errors.extend(load.errors.collect());
             }
         }
@@ -304,14 +314,21 @@ impl State {
     pub fn count_errors(&self) -> usize {
         self.modules
             .values()
-            .map(|x| x.steps.read().load.as_ref().map_or(0, |x| x.errors.len()))
+            .map(|x| {
+                x.steps
+                    .read()
+                    .steps
+                    .load
+                    .as_ref()
+                    .map_or(0, |x| x.errors.len())
+            })
             .sum()
     }
 
     pub fn print_errors(&self) {
         for module in self.modules.values() {
             let steps = module.steps.read();
-            if let Some(load) = &steps.load {
+            if let Some(load) = &steps.steps.load {
                 load.errors.print();
             }
         }
@@ -321,7 +338,7 @@ impl State {
         let loads = self
             .modules
             .values()
-            .filter_map(|x| x.steps.read().load.dupe())
+            .filter_map(|x| x.steps.read().steps.load.dupe())
             .collect::<Vec<_>>();
         let mut items = ErrorCollector::summarise(loads.iter().map(|x| &x.errors));
         items.reverse();
@@ -450,6 +467,7 @@ impl State {
             .get(handle)?
             .steps
             .read()
+            .steps
             .answers
             .as_ref()
             .map(|x| x.0.dupe())
@@ -460,6 +478,7 @@ impl State {
             .get(handle)?
             .steps
             .read()
+            .steps
             .answers
             .as_ref()
             .map(|x| x.1.dupe())
@@ -470,18 +489,25 @@ impl State {
             .get(handle)?
             .steps
             .read()
+            .steps
             .load
             .as_ref()
             .map(|x| x.module_info.dupe())
     }
 
     pub fn get_ast(&self, handle: &Handle) -> Option<Arc<ruff_python_ast::ModModule>> {
-        self.modules.get(handle)?.steps.read().ast.dupe()
+        self.modules.get(handle)?.steps.read().steps.ast.dupe()
     }
 
     #[allow(dead_code)]
     pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<Solutions>> {
-        self.modules.get(handle)?.steps.read().solutions.dupe()
+        self.modules
+            .get(handle)?
+            .steps
+            .read()
+            .steps
+            .solutions
+            .dupe()
     }
 
     pub fn debug_info(&self, handles: &[Handle]) -> DebugInfo {
@@ -489,9 +515,9 @@ impl State {
             let module = self.get_module(x);
             let steps = module.steps.read();
             (
-                steps.load.dupe().unwrap(),
-                steps.answers.dupe().unwrap(),
-                steps.solutions.dupe().unwrap(),
+                steps.steps.load.dupe().unwrap(),
+                steps.steps.answers.dupe().unwrap(),
+                steps.steps.solutions.dupe().unwrap(),
             )
         });
         DebugInfo::new(&owned.map(|x| (&x.0.module_info, &x.0.errors, &x.1.0, &*x.2)))
@@ -500,7 +526,7 @@ impl State {
     pub fn check_against_expectations(&self) -> anyhow::Result<()> {
         for module in self.modules.values() {
             let steps = module.steps.read();
-            let load = steps.load.as_ref().unwrap();
+            let load = steps.steps.load.as_ref().unwrap();
             Expectation::parse(load.module_info.dupe(), load.module_info.contents())
                 .check(&load.errors.collect())?;
         }

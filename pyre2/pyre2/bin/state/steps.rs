@@ -29,7 +29,6 @@ use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
 use crate::solver::solver::Solver;
-use crate::state::dirty::Dirty;
 use crate::state::loader::Loader;
 use crate::types::stdlib::Stdlib;
 use crate::util::fs_anyhow;
@@ -53,7 +52,6 @@ pub struct Load {
 
 #[derive(Debug, Default)]
 pub struct Steps {
-    pub dirty: Dirty,
     pub load: Option<Arc<Load>>,
     pub ast: Option<Arc<ModModule>>,
     pub exports: Option<Exports>,
