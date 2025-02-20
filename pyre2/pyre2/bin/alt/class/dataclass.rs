@@ -90,7 +90,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         {
             fields.insert(dunder::HASH, self.get_dataclass_hash(cls));
         } else if dataclass.kws.is_set(&DataclassKeywords::EQ) {
-            fields.insert(dunder::HASH, ClassSynthesizedField::new(Type::None, false));
+            fields.insert(dunder::HASH, ClassSynthesizedField::new(Type::None));
         }
         Some(ClassSynthesizedFields::new(fields))
     }
@@ -150,7 +150,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Box::new(Callable::list(ParamList::new(params), Type::None)),
             CallableKind::Def,
         );
-        ClassSynthesizedField::new(ty, false)
+        ClassSynthesizedField::new(ty)
     }
 
     fn get_dataclass_match_args(
@@ -176,7 +176,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .collect()
         };
         let ty = Type::Tuple(Tuple::Concrete(ts));
-        ClassSynthesizedField::new(ty, false)
+        ClassSynthesizedField::new(ty)
     }
 
     fn get_dataclass_rich_comparison_methods(
@@ -186,13 +186,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let self_ = cls.self_param();
         let other = Param::Pos(Name::new("other"), cls.self_type(), Required::Required);
         let ret = Type::ClassType(self.stdlib.bool());
-        let field = ClassSynthesizedField::new(
-            Type::Callable(
-                Box::new(Callable::list(ParamList::new(vec![self_, other]), ret)),
-                CallableKind::Def,
-            ),
-            false,
-        );
+        let field = ClassSynthesizedField::new(Type::Callable(
+            Box::new(Callable::list(ParamList::new(vec![self_, other]), ret)),
+            CallableKind::Def,
+        ));
         dunder::RICH_CMPS
             .iter()
             .map(|name| (name.clone(), field.clone()))
@@ -202,12 +199,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn get_dataclass_hash(&self, cls: &Class) -> ClassSynthesizedField {
         let params = vec![cls.self_param()];
         let ret = self.stdlib.int().to_type();
-        ClassSynthesizedField::new(
-            Type::Callable(
-                Box::new(Callable::list(ParamList::new(params), ret)),
-                CallableKind::Def,
-            ),
-            false,
-        )
+        ClassSynthesizedField::new(Type::Callable(
+            Box::new(Callable::list(ParamList::new(params), ret)),
+            CallableKind::Def,
+        ))
     }
 }

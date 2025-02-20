@@ -74,7 +74,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Box::new(Callable::list(ParamList::new(params), cls.self_type())),
             CallableKind::Def,
         );
-        ClassSynthesizedField::new(ty, false)
+        ClassSynthesizedField::new(ty)
     }
 
     fn get_named_tuple_iter(&self, cls: &Class, elements: &[Name]) -> ClassSynthesizedField {
@@ -94,7 +94,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             )),
             CallableKind::Def,
         );
-        ClassSynthesizedField::new(ty, false)
+        ClassSynthesizedField::new(ty)
     }
 
     fn get_named_tuple_match_args(&self, elements: &[Name]) -> ClassSynthesizedField {
@@ -104,7 +104,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .map(|e| Type::Literal(Lit::String(e.as_str().into())))
                 .collect(),
         ));
-        ClassSynthesizedField::new(ty, false)
+        ClassSynthesizedField::new(ty)
     }
 
     pub fn get_named_tuple_synthesized_fields(

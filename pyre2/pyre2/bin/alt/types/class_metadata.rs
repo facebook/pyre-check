@@ -149,18 +149,16 @@ impl ClassMetadata {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassSynthesizedField {
     pub inner: Arc<ClassField>,
-    /// Should the synthesized field ovewrite a user-defined field of the same name defined on the same class?
-    pub overwrite: bool,
 }
 
 impl Display for ClassSynthesizedField {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "({}, overwrite={})", self.inner, self.overwrite)
+        write!(f, "{}", self.inner)
     }
 }
 
 impl ClassSynthesizedField {
-    pub fn new(ty: Type, overwrite: bool) -> Self {
+    pub fn new(ty: Type) -> Self {
         Self {
             inner: Arc::new(ClassField(ClassFieldInner::Simple {
                 ty,
@@ -168,7 +166,6 @@ impl ClassSynthesizedField {
                 initialization: ClassFieldInitialization::Class(None),
                 readonly: false,
             })),
-            overwrite,
         }
     }
 }

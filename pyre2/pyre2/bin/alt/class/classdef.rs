@@ -765,16 +765,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Arc<ClassField>> {
-        let synthesized_fields =
-            self.get_from_class(cls, &KeyClassSynthesizedFields(cls.short_identifier()));
-        let synth = synthesized_fields.get(name);
-        if let Some(synth) = synth
-            && synth.overwrite
-        {
-            Some(synth.inner.dupe())
-        } else if let Some(field) = self.get_class_field_non_synthesized(cls, name) {
+        if let Some(field) = self.get_class_field_non_synthesized(cls, name) {
             Some(field)
         } else {
+            let synthesized_fields =
+                self.get_from_class(cls, &KeyClassSynthesizedFields(cls.short_identifier()));
+            let synth = synthesized_fields.get(name);
             synth.map(|f| f.inner.dupe())
         }
     }

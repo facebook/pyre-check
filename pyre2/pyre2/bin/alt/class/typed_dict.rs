@@ -194,7 +194,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Box::new(Callable::list(ParamList::new(params), Type::None)),
             CallableKind::Def,
         );
-        ClassSynthesizedField::new(ty, false)
+        ClassSynthesizedField::new(ty)
     }
 
     pub fn get_typed_dict_synthesized_fields(&self, cls: &Class) -> Option<ClassSynthesizedFields> {
