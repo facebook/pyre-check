@@ -23,4 +23,9 @@ impl Dirty {
     pub fn is_dirty(&self) -> bool {
         self.dirty_load || self.dirty_find
     }
+
+    pub fn clean(&mut self) {
+        self.dirty_load = false;
+        self.dirty_find = false;
+    }
 }

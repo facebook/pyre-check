@@ -6,6 +6,7 @@
  */
 
 pub mod dirty;
+pub mod epoch;
 pub mod handle;
 pub mod ide;
 pub mod loader;

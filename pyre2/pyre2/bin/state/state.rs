@@ -42,6 +42,8 @@ use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
 use crate::report::debug_info::DebugInfo;
 use crate::state::dirty::Dirty;
+use crate::state::epoch::Epoch;
+use crate::state::epoch::Epochs;
 use crate::state::handle::Handle;
 use crate::state::loader::FindError;
 use crate::state::loader::Loader;
@@ -73,6 +75,8 @@ pub struct State {
     /// the highest step (the module that is closest to being finished)
     /// gets picked first, ensuring we release its memory quickly.
     todo: Mutex<EnumHeap<Step, Arc<ModuleData>>>,
+    /// The current epoch, gets incremented every time we recompute
+    now: Epoch,
 
     // Set to true to keep data around forever.
     retain_memory: bool,
@@ -84,17 +88,21 @@ struct ModuleData {
     dependencies: RwLock<HashMap<ModuleName, Arc<ModuleData>, BuildNoHash>>,
 }
 
-#[derive(Default)]
 struct ModuleState {
+    epochs: Epochs,
     dirty: Dirty,
     steps: Steps,
 }
 
 impl ModuleData {
-    fn new(handle: Handle) -> Self {
+    fn new(handle: Handle, now: Epoch) -> Self {
         Self {
             handle,
-            state: Default::default(),
+            state: UpgradeLock::new(ModuleState {
+                epochs: Epochs::new(now),
+                dirty: Dirty::default(),
+                steps: Steps::default(),
+            }),
             dependencies: Default::default(),
         }
     }
@@ -105,6 +113,7 @@ impl State {
         Self {
             uniques: UniqueFactory::new(),
             parallel,
+            now: Epoch::zero(),
             stdlib: Default::default(),
             modules: Default::default(),
             loaders: Default::default(),
@@ -122,12 +131,37 @@ impl State {
         ))
     }
 
+    fn clean(&self, module_data: &Arc<ModuleData>) {
+        let exclusive;
+        loop {
+            match module_data.state.exclusive(Step::first()) {
+                None => continue,
+                Some(ex) => {
+                    exclusive = ex;
+                    break;
+                }
+            }
+        }
+        if exclusive.epochs.checked == self.now {
+            // Someone already checked us
+            return;
+        }
+        if exclusive.dirty.is_dirty() {
+            panic!("Should make the code not dirty");
+        }
+        let mut write = exclusive.write();
+        write.dirty.clean();
+        write.epochs.checked = self.now;
+    }
+
     fn demand(&self, module_data: &Arc<ModuleData>, step: Step) {
         let mut computed = false;
         loop {
             let reader = module_data.state.read();
-            if reader.dirty.is_dirty() {
-                panic!("Should make the code not dirty");
+            if reader.epochs.checked != self.now {
+                drop(reader);
+                self.clean(module_data);
+                continue;
             }
 
             let todo = match reader.steps.next_step() {
@@ -174,9 +208,12 @@ impl State {
                 let mut to_drop = None;
                 let mut writer = exclusive.write();
                 set(&mut writer.steps);
-                if todo == Step::Solutions && !self.retain_memory {
-                    // From now on we can use the answers directly, so evict the bindings/answers.
-                    to_drop = writer.steps.answers.take();
+                if todo == Step::Solutions {
+                    writer.epochs.changed = self.now;
+                    if !self.retain_memory {
+                        // From now on we can use the answers directly, so evict the bindings/answers.
+                        to_drop = writer.steps.answers.take();
+                    }
                 }
                 drop(writer);
                 // Release the lock before dropping
@@ -195,7 +232,9 @@ impl State {
 
     fn get_module(&self, handle: &Handle) -> Arc<ModuleData> {
         self.modules
-            .ensure(handle, || Arc::new(ModuleData::new(handle.dupe())))
+            .ensure(handle, || {
+                Arc::new(ModuleData::new(handle.dupe(), self.now))
+            })
             .dupe()
     }
 
@@ -409,6 +448,7 @@ impl State {
     }
 
     fn run_internal(&mut self, handles: Vec<Handle>) {
+        self.now.next();
         let configs = handles
             .iter()
             .map(|x| (x.config().dupe(), x.loader().dupe()))

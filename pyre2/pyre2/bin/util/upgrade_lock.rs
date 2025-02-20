@@ -41,10 +41,7 @@ pub struct UpgradeLock<E, T> {
 
 impl<E, T: Default> Default for UpgradeLock<E, T> {
     fn default() -> Self {
-        Self {
-            value: RwLock::default(),
-            exclusive: ExclusiveLock::default(),
-        }
+        UpgradeLock::new(T::default())
     }
 }
 
@@ -93,6 +90,13 @@ impl<E, T> DerefMut for UpgradeLockWriteGuard<'_, E, T> {
 }
 
 impl<E, T> UpgradeLock<E, T> {
+    pub fn new(value: T) -> Self {
+        Self {
+            value: RwLock::new(value),
+            exclusive: ExclusiveLock::default(),
+        }
+    }
+
     pub fn read(&self) -> UpgradeLockReadGuard<E, T> {
         UpgradeLockReadGuard {
             read: self.value.read().unwrap(),
@@ -100,11 +104,18 @@ impl<E, T> UpgradeLock<E, T> {
         }
     }
 
+    pub fn exclusive(&self, value: E) -> Option<UpgradeLockExclusiveGuard<E, T>>
+    where
+        E: PartialEq,
+    {
+        self.read().exclusive(value)
+    }
+
     pub fn write(&self, value: E) -> Option<UpgradeLockWriteGuard<E, T>>
     where
         E: PartialEq,
     {
-        Some(self.read().exclusive(value)?.write())
+        Some(self.exclusive(value)?.write())
     }
 }
 
@@ -124,7 +135,7 @@ impl<'a, E: PartialEq, T> UpgradeLockReadGuard<'a, E, T> {
 impl<'a, E, T> UpgradeLockExclusiveGuard<'a, E, T> {
     pub fn write(self) -> UpgradeLockWriteGuard<'a, E, T> {
         drop(self.read);
-        let write = self.inner.value.write().unwrap();
+        let write: RwLockWriteGuard<'_, T> = self.inner.value.write().unwrap();
         UpgradeLockWriteGuard {
             write,
             exclusive: self.exclusive,
