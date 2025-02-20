@@ -20,10 +20,12 @@ let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configurat
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
   let definitions = FetchCallables.get_definitions initial_callables in
+  let scheduler = Test.mock_scheduler () in
+  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
   let method_kinds =
     CallGraph.MethodKind.SharedMemory.from_targets
-      ~scheduler:(Test.mock_scheduler ())
-      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~scheduler
+      ~scheduler_policy
       ~pyre_api
       (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
   in
@@ -35,7 +37,12 @@ let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configurat
         (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
       ~attribute_targets:
         (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
-      ~decorators:(CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions)
+      ~decorators:
+        (CallGraph.CallableToDecoratorsMap.create
+           ~pyre_api
+           ~scheduler
+           ~scheduler_policy
+           definitions)
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~qualifier:module_name
       ~define
@@ -7500,11 +7507,15 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
   end
   in
   let definitions = FetchCallables.get_definitions initial_callables in
-  let decorators = CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions in
+  let scheduler = Test.mock_scheduler () in
+  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let decorators =
+    CallGraph.CallableToDecoratorsMap.create ~pyre_api ~scheduler ~scheduler_policy definitions
+  in
   let method_kinds =
     CallGraph.MethodKind.SharedMemory.from_targets
-      ~scheduler:(Test.mock_scheduler ())
-      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~scheduler
+      ~scheduler_policy
       ~pyre_api
       definitions
   in

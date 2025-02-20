@@ -743,6 +743,23 @@ let run_taint_analysis
     if higher_order_call_graph then
       let step_logger =
         StepLogger.start
+          ~start_message:"Building map from callables to decorators"
+          ~end_message:"Map from callables to decorators built"
+      in
+      let callables_to_decorators_map =
+        Interprocedural.CallGraph.CallableToDecoratorsMap.create
+          ~pyre_api
+          ~scheduler
+          ~scheduler_policy:
+            (Scheduler.Policy.from_configuration_or_default
+               scheduler_policies
+               Configuration.ScheduleIdentifier.CallableToDecoratorsMap
+               ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+          definitions
+      in
+      let () = StepLogger.finish step_logger in
+      let step_logger =
+        StepLogger.start
           ~start_message:"Building decorator resolution"
           ~end_message:"Decorator resolution built"
       in
@@ -758,8 +775,7 @@ let run_taint_analysis
                ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
           ~override_graph:override_graph_shared_memory
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
-          ~decorators:
-            (Interprocedural.CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions)
+          ~decorators:callables_to_decorators_map
           definitions
       in
       let () = StepLogger.finish step_logger in

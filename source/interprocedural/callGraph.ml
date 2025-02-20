@@ -203,7 +203,7 @@ module CallableToDecoratorsMap = struct
     not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order)
 
 
-  let create ~pyre_api =
+  let create ~pyre_api ~scheduler ~scheduler_policy callables =
     let collect_decorators callable =
       callable
       |> Target.get_module_and_definition ~pyre_api
@@ -218,13 +218,22 @@ module CallableToDecoratorsMap = struct
       else
         Some { decorators; define_location }
     in
-    (* Use map reduce if this is too slow. *)
-    List.fold
-      ~f:(fun so_far callable ->
-        match collect_decorators callable with
-        | Some decorators -> Target.Map.add callable decorators so_far
-        | None -> so_far)
-      ~init:Target.Map.empty
+    let map =
+      List.fold
+        ~f:(fun so_far callable ->
+          match collect_decorators callable with
+          | Some decorators -> Target.Map.add callable decorators so_far
+          | None -> so_far)
+        ~init:Target.Map.empty
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
+      ~initial:Target.Map.empty
+      ~map
+      ~reduce:(Target.Map.union (fun _ _ _ -> failwith "Unexpected"))
+      ~inputs:callables
+      ()
 
 
   let find_opt = Target.Map.find_opt

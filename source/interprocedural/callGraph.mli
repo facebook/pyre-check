@@ -440,7 +440,12 @@ module CallableToDecoratorsMap : sig
 
   val empty : t
 
-  val create : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Target.t list -> t
+  val create
+    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    scheduler:Scheduler.t ->
+    scheduler_policy:Scheduler.Policy.t ->
+    Target.t list ->
+    t
 end
 
 module DecoratorResolution : sig

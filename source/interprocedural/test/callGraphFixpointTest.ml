@@ -30,9 +30,11 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
   let definitions = FetchCallables.get_definitions initial_callables in
-  let decorators = CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let decorators =
+    CallGraph.CallableToDecoratorsMap.create ~pyre_api ~scheduler ~scheduler_policy definitions
+  in
   let method_kinds =
     CallGraph.MethodKind.SharedMemory.from_targets
       ~scheduler:(Test.mock_scheduler ())

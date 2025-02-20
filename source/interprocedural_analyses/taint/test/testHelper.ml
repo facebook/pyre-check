@@ -677,8 +677,10 @@ let initialize
 
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
-  let decorators = CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let decorators =
+    CallGraph.CallableToDecoratorsMap.create ~pyre_api ~scheduler ~scheduler_policy definitions
+  in
   let decorator_resolution =
     CallGraph.DecoratorResolution.Results.resolve_batch_exn
       ~debug:false

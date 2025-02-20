@@ -624,6 +624,7 @@ module ScheduleIdentifier = struct
     | TaintFileCoverage
     | TaintKindCoverage
     | DecoratorResolution
+    | CallableToDecoratorsMap
   [@@deriving sexp, compare, hash]
 
   let of_string = function
@@ -668,6 +669,7 @@ module ScheduleIdentifier = struct
     | TaintFileCoverage -> "taint_file_coverage"
     | TaintKindCoverage -> "taint_kind_coverage"
     | DecoratorResolution -> "decorator_resolution"
+    | CallableToDecoratorsMap -> "callable_to_decorators_map"
 end
 
 module SchedulerPolicies = struct
