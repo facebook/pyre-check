@@ -662,26 +662,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Arc<ClassField> {
         let value_ty = self.solve_binding(&field.value, errors);
         let annotation = field.annotation.map(|a| self.get_idx(a));
+        let class = self.get_idx(field.class);
+        let metadata = self.get_metadata_for_class(&class);
         Arc::new(self.calculate_class_field(
             &field.name,
             value_ty.as_ref(),
             annotation.as_deref(),
-            (*self.get_idx(field.initialization)).clone(),
-            &self.get_idx(field.class),
+            self.get_class_field_initialization(&metadata, &field.initial_value),
+            &class,
             field.range,
             errors,
         ))
     }
 
-    pub fn solve_class_field_initialization(
+    fn get_class_field_initialization(
         &self,
-        initialization: &BindingClassFieldInitialization,
-    ) -> Arc<ClassFieldInitialization> {
-        Arc::new(match &initialization.initial_value {
+        metadata: &ClassMetadata,
+        initial_value: &ClassFieldInitialValue,
+    ) -> ClassFieldInitialization {
+        match initial_value {
             ClassFieldInitialValue::Instance => ClassFieldInitialization::Instance,
             ClassFieldInitialValue::Class(None) => ClassFieldInitialization::Class(None),
             ClassFieldInitialValue::Class(Some(e)) => {
-                let metadata = self.get_idx(initialization.class_metadata);
                 // If this field was created via a call to a dataclass field specifier, extract field properties from the call.
                 if metadata.dataclass_metadata().is_some()
                     && let Expr::Call(ExprCall {
@@ -716,7 +718,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ClassFieldInitialization::Class(None)
                 }
             }
-        })
+        }
+    }
+
+    pub fn solve_class_field_initialization(
+        &self,
+        initialization: &BindingClassFieldInitialization,
+    ) -> Arc<ClassFieldInitialization> {
+        let metadata = self.get_idx(initialization.class_metadata);
+        Arc::new(self.get_class_field_initialization(&metadata, &initialization.initial_value))
     }
 
     pub fn solve_class_synthesized_fields(

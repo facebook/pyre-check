@@ -20,7 +20,6 @@ use starlark_map::small_map::SmallMap;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingClass;
 use crate::binding::binding::BindingClassField;
-use crate::binding::binding::BindingClassFieldInitialization;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::ClassBinding;
@@ -28,7 +27,6 @@ use crate::binding::binding::ClassFieldInitialValue;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyClassField;
-use crate::binding::binding::KeyClassFieldInitialization;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyClassSynthesizedFields;
 use crate::binding::bindings::BindingsBuilder;
@@ -94,7 +92,7 @@ impl<'a> BindingsBuilder<'a> {
             }
         });
 
-        let metadata_key = self.table.insert(
+        self.table.insert(
             KeyClassMetadata(class_name.clone()),
             BindingClassMetadata {
                 def: definition_key,
@@ -121,21 +119,13 @@ impl<'a> BindingsBuilder<'a> {
         for (name, info) in last_scope.flow.info.iter() {
             // A name with flow info but not static info is a reference to something that's not a class field.
             if let Some(stat_info) = last_scope.stat.0.get(name) {
-                let binding_initialization = BindingClassFieldInitialization {
-                    class_metadata: metadata_key,
-                    initial_value: info.as_initial_value(),
-                };
-                let initialization = self.table.insert(
-                    KeyClassFieldInitialization(class_name.clone(), name.clone()),
-                    binding_initialization,
-                );
                 let binding = BindingClassField {
                     class: definition_key,
                     name: name.clone(),
                     value: Binding::Forward(info.key),
                     annotation: stat_info.annot,
                     range: stat_info.loc,
-                    initialization,
+                    initial_value: info.as_initial_value(),
                 };
                 fields.insert(
                     name.clone(),
@@ -160,13 +150,6 @@ impl<'a> BindingsBuilder<'a> {
                                     range: None,
                                 },
                             );
-                            let initialization = self.table.insert(
-                                KeyClassFieldInitialization(class_name.clone(), name.clone()),
-                                BindingClassFieldInitialization {
-                                    class_metadata: metadata_key,
-                                    initial_value: ClassFieldInitialValue::Instance,
-                                },
-                            );
                             self.table.insert(
                                 KeyClassField(class_name.clone(), name.clone()),
                                 BindingClassField {
@@ -175,7 +158,7 @@ impl<'a> BindingsBuilder<'a> {
                                     value,
                                     annotation,
                                     range,
-                                    initialization,
+                                    initial_value: ClassFieldInitialValue::Instance,
                                 },
                             );
                         } else if annotation.is_some() {
@@ -218,7 +201,7 @@ impl<'a> BindingsBuilder<'a> {
         let short_class_name = ShortIdentifier::new(&class_name);
         let class_key = KeyClass(short_class_name.clone());
         let definition_key = self.table.classes.0.insert(class_key.clone());
-        let metadata_key = self.table.insert(
+        self.table.insert(
             KeyClassMetadata(short_class_name.clone()),
             BindingClassMetadata {
                 def: definition_key,
@@ -252,16 +235,6 @@ impl<'a> BindingsBuilder<'a> {
                                 range: None,
                             },
                         );
-                        let initialization = self.table.insert(
-                            KeyClassFieldInitialization(
-                                short_class_name.clone(),
-                                member_name.clone(),
-                            ),
-                            BindingClassFieldInitialization {
-                                class_metadata: metadata_key,
-                                initial_value: ClassFieldInitialValue::Class(None),
-                            },
-                        );
                         self.table.insert(
                             KeyClassField(short_class_name.clone(), member_name.clone()),
                             BindingClassField {
@@ -270,7 +243,7 @@ impl<'a> BindingsBuilder<'a> {
                                 value: Binding::AnyType(AnyStyle::Implicit),
                                 annotation: None,
                                 range: x.range(),
-                                initialization,
+                                initial_value: ClassFieldInitialValue::Class(None),
                             },
                         );
                     } else {

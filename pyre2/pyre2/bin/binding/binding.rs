@@ -77,7 +77,7 @@ mod check_size {
     assert_eq_size!(BindingClass, [usize; 21]);
     assert_eq_size!(BindingClassMetadata, [usize; 7]);
     assert_eq_size!(BindingClassFieldInitialization, [usize; 9]);
-    assert_eq_size!(BindingClassField, [usize; 15]);
+    assert_eq_size!(BindingClassField, [usize; 22]);
     assert_eq_size!(BindingClassSynthesizedFields, [u8; 4]); // Equivalent to 0.5 usize
     assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
     assert_eq_size!(BindingYield, [usize; 3]);
@@ -955,7 +955,7 @@ pub struct BindingClassField {
     pub value: Binding,
     pub annotation: Option<Idx<KeyAnnotation>>,
     pub range: TextRange,
-    pub initialization: Idx<KeyClassFieldInitialization>,
+    pub initial_value: ClassFieldInitialValue,
 }
 
 impl DisplayWith<Bindings> for BindingClassField {
