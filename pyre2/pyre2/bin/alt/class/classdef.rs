@@ -655,39 +655,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    // Get every member of a class, including those declared in parent classes.
-    fn get_all_members(&self, cls: &Class) -> SmallMap<Name, (Arc<ClassField>, Class)> {
-        let mut members = SmallMap::new();
-        for name in cls.fields() {
-            if let Some(field) = self.get_class_field(cls, name) {
-                members.insert(name.clone(), (field, cls.dupe()));
-            }
-        }
-        for ancestor in self.get_metadata_for_class(cls).ancestors(self.stdlib) {
-            for name in ancestor.class_object().fields() {
-                if !members.contains_key(name) {
-                    if let Some(field) = self.get_class_field(ancestor.class_object(), name) {
-                        members.insert(
-                            name.clone(),
-                            (
-                                Arc::new(field.instantiate_for(ancestor)),
-                                ancestor.class_object().dupe(),
-                            ),
-                        );
-                    }
-                }
-            }
-        }
-        members
-    }
-
-    pub fn get_all_member_names(&self, cls: &Class) -> SmallSet<Name> {
-        self.get_all_members(cls)
-            .keys()
-            .cloned()
-            .collect::<SmallSet<_>>()
-    }
-
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
             .map(|member| Arc::unwrap_or_clone(member.value).as_instance_attribute(cls))

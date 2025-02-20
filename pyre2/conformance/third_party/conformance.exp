@@ -11488,16 +11488,6 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "EXPECTED list[object] <: Sized",
-      "description": "EXPECTED list[object] <: Sized",
-      "line": 23,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "EXPECTED type[int] <: type[@_]",
       "description": "EXPECTED type[int] <: type[@_]",
@@ -11945,82 +11935,12 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED type[ConcreteA] <: ProtoA2",
-      "description": "EXPECTED type[ConcreteA] <: ProtoA2",
-      "line": 59,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 59
-    },
-    {
-      "code": -2,
-      "column": 16,
       "concise_description": "EXPECTED type[ConcreteB] <: ProtoB1",
       "description": "EXPECTED type[ConcreteB] <: ProtoB1",
       "line": 74,
       "name": "PyreError",
       "stop_column": 25,
       "stop_line": 74
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED type[ConcreteC1] <: ProtoC1",
-      "description": "EXPECTED type[ConcreteC1] <: ProtoC1",
-      "line": 104,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 104
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED type[ConcreteC1] <: ProtoC2",
-      "description": "EXPECTED type[ConcreteC1] <: ProtoC2",
-      "line": 105,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 105
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED type[ConcreteC2] <: ProtoC1",
-      "description": "EXPECTED type[ConcreteC2] <: ProtoC1",
-      "line": 106,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 106
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED type[ConcreteC2] <: ProtoC2",
-      "description": "EXPECTED type[ConcreteC2] <: ProtoC2",
-      "line": 107,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 107
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED type[ConcreteC3] <: ProtoC1",
-      "description": "EXPECTED type[ConcreteC3] <: ProtoC1",
-      "line": 108,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 108
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED type[ConcreteC3] <: ProtoC2",
-      "description": "EXPECTED type[ConcreteC3] <: ProtoC2",
-      "line": 109,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 109
     }
   ],
   "protocols_definition.py": [

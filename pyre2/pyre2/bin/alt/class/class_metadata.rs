@@ -22,6 +22,7 @@ use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::DataclassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::alt::types::class_metadata::NamedTupleMetadata;
+use crate::alt::types::class_metadata::ProtocolMetadata;
 use crate::alt::types::class_metadata::TypedDictMetadata;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
@@ -82,7 +83,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut enum_metadata = None;
         let mut dataclass_metadata = None;
         let bases: Vec<BaseClass> = bases.map(|x| self.base_class_of(x, errors));
-        let is_protocol = bases.iter().any(|x| matches!(x, BaseClass::Protocol(_)));
+        let mut protocol_metadata = if bases.iter().any(|x| matches!(x, BaseClass::Protocol(_))) {
+            Some(ProtocolMetadata {
+                members: cls.fields().cloned().collect(),
+            })
+        } else {
+            None
+        };
         let bases_with_metadata = bases
             .iter()
             .filter_map(|x| match x {
@@ -105,11 +112,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 named_tuple_metadata = Some(base_named_tuple.clone());
                             }
                         }
-                        if is_protocol && !base_class_metadata.is_protocol() {
-                            self.error(errors,
-                                x.range(),
-                                "If `Protocol` is included as a base class, all other bases must be protocols.".to_owned(),
-                            );
+                        if let Some(proto) = &mut protocol_metadata {
+                            if let Some(base_proto) = base_class_metadata.protocol_metadata() {
+                                proto.members.extend(base_proto.members.clone());
+                            } else {
+                                self.error(errors,
+                                    x.range(),
+                                    "If `Protocol` is included as a base class, all other bases must be protocols.".to_owned(),
+                                );
+                            }
                         }
                         if dataclass_metadata.is_none() && let Some(base_dataclass) = base_class_metadata.dataclass_metadata() {
                             // If we inherit from a dataclass, inherit its metadata. Note that if this class is
@@ -235,7 +246,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             typed_dict_metadata,
             named_tuple_metadata,
             enum_metadata,
-            is_protocol,
+            protocol_metadata,
             dataclass_metadata,
             errors,
         )

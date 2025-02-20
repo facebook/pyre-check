@@ -851,7 +851,6 @@
     "Line 102: Expected 1 errors",
     "Line 107: Expected 1 errors",
     "Line 17: Unexpected errors ['assert_type(tuple[?_TypeVar, ?_TypeVar], tuple[str, str]) failed']",
-    "Line 23: Unexpected errors ['EXPECTED list[object] <: Sized']",
     "Line 31: Unexpected errors ['EXPECTED type[int] <: type[@_]']",
     "Line 32: Unexpected errors ['assert_type(set[?_TypeVar], set[int]) failed']",
     "Line 72: Unexpected errors ['EXPECTED type[A] <: A']",
@@ -899,11 +898,12 @@
   "protocols_class_objects.py": [
     "Line 29: Expected 1 errors",
     "Line 34: Expected 1 errors",
+    "Line 104: Expected 1 errors",
+    "Line 106: Expected 1 errors",
+    "Line 107: Expected 1 errors",
+    "Line 108: Expected 1 errors",
     "Line 30: Unexpected errors ['EXPECTED type[Concrete] <: type[Proto]']",
-    "Line 35: Unexpected errors ['EXPECTED type[Concrete] <: type[Proto]']",
-    "Line 59: Unexpected errors ['EXPECTED type[ConcreteA] <: ProtoA2']",
-    "Line 105: Unexpected errors ['EXPECTED type[ConcreteC1] <: ProtoC2']",
-    "Line 109: Unexpected errors ['EXPECTED type[ConcreteC3] <: ProtoC2']"
+    "Line 35: Unexpected errors ['EXPECTED type[Concrete] <: type[Proto]']"
   ],
   "protocols_definition.py": [
     "Line 117: Expected 1 errors",

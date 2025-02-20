@@ -36,7 +36,7 @@ pub struct ClassMetadata {
     typed_dict_metadata: Option<TypedDictMetadata>,
     named_tuple_metadata: Option<NamedTupleMetadata>,
     enum_metadata: Option<EnumMetadata>,
-    is_protocol: bool,
+    protocol_metadata: Option<ProtocolMetadata>,
     dataclass_metadata: Option<DataclassMetadata>,
     bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
 }
@@ -56,7 +56,7 @@ impl ClassMetadata {
         typed_dict_metadata: Option<TypedDictMetadata>,
         named_tuple_metadata: Option<NamedTupleMetadata>,
         enum_metadata: Option<EnumMetadata>,
-        is_protocol: bool,
+        protocol_metadata: Option<ProtocolMetadata>,
         dataclass_metadata: Option<DataclassMetadata>,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
@@ -68,7 +68,7 @@ impl ClassMetadata {
             typed_dict_metadata,
             named_tuple_metadata,
             enum_metadata,
-            is_protocol,
+            protocol_metadata,
             dataclass_metadata,
             bases_with_metadata,
         }
@@ -82,7 +82,7 @@ impl ClassMetadata {
             typed_dict_metadata: None,
             named_tuple_metadata: None,
             enum_metadata: None,
-            is_protocol: false,
+            protocol_metadata: None,
             dataclass_metadata: None,
             bases_with_metadata: Vec::new(),
         }
@@ -118,7 +118,11 @@ impl ClassMetadata {
     }
 
     pub fn is_protocol(&self) -> bool {
-        self.is_protocol
+        self.protocol_metadata.is_some()
+    }
+
+    pub fn protocol_metadata(&self) -> Option<&ProtocolMetadata> {
+        self.protocol_metadata.as_ref()
     }
 
     pub fn dataclass_metadata(&self) -> Option<&DataclassMetadata> {
@@ -272,6 +276,12 @@ impl DataclassMetadata {
             kws: self.kws.clone(),
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProtocolMetadata {
+    /// All members of the protocol, excluding ones defined on `object` and not overridden in a subclass.
+    pub members: SmallSet<Name>,
 }
 
 /// A struct representing a class's ancestors, in method resolution order (MRO)

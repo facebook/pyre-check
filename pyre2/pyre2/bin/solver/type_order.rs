@@ -57,8 +57,13 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.get_metadata_for_class(cls).is_protocol()
     }
 
-    pub fn get_all_member_names(self, cls: &Class) -> SmallSet<Name> {
-        self.0.get_all_member_names(cls)
+    pub fn get_protocol_member_names(self, cls: &Class) -> SmallSet<Name> {
+        let meta = self.0.get_metadata_for_class(cls);
+        if let Some(proto) = meta.protocol_metadata() {
+            proto.members.clone()
+        } else {
+            SmallSet::new()
+        }
     }
 
     pub fn try_lookup_attr(self, base: Type, attr_name: &Name) -> Option<Attribute> {

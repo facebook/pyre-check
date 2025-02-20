@@ -192,7 +192,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             return true;
         }
         let to = self.type_order;
-        let protocol_members = to.get_all_member_names(protocol.class_object());
+        let protocol_members = to.get_protocol_member_names(protocol.class_object());
         for name in protocol_members {
             if name == dunder::INIT || name == dunder::NEW {
                 // Protocols can't be instantiated
