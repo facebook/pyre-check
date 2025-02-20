@@ -92,3 +92,23 @@ def test(o: C):
     assert_type(o.m(1), int)
     "#,
 );
+
+testcase_with_bug!(
+    "Only errors between args and params affect overload resolution",
+    test_overload_arg_errors,
+    r#"
+from typing import overload, assert_type
+
+@overload
+def f(x: int) -> int: ...
+@overload
+def f(x: str) -> str: ...
+def f(x: int | str) -> int | str: ...
+
+def g(x: str) -> int: ...
+def h(x: str) -> str: ...
+
+assert_type(f(g(0)), int) # E: No matching overload found # E: assert_type
+assert_type(f(h(0)), str) # E: No matching overload found # E: assert_type
+"#,
+);
