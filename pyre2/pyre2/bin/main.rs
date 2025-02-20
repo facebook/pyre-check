@@ -26,6 +26,7 @@
 #![feature(if_let_guard)]
 #![feature(associated_type_defaults)]
 #![feature(associated_const_equality)]
+#![feature(once_wait)]
 
 use std::process::ExitCode;
 

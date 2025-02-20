@@ -8,11 +8,9 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Duration;
 
 use dupe::Dupe;
 use enum_iterator::Sequence;
-use parking_lot::FairMutex;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
@@ -62,6 +60,7 @@ use crate::util::locked_map::LockedMap;
 use crate::util::no_hash::BuildNoHash;
 use crate::util::prelude::SliceExt;
 use crate::util::uniques::UniqueFactory;
+use crate::util::upgrade_lock::UpgradeLock;
 
 pub struct State {
     uniques: UniqueFactory,
@@ -79,42 +78,7 @@ pub struct State {
 }
 
 struct ModuleState {
-    // BIG WARNING: This must be a FairMutex or we are exposed to deadlocks.
-    //
-    // The FairMutex is locking an entire module, which goes through stages
-    // of compute (the stages are enumerated by `Step`).
-    //
-    // Each stage can `demand` some previous stage of other modules, for
-    // example `Answers` (which computes bindings) may require `Exports`
-    // of other modules to handle wildcard imports.
-    //
-    // When a thread `demand`s a Step of a module, we take the lock, and
-    // - we might see that what we need is already available
-    // - we might see that it is not, in which case we start computing
-    // - or we might pause if another thread owns the lock
-    //
-    // This works with a `FairMutex`: as long as we only `demand` earlier steps
-    // from later steps, the demand calls form a DAG. Since `FairMutex` respects
-    // the order of calls, the lock acquisition is also a DAG and we make
-    // progress.
-    //
-    // But without a `FairMutex`, we lose control of the order and we can
-    // deadlock. Suppose `foo` and `bar` each try to `from <other> import *`,
-    // and consider when
-    // - Thread 0 is computing bindings for `foo`
-    // - Thread 1 is computing exports for `bar`
-    //
-    // When Thread 0 hits the `from bar import *`, it will try to take the lock
-    // on `bar`, and wait. Thread 1 will produce the exports for `bar`.
-    //
-    // But if the mutex is not fair, Thread 1 (or some other thread) might
-    // get the lock on `bar` to start computing bindings before Thread 0
-    // does. If this happens, we will deadlock because Thread 0 still owns
-    // the lock on `foo`, so the thread trying to compute bindings on `bar`
-    // will get stuck trying to analyze `from foo import *`. Meanwhile Thread 0
-    // is still waiting for `bar` and we are unable to make progress.
-    lock: FairMutex<()>,
-    steps: RwLock<ModuleSteps>,
+    steps: UpgradeLock<ModuleSteps>,
     handle: Handle,
     dependencies: RwLock<HashMap<ModuleName, Arc<ModuleState>, BuildNoHash>>,
 }
@@ -122,7 +86,6 @@ struct ModuleState {
 impl ModuleState {
     fn new(handle: Handle) -> Self {
         Self {
-            lock: Default::default(),
             steps: Default::default(),
             handle,
             dependencies: Default::default(),
@@ -155,45 +118,41 @@ impl State {
     fn demand(&self, module_state: &Arc<ModuleState>, step: Step) {
         let mut computed = false;
         loop {
-            let lock = module_state.steps.read();
-            if lock.dirty.is_dirty() {
+            let reader = module_state.steps.read();
+            if reader.dirty.is_dirty() {
                 panic!("Should make the code not dirty");
             }
 
-            match Step::Solutions.compute_next(&lock) {
+            match Step::Solutions.compute_next(&reader) {
                 Some(todo) if todo <= step => {}
                 _ => break,
             }
-            drop(lock);
-            let compute_lock = module_state.lock.try_lock_for(Duration::from_millis(100));
-            if compute_lock.is_none() {
-                // Typechecking empty.py with -j25 deadlocks about 1% of the time. At -j100 it deadlocks about 5% of the time.
-                // I don't really understand it. But the fact we have to use FairMutex is a bit of a smell, and potentially
-                // we are having races as to what "fair" means.
-                //
-                // We plan to rewrite much of this code soon to support incrementality, so for now, bodge it.
-                // If we can't get the lock in 100ms, just give up and try from scratch.
-                // Small delay plus rarely hit means this has no overall perf impact.
-                continue;
-            }
-            let lock = module_state.steps.read();
+            let mut exclusive = match reader.exclusive() {
+                Some(exclusive) => exclusive,
+                None => {
+                    // The world changed, we should check again
+                    continue;
+                }
+            };
 
             // BIG WARNING: We do Step::Solutions.compute_next, NOT step.compute_next.
             // The reason being that we may evict Answers, and later ask for Answers,
             // which would then say Answers needed to be computed. But because we only ever
             // evict earlier things in the list when computing later things, if we always
             // ask from the end we get the right thing, not the evicted thing.
-            let todo = match Step::Solutions.compute_next(&lock) {
+            let todo = match Step::Solutions.compute_next(&exclusive) {
                 Some(todo) if todo <= step => todo,
                 _ => break,
             };
             computed = true;
-            let compute = todo.compute().0(&lock);
-            drop(lock);
+            let compute = todo.compute().0(&exclusive);
             if todo == Step::Answers && !self.retain_memory {
                 // We have captured the Ast, and must have already built Exports (we do it serially),
                 // so won't need the Ast again.
-                let to_drop = module_state.steps.write().ast.take();
+                let to_drop;
+                let mut writer = exclusive.write();
+                to_drop = writer.ast.take();
+                exclusive = writer.exclusive();
                 drop(to_drop);
             }
 
@@ -210,13 +169,13 @@ impl State {
             });
             {
                 let mut to_drop = None;
-                let mut module_write = module_state.steps.write();
-                set(&mut module_write);
+                let mut writer = exclusive.write();
+                set(&mut writer);
                 if todo == Step::Solutions && !self.retain_memory {
                     // From now on we can use the answers directly, so evict the bindings/answers.
-                    to_drop = module_write.answers.take();
+                    to_drop = writer.answers.take();
                 }
-                drop(module_write);
+                drop(writer);
                 // Release the lock before dropping
                 drop(to_drop);
             }
@@ -561,7 +520,7 @@ impl State {
         }
         for (handle, module_state) in self.modules.iter_unordered() {
             if handle.loader() == loader {
-                module_state.steps.write().dirty.set_dirty_find();
+                module_state.steps.write().unwrap().dirty.set_dirty_find();
             }
         }
 
@@ -577,7 +536,7 @@ impl State {
                 && let ModulePathDetails::Memory(x) = handle.path().details()
                 && files.contains(x)
             {
-                module_state.steps.write().dirty.set_dirty_load();
+                module_state.steps.write().unwrap().dirty.set_dirty_load();
             }
         }
 
@@ -594,7 +553,7 @@ impl State {
             if let ModulePathDetails::FileSystem(x) = handle.path().details()
                 && files.contains(x)
             {
-                module_state.steps.write().dirty.set_dirty_load();
+                module_state.steps.write().unwrap().dirty.set_dirty_load();
             }
         }
 
