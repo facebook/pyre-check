@@ -221,6 +221,7 @@ module ScheduleIdentifier : sig
     | ComputeChangedPaths
     | SaveChangedPaths
     | TaintFetchCallables
+    | MethodKinds
     | ClassHierarchyGraph
     | CallableModelQueries
     | AttributeModelQueries

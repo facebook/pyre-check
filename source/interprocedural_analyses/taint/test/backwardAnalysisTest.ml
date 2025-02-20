@@ -26,6 +26,14 @@ let assert_taint ~context source expected =
   in
   let initial_models = TestHelper.get_initial_models ~context in
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
+  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let method_kinds =
+    CallGraph.MethodKind.SharedMemory.from_targets
+      ~scheduler:(Test.mock_scheduler ())
+      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~pyre_api
+      (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
+  in
   let analyze_and_store_in_order models define =
     let define_name =
       FunctionDefinition.qualified_name_of_define ~module_name:qualifier (Ast.Node.value define)
@@ -44,6 +52,7 @@ let assert_taint ~context source expected =
           |> Target.Set.elements
           |> Target.HashSet.of_list)
         ~decorators:CallGraph.CallableToDecoratorsMap.empty
+        ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
         ~qualifier
         ~define:(Ast.Node.value define)
     in
@@ -76,6 +85,7 @@ let assert_taint ~context source expected =
   let models = List.fold ~f:analyze_and_store_in_order ~init:initial_models defines in
   let get_model = Registry.get models in
   let get_errors _ = [] in
+  CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
   List.iter
     ~f:
       (check_expectation

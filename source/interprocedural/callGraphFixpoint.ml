@@ -13,6 +13,7 @@ module CallGraphAnalysis = struct
       pyre_api: Analysis.PyrePysaEnvironment.ReadOnly.t;
       define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
       decorator_resolution: CallGraph.DecoratorResolution.Results.t;
+      method_kinds: CallGraph.MethodKind.SharedMemory.ReadOnly.t;
     }
   end
 
@@ -70,7 +71,7 @@ module CallGraphAnalysis = struct
   end
 
   let analyze_define
-      ~context:{ Context.pyre_api; define_call_graphs; decorator_resolution }
+      ~context:{ Context.pyre_api; define_call_graphs; decorator_resolution; method_kinds }
       ~callable
       ~previous_model:{ CallGraph.HigherOrderCallGraph.call_graph = previous_call_graph; _ }
       ~get_callee_model
@@ -99,7 +100,8 @@ module CallGraphAnalysis = struct
           ~pyre_api
           ~qualifier
           ~define
-          ~initial_state:(CallGraph.HigherOrderCallGraph.State.initialize_from_callable callable)
+          ~initial_state:
+            (CallGraph.HigherOrderCallGraph.State.initialize_from_callable ~method_kinds callable)
           ~get_callee_model
       in
       let dependencies call_graph =
@@ -191,6 +193,7 @@ let compute
     ~override_graph_shared_memory
     ~initial_callables
     ~decorator_resolution
+    ~method_kinds
     ~max_iterations
   =
   let decorated_callables =
@@ -254,6 +257,7 @@ let compute
           CallGraphAnalysis.Context.pyre_api;
           define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
           decorator_resolution;
+          method_kinds;
         }
       ~callables_to_analyze:(List.rev_append callables_to_analyze decorated_callables)
       ~max_iterations

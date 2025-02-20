@@ -469,6 +469,81 @@
     "callable": "decorator.main",
     "callable_line": 202,
     "code": 5002,
+    "line": 229,
+    "start": 26,
+    "end": 40,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "decorator.py",
+              "line": 229,
+              "start": 26,
+              "end": 40
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 229,
+                "start": 26,
+                "end": 40
+              },
+              "resolves_to": [
+                "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]"
+              ],
+              "port": "formal(*args, position=0)[0]",
+              "call_site": "229:4-229:41"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]",
+      "index": 0,
+      "parameter": "formal(*rest0)"
+    },
+    "master_handle": "decorator.main:5002:0:Call|decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]|0|formal(*rest0):45dd08e3ebf3d2320f5facea45bb3a39"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.main",
+    "callable_line": 202,
+    "code": 5002,
     "line": 227,
     "start": 47,
     "end": 61,
@@ -536,6 +611,81 @@
       "parameter": "formal(**kw)"
     },
     "master_handle": "decorator.main:5002:0:Call|decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]|0|formal(**kw):71c9ae876b1fa3458a57d738a4e01203"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.main",
+    "callable_line": 202,
+    "code": 5002,
+    "line": 222,
+    "start": 14,
+    "end": 28,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "decorator.py",
+              "line": 222,
+              "start": 14,
+              "end": 28
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 222,
+                "start": 14,
+                "end": 28
+              },
+              "resolves_to": [
+                "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]"
+              ],
+              "port": "formal(*args, position=0)[0]",
+              "call_site": "222:4-222:29"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+      "index": 0,
+      "parameter": "formal(*rest0)"
+    },
+    "master_handle": "decorator.main:5002:0:Call|decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]|0|formal(*rest0):f4dc87dd7f475deaf8c93b38d37d9b5e"
   }
 }
 {
@@ -1743,7 +1893,7 @@
         ]
       },
       {
-        "port": "formal(*args, position=0)[1]",
+        "port": "formal(*args, position=0)[0]",
         "taint": [
           {
             "kinds": [
@@ -1801,7 +1951,7 @@
         ]
       },
       {
-        "port": "formal(*args, position=0)[2]",
+        "port": "formal(*args, position=0)[1]",
         "taint": [
           {
             "kinds": [
@@ -1859,7 +2009,7 @@
         ]
       },
       {
-        "port": "formal(*args, position=0)[1]",
+        "port": "formal(*args, position=0)[0]",
         "taint": [
           {
             "kinds": [

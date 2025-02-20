@@ -33,6 +33,30 @@ module ReturnType : sig
   val to_json : t -> Yojson.Safe.t
 end
 
+(** Whether a method is an instance method, or a class method, or a static method. *)
+module MethodKind : sig
+  module SharedMemory : sig
+    type t
+
+    module ReadOnly : sig
+      type t
+    end
+
+    val from_targets
+      :  scheduler:Scheduler.t ->
+      scheduler_policy:Scheduler.Policy.t ->
+      pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+      Target.t list ->
+      t
+
+    val empty : unit -> t
+
+    val read_only : t -> ReadOnly.t
+
+    val cleanup : t -> unit
+  end
+end
+
 (** A specific target of a given call, with extra information. *)
 module CallTarget : sig
   type t = {
@@ -332,6 +356,7 @@ end
 (* Exposed for rare use cases, such as resolving the callees of decorators. *)
 val resolve_callees_from_type_external
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+  method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   return_type:Type.t lazy_t ->
   ?dunder_call:bool ->
@@ -442,6 +467,7 @@ module DecoratorResolution : sig
     :  ?debug:bool ->
     pyre_in_context:PyrePysaEnvironment.InContext.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
+    method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
     decorators:CallableToDecoratorsMap.t ->
     Target.t ->
     t
@@ -459,6 +485,7 @@ module DecoratorResolution : sig
       scheduler:Scheduler.t ->
       scheduler_policy:Scheduler.Policy.t ->
       override_graph:OverrideGraph.SharedMemory.t ->
+      method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
       decorators:CallableToDecoratorsMap.t ->
       Target.t list ->
       t
@@ -471,6 +498,7 @@ val call_graph_of_define
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.t ->
+  method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
   DefineCallGraph.t
@@ -489,6 +517,7 @@ val call_graph_of_callable
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.t ->
+  method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
   callable:Target.t ->
   DefineCallGraph.t
 
@@ -511,9 +540,12 @@ module HigherOrderCallGraph : sig
 
     val empty : t
 
-    val initialize_from_roots : (TaintAccessPath.Root.t * Target.t) list -> t
+    val initialize_from_roots
+      :  method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
+      (TaintAccessPath.Root.t * Target.t) list ->
+      t
 
-    val initialize_from_callable : Target.t -> t
+    val initialize_from_callable : method_kinds:MethodKind.SharedMemory.ReadOnly.t -> Target.t -> t
   end
 end
 
@@ -578,6 +610,8 @@ module SharedMemory : sig
     define_call_graphs: t;
   }
 
+  val default_scheduler_policy : Scheduler.Policy.t
+
   (** Build the whole call graph of the program.
 
       The overrides must be computed first because we depend on a global shared memory graph to
@@ -592,6 +626,7 @@ module SharedMemory : sig
     store_shared_memory:bool ->
     attribute_targets:Target.Set.t ->
     decorators:CallableToDecoratorsMap.t ->
+    method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
     skip_analysis_targets:Target.Set.t ->
     definitions:Target.t list ->
     decorator_resolution:DecoratorResolution.Results.t ->

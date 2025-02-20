@@ -455,6 +455,7 @@ module TestEnvironment = struct
     class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
     global_constants: GlobalConstants.SharedMemory.t;
     stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
+    method_kinds: CallGraph.MethodKind.SharedMemory.t;
   }
 
   let cleanup
@@ -477,6 +478,7 @@ module TestEnvironment = struct
         class_interval_graph_shared_memory;
         global_constants;
         stubs_shared_memory_handle;
+        method_kinds;
       }
     =
     CallGraph.SharedMemory.cleanup define_call_graphs;
@@ -489,7 +491,8 @@ module TestEnvironment = struct
       class_interval_graph_shared_memory
       class_interval_graph;
     Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle;
-    GlobalConstants.SharedMemory.cleanup global_constants
+    GlobalConstants.SharedMemory.cleanup global_constants;
+    CallGraph.MethodKind.SharedMemory.cleanup method_kinds
 end
 
 let set_up_decorator_preprocessing ~handle models =
@@ -569,6 +572,14 @@ let initialize
   let definitions = FetchCallables.get_definitions initial_callables in
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~pyre_api ~source in
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
+  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let method_kinds =
+    CallGraph.MethodKind.SharedMemory.from_targets
+      ~scheduler
+      ~scheduler_policy
+      ~pyre_api
+      definitions
+  in
   let user_models, model_query_results =
     let models_source =
       match models_source, add_initial_models with
@@ -607,6 +618,7 @@ let initialize
             ~scheduler
             ~scheduler_policies:Configuration.SchedulerPolicies.empty
             ~class_hierarchy_graph
+            ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~verbose:false
             ~error_on_unexpected_models:true
@@ -674,6 +686,7 @@ let initialize
       ~scheduler
       ~scheduler_policy
       ~override_graph:override_graph_shared_memory
+      ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~decorators
       definitions
   in
@@ -687,6 +700,7 @@ let initialize
       ~store_shared_memory:true
       ~attribute_targets:(SharedModels.object_targets initial_models)
       ~decorators
+      ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~skip_analysis_targets:Target.Set.empty
       ~definitions
       ~decorator_resolution
@@ -711,6 +725,7 @@ let initialize
       ~override_graph_shared_memory
       ~initial_callables
       ~decorator_resolution
+      ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~max_iterations:higher_order_call_graph_max_iterations
   in
   let initial_models =
@@ -744,6 +759,7 @@ let initialize
     class_interval_graph_shared_memory;
     global_constants;
     stubs_shared_memory_handle;
+    method_kinds;
   }
 
 
@@ -1020,3 +1036,11 @@ let end_to_end_test_paths relative_path =
 let end_to_end_test_paths_found relative_path _ =
   if List.is_empty (end_to_end_test_paths relative_path) then
     assert_bool "No test paths to check." false
+
+
+let setup_single_py_file ~file_name ~context ~source =
+  let test_module_name = Reference.create (String.chop_suffix_exn file_name ~suffix:".py") in
+  let project = Test.ScratchProject.setup ~context [file_name, source] in
+  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+  let test_source = source_from_qualifier ~pyre_api test_module_name in
+  test_source, test_module_name, pyre_api, Test.ScratchProject.configuration_of project

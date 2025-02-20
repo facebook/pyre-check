@@ -47,8 +47,14 @@ let create_call_graph ?(other_sources = []) ~context source_text =
         errors
       |> failwith
   in
-  let definitions =
-    FetchCallables.from_source ~configuration ~pyre_api ~source |> FetchCallables.get_definitions
+  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let definitions = FetchCallables.get_definitions initial_callables in
+  let method_kinds =
+    CallGraph.MethodKind.SharedMemory.from_targets
+      ~scheduler:(Test.mock_scheduler ())
+      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~pyre_api
+      (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
   in
   let fold call_graph callable =
     let callees =
@@ -59,6 +65,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
           (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
         ~attribute_targets:(Target.HashSet.create ())
         ~decorators:CallGraph.CallableToDecoratorsMap.empty
+        ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
         ~callable
       |> CallGraph.DefineCallGraph.all_targets
            ~use_case:CallGraph.AllTargetsUseCase.TaintAnalysisDependency
@@ -67,6 +74,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
   in
   let call_graph = List.fold ~init:CallGraph.WholeProgramCallGraph.empty ~f:fold definitions in
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
+  let () = CallGraph.MethodKind.SharedMemory.cleanup method_kinds in
   call_graph
 
 

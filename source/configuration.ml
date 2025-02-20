@@ -609,6 +609,7 @@ module ScheduleIdentifier = struct
     | ComputeChangedPaths
     | SaveChangedPaths
     | TaintFetchCallables
+    | MethodKinds
     | ClassHierarchyGraph
     | CallableModelQueries
     | AttributeModelQueries
@@ -650,6 +651,7 @@ module ScheduleIdentifier = struct
     | ComputeChangedPaths -> "compute_changed_paths"
     | SaveChangedPaths -> "save_changed_paths"
     | TaintFetchCallables -> "taint_fetch_callables"
+    | MethodKinds -> "method_kinds"
     | ClassHierarchyGraph -> "class_hierarchy_graph"
     | CallableModelQueries -> "callable_model_queries"
     | AttributeModelQueries -> "attribute_model_queries"

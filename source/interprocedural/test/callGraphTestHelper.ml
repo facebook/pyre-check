@@ -75,14 +75,3 @@ let create_parameterized_target ~regular ~parameters =
 
 let create_positional_parameter ?(positional_only = false) position name =
   AccessPath.Root.PositionalParameter { position; name; positional_only }
-
-
-let test_py = "test.py"
-
-let test_module_name = Reference.create (String.chop_suffix_exn test_py ~suffix:".py")
-
-let setup ~context ~source =
-  let project = Test.ScratchProject.setup ~context [test_py, source] in
-  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
-  let test_source = TestHelper.source_from_qualifier ~pyre_api test_module_name in
-  test_source, pyre_api, Test.ScratchProject.configuration_of project

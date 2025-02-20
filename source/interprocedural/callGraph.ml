@@ -237,6 +237,98 @@ module CallableToDecoratorsMap = struct
       callable
 end
 
+(** Whether a method is an instance method, or a class method, or a static method. *)
+module MethodKind = struct
+  type t =
+    | Static
+    | Class
+    | Instance
+
+  module SharedMemory = struct
+    module T =
+      Hack_parallel.Std.SharedMemory.FirstClassWithKeys.Make
+        (Target.SharedMemoryKey)
+        (struct
+          type nonrec t = t
+
+          let prefix = Hack_parallel.Std.Prefix.make ()
+
+          let description = "method kinds"
+        end)
+
+    type t = T.t
+
+    module ReadOnly = T.ReadOnly
+
+    let read_only = T.read_only
+
+    let compute_method_kind ~pyre_api target =
+      match Target.get_regular target with
+      | Target.Regular.Method { method_name = "__new__"; _ } -> Some Static
+      | Target.Regular.Method _ as target ->
+          Target.get_module_and_definition ~pyre_api (Target.from_regular target)
+          >>| fun (_, { Node.value = define; _ }) ->
+          if List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define) then
+            Class
+          else if
+            List.exists static_method_decorators ~f:(Ast.Statement.Define.has_decorator define)
+          then
+            Static
+          else
+            Instance
+      | _ -> failwithf "Unexpected target: %s" (Target.show_pretty_with_kind target) ()
+
+
+    let empty = T.create
+
+    let from_targets ~scheduler ~scheduler_policy ~pyre_api targets =
+      let shared_memory = T.create () in
+      let shared_memory_add_only = T.add_only shared_memory in
+      let empty_shared_memory = T.AddOnly.create_empty shared_memory_add_only in
+      let map =
+        List.fold ~init:empty_shared_memory ~f:(fun shared_memory target ->
+            match compute_method_kind ~pyre_api target with
+            | Some method_kind -> T.AddOnly.add shared_memory target method_kind
+            | None -> shared_memory)
+      in
+      let is_method target =
+        match Target.get_regular target with
+        | Target.Regular.Method _ -> true
+        | _ -> false
+      in
+      let shared_memory_add_only =
+        Scheduler.map_reduce
+          scheduler
+          ~policy:scheduler_policy
+          ~initial:shared_memory_add_only
+          ~map
+          ~reduce:(fun left right ->
+            T.AddOnly.merge_same_handle_disjoint_keys ~smaller:left ~larger:right)
+          ~inputs:(List.filter targets ~f:is_method)
+          ()
+      in
+      T.from_add_only shared_memory_add_only
+
+
+    (* Return `is_class_method` and `is_static_method`. *)
+    let get_method_kind shared_memory target =
+      (* For `Override`, we just check its corresponding method. *)
+      let method_target = target |> Target.get_regular |> Target.Regular.override_to_method in
+      match
+        ( method_target |> Target.from_regular |> T.ReadOnly.get ~cache:true shared_memory,
+          method_target )
+      with
+      | None, Target.Regular.Method { method_name = "__new__"; _ } -> false, true
+      | None, _ -> false, false
+      | Some Class, _ -> true, false
+      | Some Static, _ -> false, true
+      | Some Instance, _ -> false, false
+
+
+    let cleanup = T.cleanup ~clean_old:true
+  end
+end
+
 (** A specific target of a given call, with extra information. *)
 module CallTarget = struct
   module T = struct
@@ -1748,6 +1840,15 @@ module DefineCallGraph = struct
     >>= fun { ExpressionCallees.string_format; _ } -> string_format
 end
 
+let is_implicit_receiver ~is_static_method ~is_class_method ~explicit_receiver target =
+  if is_static_method then
+    false
+  else if is_class_method then
+    true
+  else
+    (not explicit_receiver) && Target.is_method_or_override target
+
+
 (* Produce call targets with a textual order index.
  *
  * The index is the number of times a given function or method was previously called,
@@ -1788,17 +1889,10 @@ module CallTargetIndexer = struct
     let target_for_index = Target.for_issue_handle original_target in
     let index = Hashtbl.find indexer.indices target_for_index |> Option.value ~default:0 in
     indexer.seen_targets <- Target.Set.add target_for_index indexer.seen_targets;
-    let implicit_receiver =
-      if is_static_method then
-        false
-      else if is_class_method then
-        true
-      else
-        (not explicit_receiver) && Target.is_method_or_override target_for_index
-    in
     {
       CallTarget.target = original_target;
-      implicit_receiver;
+      implicit_receiver =
+        is_implicit_receiver ~is_static_method ~is_class_method ~explicit_receiver target_for_index;
       implicit_dunder_call;
       index;
       return_type;
@@ -1956,21 +2050,9 @@ let compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type imp
         implementation_target :: override_targets
 
 
-let get_method_kind ~pyre_api target =
-  let target = target |> Target.get_regular |> Target.Regular.override_to_method in
-  match target with
-  | Target.Regular.Method { method_name = "__new__"; _ } -> false, true
-  | Target.Regular.Method _ as target ->
-      Target.get_module_and_definition ~pyre_api (Target.from_regular target)
-      >>| (fun (_, { Node.value = define; _ }) ->
-            ( List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define),
-              List.exists static_method_decorators ~f:(Ast.Statement.Define.has_decorator define) ))
-      |> Option.value ~default:(false, false)
-  | _ -> false, false
-
-
 let rec resolve_callees_from_type
     ~debug
+    ~method_kinds
     ~pyre_in_context
     ~override_graph
     ~call_indexer
@@ -2011,7 +2093,9 @@ let rec resolve_callees_from_type
           let targets =
             List.map
               ~f:(fun target ->
-                let is_class_method, is_static_method = get_method_kind ~pyre_api target in
+                let is_class_method, is_static_method =
+                  MethodKind.SharedMemory.get_method_kind method_kinds target
+                in
                 CallTargetIndexer.create_target
                   call_indexer
                   ~implicit_dunder_call:dunder_call
@@ -2029,7 +2113,9 @@ let rec resolve_callees_from_type
             | Method _ -> Target.create_method name
             | _ -> Target.create_function name
           in
-          let is_class_method, is_static_method = get_method_kind ~pyre_api target in
+          let is_class_method, is_static_method =
+            MethodKind.SharedMemory.get_method_kind method_kinds target
+          in
           CallCallees.create
             ~call_targets:
               [
@@ -2053,6 +2139,7 @@ let rec resolve_callees_from_type
   | Type.Parametric { name = "BoundMethod"; arguments = [Single callable; Single receiver_type] } ->
       resolve_callees_from_type
         ~debug
+        ~method_kinds
         ~pyre_in_context
         ~override_graph
         ~call_indexer
@@ -2064,6 +2151,7 @@ let rec resolve_callees_from_type
       let first_targets =
         resolve_callees_from_type
           ~debug
+          ~method_kinds
           ~pyre_in_context
           ~override_graph
           ~call_indexer
@@ -2075,6 +2163,7 @@ let rec resolve_callees_from_type
       List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
           resolve_callees_from_type
             ~debug
+            ~method_kinds
             ~pyre_in_context
             ~override_graph
             ~call_indexer
@@ -2084,7 +2173,13 @@ let rec resolve_callees_from_type
             new_target
           |> CallCallees.join combined_targets)
   | Type.Parametric { name = "type"; arguments = [Single class_type] } ->
-      resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_indexer class_type
+      resolve_constructor_callee
+        ~debug
+        ~method_kinds
+        ~pyre_in_context
+        ~override_graph
+        ~call_indexer
+        class_type
       |> CallCallees.default_to_unresolved
            ~debug
            ~message:
@@ -2128,7 +2223,9 @@ let rec resolve_callees_from_type
                     }
                   |> Target.from_regular
                 in
-                let is_class_method, is_static_method = get_method_kind ~pyre_api target in
+                let is_class_method, is_static_method =
+                  MethodKind.SharedMemory.get_method_kind method_kinds target
+                in
                 CallCallees.create
                   ~call_targets:
                     [
@@ -2150,6 +2247,7 @@ let rec resolve_callees_from_type
           if not dunder_call then
             resolve_callees_from_type
               ~debug
+              ~method_kinds
               ~pyre_in_context
               ~override_graph
               ~call_indexer
@@ -2170,6 +2268,7 @@ let rec resolve_callees_from_type
 
 and resolve_callees_from_type_external
     ~pyre_in_context
+    ~method_kinds
     ~override_graph
     ~return_type
     ?(dunder_call = false)
@@ -2179,6 +2278,7 @@ and resolve_callees_from_type_external
   let callee_kind = CalleeKind.from_callee ~pyre_in_context callee callee_type in
   resolve_callees_from_type
     ~debug:false
+    ~method_kinds
     ~pyre_in_context
     ~override_graph
     ~call_indexer:(CallTargetIndexer.create ()) (* Don't care about indexing the callees. *)
@@ -2188,7 +2288,14 @@ and resolve_callees_from_type_external
     callee_type
 
 
-and resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_indexer class_type =
+and resolve_constructor_callee
+    ~debug
+    ~method_kinds
+    ~pyre_in_context
+    ~override_graph
+    ~call_indexer
+    class_type
+  =
   let meta_type = Type.class_type class_type in
   match
     ( CallResolution.resolve_attribute_access_ignoring_untracked
@@ -2209,6 +2316,7 @@ and resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_ind
       let new_callees =
         resolve_callees_from_type
           ~debug
+          ~method_kinds
           ~pyre_in_context
           ~override_graph
           ~call_indexer
@@ -2222,6 +2330,7 @@ and resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_ind
       let init_callees =
         resolve_callees_from_type
           ~debug
+          ~method_kinds
           ~pyre_in_context
           ~override_graph
           ~call_indexer
@@ -2258,6 +2367,7 @@ and resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_ind
 
 let resolve_callee_from_defining_expression
     ~debug
+    ~method_kinds
     ~pyre_in_context
     ~override_graph
     ~call_indexer
@@ -2275,6 +2385,7 @@ let resolve_callee_from_defining_expression
       >>| fun undecorated_signature ->
       resolve_callees_from_type
         ~debug
+        ~method_kinds
         ~pyre_in_context
         ~override_graph
         ~call_indexer
@@ -2325,6 +2436,7 @@ let resolve_callee_from_defining_expression
           Some
             (resolve_callees_from_type
                ~debug
+               ~method_kinds
                ~pyre_in_context
                ~override_graph
                ~call_indexer
@@ -2503,6 +2615,7 @@ let redirect_assignments = function
 
 let resolve_recognized_callees
     ~debug
+    ~method_kinds
     ~pyre_in_context
     ~override_graph
     ~call_indexer
@@ -2521,6 +2634,7 @@ let resolve_recognized_callees
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
       resolve_callee_from_defining_expression
         ~debug
+        ~method_kinds
         ~pyre_in_context
         ~override_graph
         ~call_indexer
@@ -2535,6 +2649,7 @@ let resolve_recognized_callees
       |> fun implementing_class ->
       resolve_callee_from_defining_expression
         ~debug
+        ~method_kinds
         ~pyre_in_context
         ~override_graph
         ~call_indexer
@@ -2866,6 +2981,7 @@ let log ~debug format =
 
 let resolve_regular_callees
     ~debug
+    ~method_kinds
     ~pyre_in_context
     ~override_graph
     ~call_indexer
@@ -2883,6 +2999,7 @@ let resolve_regular_callees
   let recognized_callees =
     resolve_recognized_callees
       ~debug
+      ~method_kinds
       ~pyre_in_context
       ~override_graph
       ~call_indexer
@@ -2901,6 +3018,7 @@ let resolve_regular_callees
     let callees_from_type =
       resolve_callees_from_type
         ~debug
+        ~method_kinds
         ~pyre_in_context
         ~override_graph
         ~call_indexer
@@ -3119,6 +3237,7 @@ let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
 
 let resolve_callees
     ~debug
+    ~method_kinds
     ~pyre_in_context
     ~override_graph
     ~call_indexer
@@ -3141,6 +3260,7 @@ let resolve_callees
   let regular_callees =
     resolve_regular_callees
       ~debug
+      ~method_kinds
       ~pyre_in_context
       ~override_graph
       ~call_indexer
@@ -3205,6 +3325,7 @@ let resolve_callees
           ~debug
           ~pyre_in_context
           ~override_graph
+          ~method_kinds
           ~call_indexer
           ~return_type:(return_type_for_call ~pyre_in_context ~callee:argument)
           ~callee:argument
@@ -3353,6 +3474,7 @@ module NodeVisitorContext = struct
     call_indexer: CallTargetIndexer.t;
     missing_flow_type_analysis: MissingFlowTypeAnalysis.t option;
     attribute_targets: Target.HashSet.t;
+    method_kinds: MethodKind.SharedMemory.ReadOnly.t;
   }
 end
 
@@ -3377,6 +3499,7 @@ module CalleeVisitor = struct
                missing_flow_type_analysis;
                define_name;
                attribute_targets;
+               method_kinds;
                _;
              };
            callees_at_location;
@@ -3399,7 +3522,13 @@ module CalleeVisitor = struct
       let () =
         match value with
         | Expression.Call call ->
-            resolve_callees ~debug ~pyre_in_context ~override_graph ~call_indexer ~call
+            resolve_callees
+              ~debug
+              ~method_kinds
+              ~pyre_in_context
+              ~override_graph
+              ~call_indexer
+              ~call
             |> MissingFlowTypeAnalysis.add_unknown_callee ~missing_flow_type_analysis ~expression
             |> ExpressionCallees.from_call
             |> register_targets ~expression_identifier:(call_identifier call)
@@ -3433,7 +3562,13 @@ module CalleeVisitor = struct
             match ComparisonOperator.override ~location comparison with
             | Some { Node.value = Expression.Call call; _ } ->
                 let call = redirect_special_calls ~pyre_in_context call in
-                resolve_callees ~debug ~pyre_in_context ~override_graph ~call_indexer ~call
+                resolve_callees
+                  ~debug
+                  ~method_kinds
+                  ~pyre_in_context
+                  ~override_graph
+                  ~call_indexer
+                  ~call
                 |> MissingFlowTypeAnalysis.add_unknown_callee
                      ~missing_flow_type_analysis
                      ~expression
@@ -3478,6 +3613,7 @@ module CalleeVisitor = struct
                         CallTargetIndexer.generate_fresh_indices call_indexer;
                         resolve_regular_callees
                           ~debug
+                          ~method_kinds
                           ~pyre_in_context
                           ~override_graph
                           ~call_indexer
@@ -3766,6 +3902,7 @@ module DecoratorResolution = struct
       ?(debug = false)
       ~pyre_in_context
       ~override_graph
+      ~method_kinds
       ~decorators:decorators_map
       callable
     =
@@ -3785,6 +3922,7 @@ module DecoratorResolution = struct
           override_graph;
           call_indexer = CallTargetIndexer.create ();
           attribute_targets = Target.HashSet.create ();
+          method_kinds;
         }
       in
       CalleeVisitor.visit_expression
@@ -3877,6 +4015,7 @@ module DecoratorResolution = struct
         ~scheduler
         ~scheduler_policy
         ~override_graph
+        ~method_kinds
         ~decorators
         callables
       =
@@ -3887,6 +4026,7 @@ module DecoratorResolution = struct
             ~debug
             ~pyre_in_context
             ~override_graph:(Some (OverrideGraph.SharedMemory.read_only override_graph))
+            ~method_kinds
             ~decorators
             callable
         with
@@ -4058,7 +4198,7 @@ module HigherOrderCallGraph = struct
 
     let create_root_from_identifier identifier = TaintAccessPath.Root.Variable identifier
 
-    let initialize_from_roots alist =
+    let initialize_from_roots ~method_kinds alist =
       alist
       |> List.map ~f:(fun (root, target) ->
              (* ASTs use `TaintAccessPath.parameter_prefix` to distinguish local variables from
@@ -4076,14 +4216,28 @@ module HigherOrderCallGraph = struct
                    |> create_root_from_identifier
                | None -> root
              in
-             root, target |> CallTarget.create |> CallTarget.Set.singleton)
+             let is_class_method, is_static_method =
+               MethodKind.SharedMemory.get_method_kind method_kinds target
+             in
+             ( root,
+               target
+               |> CallTarget.create
+                    ~implicit_receiver:
+                      (is_implicit_receiver
+                         ~is_static_method
+                         ~is_class_method
+                         ~explicit_receiver:false
+                         target)
+                    ~is_class_method
+                    ~is_static_method
+               |> CallTarget.Set.singleton ))
       |> of_list
 
 
-    let initialize_from_callable = function
+    let initialize_from_callable ~method_kinds = function
       | Target.Regular _ -> bottom
       | Target.Parameterized { parameters; _ } ->
-          parameters |> Target.ParameterMap.to_alist |> initialize_from_roots
+          parameters |> Target.ParameterMap.to_alist |> initialize_from_roots ~method_kinds
   end
 
   module MakeFixpoint (Context : sig
@@ -4636,6 +4790,7 @@ let call_graph_of_define
     ~override_graph
     ~attribute_targets
     ~decorators
+    ~method_kinds
     ~qualifier
     ~define
   =
@@ -4661,6 +4816,7 @@ let call_graph_of_define
       override_graph;
       call_indexer = CallTargetIndexer.create ();
       attribute_targets;
+      method_kinds;
     }
   in
   let module DefineFixpoint = DefineCallGraphFixpoint (struct
@@ -4710,6 +4866,7 @@ let call_graph_of_callable
     ~override_graph
     ~attribute_targets
     ~decorators
+    ~method_kinds
     ~callable
   =
   match Target.get_module_and_definition callable ~pyre_api with
@@ -4721,6 +4878,7 @@ let call_graph_of_callable
         ~override_graph
         ~attribute_targets
         ~decorators
+        ~method_kinds
         ~qualifier
         ~define:(Node.value define)
 
@@ -4805,6 +4963,14 @@ module SharedMemory = struct
     |> T.from_add_only
 
 
+  let default_scheduler_policy =
+    Scheduler.Policy.fixed_chunk_size
+      ~minimum_chunks_per_worker:1
+      ~minimum_chunk_size:2
+      ~preferred_chunk_size:5000
+      ()
+
+
   (** Build the whole call graph of the program.
 
       The overrides must be computed first because we depend on a global shared memory graph to
@@ -4827,6 +4993,7 @@ module SharedMemory = struct
       ~store_shared_memory
       ~attribute_targets
       ~decorators
+      ~method_kinds
       ~skip_analysis_targets
       ~definitions
       ~decorator_resolution
@@ -4849,6 +5016,7 @@ module SharedMemory = struct
                   ~override_graph
                   ~attribute_targets
                   ~decorators
+                  ~method_kinds
                   ~callable)
               ()
           in
@@ -4890,12 +5058,7 @@ module SharedMemory = struct
         Scheduler.Policy.from_configuration_or_default
           scheduler_policies
           Configuration.ScheduleIdentifier.CallGraph
-          ~default:
-            (Scheduler.Policy.fixed_chunk_size
-               ~minimum_chunks_per_worker:1
-               ~minimum_chunk_size:2
-               ~preferred_chunk_size:5000
-               ())
+          ~default:default_scheduler_policy
       in
       Scheduler.map_reduce
         scheduler

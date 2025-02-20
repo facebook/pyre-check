@@ -22,6 +22,7 @@ val compute
   override_graph_shared_memory:OverrideGraph.SharedMemory.t ->
   initial_callables:FetchCallables.t ->
   decorator_resolution:CallGraph.DecoratorResolution.Results.t ->
+  method_kinds:CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
   max_iterations:int ->
   t
 

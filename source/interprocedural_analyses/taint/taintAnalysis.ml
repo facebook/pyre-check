@@ -333,6 +333,7 @@ let initialize_models
     ~taint_configuration_shared_memory
     ~class_hierarchy_graph
     ~initial_callables
+    ~method_kinds
   =
   let open TaintConfiguration.Heap in
   let step_logger =
@@ -376,6 +377,7 @@ let initialize_models
             ~scheduler
             ~scheduler_policies
             ~class_hierarchy_graph
+            ~method_kinds
             ~verbose
             ~error_on_unexpected_models:true
             ~error_on_empty_result:true
@@ -645,6 +647,25 @@ let run_taint_analysis
         initial_callables)
   in
 
+  let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
+  let step_logger =
+    StepLogger.start ~start_message:"Computing method kinds" ~end_message:"Method kinds computed"
+  in
+  let method_kinds =
+    (* TODO(T215258952): Cache this step. *)
+    initial_callables
+    |> Interprocedural.FetchCallables.get ~definitions:true ~stubs:true
+    |> Interprocedural.CallGraph.MethodKind.SharedMemory.from_targets
+         ~scheduler
+         ~scheduler_policy:
+           (Scheduler.Policy.from_configuration_or_default
+              scheduler_policies
+              Configuration.ScheduleIdentifier.MethodKinds
+              ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+         ~pyre_api
+  in
+  let () = StepLogger.finish step_logger in
+
   let { ModelGenerationResult.models = initial_models; errors = model_verification_errors; _ } =
     initialize_models
       ~scheduler
@@ -654,6 +675,7 @@ let run_taint_analysis
       ~taint_configuration_shared_memory
       ~class_hierarchy_graph
       ~initial_callables
+      ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
   in
 
   let step_logger =
@@ -717,7 +739,6 @@ let run_taint_analysis
   let step_logger =
     StepLogger.start ~start_message:"Building call graph" ~end_message:"Call graph built"
   in
-  let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
   let attribute_targets = SharedModels.object_targets initial_models in
   let skip_analysis_targets = SharedModels.skip_analysis ~scheduler initial_models in
   let decorator_resolution = Interprocedural.CallGraph.DecoratorResolution.Results.empty in
@@ -739,6 +760,7 @@ let run_taint_analysis
           ~attribute_targets
           ~skip_analysis_targets
           ~decorators:Interprocedural.CallGraph.CallableToDecoratorsMap.empty
+          ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
           ~definitions
           ~decorator_resolution)
   in

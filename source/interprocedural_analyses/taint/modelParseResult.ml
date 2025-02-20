@@ -785,7 +785,7 @@ module CallableDecorator = struct
     callees: CallGraph.CallCallees.t Lazy.t option;
   }
 
-  let create ~pyre_api statement =
+  let create ~pyre_api ~method_kinds statement =
     let get_callees statement =
       let ({ Node.value = expression; _ } as decorator_expression) =
         Statement.Decorator.to_expression statement
@@ -805,6 +805,7 @@ module CallableDecorator = struct
       in
       Interprocedural.CallGraph.resolve_callees_from_type_external
         ~pyre_in_context:(Analysis.PyrePysaEnvironment.InContext.create_at_global_scope pyre_api)
+        ~method_kinds
         ~override_graph:None
         ~return_type
         callee
@@ -837,7 +838,7 @@ module Modelable = struct
         type_annotation: Expression.t option Lazy.t;
       }
 
-  let create_callable ~pyre_api target =
+  let create_callable ~pyre_api ~method_kinds target =
     let define =
       lazy
         (match Target.get_module_and_definition ~pyre_api target with
@@ -857,7 +858,7 @@ module Modelable = struct
              | { Statement.Define.signature; _ } -> signature)
         |> PyrePysaLogic.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
         |> List.filter_map ~f:Statement.Decorator.from_expression
-        |> List.map ~f:(CallableDecorator.create ~pyre_api))
+        |> List.map ~f:(CallableDecorator.create ~pyre_api ~method_kinds))
     in
     Callable { target; define; decorators }
 

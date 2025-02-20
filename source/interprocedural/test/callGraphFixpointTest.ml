@@ -22,7 +22,9 @@ module Expected = struct
 end
 
 let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expected () context =
-  let source, pyre_api, configuration = setup ~context ~source in
+  let source, _, pyre_api, configuration =
+    TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+  in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
@@ -31,6 +33,13 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
   let decorators = CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let method_kinds =
+    CallGraph.MethodKind.SharedMemory.from_targets
+      ~scheduler:(Test.mock_scheduler ())
+      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~pyre_api
+      (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
+  in
   let decorator_resolution =
     CallGraph.DecoratorResolution.Results.resolve_batch_exn
       ~debug:false
@@ -38,6 +47,7 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
       ~scheduler
       ~scheduler_policy
       ~override_graph:override_graph_shared_memory
+      ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~decorators
       definitions
   in
@@ -51,6 +61,7 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
       ~store_shared_memory:true
       ~attribute_targets:Target.Set.empty
       ~decorators
+      ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~skip_analysis_targets:Target.Set.empty
       ~definitions
       ~decorator_resolution
@@ -73,6 +84,7 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
       ~override_graph_shared_memory
       ~initial_callables
       ~decorator_resolution
+      ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~max_iterations
   in
   List.iter expected ~f:(fun { Expected.callable; call_graph; returned_callables } ->
@@ -101,6 +113,7 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
   SharedMemory.cleanup define_call_graphs;
   CallGraphFixpoint.cleanup fixpoint_state;
+  CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
   ()
 
 

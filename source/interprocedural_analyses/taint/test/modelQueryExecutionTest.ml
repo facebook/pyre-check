@@ -31,8 +31,16 @@ let sink name =
 
 let test_generated_annotations context =
   let assert_generated_annotations ~source ~query ~callable ~expected =
-    let pyre_api =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.pyre_pysa_read_only_api
+    let source, _, pyre_api, configuration =
+      TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+    in
+    let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+    let method_kinds =
+      CallGraph.MethodKind.SharedMemory.from_targets
+        ~scheduler:(Test.mock_scheduler ())
+        ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+        ~pyre_api
+        (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
     in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
@@ -50,9 +58,11 @@ let test_generated_annotations context =
         ~modelable:
           (ModelQueryExecution.CallableQueryExecutor.make_modelable
              ~pyre_api
+             ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
              (Target.from_regular callable))
         query
     in
+    CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
     assert_equal
       ~cmp:(List.equal equal_query_element)
       ~printer:(List.to_string ~f:show_query_element)
@@ -60,8 +70,16 @@ let test_generated_annotations context =
       actual
   in
   let assert_generated_annotations_for_attributes ~source ~query ~name ~expected =
-    let pyre_api =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.pyre_pysa_read_only_api
+    let source, _, pyre_api, configuration =
+      TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+    in
+    let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+    let method_kinds =
+      CallGraph.MethodKind.SharedMemory.from_targets
+        ~scheduler:(Test.mock_scheduler ())
+        ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+        ~pyre_api
+        (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
     in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
@@ -77,9 +95,14 @@ let test_generated_annotations context =
         ~verbose:false
         ~pyre_api
         ~class_hierarchy_graph
-        ~modelable:(ModelQueryExecution.AttributeQueryExecutor.make_modelable ~pyre_api target)
+        ~modelable:
+          (ModelQueryExecution.AttributeQueryExecutor.make_modelable
+             ~pyre_api
+             ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+             target)
         query
     in
+    CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
     assert_equal
       ~cmp:(List.equal ModelParseResult.TaintAnnotation.equal)
       ~printer:(List.to_string ~f:ModelParseResult.TaintAnnotation.show)
@@ -87,8 +110,18 @@ let test_generated_annotations context =
       actual
   in
   let assert_generated_annotations_for_globals ~source ~query ~name ~expected =
-    let pyre_api =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.pyre_pysa_read_only_api
+    let source, _, pyre_api, configuration =
+      TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+    in
+    let definitions =
+      FetchCallables.from_source ~configuration ~pyre_api ~source |> FetchCallables.get_definitions
+    in
+    let method_kinds =
+      CallGraph.MethodKind.SharedMemory.from_targets
+        ~scheduler:(Test.mock_scheduler ())
+        ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+        ~pyre_api
+        definitions
     in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
@@ -104,9 +137,14 @@ let test_generated_annotations context =
         ~verbose:false
         ~pyre_api
         ~class_hierarchy_graph
-        ~modelable:(ModelQueryExecution.GlobalVariableQueryExecutor.make_modelable ~pyre_api target)
+        ~modelable:
+          (ModelQueryExecution.GlobalVariableQueryExecutor.make_modelable
+             ~pyre_api
+             ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+             target)
         query
     in
+    CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
     assert_equal
       ~cmp:(List.equal ModelParseResult.TaintAnnotation.equal)
       ~printer:(List.to_string ~f:ModelParseResult.TaintAnnotation.show)
@@ -4934,8 +4972,16 @@ let test_partition_cache_queries _ =
 
 let test_generated_cache context =
   let assert_generated_cache ~source ~queries ~regular_callables ~expected =
-    let pyre_api =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.pyre_pysa_read_only_api
+    let source, _, pyre_api, configuration =
+      TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+    in
+    let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+    let method_kinds =
+      CallGraph.MethodKind.SharedMemory.from_targets
+        ~scheduler:(Test.mock_scheduler ())
+        ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+        ~pyre_api
+        (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
     in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
@@ -4950,6 +4996,7 @@ let test_generated_cache context =
         ~verbose:false
         ~pyre_api
         ~class_hierarchy_graph
+        ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
         ~targets:(List.map regular_callables ~f:Target.from_regular)
         queries
     in
@@ -4964,6 +5011,7 @@ let test_generated_cache context =
             ~target:(Target.from_regular target))
         expected
     in
+    CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
     assert_equal
       ~cmp:ModelQueryExecution.ReadWriteCache.equal
       ~printer:ModelQueryExecution.ReadWriteCache.show
