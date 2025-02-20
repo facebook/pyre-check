@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use dupe::Dupe;
 use ruff_python_ast::name::Name;
 
 use crate::module::module_name::ModuleName;
@@ -226,6 +227,10 @@ impl Stdlib {
 
     pub fn tuple(&self, x: Type) -> ClassType {
         Self::apply(&self.tuple, vec![x])
+    }
+
+    pub fn tuple_class_object(&self) -> Class {
+        Self::unwrap(&self.tuple).dupe()
     }
 
     pub fn list(&self, x: Type) -> ClassType {

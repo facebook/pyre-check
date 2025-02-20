@@ -114,7 +114,7 @@
     "Line 36: Unexpected errors ['untype, got GenericAlias']",
     "Line 37: Unexpected errors ['untype, got GenericAlias']",
     "Line 38: Unexpected errors ['untype, got GenericAlias']",
-    "Line 39: Unexpected errors ['untype, got GenericAlias']"
+    "Line 39: Unexpected errors ['untype, got GenericAlias', 'Expected an iterable, got type[tuple[int, str, int]]']"
   ],
   "aliases_variance.py": [
     "Line 24: Expected 1 errors",
@@ -156,8 +156,7 @@
     "Line 93: Expected 1 errors",
     "Line 94: Expected 1 errors",
     "Line 95: Expected 1 errors",
-    "Line 100: Expected 1 errors",
-    "Line 77: Unexpected errors ['assert_type(tuple[Any], tuple[Any, ...]) failed']"
+    "Line 100: Expected 1 errors"
   ],
   "callables_annotation.py": [
     "Line 56: Expected 1 errors",
@@ -687,7 +686,7 @@
     "Line 42: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'untype, got NewType', 'untype, got NewType']",
     "Line 44: Unexpected errors ['Expected 1 type argument for class `Array`, got 4.', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
     "Line 52: Unexpected errors [\"assert_type(tuple[int, *tuple[Literal['a', True]]], tuple[int, bool, str]) failed\"]",
-    "Line 56: Unexpected errors ['EXPECTED tuple[Unpack[Error], Error] <: tuple[*?_TypeVarTuple, ?_TypeVar]', \"Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]\", \"Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]\"]"
+    "Line 56: Unexpected errors ['EXPECTED tuple[*tuple[@_, ...], Error] <: tuple[*?_TypeVarTuple, ?_TypeVar]', \"Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]\", \"Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]\"]"
   ],
   "generics_typevartuple_overloads.py": [
     "Line 18: Unexpected errors ['Expected 1 type argument for class `Array`, got 2.', 'Expected 1 type argument for class `Array`, got 2.']",
@@ -1028,9 +1027,6 @@
     "Line 8: Unexpected errors ['Could not find import of `_qualifiers_final_decorator`, looked at search roots: ']"
   ],
   "specialtypes_any.py": [
-    "Line 62: Unexpected errors ['assert_type(tuple[Any], tuple[Any, ...]) failed']",
-    "Line 64: Unexpected errors ['EXPECTED tuple[Error] <: tuple[str, ...]']",
-    "Line 65: Unexpected errors ['EXPECTED tuple[Error] <: tuple[int, ...]']",
     "Line 72: Unexpected errors ['assert_type(Callable, (...) -> Any) failed']",
     "Line 74: Unexpected errors ['EXPECTED Callable <: () -> Any']",
     "Line 75: Unexpected errors ['EXPECTED Callable <: (int, str) -> None']",

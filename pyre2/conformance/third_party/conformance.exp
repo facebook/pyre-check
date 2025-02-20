@@ -983,6 +983,16 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "Expected an iterable, got type[tuple[int, str, int]]",
+      "description": "Expected an iterable, got type[tuple[int, str, int]]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 59,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "untype, got GenericAlias",
       "description": "untype, got GenericAlias",
@@ -1462,16 +1472,6 @@
     }
   ],
   "annotations_typeexpr.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(tuple[Any], tuple[Any, ...]) failed",
-      "description": "assert_type(tuple[Any], tuple[Any, ...]) failed",
-      "line": 77,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 77
-    },
     {
       "code": -2,
       "column": 14,
@@ -9019,8 +9019,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "EXPECTED tuple[Unpack[Error], Error] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
-      "description": "EXPECTED tuple[Unpack[Error], Error] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
+      "concise_description": "EXPECTED tuple[*tuple[@_, ...], Error] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
+      "description": "EXPECTED tuple[*tuple[@_, ...], Error] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
       "line": 56,
       "name": "PyreError",
       "stop_column": 30,
@@ -12969,36 +12969,6 @@
     }
   ],
   "specialtypes_any.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(tuple[Any], tuple[Any, ...]) failed",
-      "description": "assert_type(tuple[Any], tuple[Any, ...]) failed",
-      "line": 62,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 62
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "EXPECTED tuple[Error] <: tuple[str, ...]",
-      "description": "EXPECTED tuple[Error] <: tuple[str, ...]",
-      "line": 64,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 64
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "EXPECTED tuple[Error] <: tuple[int, ...]",
-      "description": "EXPECTED tuple[Error] <: tuple[int, ...]",
-      "line": 65,
-      "name": "PyreError",
-      "stop_column": 31,
-      "stop_line": 65
-    },
     {
       "code": -2,
       "column": 5,

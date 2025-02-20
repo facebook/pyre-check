@@ -952,6 +952,18 @@ assert_type(id([0]), list[int])
 );
 
 testcase!(
+    test_unpack_in_list_literal,
+    r#"
+from typing import assert_type
+def test(x: list[int], y: list[str]):
+    assert_type([*x, 1], list[int])
+    assert_type([*x, "test"], list[int | str])
+    assert_type([*x, *y], list[int | str])
+    [*1]  # E: Expected an iterable
+"#,
+);
+
+testcase!(
     test_union_never,
     r#"
 from typing import Never, assert_type

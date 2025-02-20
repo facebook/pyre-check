@@ -52,10 +52,32 @@ assert_type((), tuple[()])
 );
 
 testcase!(
+    test_unparameterized,
+    r#"
+from typing import assert_type, Any, Tuple
+def foo(x: tuple, y: Tuple) -> None:
+    assert_type(x, tuple[Any, ...])
+    assert_type(y, tuple[Any, ...])
+"#,
+);
+
+testcase!(
     test_unpack_index_out_of_bounds,
     r#"
 def test(x: tuple[int]) -> None:
   y, z = x  # E: Cannot unpack
+"#,
+);
+
+testcase!(
+    test_unpack_in_literal,
+    r#"
+from typing import Any, assert_type, Literal
+def test(x: tuple[int, ...], y: str) -> None:
+  assert_type(("foo", *(1, 1)), tuple[Literal['foo'], Literal[1], Literal[1]])
+  assert_type((1, *x, 2), tuple[Literal[1], *tuple[int, ...], Literal[2]])
+  assert_type((1, *x, *x, 3), tuple[Literal[1], *tuple[int, ...], Literal[3]])
+  assert_type((1, *x, y, *x, 3), tuple[Literal[1], *tuple[int | str, ...], Literal[3]])
 "#,
 );
 
