@@ -51,6 +51,55 @@ pub struct Load {
     pub module_info: ModuleInfo,
 }
 
+impl Load {
+    /// Return the code for this module, and whether there was an error while loading (a self-error).
+    pub fn load_from_path(
+        path: &ModulePath,
+        loader: &dyn Loader,
+    ) -> (Arc<String>, Option<anyhow::Error>) {
+        let res = match path.details() {
+            ModulePathDetails::FileSystem(path) => fs_anyhow::read_to_string(path).map(Arc::new),
+            ModulePathDetails::Namespace(_) => Ok(Arc::new("".to_owned())),
+            ModulePathDetails::Memory(path) => loader
+                .load_from_memory(path)
+                .ok_or_else(|| anyhow!("memory path not found")),
+            ModulePathDetails::BundledTypeshed(path) => typeshed().and_then(|x| {
+                x.load(path)
+                    .ok_or_else(|| anyhow!("bundled typeshed problem"))
+            }),
+        };
+        match res {
+            Err(err) => (Arc::new(String::new()), Some(err)),
+            Ok(res) => (res, None),
+        }
+    }
+
+    pub fn load_from_data(
+        name: ModuleName,
+        path: ModulePath,
+        error_style: ErrorStyle,
+        code: Arc<String>,
+        self_error: Option<anyhow::Error>,
+    ) -> Self {
+        let module_info = ModuleInfo::new(name, path, code);
+        let errors = ErrorCollector::new(error_style);
+        if let Some(err) = self_error {
+            errors.add(
+                &module_info,
+                TextRange::default(),
+                format!(
+                    "Failed to load `{name}` from `{}`, got {err:#}",
+                    module_info.path()
+                ),
+            );
+        }
+        Self {
+            errors,
+            module_info,
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct Steps {
     /// The last step that was computed.
@@ -137,42 +186,14 @@ impl Step {
                 ErrorStyle::Delayed
             }
         };
-
-        let res = match ctx.path.details() {
-            ModulePathDetails::FileSystem(path) => fs_anyhow::read_to_string(path).map(Arc::new),
-            ModulePathDetails::Namespace(_) => Ok(Arc::new("".to_owned())),
-            ModulePathDetails::Memory(path) => ctx
-                .loader
-                .load_from_memory(path)
-                .ok_or_else(|| anyhow!("memory path not found")),
-            ModulePathDetails::BundledTypeshed(path) => typeshed().and_then(|x| {
-                x.load(path)
-                    .ok_or_else(|| anyhow!("bundled typeshed problem"))
-            }),
-        };
-        let (code, self_error) = match res {
-            Err(err) => (Arc::new(String::new()), Some(err)),
-            Ok(res) => (res, None),
-        };
-
-        let module_info = ModuleInfo::new(ctx.module, ctx.path.dupe(), code);
-        let errors = ErrorCollector::new(error_style);
-        if let Some(err) = self_error {
-            errors.add(
-                &module_info,
-                TextRange::default(),
-                format!(
-                    "Failed to load `{}` from `{}`, got {err:#}",
-                    ctx.module,
-                    module_info.path()
-                ),
-            );
-        }
-
-        Arc::new(Load {
-            errors,
-            module_info,
-        })
+        let (code, self_error) = Load::load_from_path(ctx.path, ctx.loader);
+        Arc::new(Load::load_from_data(
+            ctx.module,
+            ctx.path.dupe(),
+            error_style,
+            code,
+            self_error,
+        ))
     }
 
     fn ast<Lookup>(_ctx: &Context<Lookup>, load: Arc<Load>) -> Arc<ModModule> {
