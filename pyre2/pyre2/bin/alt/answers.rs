@@ -17,18 +17,6 @@ use starlark_map::small_map::SmallMap;
 
 use crate::alt::traits::Solve;
 use crate::alt::traits::SolveRecursive;
-use crate::binding::binding::Key;
-use crate::binding::binding::KeyAnnotation;
-use crate::binding::binding::KeyClass;
-use crate::binding::binding::KeyClassField;
-use crate::binding::binding::KeyClassMetadata;
-use crate::binding::binding::KeyClassSynthesizedFields;
-use crate::binding::binding::KeyExpect;
-use crate::binding::binding::KeyExport;
-use crate::binding::binding::KeyFunction;
-use crate::binding::binding::KeyLegacyTypeParam;
-use crate::binding::binding::KeyYield;
-use crate::binding::binding::KeyYieldFrom;
 use crate::binding::binding::Keyed;
 use crate::binding::bindings::BindingEntry;
 use crate::binding::bindings::BindingTable;

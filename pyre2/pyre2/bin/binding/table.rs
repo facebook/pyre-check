@@ -24,88 +24,88 @@ macro_rules! table {
     (@impl, [$($vis:tt)*], #[$($derive:tt)*] pub struct $name:ident($t:tt)) => {
         #[$($derive)*]
         pub struct $name {
-            $($vis)* types: $t<Key>,
-            $($vis)* expectations: $t<KeyExpect>,
-            $($vis)* exports: $t<KeyExport>,
-            $($vis)* functions: $t<KeyFunction>,
-            $($vis)* classes: $t<KeyClass>,
-            $($vis)* class_fields: $t<KeyClassField>,
-            $($vis)* class_synthesized_fields: $t<KeyClassSynthesizedFields>,
-            $($vis)* annotations: $t<KeyAnnotation>,
-            $($vis)* class_metadata: $t<KeyClassMetadata>,
-            $($vis)* legacy_tparams: $t<KeyLegacyTypeParam>,
-            $($vis)* yields: $t<KeyYield>,
-            $($vis)* yield_froms: $t<KeyYieldFrom>,
+            $($vis)* types: $t<$crate::binding::binding::Key>,
+            $($vis)* expectations: $t<$crate::binding::binding::KeyExpect>,
+            $($vis)* exports: $t<$crate::binding::binding::KeyExport>,
+            $($vis)* functions: $t<$crate::binding::binding::KeyFunction>,
+            $($vis)* classes: $t<$crate::binding::binding::KeyClass>,
+            $($vis)* class_fields: $t<$crate::binding::binding::KeyClassField>,
+            $($vis)* class_synthesized_fields: $t<$crate::binding::binding::KeyClassSynthesizedFields>,
+            $($vis)* annotations: $t<$crate::binding::binding::KeyAnnotation>,
+            $($vis)* class_metadata: $t<$crate::binding::binding::KeyClassMetadata>,
+            $($vis)* legacy_tparams: $t<$crate::binding::binding::KeyLegacyTypeParam>,
+            $($vis)* yields: $t<$crate::binding::binding::KeyYield>,
+            $($vis)* yield_froms: $t<$crate::binding::binding::KeyYieldFrom>,
         }
 
-        impl $crate::binding::table::TableKeyed<Key> for $name {
-            type Value = $t<Key>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::Key> for $name {
+            type Value = $t<$crate::binding::binding::Key>;
             fn get(&self) -> &Self::Value { &self.types }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.types }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyExpect> for $name {
-            type Value = $t<KeyExpect>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyExpect> for $name {
+            type Value = $t<$crate::binding::binding::KeyExpect>;
             fn get(&self) -> &Self::Value { &self.expectations }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.expectations }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyExport> for $name {
-            type Value = $t<KeyExport>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyExport> for $name {
+            type Value = $t<$crate::binding::binding::KeyExport>;
             fn get(&self) -> &Self::Value { &self.exports }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.exports }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyFunction> for $name {
-            type Value = $t<KeyFunction>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyFunction> for $name {
+            type Value = $t<$crate::binding::binding::KeyFunction>;
             fn get(&self) -> &Self::Value { &self.functions }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.functions }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyClass> for $name {
-            type Value = $t<KeyClass>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyClass> for $name {
+            type Value = $t<$crate::binding::binding::KeyClass>;
             fn get(&self) -> &Self::Value { &self.classes }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.classes }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyClassField> for $name {
-            type Value = $t<KeyClassField>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyClassField> for $name {
+            type Value = $t<$crate::binding::binding::KeyClassField>;
             fn get(&self) -> &Self::Value { &self.class_fields }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.class_fields }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyClassSynthesizedFields> for $name {
-            type Value = $t<KeyClassSynthesizedFields>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyClassSynthesizedFields> for $name {
+            type Value = $t<$crate::binding::binding::KeyClassSynthesizedFields>;
             fn get(&self) -> &Self::Value { &self.class_synthesized_fields }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.class_synthesized_fields }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyAnnotation> for $name {
-            type Value = $t<KeyAnnotation>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyAnnotation> for $name {
+            type Value = $t<$crate::binding::binding::KeyAnnotation>;
             fn get(&self) -> &Self::Value { &self.annotations }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.annotations }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyClassMetadata> for $name {
-            type Value = $t<KeyClassMetadata>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyClassMetadata> for $name {
+            type Value = $t<$crate::binding::binding::KeyClassMetadata>;
             fn get(&self) -> &Self::Value { &self.class_metadata }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.class_metadata }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyLegacyTypeParam> for $name {
-            type Value = $t<KeyLegacyTypeParam>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyLegacyTypeParam> for $name {
+            type Value = $t<$crate::binding::binding::KeyLegacyTypeParam>;
             fn get(&self) -> &Self::Value { &self.legacy_tparams }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.legacy_tparams }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyYield> for $name {
-            type Value = $t<KeyYield>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyYield> for $name {
+            type Value = $t<$crate::binding::binding::KeyYield>;
             fn get(&self) -> &Self::Value { &self.yields }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.yields }
         }
 
-        impl $crate::binding::table::TableKeyed<KeyYieldFrom> for $name {
-            type Value = $t<KeyYieldFrom>;
+        impl $crate::binding::table::TableKeyed<$crate::binding::binding::KeyYieldFrom> for $name {
+            type Value = $t<$crate::binding::binding::KeyYieldFrom>;
             fn get(&self) -> &Self::Value { &self.yield_froms }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.yield_froms }
         }
