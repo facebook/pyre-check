@@ -279,7 +279,8 @@ impl<'a> TypeDisplayContext<'a> {
             Type::Type(ty) => write!(f, "type[{}]", self.display(ty)),
             Type::TypeGuard(ty) => write!(f, "TypeGuard[{}]", self.display(ty)),
             Type::TypeIs(ty) => write!(f, "TypeIs[{}]", self.display(ty)),
-            Type::Unpack(ty) => write!(f, "Unpack[{}]", self.display(ty)),
+            Type::Unpack(box ty @ Type::TypedDict(_)) => write!(f, "Unpack[{}]", self.display(ty)),
+            Type::Unpack(ty) => write!(f, "*{}", self.display(ty)),
             Type::Concatenate(args, pspec) => write!(
                 f,
                 "Concatenate[{}]",

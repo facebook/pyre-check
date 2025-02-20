@@ -643,13 +643,13 @@
     "Line 56: Unexpected errors ['assert_type(Any, bytes) failed']"
   ],
   "generics_typevartuple_args.py": [
-    "Line 20: Unexpected errors ['assert_type(tuple[*Any], tuple[int, str]) failed', 'EXPECTED Literal[1] <: Unpack[@_]', \"EXPECTED Literal['a'] <: Unpack[@_]\"]",
-    "Line 31: Unexpected errors ['assert_type(tuple[*Any], tuple[()]) failed', 'EXPECTED Env <: Unpack[tuple[*@_, Env]]']",
-    "Line 32: Unexpected errors ['assert_type(tuple[*Any], tuple[int, str]) failed', 'EXPECTED Literal[0] <: Unpack[tuple[*@_, Env]]', \"EXPECTED Literal[''] <: Unpack[tuple[*@_, Env]]\", 'EXPECTED Env <: Unpack[tuple[*@_, Env]]']",
-    "Line 47: Unexpected errors ['EXPECTED Literal[1] <: Unpack[tuple[int, ...]]', 'EXPECTED Literal[2] <: Unpack[tuple[int, ...]]', 'EXPECTED Literal[3] <: Unpack[tuple[int, ...]]', 'EXPECTED Literal[4] <: Unpack[tuple[int, ...]]', 'EXPECTED Literal[5] <: Unpack[tuple[int, ...]]']",
-    "Line 55: Unexpected errors ['EXPECTED Literal[1] <: Unpack[tuple[int, *tuple[str, ...], str]]', \"EXPECTED Literal[''] <: Unpack[tuple[int, *tuple[str, ...], str]]\"]",
-    "Line 56: Unexpected errors ['EXPECTED Literal[1] <: Unpack[tuple[int, *tuple[str, ...], str]]', \"EXPECTED Literal[''] <: Unpack[tuple[int, *tuple[str, ...], str]]\", \"EXPECTED Literal[''] <: Unpack[tuple[int, *tuple[str, ...], str]]\", \"EXPECTED Literal[''] <: Unpack[tuple[int, *tuple[str, ...], str]]\", \"EXPECTED Literal[''] <: Unpack[tuple[int, *tuple[str, ...], str]]\"]",
-    "Line 66: Unexpected errors ['EXPECTED Literal[1] <: Unpack[tuple[int, str]]', \"EXPECTED Literal['hello'] <: Unpack[tuple[int, str]]\"]",
+    "Line 20: Unexpected errors ['assert_type(tuple[*Any], tuple[int, str]) failed', 'EXPECTED Literal[1] <: *@_', \"EXPECTED Literal['a'] <: *@_\"]",
+    "Line 31: Unexpected errors ['assert_type(tuple[*Any], tuple[()]) failed', 'EXPECTED Env <: *tuple[*@_, Env]']",
+    "Line 32: Unexpected errors ['assert_type(tuple[*Any], tuple[int, str]) failed', 'EXPECTED Literal[0] <: *tuple[*@_, Env]', \"EXPECTED Literal[''] <: *tuple[*@_, Env]\", 'EXPECTED Env <: *tuple[*@_, Env]']",
+    "Line 47: Unexpected errors ['EXPECTED Literal[1] <: *tuple[int, ...]', 'EXPECTED Literal[2] <: *tuple[int, ...]', 'EXPECTED Literal[3] <: *tuple[int, ...]', 'EXPECTED Literal[4] <: *tuple[int, ...]', 'EXPECTED Literal[5] <: *tuple[int, ...]']",
+    "Line 55: Unexpected errors ['EXPECTED Literal[1] <: *tuple[int, *tuple[str, ...], str]', \"EXPECTED Literal[''] <: *tuple[int, *tuple[str, ...], str]\"]",
+    "Line 56: Unexpected errors ['EXPECTED Literal[1] <: *tuple[int, *tuple[str, ...], str]', \"EXPECTED Literal[''] <: *tuple[int, *tuple[str, ...], str]\", \"EXPECTED Literal[''] <: *tuple[int, *tuple[str, ...], str]\", \"EXPECTED Literal[''] <: *tuple[int, *tuple[str, ...], str]\", \"EXPECTED Literal[''] <: *tuple[int, *tuple[str, ...], str]\"]",
+    "Line 66: Unexpected errors ['EXPECTED Literal[1] <: *tuple[int, str]', \"EXPECTED Literal['hello'] <: *tuple[int, str]\"]",
     "Line 74: Unexpected errors ['EXPECTED tuple[Literal[1]] <: tuple[*tuple[Literal[0], ...]]']"
   ],
   "generics_typevartuple_basic.py": [
@@ -670,10 +670,10 @@
     "Line 97: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']"
   ],
   "generics_typevartuple_callable.py": [
-    "Line 25: Unexpected errors ['EXPECTED (arg1: int, arg2: str) -> None <: (Unpack[@_]) -> None', \"EXPECTED tuple[Literal[0], Literal['']] <: tuple[*tuple[Literal[0], ...]]\"]",
-    "Line 41: Unexpected errors ['assert_type(tuple[*tuple[str, int], complex], tuple[str, int, complex]) failed', 'EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (int, Unpack[tuple[str, int]], complex) -> tuple[complex, *tuple[str, int]]']",
-    "Line 42: Unexpected errors ['assert_type(tuple[*tuple[()], str], tuple[str]) failed', 'EXPECTED (a: int, d: str) -> tuple[str] <: (int, Unpack[tuple[()]], str) -> tuple[str, *tuple[()]]']",
-    "Line 49: Unexpected errors ['assert_type(tuple[Any, *Any], tuple[float, str, complex]) failed', 'EXPECTED Literal[1] <: Unpack[tuple[int, *@_, @_]]', \"EXPECTED Literal[''] <: Unpack[tuple[int, *@_, @_]]\", 'EXPECTED complex <: Unpack[tuple[int, *@_, @_]]', 'EXPECTED float <: Unpack[tuple[int, *@_, @_]]']"
+    "Line 25: Unexpected errors ['EXPECTED (arg1: int, arg2: str) -> None <: (*@_) -> None', \"EXPECTED tuple[Literal[0], Literal['']] <: tuple[*tuple[Literal[0], ...]]\"]",
+    "Line 41: Unexpected errors ['assert_type(tuple[*tuple[str, int], complex], tuple[str, int, complex]) failed', 'EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (int, *tuple[str, int], complex) -> tuple[complex, *tuple[str, int]]']",
+    "Line 42: Unexpected errors ['assert_type(tuple[*tuple[()], str], tuple[str]) failed', 'EXPECTED (a: int, d: str) -> tuple[str] <: (int, *tuple[()], str) -> tuple[str, *tuple[()]]']",
+    "Line 49: Unexpected errors ['assert_type(tuple[Any, *Any], tuple[float, str, complex]) failed', 'EXPECTED Literal[1] <: *tuple[int, *@_, @_]', \"EXPECTED Literal[''] <: *tuple[int, *@_, @_]\", 'EXPECTED complex <: *tuple[int, *@_, @_]', 'EXPECTED float <: *tuple[int, *@_, @_]']"
   ],
   "generics_typevartuple_concat.py": [
     "Line 26: Unexpected errors ['untype, got NewType']",
