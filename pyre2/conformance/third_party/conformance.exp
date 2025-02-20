@@ -12971,36 +12971,6 @@
   "specialtypes_any.py": [
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Callable, (...) -> Any) failed",
-      "description": "assert_type(Callable, (...) -> Any) failed",
-      "line": 72,
-      "name": "PyreError",
-      "stop_column": 42,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED Callable <: () -> Any",
-      "description": "EXPECTED Callable <: () -> Any",
-      "line": 74,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 74
-    },
-    {
-      "code": -2,
-      "column": 38,
-      "concise_description": "EXPECTED Callable <: (int, str) -> None",
-      "description": "EXPECTED Callable <: (int, str) -> None",
-      "line": 75,
-      "name": "PyreError",
-      "stop_column": 42,
-      "stop_line": 75
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "Object of class `ClassA` has no attribute `method2`",
       "description": "Object of class `ClassA` has no attribute `method2`",

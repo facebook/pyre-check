@@ -43,6 +43,15 @@ def test(f: Callable[..., None]) -> Callable[[int, str], None]:
 );
 
 testcase!(
+    test_callable_unparameterized,
+    r#"
+from typing import Callable, assert_type, Any
+def test(f: Callable):
+    assert_type(f, Callable[..., Any])
+"#,
+);
+
+testcase!(
     test_callable_annot_too_few_args,
     r#"
 from typing import Callable

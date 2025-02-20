@@ -3,7 +3,7 @@
   "pass": 13,
   "fail": 120,
   "pass_rate": 0.1,
-  "differences": 912,
+  "differences": 909,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -121,7 +121,7 @@
     "qualifiers_annotated.py": 16,
     "qualifiers_final_annotation.py": 19,
     "qualifiers_final_decorator.py": 10,
-    "specialtypes_any.py": 5,
+    "specialtypes_any.py": 2,
     "specialtypes_never.py": 1,
     "specialtypes_none.py": 2,
     "specialtypes_type.py": 27,

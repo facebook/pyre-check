@@ -1027,9 +1027,6 @@
     "Line 8: Unexpected errors ['Could not find import of `_qualifiers_final_decorator`, looked at search roots: ']"
   ],
   "specialtypes_any.py": [
-    "Line 72: Unexpected errors ['assert_type(Callable, (...) -> Any) failed']",
-    "Line 74: Unexpected errors ['EXPECTED Callable <: () -> Any']",
-    "Line 75: Unexpected errors ['EXPECTED Callable <: (int, str) -> None']",
     "Line 87: Unexpected errors ['Object of class `ClassA` has no attribute `method2`']",
     "Line 88: Unexpected errors ['Class `ClassA` has no class attribute `method3`']"
   ],
