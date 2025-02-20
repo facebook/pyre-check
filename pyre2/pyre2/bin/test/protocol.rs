@@ -281,3 +281,18 @@ class C1:
 x1: P = C1() # OK
 "#,
 );
+
+testcase!(
+    test_hashable,
+    r#"
+from typing import ClassVar, Hashable
+class A:
+    pass
+class B:
+    __hash__: ClassVar[None]
+def f(x: Hashable):
+    pass
+f(A())
+f(B())  # E: EXPECTED B <: Hashable
+    "#,
+);
