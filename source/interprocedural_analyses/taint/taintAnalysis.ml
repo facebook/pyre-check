@@ -532,6 +532,8 @@ let run_taint_analysis
          saved_state;
          compute_coverage = compute_coverage_flag;
          scheduler_policies;
+         higher_order_call_graph;
+         higher_order_call_graph_max_iterations;
          inline_decorators;
          _;
        } as static_analysis_configuration)
@@ -737,13 +739,46 @@ let run_taint_analysis
       ~static_analysis_configuration
   in
 
+  let decorator_resolution =
+    if higher_order_call_graph then
+      let step_logger =
+        StepLogger.start
+          ~start_message:"Building decorator resolution"
+          ~end_message:"Decorator resolution built"
+      in
+      let decorator_resolution =
+        Interprocedural.CallGraph.DecoratorResolution.Results.resolve_batch_exn
+          ~debug:false
+          ~pyre_api
+          ~scheduler
+          ~scheduler_policy:
+            (Scheduler.Policy.from_configuration_or_default
+               scheduler_policies
+               Configuration.ScheduleIdentifier.DecoratorResolution
+               ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+          ~override_graph:override_graph_shared_memory
+          ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+          ~decorators:
+            (Interprocedural.CallGraph.CallableToDecoratorsMap.create ~pyre_api definitions)
+          definitions
+      in
+      let () = StepLogger.finish step_logger in
+      decorator_resolution
+    else
+      Interprocedural.CallGraph.DecoratorResolution.Results.empty
+  in
+
   let step_logger =
     StepLogger.start ~start_message:"Building call graph" ~end_message:"Call graph built"
   in
   let attribute_targets = SharedModels.object_targets initial_models in
   let skip_analysis_targets = SharedModels.skip_analysis ~scheduler initial_models in
-  let decorator_resolution = Interprocedural.CallGraph.DecoratorResolution.Results.empty in
-  let { Interprocedural.CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs }, cache
+  let ( ({
+           Interprocedural.CallGraph.SharedMemory.whole_program_call_graph =
+             original_whole_program_call_graph;
+           define_call_graphs = original_define_call_graphs;
+         } as original_call_graphs),
+        cache )
     =
     Cache.call_graph
       ~attribute_targets
@@ -783,38 +818,95 @@ let run_taint_analysis
   let step_logger =
     StepLogger.start ~start_message:"Computing dependencies" ~end_message:"Computed dependencies"
   in
-  let {
-    Interprocedural.DependencyGraph.dependency_graph;
-    override_targets;
-    callables_kept;
-    callables_to_analyze;
-  }
-    =
+  let original_dependency_graph =
     Interprocedural.DependencyGraph.build_whole_program_dependency_graph
       ~static_analysis_configuration
       ~prune:prune_method
       ~initial_callables
-      ~call_graph:whole_program_call_graph
+      ~call_graph:original_whole_program_call_graph
       ~overrides:override_graph_heap
   in
   let () = StepLogger.finish step_logger in
 
+  let ( {
+          Interprocedural.DependencyGraph.dependency_graph;
+          override_targets;
+          callables_kept;
+          callables_to_analyze;
+        },
+        get_define_call_graph )
+    =
+    if higher_order_call_graph then
+      let step_logger =
+        StepLogger.start
+          ~start_message:"Computing higher order call graphs"
+          ~end_message:"Computed higher order call graphs"
+      in
+      let { Interprocedural.CallGraphFixpoint.whole_program_call_graph; get_define_call_graph; _ } =
+        Interprocedural.CallGraphFixpoint.compute
+          ~scheduler
+          ~scheduler_policy:
+            (Scheduler.Policy.from_configuration_or_default
+               scheduler_policies
+               Configuration.ScheduleIdentifier.HigherOrderCallGraph
+               ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+          ~pyre_api
+          ~call_graph:original_call_graphs
+          ~dependency_graph:original_dependency_graph
+          ~override_graph_shared_memory
+          ~initial_callables
+          ~decorator_resolution
+          ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+          ~max_iterations:(Option.value higher_order_call_graph_max_iterations ~default:50)
+      in
+      let () = StepLogger.finish step_logger in
+
+      let step_logger =
+        StepLogger.start
+          ~start_message:"Computing dependencies from higher order call graphs"
+          ~end_message:"Computed dependencies from higher order call graphs"
+      in
+      let dependency_graph =
+        Interprocedural.DependencyGraph.build_whole_program_dependency_graph
+          ~static_analysis_configuration
+          ~prune:prune_method
+          ~initial_callables
+          ~call_graph:whole_program_call_graph
+          ~overrides:override_graph_heap
+      in
+      let () = StepLogger.finish step_logger in
+      let () = Interprocedural.CallGraph.SharedMemory.cleanup original_define_call_graphs in
+      dependency_graph, get_define_call_graph
+    else
+      let get_define_call_graph define_call_graphs callable =
+        Interprocedural.CallGraph.SharedMemory.ReadOnly.get
+          define_call_graphs
+          ~cache:false
+          ~callable
+      in
+      ( original_dependency_graph,
+        get_define_call_graph
+          (Interprocedural.CallGraph.SharedMemory.read_only original_define_call_graphs) )
+  in
+
+  (* TODO(T215367584): Cache higher order call graphs. *)
   let () =
-    Cache.save
-      ~maximum_overrides
-      ~attribute_targets
-      ~skip_type_checking_callables
-      ~skip_analysis_targets
-      ~skip_overrides_targets
-      ~analyze_all_overrides_targets
-      ~skipped_overrides
-      ~override_graph_shared_memory
-      ~initial_callables
-      ~initial_models
-      ~call_graph_shared_memory:define_call_graphs
-      ~whole_program_call_graph
-      ~global_constants
-      cache
+    if not higher_order_call_graph then
+      Cache.save
+        ~maximum_overrides
+        ~attribute_targets
+        ~skip_type_checking_callables
+        ~skip_analysis_targets
+        ~skip_overrides_targets
+        ~analyze_all_overrides_targets
+        ~skipped_overrides
+        ~override_graph_shared_memory
+        ~initial_callables
+        ~initial_models
+        ~call_graph_shared_memory:original_define_call_graphs
+        ~whole_program_call_graph:original_whole_program_call_graph
+        ~global_constants
+        cache
   in
   (if use_cache && build_cache_only then
      let () = Log.info "Cache has been built. Exiting now" in
@@ -825,7 +917,7 @@ let run_taint_analysis
   let initial_models =
     MissingFlow.add_unknown_callee_models
       ~static_analysis_configuration
-      ~call_graph:whole_program_call_graph
+      ~call_graph:original_whole_program_call_graph
       ~initial_models
   in
 
@@ -851,10 +943,6 @@ let run_taint_analysis
       ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
       ~override_targets
   in
-  (* Use a lightweight handle, to avoid copying a large handle for each worker. *)
-  let get_define_call_graph define_call_graphs callable =
-    Interprocedural.CallGraph.SharedMemory.ReadOnly.get define_call_graphs ~cache:false ~callable
-  in
   let fixpoint =
     Taint.TaintFixpoint.compute
       ~scheduler
@@ -866,11 +954,9 @@ let run_taint_analysis
           Taint.TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
           pyre_api;
           class_interval_graph = class_interval_graph_shared_memory;
-          get_define_call_graph =
-            get_define_call_graph
-              (Interprocedural.CallGraph.SharedMemory.read_only define_call_graphs);
+          get_define_call_graph;
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
-          decorator_inlined = inline_decorators;
+          decorator_inlined = inline_decorators || not higher_order_call_graph;
         }
       ~callables_to_analyze
       ~max_iterations:100

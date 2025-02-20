@@ -60,7 +60,16 @@ module CallGraphAnalysis = struct
 
   let obscure_model = empty_model
 
-  module Logger = FixpointAnalysis.WithoutLogging
+  module Logger = struct
+    include FixpointAnalysis.WithLogging (struct
+      let expensive_callable_ms = 500
+    end)
+
+    let iteration_end ~iteration ~expensive_callables ~number_of_callables ~timer =
+      (* Explicitly collect the shared memory to reduce heap size. *)
+      let () = Memory.SharedMemory.collect `aggressive in
+      iteration_end ~iteration ~expensive_callables ~number_of_callables ~timer
+  end
 
   module AnalyzeDefineResult = struct
     type t = {
@@ -282,5 +291,8 @@ let compute
   {
     fixpoint;
     whole_program_call_graph = build_whole_program_call_graph ~scheduler ~scheduler_policy state;
-    get_define_call_graph = get_define_call_graph ~state:(Fixpoint.State.read_only state);
+    get_define_call_graph =
+      (* Use a lightweight handle, to avoid copying a large handle for each worker, when used in map
+         reduce. *)
+      get_define_call_graph ~state:(Fixpoint.State.read_only state);
   }

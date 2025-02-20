@@ -617,11 +617,13 @@ module ScheduleIdentifier = struct
     | InferClassModels
     | GlobalConstants
     | CallGraph
+    | HigherOrderCallGraph
     | OverrideGraph
     | TaintFixpoint
     | TaintCollectErrors
     | TaintFileCoverage
     | TaintKindCoverage
+    | DecoratorResolution
   [@@deriving sexp, compare, hash]
 
   let of_string = function
@@ -659,11 +661,13 @@ module ScheduleIdentifier = struct
     | InferClassModels -> "infer_class_models"
     | GlobalConstants -> "global_constants"
     | CallGraph -> "call_graph"
+    | HigherOrderCallGraph -> "higher_order_call_graph"
     | OverrideGraph -> "override_graph"
     | TaintFixpoint -> "taint_fixpoint"
     | TaintCollectErrors -> "taint_collect_errors"
     | TaintFileCoverage -> "taint_file_coverage"
     | TaintKindCoverage -> "taint_kind_coverage"
+    | DecoratorResolution -> "decorator_resolution"
 end
 
 module SchedulerPolicies = struct
@@ -787,6 +791,8 @@ module StaticAnalysis = struct
     saved_state: SavedState.t;
     compute_coverage: bool;
     scheduler_policies: SchedulerPolicies.t;
+    higher_order_call_graph: bool;
+    higher_order_call_graph_max_iterations: int option;
   }
 
   let create
@@ -826,6 +832,8 @@ module StaticAnalysis = struct
       ?(saved_state = SavedState.empty)
       ?(compute_coverage = false)
       ?(scheduler_policies = SchedulerPolicies.empty)
+      ?(higher_order_call_graph = false)
+      ?higher_order_call_graph_max_iterations
       ()
     =
     {
@@ -865,5 +873,7 @@ module StaticAnalysis = struct
       saved_state;
       compute_coverage;
       scheduler_policies;
+      higher_order_call_graph;
+      higher_order_call_graph_max_iterations;
     }
 end

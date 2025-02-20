@@ -64,6 +64,8 @@ let test_json_parsing context =
       saved_state = Configuration.StaticAnalysis.SavedState.empty;
       compute_coverage = false;
       scheduler_policies = Configuration.SchedulerPolicies.empty;
+      higher_order_call_graph = false;
+      higher_order_call_graph_max_iterations = None;
     }
   in
 
@@ -225,6 +227,13 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc (("compute_coverage", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with compute_coverage = true };
+  assert_parsed
+    (`Assoc (("higher_order_call_graph", `Bool true) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with higher_order_call_graph = true };
+  assert_parsed
+    (`Assoc
+      (("higher_order_call_graph_max_iterations", `Int 101) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with higher_order_call_graph_max_iterations = Some 101 };
   assert_parsed
     (`Assoc
       (( "scheduler_policies",
