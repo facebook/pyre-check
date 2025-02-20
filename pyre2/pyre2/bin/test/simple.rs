@@ -291,11 +291,11 @@ class C:
 testcase!(
     test_class_attribute_lookup,
     r#"
-from typing import assert_type, Literal
+from typing import assert_type
 class C:
     x = 1
 
-assert_type(C.x, Literal[1])
+assert_type(C.x, int)
 "#,
 );
 

@@ -390,6 +390,10 @@ impl Type {
         matches!(self, Type::Never(_))
     }
 
+    pub fn is_literal(&self) -> bool {
+        matches!(self, Type::Literal(_))
+    }
+
     pub fn callable_concatenate(args: Box<[Type]>, param_spec: Type, ret: Type) -> Self {
         Type::Callable(
             Box::new(Callable::concatenate(args, param_spec, ret)),

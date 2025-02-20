@@ -202,14 +202,14 @@ def f(c: C):
 testcase!(
     test_set_attribute_in_init_nested,
     r#"
-from typing import assert_type, Literal
+from typing import assert_type
 class C:
     def __init__(self):
         def f():
             self.x = 0
         f()
 def f(c: C):
-    assert_type(c.x, Literal[0])
+    assert_type(c.x, int)
     "#,
 );
 
@@ -399,13 +399,13 @@ assert_type(C().m(C(), C()), list[C])
 testcase!(
     test_var_attribute,
     r#"
-from typing import Literal, assert_type
+from typing import assert_type
 def f[T](x: T) -> T:
     return x
 class C:
     def __init__(self):
         self.x = 42
-assert_type(f(C()).x, Literal[42])
+assert_type(f(C()).x, int)
     "#,
 );
 

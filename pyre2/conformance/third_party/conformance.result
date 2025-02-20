@@ -207,9 +207,7 @@
     "Line 67: Expected 1 errors",
     "Line 71: Expected 1 errors",
     "Line 105: Expected 1 errors",
-    "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']",
-    "Line 152: Unexpected errors ['Class member `y` overrides parent class `ProtoB` in an inconsistent manner']",
-    "Line 153: Unexpected errors ['Class member `z` overrides parent class `ProtoB` in an inconsistent manner']"
+    "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']"
   ],
   "classes_override.py": [
     "Line 79: Expected 1 errors",
@@ -457,7 +455,7 @@
     "Line 37: Unexpected errors ['`Pet2.CAT` is not a valid enum member']",
     "Line 38: Unexpected errors ['`Pet2.DOG` is not a valid enum member']",
     "Line 100: Unexpected errors ['assert_type(Literal[TrafficLight.AMBER], Literal[TrafficLight.YELLOW]) failed']",
-    "Line 128: Unexpected errors ['Could not find name `reveal_type`', 'revealed type: Literal[2]']"
+    "Line 128: Unexpected errors ['Could not find name `reveal_type`', 'revealed type: int']"
   ],
   "exceptions_context_managers.py": [
     "Line 64: Unexpected errors ['assert_type(int | str, str) failed']",
@@ -910,20 +908,6 @@
     "Line 110: Expected 1 errors",
     "Line 135: Expected 1 errors",
     "Line 165: Expected 1 errors",
-    "Line 57: Unexpected errors ['Class member `other` overrides parent class `RGB` in an inconsistent manner']",
-    "Line 85: Unexpected errors ['Class member `cm1` overrides parent class `Proto1` in an inconsistent manner']",
-    "Line 86: Unexpected errors ['Class member `im1` overrides parent class `Proto1` in an inconsistent manner']",
-    "Line 87: Unexpected errors ['Class member `im3` overrides parent class `Proto1` in an inconsistent manner']",
-    "Line 94: Unexpected errors ['Class member `cm1` overrides parent class `Proto1` in an inconsistent manner']",
-    "Line 95: Unexpected errors ['Class member `im1` overrides parent class `Proto1` in an inconsistent manner']",
-    "Line 102: Unexpected errors ['Class member `cm1` overrides parent class `Proto1` in an inconsistent manner']",
-    "Line 105: Unexpected errors ['Class member `im1` overrides parent class `Proto1` in an inconsistent manner']",
-    "Line 106: Unexpected errors ['Class member `cm10` overrides parent class `Proto3` in an inconsistent manner']",
-    "Line 107: Unexpected errors ['Class member `cm11` overrides parent class `Proto3` in an inconsistent manner']",
-    "Line 114: Unexpected errors ['Class member `cm1` overrides parent class `Proto1` in an inconsistent manner']",
-    "Line 115: Unexpected errors ['Class member `cm10` overrides parent class `Proto3` in an inconsistent manner']",
-    "Line 118: Unexpected errors ['Class member `im1` overrides parent class `Proto1` in an inconsistent manner']",
-    "Line 120: Unexpected errors ['Class member `cm11` overrides parent class `Proto3` in an inconsistent manner']",
     "Line 157: Unexpected errors ['Class member `method1` overrides parent class `Proto7` in an inconsistent manner']"
   ],
   "protocols_generic.py": [
@@ -1006,6 +990,7 @@
     "Line 149: Expected 1 errors",
     "Line 152: Expected 1 errors",
     "Line 155: Expected 1 errors",
+    "Line 96: Unexpected errors ['Class member `__private` overrides parent class `ClassC` in an inconsistent manner']",
     "Line 131: Unexpected errors ['Expected 2 positional arguments, got 3']",
     "Line 133: Unexpected errors ['Expected a callable, got tuple[Any]']",
     "Line 139: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']"

@@ -580,6 +580,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> ClassField {
+        let value_ty = if annotation.is_none() && value_ty.is_literal() {
+            &value_ty.clone().promote_literals(self.stdlib)
+        } else {
+            value_ty
+        };
+
         let metadata = self.get_metadata_for_class(class);
 
         let (is_override, value_ty) = match value_ty {
