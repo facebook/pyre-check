@@ -79,8 +79,8 @@ pub struct State {
 }
 
 struct ModuleData {
-    steps: UpgradeLock<Step, ModuleState>,
     handle: Handle,
+    state: UpgradeLock<Step, ModuleState>,
     dependencies: RwLock<HashMap<ModuleName, Arc<ModuleData>, BuildNoHash>>,
 }
 
@@ -93,8 +93,8 @@ struct ModuleState {
 impl ModuleData {
     fn new(handle: Handle) -> Self {
         Self {
-            steps: Default::default(),
             handle,
+            state: Default::default(),
             dependencies: Default::default(),
         }
     }
@@ -125,7 +125,7 @@ impl State {
     fn demand(&self, module_data: &Arc<ModuleData>, step: Step) {
         let mut computed = false;
         loop {
-            let reader = module_data.steps.read();
+            let reader = module_data.state.read();
             if reader.dirty.is_dirty() {
                 panic!("Should make the code not dirty");
             }
@@ -200,7 +200,7 @@ impl State {
     }
 
     fn add_error(&self, module_data: &Arc<ModuleData>, range: TextRange, msg: String) {
-        let load = module_data.steps.read().steps.load.dupe().unwrap();
+        let load = module_data.state.read().steps.load.dupe().unwrap();
         load.errors.add(&load.module_info, range, msg);
     }
 
@@ -247,7 +247,7 @@ impl State {
 
     fn lookup_export(&self, module_data: &Arc<ModuleData>) -> Exports {
         self.demand(module_data, Step::Exports);
-        let lock = module_data.steps.read();
+        let lock = module_data.state.read();
         lock.steps.exports.dupe().unwrap()
     }
 
@@ -263,14 +263,14 @@ impl State {
     {
         {
             // if we happen to have solutions available, use them instead
-            if let Some(solutions) = &module_data.steps.read().steps.solutions {
+            if let Some(solutions) = &module_data.state.read().steps.solutions {
                 return solutions.get(key).unwrap().dupe();
             }
         }
 
         self.demand(&module_data, Step::Answers);
         let (load, answers) = {
-            let steps = module_data.steps.read();
+            let steps = module_data.state.read();
             if let Some(solutions) = &steps.steps.solutions {
                 return solutions.get(key).unwrap().dupe();
             }
@@ -295,7 +295,7 @@ impl State {
     pub fn collect_errors(&self) -> Vec<Error> {
         let mut errors = Vec::new();
         for module in self.modules.values() {
-            let steps = module.steps.read();
+            let steps = module.state.read();
             if let Some(load) = &steps.steps.load {
                 errors.extend(load.errors.collect());
             }
@@ -311,7 +311,7 @@ impl State {
         self.modules
             .values()
             .map(|x| {
-                x.steps
+                x.state
                     .read()
                     .steps
                     .load
@@ -323,7 +323,7 @@ impl State {
 
     pub fn print_errors(&self) {
         for module in self.modules.values() {
-            let steps = module.steps.read();
+            let steps = module.state.read();
             if let Some(load) = &steps.steps.load {
                 load.errors.print();
             }
@@ -334,7 +334,7 @@ impl State {
         let loads = self
             .modules
             .values()
-            .filter_map(|x| x.steps.read().steps.load.dupe())
+            .filter_map(|x| x.state.read().steps.load.dupe())
             .collect::<Vec<_>>();
         let mut items = ErrorCollector::summarise(loads.iter().map(|x| &x.errors));
         items.reverse();
@@ -461,7 +461,7 @@ impl State {
     pub fn get_bindings(&self, handle: &Handle) -> Option<Bindings> {
         self.modules
             .get(handle)?
-            .steps
+            .state
             .read()
             .steps
             .answers
@@ -472,7 +472,7 @@ impl State {
     pub fn get_answers(&self, handle: &Handle) -> Option<Arc<Answers>> {
         self.modules
             .get(handle)?
-            .steps
+            .state
             .read()
             .steps
             .answers
@@ -483,7 +483,7 @@ impl State {
     pub fn get_module_info(&self, handle: &Handle) -> Option<ModuleInfo> {
         self.modules
             .get(handle)?
-            .steps
+            .state
             .read()
             .steps
             .load
@@ -492,14 +492,14 @@ impl State {
     }
 
     pub fn get_ast(&self, handle: &Handle) -> Option<Arc<ruff_python_ast::ModModule>> {
-        self.modules.get(handle)?.steps.read().steps.ast.dupe()
+        self.modules.get(handle)?.state.read().steps.ast.dupe()
     }
 
     #[allow(dead_code)]
     pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<Solutions>> {
         self.modules
             .get(handle)?
-            .steps
+            .state
             .read()
             .steps
             .solutions
@@ -509,7 +509,7 @@ impl State {
     pub fn debug_info(&self, handles: &[Handle]) -> DebugInfo {
         let owned = handles.map(|x| {
             let module = self.get_module(x);
-            let steps = module.steps.read();
+            let steps = module.state.read();
             (
                 steps.steps.load.dupe().unwrap(),
                 steps.steps.answers.dupe().unwrap(),
@@ -521,7 +521,7 @@ impl State {
 
     pub fn check_against_expectations(&self) -> anyhow::Result<()> {
         for module in self.modules.values() {
-            let steps = module.steps.read();
+            let steps = module.state.read();
             let load = steps.steps.load.as_ref().unwrap();
             Expectation::parse(load.module_info.dupe(), load.module_info.contents())
                 .check(&load.errors.collect())?;
@@ -543,7 +543,7 @@ impl State {
         for (handle, module_data) in self.modules.iter_unordered() {
             if handle.loader() == loader {
                 module_data
-                    .steps
+                    .state
                     .write(Step::Load)
                     .unwrap()
                     .dirty
@@ -564,7 +564,7 @@ impl State {
                 && files.contains(x)
             {
                 module_data
-                    .steps
+                    .state
                     .write(Step::Load)
                     .unwrap()
                     .dirty
@@ -586,7 +586,7 @@ impl State {
                 && files.contains(x)
             {
                 module_data
-                    .steps
+                    .state
                     .write(Step::Load)
                     .unwrap()
                     .dirty
