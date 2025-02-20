@@ -66,24 +66,24 @@ pub struct State {
     uniques: UniqueFactory,
     parallel: bool,
     stdlib: SmallMap<(Config, LoaderId), Arc<Stdlib>>,
-    modules: LockedMap<Handle, Arc<ModuleState>>,
+    modules: LockedMap<Handle, Arc<ModuleData>>,
     loaders: SmallMap<LoaderId, Arc<LoaderFindCache<LoaderId>>>,
     /// Items we still need to process. Stored in a max heap, so that
     /// the highest step (the module that is closest to being finished)
     /// gets picked first, ensuring we release its memory quickly.
-    todo: Mutex<EnumHeap<Step, Arc<ModuleState>>>,
+    todo: Mutex<EnumHeap<Step, Arc<ModuleData>>>,
 
     // Set to true to keep data around forever.
     retain_memory: bool,
 }
 
-struct ModuleState {
+struct ModuleData {
     steps: UpgradeLock<Steps>,
     handle: Handle,
-    dependencies: RwLock<HashMap<ModuleName, Arc<ModuleState>, BuildNoHash>>,
+    dependencies: RwLock<HashMap<ModuleName, Arc<ModuleData>, BuildNoHash>>,
 }
 
-impl ModuleState {
+impl ModuleData {
     fn new(handle: Handle) -> Self {
         Self {
             steps: Default::default(),
@@ -115,10 +115,10 @@ impl State {
         ))
     }
 
-    fn demand(&self, module_state: &Arc<ModuleState>, step: Step) {
+    fn demand(&self, module_data: &Arc<ModuleData>, step: Step) {
         let mut computed = false;
         loop {
-            let reader = module_state.steps.read();
+            let reader = module_data.steps.read();
             if reader.dirty.is_dirty() {
                 panic!("Should make the code not dirty");
             }
@@ -156,16 +156,16 @@ impl State {
                 drop(to_drop);
             }
 
-            let stdlib = self.get_stdlib(&module_state.handle);
-            let loader = self.get_cached_loader(module_state.handle.loader());
+            let stdlib = self.get_stdlib(&module_data.handle);
+            let loader = self.get_cached_loader(module_data.handle.loader());
             let set = compute(&Context {
-                module: module_state.handle.module(),
-                path: module_state.handle.path(),
-                config: module_state.handle.config(),
+                module: module_data.handle.module(),
+                path: module_data.handle.path(),
+                config: module_data.handle.config(),
                 loader: &*loader,
                 uniques: &self.uniques,
                 stdlib: &stdlib,
-                lookup: &self.lookup(module_state.dupe()),
+                lookup: &self.lookup(module_data.dupe()),
             });
             {
                 let mut to_drop = None;
@@ -186,55 +186,55 @@ impl State {
         if computed && let Some(next) = step.next() {
             // For a large benchmark, LIFO is 10Gb retained, FIFO is 13Gb.
             // Perhaps we are getting to the heart of the graph with LIFO?
-            self.todo.lock().push_lifo(next, module_state.dupe());
+            self.todo.lock().push_lifo(next, module_data.dupe());
         }
     }
 
-    fn get_module(&self, handle: &Handle) -> Arc<ModuleState> {
+    fn get_module(&self, handle: &Handle) -> Arc<ModuleData> {
         self.modules
-            .ensure(handle, || Arc::new(ModuleState::new(handle.dupe())))
+            .ensure(handle, || Arc::new(ModuleData::new(handle.dupe())))
             .dupe()
     }
 
-    fn add_error(&self, module_state: &Arc<ModuleState>, range: TextRange, msg: String) {
-        let load = module_state.steps.read().load.dupe().unwrap();
+    fn add_error(&self, module_data: &Arc<ModuleData>, range: TextRange, msg: String) {
+        let load = module_data.steps.read().load.dupe().unwrap();
         load.errors.add(&load.module_info, range, msg);
     }
 
-    fn lookup<'a>(&'a self, module_state: Arc<ModuleState>) -> StateHandle<'a> {
+    fn lookup<'a>(&'a self, module_data: Arc<ModuleData>) -> StateHandle<'a> {
         StateHandle {
             state: self,
-            module_state,
+            module_data,
         }
     }
 
     fn lookup_stdlib(&self, handle: &Handle, name: &Name) -> Option<Class> {
-        let module_state = self.get_module(handle);
+        let module_data = self.get_module(handle);
         if !self
-            .lookup_export(&module_state)
-            .contains(name, &self.lookup(module_state.dupe()))
+            .lookup_export(&module_data)
+            .contains(name, &self.lookup(module_data.dupe()))
         {
             self.add_error(
-                &module_state,
+                &module_data,
                 TextRange::default(),
                 format!(
                     "Stdlib import failure, was expecting `{}` to contain `{name}`",
-                    module_state.handle.module()
+                    module_data.handle.module()
                 ),
             );
             return None;
         }
 
-        let t = self.lookup_answer(module_state.dupe(), &KeyExport(name.clone()));
+        let t = self.lookup_answer(module_data.dupe(), &KeyExport(name.clone()));
         match t.arc_clone() {
             Type::ClassDef(cls) => Some(cls),
             ty => {
                 self.add_error(
-                    &module_state,
+                    &module_data,
                     TextRange::default(),
                     format!(
                         "Did not expect non-class type `{ty}` for stdlib import `{}.{name}`",
-                        module_state.handle.module()
+                        module_data.handle.module()
                     ),
                 );
                 None
@@ -242,15 +242,15 @@ impl State {
         }
     }
 
-    fn lookup_export(&self, module_state: &Arc<ModuleState>) -> Exports {
-        self.demand(module_state, Step::Exports);
-        let lock = module_state.steps.read();
+    fn lookup_export(&self, module_data: &Arc<ModuleData>) -> Exports {
+        self.demand(module_data, Step::Exports);
+        let lock = module_data.steps.read();
         lock.exports.dupe().unwrap()
     }
 
     fn lookup_answer<'b, K: Solve<StateHandle<'b>> + Keyed<EXPORTED = true>>(
         &'b self,
-        module_state: Arc<ModuleState>,
+        module_data: Arc<ModuleData>,
         key: &K,
     ) -> Arc<<K as Keyed>::Answer>
     where
@@ -260,21 +260,21 @@ impl State {
     {
         {
             // if we happen to have solutions available, use them instead
-            if let Some(solutions) = &module_state.steps.read().solutions {
+            if let Some(solutions) = &module_data.steps.read().solutions {
                 return solutions.get(key).unwrap().dupe();
             }
         }
 
-        self.demand(&module_state, Step::Answers);
+        self.demand(&module_data, Step::Answers);
         let (load, answers) = {
-            let steps = module_state.steps.read();
+            let steps = module_data.steps.read();
             if let Some(solutions) = &steps.solutions {
                 return solutions.get(key).unwrap().dupe();
             }
             (steps.load.dupe().unwrap(), steps.answers.dupe().unwrap())
         };
-        let stdlib = self.get_stdlib(&module_state.handle);
-        let lookup = self.lookup(module_state);
+        let stdlib = self.get_stdlib(&module_data.handle);
+        let lookup = self.lookup(module_data);
         answers.1.solve_key(
             &lookup,
             &lookup,
@@ -518,9 +518,9 @@ impl State {
         if let Some(cache) = self.loaders.get_mut(loader) {
             *cache = Arc::new(LoaderFindCache::new(loader.dupe()));
         }
-        for (handle, module_state) in self.modules.iter_unordered() {
+        for (handle, module_data) in self.modules.iter_unordered() {
             if handle.loader() == loader {
-                module_state.steps.write().unwrap().dirty.set_dirty_find();
+                module_data.steps.write().unwrap().dirty.set_dirty_find();
             }
         }
 
@@ -531,12 +531,12 @@ impl State {
     /// Specify which in-memory files might have changed.
     pub fn invalidate_memory(&mut self, loader: LoaderId, files: &[PathBuf]) {
         let files = SmallSet::from_iter(files);
-        for (handle, module_state) in self.modules.iter_unordered() {
+        for (handle, module_data) in self.modules.iter_unordered() {
             if handle.loader() == &loader
                 && let ModulePathDetails::Memory(x) = handle.path().details()
                 && files.contains(x)
             {
-                module_state.steps.write().unwrap().dirty.set_dirty_load();
+                module_data.steps.write().unwrap().dirty.set_dirty_load();
             }
         }
 
@@ -549,11 +549,11 @@ impl State {
     #[expect(dead_code)]
     pub fn invalidate_disk(&mut self, files: &[PathBuf]) {
         let files = SmallSet::from_iter(files);
-        for (handle, module_state) in self.modules.iter_unordered() {
+        for (handle, module_data) in self.modules.iter_unordered() {
             if let ModulePathDetails::FileSystem(x) = handle.path().details()
                 && files.contains(x)
             {
-                module_state.steps.write().unwrap().dirty.set_dirty_load();
+                module_data.steps.write().unwrap().dirty.set_dirty_load();
             }
         }
 
@@ -579,20 +579,18 @@ impl State {
 
 struct StateHandle<'a> {
     state: &'a State,
-    module_state: Arc<ModuleState>,
+    module_data: Arc<ModuleData>,
 }
 
 impl<'a> StateHandle<'a> {
-    fn get_module(&self, module: ModuleName) -> Result<Arc<ModuleState>, FindError> {
-        if let Some(res) = self.module_state.dependencies.read().get(&module) {
+    fn get_module(&self, module: ModuleName) -> Result<Arc<ModuleData>, FindError> {
+        if let Some(res) = self.module_data.dependencies.read().get(&module) {
             return Ok(res.dupe());
         }
 
-        let handle = self
-            .state
-            .import_handle(&self.module_state.handle, module)?;
+        let handle = self.state.import_handle(&self.module_data.handle, module)?;
         let res = self.state.get_module(&handle);
-        self.module_state
+        self.module_data
             .dependencies
             .write()
             .insert(module, res.dupe());
@@ -619,7 +617,7 @@ impl<'a> LookupAnswer for StateHandle<'a> {
     {
         // The unwrap is safe because we must have said there were no exports,
         // so no one can be trying to get at them
-        let module_state = self.get_module(module).unwrap();
-        self.state.lookup_answer(module_state, k)
+        let module_data = self.get_module(module).unwrap();
+        self.state.lookup_answer(module_data, k)
     }
 }
