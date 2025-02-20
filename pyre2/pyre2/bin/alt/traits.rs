@@ -13,7 +13,6 @@ use ruff_text_size::Ranged;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::class::classdef::ClassField;
-use crate::alt::class::classdef::ClassFieldInitialization;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::decorated_function::DecoratedFunction;
@@ -24,7 +23,6 @@ use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClass;
 use crate::binding::binding::BindingClassField;
-use crate::binding::binding::BindingClassFieldInitialization;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::BindingExpect;
@@ -37,7 +35,6 @@ use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyClassField;
-use crate::binding::binding::KeyClassFieldInitialization;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyClassSynthesizedFields;
 use crate::binding::binding::KeyExpect;
@@ -114,13 +111,6 @@ impl SolveRecursive for KeyClassField {
     fn visit_type_mut(v: &mut ClassField, f: &mut dyn FnMut(&mut Type)) {
         v.visit_type_mut(f);
     }
-}
-impl SolveRecursive for KeyClassFieldInitialization {
-    type Recursive = ();
-    fn promote_recursive(_: Self::Recursive) -> Self::Answer {
-        ClassFieldInitialization::recursive()
-    }
-    fn visit_type_mut(_v: &mut ClassFieldInitialization, _f: &mut dyn FnMut(&mut Type)) {}
 }
 impl SolveRecursive for KeyClassSynthesizedFields {
     type Recursive = ();
@@ -283,18 +273,6 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyClassField {
         errors: &ErrorCollector,
     ) -> Arc<ClassField> {
         answers.solve_class_field(binding, errors)
-    }
-
-    fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}
-}
-
-impl<Ans: LookupAnswer> Solve<Ans> for KeyClassFieldInitialization {
-    fn solve(
-        answers: &AnswersSolver<Ans>,
-        binding: &BindingClassFieldInitialization,
-        _errors: &ErrorCollector,
-    ) -> Arc<ClassFieldInitialization> {
-        answers.solve_class_field_initialization(binding)
     }
 
     fn recursive(_: &AnswersSolver<Ans>) -> Self::Recursive {}

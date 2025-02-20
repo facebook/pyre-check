@@ -40,7 +40,6 @@ use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClass;
 use crate::binding::binding::BindingClassField;
-use crate::binding::binding::BindingClassFieldInitialization;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::BindingExpect;
@@ -719,14 +718,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
-    }
-
-    pub fn solve_class_field_initialization(
-        &self,
-        initialization: &BindingClassFieldInitialization,
-    ) -> Arc<ClassFieldInitialization> {
-        let metadata = self.get_idx(initialization.class_metadata);
-        Arc::new(self.get_class_field_initialization(&metadata, &initialization.initial_value))
     }
 
     pub fn solve_class_synthesized_fields(

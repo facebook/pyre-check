@@ -29,7 +29,6 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::alt::class::classdef::ClassField;
-use crate::alt::class::classdef::ClassFieldInitialization;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::decorated_function::DecoratedFunction;
@@ -62,7 +61,6 @@ mod check_size {
     assert_eq_size!(KeyExpect, [usize; 1]);
     assert_eq_size!(KeyExport, [usize; 3]);
     assert_eq_size!(KeyClass, [usize; 1]);
-    assert_eq_size!(KeyClassFieldInitialization, [usize; 4]);
     assert_eq_size!(KeyClassField, [usize; 4]);
     assert_eq_size!(KeyClassSynthesizedFields, [usize; 1]);
     assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
@@ -76,7 +74,6 @@ mod check_size {
     assert_eq_size!(BindingAnnotation, [usize; 9]);
     assert_eq_size!(BindingClass, [usize; 21]);
     assert_eq_size!(BindingClassMetadata, [usize; 7]);
-    assert_eq_size!(BindingClassFieldInitialization, [usize; 9]);
     assert_eq_size!(BindingClassField, [usize; 22]);
     assert_eq_size!(BindingClassSynthesizedFields, [u8; 4]); // Equivalent to 0.5 usize
     assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
@@ -101,11 +98,6 @@ impl Keyed for KeyExpect {
 impl Keyed for KeyClass {
     type Value = BindingClass;
     type Answer = Class;
-}
-impl Keyed for KeyClassFieldInitialization {
-    const EXPORTED: bool = true;
-    type Value = BindingClassFieldInitialization;
-    type Answer = ClassFieldInitialization;
 }
 impl Keyed for KeyClassField {
     const EXPORTED: bool = true;
@@ -391,28 +383,6 @@ impl DisplayWith<ModuleInfo> for KeyClassField {
         write!(
             f,
             "field {} {:?} . {}",
-            ctx.display(&self.0),
-            self.0.range(),
-            self.1
-        )
-    }
-}
-
-/// A reference to information about how a class field is initialized.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct KeyClassFieldInitialization(pub ShortIdentifier, pub Name);
-
-impl Ranged for KeyClassFieldInitialization {
-    fn range(&self) -> TextRange {
-        self.0.range()
-    }
-}
-
-impl DisplayWith<ModuleInfo> for KeyClassFieldInitialization {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
-        write!(
-            f,
-            "field initialization {} {:?} . {}",
             ctx.display(&self.0),
             self.0.range(),
             self.1
@@ -972,23 +942,6 @@ pub enum ClassFieldInitialValue {
     Class(Option<Expr>),
     /// The field does not have an initial value.
     Instance,
-}
-
-/// Binding for information about how a class field is initialized.
-#[derive(Clone, Debug)]
-pub struct BindingClassFieldInitialization {
-    pub class_metadata: Idx<KeyClassMetadata>,
-    pub initial_value: ClassFieldInitialValue,
-}
-
-impl DisplayWith<Bindings> for BindingClassFieldInitialization {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, _ctx: &Bindings) -> fmt::Result {
-        let description = match self.initial_value {
-            ClassFieldInitialValue::Class(_) => "class",
-            ClassFieldInitialValue::Instance => "instance",
-        };
-        write!(f, "class field initialized in {}", description)
-    }
 }
 
 /// Bindings for fields synthesized by a class, such as a dataclass's `__init__` method. This

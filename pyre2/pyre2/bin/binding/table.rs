@@ -30,7 +30,6 @@ macro_rules! table {
             $($vis)* functions: $t<KeyFunction>,
             $($vis)* classes: $t<KeyClass>,
             $($vis)* class_fields: $t<KeyClassField>,
-            $($vis)* class_field_initializations: $t<KeyClassFieldInitialization>,
             $($vis)* class_synthesized_fields: $t<KeyClassSynthesizedFields>,
             $($vis)* annotations: $t<KeyAnnotation>,
             $($vis)* class_metadata: $t<KeyClassMetadata>,
@@ -73,12 +72,6 @@ macro_rules! table {
             type Value = $t<KeyClassField>;
             fn get(&self) -> &Self::Value { &self.class_fields }
             fn get_mut(&mut self) -> &mut Self::Value { &mut self.class_fields }
-        }
-
-        impl $crate::binding::table::TableKeyed<KeyClassFieldInitialization> for $name {
-            type Value = $t<KeyClassFieldInitialization>;
-            fn get(&self) -> &Self::Value { &self.class_field_initializations }
-            fn get_mut(&mut self) -> &mut Self::Value { &mut self.class_field_initializations }
         }
 
         impl $crate::binding::table::TableKeyed<KeyClassSynthesizedFields> for $name {
@@ -146,7 +139,6 @@ macro_rules! table_for_each(
         $f(&($e).functions);
         $f(&($e).classes);
         $f(&($e).class_fields);
-        $f(&($e).class_field_initializations);
         $f(&($e).class_synthesized_fields);
         $f(&($e).annotations);
         $f(&($e).class_metadata);
@@ -165,7 +157,6 @@ macro_rules! table_mut_for_each(
         $f(&mut ($e).functions);
         $f(&mut ($e).classes);
         $f(&mut ($e).class_fields);
-        $f(&mut ($e).class_field_initializations);
         $f(&mut ($e).class_synthesized_fields);
         $f(&mut ($e).annotations);
         $f(&mut ($e).class_metadata);
@@ -184,7 +175,6 @@ macro_rules! table_try_for_each(
         $f(&($e).functions)?;
         $f(&($e).classes)?;
         $f(&($e).class_fields)?;
-        $f(&($e).class_field_initializations)?;
         $f(&($e).class_synthesized_fields)?;
         $f(&($e).annotations)?;
         $f(&($e).class_metadata)?;
