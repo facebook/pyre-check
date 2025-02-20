@@ -128,15 +128,14 @@ assert_type(f(""), str)
 "#,
 );
 
-testcase_with_bug!(
-    "Env merging creates Binding::Forward which defeats predecessor traversal",
+testcase!(
     test_overload_static_config,
     r#"
 from typing import overload, assert_type
 import sys
 
 @overload
-def f(x: int) -> int: ...
+def f(x: int) -> int: ... # E: Overloaded function must have an implementation
 
 if sys.version_info >= (3, 11):
     @overload
@@ -147,10 +146,10 @@ else:
 
 if sys.version_info >= (3, 12):
     @overload
-    def f() -> None: ...  # E: Overloaded function must have an implementation
+    def f() -> None: ...
 
-assert_type(f(0), int)  # E: assert_type # E: No matching overload found
-assert_type(f(""), str) # E: assert_type # E: No matching overload found
+assert_type(f(0), int)
+assert_type(f(""), str)
 assert_type(f(), None)
 f(0, 0) # E: No matching overload found
 "#,

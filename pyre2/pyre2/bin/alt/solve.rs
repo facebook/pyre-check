@@ -1388,7 +1388,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         pred: &mut Option<Idx<Key>>,
     ) -> Option<Arc<DecoratedFunction>> {
         let pred_idx = (*pred)?;
-        if let Binding::Function(idx, pred_, _) = self.bindings().get(pred_idx) {
+        let mut b = self.bindings().get(pred_idx);
+        while let Binding::Forward(k) = b {
+            b = self.bindings().get(*k);
+        }
+        if let Binding::Function(idx, pred_, _) = b {
             let def = self.get_idx(*idx);
             if def.is_overload {
                 *pred = *pred_;
