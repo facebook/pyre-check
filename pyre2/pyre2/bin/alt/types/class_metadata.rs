@@ -290,7 +290,7 @@ pub struct ProtocolMetadata {
 /// Each ancestor is represented as a pair of a class and the type arguments
 /// for that class, relative to the body of the current class, so for example
 /// in
-/// ```
+/// ```python
 /// class A[T]: pass
 /// class B[S](A[list[S]]): pass
 /// class C(B[int]): pass
