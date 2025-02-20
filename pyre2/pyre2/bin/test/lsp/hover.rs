@@ -84,7 +84,7 @@ c4.x
 # main.py
 5 | c1.x
        ^
-Hover Result: `Literal[5]`
+Hover Result: `int`
 
 13 | c2.name
         ^
@@ -92,15 +92,15 @@ Hover Result: `str`
 
 19 | c3.x
         ^
-Hover Result: `Literal[5]`
+Hover Result: `int`
 
 21 | c3.y
         ^
-Hover Result: `Literal[6]`
+Hover Result: `int`
 
 31 | c4.x
         ^
-Hover Result: `Literal[5]`
+Hover Result: `int`
 "#
         .trim(),
         report.trim(),
