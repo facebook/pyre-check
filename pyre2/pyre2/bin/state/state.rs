@@ -47,8 +47,8 @@ use crate::state::loader::Loader;
 use crate::state::loader::LoaderFindCache;
 use crate::state::loader::LoaderId;
 use crate::state::steps::Context;
-use crate::state::steps::ModuleSteps;
 use crate::state::steps::Step;
+use crate::state::steps::Steps;
 use crate::types::class::Class;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
@@ -78,7 +78,7 @@ pub struct State {
 }
 
 struct ModuleState {
-    steps: UpgradeLock<ModuleSteps>,
+    steps: UpgradeLock<Steps>,
     handle: Handle,
     dependencies: RwLock<HashMap<ModuleName, Arc<ModuleState>, BuildNoHash>>,
 }

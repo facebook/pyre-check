@@ -52,7 +52,7 @@ pub struct Load {
 }
 
 #[derive(Debug, Default)]
-pub struct ModuleSteps {
+pub struct Steps {
     pub dirty: Dirty,
     pub load: Option<Arc<Load>>,
     pub ast: Option<Arc<ModModule>>,
@@ -77,21 +77,18 @@ pub struct ComputeStep<Lookup: LookupExport + LookupAnswer>(
     /// Second you get given the configs, from which you should compute the result.
     /// Thrid you get given the `ModuleSteps` to update.
     pub  Box<
-        dyn for<'a> Fn(
-            &ModuleSteps,
-        )
-            -> Box<dyn FnOnce(&Context<Lookup>) -> Box<dyn FnOnce(&mut ModuleSteps)>>,
+        dyn for<'a> Fn(&Steps) -> Box<dyn FnOnce(&Context<Lookup>) -> Box<dyn FnOnce(&mut Steps)>>,
     >,
 );
 
 macro_rules! compute_step {
     (<$ty:ty> $output:ident = $($input:ident),*) => {
-        ComputeStep(Box::new(|steps: &ModuleSteps| {
+        ComputeStep(Box::new(|steps: &Steps| {
             let _ = steps; // Not used if $input is empty.
             $(let $input = steps.$input.dupe().unwrap();)*
             Box::new(move |ctx: &Context<$ty>| {
                 let res = Step::$output(ctx, $($input),*);
-                Box::new(move |steps: &mut ModuleSteps| {
+                Box::new(move |steps: &mut Steps| {
                     steps.$output = Some(res);
                 })
             })
@@ -100,7 +97,7 @@ macro_rules! compute_step {
 }
 
 impl Step {
-    pub fn check(self, steps: &ModuleSteps) -> bool {
+    pub fn check(self, steps: &Steps) -> bool {
         match self {
             Step::Load => steps.load.is_some(),
             Step::Ast => steps.ast.is_some(),
@@ -120,7 +117,7 @@ impl Step {
 
     /// If you want to have access to the given step, the next step to compute is returned.
     /// None means the step is already available.
-    pub fn compute_next(self, steps: &ModuleSteps) -> Option<Self> {
+    pub fn compute_next(self, steps: &Steps) -> Option<Self> {
         if self.check(steps) {
             return None;
         }
