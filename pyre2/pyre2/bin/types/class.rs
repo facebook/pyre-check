@@ -20,6 +20,8 @@ use starlark_map::small_map::SmallMap;
 
 use crate::module::module_info::ModuleInfo;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::types::callable::Param;
+use crate::types::callable::Required;
 use crate::types::qname::QName;
 use crate::types::quantified::Quantified;
 use crate::types::types::TParams;
@@ -160,6 +162,10 @@ impl Class {
         let tparams_as_targs =
             TArgs::new(self.tparams().quantified().map(|q| q.to_type()).collect());
         ClassType::new(self.clone(), tparams_as_targs).to_type()
+    }
+
+    pub fn self_param(&self) -> Param {
+        Param::Pos(Name::new("self"), self.self_type(), Required::Required)
     }
 
     pub fn module_info(&self) -> &ModuleInfo {

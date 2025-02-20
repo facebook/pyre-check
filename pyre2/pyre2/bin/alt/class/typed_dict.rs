@@ -30,9 +30,7 @@ use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
-use crate::types::callable::Param;
 use crate::types::callable::ParamList;
-use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::Substitution;
@@ -180,11 +178,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         cls: &Class,
         fields: &SmallMap<Name, bool>,
     ) -> ClassSynthesizedField {
-        let mut params = vec![Param::Pos(
-            Name::new("self"),
-            cls.self_type(),
-            Required::Required,
-        )];
+        let mut params = vec![cls.self_param()];
         for (name, _) in fields {
             let field = self.get_class_member(cls, name).unwrap().value;
             let default = matches!(

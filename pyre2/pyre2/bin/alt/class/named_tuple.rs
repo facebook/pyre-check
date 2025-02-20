@@ -78,11 +78,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn get_named_tuple_iter(&self, cls: &Class, elements: &[Name]) -> ClassSynthesizedField {
-        let params = vec![Param::Pos(
-            Name::new("self"),
-            cls.self_type(),
-            Required::Required,
-        )];
+        let params = vec![cls.self_param()];
         let element_types: Vec<Type> = elements
             .iter()
             .map(|name| {

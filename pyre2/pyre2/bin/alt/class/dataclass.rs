@@ -136,11 +136,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         fields: &SmallSet<Name>,
         kw_only: bool,
     ) -> ClassSynthesizedField {
-        let mut params = vec![Param::Pos(
-            Name::new("self"),
-            cls.self_type(),
-            Required::Required,
-        )];
+        let mut params = vec![cls.self_param()];
         for (name, field, field_props) in self.iter_fields(cls, fields) {
             if field_props.is_set(&DataclassKeywords::INIT) {
                 params.push(field.as_param(
@@ -187,9 +183,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         cls: &Class,
     ) -> SmallMap<Name, ClassSynthesizedField> {
-        let self_ty = cls.self_type();
-        let self_ = Param::Pos(Name::new("self"), self_ty.clone(), Required::Required);
-        let other = Param::Pos(Name::new("other"), self_ty, Required::Required);
+        let self_ = cls.self_param();
+        let other = Param::Pos(Name::new("other"), cls.self_type(), Required::Required);
         let ret = Type::ClassType(self.stdlib.bool());
         let field = ClassSynthesizedField::new(
             Type::Callable(
@@ -205,11 +200,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn get_dataclass_hash(&self, cls: &Class) -> ClassSynthesizedField {
-        let params = vec![Param::Pos(
-            Name::new("self"),
-            cls.self_type(),
-            Required::Required,
-        )];
+        let params = vec![cls.self_param()];
         let ret = self.stdlib.int().to_type();
         ClassSynthesizedField::new(
             Type::Callable(
