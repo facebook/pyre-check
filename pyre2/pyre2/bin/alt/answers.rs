@@ -42,6 +42,7 @@ use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::display::DisplayWith;
+use crate::util::lock::Mutex;
 use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
@@ -59,6 +60,7 @@ pub const UNKNOWN: Name = Name::new_static("~unknown");
 pub struct Answers {
     solver: Solver,
     table: AnswerTable,
+    trace: Option<Mutex<SmallMap<TextRange, Arc<Type>>>>,
 }
 
 pub type AnswerEntry<K> =
@@ -174,7 +176,7 @@ pub trait LookupAnswer: Sized {
 }
 
 impl Answers {
-    pub fn new(bindings: &Bindings, solver: Solver) -> Self {
+    pub fn new(bindings: &Bindings, solver: Solver, enable_trace: bool) -> Self {
         fn presize<K: SolveRecursive>(items: &mut AnswerEntry<K>, bindings: &Bindings)
         where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -187,8 +189,17 @@ impl Answers {
         }
         let mut table = AnswerTable::default();
         table_mut_for_each!(&mut table, |items| presize(items, bindings));
+        let trace = if enable_trace {
+            Some(Mutex::new(SmallMap::new()))
+        } else {
+            None
+        };
 
-        Self { solver, table }
+        Self {
+            solver,
+            table,
+            trace,
+        }
     }
 
     #[expect(dead_code)]
@@ -287,6 +298,12 @@ impl Answers {
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
     {
         self.table.get::<K>().get(k)?.get()
+    }
+
+    pub fn get_trace(&self, range: TextRange) -> Option<Arc<Type>> {
+        let lock = self.trace.as_ref()?.lock();
+        let ty = lock.get(&range)?.dupe();
+        Some(ty)
     }
 }
 
@@ -391,6 +408,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.module_info(),
             loc,
         );
+    }
+
+    pub fn record_trace(&self, loc: TextRange, ty: &Type) {
+        if let Some(trace) = &self.current.trace {
+            trace.lock().insert(loc, Arc::new(ty.clone()));
+        }
     }
 
     pub fn check_type(

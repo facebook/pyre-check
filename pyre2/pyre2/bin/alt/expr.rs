@@ -339,7 +339,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>, errors: &ErrorCollector) -> Type {
-        match x {
+        let ty = match x {
             Expr::BoolOp(x) => self.boolop(&x.values, x.op, errors),
             Expr::Named(x) => self.expr_infer_with_hint(&x.value, hint, errors),
             Expr::BinOp(x) => self.binop_infer(x, errors),
@@ -960,7 +960,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 x.range,
                 "IPython escapes are not supported".to_owned(),
             ),
-        }
+        };
+        self.record_trace(x.range(), &ty);
+        ty
     }
 
     fn expr_infer_with_hint_promote(

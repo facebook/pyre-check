@@ -160,6 +160,7 @@ impl State {
             let stdlib = self.get_stdlib(&module_data.handle);
             let loader = self.get_cached_loader(module_data.handle.loader());
             let set = compute(&Context {
+                retain_memory: self.retain_memory,
                 module: module_data.handle.module(),
                 path: module_data.handle.path(),
                 config: module_data.handle.config(),

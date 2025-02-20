@@ -35,6 +35,7 @@ use crate::util::fs_anyhow;
 use crate::util::uniques::UniqueFactory;
 
 pub struct Context<'a, Lookup> {
+    pub retain_memory: bool,
     pub module: ModuleName,
     pub path: &'a ModulePath,
     pub config: &'a Config,
@@ -203,7 +204,8 @@ impl Step {
             &load.errors,
             ctx.uniques,
         );
-        let answers = Answers::new(&bindings, solver);
+        let enable_trace = ctx.retain_memory;
+        let answers = Answers::new(&bindings, solver, enable_trace);
         Arc::new((bindings, Arc::new(answers)))
     }
 
