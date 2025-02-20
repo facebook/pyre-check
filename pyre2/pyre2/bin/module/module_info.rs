@@ -109,7 +109,7 @@ impl ModuleInfo {
         &self.0.path
     }
 
-    pub fn contents(&self) -> &str {
+    pub fn contents(&self) -> &Arc<String> {
         &self.0.contents
     }
 
