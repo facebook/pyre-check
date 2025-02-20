@@ -20,6 +20,7 @@ use crate::types::callable::Params;
 use crate::types::callable::Required;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
+use crate::types::quantified::QuantifiedKind;
 use crate::types::simplify::unions;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::Variance;
@@ -596,10 +597,14 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         assert_eq!(got.len(), want.len());
         assert_eq!(want.len(), params.len());
         for (got_arg, want_arg, param) in izip!(got, want, params.iter()) {
-            let result = match param.variance {
-                Variance::Covariant => self.is_subset_eq(got_arg, want_arg),
-                Variance::Contravariant => self.is_subset_eq(want_arg, got_arg),
-                Variance::Invariant => self.is_equal(got_arg, want_arg),
+            let result = if param.quantified.kind() == QuantifiedKind::TypeVarTuple {
+                self.is_equal(got_arg, want_arg)
+            } else {
+                match param.variance {
+                    Variance::Covariant => self.is_subset_eq(got_arg, want_arg),
+                    Variance::Contravariant => self.is_subset_eq(want_arg, got_arg),
+                    Variance::Invariant => self.is_equal(got_arg, want_arg),
+                }
             };
             if !result {
                 return false;

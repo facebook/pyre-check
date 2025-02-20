@@ -27,3 +27,50 @@ Ts = TypeVarTuple('Ts')
 *Ts
 "#,
 );
+
+testcase!(
+    test_type_var_tuple_instantiation,
+    r#"
+from typing import assert_type
+class A[*Ts]:
+    def x(self) -> tuple[*Ts]:
+        raise Exception()
+class B[T, *Ts]:
+    def x(self) -> tuple[*Ts, T]:
+        raise Exception()
+def test(a1: A[int], a2: A[int, str], b: B[int, str, int]):
+    assert_type(a1.x(), tuple[int])
+    assert_type(a2.x(), tuple[int, str])
+    assert_type(b.x(), tuple[str, int, int])
+"#,
+);
+
+testcase_with_bug!(
+    "The solution for *Ts is wrong here",
+    test_type_var_tuple_solve,
+    r#"
+from typing import assert_type
+class A[*Ts]:
+    def x(self) -> tuple[*Ts]:
+        raise Exception()
+def test[*Ts](x: tuple[*Ts]) -> tuple[*Ts]:
+    return x
+assert_type(test((1, 2, 3)), tuple[int, int, int])  # E: EXPECTED tuple[Literal[1], Literal[2], Literal[3]] <: tuple[*tuple[Literal[1], ...]]  # E: assert_type(tuple[*tuple[Literal[1], ...]], tuple[int, int, int]) failed
+"#,
+);
+
+// TODO: improve display of type var tuples
+testcase!(
+    test_type_var_tuple_subtype,
+    r#"
+from typing import assert_type
+class A[*Ts]:
+    def x(self) -> tuple[*Ts]:
+        raise Exception()
+def helper(x: A[int, str]): ...
+def test[*Ts](x: A[int, str], y: A[str, str, str], z: A[*Ts]):
+    helper(x)
+    helper(y)  # E: EXPECTED A[tuple[str, str, str]] <: A[tuple[int, str]]
+    helper(z)  # E: EXPECTED A[tuple[*?_TypeVarTuple]] <: A[tuple[int, str]]
+"#,
+);

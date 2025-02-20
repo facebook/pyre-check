@@ -40,7 +40,7 @@ impl Tuple {
     }
 
     pub fn unpacked(prefix: Vec<Type>, middle: Type, suffix: Vec<Type>) -> Type {
-        if prefix.is_empty() && suffix.is_empty() {
+        if prefix.is_empty() && suffix.is_empty() && matches!(middle, Type::Tuple(_)) {
             return middle;
         }
         Type::Tuple(Self::Unpacked(Box::new((prefix, middle, suffix))))

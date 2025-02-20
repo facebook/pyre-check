@@ -1512,6 +1512,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Ellipsis => Some(Type::Ellipsis), // A bit weird because of tuples, so just promote it
             Type::Any(style) => Some(style.propagate()),
             Type::TypeAlias(ta) => self.untype_opt(ta.as_type(), range),
+            t @ Type::Unpack(
+                box Type::Tuple(_) | box Type::TypeVarTuple(_) | box Type::Quantified(_),
+            ) => Some(t),
+            Type::Unpack(box Type::Var(v)) if let Some(_guard) = self.recurser.recurse(v) => {
+                self.untype_opt(Type::Unpack(Box::new(self.solver().force_var(v))), range)
+            }
             Type::Unpack(box t) => Some(t),
             _ => None,
         }

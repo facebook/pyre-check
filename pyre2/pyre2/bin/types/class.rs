@@ -24,6 +24,7 @@ use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::qname::QName;
 use crate::types::quantified::Quantified;
+use crate::types::quantified::QuantifiedKind;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
@@ -262,13 +263,17 @@ impl Display for ClassType {
 impl ClassType {
     fn new_impl(class: Class, targs: TArgs, extra_context: &str) -> Self {
         let tparams = class.tparams();
-        if targs.0.len() != tparams.len() {
+        if targs.0.len() != tparams.len()
+            && !tparams
+                .quantified()
+                .any(|q| q.kind() == QuantifiedKind::TypeVarTuple)
+        {
             // Invariant violation: we should always have valid type arguments when
             // constructing `ClassType`.
             assert_eq!(
                 targs.0.len(),
                 tparams.len(),
-                "Encountered invalid type arguments in class{}.{}",
+                "Encountered invalid type arguments in class {}.{}",
                 class.name(),
                 extra_context,
             )

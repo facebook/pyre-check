@@ -10,8 +10,6 @@ use std::fmt::Display;
 use std::sync::Arc;
 
 use dupe::Dupe;
-use itertools::EitherOrBoth;
-use itertools::Itertools;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
@@ -42,6 +40,7 @@ use crate::types::class::Class;
 use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
+use crate::types::tuple::Tuple;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::BoundMethod;
 use crate::types::types::Decoration;
@@ -350,32 +349,113 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let tparams = cls.tparams();
         let nargs = targs.len();
         let mut checked_targs = Vec::new();
-        for pair in tparams.iter().zip_longest(targs) {
-            match pair {
-                EitherOrBoth::Both(_, arg) => {
-                    checked_targs.push(arg);
+        let mut targ_idx = 0;
+        for (param_idx, param) in tparams.iter().enumerate() {
+            if param.quantified.is_type_var_tuple() && targs.get(targ_idx).is_some() {
+                let n_remaining_params = tparams.len() - param_idx - 1;
+                let n_remaining_args = nargs - targ_idx;
+                let mut prefix = Vec::new();
+                let mut middle = Vec::new();
+                let mut suffix = Vec::new();
+                let args_to_consume = n_remaining_args.saturating_sub(n_remaining_params);
+                for _ in 0..args_to_consume {
+                    match targs.get(targ_idx) {
+                        Some(Type::Unpack(box Type::Tuple(Tuple::Concrete(elts)))) => {
+                            if middle.is_empty() {
+                                prefix.extend(elts.clone());
+                            } else {
+                                suffix.extend(elts.clone());
+                            }
+                        }
+                        Some(Type::Unpack(box t)) => {
+                            if !suffix.is_empty() {
+                                middle.push(Type::Tuple(Tuple::Unbounded(Box::new(
+                                    self.unions(suffix),
+                                ))));
+                                suffix = Vec::new();
+                            } else {
+                                middle.push(t.clone())
+                            }
+                        }
+                        Some(arg) => {
+                            if middle.is_empty() {
+                                prefix.push(arg.clone());
+                            } else {
+                                suffix.push(arg.clone());
+                            }
+                        }
+                        _ => {}
+                    }
+                    targ_idx += 1;
                 }
-                EitherOrBoth::Left(param) if let Some(default) = &param.default => {
-                    checked_targs.push(default.clone());
+                let tuple_type = match middle.as_slice() {
+                    [] => Type::tuple(prefix),
+                    [middle] => Tuple::unpacked(prefix, middle.clone(), suffix),
+                    // We can't precisely model unpacking two unbounded iterables, so we'll keep any
+                    // concrete prefix and suffix elements and merge everything in between into an unbounded tuple
+                    _ => {
+                        let middle_types: Vec<Type> = middle
+                            .iter()
+                            .map(|t| {
+                                self.unwrap_iterable(t)
+                                    .unwrap_or(self.stdlib.object_class_type().clone().to_type())
+                            })
+                            .collect();
+                        Tuple::unpacked(
+                            prefix,
+                            Type::Tuple(Tuple::Unbounded(Box::new(self.unions(middle_types)))),
+                            suffix,
+                        )
+                    }
+                };
+                checked_targs.push(tuple_type);
+            } else if param.quantified.is_type_var_tuple() {
+                checked_targs.push(Type::any_tuple())
+            } else if let Some(arg) = targs.get(targ_idx) {
+                match arg {
+                    Type::Unpack(_) => {
+                        checked_targs.push(self.error(
+                            errors,
+                            range,
+                            format!(
+                                "Unpacked argument cannot be used for type parameter {}.",
+                                param.name
+                            ),
+                        ));
+                    }
+                    _ => {
+                        checked_targs.push(arg.clone());
+                    }
                 }
-                _ => {
-                    self.error(
-                        errors,
-                        range,
-                        format!(
-                            "Expected {} for class `{}`, got {}.",
-                            count(tparams.len(), "type argument"),
-                            cls.name(),
-                            nargs
-                        ),
-                    );
-                    // We have either too few or too many targs. If too few, pad out with Any.
-                    // If there are too many, the extra are ignored.
-                    checked_targs
-                        .extend(vec![Type::any_error(); tparams.len().saturating_sub(nargs)]);
-                    break;
-                }
+                targ_idx += 1;
+            } else if let Some(default) = &param.default {
+                checked_targs.push(default.clone());
+            } else {
+                self.error(
+                    errors,
+                    range,
+                    format!(
+                        "Expected {} for class `{}`, got {}.",
+                        count(tparams.len(), "type argument"),
+                        cls.name(),
+                        nargs
+                    ),
+                );
+                checked_targs.extend(vec![Type::any_error(); tparams.len().saturating_sub(nargs)]);
+                break;
             }
+        }
+        if targ_idx < nargs {
+            self.error(
+                errors,
+                range,
+                format!(
+                    "Expected {} for class `{}`, got {}.",
+                    count(tparams.len(), "type argument"),
+                    cls.name(),
+                    nargs
+                ),
+            );
         }
         TArgs::new(checked_targs)
     }
