@@ -140,9 +140,7 @@ impl ModuleInfo {
 
 #[derive(Debug, Clone)]
 pub struct TextRangeWithModuleInfo {
-    #[expect(dead_code)]
     pub module_info: ModuleInfo,
-    #[expect(dead_code)]
     pub range: TextRange,
 }
 
@@ -151,7 +149,6 @@ impl TextRangeWithModuleInfo {
         Self { module_info, range }
     }
 
-    #[expect(dead_code)]
     pub fn opt_new(module_info: ModuleInfo, opt_range: Option<TextRange>) -> Option<Self> {
         opt_range.map(|range| Self::new(module_info, range))
     }

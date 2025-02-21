@@ -8,6 +8,7 @@
 use pretty_assertions::assert_eq;
 use ruff_text_size::TextSize;
 
+use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::test::util::code_frame_of_source_at_range;
@@ -15,11 +16,12 @@ use crate::test::util::get_batched_lsp_operations_report;
 use crate::test::util::get_batched_lsp_operations_report_allow_error;
 
 fn get_test_report(state: &State, handle: &Handle, position: TextSize) -> String {
-    if let Some((handle, range)) = state.goto_definition(handle, position) {
-        let info = state.get_module_info(&handle).unwrap();
+    if let Some(TextRangeWithModuleInfo { module_info, range }) =
+        state.goto_definition(handle, position)
+    {
         format!(
             "Definition Result:\n{}",
-            code_frame_of_source_at_range(info.contents(), range)
+            code_frame_of_source_at_range(module_info.contents(), range)
         )
     } else {
         "Definition Result: None".to_owned()
@@ -397,23 +399,33 @@ dict["bar"]
 # main.py
 5 | c1.x
        ^
-Definition Result: None
+Definition Result:
+3 |   x = 5
+      ^
 
 13 | c2.name
         ^
-Definition Result: None
+Definition Result:
+10 |     self.name = name
+              ^^^^
 
 19 | c3.x
         ^
-Definition Result: None
+Definition Result:
+3 |   x = 5
+      ^
 
 21 | c3.y
         ^
-Definition Result: None
+Definition Result:
+17 |   y = 6
+       ^
 
 31 | c4.x
         ^
-Definition Result: None
+Definition Result:
+25 |   x = 5
+       ^
 
 35 | dict["foo"]
             ^

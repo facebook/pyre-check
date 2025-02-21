@@ -68,6 +68,7 @@ use crate::module::bundled::typeshed;
 use crate::module::finder::find_module;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::SourceRange;
+use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
@@ -357,9 +358,9 @@ impl<'a> Server<'a> {
         let handle = self.make_handle(&params.text_document_position_params.text_document.uri);
         let info = state.get_module_info(&handle)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let (handle, range) = state.goto_definition(&handle, range)?;
-        let path = to_real_path(handle.path())?;
-        let info = state.get_module_info(&handle)?;
+        let TextRangeWithModuleInfo { module_info, range } =
+            state.goto_definition(&handle, range)?;
+        let path = to_real_path(module_info.path())?;
         let path = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_owned());
         Some(GotoDefinitionResponse::Scalar(Location {
             uri: Url::from_file_path(path).unwrap(),

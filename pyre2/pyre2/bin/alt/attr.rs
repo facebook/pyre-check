@@ -18,6 +18,7 @@ use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyExport;
 use crate::error::collector::ErrorCollector;
 use crate::export::exports::Exports;
+use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
@@ -45,7 +46,10 @@ enum LookupResult {
 /// The result of looking up an attribute. We can analyze get and set actions
 /// on an attribute, each of which can be allowed with some type or disallowed.
 #[derive(Debug)]
-pub struct Attribute(AttributeInner);
+pub struct Attribute {
+    definition_range: Option<TextRangeWithModuleInfo>,
+    inner: AttributeInner,
+}
 
 /// The result of an attempt to access an attribute (with a get or set operation).
 ///
@@ -91,20 +95,40 @@ enum InternalError {
 }
 
 impl Attribute {
-    pub fn no_access(reason: NoAccessReason) -> Self {
-        Attribute(AttributeInner::NoAccess(reason))
+    pub fn no_access(
+        definition_range: Option<TextRangeWithModuleInfo>,
+        reason: NoAccessReason,
+    ) -> Self {
+        Attribute {
+            definition_range,
+            inner: AttributeInner::NoAccess(reason),
+        }
     }
 
-    pub fn read_write(ty: Type) -> Self {
-        Attribute(AttributeInner::ReadWrite(ty))
+    pub fn read_write(definition_range: Option<TextRangeWithModuleInfo>, ty: Type) -> Self {
+        Attribute {
+            definition_range,
+            inner: AttributeInner::ReadWrite(ty),
+        }
     }
 
-    pub fn read_only(ty: Type) -> Self {
-        Attribute(AttributeInner::ReadOnly(ty))
+    pub fn read_only(definition_range: Option<TextRangeWithModuleInfo>, ty: Type) -> Self {
+        Attribute {
+            definition_range,
+            inner: AttributeInner::ReadOnly(ty),
+        }
     }
 
-    pub fn property(getter: Type, setter: Option<Type>, cls: Class) -> Self {
-        Attribute(AttributeInner::Property(getter, setter, cls))
+    pub fn property(
+        definition_range: Option<TextRangeWithModuleInfo>,
+        getter: Type,
+        setter: Option<Type>,
+        cls: Class,
+    ) -> Self {
+        Attribute {
+            definition_range,
+            inner: AttributeInner::Property(getter, setter, cls),
+        }
     }
 }
 
@@ -140,8 +164,8 @@ impl LookupResult {
     ///
     /// TODO(stroxler) The uses of this eventually need to be audited, but we
     /// need to prioiritize the class logic first.
-    fn found_type(ty: Type) -> Self {
-        Self::Found(Attribute::read_write(ty))
+    fn found_type(def_range: Option<TextRangeWithModuleInfo>, ty: Type) -> Self {
+        Self::Found(Attribute::read_write(def_range, ty))
     }
 }
 
@@ -203,9 +227,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
         todo_ctx: &str,
-    ) -> Type {
-        match self.get_type_or_conflated_error_msg(
-            self.lookup_attr(base, attr_name),
+    ) -> (Option<TextRangeWithModuleInfo>, Type) {
+        let lookup_result = self.lookup_attr(base, attr_name);
+        let def_range = match &lookup_result {
+            LookupResult::Found(attribute) => attribute.definition_range.clone(),
+            LookupResult::NotFound(_) => None,
+            LookupResult::InternalError(_) => None,
+        };
+        let ty = match self.get_type_or_conflated_error_msg(
+            lookup_result,
             attr_name,
             range,
             errors,
@@ -213,7 +243,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ) {
             Ok(ty) => ty,
             Err(msg) => self.error(errors, range, msg),
-        }
+        };
+        (def_range, ty)
     }
 
     /// Compute the get (i.e. read) type of an attribute, if it can be found. If read is not
@@ -245,7 +276,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn type_of_enum_value(&self, enum_: &EnumMetadata) -> Option<Type> {
         let base = Type::ClassType(enum_.cls.clone());
         match self.lookup_attr(base, &Name::new_static("_value_")) {
-            LookupResult::Found(attr) => match attr.0 {
+            LookupResult::Found(attr) => match attr.inner {
                 AttributeInner::ReadWrite(ty) => Some(ty),
                 AttributeInner::ReadOnly(_)
                 | AttributeInner::NoAccess(_)
@@ -267,7 +298,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         todo_ctx: &str,
     ) {
         match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attr) => match attr.0 {
+            LookupResult::Found(attr) => match attr.inner {
                 AttributeInner::NoAccess(e) => {
                     self.error(errors, range, e.to_error_msg(attr_name));
                 }
@@ -348,7 +379,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         want: &Attribute,
         is_subset: &mut dyn FnMut(&Type, &Type) -> bool,
     ) -> bool {
-        match (&got.0, &want.0) {
+        match (&got.inner, &want.inner) {
             (_, AttributeInner::NoAccess(_)) => true,
             (AttributeInner::NoAccess(_), _) => false,
             (
@@ -421,7 +452,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Result<Type, NoAccessReason> {
-        match attr.0 {
+        match attr.inner {
             AttributeInner::NoAccess(reason) => Err(reason),
             AttributeInner::ReadWrite(ty) | AttributeInner::ReadOnly(ty) => Ok(ty),
             AttributeInner::Property(getter, ..) => {
@@ -434,7 +465,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// only interested in simple, read-write attributes (in particular, this covers instance access to
     /// regular methods, and is useful for edge cases where we handle cases like `__call__` and `__new__`).
     pub fn resolve_as_instance_method(&self, attr: Attribute) -> Option<Type> {
-        match attr.0 {
+        self.resolve_as_instance_method_with_attribute_inner(attr.inner)
+    }
+
+    fn resolve_as_instance_method_with_attribute_inner(
+        &self,
+        inner: AttributeInner,
+    ) -> Option<Type> {
+        match inner {
             AttributeInner::ReadWrite(ty) => Some(ty),
             AttributeInner::ReadOnly(_)
             | AttributeInner::NoAccess(_)
@@ -490,14 +528,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Some(AttributeBase::Module(module)) => match self.get_module_attr(&module, attr_name) {
-                Some(attr) => LookupResult::found_type(attr),
+                // TODO(samzhou19815): Support module attribute go-to-definition
+                Some(attr) => LookupResult::found_type(None, attr),
                 None => LookupResult::NotFound(NotFound::ModuleExport(module)),
             },
             Some(AttributeBase::Quantified(q)) => {
                 if q.is_param_spec() && attr_name == "args" {
-                    LookupResult::found_type(Type::type_form(Type::Args(q)))
+                    LookupResult::found_type(None, Type::type_form(Type::Args(q)))
                 } else if q.is_param_spec() && attr_name == "kwargs" {
-                    LookupResult::found_type(Type::type_form(Type::Kwargs(q)))
+                    LookupResult::found_type(None, Type::type_form(Type::Kwargs(q)))
                 } else {
                     let class = q.as_value(self.stdlib);
                     match self.get_instance_attribute(&class, attr_name) {
@@ -508,21 +547,32 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Some(AttributeBase::TypeAny(style)) => {
                 let builtins_type_classtype = self.stdlib.builtins_type();
-                LookupResult::found_type(
-                    self.get_instance_attribute(&builtins_type_classtype, attr_name)
-                        .and_then(|attr| self.resolve_as_instance_method(attr))
-                        .map_or_else(|| style.propagate(), |ty| ty),
-                )
+                self.get_instance_attribute(&builtins_type_classtype, attr_name)
+                    .and_then(
+                        |Attribute {
+                             definition_range,
+                             inner,
+                         }| {
+                            self.resolve_as_instance_method_with_attribute_inner(inner)
+                                .map(|ty| LookupResult::found_type(definition_range, ty))
+                        },
+                    )
+                    .map_or_else(
+                        || LookupResult::found_type(None, style.propagate()),
+                        |result| result,
+                    )
             }
-            Some(AttributeBase::Any(style)) => LookupResult::found_type(style.propagate()),
-            Some(AttributeBase::Never) => LookupResult::found_type(Type::never()),
+            Some(AttributeBase::Any(style)) => LookupResult::found_type(None, style.propagate()),
+            Some(AttributeBase::Never) => LookupResult::found_type(None, Type::never()),
             Some(AttributeBase::Property(getter)) => {
                 // TODO(stroxler): it is probably possible to synthesize a forall type here
                 // that uses a type var to propagate the setter instead of using a `Decoration`
                 // with hardcoded support in `apply_decorator`. Investigate this option later.
-                LookupResult::found_type(Type::Decoration(Decoration::PropertySetterDecorator(
-                    Box::new(getter),
-                )))
+                LookupResult::found_type(
+                    // TODO(samzhou19815): Support go-to-definition for @property applied symbols
+                    None,
+                    Type::Decoration(Decoration::PropertySetterDecorator(Box::new(getter))),
+                )
             }
             None => LookupResult::InternalError(InternalError::AttributeBaseUndefined(base)),
         }

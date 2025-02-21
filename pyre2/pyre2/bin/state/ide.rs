@@ -19,6 +19,7 @@ use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
+use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::state::handle::Handle;
 use crate::state::state::State;
@@ -134,9 +135,18 @@ impl State {
         &self,
         handle: &Handle,
         position: TextSize,
-    ) -> Option<(Handle, TextRange)> {
-        let id = self.identifier_at(handle, position)?;
-        self.key_to_definition(handle, &Key::Usage(ShortIdentifier::new(&id)), 20)
+    ) -> Option<TextRangeWithModuleInfo> {
+        if let Some(id) = self.identifier_at(handle, position) {
+            let (handle, range) =
+                self.key_to_definition(handle, &Key::Usage(ShortIdentifier::new(&id)), 20)?;
+            return Some(TextRangeWithModuleInfo::new(
+                self.get_module_info(&handle)?,
+                range,
+            ));
+        }
+        let attribute = self.attribute_at(handle, position)?;
+        self.get_answers(handle)?
+            .get_definition_trace(attribute.range)
     }
 
     pub fn inlay_hints(&self, handle: &Handle) -> Option<Vec<(TextSize, String)>> {

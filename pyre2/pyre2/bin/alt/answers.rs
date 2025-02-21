@@ -313,7 +313,6 @@ impl Answers {
         Some(ty)
     }
 
-    #[expect(dead_code)]
     pub fn get_definition_trace(&self, range: TextRange) -> Option<TextRangeWithModuleInfo> {
         let lock = self.trace.as_ref()?.lock();
         let ty = lock.definitions.get(&range)?.clone();
@@ -430,7 +429,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    #[expect(dead_code)]
     pub fn record_definition_trace(&self, loc: TextRange, def: &TextRangeWithModuleInfo) {
         if let Some(trace) = &self.current.trace {
             trace.lock().definitions.insert(loc, def.clone());

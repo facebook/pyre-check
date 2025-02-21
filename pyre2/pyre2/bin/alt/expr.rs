@@ -131,9 +131,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
-        self.distribute_over_union(obj, |obj| {
-            self.type_of_attr_get(obj.clone(), attr_name, range, errors, "Expr::attr_infer")
-        })
+        let mut def_opt = None;
+        let ty = self.distribute_over_union(obj, |obj| {
+            let (def_range, ty) =
+                self.type_of_attr_get(obj.clone(), attr_name, range, errors, "Expr::attr_infer");
+            if def_opt.is_none() {
+                def_opt = def_range;
+            }
+            ty
+        });
+        if let Some(def) = def_opt {
+            self.record_definition_trace(range, &def);
+        }
+        ty
     }
 
     fn binop_infer(&self, x: &ExprBinOp, errors: &ErrorCollector) -> Type {

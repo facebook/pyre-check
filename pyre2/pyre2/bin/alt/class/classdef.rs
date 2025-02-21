@@ -35,6 +35,7 @@ use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::error::style::ErrorStyle;
 use crate::graph::index::Idx;
+use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::types::annotation::Annotation;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::CallableKind;
@@ -203,11 +204,25 @@ impl ClassField {
 
     fn as_instance_attribute(self, cls: &ClassType) -> Attribute {
         match self.instantiate_for(cls).0 {
-            ClassFieldInner::Simple { ty, readonly, .. } => match self.initialization() {
-                ClassFieldInitialization::Class(_) => bind_instance_attribute(cls, ty),
-                ClassFieldInitialization::Instance if readonly => Attribute::read_only(ty),
-                ClassFieldInitialization::Instance => Attribute::read_write(ty),
-            },
+            ClassFieldInner::Simple {
+                ty,
+                range,
+                readonly,
+                ..
+            } => {
+                let module_info = cls.qname().module_info().dupe();
+                match self.initialization() {
+                    ClassFieldInitialization::Class(_) => bind_instance_attribute(cls, range, ty),
+                    ClassFieldInitialization::Instance if readonly => {
+                        let def_range = TextRangeWithModuleInfo::opt_new(module_info, range);
+                        Attribute::read_only(def_range, ty)
+                    }
+                    ClassFieldInitialization::Instance => {
+                        let def_range = TextRangeWithModuleInfo::opt_new(module_info, range);
+                        Attribute::read_write(def_range, ty)
+                    }
+                }
+            }
         }
     }
 
@@ -215,17 +230,25 @@ impl ClassField {
         match &self.0 {
             ClassFieldInner::Simple {
                 initialization: ClassFieldInitialization::Instance,
+                range,
                 ..
-            } => Attribute::no_access(NoAccessReason::ClassUseOfInstanceAttribute(cls.clone())),
+            } => Attribute::no_access(
+                TextRangeWithModuleInfo::opt_new(cls.module_info().dupe(), *range),
+                NoAccessReason::ClassUseOfInstanceAttribute(cls.clone()),
+            ),
             ClassFieldInner::Simple {
+                range,
                 initialization: ClassFieldInitialization::Class(_),
                 ty,
                 ..
             } => {
                 if self.depends_on_class_type_parameter(cls) {
-                    Attribute::no_access(NoAccessReason::ClassAttributeIsGeneric(cls.clone()))
+                    Attribute::no_access(
+                        TextRangeWithModuleInfo::opt_new(cls.module_info().dupe(), *range),
+                        NoAccessReason::ClassAttributeIsGeneric(cls.clone()),
+                    )
                 } else {
-                    bind_class_attribute(cls, ty.clone())
+                    bind_class_attribute(cls, *range, ty.clone())
                 }
             }
         }
@@ -241,35 +264,47 @@ fn is_unbound_function(ty: &Type) -> bool {
     }
 }
 
-fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
+fn bind_class_attribute(cls: &Class, range: Option<TextRange>, attr: Type) -> Attribute {
+    let def_range = TextRangeWithModuleInfo::opt_new(cls.module_info().dupe(), range);
     match attr {
-        Type::Decoration(Decoration::StaticMethod(box attr)) => Attribute::read_write(attr),
-        Type::Decoration(Decoration::ClassMethod(box attr)) => {
-            Attribute::read_write(make_bound_method(Type::ClassDef(cls.dupe()), attr))
+        Type::Decoration(Decoration::StaticMethod(box attr)) => {
+            Attribute::read_write(def_range, attr)
         }
+        Type::Decoration(Decoration::ClassMethod(box attr)) => Attribute::read_write(
+            def_range,
+            make_bound_method(Type::ClassDef(cls.dupe()), attr),
+        ),
         // Accessing a property descriptor on the class gives the property itself,
         // with no magic access rules at runtime.
-        p @ Type::Decoration(Decoration::Property(_)) => Attribute::read_write(p),
-        attr => Attribute::read_write(attr),
+        p @ Type::Decoration(Decoration::Property(_)) => Attribute::read_write(def_range, p),
+        attr => Attribute::read_write(def_range, attr),
     }
 }
 
-fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
+fn bind_instance_attribute(cls: &ClassType, range: Option<TextRange>, attr: Type) -> Attribute {
+    let def_range = TextRangeWithModuleInfo::opt_new(cls.qname().module_info().dupe(), range);
     match attr {
-        Type::Decoration(Decoration::StaticMethod(box attr)) => Attribute::read_write(attr),
+        Type::Decoration(Decoration::StaticMethod(box attr)) => {
+            Attribute::read_write(def_range, attr)
+        }
         Type::Decoration(Decoration::ClassMethod(box attr)) => Attribute::read_write(
+            def_range,
             make_bound_method(Type::ClassDef(cls.class_object().dupe()), attr),
         ),
         Type::Decoration(Decoration::Property(box (getter, setter))) => Attribute::property(
+            def_range,
             make_bound_method(Type::ClassType(cls.clone()), getter),
             setter.map(|setter| make_bound_method(Type::ClassType(cls.clone()), setter)),
             cls.class_object().dupe(),
         ),
-        attr => Attribute::read_write(if is_unbound_function(&attr) {
-            make_bound_method(cls.self_type(), attr)
-        } else {
-            attr
-        }),
+        attr => Attribute::read_write(
+            def_range,
+            if is_unbound_function(&attr) {
+                make_bound_method(cls.self_type(), attr)
+            } else {
+                attr
+            },
+        ),
     }
 }
 
