@@ -10,13 +10,13 @@ use std::fmt::Display;
 
 use crate::types::types::Type;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct YieldResult {
     pub yield_ty: Type,
     pub send_ty: Type,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct YieldFromResult {
     pub yield_ty: Type,
     pub send_ty: Type,

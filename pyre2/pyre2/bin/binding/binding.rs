@@ -84,7 +84,7 @@ mod check_size {
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
     const EXPORTED: bool = false;
     type Value: Debug + DisplayWith<Bindings>;
-    type Answer: Clone + Debug + Display;
+    type Answer: Clone + Debug + Display + Eq;
 }
 
 impl Keyed for Key {
@@ -310,7 +310,7 @@ impl DisplayWith<Bindings> for BindingExpect {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EmptyAnswer;
 
 impl Display for EmptyAnswer {
