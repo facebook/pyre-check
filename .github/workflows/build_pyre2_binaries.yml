@@ -1,0 +1,33 @@
+name: Build binaries
+on:
+  workflow_dispatch:
+env:
+  PYTHON_VERSION: "3.12"
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          architecture: x64
+      - name: "Build wheels"
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: auto
+          args: --release --out dist
+          working-directory: pyre2/pyre2
+      - name: "Upload wheels"
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.target }}
+          path: pyre2/pyre2/dist
