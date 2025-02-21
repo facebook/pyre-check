@@ -72,6 +72,10 @@ impl<'a> BindingsBuilder<'a> {
             let make_binding = |k| Binding::IterableValue(k, comp.iter.clone());
             self.bind_target(&comp.target, &make_binding, None);
             self.ensure_expr(&comp.target);
+            for x in comp.ifs.iter() {
+                let narrow_ops = NarrowOps::from_expr(Some(x));
+                self.bind_narrow_ops(&narrow_ops, comp.range);
+            }
         }
     }
 

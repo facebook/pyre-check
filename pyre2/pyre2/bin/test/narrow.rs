@@ -611,3 +611,13 @@ def f(x: int | None, y: bool):
         pass
 "#,
 );
+
+testcase!(
+    test_narrow_comprehension,
+    r#"
+from typing import assert_type
+def f(xs: list[int | None]):
+    ys = [x for x in xs if x]
+    assert_type(ys, list[int])
+"#,
+);
