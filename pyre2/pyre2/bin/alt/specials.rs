@@ -117,14 +117,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             return self.error(
                                 errors,
                                 value.range(),
-                                format!("Expected a tuple or type var tuple, got `{}`", ty),
+                                format!("Expected a tuple or TypeVarTuple, got `{}`", ty),
                             );
                         }
                         ty if ty.is_kind_type_var_tuple() => {
                             return self.error(
                                 errors,
                                 value.range(),
-                                format!("Type var tuple `{}` must be unpacked", ty),
+                                "TypeVarTuple must be unpacked".to_owned(),
                             );
                         }
                         _ => {

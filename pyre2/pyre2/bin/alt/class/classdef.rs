@@ -385,10 +385,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         }
                         Some(arg) => {
-                            if middle.is_empty() {
-                                prefix.push(arg.clone());
+                            let arg = if arg.is_kind_type_var_tuple() {
+                                self.error(
+                                    errors,
+                                    range,
+                                    "TypeVarTuple must be unpacked".to_owned(),
+                                )
                             } else {
-                                suffix.push(arg.clone());
+                                arg.clone()
+                            };
+                            if middle.is_empty() {
+                                prefix.push(arg);
+                            } else {
+                                suffix.push(arg);
                             }
                         }
                         _ => {}
@@ -431,7 +440,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ));
                     }
                     _ => {
-                        checked_targs.push(arg.clone());
+                        let arg = if arg.is_kind_type_var_tuple() {
+                            self.error(errors, range, "TypeVarTuple must be unpacked".to_owned())
+                        } else {
+                            arg.clone()
+                        };
+                        checked_targs.push(arg);
                     }
                 }
                 targ_idx += 1;

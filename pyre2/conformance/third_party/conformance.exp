@@ -8265,8 +8265,8 @@
     {
       "code": -2,
       "column": 37,
-      "concise_description": "Type var tuple `?_TypeVarTuple` must be unpacked",
-      "description": "Type var tuple `?_TypeVarTuple` must be unpacked",
+      "concise_description": "TypeVarTuple must be unpacked",
+      "description": "TypeVarTuple must be unpacked",
       "line": 53,
       "name": "PyreError",
       "stop_column": 42,
@@ -8275,8 +8275,8 @@
     {
       "code": -2,
       "column": 34,
-      "concise_description": "Type var tuple `?_TypeVarTuple` must be unpacked",
-      "description": "Type var tuple `?_TypeVarTuple` must be unpacked",
+      "concise_description": "TypeVarTuple must be unpacked",
+      "description": "TypeVarTuple must be unpacked",
       "line": 56,
       "name": "PyreError",
       "stop_column": 39,
