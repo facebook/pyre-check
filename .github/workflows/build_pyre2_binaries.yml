@@ -4,12 +4,44 @@ on:
 env:
   PYTHON_VERSION: "3.12"
 jobs:
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        platform:
+          - target: x86_64-pc-windows-msvc
+            arch: x64
+          - target: i686-pc-windows-msvc
+            arch: x86
+          - target: aarch64-pc-windows-msvc
+            arch: x64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          architecture: ${{ matrix.platform.arch }}
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist
+          working-directory: pyre2/pyre2
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.platform.target }}
+          path: pyre2/pyre2/dist
   linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         target:
           - x86_64-unknown-linux-gnu
+          - i686-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v4
         with:
