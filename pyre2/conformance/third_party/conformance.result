@@ -207,8 +207,7 @@
     "Line 79: Expected 1 errors",
     "Line 84: Expected 1 errors",
     "Line 89: Expected 1 errors",
-    "Lines 56, 65: Expected error (tag 'method4')",
-    "Line 101: Unexpected errors ['Class member `method1` is marked as an override, but no parent class has a matching attribute']"
+    "Lines 56, 65: Expected error (tag 'method4')"
   ],
   "constructors_call_init.py": [
     "Line 42: Expected 1 errors",

@@ -6,10 +6,8 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
-testcase_with_bug!(
-    "todo: parent can derive from Any",
+testcase!(
     test_override_any,
     r#"
 from typing import override, Any
@@ -20,7 +18,7 @@ class ParentB(Any):
 
 class ChildB(ParentB):
     @override
-    def method1(self) -> None:  # E: Class member `method1` is marked as an override, but no parent class has a matching attribute
+    def method1(self) -> None:
         pass        
  "#,
 );

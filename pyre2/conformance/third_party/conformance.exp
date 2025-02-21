@@ -2453,16 +2453,6 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 53
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Class member `method1` is marked as an override, but no parent class has a matching attribute",
-      "description": "Class member `method1` is marked as an override, but no parent class has a matching attribute",
-      "line": 101,
-      "name": "PyreError",
-      "stop_column": 16,
-      "stop_line": 101
     }
   ],
   "constructors_call_init.py": [

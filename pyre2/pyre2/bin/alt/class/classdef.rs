@@ -673,8 +673,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let parents = metadata.bases_with_metadata();
 
             let mut parent_attr_found = false;
+            let mut parent_has_any = false;
 
             for (parent, parent_metadata) in parents {
+                parent_has_any = parent_has_any || parent_metadata.has_base_any();
+
                 // todo zeina: skip dataclasses. Look into them next.
                 if metadata.dataclass_metadata().is_some()
                     || parent_metadata.dataclass_metadata().is_some()
@@ -702,7 +705,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
             }
-            if is_override && !parent_attr_found {
+            if is_override && !parent_attr_found && !parent_has_any {
                 self.error(
                     errors,
                     range,

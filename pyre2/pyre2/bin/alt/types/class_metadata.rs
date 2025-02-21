@@ -105,6 +105,10 @@ impl ClassMetadata {
         self.typed_dict_metadata.is_some()
     }
 
+    pub fn has_base_any(&self) -> bool {
+        self.has_base_any
+    }
+
     pub fn typed_dict_metadata(&self) -> Option<&TypedDictMetadata> {
         self.typed_dict_metadata.as_ref()
     }
