@@ -451,10 +451,8 @@
     "Line 128: Unexpected errors ['Could not find name `reveal_type`', 'revealed type: int']"
   ],
   "exceptions_context_managers.py": [
-    "Line 64: Unexpected errors ['assert_type(int | str, str) failed']",
-    "Line 71: Unexpected errors ['assert_type(int | str, str) failed']",
-    "Line 78: Unexpected errors ['assert_type(int | str, str) failed']",
-    "Line 85: Unexpected errors ['assert_type(int | str, str) failed']"
+    "Line 50: Unexpected errors ['assert_type(str, int | str) failed']",
+    "Line 57: Unexpected errors ['assert_type(str, int | str) failed']"
   ],
   "generics_base_class.py": [
     "Line 30: Expected 1 errors",

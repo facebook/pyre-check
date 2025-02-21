@@ -3,7 +3,7 @@
   "pass": 15,
   "fail": 118,
   "pass_rate": 0.11,
-  "differences": 866,
+  "differences": 864,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -67,7 +67,7 @@
     "enums_behaviors.py": 5,
     "enums_member_values.py": 1,
     "enums_members.py": 9,
-    "exceptions_context_managers.py": 4,
+    "exceptions_context_managers.py": 2,
     "generics_base_class.py": 2,
     "generics_basic.py": 7,
     "generics_defaults.py": 17,

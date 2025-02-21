@@ -590,14 +590,13 @@ def g(x: int | str):
     "#,
 );
 
-testcase_with_bug!(
-    "Merged flow env should be narrowed when branches exit",
-    test_control_flow,
+testcase!(
+    test_implicit_else,
     r#"
 from typing import assert_type
 def f(x: int | None):
     if not x:
         return
-    assert_type(x, int) # E: assert_type(int | None, int)
+    assert_type(x, int)
     "#,
 );

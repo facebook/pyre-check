@@ -270,6 +270,7 @@ impl<'a> BindingsBuilder<'a> {
                 // x is bound to Narrow(x, Is(None)) in the if branch, and the negation, Narrow(x, IsNot(None)),
                 // is carried over to the else branch.
                 let mut negated_prev_ops = NarrowOps::new();
+                let mut implicit_else = true;
                 for (test, body) in Ast::if_branches_owned(x) {
                     let b = self.config.evaluate_bool_opt(test.as_ref());
                     if b == Some(false) {
@@ -281,6 +282,8 @@ impl<'a> BindingsBuilder<'a> {
                         self.ensure_expr(&e);
                         self.table
                             .insert(Key::Anon(e.range()), Binding::Expr(None, e));
+                    } else {
+                        implicit_else = false;
                     }
                     if let Some(stmt) = body.first() {
                         let use_range = stmt.range();
@@ -295,6 +298,13 @@ impl<'a> BindingsBuilder<'a> {
                         exhaustive = true;
                         break; // We picked this branch, none others stand a chance
                     }
+                }
+                if implicit_else {
+                    // If there is no explicit else branch, we still want to merge the negated ops
+                    // from the previous branches into the flow env.
+                    // Note, using the range of the entire if statement for the key, just to
+                    // make the keys unique in the bindings table.
+                    self.bind_narrow_ops(&negated_prev_ops, range);
                 }
                 if !exhaustive {
                     branches.push(mem::take(&mut self.scopes.current_mut().flow));

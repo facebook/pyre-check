@@ -5881,42 +5881,22 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(int | str, str) failed",
-      "description": "assert_type(int | str, str) failed",
-      "line": 64,
+      "concise_description": "assert_type(str, int | str) failed",
+      "description": "assert_type(str, int | str) failed",
+      "line": 50,
       "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 64
+      "stop_column": 30,
+      "stop_line": 50
     },
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(int | str, str) failed",
-      "description": "assert_type(int | str, str) failed",
-      "line": 71,
+      "concise_description": "assert_type(str, int | str) failed",
+      "description": "assert_type(str, int | str) failed",
+      "line": 57,
       "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 71
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(int | str, str) failed",
-      "description": "assert_type(int | str, str) failed",
-      "line": 78,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 78
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(int | str, str) failed",
-      "description": "assert_type(int | str, str) failed",
-      "line": 85,
-      "name": "PyreError",
-      "stop_column": 24,
-      "stop_line": 85
+      "stop_column": 30,
+      "stop_line": 57
     }
   ],
   "generics_base_class.py": [
