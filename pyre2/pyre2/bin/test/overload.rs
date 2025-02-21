@@ -173,3 +173,22 @@ class P(Protocol):
     def m(x: int) -> int: ...  # E: Overloaded function needs at least two signatures
 "#,
 );
+
+testcase_with_bug!(
+    "Ignore comment messes with overload selection",
+    test_overload_ignore,
+    r#"
+from typing import Never, overload, assert_type
+
+@overload
+def f(x: int) -> int: ...
+@overload
+def f(x: str) -> str: ...
+def f(x: int | str) -> int | str:
+    return x
+
+x = f("foo") # type: ignore
+# intentionally blank: make sure we don't ignore the assert_type below
+assert_type(x, str) # E: assert_type(int, str) failed
+"#,
+);
