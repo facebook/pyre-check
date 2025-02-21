@@ -23,28 +23,6 @@
   },
   {
     "code": 5008,
-    "column": 37,
-    "define": "flask.app.Flask.full_dispatch_request",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [XSS] sink(s)",
-    "line": 1487,
-    "name": "XSS",
-    "path": "*",
-    "stop_column": 39,
-    "stop_line": 1487
-  },
-  {
-    "code": 5008,
-    "column": 48,
-    "define": "flask.app.Flask.process_response",
-    "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [XSS] sink(s)",
-    "line": 2005,
-    "name": "XSS",
-    "path": "*",
-    "stop_column": 52,
-    "stop_line": 2005
-  },
-  {
-    "code": 5008,
     "column": 16,
     "define": "flask.app.Flask.wsgi_app",
     "description": "XSS [5008]: Data from [UserControlled] source(s) may reach [XSS] sink(s)",
@@ -108,28 +86,6 @@
     "path": "*",
     "stop_column": 39,
     "stop_line": 1487
-  },
-  {
-    "code": 5015,
-    "column": 37,
-    "define": "flask.app.Flask.full_dispatch_request",
-    "description": "User input returned to user [5015]: Data from [UserControlled] source(s) may reach [ReturnedToUser] sink(s)",
-    "line": 1487,
-    "name": "User input returned to user",
-    "path": "*",
-    "stop_column": 39,
-    "stop_line": 1487
-  },
-  {
-    "code": 5015,
-    "column": 48,
-    "define": "flask.app.Flask.process_response",
-    "description": "User input returned to user [5015]: Data from [UserControlled] source(s) may reach [ReturnedToUser] sink(s)",
-    "line": 2005,
-    "name": "User input returned to user",
-    "path": "*",
-    "stop_column": 52,
-    "stop_line": 2005
   },
   {
     "code": 5015,
@@ -218,28 +174,6 @@
     "path": "*",
     "stop_column": 39,
     "stop_line": 1487
-  },
-  {
-    "code": 5052,
-    "column": 37,
-    "define": "flask.app.Flask.full_dispatch_request",
-    "description": "XSS [5052]: Data from [UserControlled] source(s) may reach [PartialSink[UserControlledAndStringMayBeHTML[uc]]] sink(s)",
-    "line": 1487,
-    "name": "XSS",
-    "path": "*",
-    "stop_column": 39,
-    "stop_line": 1487
-  },
-  {
-    "code": 5052,
-    "column": 48,
-    "define": "flask.app.Flask.process_response",
-    "description": "XSS [5052]: Data from [UserControlled] source(s) may reach [PartialSink[UserControlledAndStringMayBeHTML[uc]]] sink(s)",
-    "line": 2005,
-    "name": "XSS",
-    "path": "*",
-    "stop_column": 52,
-    "stop_line": 2005
   },
   {
     "code": 5053,
