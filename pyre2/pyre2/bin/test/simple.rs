@@ -652,6 +652,15 @@ z: int = "3"  # E: Literal['3'] <: int
 );
 
 testcase_with_bug!(
+    "An ignore comment should attach to either the current line or next line, but not both",
+    test_ignore_attachment,
+    r#"
+x: int = "1"  # type: ignore
+y: int = "2"  # TODO: this error should not be suppressed
+"#,
+);
+
+testcase_with_bug!(
     "This test is a placeholder, we've commented out the check for missing type arguments because until we have configurable errors it causes too many problems.",
     test_untype_with_missing_targs,
     r#"
