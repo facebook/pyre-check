@@ -250,14 +250,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if allow_none && actual_type.is_none() {
             return;
         }
-        let expected_types = if let base_exception_type @ Type::ClassType(c) =
-            &self.stdlib.base_exception().to_type()
-        {
-            let base_exception_class_type = Type::ClassDef(c.class_object().dupe());
-            vec![base_exception_type.clone(), base_exception_class_type]
-        } else {
-            unreachable!("The stdlib base exception type should be a ClassInstance")
-        };
+        let base_exception_class = self.stdlib.base_exception();
+        let base_exception_class_type = Type::ClassDef(base_exception_class.class_object().dupe());
+        let base_exception_type = base_exception_class.to_type();
+        let expected_types = vec![base_exception_type, base_exception_class_type];
         if !self.solver().is_subset_eq(
             &actual_type,
             &Type::Union(expected_types),
