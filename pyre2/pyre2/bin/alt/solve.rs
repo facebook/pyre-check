@@ -682,75 +682,78 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()), errors)
             }
-            Binding::ReturnTypeAnnotated(x) => {
-                let ty = self.get_idx(x.annot).get_type().clone();
+            Binding::ReturnType(x) => {
+                let is_generator = !x.yields.is_empty();
                 let implicit_return = self.get_idx(x.implicit_return);
-                if x.is_async && x.is_generator {
-                    if self.decompose_async_generator(&ty).is_none() {
-                        self.error(
-                            errors,
-                            x.range,
-                            "Async generator function should return `AsyncGenerator`".to_owned(),
-                        );
-                    }
-                } else if x.is_generator {
-                    if let Some((_, _, return_ty)) = self.decompose_generator(&ty) {
-                        self.check_type(&return_ty, &implicit_return, x.range, errors);
+                if let Some((range, annot)) = &x.annot {
+                    // TODO: A return type annotation like `Final` is invalid in this context.
+                    // It will result in an implicit Any type, which is reasonable, but we should
+                    // at least error here.
+                    let ty = self.get_idx(*annot).get_type().clone();
+                    if x.is_async && is_generator {
+                        if self.decompose_async_generator(&ty).is_none() {
+                            self.error(
+                                errors,
+                                *range,
+                                "Async generator function should return `AsyncGenerator`"
+                                    .to_owned(),
+                            );
+                        }
+                    } else if is_generator {
+                        if let Some((_, _, return_ty)) = self.decompose_generator(&ty) {
+                            self.check_type(&return_ty, &implicit_return, *range, errors);
+                        } else {
+                            self.error(
+                                errors,
+                                *range,
+                                "Generator function should return `Generator`".to_owned(),
+                            );
+                        }
                     } else {
-                        self.error(
-                            errors,
-                            x.range,
-                            "Generator function should return `Generator`".to_owned(),
-                        );
+                        self.check_type(&ty, &implicit_return, *range, errors);
                     }
+                    ty
                 } else {
-                    self.check_type(&ty, &implicit_return, x.range, errors);
-                }
-                ty
-            }
-            Binding::ReturnTypeInferred(x) => {
-                let returns = x.returns.iter().map(|k| self.get_idx(*k).arc_clone());
-                let implicit_return = self.get_idx(x.implicit_return);
-                // TODO: It should always be a no-op to include a `Type::Never` in unions, but
-                // `simple::test_solver_variables` fails if we do, because `solver::unions` does
-                // `is_subset_eq` to force free variables, causing them to be equated to
-                // `Type::Never` instead of becoming `Type::Any`.
-                let return_ty = if implicit_return.is_never() {
-                    self.unions(returns.collect())
-                } else {
-                    self.unions(
-                        returns
-                            .chain(std::iter::once(implicit_return.arc_clone()))
-                            .collect(),
-                    )
-                };
-                if x.yields.is_empty() {
-                    if x.is_async {
+                    let returns = x.returns.iter().map(|k| self.get_idx(*k).arc_clone());
+                    // TODO: It should always be a no-op to include a `Type::Never` in unions, but
+                    // `simple::test_solver_variables` fails if we do, because `solver::unions` does
+                    // `is_subset_eq` to force free variables, causing them to be equated to
+                    // `Type::Never` instead of becoming `Type::Any`.
+                    let return_ty = if implicit_return.is_never() {
+                        self.unions(returns.collect())
+                    } else {
+                        self.unions(
+                            returns
+                                .chain(std::iter::once(implicit_return.arc_clone()))
+                                .collect(),
+                        )
+                    };
+                    if is_generator {
+                        let yield_ty = self.unions(
+                            x.yields
+                                .iter()
+                                .map(|x| match x {
+                                    Either::Left(k) => self.get_idx(*k).yield_ty.clone(),
+                                    Either::Right(k) => self.get_idx(*k).yield_ty.clone(),
+                                })
+                                .collect(),
+                        );
+                        if x.is_async {
+                            self.stdlib
+                                .async_generator(yield_ty, Type::any_implicit())
+                                .to_type()
+                        } else {
+                            self.stdlib
+                                .generator(yield_ty, Type::any_implicit(), return_ty)
+                                .to_type()
+                        }
+                    } else if x.is_async {
                         // TODO: Use the more precise `types.CoroutineType` instead.
                         self.stdlib
                             .coroutine(Type::any_implicit(), Type::any_implicit(), return_ty)
                             .to_type()
                     } else {
                         return_ty
-                    }
-                } else {
-                    let yield_ty = self.unions(
-                        x.yields
-                            .iter()
-                            .map(|x| match x {
-                                Either::Left(k) => self.get_idx(*k).yield_ty.clone(),
-                                Either::Right(k) => self.get_idx(*k).yield_ty.clone(),
-                            })
-                            .collect(),
-                    );
-                    if x.is_async {
-                        self.stdlib
-                            .async_generator(yield_ty, Type::any_implicit())
-                            .to_type()
-                    } else {
-                        self.stdlib
-                            .generator(yield_ty, Type::any_implicit(), return_ty)
-                            .to_type()
                     }
                 }
             }
@@ -785,8 +788,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // TODO: This is a bit of a hack. We want to implement Pyright's behavior where
                 // stub functions allow any annotation, but we also infer a `Never` return type
                 // instead of `None`. Instead, we should just ignore the implicit return for stub
-                // functions when solving Binding::ReturnTypeAnnotated. Unfortunately, this leads
-                // to another issue (see comment on Binding::ReturnTypeInferred).
+                // functions when solving Binding::ReturnType. Unfortunately, this leads to
+                // another issue (see comment on Binding::ReturnType).
                 if x.function_kind == FunctionKind::Stub
                     || x.last_exprs
                         .as_ref()

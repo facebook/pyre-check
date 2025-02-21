@@ -17,7 +17,6 @@ use ruff_python_ast::StmtFunctionDef;
 use ruff_text_size::Ranged;
 
 use crate::ast::Ast;
-use crate::binding::binding::AnnotatedReturn;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingYield;
@@ -25,13 +24,13 @@ use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::ImplicitReturn;
-use crate::binding::binding::InferredReturn;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyFunction;
 use crate::binding::binding::KeyYield;
 use crate::binding::binding::KeyYieldFrom;
 use crate::binding::binding::ReturnExplicit;
+use crate::binding::binding::ReturnType;
 use crate::binding::bindings::BindingsBuilder;
 use crate::binding::bindings::FuncInfo;
 use crate::binding::bindings::LegacyTParamBuilder;
@@ -251,24 +250,15 @@ impl<'a> BindingsBuilder<'a> {
             })
             .into_boxed_slice();
 
-        let return_type = match return_ann_range {
-            Some((range, annot)) => Binding::ReturnTypeAnnotated(AnnotatedReturn {
-                annot,
-                range,
-                implicit_return,
-                is_generator: !yield_keys.is_empty(),
-                is_async: x.is_async,
-            }),
-            None => Binding::ReturnTypeInferred(InferredReturn {
+        self.table.insert(
+            Key::ReturnType(ShortIdentifier::new(&func_name)),
+            Binding::ReturnType(ReturnType {
+                annot: return_ann_range,
                 returns: return_keys,
                 implicit_return,
                 yields: yield_keys,
                 is_async: x.is_async,
             }),
-        };
-        self.table.insert(
-            Key::ReturnType(ShortIdentifier::new(&func_name)),
-            return_type,
         );
 
         let function_idx = self.table.insert(

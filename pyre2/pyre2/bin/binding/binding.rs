@@ -580,17 +580,9 @@ pub struct ReturnExplicit {
 }
 
 #[derive(Clone, Debug)]
-pub struct AnnotatedReturn {
-    pub annot: Idx<KeyAnnotation>,
-    /// The range of the return annotation.
-    pub range: TextRange,
-    pub implicit_return: Idx<Key>,
-    pub is_generator: bool,
-    pub is_async: bool,
-}
-
-#[derive(Clone, Debug)]
-pub struct InferredReturn {
+pub struct ReturnType {
+    /// The annotation for the return type.
+    pub annot: Option<(TextRange, Idx<KeyAnnotation>)>,
     /// The returns from the function.
     pub returns: Box<[Idx<Key>]>,
     pub implicit_return: Idx<Key>,
@@ -622,10 +614,8 @@ pub enum Binding {
     ReturnExplicit(ReturnExplicit),
     /// The implicit return from a function.
     ReturnImplicit(ImplicitReturn),
-    /// The annotated return type of a function.
-    ReturnTypeAnnotated(AnnotatedReturn),
-    /// The inferred return type of a function.
-    ReturnTypeInferred(InferredReturn),
+    /// The return type of a function.
+    ReturnType(ReturnType),
     /// A value in an iterable expression, e.g. IterableValue(\[1\]) represents 1.
     IterableValue(Option<Idx<KeyAnnotation>>, Expr),
     /// A value produced by entering a context manager.
@@ -729,8 +719,7 @@ impl DisplayWith<Bindings> for Binding {
                 }
             }
             Self::ReturnImplicit(_) => write!(f, "implicit return"),
-            Self::ReturnTypeAnnotated(_) => write!(f, "annotated return type"),
-            Self::ReturnTypeInferred(_) => write!(f, "inferred return type"),
+            Self::ReturnType(_) => write!(f, "return type"),
             Self::IterableValue(None, x) => write!(f, "iter {}", m.display(x)),
             Self::IterableValue(Some(k), x) => {
                 write!(f, "iter {}: {}", ctx.display(*k), m.display(x))
