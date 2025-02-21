@@ -1,8 +1,14 @@
 name: Build binaries
+
 on:
+  push:
+    paths:
+      - .github/workflows/build_pyre2_binaries.yml
   workflow_dispatch:
+
 env:
   PYTHON_VERSION: "3.12"
+
 jobs:
   windows:
     runs-on: windows-latest
@@ -35,6 +41,7 @@ jobs:
         with:
           name: wheels-${{ matrix.platform.target }}
           path: pyre2/pyre2/dist
+
   linux:
     runs-on: ubuntu-latest
     strategy:
@@ -51,14 +58,14 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           architecture: x64
-      - name: "Build wheels"
+      - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
           manylinux: auto
           args: --release --out dist
           working-directory: pyre2/pyre2
-      - name: "Upload wheels"
+      - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.target }}
