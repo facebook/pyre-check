@@ -144,13 +144,7 @@
   ],
   "annotations_methods.py": [
     "Line 19: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
-    "Line 23: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
-    "Line 31: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: type[@_]']",
-    "Line 36: Unexpected errors ['assert_type(Any, B) failed', 'EXPECTED type[B] <: type[@_]']",
-    "Line 48: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: type[@_]']",
-    "Line 49: Unexpected errors ['assert_type(Any, B) failed', 'EXPECTED type[B] <: type[@_]']",
-    "Line 50: Unexpected errors ['assert_type(Any, B) failed', 'EXPECTED type[B] <: type[@_]']",
-    "Line 51: Unexpected errors ['assert_type(Any, A) failed', 'EXPECTED type[A] <: type[@_]']"
+    "Line 23: Unexpected errors ['Expected a callable, got type[?_TypeVar]']"
   ],
   "annotations_typeexpr.py": [
     "Line 93: Expected 1 errors",
@@ -837,7 +831,6 @@
     "Line 102: Expected 1 errors",
     "Line 107: Expected 1 errors",
     "Line 17: Unexpected errors ['assert_type(tuple[?_TypeVar, ?_TypeVar], tuple[str, str]) failed']",
-    "Line 31: Unexpected errors ['EXPECTED type[int] <: type[@_]']",
     "Line 32: Unexpected errors ['assert_type(set[?_TypeVar], set[int]) failed']",
     "Line 72: Unexpected errors ['EXPECTED type[A] <: A']",
     "Line 76: Unexpected errors ['EXPECTED type[A] <: A']",
@@ -884,9 +877,7 @@
     "Line 104: Expected 1 errors",
     "Line 106: Expected 1 errors",
     "Line 107: Expected 1 errors",
-    "Line 108: Expected 1 errors",
-    "Line 30: Unexpected errors ['EXPECTED type[Concrete] <: type[Proto]']",
-    "Line 35: Unexpected errors ['EXPECTED type[Concrete] <: type[Proto]']"
+    "Line 108: Expected 1 errors"
   ],
   "protocols_definition.py": [
     "Line 117: Expected 1 errors",
@@ -956,6 +947,7 @@
     "Line 64: Expected 1 errors",
     "Line 76: Expected 1 errors",
     "Line 77: Expected 1 errors",
+    "Line 84: Expected 1 errors",
     "Line 85: Expected 1 errors",
     "Line 92: Expected 1 errors",
     "Line 93: Expected 1 errors",
@@ -1015,12 +1007,7 @@
   "specialtypes_type.py": [
     "Line 70: Expected 1 errors",
     "Line 39: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
-    "Line 44: Unexpected errors ['assert_type(Any, TeamUser) failed', 'EXPECTED type[TeamUser] <: type[@_]']",
     "Line 51: Unexpected errors ['Expected a callable, got type[BasicUser | ProUser]']",
-    "Line 54: Unexpected errors ['EXPECTED type[BasicUser] <: type[BasicUser | ProUser]']",
-    "Line 55: Unexpected errors ['EXPECTED type[ProUser] <: type[BasicUser | ProUser]']",
-    "Line 68: Unexpected errors ['EXPECTED type[User] <: type[@_]']",
-    "Line 69: Unexpected errors ['EXPECTED type[tuple] <: type[@_]']",
     "Line 84: Unexpected errors ['assert_type(type, type[Any]) failed']",
     "Line 99: Unexpected errors ['Object of class `type` has no attribute `unknown`']",
     "Line 100: Unexpected errors ['Object of class `type` has no attribute `unknown`']",

@@ -473,7 +473,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // Placeholder for strict mode: we want to force callers to pass a range so
         // that we don't refactor in a way where none is available, but this is unused
         // because we do not have a strict mode yet.
-        _range: Option<TextRange>,
+        range: Option<TextRange>,
     ) -> TArgs {
         let tparams = cls.tparams();
         if tparams.is_empty() {
@@ -485,7 +485,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             //
             // Our plumbing isn't ready for that yet, so for now we are silently
             // using gradual type arguments.
-            TArgs::new(vec![Type::any_error(); tparams.len()])
+            let any = match range {
+                None => Type::any_implicit(),
+                Some(_) => Type::any_error(),
+            };
+            TArgs::new(vec![any; tparams.len()])
         }
     }
 
@@ -525,9 +529,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.type_of_instance(cls, targs)
     }
 
-    /// Private version of `promote` that does not potentially
-    /// raise strict mode errors. Should only be used for unusual scenarios.
-    fn promote_silently(&self, cls: &Class) -> Type {
+    /// Version of `promote` that does not potentially raise errors.
+    /// Should only be used for unusual scenarios.
+    pub fn promote_silently(&self, cls: &Class) -> Type {
         let targs = self.create_default_targs(cls, None);
         self.type_of_instance(cls, targs)
     }

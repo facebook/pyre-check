@@ -86,4 +86,8 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
     pub fn named_tuple_element_types(self, cls: &ClassType) -> Option<Vec<Type>> {
         self.0.named_tuple_element_types(cls)
     }
+
+    pub fn promote_silently(self, cls: &Class) -> Type {
+        self.0.promote_silently(cls)
+    }
 }

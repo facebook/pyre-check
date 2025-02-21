@@ -1343,132 +1343,12 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, A) failed",
-      "description": "assert_type(Any, A) failed",
-      "line": 31,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED type[A] <: type[@_]",
-      "description": "EXPECTED type[A] <: type[@_]",
-      "line": 31,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, B) failed",
-      "description": "assert_type(Any, B) failed",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "EXPECTED type[B] <: type[@_]",
-      "description": "EXPECTED type[B] <: type[@_]",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 22,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 1,
       "concise_description": "assert_type(B, A) failed",
       "description": "assert_type(B, A) failed",
       "line": 42,
       "name": "PyreError",
       "stop_column": 28,
       "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, A) failed",
-      "description": "assert_type(Any, A) failed",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED type[A] <: type[@_]",
-      "description": "EXPECTED type[A] <: type[@_]",
-      "line": 48,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, B) failed",
-      "description": "assert_type(Any, B) failed",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED type[B] <: type[@_]",
-      "description": "EXPECTED type[B] <: type[@_]",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, B) failed",
-      "description": "assert_type(Any, B) failed",
-      "line": 50,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 50
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED type[B] <: type[@_]",
-      "description": "EXPECTED type[B] <: type[@_]",
-      "line": 50,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 50
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, A) failed",
-      "description": "assert_type(Any, A) failed",
-      "line": 51,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 51
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "EXPECTED type[A] <: type[@_]",
-      "description": "EXPECTED type[A] <: type[@_]",
-      "line": 51,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 51
     }
   ],
   "annotations_typeexpr.py": [
@@ -11339,16 +11219,6 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "EXPECTED type[int] <: type[@_]",
-      "description": "EXPECTED type[int] <: type[@_]",
-      "line": 31,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "assert_type(set[?_TypeVar], set[int]) failed",
       "description": "assert_type(set[?_TypeVar], set[int]) failed",
@@ -11773,26 +11643,6 @@
     }
   ],
   "protocols_class_objects.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "EXPECTED type[Concrete] <: type[Proto]",
-      "description": "EXPECTED type[Concrete] <: type[Proto]",
-      "line": 30,
-      "name": "PyreError",
-      "stop_column": 13,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED type[Concrete] <: type[Proto]",
-      "description": "EXPECTED type[Concrete] <: type[Proto]",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 35
-    },
     {
       "code": -2,
       "column": 16,
@@ -12485,16 +12335,6 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED type[str] <: type[@_]",
-      "description": "EXPECTED type[str] <: type[@_]",
-      "line": 84,
-      "name": "PyreError",
-      "stop_column": 25,
-      "stop_line": 84
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Expected a callable, got type[Annotated]",
       "description": "Expected a callable, got type[Annotated]",
@@ -12829,26 +12669,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, TeamUser) failed",
-      "description": "assert_type(Any, TeamUser) failed",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED type[TeamUser] <: type[@_]",
-      "description": "EXPECTED type[TeamUser] <: type[@_]",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
       "column": 12,
       "concise_description": "Expected a callable, got type[BasicUser | ProUser]",
       "description": "Expected a callable, got type[BasicUser | ProUser]",
@@ -12859,26 +12679,6 @@
     },
     {
       "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED type[BasicUser] <: type[BasicUser | ProUser]",
-      "description": "EXPECTED type[BasicUser] <: type[BasicUser | ProUser]",
-      "line": 54,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 54
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED type[ProUser] <: type[BasicUser | ProUser]",
-      "description": "EXPECTED type[ProUser] <: type[BasicUser | ProUser]",
-      "line": 55,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 55
-    },
-    {
-      "code": -2,
       "column": 7,
       "concise_description": "EXPECTED type[TeamUser] <: type[BasicUser | ProUser]",
       "description": "EXPECTED type[TeamUser] <: type[BasicUser | ProUser]",
@@ -12886,26 +12686,6 @@
       "name": "PyreError",
       "stop_column": 15,
       "stop_line": 56
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED type[User] <: type[@_]",
-      "description": "EXPECTED type[User] <: type[@_]",
-      "line": 68,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 68
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "EXPECTED type[tuple] <: type[@_]",
-      "description": "EXPECTED type[tuple] <: type[@_]",
-      "line": 69,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 69
     },
     {
       "code": -2,

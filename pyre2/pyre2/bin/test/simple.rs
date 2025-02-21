@@ -104,6 +104,24 @@ append(v, "test")  # E: Literal['test'] <: int
 );
 
 testcase!(
+    test_generic_type,
+    r#"
+from typing import reveal_type
+class A: ...
+class B: ...
+class C[T]: ...
+def f[E](e: type[E]) -> E: ...
+reveal_type(f(A)) # E: revealed type: A
+reveal_type(f(B)) # E: revealed type: B
+reveal_type(f(C)) # E: revealed type: C[Unknown]
+
+# TODO: type parameters defaults are crashing the checker
+# class D[T = A]: ...
+# reveal_type(f(D)) # TODO: revealed type: D[A]
+"#,
+);
+
+testcase!(
     test_list_class_basic,
     r#"
 from typing import assert_type

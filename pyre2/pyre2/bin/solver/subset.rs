@@ -512,8 +512,8 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (Type::ClassDef(got), Type::ClassDef(want)) => {
                 self.type_order.has_superclass(got, want)
             }
-            (Type::ClassDef(got), Type::Type(box Type::ClassType(want))) => {
-                self.type_order.has_superclass(got, want.class_object())
+            (Type::ClassDef(got), Type::Type(want)) => {
+                self.is_subset_eq(&self.type_order.promote_silently(got), want)
             }
             (Type::Type(box Type::ClassType(got)), Type::ClassDef(want)) => {
                 self.type_order.has_superclass(got.class_object(), want)
@@ -524,8 +524,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (Type::Type(box Type::ClassType(got)), Type::ClassType(want)) => {
                 self.type_order.has_metaclass(got.class_object(), want)
             }
-            (Type::ClassDef(_), Type::Type(box Type::Any(_)))
-            | (Type::Type(box Type::Any(_)), Type::ClassDef(_)) => true,
+            (Type::Type(box Type::Any(_)), Type::ClassDef(_)) => true,
             (Type::ClassType(cls), want @ Type::Tuple(_))
                 if let Some(elts) = self.type_order.named_tuple_element_types(cls) =>
             {
