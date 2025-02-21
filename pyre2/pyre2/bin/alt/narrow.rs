@@ -151,7 +151,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             Type::None | Type::Literal(Lit::Bool(_)) | Type::Literal(Lit::Enum(_)),
                         ) if *t == right => Type::never(),
                         (Type::ClassType(cls), Type::Literal(Lit::Bool(b)))
-                            if *cls == self.stdlib.bool() =>
+                            if cls.class_object().has_qname("builtins", "bool") =>
                         {
                             Type::Literal(Lit::Bool(!b))
                         }
@@ -227,7 +227,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let boolval = matches!(op, NarrowOp::Truthy);
                 if t.as_bool() == Some(!boolval) {
                     Type::never()
-                } else if matches!(t, Type::ClassType(cls) if *cls == self.stdlib.bool()) {
+                } else if matches!(t, Type::ClassType(cls) if cls.class_object().has_qname("builtins", "bool")) {
                     Type::Literal(Lit::Bool(boolval))
                 } else {
                     t.clone()
@@ -247,7 +247,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.distribute_over_union(ty, |t| match (t, &right) {
                         (_, _) if *t == right => Type::never(),
                         (Type::ClassType(cls), Type::Literal(Lit::Bool(b)))
-                            if *cls == self.stdlib.bool() =>
+                            if cls.class_object().has_qname("builtins", "bool") =>
                         {
                             Type::Literal(Lit::Bool(!b))
                         }

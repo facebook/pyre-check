@@ -921,7 +921,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     format!("Expected {}, got {}", field.ty, value_ty),
                                 )
                             } else {
-                                Type::ClassType(self.stdlib.none_type())
+                                Type::None
                             }
                         } else {
                             self.error(
