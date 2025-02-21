@@ -969,6 +969,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Name(x) => match x.id.as_str() {
                 "" => Type::any_error(), // Must already have a parse error
+                // TODO(stroxler): The handling of `typing.Any` should use proper name resolution.
                 "Any" => Type::type_form(Type::any_explicit()),
                 _ => self
                     .get(&Key::Usage(ShortIdentifier::expr_name(x)))
