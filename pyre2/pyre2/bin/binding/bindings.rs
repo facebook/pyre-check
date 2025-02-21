@@ -494,6 +494,9 @@ impl<'a> BindingsBuilder<'a> {
                     if let Some(bound) = &mut x.bound {
                         self.ensure_type(bound, &mut None);
                     }
+                    if let Some(default) = &mut x.default {
+                        self.ensure_type(default, &mut None);
+                    }
                     Quantified::type_var(self.uniques)
                 }
                 TypeParam::ParamSpec(_) => Quantified::param_spec(self.uniques),
