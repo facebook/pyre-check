@@ -193,3 +193,15 @@ class E[T](Enum):  # E: Enums may not be generic
 assert_type(E.X, Literal[E.X])
     "#,
 );
+
+testcase!(
+    test_enum_name,
+    r#"
+from typing import assert_type, Literal
+from enum import Enum
+class E(Enum):
+    X = 1
+# Even though a generic enum is an error, we still want to handle it gracefully.
+assert_type(E.X._name_, Literal["X"])
+    "#,
+);
