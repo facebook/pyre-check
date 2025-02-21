@@ -721,10 +721,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::ClassType(class_type) => Some(class_type),
             _ => None,
         };
-
         if let Some(class_type) = class_type {
             let got = class_field.clone().as_instance_attribute(&class_type);
-
             let metadata = self.get_metadata_for_class(class);
             let parents = metadata.bases_with_metadata();
 
@@ -734,11 +732,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             for (parent, parent_metadata) in parents {
                 parent_has_any = parent_has_any || parent_metadata.has_base_any();
 
-                // todo zeina: skip dataclasses. Look into them next.
-                if metadata.dataclass_metadata().is_some()
-                    || parent_metadata.dataclass_metadata().is_some()
-                    || (name.starts_with('_') && name.ends_with('_'))
-                {
+                // todo zeina: skip private properties and dunder methods for now. This will need some special casing.
+                if name.starts_with('_') && name.ends_with('_') {
                     continue;
                 }
 

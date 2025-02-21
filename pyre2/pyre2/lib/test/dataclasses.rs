@@ -103,7 +103,7 @@ class A:
     y: float
 @dataclasses.dataclass
 class B(A):
-    x: str
+    x: str # E:  Class member `x` overrides parent class `A` in an inconsistent manner
 # Overwriting x doesn't change the param order but does change its type
 B('0', 1.0)  # OK
 B(0, 1.0)  # E: EXPECTED Literal[0] <: str
