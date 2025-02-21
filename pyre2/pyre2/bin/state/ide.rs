@@ -32,7 +32,7 @@ impl State {
     }
 
     fn get_type_from_trace(&self, handle: &Handle, range: TextRange) -> Option<Arc<Type>> {
-        self.get_answers(handle)?.get_trace(range)
+        self.get_answers(handle)?.get_type_trace(range)
     }
 
     fn identifier_at(&self, handle: &Handle, position: TextSize) -> Option<Identifier> {

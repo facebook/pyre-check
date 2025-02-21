@@ -29,6 +29,7 @@ use crate::graph::calculation::Calculation;
 use crate::graph::index::Idx;
 use crate::graph::index_map::IndexMap;
 use crate::module::module_info::ModuleInfo;
+use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::solver::solver::Solver;
 use crate::solver::type_order::TypeOrder;
@@ -49,6 +50,12 @@ use crate::util::uniques::UniqueFactory;
 
 pub const UNKNOWN: Name = Name::new_static("~unknown");
 
+#[derive(Debug, Default)]
+pub struct Traces {
+    types: SmallMap<TextRange, Arc<Type>>,
+    definitions: SmallMap<TextRange, TextRangeWithModuleInfo>,
+}
+
 /// Invariants:
 ///
 /// * Every module name referenced anywhere MUST be present
@@ -60,7 +67,7 @@ pub const UNKNOWN: Name = Name::new_static("~unknown");
 pub struct Answers {
     solver: Solver,
     table: AnswerTable,
-    trace: Option<Mutex<SmallMap<TextRange, Arc<Type>>>>,
+    trace: Option<Mutex<Traces>>,
 }
 
 pub type AnswerEntry<K> =
@@ -190,7 +197,7 @@ impl Answers {
         let mut table = AnswerTable::default();
         table_mut_for_each!(&mut table, |items| presize(items, bindings));
         let trace = if enable_trace {
-            Some(Mutex::new(SmallMap::new()))
+            Some(Mutex::new(Traces::default()))
         } else {
             None
         };
@@ -300,9 +307,16 @@ impl Answers {
         self.table.get::<K>().get(k)?.get()
     }
 
-    pub fn get_trace(&self, range: TextRange) -> Option<Arc<Type>> {
+    pub fn get_type_trace(&self, range: TextRange) -> Option<Arc<Type>> {
         let lock = self.trace.as_ref()?.lock();
-        let ty = lock.get(&range)?.dupe();
+        let ty = lock.types.get(&range)?.dupe();
+        Some(ty)
+    }
+
+    #[expect(dead_code)]
+    pub fn get_definition_trace(&self, range: TextRange) -> Option<TextRangeWithModuleInfo> {
+        let lock = self.trace.as_ref()?.lock();
+        let ty = lock.definitions.get(&range)?.clone();
         Some(ty)
     }
 }
@@ -410,9 +424,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         );
     }
 
-    pub fn record_trace(&self, loc: TextRange, ty: &Type) {
+    pub fn record_type_trace(&self, loc: TextRange, ty: &Type) {
         if let Some(trace) = &self.current.trace {
-            trace.lock().insert(loc, Arc::new(ty.clone()));
+            trace.lock().types.insert(loc, Arc::new(ty.clone()));
+        }
+    }
+
+    #[expect(dead_code)]
+    pub fn record_definition_trace(&self, loc: TextRange, def: &TextRangeWithModuleInfo) {
+        if let Some(trace) = &self.current.trace {
+            trace.lock().definitions.insert(loc, def.clone());
         }
     }
 

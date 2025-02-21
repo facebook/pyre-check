@@ -985,7 +985,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "IPython escapes are not supported".to_owned(),
             ),
         };
-        self.record_trace(x.range(), &ty);
+        self.record_type_trace(x.range(), &ty);
         ty
     }
 
