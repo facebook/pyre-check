@@ -43,6 +43,14 @@ impl<K, V> LockedMap<K, V> {
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.map.len()
+    }
 }
 
 impl<K: Eq + Hash + 'static, V: Dupe + 'static> LockedMap<K, V> {
@@ -95,9 +103,5 @@ impl<K: Eq + Hash + 'static, V: Dupe + 'static> LockedMap<K, V> {
 
     pub fn values(&self) -> impl Iterator<Item = &V> {
         self.map.iter().map(|x| &x.1)
-    }
-
-    pub fn len(&self) -> usize {
-        self.map.len()
     }
 }
