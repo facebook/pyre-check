@@ -859,21 +859,36 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             // This causes us to treat `type[list]` as equivalent to `type[list[Any]]`,
                             // which may or may not be what we want.
                             1 => self.expr_untype(&xs[0], errors),
-                            _ => {
-                                self.error(
-                                    errors,
-                                    x.range,
-                                    format!(
-                                        "Expected 1 type argument for class `type`, got {}",
-                                        xs.len()
-                                    ),
-                                );
-                                Type::any_error()
-                            }
+                            _ => self.error(
+                                errors,
+                                x.range,
+                                format!(
+                                    "Expected 1 type argument for class `type`, got {}",
+                                    xs.len()
+                                ),
+                            ),
                         };
                         // TODO: Validate that `targ` refers to a "valid in-scope class or TypeVar"
                         // (https://typing.readthedocs.io/en/latest/spec/annotations.html#type-and-annotation-expressions)
                         Type::type_form(Type::type_form(targ))
+                    }
+                    // TODO: pyre_extensions.PyreReadOnly is a non-standard type system extension that marks read-only
+                    // objects. We don't support it yet.
+                    Type::ClassDef(cls)
+                        if cls.has_qname("pyre_extensions", "PyreReadOnly")
+                            || cls.has_qname("pyre_extensions", "ReadOnly") =>
+                    {
+                        match xs.len() {
+                            1 => self.expr_infer(&xs[0], errors),
+                            _ => self.error(
+                                errors,
+                                x.range,
+                                format!(
+                                    "Expected 1 type argument for class `PyreReadOnly`, got {}",
+                                    xs.len()
+                                ),
+                            ),
+                        }
                     }
                     Type::ClassDef(cls) => Type::type_form(self.specialize(
                         &cls,

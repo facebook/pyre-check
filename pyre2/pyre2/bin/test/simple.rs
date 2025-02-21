@@ -1058,3 +1058,13 @@ class C:
     x: int = oops  # E: Could not find name `oops`
     "#,
 );
+
+testcase!(
+    test_pyrereadonly,
+    r#"
+from pyre_extensions import PyreReadOnly
+def f(x: PyreReadOnly[str]):
+    pass
+f("test")
+    "#,
+);

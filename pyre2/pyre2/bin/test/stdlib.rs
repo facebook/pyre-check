@@ -308,6 +308,11 @@ class _version_info(tuple[int, int, int, str, int]): ...
 version_info: _version_info
 "#;
 
+static PYRE_EXTENSIONS: &str = r#"
+class PyreReadOnly[T]:
+    pass
+"#;
+
 static STDLIB: &[(&str, &str)] = &[
     ("builtins", BUILTINS),
     ("typing", TYPING),
@@ -315,6 +320,7 @@ static STDLIB: &[(&str, &str)] = &[
     ("enum", ENUM),
     ("dataclasses", DATACLASSES),
     ("sys", SYS),
+    ("pyre_extensions", PYRE_EXTENSIONS),
 ];
 
 pub fn lookup_test_stdlib(module: ModuleName) -> Option<&'static str> {
