@@ -90,6 +90,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             None
         };
+        let mut has_base_any = false;
         let bases_with_metadata = bases
             .iter()
             .filter_map(|x| match x {
@@ -148,6 +149,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             class_metadata,
                         ))
                     }
+                    // todo zeina: Ideally, we can directly add this class to the list of base classes. Revist this when fixing the "Any" representation.  
+                    Type::Any(_) =>  {has_base_any = true; None}
                     _ => None,
                 },
                 BaseClass::TypedDict => {
@@ -248,6 +251,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             enum_metadata,
             protocol_metadata,
             dataclass_metadata,
+            has_base_any,
             errors,
         )
     }

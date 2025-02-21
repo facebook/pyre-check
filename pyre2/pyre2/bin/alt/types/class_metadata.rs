@@ -39,6 +39,7 @@ pub struct ClassMetadata {
     protocol_metadata: Option<ProtocolMetadata>,
     dataclass_metadata: Option<DataclassMetadata>,
     bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
+    has_base_any: bool,
 }
 
 impl Display for ClassMetadata {
@@ -58,6 +59,7 @@ impl ClassMetadata {
         enum_metadata: Option<EnumMetadata>,
         protocol_metadata: Option<ProtocolMetadata>,
         dataclass_metadata: Option<DataclassMetadata>,
+        has_base_any: bool,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         let mro = Mro::new(cls, &bases_with_metadata, errors);
@@ -71,6 +73,7 @@ impl ClassMetadata {
             protocol_metadata,
             dataclass_metadata,
             bases_with_metadata,
+            has_base_any,
         }
     }
 
@@ -85,6 +88,7 @@ impl ClassMetadata {
             protocol_metadata: None,
             dataclass_metadata: None,
             bases_with_metadata: Vec::new(),
+            has_base_any: false,
         }
     }
 
