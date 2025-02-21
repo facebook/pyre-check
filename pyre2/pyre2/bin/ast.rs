@@ -150,9 +150,14 @@ impl Ast {
     }
 
     /// Like `if_branches`, but returns owned values.
-    pub fn if_branches_owned(x: StmtIf) -> impl Iterator<Item = (Option<Expr>, Vec<Stmt>)> {
-        let first = [(Some(*x.test), x.body)].into_iter();
-        let elses = x.elif_else_clauses.into_iter().map(|x| (x.test, x.body));
+    pub fn if_branches_owned(
+        x: StmtIf,
+    ) -> impl Iterator<Item = (TextRange, Option<Expr>, Vec<Stmt>)> {
+        let first = std::iter::once((x.range, Some(*x.test), x.body));
+        let elses = x
+            .elif_else_clauses
+            .into_iter()
+            .map(|x| (x.range, x.test, x.body));
         first.chain(elses)
     }
 

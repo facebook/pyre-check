@@ -13,6 +13,7 @@ use ruff_python_ast::Identifier;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtImportFrom;
 use ruff_text_size::Ranged;
+use ruff_text_size::TextRange;
 
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
@@ -271,11 +272,12 @@ impl<'a> BindingsBuilder<'a> {
                 // is carried over to the else branch.
                 let mut negated_prev_ops = NarrowOps::new();
                 let mut implicit_else = true;
-                for (test, body) in Ast::if_branches_owned(x) {
+                for (range, test, body) in Ast::if_branches_owned(x) {
                     let b = self.config.evaluate_bool_opt(test.as_ref());
                     if b == Some(false) {
                         continue; // We won't pick this branch
                     }
+                    self.bind_narrow_ops(&negated_prev_ops, range);
                     let mut base = self.scopes.current().flow.clone();
                     let new_narrow_ops = NarrowOps::from_expr(test.as_ref());
                     if let Some(e) = test {
@@ -285,11 +287,7 @@ impl<'a> BindingsBuilder<'a> {
                     } else {
                         implicit_else = false;
                     }
-                    if let Some(stmt) = body.first() {
-                        let use_range = stmt.range();
-                        self.bind_narrow_ops(&negated_prev_ops, use_range);
-                        self.bind_narrow_ops(&new_narrow_ops, use_range);
-                    }
+                    self.bind_narrow_ops(&new_narrow_ops, range);
                     negated_prev_ops.and_all(new_narrow_ops.negate());
                     self.stmts(body);
                     mem::swap(&mut self.scopes.current_mut().flow, &mut base);
@@ -302,9 +300,9 @@ impl<'a> BindingsBuilder<'a> {
                 if implicit_else {
                     // If there is no explicit else branch, we still want to merge the negated ops
                     // from the previous branches into the flow env.
-                    // Note, using the range of the entire if statement for the key, just to
-                    // make the keys unique in the bindings table.
-                    self.bind_narrow_ops(&negated_prev_ops, range);
+                    // Note, using a default use_range is OK. The range is only needed to make the
+                    // key distinct from other keys.
+                    self.bind_narrow_ops(&negated_prev_ops, TextRange::default());
                 }
                 if !exhaustive {
                     branches.push(mem::take(&mut self.scopes.current_mut().flow));

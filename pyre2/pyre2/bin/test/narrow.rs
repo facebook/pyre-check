@@ -600,3 +600,14 @@ def f(x: int | None):
     assert_type(x, int)
     "#,
 );
+
+testcase!(
+    test_narrowed_elif_test,
+    r#"
+def f(x: int | None, y: bool):
+    if not x:
+        pass
+    elif x > 42:
+        pass
+"#,
+);
