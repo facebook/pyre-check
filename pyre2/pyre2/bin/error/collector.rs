@@ -93,7 +93,9 @@ impl ErrorCollector {
     }
 
     pub fn extend(&self, other: ErrorCollector) {
-        self.errors.lock().extend(other.errors.into_inner());
+        if self.style != ErrorStyle::Never {
+            self.errors.lock().extend(other.errors.into_inner());
+        }
     }
 
     pub fn add_error(&self, err: Error) {
