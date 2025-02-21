@@ -56,10 +56,6 @@ Call dependencies
     "_test_sink (fun)", "typing.Iterable.__iter__ (method)",
     "typing.Iterator.__next__ (method)"
   ],
-  "higher_order_functions.sink_args (fun)[formal(*args, position=0)=higher_order_functions.Callable.__call__ (method)]": [
-    "_test_sink (fun)", "typing.Iterable.__iter__ (method)",
-    "typing.Iterator.__next__ (method)"
-  ],
   "higher_order_functions.source_through_tito (fun)": [
     "_test_source (fun)",
     "higher_order_functions.apply (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]"
@@ -110,6 +106,7 @@ Call dependencies
     "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]"
   ],
   "higher_order_functions.test_location (fun)": [
-    "higher_order_functions.sink_args (fun)[formal(*args, position=0)=higher_order_functions.Callable.__call__ (method)]"
+    "higher_order_functions.sink_args (fun)",
+    "higher_order_functions.Callable.__call__ (method)"
   ]
 }

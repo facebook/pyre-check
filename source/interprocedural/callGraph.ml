@@ -4326,8 +4326,14 @@ module HigherOrderCallGraph = struct
             |> Target.get_module_and_definition ~pyre_api:Context.pyre_api
             >>= fun (_, { Node.value = define; _ }) -> formal_arguments_from_non_stub_define define
         in
-        let create_parameter_target (parameter_target, (_, argument_matches)) =
+        let create_parameter_target_excluding_args_kwargs (parameter_target, (_, argument_matches)) =
           match argument_matches, parameter_target with
+          | { TaintAccessPath.root = TaintAccessPath.Root.StarParameter _; _ } :: _, _
+          | { TaintAccessPath.root = TaintAccessPath.Root.StarStarParameter _; _ } :: _, _ ->
+              (* TODO(T215864108): Since we do not distinguish paths under the same `Root`, we may
+                 run into conflicts in `of_alist_exn` below, which is avoided by excluding those
+                 cases, such as kwargs and args. *)
+              None
           | { TaintAccessPath.root; _ } :: _, Some parameter_target ->
               Some (root, parameter_target.CallTarget.target)
           | _ -> (* TODO: Consider the remaining `argument_matches`. *) None
@@ -4419,7 +4425,7 @@ module HigherOrderCallGraph = struct
                 formal_arguments
                 >>| TaintAccessPath.match_actuals_to_formals arguments
                 >>| List.zip_exn parameter_targets
-                >>| List.filter_map ~f:create_parameter_target
+                >>| List.filter_map ~f:create_parameter_target_excluding_args_kwargs
                 >>| Target.ParameterMap.of_alist_exn
                 |> Option.value ~default:Target.ParameterMap.empty
                 |> Target.ParameterMap.union

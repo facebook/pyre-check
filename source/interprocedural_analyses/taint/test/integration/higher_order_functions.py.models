@@ -1633,35 +1633,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "higher_order_functions.sink_args[formal(*args, position=0)=higher_order_functions.Callable.__call__]",
-    "sinks": [
-      {
-        "port": "formal(*args, position=0)[*]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 94,
-              "start": 19,
-              "end": 22
-            },
-            "call_site": "94:8-94:23"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "higher_order_functions.source_through_tito",
     "filename": "higher_order_functions.py",
     "callable_line": 68,
@@ -1966,9 +1937,7 @@
                 "start": 20,
                 "end": 21
               },
-              "resolves_to": [
-                "higher_order_functions.sink_args[formal(*args, position=0)=higher_order_functions.Callable.__call__]"
-              ],
+              "resolves_to": [ "higher_order_functions.sink_args" ],
               "port": "formal(*args, position=0)[*]",
               "call_site": "98:4-98:22"
             }
@@ -1993,9 +1962,7 @@
                 "start": 17,
                 "end": 18
               },
-              "resolves_to": [
-                "higher_order_functions.sink_args[formal(*args, position=0)=higher_order_functions.Callable.__call__]"
-              ],
+              "resolves_to": [ "higher_order_functions.sink_args" ],
               "port": "formal(*args, position=0)[*]",
               "call_site": "98:4-98:22"
             }
@@ -2023,9 +1990,7 @@
                 "start": 14,
                 "end": 15
               },
-              "resolves_to": [
-                "higher_order_functions.sink_args[formal(*args, position=0)=higher_order_functions.Callable.__call__]"
-              ],
+              "resolves_to": [ "higher_order_functions.sink_args" ],
               "port": "formal(*args, position=0)[*]",
               "call_site": "98:4-98:22"
             }
