@@ -892,6 +892,7 @@ let end_to_end_integration_test path context =
            stubs;
            class_interval_graph_shared_memory;
            global_constants;
+           call_graph_fixpoint_state;
            _;
          } as test_environment)
       =
@@ -925,6 +926,12 @@ let end_to_end_integration_test path context =
         ~initial_callables
         ~call_graph:whole_program_call_graph
         ~overrides:override_graph_heap
+    in
+    let initial_models =
+      SharedModels.initialize_for_parameterized_callables
+        ~higher_order_call_graph_fixpoint:
+          (Some call_graph_fixpoint_state.CallGraphFixpoint.fixpoint)
+        initial_models
     in
     let fixpoint_state =
       TaintFixpoint.record_initial_models

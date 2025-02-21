@@ -26,6 +26,8 @@ val compute
   max_iterations:int ->
   t
 
+val analyzed_callables : fixpoint -> Target.t list
+
 val get_model : t -> Target.t -> CallGraph.HigherOrderCallGraph.t option
 
 val cleanup : t -> unit

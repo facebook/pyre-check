@@ -260,6 +260,16 @@ module Make (Analysis : ANALYSIS) = struct
 
     let map_parallel models ~scheduler ~f =
       map_parallel_targets models ~scheduler ~f ~targets:(T.keys models)
+
+
+    let get_new_model = ReadOnly.get ~cache:true
+
+    let get_old_model = ReadOnly.get_old
+
+    let get_model shared_models callable =
+      match get_new_model shared_models callable with
+      | Some _ as model -> model
+      | None -> get_old_model shared_models callable
   end
 
   module Epoch = struct
@@ -351,18 +361,10 @@ module Make (Analysis : ANALYSIS) = struct
         shared_results: SharedResults.t;
       }
 
-      let get_new_model { shared_models; _ } callable =
-        SharedModels.ReadOnly.get shared_models ~cache:true callable
-
-
-      let get_old_model { shared_models; _ } callable =
-        SharedModels.ReadOnly.get_old shared_models callable
-
-
-      let get_model read_only callable =
-        match get_new_model read_only callable with
+      let get_model { shared_models; _ } callable =
+        match SharedModels.get_new_model shared_models callable with
         | Some _ as model -> model
-        | None -> get_old_model read_only callable
+        | None -> SharedModels.get_old_model shared_models callable
 
 
       let get_result { shared_results; _ } callable =

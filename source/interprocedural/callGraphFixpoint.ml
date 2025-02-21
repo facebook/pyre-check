@@ -179,18 +179,17 @@ let build_whole_program_call_graph ~scheduler ~scheduler_policy state =
                    call_graph)
               so_far)
   in
-  let whole_program_call_graph =
-    Scheduler.map_reduce
-      scheduler
-      ~policy:scheduler_policy
-      ~initial:CallGraph.WholeProgramCallGraph.empty
-      ~map:(build_whole_program_call_graph ~state:(Fixpoint.State.read_only state))
-      ~reduce:CallGraph.WholeProgramCallGraph.merge_disjoint
-      ~inputs:(Fixpoint.State.targets state)
-      ()
-  in
-  whole_program_call_graph
+  Scheduler.map_reduce
+    scheduler
+    ~policy:scheduler_policy
+    ~initial:CallGraph.WholeProgramCallGraph.empty
+    ~map:(build_whole_program_call_graph ~state:(Fixpoint.State.read_only state))
+    ~reduce:CallGraph.WholeProgramCallGraph.merge_disjoint
+    ~inputs:(Fixpoint.State.targets state)
+    ()
 
+
+let analyzed_callables { Fixpoint.state; _ } = Fixpoint.State.targets state
 
 let compute
     ~scheduler

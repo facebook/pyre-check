@@ -850,7 +850,8 @@ let run_taint_analysis
           callables_kept;
           callables_to_analyze;
         },
-        get_define_call_graph )
+        get_define_call_graph,
+        higher_order_call_graph_fixpoint )
     =
     if higher_order_call_graph then
       let step_logger =
@@ -858,7 +859,13 @@ let run_taint_analysis
           ~start_message:"Computing higher order call graphs"
           ~end_message:"Computed higher order call graphs"
       in
-      let { Interprocedural.CallGraphFixpoint.whole_program_call_graph; get_define_call_graph; _ } =
+      let {
+        Interprocedural.CallGraphFixpoint.whole_program_call_graph;
+        get_define_call_graph;
+        fixpoint;
+        _;
+      }
+        =
         Interprocedural.CallGraphFixpoint.compute
           ~scheduler
           ~scheduler_policy:
@@ -892,7 +899,7 @@ let run_taint_analysis
       in
       let () = StepLogger.finish step_logger in
       let () = Interprocedural.CallGraph.SharedMemory.cleanup original_define_call_graphs in
-      dependency_graph, get_define_call_graph
+      dependency_graph, get_define_call_graph, Some fixpoint
     else
       let get_define_call_graph define_call_graphs callable =
         Interprocedural.CallGraph.SharedMemory.ReadOnly.get
@@ -902,7 +909,8 @@ let run_taint_analysis
       in
       ( original_dependency_graph,
         get_define_call_graph
-          (Interprocedural.CallGraph.SharedMemory.read_only original_define_call_graphs) )
+          (Interprocedural.CallGraph.SharedMemory.read_only original_define_call_graphs),
+        None )
   in
 
   (* TODO(T215367584): Cache higher order call graphs. *)
@@ -939,6 +947,18 @@ let run_taint_analysis
 
   let () = PyrePysaEnvironment.ReadWrite.purge_shared_memory pyre_read_write_api in
 
+  let step_logger =
+    StepLogger.start
+      ~start_message:"Initializing taint models for parameterized callables"
+      ~end_message:"Initialized taint models for parameterized callables"
+  in
+  let initial_models =
+    SharedModels.initialize_for_parameterized_callables
+      ~higher_order_call_graph_fixpoint
+      initial_models
+  in
+  let () = StepLogger.finish step_logger in
+
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"before fixpoint";
 
@@ -951,11 +971,13 @@ let run_taint_analysis
            (List.length callables_kept))
       ~end_message:"Analysis fixpoint complete"
   in
+  (* This should always be called immediately before `TaintFixpoint.compute`, because it initializes
+     `TaintFixpoint.State`. *)
   let fixpoint_state =
     TaintFixpoint.record_initial_models
       ~scheduler
       ~initial_models
-      ~callables_to_analyze:(Interprocedural.FetchCallables.get_definitions initial_callables)
+      ~callables_to_analyze
       ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
       ~override_targets
   in

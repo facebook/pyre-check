@@ -209,6 +209,8 @@ module Make (Analysis : ANALYSIS) : sig
       scheduler:Scheduler.t ->
       f:(target:Target.t -> model:Analysis.Model.t -> Analysis.Model.t) ->
       t
+
+    val get_model : ReadOnly.t -> Target.t -> Analysis.Model.t option
   end
 
   module Epoch : sig

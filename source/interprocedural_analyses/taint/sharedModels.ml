@@ -60,3 +60,29 @@ let entrypoints ~scheduler models = targets_with_mode ~scheduler ~mode:Model.Mod
 
 let object_targets models =
   models |> T.targets |> List.filter ~f:Target.is_object |> Target.Set.of_list
+
+
+let initialize_for_parameterized_callables ~higher_order_call_graph_fixpoint initial_models =
+  let initial_model = function
+    | Interprocedural.Target.Parameterized _ as callable -> (
+        (* We assume the higher order call graph should only create parameterized targets. *)
+        callable
+        |> Target.strip_parameters
+        (* Initialize with the user-provided models, which we assume are already in
+           `initial_models`. *)
+        |> T.get_model (T.read_only initial_models)
+        |> function
+        | Some model -> Some model
+        | None -> Some TaintFixpoint.Analysis.initial_model)
+    | Regular _ -> None
+  in
+  match higher_order_call_graph_fixpoint with
+  | None -> initial_models
+  | Some higher_order_call_graph_fixpoint ->
+      higher_order_call_graph_fixpoint
+      |> Interprocedural.CallGraphFixpoint.analyzed_callables
+      |> List.fold ~init:(T.add_only initial_models) ~f:(fun models callable ->
+             match initial_model callable with
+             | None -> models
+             | Some model -> T.AddOnly.add models callable model)
+      |> from_add_only

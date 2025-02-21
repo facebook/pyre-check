@@ -798,6 +798,209 @@
 {
   "kind": "model",
   "data": {
+    "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.outer]",
+    "tito": [
+      {
+        "port": "formal(inner, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(feature)",
+                    "tag": "feature1"
+                  }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test.return_model_query_tito]",
+    "tito": [
+      {
+        "port": "formal(inner, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(feature)",
+                    "tag": "feature1"
+                  }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test.return_model_taint]",
+    "tito": [
+      {
+        "port": "formal(inner, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(feature)",
+                    "tag": "feature1"
+                  }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test.return_model_taint_tito]",
+    "tito": [
+      {
+        "port": "formal(inner, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(feature)",
+                    "tag": "feature1"
+                  }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test.return_taint]",
+    "tito": [
+      {
+        "port": "formal(inner, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(feature)",
+                    "tag": "feature1"
+                  }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test_tito_transform.return_model_query_tito]",
+    "tito": [
+      {
+        "port": "formal(inner, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(feature)",
+                    "tag": "feature1"
+                  }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test_tito_transform.return_model_taint_tito]",
+    "tito": [
+      {
+        "port": "formal(inner, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(feature)",
+                    "tag": "feature1"
+                  }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "closure_models.test.return_model_query_tito",
     "filename": "closure_models.py",
     "callable_line": 51,
