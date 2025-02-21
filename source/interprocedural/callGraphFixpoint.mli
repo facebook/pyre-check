@@ -21,6 +21,7 @@ val compute
   dependency_graph:DependencyGraph.whole_program_dependency_graph ->
   override_graph_shared_memory:OverrideGraph.SharedMemory.t ->
   initial_callables:FetchCallables.t ->
+  skip_analysis_targets:Target.Set.t ->
   decorator_resolution:CallGraph.DecoratorResolution.Results.t ->
   method_kinds:CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
   max_iterations:int ->

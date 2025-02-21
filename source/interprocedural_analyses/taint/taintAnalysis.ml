@@ -878,6 +878,7 @@ let run_taint_analysis
           ~dependency_graph:original_dependency_graph
           ~override_graph_shared_memory
           ~initial_callables
+          ~skip_analysis_targets
           ~decorator_resolution
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
           ~max_iterations:(Option.value higher_order_call_graph_max_iterations ~default:50)

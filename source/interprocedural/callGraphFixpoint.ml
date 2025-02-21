@@ -7,6 +7,11 @@
 
 open Core
 
+let not_skip_analysis_target ~skip_analysis_targets callable =
+  (* We assume `skip_analysis_targets` only contains regular callables. *)
+  not (Hash_set.mem skip_analysis_targets (Target.strip_parameters callable))
+
+
 module CallGraphAnalysis = struct
   module Context = struct
     type t = {
@@ -14,6 +19,7 @@ module CallGraphAnalysis = struct
       define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
       decorator_resolution: CallGraph.DecoratorResolution.Results.t;
       method_kinds: CallGraph.MethodKind.SharedMemory.ReadOnly.t;
+      skip_analysis_targets: Target.HashSet.t;
     }
   end
 
@@ -80,7 +86,14 @@ module CallGraphAnalysis = struct
   end
 
   let analyze_define
-      ~context:{ Context.pyre_api; define_call_graphs; decorator_resolution; method_kinds }
+      ~context:
+        {
+          Context.pyre_api;
+          define_call_graphs;
+          decorator_resolution;
+          method_kinds;
+          skip_analysis_targets;
+        }
       ~callable
       ~previous_model:{ CallGraph.HigherOrderCallGraph.call_graph = previous_call_graph; _ }
       ~get_callee_model
@@ -121,6 +134,7 @@ module CallGraphAnalysis = struct
       in
       let additional_dependencies =
         Target.Set.diff (dependencies call_graph) (dependencies previous_call_graph)
+        |> Target.Set.filter (not_skip_analysis_target ~skip_analysis_targets)
       in
       if CallGraph.debug_higher_order_call_graph define then (
         Log.dump
@@ -200,6 +214,7 @@ let compute
       { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ }
     ~override_graph_shared_memory
     ~initial_callables
+    ~skip_analysis_targets
     ~decorator_resolution
     ~method_kinds
     ~max_iterations
@@ -207,8 +222,14 @@ let compute
   let decorated_callables =
     CallGraph.DecoratorResolution.Results.decorated_callables decorator_resolution
   in
+  let skip_analysis_targets =
+    skip_analysis_targets |> Target.Set.elements |> Target.HashSet.of_list
+  in
   let definitions =
-    initial_callables |> FetchCallables.get_definitions |> List.rev_append decorated_callables
+    initial_callables
+    |> FetchCallables.get_definitions
+    |> List.filter ~f:(not_skip_analysis_target ~skip_analysis_targets)
+    |> List.rev_append decorated_callables
   in
   let initial_models =
     let policy =
@@ -254,6 +275,9 @@ let compute
       ~override_targets
       ~initial_models
   in
+  let callables_to_analyze =
+    List.filter ~f:(not_skip_analysis_target ~skip_analysis_targets) callables_to_analyze
+  in
   let ({ Fixpoint.state; _ } as fixpoint) =
     Fixpoint.compute
       ~scheduler
@@ -266,6 +290,7 @@ let compute
           define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
           decorator_resolution;
           method_kinds;
+          skip_analysis_targets;
         }
       ~callables_to_analyze:(List.rev_append callables_to_analyze decorated_callables)
       ~max_iterations

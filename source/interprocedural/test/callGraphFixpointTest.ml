@@ -21,7 +21,14 @@ module Expected = struct
   }
 end
 
-let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expected () context =
+let assert_higher_order_call_graph_fixpoint
+    ?(max_iterations = 10)
+    ?(skip_analysis_targets = Target.Set.empty)
+    ~source
+    ~expected
+    ()
+    context
+  =
   let source, _, pyre_api, configuration =
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
@@ -64,7 +71,7 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
       ~attribute_targets:Target.Set.empty
       ~decorators
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
-      ~skip_analysis_targets:Target.Set.empty
+      ~skip_analysis_targets
       ~definitions
       ~decorator_resolution
   in
@@ -85,6 +92,7 @@ let assert_higher_order_call_graph_fixpoint ?(max_iterations = 10) ~source ~expe
       ~dependency_graph
       ~override_graph_shared_memory
       ~initial_callables
+      ~skip_analysis_targets
       ~decorator_resolution
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~max_iterations
@@ -925,6 +933,65 @@ let test_higher_order_call_graph_fixpoint =
                                                 { name = "test.baz"; kind = Normal }
                                               |> Target.from_regular );
                                           ]);
+                                 ]
+                               ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def baz():
+       return
+     def foo(f):
+       return baz
+     def bar():
+       return foo(foo)  # Test skip analysis
+  |}
+           ~skip_analysis_targets:
+             (Target.Set.of_list
+                [
+                  Target.Regular.Function { name = "test.foo"; kind = Normal } |> Target.from_regular;
+                ])
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.bar"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "7:9-7:17",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create
+                                     (create_parameterized_target
+                                        ~regular:
+                                          (Target.Regular.Function
+                                             { name = "test.foo"; kind = Normal })
+                                        ~parameters:
+                                          [
+                                            ( create_positional_parameter 0 "f",
+                                              Target.Regular.Function
+                                                { name = "test.foo"; kind = Normal }
+                                              |> Target.from_regular );
+                                          ]);
+                                 ]
+                               ())) );
+                     ( "7:13-7:16",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_attribute_access
+                            (AttributeAccessCallees.create
+                               ~callable_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
                                  ]
                                ())) );
                    ];
