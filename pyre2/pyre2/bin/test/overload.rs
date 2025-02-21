@@ -174,8 +174,7 @@ class P(Protocol):
 "#,
 );
 
-testcase_with_bug!(
-    "Ignore comment messes with overload selection",
+testcase!(
     test_overload_ignore,
     r#"
 from typing import Never, overload, assert_type
@@ -189,6 +188,6 @@ def f(x: int | str) -> int | str:
 
 x = f("foo") # type: ignore
 # intentionally blank: make sure we don't ignore the assert_type below
-assert_type(x, str) # E: assert_type(int, str) failed
+assert_type(x, str)
 "#,
 );

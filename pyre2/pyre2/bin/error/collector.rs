@@ -57,9 +57,13 @@ impl ModuleErrors {
         self.items.len()
     }
 
-    fn iter(&mut self) -> impl Iterator<Item = &Error> {
+    fn iter_all(&mut self) -> impl Iterator<Item = &Error> {
         self.cleanup();
         self.items.iter()
+    }
+
+    fn iter(&mut self) -> impl Iterator<Item = &Error> {
+        self.iter_all().filter(|x| !x.is_ignored())
     }
 }
 
@@ -93,10 +97,6 @@ impl ErrorCollector {
     }
 
     pub fn add_error(&self, err: Error) {
-        if err.is_ignored() {
-            // Should we record these anyway? Not clear.
-            return;
-        }
         if self.style != ErrorStyle::Never {
             self.errors.lock().push(err);
         }
