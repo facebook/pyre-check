@@ -16,7 +16,7 @@ pub struct Expectation {
 
 impl Expectation {
     fn parse_line(&mut self, line_no: usize, mut s: &str) {
-        while let Some((prefix, err)) = s.trim().rsplit_once("# E: ") {
+        while let Some((prefix, err)) = s.trim().rsplit_once("# E:") {
             self.error.push((line_no, err.trim().to_owned()));
             s = prefix.trim_end();
         }
