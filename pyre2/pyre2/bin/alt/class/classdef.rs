@@ -485,11 +485,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             //
             // Our plumbing isn't ready for that yet, so for now we are silently
             // using gradual type arguments.
-            let any = match range {
-                None => Type::any_implicit(),
-                Some(_) => Type::any_error(),
-            };
-            TArgs::new(vec![any; tparams.len()])
+            TArgs::new(
+                tparams
+                    .iter()
+                    .map(|x| {
+                        if let Some(default) = &x.default {
+                            default.clone()
+                        } else if range.is_some() {
+                            Type::any_error()
+                        } else {
+                            Type::any_implicit()
+                        }
+                    })
+                    .collect(),
+            )
         }
     }
 
