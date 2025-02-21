@@ -599,7 +599,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     stdlib.tuple(self.unions(elements))
                 }))
             }
-            Type::Tuple(Tuple::Unpacked(box (prefix, middle, suffix))) => {
+            Type::Tuple(Tuple::Unpacked(box (
+                prefix,
+                Type::Tuple(Tuple::Unbounded(box middle)),
+                suffix,
+            ))) => {
                 let mut elements = prefix;
                 elements.push(middle);
                 elements.extend(suffix);
@@ -607,6 +611,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     stdlib.tuple(self.unions(elements)),
                 ))
             }
+            // TODO(yangdanny): the middle part is AttributeBase::Quantified
+            // but we can only return one attribute base
+            Type::Tuple(Tuple::Unpacked(_)) => Some(AttributeBase::ClassInstance(
+                stdlib.tuple(Type::any_implicit()),
+            )),
             Type::LiteralString => Some(AttributeBase::ClassInstance(stdlib.str())),
             Type::Literal(lit) => {
                 Some(AttributeBase::ClassInstance(lit.general_class_type(stdlib)))

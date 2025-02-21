@@ -8819,31 +8819,11 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "EXPECTED tuple[*tuple[@_, ...], Error] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
-      "description": "EXPECTED tuple[*tuple[@_, ...], Error] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
+      "concise_description": "EXPECTED tuple[*tuple[Unknown, ...], Unknown] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
+      "description": "EXPECTED tuple[*tuple[Unknown, ...], Unknown] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
       "line": 56,
       "name": "PyreError",
       "stop_column": 30,
-      "stop_line": 56
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]",
-      "description": "Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]",
-      "line": 56,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 56
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]",
-      "description": "Can't apply arguments to non-class, got tuple[?_TypeVar, *?_TypeVarTuple]",
-      "line": 56,
-      "name": "PyreError",
-      "stop_column": 29,
       "stop_line": 56
     }
   ],

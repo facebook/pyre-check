@@ -902,15 +902,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::Tuple(Tuple::Concrete(elts)) if xs.len() == 1 => {
                         self.infer_tuple_index(elts, &x.slice, x.range, errors)
                     }
-                    Type::Tuple(Tuple::Unbounded(elt)) if xs.len() == 1 => self
-                        .call_method_or_error(
-                            &Type::Tuple(Tuple::Unbounded(elt)),
-                            &dunder::GETITEM,
-                            x.range,
-                            &[CallArg::Expr(&x.slice)],
-                            &[],
-                            errors,
-                        ),
+                    Type::Tuple(_) if xs.len() == 1 => self.call_method_or_error(
+                        &fun,
+                        &dunder::GETITEM,
+                        x.range,
+                        &[CallArg::Expr(&x.slice)],
+                        &[],
+                        errors,
+                    ),
                     Type::Any(style) => style.propagate(),
                     Type::ClassType(cls)
                         if let Some(elts) = self.named_tuple_element_types(&cls) =>

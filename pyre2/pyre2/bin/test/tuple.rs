@@ -37,9 +37,10 @@ testcase!(
     r#"
 from typing import assert_type
 
-def foo(x: tuple[int, str], y: tuple[int, ...], idx: int) -> None:
+def foo(x: tuple[int, str], y: tuple[int, ...], z: tuple[int, *tuple[str, ...], bool], idx: int) -> None:
     assert_type(x[idx], int | str)
     assert_type(y[idx], int)
+    assert_type(z[idx], bool | int | str)
 "#,
 );
 
