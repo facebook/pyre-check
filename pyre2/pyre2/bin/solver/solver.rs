@@ -25,6 +25,7 @@ use crate::types::display::TypeDisplayContext;
 use crate::types::module::Module;
 use crate::types::quantified::Quantified;
 use crate::types::quantified::QuantifiedKind;
+use crate::types::simplify::simplify_tuples;
 use crate::types::simplify::unions;
 use crate::types::types::Type;
 use crate::types::types::Var;
@@ -184,6 +185,9 @@ impl Solver {
         t.transform_mut(|x| {
             if let Type::Union(xs) = x {
                 *x = unions(mem::take(xs));
+            }
+            if let Type::Tuple(tuple) = x {
+                *x = simplify_tuples(mem::take(tuple));
             }
         });
     }
@@ -448,7 +452,6 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         // got <: want. Most callers want both behaviors. The exception is that in a union, we call is_subset_eq
         // for the sole purpose of solving contained variables, throwing away the check result.
         let should_force = |v: &Variable| !self.union || matches!(v, Variable::Contained);
-
         match (got, want) {
             _ if got == want => true,
             (Type::Var(v1), Type::Var(v2)) => {

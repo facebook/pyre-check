@@ -45,17 +45,15 @@ def test(a1: A[int], a2: A[int, str], b: B[int, str, int]):
 "#,
 );
 
-testcase_with_bug!(
-    "The solution for *Ts is wrong here",
+testcase!(
     test_type_var_tuple_solve,
     r#"
 from typing import assert_type
 class A[*Ts]:
-    def x(self) -> tuple[*Ts]:
-        raise Exception()
+    def x(self) -> tuple[*Ts]: ...
 def test[*Ts](x: tuple[*Ts]) -> tuple[*Ts]:
     return x
-assert_type(test((1, 2, 3)), tuple[int, int, int])  # E: EXPECTED tuple[Literal[1], Literal[2], Literal[3]] <: tuple[*tuple[Literal[1], ...]]  # E: assert_type(tuple[*tuple[Literal[1], ...]], tuple[int, int, int]) failed
+assert_type(test((1, 2, 3)), tuple[int, int, int])
 "#,
 );
 

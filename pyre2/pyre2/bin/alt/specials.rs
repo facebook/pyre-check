@@ -63,7 +63,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         if let [t] = prefix.as_slice()
                             && middle.is_none()
                         {
-                            return Type::type_form(Type::Tuple(Tuple::unbounded(t.clone())));
+                            if t.is_unpack() {
+                                return self.error(
+                                    errors,
+                                    value.range(),
+                                    "`...` cannot be used with an unpacked TypeVarTuple or tuple"
+                                        .to_owned(),
+                                );
+                            } else {
+                                return Type::type_form(Type::Tuple(Tuple::unbounded(t.clone())));
+                            }
                         } else {
                             return self.error(
                                 errors,

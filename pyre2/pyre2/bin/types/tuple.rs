@@ -30,6 +30,12 @@ pub enum Tuple {
     Unpacked(Box<(Vec<Type>, Type, Vec<Type>)>),
 }
 
+impl Default for Tuple {
+    fn default() -> Self {
+        Self::Concrete(Vec::new())
+    }
+}
+
 impl Tuple {
     pub fn concrete(elts: Vec<Type>) -> Self {
         Self::Concrete(elts)

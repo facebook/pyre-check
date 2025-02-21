@@ -219,14 +219,4 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         }
     }
-
-    pub fn decompose_tuple(&self, ty: &Type) -> Option<Type> {
-        let elem = self.fresh_var();
-        let tuple_type = self.stdlib.tuple(elem.to_type()).to_type();
-        if self.is_subset_eq(&tuple_type, ty) {
-            self.expand_var_opt(elem)
-        } else {
-            None
-        }
-    }
 }

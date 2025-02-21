@@ -236,7 +236,9 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     false
                 }
             }
-            (Tuple::Unbounded(box Type::Any(_)), _) => true,
+            (Tuple::Unbounded(box Type::Any(_)), _) | (_, Tuple::Unbounded(box Type::Any(_))) => {
+                true
+            }
             (Tuple::Concrete(lelts), Tuple::Unbounded(box u)) => {
                 lelts.iter().all(|l| self.is_subset_eq(l, u))
             }
@@ -258,9 +260,9 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     }) && self.is_subset_eq(&Type::Tuple(Tuple::Concrete(l_middle)), u_middle)
                 }
             }
-            (Tuple::Unbounded(box l), Tuple::Unpacked(box (u_prefix, u_middle, u_suffix))) => {
-                u_prefix.iter().all(|u| self.is_subset_eq(l, u))
-                    && u_suffix.iter().all(|u| self.is_subset_eq(l, u))
+            (Tuple::Unbounded(_), Tuple::Unpacked(box (u_prefix, u_middle, u_suffix))) => {
+                u_prefix.is_empty()
+                    && u_suffix.is_empty()
                     && self.is_subset_eq(&Type::Tuple(got.clone()), u_middle)
             }
             (Tuple::Unpacked(box (l_prefix, l_middle, l_suffix)), Tuple::Unbounded(box u)) => {
