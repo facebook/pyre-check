@@ -69,7 +69,7 @@ fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonA
         )
     });
     let mut state = State::new(common.parallel());
-    state.run_one_shot(modules_to_check);
+    state.run_one_shot(&modules_to_check);
     state.collect_errors()
 }
 

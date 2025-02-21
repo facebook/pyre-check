@@ -447,7 +447,7 @@ impl State {
         }
     }
 
-    fn run_internal(&mut self, handles: Vec<Handle>) {
+    fn run_internal(&mut self, handles: &[Handle]) {
         self.now.next();
         let configs = handles
             .iter()
@@ -462,7 +462,7 @@ impl State {
         {
             let mut lock = self.todo.lock();
             for h in handles {
-                lock.push_fifo(Step::first(), self.get_module(&h));
+                lock.push_fifo(Step::first(), self.get_module(h));
             }
         }
 
@@ -484,12 +484,12 @@ impl State {
     /// The state afterwards will be useful for timing queries.
     /// Note we grab the `mut` only to stop other people accessing us simultaneously,
     /// we don't actually need it.
-    pub fn run_one_shot(&mut self, handles: Vec<Handle>) {
+    pub fn run_one_shot(&mut self, handles: &[Handle]) {
         self.retain_memory = false;
         self.run_internal(handles)
     }
 
-    pub fn run(&mut self, handles: Vec<Handle>) {
+    pub fn run(&mut self, handles: &[Handle]) {
         self.retain_memory = true;
         self.run_internal(handles)
     }

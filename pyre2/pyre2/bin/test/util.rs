@@ -149,9 +149,9 @@ impl TestEnv {
             .0
             .into_iter()
             .map(|(x, (path, _))| Handle::new(x, path, config.dupe(), loader.dupe()))
-            .collect();
+            .collect::<Vec<_>>();
         let mut state = State::new(true);
-        state.run(handles);
+        state.run(&handles);
         state.print_errors();
         (state, move |module| {
             let name = ModuleName::from_str(module);

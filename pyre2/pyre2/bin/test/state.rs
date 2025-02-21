@@ -56,7 +56,7 @@ else:
         Handle::new(name, path, config.dupe(), loader.dupe())
     };
 
-    state.run(vec![
+    state.run(&[
         f("linux", &linux),
         f("windows", &windows),
         f("main", &linux),
@@ -102,7 +102,7 @@ fn test_multiple_path() {
     let loader = LoaderId::new(Load(TestEnv::new()));
 
     let mut state = State::new(true);
-    state.run(FILES.map(|(name, path, _)| {
+    state.run(&FILES.map(|(name, path, _)| {
         Handle::new(
             ModuleName::from_str(name),
             ModulePath::memory(PathBuf::from(path)),
@@ -139,7 +139,7 @@ fn test_in_memory_updated_content_recheck() {
     let loader = LoaderId::new(load);
 
     let mut state = State::new(true);
-    state.run(vec![Handle::new(
+    state.run(&[Handle::new(
         ModuleName::from_str("main"),
         ModulePath::memory(PathBuf::from("main.py")),
         TestEnv::config(),
@@ -148,7 +148,7 @@ fn test_in_memory_updated_content_recheck() {
     assert_eq!(state.collect_errors().len(), 1);
     test_env.lock().add("main", "bound_name = 3");
     state.invalidate_memory(loader.dupe(), &[PathBuf::from("main.py")]);
-    state.run(vec![Handle::new(
+    state.run(&[Handle::new(
         ModuleName::from_str("main"),
         ModulePath::memory(PathBuf::from("main.py")),
         TestEnv::config(),
