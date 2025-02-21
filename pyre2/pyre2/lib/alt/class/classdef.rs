@@ -710,9 +710,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             (value_ty, None)
         };
-        let readonly = metadata.dataclass_metadata().map_or(false, |dataclass| {
-            dataclass.kws.is_set(&DataclassKeywords::FROZEN)
-        });
+        let readonly = metadata
+            .dataclass_metadata()
+            .is_some_and(|dataclass| dataclass.kws.is_set(&DataclassKeywords::FROZEN));
         let class_field =
             ClassField::new(ty.clone(), range, ann.cloned(), initialization, readonly);
 

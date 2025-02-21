@@ -445,11 +445,11 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 want.fields().iter().all(|(k, want_v)| {
                     got.fields()
                         .get(k)
-                        .map_or(false, |got_v| self.is_subset_eq(&got_v.ty, &want_v.ty))
+                        .is_some_and(|got_v| self.is_subset_eq(&got_v.ty, &want_v.ty))
                 }) && got.fields().iter().all(|(k, got_v)| {
                     want.fields()
                         .get(k)
-                        .map_or(true, |want_v| got_v.required == want_v.required)
+                        .is_none_or(|want_v| got_v.required == want_v.required)
                 })
             }
             (Type::TypedDict(_), _) => {

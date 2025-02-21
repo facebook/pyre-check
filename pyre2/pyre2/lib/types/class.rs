@@ -181,7 +181,7 @@ impl Class {
         self.0
             .fields
             .get(name)
-            .map_or(false, |prop| prop.is_annotated)
+            .is_some_and(|prop| prop.is_annotated)
     }
 
     pub fn field_decl_range(&self, name: &Name) -> Option<TextRange> {
