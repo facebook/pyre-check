@@ -1117,7 +1117,7 @@ testcase_with_bug!(
     test_resolving_any_correctly,
     r#"
 import typing
-x: typing.Any = 1  # E: EXPECTED Literal[1] <: Any
+x: typing.Any = 1  # E: untype, got object
 class Any: ...
 a: Any = Any()  # E: Expected a callable, got type[Any]
 "#,

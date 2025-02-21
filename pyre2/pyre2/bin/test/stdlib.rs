@@ -127,7 +127,7 @@ class _SpecialForm: ...
 Optional: _SpecialForm
 Literal: _SpecialForm
 Final: _SpecialForm
-class Any: ...
+Any = object()
 LiteralString: _SpecialForm
 Union: _SpecialForm
 Tuple: _SpecialForm
