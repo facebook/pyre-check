@@ -810,6 +810,17 @@ z: foo(y=x)  # E: untype, got Never
 "#,
 );
 
+testcase_with_bug!(
+    "We think that Type::None is a type",
+    test_function_in_type_none,
+    r#"
+x = 42
+def foo(y):
+    pass
+z: foo(y=x)  # TODO: not legal
+"#,
+);
+
 testcase!(
     test_invalid_literal,
     r#"
