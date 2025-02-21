@@ -170,6 +170,7 @@ impl ClassSynthesizedField {
         Self {
             inner: Arc::new(ClassField(ClassFieldInner::Simple {
                 ty,
+                range: None,
                 annotation: None,
                 initialization: ClassFieldInitialization::Class(None),
                 readonly: false,

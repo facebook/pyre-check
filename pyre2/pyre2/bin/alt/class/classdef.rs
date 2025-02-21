@@ -91,6 +91,7 @@ pub struct ClassField(pub ClassFieldInner);
 pub enum ClassFieldInner {
     Simple {
         ty: Type,
+        range: Option<TextRange>,
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
         readonly: bool,
@@ -100,12 +101,14 @@ pub enum ClassFieldInner {
 impl ClassField {
     fn new(
         ty: Type,
+        range: TextRange,
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
         readonly: bool,
     ) -> Self {
         Self(ClassFieldInner::Simple {
             ty,
+            range: Some(range),
             annotation,
             initialization,
             readonly,
@@ -115,6 +118,7 @@ impl ClassField {
     pub fn recursive() -> Self {
         Self(ClassFieldInner::Simple {
             ty: Type::any_implicit(),
+            range: None,
             annotation: None,
             initialization: ClassFieldInitialization::recursive(),
             readonly: false,
@@ -142,11 +146,13 @@ impl ClassField {
         match &self.0 {
             ClassFieldInner::Simple {
                 ty,
+                range,
                 annotation,
                 initialization,
                 readonly,
             } => Self(ClassFieldInner::Simple {
                 ty: cls.instantiate_member(ty.clone()),
+                range: *range,
                 annotation: annotation.clone(),
                 initialization: initialization.clone(),
                 readonly: *readonly,
@@ -632,7 +638,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             && self.is_valid_enum_member(name, value_ty, &initialization)
         {
             if annotation.is_some() {
-                self.error(errors,range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
+                self.error(errors, range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
             }
 
             if let Some(enum_value_ty) = self.type_of_enum_value(enum_) {
@@ -641,7 +647,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         .solver()
                         .is_subset_eq(value_ty, &enum_value_ty, self.type_order())
                 {
-                    self.error(errors,range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name));
+                    self.error(errors, range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name));
                 }
             }
 
@@ -672,7 +678,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let readonly = metadata.dataclass_metadata().map_or(false, |dataclass| {
             dataclass.kws.is_set(&DataclassKeywords::FROZEN)
         });
-        let class_field = ClassField::new(ty.clone(), ann.cloned(), initialization, readonly);
+        let class_field =
+            ClassField::new(ty.clone(), range, ann.cloned(), initialization, readonly);
 
         // check if this attribute is compatible with the parent attribute
         let class_type = match class.self_type() {
