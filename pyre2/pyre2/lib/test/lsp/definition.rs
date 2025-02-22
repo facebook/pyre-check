@@ -439,3 +439,36 @@ Definition Result: None
         report.trim(),
     );
 }
+
+#[test]
+fn cross_module_property_test() {
+    let code_class_provider = r#"
+class MyClass:
+  x = 5
+"#;
+    let code = r#"
+from .my_class import MyClass
+c1 = MyClass()
+c1.x
+#  ^
+"#;
+    let report = get_batched_lsp_operations_report(
+        &[("main", code), ("my_class", code_class_provider)],
+        get_test_report,
+    );
+    assert_eq!(
+        r#"
+# main.py
+4 | c1.x
+       ^
+Definition Result:
+3 |   x = 5
+      ^
+
+
+# my_class.py
+"#
+        .trim(),
+        report.trim(),
+    );
+}
