@@ -1030,9 +1030,7 @@
     "Line 34: Unexpected errors ['TypedDict item `method2` may not be initialized.']",
     "Line 39: Unexpected errors ['TypedDict item `method3` may not be initialized.']"
   ],
-  "typeddicts_final.py": [
-    "Line 26: Unexpected errors [\"Invalid key for TypedDict `Movie`, got `Literal['name', 'year']`\"]"
-  ],
+  "typeddicts_final.py": [],
   "typeddicts_inheritance.py": [
     "Line 65: Expected 1 errors"
   ],

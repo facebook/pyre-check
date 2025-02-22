@@ -938,34 +938,37 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &[],
                         errors,
                     ),
-                    Type::TypedDict(typed_dict) => match self.expr_infer(&x.slice, errors) {
-                        Type::Literal(Lit::String(field_name)) => {
-                            if let Some(field) =
-                                typed_dict.fields().get(&Name::new(field_name.clone()))
-                            {
-                                field.ty.clone()
-                            } else {
-                                self.error(
-                                    errors,
-                                    x.slice.range(),
-                                    format!(
-                                        "TypedDict `{}` does not have key `{}`",
-                                        typed_dict.name(),
-                                        field_name
-                                    ),
-                                )
+                    Type::TypedDict(typed_dict) => {
+                        let key_ty = self.expr_infer(&x.slice, errors);
+                        self.distribute_over_union(&key_ty, |ty| match ty {
+                            Type::Literal(Lit::String(field_name)) => {
+                                if let Some(field) =
+                                    typed_dict.fields().get(&Name::new(field_name.clone()))
+                                {
+                                    field.ty.clone()
+                                } else {
+                                    self.error(
+                                        errors,
+                                        x.slice.range(),
+                                        format!(
+                                            "TypedDict `{}` does not have key `{}`",
+                                            typed_dict.name(),
+                                            field_name
+                                        ),
+                                    )
+                                }
                             }
-                        }
-                        t => self.error(
-                            errors,
-                            x.slice.range(),
-                            format!(
-                                "Invalid key for TypedDict `{}`, got `{}`",
-                                typed_dict.name(),
-                                t.deterministic_printing()
+                            _ => self.error(
+                                errors,
+                                x.slice.range(),
+                                format!(
+                                    "Invalid key for TypedDict `{}`, got `{}`",
+                                    typed_dict.name(),
+                                    ty.clone().deterministic_printing()
+                                ),
                             ),
-                        ),
-                    },
+                        })
+                    }
                     t => self.error(
                         errors,
                         x.range,

@@ -132,15 +132,17 @@ class Coord(TypedDict):
 testcase!(
     test_typed_dict_access,
     r#"
-from typing import TypedDict
+from typing import TypedDict, Literal, assert_type
 class Coord(TypedDict):
     x: int
-    y: int
-def foo(c: Coord, key: str):
+    y: str
+    z: bool
+def foo(c: Coord, key: str, key2: Literal["x", "y"]):
     x: int = c["x"]
     x2: int = c.x  # E: Object of class `Mapping` has no attribute `x`
     x3: int = c[key]  # E: Invalid key for TypedDict `Coord`, got `str`
     x4: int = c["aaaaaa"]  # E: TypedDict `Coord` does not have key `aaaaaa`
+    assert_type(c[key2], int | str)
     "#,
 );
 

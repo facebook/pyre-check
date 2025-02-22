@@ -12907,18 +12907,7 @@
       "stop_line": 44
     }
   ],
-  "typeddicts_final.py": [
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "Invalid key for TypedDict `Movie`, got `Literal['name', 'year']`",
-      "description": "Invalid key for TypedDict `Movie`, got `Literal['name', 'year']`",
-      "line": 26,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 26
-    }
-  ],
+  "typeddicts_final.py": [],
   "typeddicts_inheritance.py": [
     {
       "code": -2,
