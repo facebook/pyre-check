@@ -78,11 +78,23 @@ testcase!(
 from typing import assert_type, Literal
 from enum import Enum
 
+Color2 = Enum('Color2', 'RED', 'GREEN', 'BLUE')
+Color3 = Enum('Color3', ['RED', 'GREEN', 'BLUE'])
+Color4 = Enum('Color4', ('RED', 'GREEN', 'BLUE'))
 Color5 = Enum('Color5', 'RED, GREEN, BLUE')
 Color6 = Enum('Color6', 'RED GREEN BLUE')
+Color7 = Enum('Color7', [('RED', 1), ('GREEN', 2), ('BLUE', 3)])
+Color8 = Enum('Color8', (('RED', 1), ('GREEN', 2), ('BLUE', 3)))
+Color9 = Enum('Color9', {'RED': 1, 'GREEN': 2, 'BLUE': 3})
 
+assert_type(Color2.RED, Literal[Color2.RED])
+assert_type(Color3.RED, Literal[Color3.RED])
+assert_type(Color4.RED, Literal[Color4.RED])
 assert_type(Color5.RED, Literal[Color5.RED])
 assert_type(Color6.RED, Literal[Color6.RED])
+assert_type(Color7.RED, Literal[Color7.RED])
+assert_type(Color8.RED, Literal[Color8.RED])
+assert_type(Color9.RED, Literal[Color9.RED])
 "#,
 );
 

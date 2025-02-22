@@ -11,10 +11,14 @@ use std::sync::LazyLock;
 use regex::Regex;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprDict;
+use ruff_python_ast::ExprList;
 use ruff_python_ast::ExprName;
+use ruff_python_ast::ExprTuple;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtClassDef;
 use ruff_text_size::Ranged;
+use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
 use crate::binding::binding::Binding;
@@ -192,6 +196,53 @@ impl<'a> BindingsBuilder<'a> {
         );
     }
 
+    fn extract_string_literals(
+        &mut self,
+        items: &[Expr],
+    ) -> Vec<(String, TextRange, Option<Expr>)> {
+        items
+            .iter()
+            .filter_map(|item| match item {
+                Expr::StringLiteral(x) => Some((x.value.to_string(), x.range(), None)),
+                _ => {
+                    self.error(item.range(), "Expected a string literal".to_owned());
+                    None
+                }
+            })
+            .collect()
+    }
+
+    fn decompose_key_value_pairs(
+        &mut self,
+        items: &[Expr],
+    ) -> Vec<(String, TextRange, Option<Expr>)> {
+        items
+            .iter()
+            .filter_map(|item| match item {
+                Expr::Tuple(ExprTuple { elts, .. }) => match elts.as_slice() {
+                    [Expr::StringLiteral(k), v] => {
+                        Some((k.value.to_string(), k.range(), Some(v.clone())))
+                    }
+                    [k, _] => {
+                        self.error(
+                            k.range(),
+                            "Expected first item to be a string literal".to_owned(),
+                        );
+                        None
+                    }
+                    _ => {
+                        self.error(item.range(), "Expected a pair".to_owned());
+                        None
+                    }
+                },
+                _ => {
+                    self.error(item.range(), "Expected a tuple".to_owned());
+                    None
+                }
+            })
+            .collect()
+    }
+
     pub fn synthesize_enum_def(
         &mut self,
         class_name: Identifier,
@@ -215,43 +266,104 @@ impl<'a> BindingsBuilder<'a> {
             BindingClassSynthesizedFields(definition_key),
         );
         let mut fields = SmallMap::new();
-        match members {
-            // Enum('Color5', 'RED, GREEN, BLUE')
-            // Enum('Color6', 'RED GREEN BLUE')
+        let member_definitions: Vec<(String, TextRange, Option<Expr>)> = match members {
+            // Enum('Color', 'RED, GREEN, BLUE')
+            // Enum('Color', 'RED GREEN BLUE')
             [Expr::StringLiteral(x)] => {
                 let s = x.value.to_str();
-                let parts: Vec<&str> = if s.contains(',') {
-                    s.split(',').map(str::trim).collect()
+                if s.contains(',') {
+                    s.split(',')
+                        .map(str::trim)
+                        .map(|s| (s.to_owned(), x.range(), None))
+                        .collect()
                 } else {
-                    s.split_whitespace().collect()
-                };
-                for member in parts {
-                    if is_valid_identifier(member) {
-                        let member_name = Name::new(member);
-                        fields.insert(
-                            member_name.clone(),
-                            ClassFieldProperties {
-                                is_annotated: false,
-                                range: None,
-                            },
-                        );
-                        self.table.insert(
-                            KeyClassField(short_class_name.clone(), member_name.clone()),
-                            BindingClassField {
-                                class: definition_key,
-                                name: member_name,
-                                value: Binding::AnyType(AnyStyle::Implicit),
-                                annotation: None,
-                                range: x.range(),
-                                initial_value: ClassFieldInitialValue::Class(None),
-                            },
-                        );
-                    } else {
-                        self.error(x.range, format!("{member} is not a valid identifier"))
-                    }
+                    s.split_whitespace()
+                        .map(|s| (s.to_owned(), x.range(), None))
+                        .collect()
                 }
             }
-            _ => self.error(class_name.range, "TODO enum functional syntax".to_owned()),
+            // Enum('Color', 'RED', 'GREEN', 'BLUE')
+            [Expr::StringLiteral(_), ..] => self.extract_string_literals(members),
+            // Enum('Color', ['RED', 'GREEN', 'BLUE'])
+            [Expr::List(ExprList { elts, .. })]
+                if matches!(elts.as_slice(), [Expr::StringLiteral(_), ..]) =>
+            {
+                self.extract_string_literals(elts)
+            }
+            // Enum('Color', ('RED', 'GREEN', 'BLUE'))
+            [Expr::Tuple(ExprTuple { elts, .. })]
+                if matches!(elts.as_slice(), [Expr::StringLiteral(_), ..]) =>
+            {
+                self.extract_string_literals(elts)
+            }
+            // Enum('Color', [('RED', 1), ('GREEN', 2), ('BLUE', 3)])
+            [Expr::List(ExprList { elts, .. })]
+                if matches!(elts.as_slice(), [Expr::Tuple(_), ..]) =>
+            {
+                self.decompose_key_value_pairs(elts)
+            }
+            // Enum('Color', (('RED', 1), ('GREEN', 2), ('BLUE', 3)))
+            [Expr::Tuple(ExprTuple { elts, .. })]
+                if matches!(elts.as_slice(), [Expr::Tuple(_), ..]) =>
+            {
+                self.decompose_key_value_pairs(elts)
+            }
+            // Enum('Color', {'RED': 1, 'GREEN': 2, 'BLUE': 3})
+            [Expr::Dict(ExprDict { items, .. })] => items
+                .iter()
+                .filter_map(|item| match (&item.key, &item.value) {
+                    (Some(Expr::StringLiteral(k)), v) => {
+                        Some((k.value.to_string(), k.range(), Some(v.clone())))
+                    }
+                    (Some(k), _) => {
+                        self.error(
+                            k.range(),
+                            "Expected first item to be a string literal".to_owned(),
+                        );
+                        None
+                    }
+                    _ => {
+                        self.error(item.range(), "Expected a key-value pair".to_owned());
+                        None
+                    }
+                })
+                .collect(),
+            _ => {
+                self.error(
+                    class_name.range,
+                    "Expected valid functional enum definition".to_owned(),
+                );
+                Vec::new()
+            }
+        };
+        for (member_name, range, member_value) in member_definitions {
+            if is_valid_identifier(member_name.as_str()) {
+                let member_name = Name::new(member_name);
+                fields.insert(
+                    member_name.clone(),
+                    ClassFieldProperties {
+                        is_annotated: false,
+                        range: None,
+                    },
+                );
+                let value_binding = match member_value {
+                    Some(value) => Binding::Expr(None, value),
+                    None => Binding::AnyType(AnyStyle::Implicit),
+                };
+                self.table.insert(
+                    KeyClassField(short_class_name.clone(), member_name.clone()),
+                    BindingClassField {
+                        class: definition_key,
+                        name: member_name,
+                        value: value_binding,
+                        annotation: None,
+                        range,
+                        initial_value: ClassFieldInitialValue::Class(None),
+                    },
+                );
+            } else {
+                self.error(range, format!("{member_name} is not a valid identifier"))
+            }
         }
         let self_binding = Binding::SelfType(definition_key);
         self.table
