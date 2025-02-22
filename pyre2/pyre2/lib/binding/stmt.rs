@@ -7,6 +7,7 @@
 
 use std::mem;
 
+use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprCall;
 use ruff_python_ast::Identifier;
@@ -45,6 +46,17 @@ impl<'a> BindingsBuilder<'a> {
                 // We pass None as imported_from, since we are really faking up a local error definition
                 self.bind_definition(asname, Binding::AnyType(AnyStyle::Error), None);
             }
+        }
+    }
+
+    // Check that the variable name in a functional definition matches the first argument string
+    fn check_functional_definition_name(&mut self, name: &Name, arg: &Expr) {
+        if let Expr::StringLiteral(x) = arg {
+            if x.value.to_str() != name.as_str() {
+                self.error(arg.range(), format!("Expected string literal \"{}\"", name));
+            }
+        } else {
+            self.error(arg.range(), format!("Expected string literal \"{}\"", name));
         }
     }
 
@@ -105,17 +117,41 @@ impl<'a> BindingsBuilder<'a> {
                         self.as_special_export(func),
                         Some(SpecialExport::Enum | SpecialExport::IntEnum | SpecialExport::StrEnum)
                     ) && arguments.keywords.is_empty()
+                        && arguments.len() > 1
                         && let Some(name) = &name =>
                     {
                         self.ensure_expr(func);
                         for arg in arguments.args.iter_mut() {
                             self.ensure_expr(arg);
                         }
-                        // Use the variable name, not the string literal argument
+                        self.check_functional_definition_name(name, &arguments.args[0]);
                         self.synthesize_enum_def(
                             Identifier::new(name.clone(), x.targets[0].range()),
                             base_name.clone(),
                             &arguments.args[1..],
+                        );
+                        is_synthesized_class = true;
+                    }
+                    Expr::Call(ExprCall {
+                        range: _,
+                        func: box ref func @ Expr::Name(ref base_name),
+                        arguments,
+                    }) if matches!(
+                        self.as_special_export(func),
+                        Some(SpecialExport::TypedDict)
+                    ) && let Some(name) = &name
+                        && arguments.len() > 1 =>
+                    {
+                        self.ensure_expr(func);
+                        for keyword in arguments.keywords.iter_mut() {
+                            self.ensure_expr(&keyword.value);
+                        }
+                        self.check_functional_definition_name(name, &arguments.args[0]);
+                        self.synthesize_typed_dict_def(
+                            Identifier::new(name.clone(), x.targets[0].range()),
+                            base_name.clone(),
+                            &arguments.args[1..],
+                            arguments.keywords.as_ref(),
                         );
                         is_synthesized_class = true;
                     }

@@ -145,6 +145,17 @@ def foo(c: Coord, key: str):
 );
 
 testcase!(
+    test_typed_dict_functional,
+    r#"
+from typing import TypedDict
+Coord = TypedDict("Coord", { "x": int, " illegal ": int })
+c: Coord = {"x": 1, " illegal ": 2}
+def test(c: Coord):
+    x: int = c[" illegal "]
+    "#,
+);
+
+testcase!(
     test_typed_dict_subtype,
     r#"
 from typing import TypedDict

@@ -1,9 +1,9 @@
 {
   "total": 133,
-  "pass": 15,
-  "fail": 118,
-  "pass_rate": 0.11,
-  "differences": 857,
+  "pass": 16,
+  "fail": 117,
+  "pass_rate": 0.12,
+  "differences": 849,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -19,6 +19,7 @@
     "overloads_basic.py",
     "specialtypes_promotions.py",
     "tuples_unpacked.py",
+    "typeddicts_alt_syntax.py",
     "typeddicts_readonly_kwargs.py"
   ],
   "failing": {
@@ -128,17 +129,16 @@
     "specialtypes_type.py": 22,
     "tuples_type_compat.py": 13,
     "tuples_type_form.py": 2,
-    "typeddicts_alt_syntax.py": 3,
     "typeddicts_class_syntax.py": 5,
     "typeddicts_final.py": 1,
     "typeddicts_inheritance.py": 1,
     "typeddicts_operations.py": 2,
-    "typeddicts_readonly.py": 5,
+    "typeddicts_readonly.py": 2,
     "typeddicts_readonly_consistency.py": 3,
     "typeddicts_readonly_inheritance.py": 7,
     "typeddicts_readonly_update.py": 1,
-    "typeddicts_required.py": 8,
-    "typeddicts_type_consistency.py": 8,
+    "typeddicts_required.py": 7,
+    "typeddicts_type_consistency.py": 7,
     "typeddicts_usage.py": 2
   },
   "comment": "@generated"

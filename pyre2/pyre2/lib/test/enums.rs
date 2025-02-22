@@ -95,6 +95,9 @@ assert_type(Color6.RED, Literal[Color6.RED])
 assert_type(Color7.RED, Literal[Color7.RED])
 assert_type(Color8.RED, Literal[Color8.RED])
 assert_type(Color9.RED, Literal[Color9.RED])
+
+# String literal doesn't match variable name
+Color = Enum("C", 'RED', 'GREEN', 'BLUE')  # E: Expected string literal "Color"
 "#,
 );
 
