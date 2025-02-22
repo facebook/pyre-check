@@ -2433,6 +2433,36 @@
       "name": "PyreError",
       "stop_column": 16,
       "stop_line": 53
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Class member `static_method1` is marked as an override, but no parent class has a matching attribute",
+      "description": "Class member `static_method1` is marked as an override, but no parent class has a matching attribute",
+      "line": 79,
+      "name": "PyreError",
+      "stop_column": 23,
+      "stop_line": 79
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Class member `class_method1` is marked as an override, but no parent class has a matching attribute",
+      "description": "Class member `class_method1` is marked as an override, but no parent class has a matching attribute",
+      "line": 84,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 84
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Class member `property1` is marked as an override, but no parent class has a matching attribute",
+      "description": "Class member `property1` is marked as an override, but no parent class has a matching attribute",
+      "line": 89,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 89
     }
   ],
   "constructors_call_init.py": [

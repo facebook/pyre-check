@@ -545,6 +545,19 @@ impl Type {
         seen
     }
 
+    pub fn contains_override(&self) -> bool {
+        fn f(ty: &Type, seen: &mut bool) {
+            if *seen || matches!(ty, Type::Decoration(Decoration::Override(_))) {
+                *seen = true;
+            } else {
+                ty.visit(|ty| f(ty, seen));
+            }
+        }
+        let mut seen = false;
+        f(self, &mut seen);
+        seen
+    }
+
     pub fn promote_literals(self, stdlib: &Stdlib) -> Type {
         self.transform(|ty| match &ty {
             Type::Literal(lit) => *ty = lit.general_class_type(stdlib).to_type(),

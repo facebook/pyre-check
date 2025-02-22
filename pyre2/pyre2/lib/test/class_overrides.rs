@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_override_any,
@@ -130,10 +129,7 @@ class B(A):
  "#,
 );
 
-testcase_with_bug!(
-    "raise an error that the attribute doesn't exist in the parent class.
-     The reason it's happening is that we are checking the top level decorator to know if something is an override. 
-     Since in these cases, the override is not at the top level, we are not catching it.",
+testcase!(
     test_override_decorators,
     r#"
 from typing import override
@@ -144,17 +140,17 @@ class ParentA:
 class ChildA(ParentA):
     @staticmethod
     @override
-    def static_method1() -> int:
+    def static_method1() -> int: # E: Class member `static_method1` is marked as an override, but no parent class has a matching attribute
         return 1
 
     @classmethod
     @override
-    def class_method1(cls) -> int:
+    def class_method1(cls) -> int: # E: Class member `class_method1` is marked as an override, but no parent class has a matching attribute
         return 1
 
     @property
     @override
-    def property1(self) -> int:
+    def property1(self) -> int: # E: Class member `property1` is marked as an override, but no parent class has a matching attribute
         return 1
     
  "#,

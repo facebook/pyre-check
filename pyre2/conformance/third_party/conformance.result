@@ -202,9 +202,6 @@
     "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']"
   ],
   "classes_override.py": [
-    "Line 79: Expected 1 errors",
-    "Line 84: Expected 1 errors",
-    "Line 89: Expected 1 errors",
     "Lines 56, 65: Expected error (tag 'method4')"
   ],
   "constructors_call_init.py": [

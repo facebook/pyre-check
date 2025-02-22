@@ -3,7 +3,7 @@
   "pass": 18,
   "fail": 115,
   "pass_rate": 0.14,
-  "differences": 834,
+  "differences": 831,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -41,7 +41,7 @@
     "callables_protocol.py": 9,
     "callables_subtyping.py": 2,
     "classes_classvar.py": 10,
-    "classes_override.py": 4,
+    "classes_override.py": 1,
     "constructors_call_init.py": 8,
     "constructors_call_metaclass.py": 7,
     "constructors_call_new.py": 6,

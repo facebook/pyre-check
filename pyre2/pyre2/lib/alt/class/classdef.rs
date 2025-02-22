@@ -664,9 +664,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let metadata = self.get_metadata_for_class(class);
         let initialization = self.get_class_field_initialization(&metadata, initial_value);
 
-        let (is_override, value_ty) = match value_ty {
-            Type::Decoration(Decoration::Override(ty)) => (true, ty.as_ref()),
-            _ => (false, value_ty),
+        let is_override = value_ty.contains_override();
+
+        // todo: consider revisiting the attr subset check to account for override decorator
+        // stripping the override decorator from the type when we don't know where it appears
+        // may not be the most efficient approach
+        let value_ty = match value_ty {
+            Type::Decoration(Decoration::Override(ty)) => ty.as_ref(),
+            _ => value_ty,
         };
 
         let value_ty = if let Some(enum_) = metadata.enum_metadata()
