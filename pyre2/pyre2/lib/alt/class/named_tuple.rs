@@ -26,6 +26,7 @@ use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::tuple::Tuple;
 use crate::types::types::Type;
+use crate::util::prelude::SliceExt;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_named_tuple_elements(&self, cls: &Class) -> Vec<Name> {
@@ -54,13 +55,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
-    fn get_named_tuple_new(&self, cls: &Class, elements: &Vec<Name>) -> ClassSynthesizedField {
-        let mut params = vec![Param::Pos(
-            Name::new("cls"),
-            Type::Type(Box::new(cls.self_type())),
-            Required::Required,
-        )];
-        for name in elements {
+    fn get_named_tuple_field_params(&self, cls: &Class, elements: &[Name]) -> Vec<Param> {
+        elements.map(|name| {
             let ClassField(ClassFieldInner::Simple {
                 ty, initialization, ..
             }) = &*self.get_class_member(cls, name).unwrap().value;
@@ -68,8 +64,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ClassFieldInitialization::Class(_) => Required::Optional,
                 ClassFieldInitialization::Instance => Required::Required,
             };
-            params.push(Param::Pos(name.clone(), ty.clone(), required));
-        }
+            Param::Pos(name.clone(), ty.clone(), required)
+        })
+    }
+
+    fn get_named_tuple_new(&self, cls: &Class, elements: &[Name]) -> ClassSynthesizedField {
+        let mut params = vec![Param::Pos(
+            Name::new("cls"),
+            Type::Type(Box::new(cls.self_type())),
+            Required::Required,
+        )];
+        params.extend(self.get_named_tuple_field_params(cls, elements));
+        let ty = Type::Callable(
+            Box::new(Callable::list(ParamList::new(params), cls.self_type())),
+            CallableKind::Def,
+        );
+        ClassSynthesizedField::new(ty)
+    }
+
+    fn get_named_tuple_init(&self, cls: &Class, elements: &[Name]) -> ClassSynthesizedField {
+        let mut params = vec![cls.self_param()];
+        params.extend(self.get_named_tuple_field_params(cls, elements));
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), cls.self_type())),
             CallableKind::Def,
@@ -113,11 +128,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Option<ClassSynthesizedFields> {
         let metadata = self.get_metadata_for_class(cls);
         let named_tuple = metadata.named_tuple_metadata()?;
-        Some(ClassSynthesizedFields::new(
-            smallmap! { dunder::NEW => self.get_named_tuple_new(cls, &named_tuple.elements),
-                dunder::MATCH_ARGS => self.get_named_tuple_match_args(&named_tuple.elements),
-                dunder::ITER => self.get_named_tuple_iter(cls, &named_tuple.elements)
-            },
-        ))
+        Some(ClassSynthesizedFields::new(smallmap! {
+            dunder::NEW => self.get_named_tuple_new(cls, &named_tuple.elements),
+            dunder::INIT => self.get_named_tuple_init(cls, &named_tuple.elements),
+            dunder::MATCH_ARGS => self.get_named_tuple_match_args(&named_tuple.elements),
+            dunder::ITER => self.get_named_tuple_iter(cls, &named_tuple.elements)
+        }))
     }
 }

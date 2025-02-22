@@ -781,13 +781,7 @@
   ],
   "namedtuples_define_class.py": [
     "Line 59: Expected 1 errors",
-    "Line 79: Expected 1 errors",
-    "Line 21: Unexpected errors ['No matching overload found']",
-    "Line 35: Unexpected errors ['No matching overload found']",
-    "Line 38: Unexpected errors ['No matching overload found']",
-    "Line 41: Unexpected errors ['No matching overload found']",
-    "Line 72: Unexpected errors ['No matching overload found']",
-    "Line 93: Unexpected errors ['No matching overload found']"
+    "Line 79: Expected 1 errors"
   ],
   "namedtuples_define_functional.py": [
     "Line 14: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]']",
@@ -808,13 +802,9 @@
     "Line 64: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]']",
     "Line 65: Unexpected errors ['Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]']"
   ],
-  "namedtuples_type_compat.py": [
-    "Line 19: Unexpected errors ['No matching overload found']"
-  ],
+  "namedtuples_type_compat.py": [],
   "namedtuples_usage.py": [
-    "Line 40: Expected 1 errors",
-    "Line 19: Unexpected errors ['No matching overload found']",
-    "Line 60: Unexpected errors ['No matching overload found']"
+    "Line 40: Expected 1 errors"
   ],
   "narrowing_typeguard.py": [
     "Line 102: Expected 1 errors",
@@ -871,8 +861,8 @@
   "protocols_definition.py": [
     "Line 117: Expected 1 errors",
     "Line 157: Expected 1 errors",
+    "Line 340: Expected 1 errors",
     "Line 341: Expected 1 errors",
-    "Line 216: Unexpected errors ['No matching overload found']",
     "Line 281: Unexpected errors ['EXPECTED Concrete5_Good2 <: Template5']"
   ],
   "protocols_explicit.py": [

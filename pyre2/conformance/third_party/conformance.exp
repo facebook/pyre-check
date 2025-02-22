@@ -10180,16 +10180,6 @@
   "namedtuples_define_class.py": [
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 21,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
       "column": 7,
       "concise_description": "Index 3 out of range for tuple with 3 elements",
       "description": "Index 3 out of range for tuple with 3 elements",
@@ -10211,48 +10201,8 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 6,
       "concise_description": "Missing argument `y`",
       "description": "Missing argument `y`",
-      "line": 44,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
       "line": 44,
       "name": "PyreError",
       "stop_column": 11,
@@ -10267,26 +10217,6 @@
       "name": "PyreError",
       "stop_column": 11,
       "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 45,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 46,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 46
     },
     {
       "code": -2,
@@ -10300,16 +10230,6 @@
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 47,
-      "name": "PyreError",
-      "stop_column": 11,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
       "column": 24,
       "concise_description": "EXPECTED Literal[3] <: str",
       "description": "EXPECTED Literal[3] <: str",
@@ -10320,12 +10240,12 @@
     },
     {
       "code": -2,
-      "column": 6,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "column": 22,
+      "concise_description": "Expected 3 positional arguments, got 4",
+      "description": "Expected 3 positional arguments, got 4",
       "line": 48,
       "name": "PyreError",
-      "stop_column": 11,
+      "stop_column": 24,
       "stop_line": 48
     },
     {
@@ -10340,16 +10260,6 @@
     },
     {
       "code": -2,
-      "column": 7,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "Unexpected keyword argument `other`",
       "description": "Unexpected keyword argument `other`",
@@ -10357,36 +10267,6 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 72,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 7,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 93,
-      "name": "PyreError",
-      "stop_column": 15,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 98,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 98
     },
     {
       "code": -2,
@@ -10674,16 +10554,6 @@
   "namedtuples_type_compat.py": [
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "EXPECTED Point <: tuple[int, int]",
       "description": "EXPECTED Point <: tuple[int, int]",
@@ -10704,16 +10574,6 @@
     }
   ],
   "namedtuples_usage.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 19,
-      "name": "PyreError",
-      "stop_column": 10,
-      "stop_line": 19
-    },
     {
       "code": -2,
       "column": 7,
@@ -10783,16 +10643,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 53
-    },
-    {
-      "code": -2,
-      "column": 6,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 60,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 60
     }
   ],
   "narrowing_typeguard.py": [
@@ -11346,16 +11196,6 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 216,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 216
-    },
-    {
-      "code": -2,
       "column": 22,
       "concise_description": "EXPECTED Concrete4_Bad1 <: Template4",
       "description": "EXPECTED Concrete4_Bad1 <: Template4",
@@ -11443,16 +11283,6 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 339
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
-      "line": 340,
-      "name": "PyreError",
-      "stop_column": 36,
-      "stop_line": 340
     }
   ],
   "protocols_explicit.py": [
