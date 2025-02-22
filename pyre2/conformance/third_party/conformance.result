@@ -11,7 +11,6 @@
     "Line 90: Expected 1 errors",
     "Line 27: Unexpected errors [\"Expected `GoodTypeAlias13` to be a type alias, got Literal['int | str']\"]",
     "Line 28: Unexpected errors [\"untype, got Literal['int | str']\"]",
-    "Line 29: Unexpected errors ['Invalid literal expression']",
     "Line 38: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]\"]",
     "Line 41: Unexpected errors ['untype, got list[type[str]]']",
     "Line 53: Unexpected errors ['assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed']",
@@ -20,7 +19,6 @@
     "Line 60: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']",
     "Line 61: Unexpected errors ['assert_type(Any, int | str) failed']",
     "Line 62: Unexpected errors ['assert_type(list[Any], list[int | str]) failed']",
-    "Line 63: Unexpected errors ['Invalid literal expression']",
     "Line 98: Unexpected errors ['assert_type(list[Any], list[str]) failed']"
   ],
   "aliases_implicit.py": [
@@ -771,13 +769,11 @@
   "literals_parameterizations.py": [
     "Line 46: Expected 1 errors",
     "Line 60: Expected 1 errors",
-    "Line 26: Unexpected errors ['Invalid literal expression']",
     "Line 33: Unexpected errors ['Invalid literal expression', 'Invalid literal expression', 'Invalid literal expression', 'Invalid literal expression']",
-    "Line 35: Unexpected errors ['Invalid literal expression', 'Invalid literal expression']"
+    "Line 35: Unexpected errors ['Invalid literal expression']"
   ],
   "literals_semantics.py": [
-    "Line 38: Unexpected errors ['Invalid literal expression', 'Could not find name `foo`', 'Invalid literal expression']",
-    "Line 39: Unexpected errors ['Invalid literal expression']"
+    "Line 38: Unexpected errors ['Could not find name `foo`', 'Invalid literal expression']"
   ],
   "namedtuples_define_class.py": [
     "Line 59: Expected 1 errors",
@@ -930,7 +926,6 @@
     "Line 85: Expected 1 errors",
     "Line 92: Expected 1 errors",
     "Line 93: Expected 1 errors",
-    "Line 36: Unexpected errors ['Invalid literal expression']",
     "Line 81: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
     "Line 98: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[int]`']",
     "Line 100: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Final[int]`']",

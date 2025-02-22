@@ -23,16 +23,6 @@
     },
     {
       "code": -2,
-      "column": 40,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 29,
-      "name": "PyreError",
-      "stop_column": 44,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]",
       "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]",
@@ -110,16 +100,6 @@
       "name": "PyreError",
       "stop_column": 38,
       "stop_line": 62
-    },
-    {
-      "code": -2,
-      "column": 39,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 63,
-      "name": "PyreError",
-      "stop_column": 43,
-      "stop_line": 63
     },
     {
       "code": -2,
@@ -9876,16 +9856,6 @@
   "literals_parameterizations.py": [
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 26,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 26
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
@@ -9932,16 +9902,6 @@
       "line": 35,
       "name": "PyreError",
       "stop_column": 49,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 54,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 35,
-      "name": "PyreError",
-      "stop_column": 58,
       "stop_line": 35
     },
     {
@@ -10138,16 +10098,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 20,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "Could not find name `foo`",
       "description": "Could not find name `foo`",
@@ -10165,16 +10115,6 @@
       "name": "PyreError",
       "stop_column": 35,
       "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 39,
-      "name": "PyreError",
-      "stop_column": 45,
-      "stop_line": 39
     }
   ],
   "namedtuples_define_class.py": [
@@ -11632,16 +11572,6 @@
   ],
   "protocols_variance.py": [],
   "qualifiers_annotated.py": [
-    {
-      "code": -2,
-      "column": 35,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 36,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 36
-    },
     {
       "code": -2,
       "column": 7,

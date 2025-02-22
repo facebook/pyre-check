@@ -3,7 +3,7 @@
   "pass": 17,
   "fail": 116,
   "pass_rate": 0.13,
-  "differences": 840,
+  "differences": 835,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -24,7 +24,7 @@
     "typeddicts_readonly_kwargs.py"
   ],
   "failing": {
-    "aliases_explicit.py": 21,
+    "aliases_explicit.py": 19,
     "aliases_implicit.py": 17,
     "aliases_newtype.py": 9,
     "aliases_recursive.py": 19,
@@ -102,8 +102,8 @@
     "historical_positional.py": 4,
     "literals_interactions.py": 5,
     "literals_literalstring.py": 12,
-    "literals_parameterizations.py": 5,
-    "literals_semantics.py": 2,
+    "literals_parameterizations.py": 4,
+    "literals_semantics.py": 1,
     "namedtuples_define_class.py": 2,
     "namedtuples_define_functional.py": 17,
     "namedtuples_usage.py": 1,
@@ -120,7 +120,7 @@
     "protocols_self.py": 4,
     "protocols_subtyping.py": 1,
     "protocols_variance.py": 7,
-    "qualifiers_annotated.py": 17,
+    "qualifiers_annotated.py": 16,
     "qualifiers_final_annotation.py": 20,
     "qualifiers_final_decorator.py": 10,
     "specialtypes_any.py": 2,

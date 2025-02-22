@@ -1122,3 +1122,11 @@ class Any: ...
 a: Any = Any()  # E: Expected a callable, got type[Any]
 "#,
 );
+
+testcase!(
+    test_literal_none,
+    r#"
+from typing import Literal
+Literal[None]
+    "#,
+);

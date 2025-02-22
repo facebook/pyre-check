@@ -131,6 +131,7 @@ impl Lit {
                     Type::any_error()
                 }
             },
+            Expr::NoneLiteral(_) => Type::None,
             _ => {
                 errors.add(
                     module_info,
