@@ -7,6 +7,8 @@ on:
   workflow_dispatch:
 
 env:
+  PACKAGE_NAME: pyre2
+  BINARY_NAME: pyre2
   PYTHON_VERSION: "3.12"
 
 jobs:
@@ -36,6 +38,12 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
           working-directory: pyre2/pyre2
+      - name: Test wheel
+        if: ${{ !startsWith(matrix.platform.target, 'aarch64') }}
+        shell: bash
+        run: |
+          python -m pip install pyre2/pyre2/dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
+          "${BINARY_NAME}" --help
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -65,6 +73,11 @@ jobs:
           manylinux: auto
           args: --release --out dist
           working-directory: pyre2/pyre2
+      - name: Test wheel
+        if: ${{ startsWith(matrix.target, 'x86_64') }}
+        run: |
+          pip install pyre2/pyre2/dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
+          "${BINARY_NAME}" --help
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
