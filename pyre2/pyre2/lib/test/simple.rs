@@ -104,6 +104,33 @@ append(v, "test")  # E: Literal['test'] <: int
 );
 
 testcase!(
+    test_generics_legacy_unqualified,
+    r#"
+from typing import TypeVar, Generic
+T = TypeVar("T")
+class C(Generic[T]): ...
+def append(x: C[T], y: T):
+    pass
+v: C[int]
+append(v, "test")  # E: Literal['test'] <: int
+"#,
+);
+
+testcase_with_bug!(
+    "special_base_class doesn't support qualified names",
+    test_generics_legacy_qualified,
+    r#"
+import typing
+T = typing.TypeVar("T")
+class C(typing.Generic[T]): ...  # E: TODO: Answers::apply_special_form cannot handle `Generic[T]`
+def append(x: C[T], y: T):
+    pass
+v: C[int]
+append(v, "test")  # E: Literal['test'] <: int
+"#,
+);
+
+testcase!(
     test_generic_default,
     r#"
 from typing import assert_type
