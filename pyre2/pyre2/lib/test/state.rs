@@ -221,3 +221,24 @@ fn test_in_memory_updated_content_recheck() {
     i.set("main", "bound_name = 3");
     i.check(&["main"], &["main"]);
 }
+
+#[test]
+fn test_incremental_minimal_recompute() {
+    let mut i = Incremental::new();
+    i.set("main", "import foo; x = foo.x");
+    i.set("foo", "x = 7");
+    i.check(&["main"], &["main", "foo"]);
+    i.set("foo", "x = 'test'");
+    i.check(&["main"], &["main", "foo"]);
+    i.set("foo", "x = 'test' # still");
+    i.check(&["main"], &["foo"]);
+    i.set("main", "import foo; x = foo.x # still");
+    i.check(&["main"], &["main"]);
+
+    // Now check that we change foo, but stop depending on it, so won't recompute.
+    i.set("foo", "x = True");
+    i.set("main", "x = 7");
+    i.check(&["main"], &["main"]);
+    i.set("main", "import foo; x = foo.x # still");
+    i.check(&["main"], &["main", "foo"]);
+}
