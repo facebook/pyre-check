@@ -6,6 +6,7 @@
  */
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::mem;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -220,15 +221,17 @@ impl State {
         }
 
         // Validate the dependencies.
-        let mut is_dirty = false;
-        for x in module_data.dependencies.read().values() {
-            if exclusive.epochs.computed < x.state.read().epochs.changed {
-                is_dirty = true;
-                break;
+        let mut is_dirty_deps = exclusive.dirty.is_dirty_deps();
+        if !is_dirty_deps {
+            for x in module_data.dependencies.read().values() {
+                if exclusive.epochs.computed < x.state.read().epochs.changed {
+                    is_dirty_deps = true;
+                    break;
+                }
             }
         }
         let mut write = exclusive.write();
-        if is_dirty {
+        if is_dirty_deps {
             write.steps.last_step = Some(if write.steps.ast.is_none() {
                 Step::Load
             } else {
@@ -239,7 +242,7 @@ impl State {
             module_data.dependencies.write().clear();
         }
         cleanup(&mut write);
-        if !is_dirty {
+        if !is_dirty_deps {
             drop(write);
             // I am clean, but I need to make sure my dependencies are too
             let mut todo = self.todo.lock();
@@ -553,7 +556,7 @@ impl State {
         }
     }
 
-    fn run_internal(&mut self, handles: &[Handle]) {
+    fn run_step(&mut self, handles: &[Handle]) {
         self.now.next();
         let configs = handles
             .iter()
@@ -584,12 +587,76 @@ impl State {
         } else {
             self.work();
         }
+    }
 
-        let changed = mem::take(&mut *self.changed.lock());
-        if changed.is_empty() {
-            return;
+    fn invalidate_rdeps(&mut self, changed: &[Handle]) {
+        // We need to invalidate all modules that depend on anything in changed, including transitively.
+        fn f(
+            dirty_handles: &mut SmallMap<Handle, bool>,
+            stack: &mut HashSet<Handle>,
+            x: &ModuleData,
+        ) -> bool {
+            if let Some(res) = dirty_handles.get(&x.handle) {
+                *res
+            } else if stack.contains(&x.handle) {
+                // Recursive hypothesis - do not write to dirty
+                false
+            } else {
+                stack.insert(x.handle.dupe());
+                let reader = x.dependencies.read();
+                let res = reader.values().any(|y| f(dirty_handles, stack, y));
+                stack.remove(&x.handle);
+                dirty_handles.insert(x.handle.dupe(), res);
+                res
+            }
         }
-        panic!("Doesn't yet support incremental changes, {changed:?}");
+
+        let mut dirty_handles = changed
+            .iter()
+            .map(|x| (x.dupe(), true))
+            .collect::<SmallMap<_, _>>();
+        let mut stack = HashSet::new();
+        for x in self.modules.values() {
+            f(&mut dirty_handles, &mut stack, x);
+        }
+
+        for (x, dirty) in dirty_handles {
+            if dirty {
+                self.modules
+                    .get(&x)
+                    .unwrap()
+                    .state
+                    .write(Step::Load)
+                    .unwrap()
+                    .dirty
+                    .set_dirty_deps();
+            }
+        }
+    }
+
+    fn run_internal(&mut self, handles: &[Handle]) {
+        // We first compute all the modules that are either new or have changed.
+        // Then we repeatedly compute all the modules who depend on modules that changed.
+        // To ensure we guarantee termination, and don't endure more than a linear overhead,
+        // if we end up spotting the same module changing twice, we just invalidate
+        // everything in the cycle and force it to compute.
+        let mut changed_twice = SmallSet::new();
+        loop {
+            self.run_step(handles);
+            let changed = mem::take(&mut *self.changed.lock());
+            if changed.is_empty() {
+                return;
+            }
+            for c in &changed {
+                if !changed_twice.insert(c.dupe()) {
+                    // We are in a cycle of mutual dependencies, so give up.
+                    // Just invalidate everything in the cycle and recompute it all.
+                    self.invalidate_rdeps(&changed);
+                    self.run_step(handles);
+                    return;
+                }
+            }
+        }
     }
 
     /// Run, collecting all errors and destroying the state.
