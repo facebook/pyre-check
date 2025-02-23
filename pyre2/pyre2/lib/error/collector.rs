@@ -98,21 +98,13 @@ impl ErrorCollector {
         }
     }
 
-    pub fn add_error(&self, err: Error) {
-        if self.style != ErrorStyle::Never {
-            self.errors.lock().push(err);
-        }
-    }
-
     pub fn add(&self, module_info: &ModuleInfo, range: TextRange, msg: String) {
         let source_range = module_info.source_range(range);
         let is_ignored = module_info.is_ignored(&source_range, &msg);
-        self.add_error(Error::new(
-            module_info.path().dupe(),
-            source_range,
-            msg,
-            is_ignored,
-        ));
+        if self.style != ErrorStyle::Never {
+            let err = Error::new(module_info.path().dupe(), source_range, msg, is_ignored);
+            self.errors.lock().push(err);
+        }
     }
 
     pub fn style(&self) -> ErrorStyle {
