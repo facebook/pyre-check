@@ -92,7 +92,7 @@ impl TypeVar {
     pub fn is_ctor(x: &Type) -> bool {
         matches!(
             x, Type::ClassDef(cls)
-            if cls.name() == "TypeVar" && matches!(cls.module_info().name().as_str(), "typing" | "typing_extensions"))
+            if cls.name() == "TypeVar" && matches!(cls.module_name().as_str(), "typing" | "typing_extensions"))
     }
 }
 

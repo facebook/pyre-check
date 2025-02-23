@@ -49,6 +49,6 @@ impl TypeVarTuple {
     pub fn is_ctor(x: &Type) -> bool {
         // This function moved in 3.11, so support both places
         let locations = &["typing", "typing_extensions"];
-        matches!(x, Type::ClassDef(cls) if cls.name() == "TypeVarTuple" && locations.contains(&cls.module_info().name().as_str()))
+        matches!(x, Type::ClassDef(cls) if cls.name() == "TypeVarTuple" && locations.contains(&cls.module_name().as_str()))
     }
 }

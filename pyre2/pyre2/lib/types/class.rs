@@ -19,6 +19,7 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
 use crate::module::module_info::ModuleInfo;
+use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
@@ -167,6 +168,10 @@ impl Class {
 
     pub fn self_param(&self) -> Param {
         Param::Pos(Name::new("self"), self.self_type(), Required::Required)
+    }
+
+    pub fn module_name(&self) -> ModuleName {
+        self.0.qname.module_name()
     }
 
     pub fn module_info(&self) -> &ModuleInfo {
