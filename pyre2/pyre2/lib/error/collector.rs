@@ -71,6 +71,7 @@ impl ModuleErrors {
 // Deliberately don't implement Clone,
 #[derive(Debug)]
 pub struct ErrorCollector {
+    module_info: ModuleInfo,
     style: ErrorStyle,
     errors: Mutex<ModuleErrors>,
 }
@@ -85,8 +86,9 @@ impl Display for ErrorCollector {
 }
 
 impl ErrorCollector {
-    pub fn new(style: ErrorStyle) -> Self {
+    pub fn new(module_info: ModuleInfo, style: ErrorStyle) -> Self {
         Self {
+            module_info,
             style,
             errors: Mutex::new(Default::default()),
         }
@@ -99,6 +101,7 @@ impl ErrorCollector {
     }
 
     pub fn add(&self, module_info: &ModuleInfo, range: TextRange, msg: String) {
+        assert_eq!(self.module_info.name(), module_info.name());
         let source_range = module_info.source_range(range);
         let is_ignored = module_info.is_ignored(&source_range, &msg);
         if self.style != ErrorStyle::Never {
@@ -177,12 +180,12 @@ mod tests {
 
     #[test]
     fn test_error_collector() {
-        let errors = ErrorCollector::new(ErrorStyle::Delayed);
         let mi = ModuleInfo::new(
             ModuleName::from_name(&Name::new("main")),
             ModulePath::filesystem(Path::new("main.py").to_owned()),
             Arc::new("contents".to_owned()),
         );
+        let errors = ErrorCollector::new(mi.dupe(), ErrorStyle::Delayed);
         errors.add(
             &mi,
             TextRange::new(TextSize::new(1), TextSize::new(3)),

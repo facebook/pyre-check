@@ -479,7 +479,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let mut props = BoolKeywords::new();
                     // We already type-checked this expression as part of computing the type for the ClassField,
                     // so we can ignore any errors encountered here.
-                    let ignore_errors = ErrorCollector::new(ErrorStyle::Never);
+                    let ignore_errors =
+                        ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Never);
                     let func_ty = self.expr_infer(func, &ignore_errors);
                     if matches!(
                         func_ty.callee_kind(),

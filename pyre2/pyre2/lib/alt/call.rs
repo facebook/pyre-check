@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Keyword;
 use ruff_python_ast::Operator;
@@ -412,8 +413,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let errors = arg_errors;
                 for call_target in overloads.into_iter() {
                     if let Some(call_target) = call_target {
-                        let arg_errors = ErrorCollector::new(ErrorStyle::Delayed);
-                        let call_errors = ErrorCollector::new(ErrorStyle::Delayed);
+                        let arg_errors =
+                            ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
+                        let call_errors =
+                            ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
                         let res = self.call_infer_inner(
                             call_target,
                             args,

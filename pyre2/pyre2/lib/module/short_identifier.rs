@@ -47,6 +47,7 @@ mod tests {
     use std::path::Path;
     use std::sync::Arc;
 
+    use dupe::Dupe;
     use ruff_python_ast::Expr;
     use ruff_python_ast::Stmt;
     use ruff_python_ast::StmtAssign;
@@ -71,7 +72,10 @@ mod tests {
             ModulePath::filesystem(Path::new("foo.py").to_owned()),
             Arc::new("hello_world = Baz123.attribute".to_owned()),
         );
-        let module = module_info.parse(&ErrorCollector::new(ErrorStyle::Delayed));
+        let module = module_info.parse(&ErrorCollector::new(
+            module_info.dupe(),
+            ErrorStyle::Delayed,
+        ));
         let show = |x: &ShortIdentifier| module_info.display(x).to_string();
         if let Stmt::Assign(StmtAssign {
             targets: x1,
