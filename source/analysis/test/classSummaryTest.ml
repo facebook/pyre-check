@@ -462,7 +462,7 @@ let test_class_attributes =
       @@ assert_attributes
            {|
       class Foo:
-        @pyre_extensions.classproperty
+        @__classproperty__
         def property(self) -> int: ...
     |}
            [

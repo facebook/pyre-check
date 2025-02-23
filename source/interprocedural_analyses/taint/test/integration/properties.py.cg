@@ -11,7 +11,6 @@ Call dependencies
     "_test_source (fun)", "properties.Class.my_property (override)"
   ],
   "properties.ClassProperty.my_class_property@decorated (method)": [
-    "pyre_extensions.classproperty (fun)",
     "properties.ClassProperty.my_class_property (method)"
   ],
   "properties.CollidePropertySetterName.collided_property (method)": [

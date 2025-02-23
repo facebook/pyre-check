@@ -25,7 +25,7 @@ let property_decorators =
     ]
 
 
-let classproperty_decorators = String.Set.of_list []
+let classproperty_decorators = String.Set.of_list ["__classproperty__"]
 
 let enumeration_classes = String.Set.of_list ["enum.Enum"; "enum.IntEnum"]
 

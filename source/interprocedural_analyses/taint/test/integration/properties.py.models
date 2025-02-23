@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.function_with_nested_properties.my_property@setter",
-    "callable_line": 233,
+    "callable_line": 232,
     "code": 5002,
-    "line": 234,
+    "line": 233,
     "start": 19,
     "end": 33,
     "filename": "properties.py",
@@ -26,7 +26,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 234,
+              "line": 233,
               "start": 19,
               "end": 33
             }
@@ -46,11 +46,11 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 234,
+              "line": 233,
               "start": 19,
               "end": 33
             },
-            "call_site": "234:8-234:34"
+            "call_site": "233:8-233:34"
           }
         ]
       }
@@ -71,9 +71,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.property_setter_in_constructor",
-    "callable_line": 159,
+    "callable_line": 158,
     "code": 5002,
-    "line": 162,
+    "line": 161,
     "start": 15,
     "end": 29,
     "filename": "properties.py",
@@ -97,10 +97,10 @@
               { "first-field": "underlying" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 160, "start": 38, "end": 52 } ],
+            "tito_positions": [ { "line": 159, "start": 38, "end": 52 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 160,
+              "line": 159,
               "start": 38,
               "end": 52
             }
@@ -120,11 +120,11 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 162,
+              "line": 161,
               "start": 15,
               "end": 29
             },
-            "call_site": "162:4-162:30"
+            "call_site": "161:4-161:30"
           }
         ]
       }
@@ -149,9 +149,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.property_setter_in_constructor",
-    "callable_line": 159,
+    "callable_line": 158,
     "code": 5002,
-    "line": 161,
+    "line": 160,
     "start": 15,
     "end": 20,
     "filename": "properties.py",
@@ -176,12 +176,12 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 160, "start": 38, "end": 52 },
-              { "line": 161, "start": 15, "end": 18 }
+              { "line": 159, "start": 38, "end": 52 },
+              { "line": 160, "start": 15, "end": 18 }
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 160,
+              "line": 159,
               "start": 38,
               "end": 52
             }
@@ -201,11 +201,11 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 161,
+              "line": 160,
               "start": 15,
               "end": 20
             },
-            "call_site": "161:4-161:21"
+            "call_site": "160:4-160:21"
           }
         ]
       }
@@ -230,9 +230,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.sets_tainted_value",
-    "callable_line": 96,
+    "callable_line": 94,
     "code": 5002,
-    "line": 97,
+    "line": 95,
     "start": 20,
     "end": 34,
     "filename": "properties.py",
@@ -253,7 +253,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 97,
+              "line": 95,
               "start": 20,
               "end": 34
             }
@@ -275,7 +275,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 97,
+                "line": 95,
                 "start": 20,
                 "end": 34
               },
@@ -283,7 +283,7 @@
                 "properties.DerivedTaintedSetter.my_property@setter"
               ],
               "port": "formal(value, position=1)",
-              "call_site": "97:4-97:17"
+              "call_site": "95:4-95:17"
             }
           }
         ]
@@ -305,9 +305,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.setters_are_simulated",
-    "callable_line": 113,
+    "callable_line": 111,
     "code": 5002,
-    "line": 119,
+    "line": 117,
     "start": 15,
     "end": 18,
     "filename": "properties.py",
@@ -328,12 +328,12 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 117, "start": 10, "end": 24 },
-              { "line": 119, "start": 15, "end": 16 }
+              { "line": 115, "start": 10, "end": 24 },
+              { "line": 117, "start": 15, "end": 16 }
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 117,
+              "line": 115,
               "start": 10,
               "end": 24
             }
@@ -353,11 +353,11 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 119,
+              "line": 117,
               "start": 15,
               "end": 18
             },
-            "call_site": "119:4-119:19"
+            "call_site": "117:4-117:19"
           }
         ]
       }
@@ -380,9 +380,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.test_issue_in_class_property",
-    "callable_line": 128,
+    "callable_line": 127,
     "code": 5002,
-    "line": 129,
+    "line": 128,
     "start": 15,
     "end": 46,
     "filename": "properties.py",
@@ -406,7 +406,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 129,
+              "line": 128,
               "start": 15,
               "end": 46
             }
@@ -426,11 +426,11 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 129,
+              "line": 128,
               "start": 15,
               "end": 46
             },
-            "call_site": "129:4-129:47"
+            "call_site": "128:4-128:47"
           }
         ]
       }
@@ -451,9 +451,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.test_property_callable",
-    "callable_line": 185,
+    "callable_line": 184,
     "code": 5002,
-    "line": 187,
+    "line": 186,
     "start": 25,
     "end": 39,
     "filename": "properties.py",
@@ -474,7 +474,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 187,
+              "line": 186,
               "start": 25,
               "end": 39
             }
@@ -496,13 +496,13 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 187,
+                "line": 186,
                 "start": 25,
                 "end": 39
               },
               "resolves_to": [ "properties.PropertyCallableReturn.__call__" ],
               "port": "formal(y, position=1)",
-              "call_site": "187:11-187:40"
+              "call_site": "186:11-186:40"
             },
             "receiver_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false
@@ -829,7 +829,7 @@
   "data": {
     "callable": "properties.Class.my_property",
     "filename": "properties.py",
-    "callable_line": 18,
+    "callable_line": 16,
     "tito": [
       {
         "port": "formal(self, position=0)[tainted]",
@@ -848,7 +848,7 @@
   "data": {
     "callable": "properties.Class.uses_other",
     "filename": "properties.py",
-    "callable_line": 29,
+    "callable_line": 27,
     "sources": [
       {
         "port": "result",
@@ -864,7 +864,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 31,
+                "line": 29,
                 "start": 19,
                 "end": 36
               },
@@ -890,7 +890,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 31, "start": 19, "end": 24 } ],
+            "tito_positions": [ { "line": 29, "start": 19, "end": 24 } ],
             "tito": {
               "caller_interval": [ { "lower": 2, "upper": 7 } ],
               "is_self_call": false
@@ -906,7 +906,7 @@
   "data": {
     "callable": "properties.Class.uses_property",
     "filename": "properties.py",
-    "callable_line": 21,
+    "callable_line": 19,
     "sources": [
       {
         "port": "formal(self, position=0)[tainted]",
@@ -923,7 +923,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 22,
+              "line": 20,
               "start": 23,
               "end": 37
             },
@@ -946,10 +946,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 23, "start": 15, "end": 19 } ],
+            "tito_positions": [ { "line": 21, "start": 15, "end": 19 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 22,
+              "line": 20,
               "start": 23,
               "end": 37
             },
@@ -967,7 +967,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 23,
+                "line": 21,
                 "start": 15,
                 "end": 31
               },
@@ -987,7 +987,7 @@
   "data": {
     "callable": "properties.Class.uses_property_but_no_tito_taint",
     "filename": "properties.py",
-    "callable_line": 25,
+    "callable_line": 23,
     "sources": [
       {
         "port": "formal(self, position=0)[untainted]",
@@ -1004,7 +1004,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 26,
+              "line": 24,
               "start": 25,
               "end": 39
             },
@@ -1027,7 +1027,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 27,
+                "line": 25,
                 "start": 15,
                 "end": 31
               },
@@ -1053,7 +1053,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 27, "start": 15, "end": 19 } ],
+            "tito_positions": [ { "line": 25, "start": 15, "end": 19 } ],
             "tito": {
               "caller_interval": [ { "lower": 2, "upper": 7 } ],
               "is_self_call": false
@@ -1069,7 +1069,7 @@
   "data": {
     "callable": "properties.ClassProperty.my_class_property",
     "filename": "properties.py",
-    "callable_line": 124,
+    "callable_line": 123,
     "sources": [
       {
         "port": "result",
@@ -1093,7 +1093,7 @@
   "data": {
     "callable": "properties.Derived.uses_property",
     "filename": "properties.py",
-    "callable_line": 37,
+    "callable_line": 35,
     "sources": [
       {
         "port": "formal(self, position=0)[tainted]",
@@ -1110,7 +1110,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 38,
+              "line": 36,
               "start": 23,
               "end": 37
             },
@@ -1133,10 +1133,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 39, "start": 15, "end": 19 } ],
+            "tito_positions": [ { "line": 37, "start": 15, "end": 19 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 38,
+              "line": 36,
               "start": 23,
               "end": 37
             },
@@ -1153,7 +1153,7 @@
   "data": {
     "callable": "properties.Derived.uses_property_but_no_tito_taint",
     "filename": "properties.py",
-    "callable_line": 41,
+    "callable_line": 39,
     "sources": [
       {
         "port": "formal(self, position=0)[untainted]",
@@ -1170,7 +1170,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 42,
+              "line": 40,
               "start": 25,
               "end": 39
             },
@@ -1193,7 +1193,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 43, "start": 15, "end": 19 } ],
+            "tito_positions": [ { "line": 41, "start": 15, "end": 19 } ],
             "tito": {
               "caller_interval": [ { "lower": 3, "upper": 4 } ],
               "is_self_call": false
@@ -1209,7 +1209,7 @@
   "data": {
     "callable": "properties.DerivedTaintedSetter.my_property@setter",
     "filename": "properties.py",
-    "callable_line": 82,
+    "callable_line": 80,
     "sinks": [
       {
         "port": "formal(value, position=1)",
@@ -1224,13 +1224,13 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 83,
+              "line": 81,
               "start": 19,
               "end": 24
             },
             "caller_interval": [ { "lower": 27, "upper": 30 } ],
             "is_self_call": false,
-            "call_site": "83:8-83:25"
+            "call_site": "81:8-81:25"
           }
         ]
       }
@@ -1242,7 +1242,7 @@
   "data": {
     "callable": "properties.OtherDerived.my_property",
     "filename": "properties.py",
-    "callable_line": 48,
+    "callable_line": 46,
     "sources": [
       {
         "port": "result",
@@ -1259,7 +1259,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 49,
+              "line": 47,
               "start": 15,
               "end": 29
             },
@@ -1276,7 +1276,7 @@
   "data": {
     "callable": "properties.OtherDerived.uses_property_but_no_tito_taint",
     "filename": "properties.py",
-    "callable_line": 51,
+    "callable_line": 49,
     "sources": [
       {
         "port": "formal(self, position=0)[untainted]",
@@ -1293,7 +1293,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 52,
+              "line": 50,
               "start": 25,
               "end": 39
             },
@@ -1316,7 +1316,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 53,
+                "line": 51,
                 "start": 15,
                 "end": 31
               },
@@ -1336,7 +1336,7 @@
   "data": {
     "callable": "properties.PropertyCallable.__init__",
     "filename": "properties.py",
-    "callable_line": 176,
+    "callable_line": 175,
     "tito": [
       {
         "port": "formal(z, position=1)",
@@ -1360,7 +1360,7 @@
   "data": {
     "callable": "properties.PropertyCallable.attribute",
     "filename": "properties.py",
-    "callable_line": 180,
+    "callable_line": 179,
     "sources": [
       {
         "port": "result[x]",
@@ -1376,10 +1376,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 182, "start": 38, "end": 52 } ],
+            "tito_positions": [ { "line": 181, "start": 38, "end": 52 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 182,
+              "line": 181,
               "start": 38,
               "end": 52
             },
@@ -1403,13 +1403,13 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 181,
+              "line": 180,
               "start": 19,
               "end": 25
             },
             "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false,
-            "call_site": "181:8-181:26"
+            "call_site": "180:8-180:26"
           }
         ]
       }
@@ -1421,7 +1421,7 @@
   "data": {
     "callable": "properties.PropertyCallableReturn.__call__",
     "filename": "properties.py",
-    "callable_line": 169,
+    "callable_line": 168,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -1436,13 +1436,13 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 171,
+              "line": 170,
               "start": 19,
               "end": 20
             },
             "caller_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false,
-            "call_site": "171:8-171:21"
+            "call_site": "170:8-170:21"
           }
         ]
       },
@@ -1459,13 +1459,13 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 170,
+              "line": 169,
               "start": 19,
               "end": 25
             },
             "caller_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false,
-            "call_site": "170:8-170:26"
+            "call_site": "169:8-169:26"
           }
         ]
       }
@@ -1477,7 +1477,7 @@
   "data": {
     "callable": "properties.PropertyCallableReturn.__init__",
     "filename": "properties.py",
-    "callable_line": 166,
+    "callable_line": 165,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -1501,7 +1501,7 @@
   "data": {
     "callable": "properties.PropertySetterInConstructor.__init__",
     "filename": "properties.py",
-    "callable_line": 146,
+    "callable_line": 145,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -1515,7 +1515,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 148, "start": 17, "end": 18 } ],
+            "tito_positions": [ { "line": 147, "start": 17, "end": 18 } ],
             "tito": {
               "caller_interval": [ { "lower": 18, "upper": 19 } ],
               "is_self_call": false
@@ -1531,7 +1531,7 @@
   "data": {
     "callable": "properties.PropertySetterInConstructor.x",
     "filename": "properties.py",
-    "callable_line": 151,
+    "callable_line": 150,
     "tito": [
       {
         "port": "formal(self, position=0)[underlying]",
@@ -1550,7 +1550,7 @@
   "data": {
     "callable": "properties.PropertySetterInConstructor.x@setter",
     "filename": "properties.py",
-    "callable_line": 155,
+    "callable_line": 154,
     "tito": [
       {
         "port": "formal(x_value, position=1)",
@@ -1574,7 +1574,7 @@
   "data": {
     "callable": "properties.PropertySetterTitoModel.my_property",
     "filename": "properties.py",
-    "callable_line": 261,
+    "callable_line": 260,
     "tito": [
       {
         "port": "formal(self, position=0)[foo]",
@@ -1593,7 +1593,7 @@
   "data": {
     "callable": "properties.PropertySetterTitoModel.my_property@setter",
     "filename": "properties.py",
-    "callable_line": 265,
+    "callable_line": 264,
     "tito": [
       {
         "port": "formal(value, position=1)",
@@ -1617,7 +1617,7 @@
   "data": {
     "callable": "properties.PropertySetterTitoModel.test_obscure_property",
     "filename": "properties.py",
-    "callable_line": 280,
+    "callable_line": 279,
     "sources": [
       {
         "port": "formal(self, position=0)",
@@ -1635,10 +1635,10 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 281, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 280, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 281,
+              "line": 280,
               "start": 32,
               "end": 46
             },
@@ -1663,16 +1663,16 @@
             "local_features": [
               { "via": "obscure:model" }, { "via": "tito" }
             ],
-            "tito_positions": [ { "line": 281, "start": 8, "end": 12 } ],
+            "tito_positions": [ { "line": 280, "start": 8, "end": 12 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 282,
+              "line": 281,
               "start": 19,
               "end": 23
             },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false,
-            "call_site": "282:8-282:24"
+            "call_site": "281:8-281:24"
           }
         ]
       }
@@ -1683,9 +1683,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.PropertySetterTitoModel.test_obscure_property",
-    "callable_line": 280,
+    "callable_line": 279,
     "code": 5002,
-    "line": 282,
+    "line": 281,
     "start": 19,
     "end": 23,
     "filename": "properties.py",
@@ -1707,10 +1707,10 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 281, "start": 32, "end": 46 } ],
+            "tito_positions": [ { "line": 280, "start": 32, "end": 46 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 281,
+              "line": 280,
               "start": 32,
               "end": 46
             },
@@ -1732,13 +1732,13 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 282,
+              "line": 281,
               "start": 19,
               "end": 23
             },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false,
-            "call_site": "282:8-282:24"
+            "call_site": "281:8-281:24"
           }
         ]
       }
@@ -1763,7 +1763,7 @@
   "data": {
     "callable": "properties.PropertySetterTitoModel.test_tito_property",
     "filename": "properties.py",
-    "callable_line": 268,
+    "callable_line": 267,
     "sources": [
       {
         "port": "formal(self, position=0)",
@@ -1779,10 +1779,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 269, "start": 27, "end": 41 } ],
+            "tito_positions": [ { "line": 268, "start": 27, "end": 41 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 269,
+              "line": 268,
               "start": 27,
               "end": 41
             },
@@ -1805,16 +1805,16 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 270, "start": 19, "end": 23 } ],
+            "tito_positions": [ { "line": 269, "start": 19, "end": 23 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 270,
+              "line": 269,
               "start": 19,
               "end": 35
             },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false,
-            "call_site": "270:8-270:36"
+            "call_site": "269:8-269:36"
           }
         ]
       }
@@ -1825,9 +1825,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.PropertySetterTitoModel.test_tito_property",
-    "callable_line": 268,
+    "callable_line": 267,
     "code": 5002,
-    "line": 270,
+    "line": 269,
     "start": 19,
     "end": 35,
     "filename": "properties.py",
@@ -1848,12 +1848,12 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 269, "start": 27, "end": 41 },
-              { "line": 270, "start": 19, "end": 23 }
+              { "line": 268, "start": 27, "end": 41 },
+              { "line": 269, "start": 19, "end": 23 }
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 269,
+              "line": 268,
               "start": 27,
               "end": 41
             },
@@ -1875,13 +1875,13 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 270,
+              "line": 269,
               "start": 19,
               "end": 35
             },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false,
-            "call_site": "270:8-270:36"
+            "call_site": "269:8-269:36"
           }
         ]
       }
@@ -1905,7 +1905,7 @@
   "data": {
     "callable": "properties.RegularAttribute.__init__",
     "filename": "properties.py",
-    "callable_line": 191,
+    "callable_line": 190,
     "tito": [
       {
         "port": "formal(my_property, position=1)",
@@ -1929,7 +1929,7 @@
   "data": {
     "callable": "properties.SetterMutatesValue.p",
     "filename": "properties.py",
-    "callable_line": 105,
+    "callable_line": 103,
     "tito": [
       {
         "port": "formal(self, position=0)[_p]",
@@ -1948,7 +1948,7 @@
   "data": {
     "callable": "properties.SetterMutatesValue.p@setter",
     "filename": "properties.py",
-    "callable_line": 109,
+    "callable_line": 107,
     "tito": [
       {
         "port": "formal(value, position=1)",
@@ -1972,7 +1972,7 @@
   "data": {
     "callable": "properties.TaintedGetterAndSetter.my_property",
     "filename": "properties.py",
-    "callable_line": 59,
+    "callable_line": 57,
     "sources": [
       {
         "port": "result",
@@ -1993,13 +1993,13 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 62,
+              "line": 60,
               "start": 19,
               "end": 23
             },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": false,
-            "call_site": "62:8-62:24"
+            "call_site": "60:8-60:24"
           }
         ]
       }
@@ -2011,7 +2011,7 @@
   "data": {
     "callable": "properties.TaintedGetterAndSetter.my_property@setter",
     "filename": "properties.py",
-    "callable_line": 66,
+    "callable_line": 64,
     "sources": [
       {
         "port": "formal(self, position=0)",
@@ -2030,13 +2030,13 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 66,
+              "line": 64,
               "start": 20,
               "end": 24
             },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": false,
-            "call_site": "66:4-67:12"
+            "call_site": "64:4-65:12"
           }
         ]
       }
@@ -2071,7 +2071,7 @@
   "data": {
     "callable": "properties.TaintedGetterAndSetter.uses_property",
     "filename": "properties.py",
-    "callable_line": 69,
+    "callable_line": 67,
     "sources": [
       {
         "port": "result",
@@ -2090,7 +2090,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 70,
+              "line": 68,
               "start": 15,
               "end": 31
             },
@@ -2115,7 +2115,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 70,
+                "line": 68,
                 "start": 15,
                 "end": 19
               },
@@ -2123,7 +2123,7 @@
                 "properties.TaintedGetterAndSetter.my_property"
               ],
               "port": "formal(self, position=0)",
-              "call_site": "70:15-70:31"
+              "call_site": "68:15-68:31"
             },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": true
@@ -2138,7 +2138,7 @@
   "data": {
     "callable": "properties.TaintedGetterAndSetter.writes_to_property",
     "filename": "properties.py",
-    "callable_line": 72,
+    "callable_line": 70,
     "sources": [
       {
         "port": "formal(self, position=0)",
@@ -2156,10 +2156,10 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 73, "start": 27, "end": 41 } ],
+            "tito_positions": [ { "line": 71, "start": 27, "end": 41 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 73,
+              "line": 71,
               "start": 27,
               "end": 41
             },
@@ -2171,7 +2171,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 73,
+                "line": 71,
                 "start": 8,
                 "end": 12
               },
@@ -2179,7 +2179,7 @@
                 "properties.TaintedGetterAndSetter.my_property@setter"
               ],
               "port": "formal(self, position=0)",
-              "call_site": "73:8-73:24"
+              "call_site": "71:8-71:24"
             },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": true
@@ -2193,9 +2193,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.TaintedGetterAndSetter.writes_to_property",
-    "callable_line": 72,
+    "callable_line": 70,
     "code": 5002,
-    "line": 73,
+    "line": 71,
     "start": 27,
     "end": 41,
     "filename": "properties.py",
@@ -2216,7 +2216,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 73,
+              "line": 71,
               "start": 27,
               "end": 41
             },
@@ -2240,7 +2240,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 73,
+                "line": 71,
                 "start": 27,
                 "end": 41
               },
@@ -2248,7 +2248,7 @@
                 "properties.DerivedTaintedSetter.my_property@setter"
               ],
               "port": "formal(value, position=1)",
-              "call_site": "73:8-73:24"
+              "call_site": "71:8-71:24"
             },
             "caller_interval": [ { "lower": 27, "upper": 30 } ],
             "is_self_call": true
@@ -2273,7 +2273,7 @@
   "data": {
     "callable": "properties.test_getattr_on_property",
     "filename": "properties.py",
-    "callable_line": 213,
+    "callable_line": 212,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2289,7 +2289,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 214,
+                "line": 213,
                 "start": 23,
                 "end": 24
               },
@@ -2297,7 +2297,7 @@
                 "properties.TaintedGetterAndSetter.my_property"
               ],
               "port": "formal(self, position=0)",
-              "call_site": "214:15-214:44"
+              "call_site": "213:15-213:44"
             }
           }
         ]
@@ -2309,9 +2309,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.test_getattr_on_property",
-    "callable_line": 213,
+    "callable_line": 212,
     "code": 5002,
-    "line": 214,
+    "line": 213,
     "start": 15,
     "end": 44,
     "filename": "properties.py",
@@ -2334,7 +2334,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 214,
+              "line": 213,
               "start": 15,
               "end": 44
             }
@@ -2354,11 +2354,11 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 214,
+              "line": 213,
               "start": 15,
               "end": 44
             },
-            "call_site": "214:4-214:45"
+            "call_site": "213:4-213:45"
           }
         ]
       }
@@ -2378,7 +2378,7 @@
   "data": {
     "callable": "properties.test_type_variable_properties_are_resolved",
     "filename": "properties.py",
-    "callable_line": 141,
+    "callable_line": 140,
     "tito": [
       {
         "port": "formal(x, position=0)[tainted]",
@@ -2392,7 +2392,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 142, "start": 11, "end": 12 } ],
+            "tito_positions": [ { "line": 141, "start": 11, "end": 12 } ],
             "tito": {}
           }
         ]
@@ -2405,7 +2405,7 @@
   "data": {
     "callable": "properties.test_union_property_attribute_sink",
     "filename": "properties.py",
-    "callable_line": 204,
+    "callable_line": 203,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2419,14 +2419,14 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 209, "start": 31, "end": 32 } ],
+            "tito_positions": [ { "line": 208, "start": 31, "end": 32 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 210,
+              "line": 209,
               "start": 15,
               "end": 30
             },
-            "call_site": "210:4-210:31"
+            "call_site": "209:4-209:31"
           },
           {
             "kinds": [
@@ -2437,11 +2437,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 209, "start": 31, "end": 32 } ],
+            "tito_positions": [ { "line": 208, "start": 31, "end": 32 } ],
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 210,
+                "line": 209,
                 "start": 15,
                 "end": 18
               },
@@ -2449,7 +2449,7 @@
                 "properties.TaintedGetterAndSetter.my_property"
               ],
               "port": "formal(self, position=0)",
-              "call_site": "210:15-210:30"
+              "call_site": "209:15-209:30"
             }
           }
         ]
@@ -2461,9 +2461,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.test_union_property_attribute_sink",
-    "callable_line": 204,
+    "callable_line": 203,
     "code": 5002,
-    "line": 210,
+    "line": 209,
     "start": 15,
     "end": 30,
     "filename": "properties.py",
@@ -2486,7 +2486,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 210,
+              "line": 209,
               "start": 15,
               "end": 30
             }
@@ -2506,11 +2506,11 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 210,
+              "line": 209,
               "start": 15,
               "end": 30
             },
-            "call_site": "210:4-210:31"
+            "call_site": "209:4-209:31"
           }
         ]
       }
@@ -2530,7 +2530,7 @@
   "data": {
     "callable": "properties.test_union_property_attribute_source",
     "filename": "properties.py",
-    "callable_line": 195,
+    "callable_line": 194,
     "sources": [
       {
         "port": "result",
@@ -2550,10 +2550,10 @@
               { "first-field": "my_property" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 200, "start": 31, "end": 45 } ],
+            "tito_positions": [ { "line": 199, "start": 31, "end": 45 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 200,
+              "line": 199,
               "start": 31,
               "end": 45
             }
@@ -2572,7 +2572,7 @@
             ],
             "origin": {
               "filename": "properties.py",
-              "line": 201,
+              "line": 200,
               "start": 11,
               "end": 26
             }
@@ -2586,9 +2586,9 @@
   "kind": "issue",
   "data": {
     "callable": "properties.test_union_property_attribute_source",
-    "callable_line": 195,
+    "callable_line": 194,
     "code": 5002,
-    "line": 201,
+    "line": 200,
     "start": 11,
     "end": 14,
     "filename": "properties.py",
@@ -2612,10 +2612,10 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 200, "start": 31, "end": 45 } ],
+            "tito_positions": [ { "line": 199, "start": 31, "end": 45 } ],
             "origin": {
               "filename": "properties.py",
-              "line": 200,
+              "line": 199,
               "start": 31,
               "end": 45
             }
@@ -2637,7 +2637,7 @@
             "call": {
               "position": {
                 "filename": "properties.py",
-                "line": 201,
+                "line": 200,
                 "start": 11,
                 "end": 14
               },
@@ -2645,7 +2645,7 @@
                 "properties.TaintedGetterAndSetter.my_property"
               ],
               "port": "formal(self, position=0)",
-              "call_site": "201:11-201:26"
+              "call_site": "200:11-200:26"
             }
           }
         ]

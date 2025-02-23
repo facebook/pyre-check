@@ -6,8 +6,6 @@
 from builtins import _test_sink, _test_source
 from typing import Optional, TypeVar, Union
 
-from pyre_extensions import classproperty
-
 
 class Class:
     def __init__(self):
@@ -120,7 +118,8 @@ def setters_are_simulated() -> None:
 
 
 class ClassProperty:
-    @classproperty
+    # pyre-ignore[10]: __classproperty__ is a made-up name to allow testing
+    @__classproperty__
     def my_class_property(cls) -> str:
         return ""
 

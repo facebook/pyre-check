@@ -9,7 +9,7 @@ def properties.TaintedGetterAndSetter.my_property(self) -> TaintSource[Test]: ..
 @my_property.setter
 def properties.TaintedGetterAndSetter.my_property(self: TaintSource[Test], value): ...
 
-@pyre_extensions.classproperty
+@__classproperty__
 def properties.ClassProperty.my_class_property(cls) -> TaintSource[Test, Via[string_concat_lhs]]: ...
 
 # Using TaintInTaintOut[LocalReturn] on property setters is equivalent to TaintInTaintOut[Updates[self]]

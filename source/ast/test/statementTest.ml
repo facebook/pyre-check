@@ -100,7 +100,7 @@ let test_is_class_property _ =
   in
   assert_false (Define.is_class_property (define "foo" []));
   assert_false (Define.is_class_property (define "__init__" []));
-  assert_true (Define.is_class_property (define "foo" [!"pyre_extensions.classproperty"]));
+  assert_true (Define.is_class_property (define "foo" [!"__classproperty__"]));
   assert_false (Define.is_class_property (define "__new__" []))
 
 
