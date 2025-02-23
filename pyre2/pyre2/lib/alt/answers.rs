@@ -114,11 +114,11 @@ pub type SolutionsEntry<K> = SmallMap<K, Arc<<K as Keyed>::Answer>>;
 
 table!(
     // Only the exported keys are stored in the solutions table.
-    #[derive(Default, Debug, Clone)]
+    #[derive(Default, Debug, Clone, PartialEq, Eq)]
     pub struct SolutionsTable(pub SolutionsEntry)
 );
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Solutions(SolutionsTable);
 
 impl DisplayWith<ModuleInfo> for Solutions {

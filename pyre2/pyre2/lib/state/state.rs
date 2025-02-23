@@ -6,6 +6,7 @@
  */
 
 use std::collections::HashMap;
+use std::mem;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -76,6 +77,8 @@ pub struct State {
     /// the highest step (the module that is closest to being finished)
     /// gets picked first, ensuring we release its memory quickly.
     todo: Mutex<EnumHeap<Step, Arc<ModuleData>>>,
+    /// Handles whose solutions changed value since the last time we recomputed
+    changed: Mutex<Vec<Handle>>,
     /// The current epoch, gets incremented every time we recompute
     now: Epoch,
 
@@ -119,6 +122,7 @@ impl State {
             modules: Default::default(),
             loaders: Default::default(),
             todo: Default::default(),
+            changed: Default::default(),
             retain_memory: true, // Will always be overwritten by entry points
         }
     }
@@ -299,9 +303,19 @@ impl State {
             {
                 let mut to_drop = None;
                 let mut writer = exclusive.write();
+                let old_solutions = if todo == Step::Solutions {
+                    writer.steps.solutions.take()
+                } else {
+                    None
+                };
                 set(&mut writer.steps);
                 if todo == Step::Solutions {
-                    writer.epochs.changed = self.now;
+                    if old_solutions != writer.steps.solutions {
+                        if old_solutions.is_some() {
+                            self.changed.lock().push(module_data.handle.dupe());
+                        }
+                        writer.epochs.changed = self.now;
+                    }
                     if !self.retain_memory {
                         // From now on we can use the answers directly, so evict the bindings/answers.
                         to_drop = writer.steps.answers.take();
@@ -570,6 +584,12 @@ impl State {
         } else {
             self.work();
         }
+
+        let changed = mem::take(&mut *self.changed.lock());
+        if changed.is_empty() {
+            return;
+        }
+        panic!("Doesn't yet support incremental changes, {changed:?}");
     }
 
     /// Run, collecting all errors and destroying the state.
