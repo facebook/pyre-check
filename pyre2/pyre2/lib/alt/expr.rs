@@ -378,9 +378,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 self.distribute_over_union(&t, |t| match x.op {
                     UnaryOp::USub => {
-                        let f = |lit: &Lit| {
-                            lit.negate(self.stdlib, self.module_info(), x.range, errors)
-                        };
+                        let f = |lit: &Lit| lit.negate(self.stdlib, x.range, errors);
                         unop(t, &f, &dunder::NEG)
                     }
                     UnaryOp::UAdd => {
@@ -392,7 +390,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Some(b) => Type::Literal(Lit::Bool(!b)),
                     },
                     UnaryOp::Invert => {
-                        let f = |lit: &Lit| lit.invert(self.module_info(), x.range, errors);
+                        let f = |lit: &Lit| lit.invert(x.range, errors);
                         unop(t, &f, &dunder::INVERT)
                     }
                 })

@@ -71,7 +71,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         msg: String,
     ) -> (Vec<Var>, CallTarget) {
-        errors.add(self.module_info(), range, msg);
+        errors.add(range, msg);
         (Vec::new(), CallTarget::any(AnyStyle::Error))
     }
 

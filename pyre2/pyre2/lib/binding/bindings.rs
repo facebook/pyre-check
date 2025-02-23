@@ -254,11 +254,7 @@ impl Bindings {
                     .table
                     .insert(Key::Anon(x.range()), Binding::Expr(None, *x));
             }
-            errors.add(
-                &module_info,
-                x.range,
-                "Invalid `return` outside of a function".to_owned(),
-            );
+            errors.add(x.range, "Invalid `return` outside of a function".to_owned());
         }
         let last_scope = builder.scopes.finish();
         for (k, static_info) in last_scope.stat.0 {
@@ -275,7 +271,6 @@ impl Bindings {
                     // We think we have a binding for this, but we didn't encounter a flow element, so have no idea of what.
                     // This might be because we haven't fully implemented all bindings, or because the two disagree. Just guess.
                     errors.add(
-                        &module_info,
                         static_info.loc,
                         format!("Could not find flow binding for `{k}`"),
                     );
@@ -379,7 +374,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     pub fn todo(&mut self, msg: &str, x: impl Ranged + Debug) {
-        self.errors.todo(&self.module_info, msg, x);
+        self.errors.todo(msg, x);
     }
 
     pub fn as_special_export(&self, e: &Expr) -> Option<SpecialExport> {
@@ -387,7 +382,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     pub fn error(&self, range: TextRange, msg: String) {
-        self.errors.add(&self.module_info, range, msg);
+        self.errors.add(range, msg);
     }
 
     fn lookup_name(&mut self, name: &Name) -> Option<Idx<Key>> {

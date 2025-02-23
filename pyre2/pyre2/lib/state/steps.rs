@@ -85,7 +85,6 @@ impl Load {
         let errors = ErrorCollector::new(module_info.dupe(), error_style);
         if let Some(err) = self_error {
             errors.add(
-                &module_info,
                 TextRange::default(),
                 format!(
                     "Failed to load `{name}` from `{}`, got {err:#}",

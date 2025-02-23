@@ -418,7 +418,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             answer.arc_clone(),
             self.type_order(),
             errors,
-            self.module_info(),
             loc,
         );
     }
@@ -448,8 +447,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else if self.solver().is_subset_eq(got, want, self.type_order()) {
             got.clone()
         } else {
-            self.solver()
-                .error(want, got, errors, self.module_info(), loc);
+            self.solver().error(want, got, errors, loc);
             want.clone()
         }
     }
@@ -470,12 +468,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn todo(&self, errors: &ErrorCollector, msg: &str, x: impl Ranged + Debug) -> Type {
-        errors.todo(self.module_info(), msg, x);
+        errors.todo(msg, x);
         Type::any_error()
     }
 
     pub fn error(&self, errors: &ErrorCollector, range: TextRange, msg: String) -> Type {
-        errors.add(self.module_info(), range, msg);
+        errors.add(range, msg);
         Type::any_error()
     }
 }

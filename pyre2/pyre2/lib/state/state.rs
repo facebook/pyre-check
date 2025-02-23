@@ -370,7 +370,7 @@ impl State {
 
     fn add_error(&self, module_data: &Arc<ModuleData>, range: TextRange, msg: String) {
         let load = module_data.state.read().steps.load.dupe().unwrap();
-        load.errors.add(&load.module_info, range, msg);
+        load.errors.add(range, msg);
     }
 
     fn lookup<'a>(&'a self, module_data: Arc<ModuleData>) -> StateHandle<'a> {

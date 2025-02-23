@@ -100,12 +100,16 @@ impl ErrorCollector {
         }
     }
 
-    pub fn add(&self, module_info: &ModuleInfo, range: TextRange, msg: String) {
-        assert_eq!(self.module_info.name(), module_info.name());
-        let source_range = module_info.source_range(range);
-        let is_ignored = module_info.is_ignored(&source_range, &msg);
+    pub fn add(&self, range: TextRange, msg: String) {
+        let source_range = self.module_info.source_range(range);
+        let is_ignored = self.module_info.is_ignored(&source_range, &msg);
         if self.style != ErrorStyle::Never {
-            let err = Error::new(module_info.path().dupe(), source_range, msg, is_ignored);
+            let err = Error::new(
+                self.module_info.path().dupe(),
+                source_range,
+                msg,
+                is_ignored,
+            );
             self.errors.lock().push(err);
         }
     }
@@ -147,14 +151,14 @@ impl ErrorCollector {
         res
     }
 
-    pub fn todo(&self, module_info: &ModuleInfo, msg: &str, v: impl Ranged + Debug) {
+    pub fn todo(&self, msg: &str, v: impl Ranged + Debug) {
         let s = format!("{v:?}");
         if s == format!("{:?}", v.range()) {
             // The v is just a range, so don't add the constructor
-            self.add(module_info, v.range(), format!("TODO: {msg}"));
+            self.add(v.range(), format!("TODO: {msg}"));
         } else {
             let prefix = s.split_once(' ').map_or(s.as_str(), |x| x.0);
-            self.add(module_info, v.range(), format!("TODO: {prefix} - {msg}"));
+            self.add(v.range(), format!("TODO: {prefix} - {msg}"));
         }
     }
 
@@ -187,27 +191,22 @@ mod tests {
         );
         let errors = ErrorCollector::new(mi.dupe(), ErrorStyle::Delayed);
         errors.add(
-            &mi,
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "b".to_owned(),
         );
         errors.add(
-            &mi,
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "a".to_owned(),
         );
         errors.add(
-            &mi,
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "a".to_owned(),
         );
         errors.add(
-            &mi,
             TextRange::new(TextSize::new(2), TextSize::new(3)),
             "a".to_owned(),
         );
         errors.add(
-            &mi,
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "b".to_owned(),
         );

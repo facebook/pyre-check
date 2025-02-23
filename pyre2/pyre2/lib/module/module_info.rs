@@ -116,7 +116,7 @@ impl ModuleInfo {
     pub fn parse(&self, errors: &ErrorCollector) -> ModModule {
         let (module, parse_errors) = Ast::parse(self.contents());
         for err in parse_errors {
-            errors.add(self, err.location, format!("Parse error: {err}"));
+            errors.add(err.location, format!("Parse error: {err}"));
         }
         module
     }

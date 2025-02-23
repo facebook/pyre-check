@@ -451,7 +451,6 @@ impl Linearization {
                     mro: Mro::Cyclic, ..
                 } => {
                     errors.add(
-                        cls.module_info(),
                         cls.range(),
                         format!(
                             "Class `{}` inheriting from `{}` creates a cycle.",
@@ -528,7 +527,6 @@ impl Linearization {
                 // (The while loop invariant ensures that ancestor_chains is non-empty, so unwrap is safe.)
                 let first_candidate = &ancestor_chains.first().unwrap().0.last().class_object();
                 errors.add(
-                    cls.module_info(),
                     cls.range(),
                     format!(
                         "Class `{}` has a nonlinearizable inheritance chain detected at `{}`.",

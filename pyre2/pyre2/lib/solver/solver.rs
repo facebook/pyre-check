@@ -18,7 +18,6 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::LookupAnswer;
 use crate::error::collector::ErrorCollector;
-use crate::module::module_info::ModuleInfo;
 use crate::solver::type_order::TypeOrder;
 use crate::types::callable::ParamList;
 use crate::types::display::TypeDisplayContext;
@@ -259,21 +258,13 @@ impl Solver {
     }
 
     /// Generate an error message that `got <: want` failed.
-    pub fn error(
-        &self,
-        want: &Type,
-        got: &Type,
-        errors: &ErrorCollector,
-        module_info: &ModuleInfo,
-        loc: TextRange,
-    ) {
+    pub fn error(&self, want: &Type, got: &Type, errors: &ErrorCollector, loc: TextRange) {
         let got = self.expand(got.clone()).deterministic_printing();
         let want = self.expand(want.clone()).deterministic_printing();
         let mut ctx = TypeDisplayContext::new();
         ctx.add(&got);
         ctx.add(&want);
         errors.add(
-            module_info,
             loc,
             format!("EXPECTED {} <: {}", ctx.display(&got), ctx.display(&want)),
         );
@@ -334,7 +325,6 @@ impl Solver {
         t: Type,
         type_order: TypeOrder<Ans>,
         errors: &ErrorCollector,
-        module_info: &ModuleInfo,
         loc: TextRange,
     ) {
         fn expand(
@@ -369,7 +359,7 @@ impl Solver {
                 drop(lock);
                 // We got forced into choosing a type to satisfy a subset constraint, so check we are OK with that.
                 if !self.is_subset_eq(&got, &t, type_order) {
-                    self.error(&t, &got, errors, module_info, loc);
+                    self.error(&t, &got, errors, loc);
                 }
             }
             _ => {

@@ -28,7 +28,6 @@ use ruff_text_size::TextRange;
 
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
-use crate::module::module_info::ModuleInfo;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
@@ -78,7 +77,6 @@ impl Display for Lit {
 impl Lit {
     pub fn from_expr(
         x: &Expr,
-        module_info: &ModuleInfo,
         get_enum_member: &dyn Fn(Identifier, &Name) -> Option<Lit>,
         errors: &ErrorCollector,
     ) -> Type {
@@ -86,7 +84,6 @@ impl Lit {
             Some(i) => Lit::Int(i).to_type(),
             None => {
                 errors.add(
-                    module_info,
                     x.range(),
                     "Int literal exceeds range, expected to fit within 64 bits".to_owned(),
                 );
@@ -121,7 +118,6 @@ impl Lit {
                 Some(lit) => lit.to_type(),
                 None => {
                     errors.add(
-                        module_info,
                         *range,
                         format!(
                             "`{}.{}` is not a valid enum member",
@@ -133,48 +129,33 @@ impl Lit {
             },
             Expr::NoneLiteral(_) => Type::None,
             _ => {
-                errors.add(
-                    module_info,
-                    x.range(),
-                    "Invalid literal expression".to_owned(),
-                );
+                errors.add(x.range(), "Invalid literal expression".to_owned());
                 Type::any_error()
             }
         }
     }
 
-    pub fn negate(
-        &self,
-        stdlib: &Stdlib,
-        module_info: &ModuleInfo,
-        range: TextRange,
-        errors: &ErrorCollector,
-    ) -> Type {
+    pub fn negate(&self, stdlib: &Stdlib, range: TextRange, errors: &ErrorCollector) -> Type {
         match self {
             Lit::Int(x) => match x.checked_neg() {
                 Some(x) => Lit::Int(x).to_type(),
                 None => stdlib.int().to_type(), // Loss of precision
             },
             _ => {
-                errors.add(module_info, range, format!("Cannot negate type {self}"));
+                errors.add(range, format!("Cannot negate type {self}"));
                 Type::any_error()
             }
         }
     }
 
-    pub fn invert(
-        &self,
-        module_info: &ModuleInfo,
-        range: TextRange,
-        errors: &ErrorCollector,
-    ) -> Type {
+    pub fn invert(&self, range: TextRange, errors: &ErrorCollector) -> Type {
         match self {
             Lit::Int(x) => {
                 let x = !x;
                 Lit::Int(x).to_type()
             }
             _ => {
-                errors.add(module_info, range, format!("Cannot invert type {self}"));
+                errors.add(range, format!("Cannot invert type {self}"));
                 Type::any_error()
             }
         }

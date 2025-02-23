@@ -147,7 +147,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 for x in arguments.iter() {
                     let lit = Lit::from_expr(
                         x,
-                        self.module_info(),
                         &|enum_name, member_name| {
                             let ty = self.get(&Key::Usage(ShortIdentifier::new(&enum_name)));
                             let cls = match &*ty {
