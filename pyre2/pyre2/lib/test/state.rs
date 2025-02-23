@@ -242,3 +242,15 @@ fn test_incremental_minimal_recompute() {
     i.set("main", "import foo; x = foo.x # still");
     i.check(&["main"], &["main", "foo"]);
 }
+
+#[test]
+fn test_incremental_cyclic() {
+    let mut i = Incremental::new();
+    i.set("foo", "import bar; x = 1; y = bar.x");
+    i.set("bar", "import foo; x = True; y = foo.x");
+    i.check(&["foo"], &["foo", "bar"]);
+    i.set("foo", "import bar; x = 1; y = bar.x # still");
+    i.check(&["foo"], &["foo"]);
+    i.set("foo", "import bar; x = 'test'; y = bar.x");
+    i.check(&["foo"], &["foo", "foo", "bar"]);
+}
