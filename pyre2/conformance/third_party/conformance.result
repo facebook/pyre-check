@@ -390,18 +390,17 @@
     "Line 16: Expected 1 errors"
   ],
   "directives_deprecated.py": [
+    "Line 18: Expected 1 errors",
     "Line 24: Expected 1 errors",
     "Line 25: Expected 1 errors",
     "Line 30: Expected 1 errors",
     "Line 41: Expected 1 errors",
-    "Line 42: Expected 1 errors",
     "Line 44: Expected 1 errors",
     "Line 47: Expected 1 errors",
     "Line 48: Expected 1 errors",
     "Line 58: Expected 1 errors",
     "Line 69: Expected 1 errors",
-    "Line 98: Expected 1 errors",
-    "Line 19: Unexpected errors ['Could not find import of `_directives_deprecated_library`, looked at search roots: ']"
+    "Line 98: Expected 1 errors"
   ],
   "directives_no_type_check.py": [],
   "directives_reveal_type.py": [
@@ -431,17 +430,12 @@
   "enums_definition.py": [],
   "enums_expansion.py": [],
   "enums_member_names.py": [],
-  "enums_member_values.py": [
-    "Line 90: Unexpected errors ['Could not find import of `_enums_member_values`, looked at search roots: ']"
-  ],
+  "enums_member_values.py": [],
   "enums_members.py": [
     "Line 27: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `genus` of class `Pet` is not visible on the class']",
     "Line 28: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `species` of class `Pet` is not visible on the class']",
-    "Line 33: Unexpected errors ['Could not find import of `_enums_members`, looked at search roots: ']",
-    "Line 35: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 36: Unexpected errors ['assert_type(Any, str) failed']",
-    "Line 37: Unexpected errors ['`Pet2.CAT` is not a valid enum member']",
-    "Line 38: Unexpected errors ['`Pet2.DOG` is not a valid enum member']",
+    "Line 35: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `genus` of class `Pet2` is not visible on the class']",
+    "Line 36: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `species` of class `Pet2` is not visible on the class']",
     "Line 100: Unexpected errors ['assert_type(Literal[TrafficLight.AMBER], Literal[TrafficLight.YELLOW]) failed']",
     "Line 128: Unexpected errors ['Could not find name `reveal_type`', 'revealed type: int']"
   ],
@@ -875,11 +869,7 @@
     "Line 82: Expected 1 errors"
   ],
   "protocols_modules.py": [
-    "Line 26: Expected 1 errors",
-    "Line 48: Expected 1 errors",
-    "Line 49: Expected 1 errors",
-    "Line 10: Unexpected errors ['Could not find import of `_protocols_modules1`, looked at search roots: ']",
-    "Line 11: Unexpected errors ['Could not find import of `_protocols_modules2`, looked at search roots: ']"
+    "Line 25: Unexpected errors ['EXPECTED Module[_protocols_modules1] <: Options1']"
   ],
   "protocols_recursive.py": [
     "Line 80: Unexpected errors ['EXPECTED ImplB <: ProtoA[Never, @_]']",
@@ -960,8 +950,7 @@
     "Lines 80, 89: Expected error (tag 'Derived3')",
     "Lines 84, 85, 86: Expected error (tag 'Derived3-2')",
     "Lines 94, 102: Expected error (tag 'Derived4')",
-    "Lines 125, 126: Expected error (tag 'func')",
-    "Line 8: Unexpected errors ['Could not find import of `_qualifiers_final_decorator`, looked at search roots: ']"
+    "Lines 125, 126: Expected error (tag 'func')"
   ],
   "specialtypes_any.py": [
     "Line 87: Unexpected errors ['Object of class `ClassA` has no attribute `method2`']",

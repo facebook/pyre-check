@@ -223,6 +223,8 @@ def get_conformance_output(
                 "--output",
                 tmp_file.name,
                 "--output-format=json",
+                "--include",
+                directory,
             ]
             + files_to_check
         )
