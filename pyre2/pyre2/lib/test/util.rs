@@ -33,6 +33,7 @@ use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
+use crate::state::subscriber::TestSubscriber;
 use crate::test::stdlib::lookup_test_stdlib;
 use crate::types::class::Class;
 use crate::types::types::Type;
@@ -151,7 +152,9 @@ impl TestEnv {
             .map(|(x, (path, _))| Handle::new(x, path, config.dupe(), loader.dupe()))
             .collect::<Vec<_>>();
         let mut state = State::new(true);
-        state.run(&handles, None);
+        let subscriber = TestSubscriber::new();
+        state.run(&handles, Some(Box::new(subscriber.dupe())));
+        subscriber.finish();
         state.print_errors();
         (state, move |module| {
             let name = ModuleName::from_str(module);
