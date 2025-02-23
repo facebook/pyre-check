@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_typed_dict,
@@ -342,5 +343,18 @@ class Coord(TypedDict):
 def foo(x: Coord, **kwargs: Unpack[Coord]):
     assert_type(x, Coord)
     assert_type(kwargs, Coord)
+    "#,
+);
+
+testcase_with_bug!(
+    "TODO(stroxler) We should correctly account for requireness of a field in requiredness of `__init__` args",
+    test_requireness_in_init,
+    r#"
+from typing import TypedDict, NotRequired
+class D(TypedDict):
+     x: int
+     y: int = 5  # E: TypedDict item `y` may not be initialized.
+     z: NotRequired[int]
+D(x=5)  # E: Missing argument `z`
     "#,
 );
