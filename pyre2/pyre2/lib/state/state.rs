@@ -748,10 +748,6 @@ impl State {
         Ok(())
     }
 
-    fn invalidate_everything(&mut self) {
-        *self = State::new(self.parallel);
-    }
-
     /// Called if the `find` portion of loading might have changed.
     /// E.g. you have include paths, and a new file appeared earlier on the path.
     #[expect(dead_code)]
@@ -769,8 +765,6 @@ impl State {
                     .set_dirty_find();
             }
         }
-
-        self.invalidate_everything();
     }
 
     /// Called if the `load_from_memory` portion of loading might have changed.
@@ -790,8 +784,6 @@ impl State {
                     .set_dirty_load();
             }
         }
-
-        self.invalidate_everything();
     }
 
     /// Called if the files read from the disk might have changed.
@@ -812,8 +804,6 @@ impl State {
                     .set_dirty_load();
             }
         }
-
-        self.invalidate_everything();
     }
 
     /* Notes on how to move to incremental
