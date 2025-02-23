@@ -254,3 +254,18 @@ fn test_incremental_cyclic() {
     i.set("foo", "import bar; x = 'test'; y = bar.x");
     i.check(&["foo"], &["foo", "foo", "bar"]);
 }
+
+#[test]
+fn test_incremental_class() {
+    // Class has equality with ArcId, so need to make sure they have equality
+    let mut i = Incremental::new();
+    i.set("main", "import foo; x = foo.X()");
+    i.set("foo", "class X: pass");
+    i.check(&["main"], &["main", "foo"]);
+    i.set("foo", "class X: pass # still");
+    // TODO: should not recompute main
+    i.check(&["main"], &["foo", "main"]);
+    i.set("foo", "# new range\nclass X: pass");
+    // TODO: should not recompute main
+    i.check(&["main"], &["foo", "main"]);
+}
