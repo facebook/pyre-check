@@ -12,6 +12,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use starlark_map::small_map::SmallMap;
 
 use crate::config::Config;
 use crate::config::PythonVersion;
@@ -23,6 +24,7 @@ use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
+use crate::state::subscriber::TestSubscriber;
 use crate::test::util::TestEnv;
 use crate::util::lock::Mutex;
 use crate::util::prelude::SliceExt;
@@ -121,50 +123,101 @@ fn test_multiple_path() {
     assert_eq!(state.collect_errors().len(), 3);
 }
 
-#[test]
-fn test_in_memory_updated_content_recheck() {
-    #[derive(Debug)]
-    struct Load(Arc<Mutex<TestEnv>>);
+#[derive(Default, Clone, Dupe, Debug)]
+struct IncrementalData(Arc<Mutex<SmallMap<ModuleName, Arc<String>>>>);
 
-    impl Loader for Load {
-        fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
-            self.0.lock().find(module)
-        }
-
-        fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
-            self.0.lock().load_from_memory(path)
+impl Loader for IncrementalData {
+    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+        match self.0.lock().get(&module) {
+            Some(_) => Ok((
+                ModulePath::memory(PathBuf::from(module.as_str())),
+                ErrorStyle::Delayed,
+            )),
+            None => TestEnv::new().find(module),
         }
     }
 
-    let test_env = {
-        let mut test_env = TestEnv::new();
-        test_env.add("main", "unbound_name");
-        Arc::new(Mutex::new(test_env))
-    };
-    let load = Load(test_env.dupe());
-    let loader = LoaderId::new(load);
+    fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {
+        match self
+            .0
+            .lock()
+            .get(&ModuleName::from_str(path.to_str().unwrap()))
+        {
+            Some(x) => Some(x.dupe()),
+            None => TestEnv::new().load_from_memory(path),
+        }
+    }
+}
 
-    let mut state = State::new(true);
-    state.run(
-        &[Handle::new(
-            ModuleName::from_str("main"),
-            ModulePath::memory(PathBuf::from("main.py")),
-            TestEnv::config(),
-            loader.dupe(),
-        )],
-        None,
-    );
-    assert_eq!(state.collect_errors().len(), 1);
-    test_env.lock().add("main", "bound_name = 3");
-    state.invalidate_memory(loader.dupe(), &[PathBuf::from("main.py")]);
-    state.run(
-        &[Handle::new(
-            ModuleName::from_str("main"),
-            ModulePath::memory(PathBuf::from("main.py")),
-            TestEnv::config(),
-            loader.dupe(),
-        )],
-        None,
-    );
-    assert_eq!(state.collect_errors().len(), 0);
+/// Helper for writing incrementality tests.
+struct Incremental {
+    data: IncrementalData,
+    loader: LoaderId,
+    state: State,
+}
+
+impl Incremental {
+    fn new() -> Self {
+        let data = IncrementalData::default();
+        let loader = LoaderId::new(data.dupe());
+        let state = State::new(true);
+        Self {
+            data,
+            loader,
+            state,
+        }
+    }
+
+    /// Change this file to these contents, expecting this number of errors.
+    fn set(&mut self, file: &str, content: &str) {
+        self.data
+            .0
+            .lock()
+            .insert(ModuleName::from_str(file), Arc::new(content.to_owned()));
+        self.state
+            .invalidate_memory(self.loader.dupe(), &[PathBuf::from(file)]);
+    }
+
+    fn handle(&self, x: &str) -> Handle {
+        Handle::new(
+            ModuleName::from_str(x),
+            ModulePath::memory(PathBuf::from(x)),
+            Config::default(),
+            self.loader.dupe(),
+        )
+    }
+
+    /// Run a check. Expect recompute things to have changed.
+    fn check(&mut self, want: &[&str], recompute: &[&str]) {
+        let subscriber = TestSubscriber::new();
+        self.state.run(
+            &want.map(|x| self.handle(x)),
+            Some(Box::new(subscriber.dupe())),
+        );
+        self.state.check_against_expectations().unwrap();
+
+        let mut recompute = recompute.map(|x| (*x).to_owned());
+        recompute.sort();
+
+        let mut changed = Vec::new();
+        for (x, (count, _)) in subscriber.finish() {
+            let m = x.module();
+            if self.data.0.lock().contains_key(&m) {
+                for _ in 0..count {
+                    changed.push(m.as_str().to_owned());
+                }
+            }
+        }
+        changed.sort();
+        assert_eq!(recompute, changed);
+    }
+}
+
+#[test]
+fn test_in_memory_updated_content_recheck() {
+    let mut i = Incremental::new();
+    i.set("main", "unbound_name # E:");
+    i.check(&["main"], &["main"]);
+    i.set("main", "bound_name = 3");
+    i.check(&["main"], &["main"]);
 }
