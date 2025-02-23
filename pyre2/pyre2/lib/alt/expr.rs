@@ -57,6 +57,7 @@ use crate::types::types::CalleeKind;
 use crate::types::types::Decoration;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
+use crate::util::prelude::VecExt;
 use crate::visitors::Visitors;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -401,24 +402,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(parameters) = &lambda.parameters {
                     param_vars.reserve(parameters.len());
                     for x in parameters.iter() {
-                        param_vars.push(self.bindings().get_lambda_param(x.name()));
+                        param_vars.push((&x.name().id, self.bindings().get_lambda_param(x.name())));
                     }
                 }
                 let return_hint = hint
                     .iter()
                     .flat_map(|ty| self.decompose_lambda(ty, &param_vars))
                     .next();
-                let params = param_vars
-                    .iter()
-                    .zip(lambda.parameters.iter().flatten())
-                    .map(|(var, p)| {
-                        Param::Pos(
-                            p.name().id.clone(),
-                            self.solver().force_var(*var),
-                            Required::Required,
-                        )
-                    })
-                    .collect::<Vec<_>>();
+                let params = param_vars.into_map(|(name, var)| {
+                    Param::Pos(
+                        name.clone(),
+                        self.solver().force_var(var),
+                        Required::Required,
+                    )
+                });
                 let params = Params::List(ParamList::new(params));
                 let ret = self.expr_infer_with_hint(&lambda.body, return_hint.as_ref(), errors);
                 Type::Callable(Box::new(Callable { params, ret }), CallableKind::Anon)

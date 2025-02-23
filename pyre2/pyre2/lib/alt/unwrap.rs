@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use ruff_python_ast::name::Name;
+
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::types::callable::Param;
@@ -133,7 +135,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn decompose_lambda(&self, ty: &Type, param_vars: &[Var]) -> Option<Type> {
+    pub fn decompose_lambda(&self, ty: &Type, param_vars: &[(&Name, Var)]) -> Option<Type> {
         let return_ty = self.fresh_var();
         // Note that parameters are optional and we add a `*args: Any`. This is to ensure that
         // our callable_ty is compatible with _any_ callable type hint. This is because we want
@@ -149,7 +151,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // will be affected, because we lose contextual type information for the existing params.
         let params = param_vars
             .iter()
-            .map(|var| Param::PosOnly(var.to_type(), Required::Optional))
+            .map(|(name, var)| Param::Pos((*name).clone(), var.to_type(), Required::Optional))
             .chain(std::iter::once(Param::VarArg(Type::any_implicit())))
             .collect::<Vec<_>>();
         let callable_ty = Type::callable(params, return_ty.to_type());
