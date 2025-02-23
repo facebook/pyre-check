@@ -117,7 +117,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.as_special_export(func),
                         Some(SpecialExport::Enum | SpecialExport::IntEnum | SpecialExport::StrEnum)
                     ) && arguments.keywords.is_empty()
-                        && arguments.len() > 1
+                        && arguments.args.len() > 1
                         && let Some(name) = &name =>
                     {
                         self.ensure_expr(func);
@@ -140,7 +140,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.as_special_export(func),
                         Some(SpecialExport::TypedDict)
                     ) && let Some(name) = &name
-                        && arguments.len() > 1 =>
+                        && arguments.args.len() >= 1 =>
                     {
                         self.ensure_expr(func);
                         for keyword in arguments.keywords.iter_mut() {

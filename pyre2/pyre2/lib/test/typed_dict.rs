@@ -154,6 +154,7 @@ Coord = TypedDict("Coord", { "x": int, " illegal ": int })
 c: Coord = {"x": 1, " illegal ": 2}
 def test(c: Coord):
     x: int = c[" illegal "]
+Invalid = TypedDict()  # E: Expected a callable, got type[TypedDict]
     "#,
 );
 
