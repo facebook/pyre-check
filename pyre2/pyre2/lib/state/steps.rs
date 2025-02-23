@@ -104,7 +104,7 @@ impl Load {
 pub struct Steps {
     /// The last step that was computed.
     /// None means no steps have been computed yet.
-    last_step: Option<Step>,
+    pub last_step: Option<Step>,
     pub load: Option<Arc<Load>>,
     pub ast: Option<Arc<ModModule>>,
     pub exports: Option<Exports>,

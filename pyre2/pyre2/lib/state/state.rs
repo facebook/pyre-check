@@ -50,6 +50,7 @@ use crate::state::loader::Loader;
 use crate::state::loader::LoaderFindCache;
 use crate::state::loader::LoaderId;
 use crate::state::steps::Context;
+use crate::state::steps::Load;
 use crate::state::steps::Step;
 use crate::state::steps::Steps;
 use crate::types::class::Class;
@@ -146,12 +147,103 @@ impl State {
             // Someone already checked us
             return;
         }
-        if exclusive.dirty.is_dirty() {
-            panic!("Should make the code not dirty");
+        // We need to clean up the state.
+        // If things have changed, we need to update the last_step.
+        // We clear memory as an optimisation only.
+        let cleanup = |w: &mut ModuleState| {
+            w.epochs.checked = self.now;
+            w.dirty.clean();
+            if w.steps.last_step != Some(Step::last()) {
+                w.epochs.computed = self.now;
+            }
+        };
+
+        // Validate the load flag.
+        if exclusive.dirty.is_dirty_load()
+            && let Some(old_load) = exclusive.steps.load.dupe()
+        {
+            let (code, self_error) =
+                Load::load_from_path(module_data.handle.path(), module_data.handle.loader());
+            if self_error.is_some() || &code != old_load.module_info.contents() {
+                let mut write = exclusive.write();
+                cleanup(&mut write);
+                write.steps.last_step = Some(Step::Load);
+                write.steps.load = Some(Arc::new(Load::load_from_data(
+                    module_data.handle.module(),
+                    module_data.handle.path().dupe(),
+                    old_load.errors.style(),
+                    code,
+                    self_error,
+                )));
+                // Clear the memory
+                write.steps.ast = None;
+                write.steps.exports = None;
+                write.steps.answers = None;
+                module_data.dependencies.write().clear();
+                // Don't clear solutions, since we can use that for equality
+                return;
+            }
+            // The contents are the same, so we can just reuse the old load
+        }
+
+        // Validate the find flag.
+        if exclusive.dirty.is_dirty_find() {
+            let loader = self.get_cached_loader(module_data.handle.loader());
+            let mut is_dirty = false;
+            for x in module_data.dependencies.read().values() {
+                match loader.find(x.handle.module()) {
+                    Ok((path, _)) if &path == x.handle.path() => {}
+                    _ => {
+                        is_dirty = true;
+                        break;
+                    }
+                }
+            }
+            if is_dirty {
+                let mut write = exclusive.write();
+                cleanup(&mut write);
+                write.steps.last_step = Some(if write.steps.ast.is_none() {
+                    Step::Load
+                } else {
+                    Step::Ast
+                });
+                write.steps.exports = None;
+                write.steps.answers = None;
+                module_data.dependencies.write().clear();
+                // Don't clear solutions, since we can use that for equality
+                return;
+            }
+        }
+
+        // Validate the dependencies.
+        let mut is_dirty = false;
+        for x in module_data.dependencies.read().values() {
+            if exclusive.epochs.computed < x.state.read().epochs.changed {
+                is_dirty = true;
+                break;
+            }
         }
         let mut write = exclusive.write();
-        write.dirty.clean();
-        write.epochs.checked = self.now;
+        if is_dirty {
+            write.steps.last_step = Some(if write.steps.ast.is_none() {
+                Step::Load
+            } else {
+                Step::Ast
+            });
+            write.steps.exports = None;
+            write.steps.answers = None;
+            module_data.dependencies.write().clear();
+        }
+        cleanup(&mut write);
+        if !is_dirty {
+            drop(write);
+            // I am clean, but I need to make sure my dependencies are too
+            let mut todo = self.todo.lock();
+            for x in module_data.dependencies.read().values() {
+                // Important we use solutions, so they don't early exit
+                todo.push_lifo(Step::Solutions, x.dupe());
+            }
+        }
     }
 
     fn demand(&self, module_data: &Arc<ModuleData>, step: Step) {

@@ -20,8 +20,12 @@ impl Dirty {
         self.dirty_find = true;
     }
 
-    pub fn is_dirty(&self) -> bool {
-        self.dirty_load || self.dirty_find
+    pub fn is_dirty_load(&self) -> bool {
+        self.dirty_load
+    }
+
+    pub fn is_dirty_find(&self) -> bool {
+        self.dirty_find
     }
 
     pub fn clean(&mut self) {

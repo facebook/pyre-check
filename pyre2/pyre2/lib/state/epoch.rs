@@ -30,7 +30,6 @@ pub struct Epochs {
     /// The point at which we have validated that everything is correct.
     pub checked: Epoch,
     /// The point at which we last computed everything.
-    #[expect(dead_code)]
     pub computed: Epoch,
     /// The last point at which something changed.
     pub changed: Epoch,
