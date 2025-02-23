@@ -55,6 +55,7 @@ use crate::state::steps::Context;
 use crate::state::steps::Load;
 use crate::state::steps::Step;
 use crate::state::steps::Steps;
+use crate::state::subscriber::Subscriber;
 use crate::types::class::Class;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
@@ -82,6 +83,8 @@ pub struct State {
     changed: Mutex<Vec<Handle>>,
     /// The current epoch, gets incremented every time we recompute
     now: Epoch,
+    /// Thing to tell about each action.
+    subscriber: Option<Box<dyn Subscriber>>,
 
     // Set to true to keep data around forever.
     retain_memory: bool,
@@ -124,6 +127,7 @@ impl State {
             loaders: Default::default(),
             todo: Default::default(),
             changed: Default::default(),
+            subscriber: None,
             retain_memory: true, // Will always be overwritten by entry points
         }
     }
@@ -160,6 +164,9 @@ impl State {
             w.dirty.clean();
             if w.steps.last_step != Some(Step::last()) {
                 w.epochs.computed = self.now;
+                if let Some(subscriber) = &self.subscriber {
+                    subscriber.start_work(module_data.handle.dupe());
+                }
             }
         };
 
@@ -171,7 +178,6 @@ impl State {
                 Load::load_from_path(module_data.handle.path(), module_data.handle.loader());
             if self_error.is_some() || &code != old_load.module_info.contents() {
                 let mut write = exclusive.write();
-                cleanup(&mut write);
                 write.steps.last_step = Some(Step::Load);
                 write.steps.load = Some(Arc::new(Load::load_from_data(
                     module_data.handle.module(),
@@ -186,6 +192,7 @@ impl State {
                 write.steps.answers = None;
                 module_data.dependencies.write().clear();
                 // Don't clear solutions, since we can use that for equality
+                cleanup(&mut write);
                 return;
             }
             // The contents are the same, so we can just reuse the old load
@@ -206,7 +213,6 @@ impl State {
             }
             if is_dirty {
                 let mut write = exclusive.write();
-                cleanup(&mut write);
                 write.steps.last_step = Some(if write.steps.ast.is_none() {
                     Step::Load
                 } else {
@@ -215,6 +221,7 @@ impl State {
                 write.steps.exports = None;
                 write.steps.answers = None;
                 module_data.dependencies.write().clear();
+                cleanup(&mut write);
                 // Don't clear solutions, since we can use that for equality
                 return;
             }
@@ -306,6 +313,7 @@ impl State {
             {
                 let mut to_drop = None;
                 let mut writer = exclusive.write();
+                let mut load_result = None;
                 let old_solutions = if todo == Step::Solutions {
                     writer.steps.solutions.take()
                 } else {
@@ -323,10 +331,16 @@ impl State {
                         // From now on we can use the answers directly, so evict the bindings/answers.
                         to_drop = writer.steps.answers.take();
                     }
+                    load_result = writer.steps.load.dupe();
                 }
                 drop(writer);
                 // Release the lock before dropping
                 drop(to_drop);
+                if let Some(load) = load_result
+                    && let Some(subscriber) = &self.subscriber
+                {
+                    subscriber.finish_work(module_data.handle.dupe(), load);
+                }
             }
             if todo == step {
                 break; // Fast path - avoid asking again since we just did it.
@@ -340,11 +354,18 @@ impl State {
     }
 
     fn get_module(&self, handle: &Handle) -> Arc<ModuleData> {
-        self.modules
+        let mut created = false;
+        let res = self
+            .modules
             .ensure(handle, || {
+                created = true;
                 Arc::new(ModuleData::new(handle.dupe(), self.now))
             })
-            .dupe()
+            .dupe();
+        if created && let Some(subscriber) = &self.subscriber {
+            subscriber.start_work(handle.dupe());
+        }
+        res
     }
 
     fn add_error(&self, module_data: &Arc<ModuleData>, range: TextRange, msg: String) {
@@ -663,14 +684,18 @@ impl State {
     /// The state afterwards will be useful for timing queries.
     /// Note we grab the `mut` only to stop other people accessing us simultaneously,
     /// we don't actually need it.
-    pub fn run_one_shot(&mut self, handles: &[Handle]) {
+    pub fn run_one_shot(&mut self, handles: &[Handle], subscriber: Option<Box<dyn Subscriber>>) {
         self.retain_memory = false;
-        self.run_internal(handles)
+        self.subscriber = subscriber;
+        self.run_internal(handles);
+        self.subscriber = None;
     }
 
-    pub fn run(&mut self, handles: &[Handle]) {
+    pub fn run(&mut self, handles: &[Handle], subscriber: Option<Box<dyn Subscriber>>) {
         self.retain_memory = true;
-        self.run_internal(handles)
+        self.subscriber = subscriber;
+        self.run_internal(handles);
+        self.subscriber = None;
     }
 
     pub fn handles(&self) -> Vec<Handle> {

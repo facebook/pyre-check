@@ -12,3 +12,4 @@ pub mod ide;
 pub mod loader;
 pub mod state;
 pub mod steps;
+pub mod subscriber;

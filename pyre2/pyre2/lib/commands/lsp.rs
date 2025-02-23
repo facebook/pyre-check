@@ -287,7 +287,7 @@ impl<'a> Server<'a> {
             &self.open_files.lock().keys().cloned().collect::<Vec<_>>(),
         );
 
-        self.state.lock().run(&handles);
+        self.state.lock().run(&handles, None);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         for x in self.open_files.lock().keys() {
             diags.insert(x.as_path().to_owned(), Vec::new());

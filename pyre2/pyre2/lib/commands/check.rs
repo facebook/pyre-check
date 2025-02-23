@@ -220,9 +220,9 @@ impl Args {
         let state = holder.as_mut();
 
         if args.report_binding_memory.is_none() && args.debug_info.is_none() {
-            state.run_one_shot(&handles)
+            state.run_one_shot(&handles, None)
         } else {
-            state.run(&handles)
+            state.run(&handles, None)
         };
         let computing = start.elapsed();
         if let Some(path) = args.output {

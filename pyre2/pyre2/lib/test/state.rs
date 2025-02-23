@@ -56,11 +56,14 @@ else:
         Handle::new(name, path, config.dupe(), loader.dupe())
     };
 
-    state.run(&[
-        f("linux", &linux),
-        f("windows", &windows),
-        f("main", &linux),
-    ]);
+    state.run(
+        &[
+            f("linux", &linux),
+            f("windows", &windows),
+            f("main", &linux),
+        ],
+        None,
+    );
     state.check_against_expectations().unwrap();
 }
 
@@ -102,14 +105,17 @@ fn test_multiple_path() {
     let loader = LoaderId::new(Load(TestEnv::new()));
 
     let mut state = State::new(true);
-    state.run(&FILES.map(|(name, path, _)| {
-        Handle::new(
-            ModuleName::from_str(name),
-            ModulePath::memory(PathBuf::from(path)),
-            TestEnv::config(),
-            loader.dupe(),
-        )
-    }));
+    state.run(
+        &FILES.map(|(name, path, _)| {
+            Handle::new(
+                ModuleName::from_str(name),
+                ModulePath::memory(PathBuf::from(path)),
+                TestEnv::config(),
+                loader.dupe(),
+            )
+        }),
+        None,
+    );
     state.print_errors();
     state.check_against_expectations().unwrap();
     assert_eq!(state.collect_errors().len(), 3);
@@ -139,20 +145,26 @@ fn test_in_memory_updated_content_recheck() {
     let loader = LoaderId::new(load);
 
     let mut state = State::new(true);
-    state.run(&[Handle::new(
-        ModuleName::from_str("main"),
-        ModulePath::memory(PathBuf::from("main.py")),
-        TestEnv::config(),
-        loader.dupe(),
-    )]);
+    state.run(
+        &[Handle::new(
+            ModuleName::from_str("main"),
+            ModulePath::memory(PathBuf::from("main.py")),
+            TestEnv::config(),
+            loader.dupe(),
+        )],
+        None,
+    );
     assert_eq!(state.collect_errors().len(), 1);
     test_env.lock().add("main", "bound_name = 3");
     state.invalidate_memory(loader.dupe(), &[PathBuf::from("main.py")]);
-    state.run(&[Handle::new(
-        ModuleName::from_str("main"),
-        ModulePath::memory(PathBuf::from("main.py")),
-        TestEnv::config(),
-        loader.dupe(),
-    )]);
+    state.run(
+        &[Handle::new(
+            ModuleName::from_str("main"),
+            ModulePath::memory(PathBuf::from("main.py")),
+            TestEnv::config(),
+            loader.dupe(),
+        )],
+        None,
+    );
     assert_eq!(state.collect_errors().len(), 0);
 }
