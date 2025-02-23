@@ -16,9 +16,9 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
-use crate::alt::class::classdef::ClassField;
-use crate::alt::class::classdef::ClassFieldInitialization;
-use crate::alt::class::classdef::ClassFieldInner;
+use crate::alt::class::class_field::ClassField;
+use crate::alt::class::class_field::ClassFieldInitialization;
+use crate::alt::class::class_field::ClassFieldInner;
 use crate::error::collector::ErrorCollector;
 use crate::types::callable::BoolKeywords;
 use crate::types::class::Class;

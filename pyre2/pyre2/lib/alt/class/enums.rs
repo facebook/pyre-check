@@ -10,9 +10,9 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::class::classdef::ClassField;
-use crate::alt::class::classdef::ClassFieldInitialization;
-use crate::alt::class::classdef::ClassFieldInner;
+use crate::alt::class::class_field::ClassField;
+use crate::alt::class::class_field::ClassFieldInitialization;
+use crate::alt::class::class_field::ClassFieldInner;
 use crate::types::class::Class;
 use crate::types::literal::Lit;
 use crate::types::types::Decoration;
