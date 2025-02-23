@@ -274,6 +274,38 @@ reveal_type(x2) # E: revealed type: (x: int, y: str) -> None
 );
 
 testcase_with_bug!(
+    "Push expected return type context through generic function call",
+    test_context_return,
+    r#"
+from typing import Callable
+
+class A: ...
+class B(A): ...
+
+def f[T](x: T) -> T: ...
+
+x: list[A] = f([B()]) # TODO # E: EXPECTED list[B] <: list[A]
+
+y = f([B()])
+z: list[A] = y # E: EXPECTED list[B] <: list[A]
+"#,
+);
+
+testcase_with_bug!(
+    "Push expected return type context through generic constructor call",
+    test_context_ctor_return,
+    r#"
+class A: ...
+class B(A): ...
+
+class C[T]:
+    def __init__(self, x: T) -> None: ...
+
+x: C[list[A]] = C([B()]) # E: EXPECTED C[list[B]] <: C[list[A]]
+"#,
+);
+
+testcase_with_bug!(
     "TODO: We do not currently validate assignments in multi-target assigns. Depending how we fix it, contextual typing may not work",
     test_context_assign_unpacked_tuple,
     r#"
