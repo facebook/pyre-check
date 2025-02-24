@@ -28,12 +28,6 @@
 #![feature(associated_const_equality)]
 #![feature(once_wait)]
 
-use std::process::ExitCode;
-
-use util::panic::exit_on_panic;
-
-use crate::commands::run::run;
-
 mod alt;
 mod ast;
 mod binding;
@@ -52,16 +46,4 @@ mod types;
 mod util;
 mod visitors;
 
-pub fn main() -> ExitCode {
-    exit_on_panic();
-    let res = run();
-    match res {
-        Ok(code) => code,
-        Err(e) => {
-            // If you return a Result from main, and RUST_BACKTRACE=1 is set, then
-            // it will print a backtrace - which is not what we want.
-            eprintln!("{:#}", e);
-            ExitCode::FAILURE
-        }
-    }
-}
+pub use crate::commands::run::run;
