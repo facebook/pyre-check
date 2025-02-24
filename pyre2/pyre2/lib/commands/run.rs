@@ -38,9 +38,8 @@ impl<T: clap::Args> Standard<T> {
 #[command(name = "pyre2")]
 #[command(about = "Next generation of Pyre type checker", long_about = None)]
 enum Args {
-    /// Test typing result a single file
-    #[clap(name = "check")]
-    ExpectTest(Standard<crate::commands::check::Args>),
+    /// Full type checking on a file or a project
+    Check(Standard<crate::commands::check::Args>),
 
     /// Entry point for Buck integration
     BuckCheck(Standard<crate::commands::buck_check::Args>),
@@ -62,7 +61,7 @@ pub fn run() -> anyhow::Result<ExitCode> {
 fn run_once(allow_forget: bool) -> anyhow::Result<ExitCode> {
     let args = Args::parse_from(get_args_expanded()?);
     match args {
-        Args::ExpectTest(args) => {
+        Args::Check(args) => {
             args.init_tracing();
             args.args.run(allow_forget)
         }
