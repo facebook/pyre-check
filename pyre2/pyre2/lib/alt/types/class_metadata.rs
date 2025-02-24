@@ -17,8 +17,6 @@ use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
 use crate::alt::class::class_field::ClassField;
-use crate::alt::class::class_field::ClassFieldInitialization;
-use crate::alt::class::class_field::ClassFieldInner;
 use crate::error::collector::ErrorCollector;
 use crate::types::callable::BoolKeywords;
 use crate::types::class::Class;
@@ -168,13 +166,7 @@ impl Display for ClassSynthesizedField {
 impl ClassSynthesizedField {
     pub fn new(ty: Type) -> Self {
         Self {
-            inner: Arc::new(ClassField(ClassFieldInner::Simple {
-                ty,
-                range: None,
-                annotation: None,
-                initialization: ClassFieldInitialization::Class(None),
-                readonly: false,
-            })),
+            inner: Arc::new(ClassField::new_synthesized(ty)),
         }
     }
 }

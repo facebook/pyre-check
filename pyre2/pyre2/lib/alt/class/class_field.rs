@@ -113,6 +113,16 @@ impl ClassField {
         })
     }
 
+    pub fn new_synthesized(ty: Type) -> Self {
+        ClassField(ClassFieldInner::Simple {
+            ty,
+            range: None,
+            annotation: None,
+            initialization: ClassFieldInitialization::Class(None),
+            readonly: false,
+        })
+    }
+
     pub fn recursive() -> Self {
         Self(ClassFieldInner::Simple {
             ty: Type::any_implicit(),
