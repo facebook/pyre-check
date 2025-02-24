@@ -12652,6 +12652,16 @@
     },
     {
       "code": -2,
+      "column": 17,
+      "concise_description": "Invalid position for `...`",
+      "description": "Invalid position for `...`",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
       "column": 30,
       "concise_description": "Invalid position for `...`",
       "description": "Invalid position for `...`",

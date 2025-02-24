@@ -989,7 +989,6 @@
     "Line 139: Unexpected errors ['assert_type(Sequence[int | tuple[str, ...]], Sequence[int | str]) failed']"
   ],
   "tuples_type_form.py": [
-    "Line 43: Expected 1 errors",
     "Line 44: Expected 1 errors"
   ],
   "tuples_unpacked.py": [],

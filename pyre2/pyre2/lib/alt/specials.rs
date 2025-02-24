@@ -48,6 +48,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             if matches!(value, Expr::EllipsisLiteral(_)) {
                 if let [t] = prefix.as_slice()
                     && middle.is_none()
+                    && arguments.len() == 2
                 {
                     if t.is_unpack() {
                         return Err(self.error(

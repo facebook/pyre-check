@@ -3,7 +3,7 @@
   "pass": 20,
   "fail": 113,
   "pass_rate": 0.15,
-  "differences": 807,
+  "differences": 806,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -129,7 +129,7 @@
     "specialtypes_none.py": 2,
     "specialtypes_type.py": 22,
     "tuples_type_compat.py": 13,
-    "tuples_type_form.py": 2,
+    "tuples_type_form.py": 1,
     "typeddicts_class_syntax.py": 5,
     "typeddicts_inheritance.py": 1,
     "typeddicts_operations.py": 2,
