@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_override_any,
@@ -168,6 +169,63 @@ class ChildA(ParentA):
     @override
     @staticmethod
     def static_method1() -> int: # E: Class member `static_method1` is marked as an override, but no parent class has a matching attribute
+        return 1
+    
+ "#,
+);
+
+testcase_with_bug!(
+    "TODO: Handle custom wrappers",
+    test_override_custom_wrapper,
+    r#"
+
+from typing import Any, Callable, override
+
+def wrapper(func: Callable[..., Any], /) -> Any:
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError # E: Could not find name `NotImplementedError`
+
+    return wrapped
+
+
+class ParentA:
+
+    @staticmethod
+    def static_method1() -> int:
+        return 1
+
+class ChildA(ParentA):
+
+    @wrapper # E: EXPECTED override[staticmethod[() -> bool]] <: (...) -> Any
+    @override
+    @staticmethod
+    def static_method1() -> bool: 
+        return 1 # E: EXPECTED Literal[1] <: bool
+    
+ "#,
+);
+
+testcase_with_bug!(
+    "TODO: is attr subset should be edited to potentially strip/ignore override decorators from the type.
+    after this is accomplished, we can remove the duplicate code that strips the decorator when calculating 
+    fields",
+    test_override_duplicate_decorator,
+    r#"
+
+from typing import  override
+
+class ParentA:
+
+    @staticmethod
+    def static_method1() -> int:
+        return 1
+
+class ChildA(ParentA):
+
+    @staticmethod
+    @override
+    @staticmethod
+    def static_method1() -> int: # E: Class member `static_method1` overrides parent class `ParentA` in an inconsistent manner
         return 1
     
  "#,
