@@ -3,26 +3,6 @@
   "aliases_explicit.py": [
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "Expected `GoodTypeAlias13` to be a type alias, got Literal['int | str']",
-      "description": "Expected `GoodTypeAlias13` to be a type alias, got Literal['int | str']",
-      "line": 27,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 27
-    },
-    {
-      "code": -2,
-      "column": 28,
-      "concise_description": "untype, got Literal['int | str']",
-      "description": "untype, got Literal['int | str']",
-      "line": 28,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]",
       "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]",
@@ -83,26 +63,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, int | str) failed",
-      "description": "assert_type(Any, int | str) failed",
-      "line": 61,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(list[Any], list[int | str]) failed",
-      "description": "assert_type(list[Any], list[int | str]) failed",
-      "line": 62,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 62
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias2, type[int | None]]",
       "description": "Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias2, type[int | None]]",
@@ -120,6 +80,16 @@
       "name": "PyreError",
       "stop_column": 28,
       "stop_line": 68
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "Could not parse type string: , got Expected an expression at byte range 2504..2504",
+      "description": "Could not parse type string: , got Expected an expression at byte range 2504..2504",
+      "line": 79,
+      "name": "PyreError",
+      "stop_column": 28,
+      "stop_line": 79
     },
     {
       "code": -2,
@@ -154,11 +124,31 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected `BadTypeAlias5` to be a type alias, got dict[str, str]",
-      "description": "Expected `BadTypeAlias5` to be a type alias, got dict[str, str]",
+      "concise_description": "Expected `BadTypeAlias5` to be a type alias, got dict[Error, Error]",
+      "description": "Expected `BadTypeAlias5` to be a type alias, got dict[Error, Error]",
       "line": 83,
       "name": "PyreError",
       "stop_column": 31,
+      "stop_line": 83
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "Could not find name `a`",
+      "description": "Could not find name `a`",
+      "line": 83,
+      "name": "PyreError",
+      "stop_column": 23,
+      "stop_line": 83
+    },
+    {
+      "code": -2,
+      "column": 27,
+      "concise_description": "Could not find name `b`",
+      "description": "Could not find name `b`",
+      "line": 83,
+      "name": "PyreError",
+      "stop_column": 28,
       "stop_line": 83
     },
     {
@@ -10095,26 +10085,6 @@
       "name": "PyreError",
       "stop_column": 11,
       "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Could not find name `foo`",
-      "description": "Could not find name `foo`",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 38,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 38
     }
   ],
   "namedtuples_define_class.py": [

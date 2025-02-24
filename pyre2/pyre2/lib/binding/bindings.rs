@@ -364,7 +364,11 @@ impl<'a> BindingsBuilder<'a> {
                     let idx = self
                         .table
                         .insert(key, Binding::Import(builtins_module, name.clone()));
-                    self.bind_key(name, idx, Some(FlowStyle::Import(builtins_module)));
+                    self.bind_key(
+                        name,
+                        idx,
+                        Some(FlowStyle::Import(builtins_module, name.clone())),
+                    );
                 }
             }
             Err(err) => {

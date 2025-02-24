@@ -502,12 +502,16 @@ impl<'a> BindingsBuilder<'a> {
                                             Binding::AnyType(AnyStyle::Error)
                                         };
                                         let key = self.table.insert(key, val);
-                                        self.bind_key(name, key, Some(FlowStyle::Import(m)));
+                                        self.bind_key(
+                                            name,
+                                            key,
+                                            Some(FlowStyle::Import(m, name.clone())),
+                                        );
                                     }
                                 } else {
                                     let asname = x.asname.unwrap_or_else(|| x.name.clone());
                                     let val = if module_exports.contains(&x.name.id, self.lookup) {
-                                        Binding::Import(m, x.name.id)
+                                        Binding::Import(m, x.name.id.clone())
                                     } else {
                                         let x_as_module_name = m.append(&x.name.id);
                                         if self.lookup.get(x_as_module_name).is_ok() {
@@ -527,7 +531,11 @@ impl<'a> BindingsBuilder<'a> {
                                             Binding::AnyType(AnyStyle::Error)
                                         }
                                     };
-                                    self.bind_definition(&asname, val, Some(FlowStyle::Import(m)));
+                                    self.bind_definition(
+                                        &asname,
+                                        val,
+                                        Some(FlowStyle::Import(m, x.name.id)),
+                                    );
                                 }
                             }
                         }

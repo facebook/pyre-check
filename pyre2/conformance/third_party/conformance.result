@@ -4,21 +4,16 @@
     "Line 69: Expected 1 errors",
     "Line 70: Expected 1 errors",
     "Line 71: Expected 1 errors",
-    "Line 79: Expected 1 errors",
     "Line 84: Expected 1 errors",
     "Line 85: Expected 1 errors",
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
-    "Line 27: Unexpected errors [\"Expected `GoodTypeAlias13` to be a type alias, got Literal['int | str']\"]",
-    "Line 28: Unexpected errors [\"untype, got Literal['int | str']\"]",
     "Line 38: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]\"]",
     "Line 41: Unexpected errors ['untype, got list[type[str]]']",
     "Line 53: Unexpected errors ['assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed']",
     "Line 54: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
     "Line 57: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
     "Line 60: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']",
-    "Line 61: Unexpected errors ['assert_type(Any, int | str) failed']",
-    "Line 62: Unexpected errors ['assert_type(list[Any], list[int | str]) failed']",
     "Line 98: Unexpected errors ['assert_type(list[Any], list[str]) failed']"
   ],
   "aliases_implicit.py": [
@@ -763,9 +758,7 @@
     "Line 33: Unexpected errors ['Invalid literal expression', 'Invalid literal expression', 'Invalid literal expression', 'Invalid literal expression']",
     "Line 35: Unexpected errors ['Invalid literal expression']"
   ],
-  "literals_semantics.py": [
-    "Line 38: Unexpected errors ['Could not find name `foo`', 'Invalid literal expression']"
-  ],
+  "literals_semantics.py": [],
   "namedtuples_define_class.py": [
     "Line 59: Expected 1 errors",
     "Line 79: Expected 1 errors"

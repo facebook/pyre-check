@@ -129,8 +129,9 @@ pub enum FlowStyle {
     /// The `ModuleName` will be the most recent entry.
     MergeableImport(ModuleName),
     /// Was I imported from somewhere (and if so, where)
-    /// E.g. `from foo import bar` would get `foo` here.
-    Import(ModuleName),
+    /// E.g. Both `from foo import bar` and
+    /// `from foo import bar as baz` would get `(foo, bar)`.
+    Import(ModuleName, Name),
     /// Am I an alias for a module import, `import foo.bar as baz`
     /// would get `foo.bar` here.
     ImportAs(ModuleName),
@@ -325,17 +326,29 @@ impl Scopes {
     }
 
     pub fn as_special_export(&self, e: &Expr, current_module: ModuleName) -> Option<SpecialExport> {
-        // Only works for things with `Foo` or `source.Foo`.
+        // Only works for things with `Foo`, or `source.Foo`, or `F` where `from module import Foo as F`.
         // Does not work for things with nested modules - but no SpecialExport's have that.
         match e {
             Expr::Name(name) => {
                 let name = &name.id;
-                let special = SpecialExport::new(name)?;
                 let flow = self.get_flow_info(name)?;
-                match flow.style {
-                    Some(FlowStyle::Import(m)) if special.defined_in(m) => Some(special),
-                    _ if special.defined_in(current_module) => Some(special),
-                    _ => None,
+                match &flow.style {
+                    Some(FlowStyle::Import(m, name2)) => {
+                        let special = SpecialExport::new(name2)?;
+                        if special.defined_in(*m) {
+                            Some(special)
+                        } else {
+                            None
+                        }
+                    }
+                    _ => {
+                        let special = SpecialExport::new(name)?;
+                        if special.defined_in(current_module) {
+                            Some(special)
+                        } else {
+                            None
+                        }
+                    }
                 }
             }
             Expr::Attribute(ExprAttribute {

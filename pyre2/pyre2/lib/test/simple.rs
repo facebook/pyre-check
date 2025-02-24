@@ -1157,3 +1157,11 @@ from typing import Literal
 Literal[None]
     "#,
 );
+
+testcase!(
+    test_literal_alias,
+    r#"
+from typing import Literal as L
+x: L["foo"] = "foo"
+"#,
+);
