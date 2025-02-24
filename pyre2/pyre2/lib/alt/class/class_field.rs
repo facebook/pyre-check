@@ -29,6 +29,7 @@ use crate::error::collector::ErrorCollector;
 use crate::error::style::ErrorStyle;
 use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::types::annotation::Annotation;
+use crate::types::annotation::Qualifier;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::CallableKind;
 use crate::types::callable::DataclassKeywords;
@@ -37,6 +38,7 @@ use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
+use crate::types::typed_dict::TypedDictField;
 use crate::types::types::BoundMethod;
 use crate::types::types::CalleeKind;
 use crate::types::types::Decoration;
@@ -246,6 +248,43 @@ impl ClassField {
                     bind_class_attribute(cls, *range, ty.clone())
                 }
             }
+        }
+    }
+
+    // TODO(stroxler): Simplify this - in a refactor, I preserved behavior of using a
+    // has_default flag, but this is a bug and should be removed in a follow-up.
+    pub fn as_typed_dict_field_info(
+        self,
+        required_by_default: bool,
+    ) -> Option<(TypedDictField, bool)> {
+        match &self.0 {
+            ClassFieldInner::Simple {
+                annotation:
+                    Some(Annotation {
+                        ty: Some(ty),
+                        qualifiers,
+                    }),
+                initialization,
+                ..
+            } => Some((
+                TypedDictField {
+                    ty: ty.clone(),
+                    read_only: qualifiers.contains(&Qualifier::ReadOnly),
+                    required: if qualifiers.contains(&Qualifier::Required) {
+                        true
+                    } else if qualifiers.contains(&Qualifier::NotRequired) {
+                        false
+                    } else {
+                        required_by_default
+                    },
+                },
+                // Does the field have a default value?
+                match initialization {
+                    ClassFieldInitialization::Class(_) => true,
+                    ClassFieldInitialization::Instance => false,
+                },
+            )),
+            _ => None,
         }
     }
 }

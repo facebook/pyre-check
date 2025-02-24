@@ -14,6 +14,7 @@ use starlark_map::ordered_map::OrderedMap;
 use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
+use crate::types::class::Substitution;
 use crate::types::class::TArgs;
 use crate::types::qname::QName;
 use crate::types::types::Type;
@@ -23,6 +24,16 @@ pub struct TypedDictField {
     pub ty: Type,
     pub required: bool,
     pub read_only: bool,
+}
+
+impl TypedDictField {
+    pub fn substitute(self, substitution: &Substitution) -> Self {
+        Self {
+            ty: substitution.substitute(self.ty),
+            required: self.required,
+            read_only: self.read_only,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
