@@ -15,6 +15,7 @@ use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
+use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprSubscript;
 use ruff_python_ast::ExprYield;
 use ruff_python_ast::ExprYieldFrom;
@@ -610,6 +611,10 @@ pub enum Binding {
     /// An expression, optionally with a Key saying what the type must be.
     /// The Key must be a type of types, e.g. `Type::Type`.
     Expr(Option<Idx<KeyAnnotation>>, Expr),
+    /// TypeVar, ParamSpec, or TypeVarTuple
+    TypeVar(Option<Idx<KeyAnnotation>>, Identifier, Box<ExprCall>),
+    ParamSpec(Option<Idx<KeyAnnotation>>, Identifier, Box<ExprCall>),
+    TypeVarTuple(Option<Idx<KeyAnnotation>>, Identifier, Box<ExprCall>),
     /// An expression returned from a function.
     ReturnExplicit(ReturnExplicit),
     /// The implicit return from a function.
@@ -707,6 +712,15 @@ impl DisplayWith<Bindings> for Binding {
             Self::Expr(None, x) => write!(f, "{}", m.display(x)),
             Self::Expr(Some(k), x) => {
                 write!(f, "{}: {}", ctx.display(*k), m.display(x))
+            }
+            Self::TypeVar(_, name, x) => {
+                write!(f, "typevar {} = {}", name, m.display(x))
+            }
+            Self::ParamSpec(_, name, x) => {
+                write!(f, "paramspec {} = {}", name, m.display(x))
+            }
+            Self::TypeVarTuple(_, name, x) => {
+                write!(f, "typevartuple {} = {}", name, m.display(x))
             }
             Self::ReturnExplicit(x) => {
                 if let Some(annot) = x.annot {

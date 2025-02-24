@@ -3,7 +3,7 @@
   "pass": 21,
   "fail": 112,
   "pass_rate": 0.16,
-  "differences": 805,
+  "differences": 807,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -93,7 +93,7 @@
     "generics_syntax_scoping.py": 9,
     "generics_type_erasure.py": 1,
     "generics_typevartuple_args.py": 7,
-    "generics_typevartuple_basic.py": 8,
+    "generics_typevartuple_basic.py": 10,
     "generics_typevartuple_callable.py": 4,
     "generics_typevartuple_concat.py": 8,
     "generics_typevartuple_overloads.py": 2,

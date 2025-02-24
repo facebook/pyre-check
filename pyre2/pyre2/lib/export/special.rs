@@ -17,6 +17,8 @@ use crate::module::module_name::ModuleName;
 pub enum SpecialExport {
     TypeAlias,
     TypeVar,
+    ParamSpec,
+    TypeVarTuple,
     Annotated,
     Literal,
     Enum,
@@ -32,6 +34,8 @@ impl SpecialExport {
         match name.as_str() {
             "TypeAlias" => Some(Self::TypeAlias),
             "TypeVar" => Some(Self::TypeVar),
+            "ParamSpec" => Some(Self::ParamSpec),
+            "TypeVarTuple" => Some(Self::TypeVarTuple),
             "Annotated" => Some(Self::Annotated),
             "Literal" => Some(Self::Literal),
             "Enum" => Some(Self::Enum),
@@ -48,6 +52,8 @@ impl SpecialExport {
         match self {
             Self::TypeAlias
             | Self::TypeVar
+            | Self::ParamSpec
+            | Self::TypeVarTuple
             | Self::Annotated
             | Self::Literal
             | Self::TypedDict

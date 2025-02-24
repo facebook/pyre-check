@@ -152,49 +152,71 @@ def f(a: A):  # TODO: The generic class `A` is missing type arguments.
 testcase!(
     test_tvar_missing_name,
     r#"
-from typing import TypeVar
+from typing import TypeVar, ParamSpec, TypeVarTuple
 T = TypeVar()  # E: Missing `name` argument
+P = ParamSpec()  # E: Missing `name` argument
+Ts = TypeVarTuple()  # E: Missing `name` argument
     "#,
 );
 
 testcase!(
     test_tvar_wrong_name,
     r#"
-from typing import TypeVar
-T = TypeVar("Z")  # E: TypeVar must be assigned to a variable named Z
+from typing import TypeVar, ParamSpec, TypeVarTuple
+T = TypeVar("Z")  # E: TypeVar must be assigned to a variable named `Z`
+P = ParamSpec("Z")  # E: ParamSpec must be assigned to a variable named `Z`
+Ts = TypeVarTuple("Z")  # E: TypeVarTuple must be assigned to a variable named `Z
     "#,
 );
 
 testcase!(
     test_tvar_wrong_name_expr,
     r#"
-from typing import TypeVar
+from typing import TypeVar, ParamSpec, TypeVarTuple
 T = TypeVar(17)  # E: Expected first argument of TypeVar to be a string literal
+P = ParamSpec(17)  # E: Expected first argument of ParamSpec to be a string literal
+Ts = TypeVarTuple(17)  # E: Expected first argument of TypeVarTuple to be a string literal
     "#,
 );
 
 testcase!(
     test_tvar_wrong_name_bind,
     r#"
-from typing import TypeVar
+from typing import TypeVar, ParamSpec, TypeVarTuple
 x = "test"
 T = TypeVar(x)  # E: Expected first argument of TypeVar to be a string literal
+P = ParamSpec(x)  # E: Expected first argument of ParamSpec to be a string literal
+Ts = TypeVarTuple(x)  # E: Expected first argument of TypeVarTuple to be a string literal
     "#,
 );
 
 testcase!(
     test_tvar_keyword_name,
     r#"
-from typing import TypeVar
+from typing import TypeVar, ParamSpec, TypeVarTuple
 T = TypeVar(name = "T")
+P = ParamSpec(name = "P")
+Ts = TypeVarTuple(name = "Ts")
     "#,
 );
 
 testcase!(
     test_tvar_unexpected_keyword,
     r#"
-from typing import TypeVar
+from typing import TypeVar, ParamSpec, TypeVarTuple
 T = TypeVar('T', foo=True)  # E: Unexpected keyword argument `foo`
+P = ParamSpec('P', foo=True)  # E: Unexpected keyword argument `foo`
+Ts = TypeVarTuple('Ts', foo=True)  # E: Unexpected keyword argument `foo`
+    "#,
+);
+
+testcase!(
+    test_tvar_kwargs,
+    r#"
+from typing import TypeVar, ParamSpec, TypeVarTuple
+T = TypeVar('T', **{'a': 'b'})  # E: Cannot pass unpacked keyword arguments to TypeVar
+P = ParamSpec('P', **{'a': 'b'})  # E: Cannot pass unpacked keyword arguments to ParamSpec
+Ts = TypeVarTuple('Ts', **{'a': 'b'})  # E: Cannot pass unpacked keyword arguments to TypeVarTuple
     "#,
 );
 
@@ -240,14 +262,6 @@ class A:
     pass
 T1 = TypeVar('T1', int, A)
 T2 = TypeVar('T2', int, B)  # E: Could not find name `B`
-    "#,
-);
-
-testcase!(
-    test_tvar_kwargs,
-    r#"
-from typing import TypeVar
-T = TypeVar('T', **{'a': 'b'})  # E: Cannot pass unpacked keyword arguments to TypeVar
     "#,
 );
 

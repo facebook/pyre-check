@@ -17,7 +17,6 @@ use crate::binding::binding::SizeExpectation;
 use crate::binding::binding::UnpackedPosition;
 use crate::binding::bindings::BindingsBuilder;
 use crate::graph::index::Idx;
-use crate::module::short_identifier::ShortIdentifier;
 
 impl<'a> BindingsBuilder<'a> {
     fn bind_unpacking(
@@ -99,12 +98,7 @@ impl<'a> BindingsBuilder<'a> {
         value: Option<&Expr>,
     ) {
         match target {
-            Expr::Name(name) => {
-                let key = Key::Definition(ShortIdentifier::expr_name(name));
-                let idx = self.table.types.0.insert(key);
-                let ann = self.bind_key(&name.id, idx, None);
-                self.table.types.1.insert(idx, make_binding(ann));
-            }
+            Expr::Name(name) => self.bind_assign(name, make_binding),
             Expr::Attribute(x) => {
                 // `make_binding` will give us a binding for inferring the value type, which we
                 // *might* use to compute the attribute type if there are no explicit annotations.

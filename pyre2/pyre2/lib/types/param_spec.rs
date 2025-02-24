@@ -45,10 +45,4 @@ impl ParamSpec {
     pub fn to_type(&self) -> Type {
         Type::ParamSpec(self.dupe())
     }
-
-    pub fn is_ctor(x: &Type) -> bool {
-        // This function moved in 3.11, so support both places
-        let locations = &["typing", "typing_extensions"];
-        matches!(x, Type::ClassDef(cls) if cls.name() == "ParamSpec" && locations.contains(&cls.module_name().as_str()))
-    }
 }

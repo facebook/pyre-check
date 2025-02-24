@@ -7,15 +7,16 @@
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
-use ruff_python_ast::Arguments;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBinOp;
+use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprSlice;
 use ruff_python_ast::ExprStarred;
 use ruff_python_ast::Identifier;
+use ruff_python_ast::Keyword;
 use ruff_python_ast::Number;
 use ruff_python_ast::Operator;
 use ruff_python_ast::UnaryOp;
@@ -25,7 +26,6 @@ use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::answers::UNKNOWN;
 use crate::alt::call::CallStyle;
 use crate::alt::callable::CallArg;
 use crate::ast::Ast;
@@ -49,7 +49,6 @@ use crate::types::special_form::SpecialForm;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
-use crate::types::type_var::TypeVarArgs;
 use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
@@ -211,87 +210,275 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn tyvar_from_arguments(&self, arguments: &Arguments, errors: &ErrorCollector) -> TypeVar {
-        let args = TypeVarArgs::from_arguments(arguments);
+    pub fn typevar_from_call(
+        &self,
+        name: Identifier,
+        x: &ExprCall,
+        errors: &ErrorCollector,
+    ) -> TypeVar {
+        let mut arg_name = false;
+        let mut restriction = None;
+        let mut default = None;
+        let mut variance = None;
 
-        let name = match args.name {
-            Some(Expr::StringLiteral(x)) => Identifier::new(Name::new(x.value.to_str()), x.range),
-            _ => {
-                let msg = if args.name.is_none() {
-                    "Missing `name` argument to TypeVar"
-                } else {
-                    "Expected first argument of TypeVar to be a string literal"
-                };
-                self.error(errors, arguments.range, msg.to_owned());
-                // FIXME: This isn't ideal - we are creating a fake Identifier, which is not good.
-                Identifier::new(UNKNOWN, arguments.range)
-            }
-        };
-        let constraints = args.constraints.map(|x| self.expr_untype(x, errors));
-        let bound = args.bound.map(|x| self.expr_untype(x, errors));
-        let default = args.default.map(|x| self.expr_untype(x, errors));
-        let covariant = args
-            .covariant
-            .is_some_and(|x| self.literal_bool_infer(x, errors));
-        let contravariant = args
-            .contravariant
-            .is_some_and(|x| self.literal_bool_infer(x, errors));
-        let infer_variance = args
-            .infer_variance
-            .is_some_and(|x| self.literal_bool_infer(x, errors));
-
-        for kw in args.unknown {
-            self.error(
-                errors,
-                kw.range,
-                match &kw.arg {
-                    Some(id) => format!("Unexpected keyword argument `{}` to TypeVar", id.id),
-                    None => "Cannot pass unpacked keyword arguments to TypeVar".to_owned(),
-                },
-            );
-        }
-        let restriction = if let Some(bound) = bound {
-            if !constraints.is_empty() {
+        let check_name_arg = |arg: &Expr| {
+            if let Expr::StringLiteral(lit) = arg {
+                if lit.value.to_str() != name.id.as_str() {
+                    self.error(
+                        errors,
+                        x.range,
+                        format!(
+                            "TypeVar must be assigned to a variable named `{}`",
+                            lit.value.to_str()
+                        ),
+                    );
+                }
+            } else {
                 self.error(
                     errors,
-                    arguments.range,
-                    "TypeVar cannot have both constraints and bound".to_owned(),
+                    arg.range(),
+                    "Expected first argument of TypeVar to be a string literal".to_owned(),
                 );
             }
-            Restriction::Bound(bound)
-        } else if !constraints.is_empty() {
-            Restriction::Constraints(constraints)
-        } else {
-            Restriction::Unrestricted
         };
-        if [covariant, contravariant, infer_variance]
-            .iter()
-            .filter(|x| **x)
-            .count()
-            > 1
-        {
-            self.error(
-                errors,
-                arguments.range,
-                "Contradictory variance specifications".to_owned(),
-            );
+
+        let mut try_set_variance = |kw: &Keyword, v: Option<Variance>| {
+            if self.literal_bool_infer(&kw.value, errors) {
+                if variance.is_some() {
+                    self.error(
+                        errors,
+                        kw.range,
+                        "Contradictory variance specifications".to_owned(),
+                    );
+                } else {
+                    variance = Some(v);
+                }
+            }
+        };
+
+        let mut iargs = x.arguments.args.iter();
+        if let Some(arg) = iargs.next() {
+            check_name_arg(arg);
+            arg_name = true;
         }
-        let variance = if covariant {
-            Some(Variance::Covariant)
-        } else if contravariant {
-            Some(Variance::Contravariant)
-        } else if infer_variance {
-            None
-        } else {
-            Some(Variance::Invariant)
-        };
+
+        let constraints = iargs
+            .map(|arg| self.expr_untype(arg, errors))
+            .collect::<Vec<_>>();
+        if !constraints.is_empty() {
+            restriction = Some(Restriction::Constraints(constraints));
+        }
+
+        for kw in &x.arguments.keywords {
+            match &kw.arg {
+                Some(id) => match id.id.as_str() {
+                    "bound" => {
+                        let bound = self.expr_untype(&kw.value, errors);
+                        if restriction.is_some() {
+                            self.error(
+                                errors,
+                                kw.range,
+                                "TypeVar cannot have both constraints and bound".to_owned(),
+                            );
+                        } else {
+                            restriction = Some(Restriction::Bound(bound));
+                        }
+                    }
+                    "default" => default = Some(self.expr_untype(&kw.value, errors)),
+                    "covariant" => try_set_variance(kw, Some(Variance::Covariant)),
+                    "contravariant" => try_set_variance(kw, Some(Variance::Contravariant)),
+                    "infer_variance" => try_set_variance(kw, None),
+                    "name" => {
+                        if arg_name {
+                            self.error(
+                                errors,
+                                kw.range,
+                                "Multiple values for argument `name`".to_owned(),
+                            );
+                        } else {
+                            check_name_arg(&kw.value);
+                            arg_name = true;
+                        }
+                    }
+                    _ => {
+                        self.error(
+                            errors,
+                            kw.range,
+                            format!("Unexpected keyword argument `{}` to TypeVar", id.id),
+                        );
+                    }
+                },
+                _ => {
+                    self.error(
+                        errors,
+                        kw.range,
+                        "Cannot pass unpacked keyword arguments to TypeVar".to_owned(),
+                    );
+                }
+            }
+        }
+
+        if !arg_name {
+            self.error(errors, x.range, "Missing `name` argument".to_owned());
+        }
+
         TypeVar::new(
             name,
             self.module_info().dupe(),
-            restriction,
+            restriction.unwrap_or(Restriction::Unrestricted),
             default,
-            variance,
+            variance.unwrap_or(Some(Variance::Invariant)),
         )
+    }
+
+    pub fn paramspec_from_call(
+        &self,
+        name: Identifier,
+        x: &ExprCall,
+        errors: &ErrorCollector,
+    ) -> ParamSpec {
+        // TODO: check and complain on extra args, keywords
+        let mut arg_name = false;
+
+        let check_name_arg = |arg: &Expr| {
+            if let Expr::StringLiteral(lit) = arg {
+                if lit.value.to_str() != name.id.as_str() {
+                    self.error(
+                        errors,
+                        x.range,
+                        format!(
+                            "ParamSpec must be assigned to a variable named `{}`",
+                            lit.value.to_str()
+                        ),
+                    );
+                }
+            } else {
+                self.error(
+                    errors,
+                    arg.range(),
+                    "Expected first argument of ParamSpec to be a string literal".to_owned(),
+                );
+            }
+        };
+
+        if let Some(arg) = x.arguments.args.first() {
+            check_name_arg(arg);
+            arg_name = true;
+        }
+
+        for kw in &x.arguments.keywords {
+            match &kw.arg {
+                Some(id) => match id.id.as_str() {
+                    "name" => {
+                        if arg_name {
+                            self.error(
+                                errors,
+                                kw.range,
+                                "Multiple values for argument `name`".to_owned(),
+                            );
+                        } else {
+                            check_name_arg(&kw.value);
+                            arg_name = true;
+                        }
+                    }
+                    _ => {
+                        self.error(
+                            errors,
+                            kw.range,
+                            format!("Unexpected keyword argument `{}` to ParamSpec", id.id),
+                        );
+                    }
+                },
+                _ => {
+                    self.error(
+                        errors,
+                        kw.range,
+                        "Cannot pass unpacked keyword arguments to ParamSpec".to_owned(),
+                    );
+                }
+            }
+        }
+
+        if !arg_name {
+            self.error(errors, x.range, "Missing `name` argument".to_owned());
+        }
+
+        ParamSpec::new(name, self.module_info().dupe())
+    }
+
+    pub fn typevartuple_from_call(
+        &self,
+        name: Identifier,
+        x: &ExprCall,
+        errors: &ErrorCollector,
+    ) -> TypeVarTuple {
+        // TODO: check and complain on extra args, keywords
+        let mut arg_name = false;
+
+        let check_name_arg = |arg: &Expr| {
+            if let Expr::StringLiteral(lit) = arg {
+                if lit.value.to_str() != name.id.as_str() {
+                    self.error(
+                        errors,
+                        x.range,
+                        format!(
+                            "TypeVarTuple must be assigned to a variable named `{}`",
+                            lit.value.to_str()
+                        ),
+                    );
+                }
+            } else {
+                self.error(
+                    errors,
+                    arg.range(),
+                    "Expected first argument of TypeVarTuple to be a string literal".to_owned(),
+                );
+            }
+        };
+
+        if let Some(arg) = x.arguments.args.first() {
+            check_name_arg(arg);
+            arg_name = true;
+        }
+
+        for kw in &x.arguments.keywords {
+            match &kw.arg {
+                Some(id) => match id.id.as_str() {
+                    "name" => {
+                        if arg_name {
+                            self.error(
+                                errors,
+                                kw.range,
+                                "Multiple values for argument `name`".to_owned(),
+                            );
+                        } else {
+                            check_name_arg(&kw.value);
+                            arg_name = true;
+                        }
+                    }
+                    _ => {
+                        self.error(
+                            errors,
+                            kw.range,
+                            format!("Unexpected keyword argument `{}` to TypeVarTuple", id.id),
+                        );
+                    }
+                },
+                _ => {
+                    self.error(
+                        errors,
+                        kw.range,
+                        "Cannot pass unpacked keyword arguments to TypeVarTuple".to_owned(),
+                    );
+                }
+            }
+        }
+
+        if !arg_name {
+            self.error(errors, x.range, "Missing `name` argument".to_owned());
+        }
+
+        TypeVarTuple::new(name, self.module_info().dupe())
     }
 
     pub fn expr_infer(&self, x: &Expr, errors: &ErrorCollector) -> Type {
@@ -781,32 +968,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Call(x) => {
                 let ty_fun = self.expr_infer(&x.func, errors);
-                if TypeVar::is_ctor(&ty_fun) {
-                    Type::type_form(self.tyvar_from_arguments(&x.arguments, errors).to_type())
-                } else if TypeVarTuple::is_ctor(&ty_fun)
-                    && let Some(name) = arguments_one_string(&x.arguments)
-                {
-                    Type::type_form(TypeVarTuple::new(name, self.module_info().dupe()).to_type())
-                } else if ParamSpec::is_ctor(&ty_fun)
-                    && let Some(name) = arguments_one_string(&x.arguments)
-                {
-                    Type::type_form(ParamSpec::new(name, self.module_info().dupe()).to_type())
-                } else {
-                    let func_range = x.func.range();
-                    let args = x.arguments.args.map(|arg| match arg {
-                        Expr::Starred(x) => CallArg::Star(&x.value, x.range),
-                        _ => CallArg::Expr(arg),
-                    });
-                    self.distribute_over_union(&ty_fun, |ty| {
-                        let callable = self.as_call_target_or_error(
-                            ty.clone(),
-                            CallStyle::FreeForm,
-                            func_range,
-                            errors,
-                        );
-                        self.call_infer(callable, &args, &x.arguments.keywords, func_range, errors)
-                    })
-                }
+                let func_range = x.func.range();
+                let args = x.arguments.args.map(|arg| match arg {
+                    Expr::Starred(x) => CallArg::Star(&x.value, x.range),
+                    _ => CallArg::Expr(arg),
+                });
+                self.distribute_over_union(&ty_fun, |ty| {
+                    let callable = self.as_call_target_or_error(
+                        ty.clone(),
+                        CallStyle::FreeForm,
+                        func_range,
+                        errors,
+                    );
+                    self.call_infer(callable, &args, &x.arguments.keywords, func_range, errors)
+                })
             }
             Expr::FString(x) => {
                 // Ensure we detect type errors in f-string expressions.
@@ -1107,19 +1282,5 @@ fn is_special_name(x: &Expr, name: &str) -> bool {
     match x {
         Expr::Name(x) => x.id.as_str() == name,
         _ => false,
-    }
-}
-
-fn arguments_one_string(x: &Arguments) -> Option<Identifier> {
-    if x.args.len() == 1 && x.keywords.is_empty() {
-        match &x.args[0] {
-            Expr::StringLiteral(x) => Some(Identifier {
-                id: Name::new(x.value.to_str()),
-                range: x.range,
-            }),
-            _ => None,
-        }
-    } else {
-        None
     }
 }

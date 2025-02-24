@@ -17,6 +17,7 @@ use itertools::Itertools;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
+use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprYield;
 use ruff_python_ast::ExprYieldFrom;
 use ruff_python_ast::Identifier;
@@ -432,6 +433,17 @@ impl<'a> BindingsBuilder<'a> {
             .table
             .insert(Key::Definition(ShortIdentifier::new(name)), binding);
         self.bind_key(&name.id, idx, style)
+    }
+
+    pub fn bind_assign(
+        &mut self,
+        name: &ExprName,
+        binding: impl FnOnce(Option<Idx<KeyAnnotation>>) -> Binding,
+    ) {
+        let key = Key::Definition(ShortIdentifier::expr_name(name));
+        let idx = self.table.types.0.insert(key);
+        let ann = self.bind_key(&name.id, idx, None);
+        self.table.types.1.insert(idx, binding(ann));
     }
 
     /// In methods, we track assignments to `self` attribute targets so that we can

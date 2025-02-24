@@ -27,7 +27,6 @@ use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
-use crate::types::qname::QName;
 use crate::types::quantified::Quantified;
 use crate::types::special_form::SpecialForm;
 use crate::types::stdlib::Stdlib;
@@ -434,15 +433,6 @@ impl Type {
             Type::TypeVarTuple(_) => true,
             Type::Quantified(q) if q.is_type_var_tuple() => true,
             _ => false,
-        }
-    }
-
-    pub fn as_tvar_declaration(&self) -> Option<&QName> {
-        match self {
-            Type::TypeVar(t) => Some(t.qname()),
-            Type::TypeVarTuple(t) => Some(t.qname()),
-            Type::ParamSpec(t) => Some(t.qname()),
-            _ => None,
         }
     }
 

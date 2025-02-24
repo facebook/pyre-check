@@ -5855,19 +5855,29 @@
     },
     {
       "code": -2,
-      "column": 31,
-      "concise_description": "untype, got ParamSpec",
-      "description": "untype, got ParamSpec",
-      "line": 76,
+      "column": 34,
+      "concise_description": "Unexpected keyword argument `default` to ParamSpec",
+      "description": "Unexpected keyword argument `default` to ParamSpec",
+      "line": 73,
       "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 76
+      "stop_column": 52,
+      "stop_line": 73
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[str]]) failed",
+      "description": "assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[str]]) failed",
+      "line": 79,
+      "name": "PyreError",
+      "stop_column": 62,
+      "stop_line": 79
     },
     {
       "code": -2,
       "column": 35,
-      "concise_description": "Expected 0 type arguments for class `Class_ParamSpec`, got 2.",
-      "description": "Expected 0 type arguments for class `Class_ParamSpec`, got 2.",
+      "concise_description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
+      "description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
       "line": 79,
       "name": "PyreError",
       "stop_column": 60,
@@ -5875,9 +5885,19 @@
     },
     {
       "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[str]) failed",
+      "description": "assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[str]) failed",
+      "line": 80,
+      "name": "PyreError",
+      "stop_column": 58,
+      "stop_line": 80
+    },
+    {
+      "code": -2,
       "column": 32,
-      "concise_description": "Expected 0 type arguments for class `Class_ParamSpec`, got 2.",
-      "description": "Expected 0 type arguments for class `Class_ParamSpec`, got 2.",
+      "concise_description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
+      "description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
       "line": 80,
       "name": "PyreError",
       "stop_column": 57,
@@ -5885,12 +5905,12 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Expected 0 type arguments for class `Class_ParamSpec`, got 1.",
-      "description": "Expected 0 type arguments for class `Class_ParamSpec`, got 1.",
+      "column": 1,
+      "concise_description": "assert_type(Class_ParamSpec[Any], Class_ParamSpec[bool]) failed",
+      "description": "assert_type(Class_ParamSpec[Any], Class_ParamSpec[bool]) failed",
       "line": 81,
       "name": "PyreError",
-      "stop_column": 42,
+      "stop_column": 74,
       "stop_line": 81
     },
     {
@@ -5906,8 +5926,8 @@
     {
       "code": -2,
       "column": 46,
-      "concise_description": "Expected 0 type arguments for class `Class_ParamSpec`, got 2.",
-      "description": "Expected 0 type arguments for class `Class_ParamSpec`, got 2.",
+      "concise_description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
+      "description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
       "line": 81,
       "name": "PyreError",
       "stop_column": 73,
@@ -5915,53 +5935,33 @@
     },
     {
       "code": -2,
-      "column": 35,
-      "concise_description": "untype, got TypeVarTuple",
-      "description": "untype, got TypeVarTuple",
-      "line": 91,
+      "column": 39,
+      "concise_description": "Unexpected keyword argument `default` to TypeVarTuple",
+      "description": "Unexpected keyword argument `default` to TypeVarTuple",
+      "line": 88,
       "name": "PyreError",
-      "stop_column": 44,
-      "stop_line": 91
+      "stop_column": 70,
+      "stop_line": 88
     },
     {
       "code": -2,
-      "column": 38,
-      "concise_description": "Expected 0 type arguments for class `Class_TypeVarTuple`, got 1.",
-      "description": "Expected 0 type arguments for class `Class_TypeVarTuple`, got 1.",
+      "column": 1,
+      "concise_description": "assert_type(type[Class_TypeVarTuple[Error]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
+      "description": "assert_type(type[Class_TypeVarTuple[Error]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
       "line": 94,
       "name": "PyreError",
-      "stop_column": 74,
+      "stop_column": 76,
       "stop_line": 94
     },
     {
       "code": -2,
-      "column": 35,
-      "concise_description": "Expected 0 type arguments for class `Class_TypeVarTuple`, got 2.",
-      "description": "Expected 0 type arguments for class `Class_TypeVarTuple`, got 2.",
+      "column": 1,
+      "concise_description": "assert_type(Class_TypeVarTuple[tuple[Any, ...]], Class_TypeVarTuple[tuple[str, int]]) failed",
+      "description": "assert_type(Class_TypeVarTuple[tuple[Any, ...]], Class_TypeVarTuple[tuple[str, int]]) failed",
       "line": 95,
       "name": "PyreError",
-      "stop_column": 63,
+      "stop_column": 64,
       "stop_line": 95
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Expected 0 type arguments for class `Class_TypeVarTuple`, got 2.",
-      "description": "Expected 0 type arguments for class `Class_TypeVarTuple`, got 2.",
-      "line": 96,
-      "name": "PyreError",
-      "stop_column": 42,
-      "stop_line": 96
-    },
-    {
-      "code": -2,
-      "column": 46,
-      "concise_description": "Expected 0 type arguments for class `Class_TypeVarTuple`, got 2.",
-      "description": "Expected 0 type arguments for class `Class_TypeVarTuple`, got 2.",
-      "line": 96,
-      "name": "PyreError",
-      "stop_column": 75,
-      "stop_line": 96
     },
     {
       "code": -2,
@@ -5995,19 +5995,29 @@
     },
     {
       "code": -2,
-      "column": 25,
-      "concise_description": "untype, got ParamSpec",
-      "description": "untype, got ParamSpec",
+      "column": 20,
+      "concise_description": "Unexpected keyword argument `default` to ParamSpec",
+      "description": "Unexpected keyword argument `default` to ParamSpec",
+      "line": 145,
+      "name": "PyreError",
+      "stop_column": 41,
+      "stop_line": 145
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base",
+      "description": "Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base",
       "line": 148,
       "name": "PyreError",
-      "stop_column": 26,
+      "stop_column": 11,
       "stop_line": 148
     },
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(type[Foo6[tuple[int, str]]], type[Foo6[tuple[int, str, Any]]]) failed",
-      "description": "assert_type(type[Foo6[tuple[int, str]]], type[Foo6[tuple[int, str, Any]]]) failed",
+      "concise_description": "assert_type(type[Foo6[int, tuple[str]]], type[Foo6[int, tuple[str, Any]]]) failed",
+      "description": "assert_type(type[Foo6[int, tuple[str]]], type[Foo6[int, tuple[str, Any]]]) failed",
       "line": 151,
       "name": "PyreError",
       "stop_column": 65,
@@ -6222,8 +6232,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "TypeVar must be assigned to a variable named NotIt",
-      "description": "TypeVar must be assigned to a variable named NotIt",
+      "concise_description": "ParamSpec must be assigned to a variable named `NotIt`",
+      "description": "ParamSpec must be assigned to a variable named `NotIt`",
       "line": 10,
       "name": "PyreError",
       "stop_column": 31,
@@ -7065,22 +7075,22 @@
   "generics_syntax_infer_variance.py": [
     {
       "code": -2,
-      "column": 13,
+      "column": 36,
       "concise_description": "Contradictory variance specifications",
       "description": "Contradictory variance specifications",
       "line": 15,
       "name": "PyreError",
-      "stop_column": 56,
+      "stop_column": 55,
       "stop_line": 15
     },
     {
       "code": -2,
-      "column": 13,
+      "column": 40,
       "concise_description": "Contradictory variance specifications",
       "description": "Contradictory variance specifications",
       "line": 17,
       "name": "PyreError",
-      "stop_column": 60,
+      "stop_column": 59,
       "stop_line": 17
     },
     {
@@ -8074,8 +8084,8 @@
     {
       "code": -2,
       "column": 27,
-      "concise_description": "Unexpected keyword argument `covariant`",
-      "description": "Unexpected keyword argument `covariant`",
+      "concise_description": "Unexpected keyword argument `covariant` to TypeVarTuple",
+      "description": "Unexpected keyword argument `covariant` to TypeVarTuple",
       "line": 65,
       "name": "PyreError",
       "stop_column": 41,
@@ -8084,18 +8094,8 @@
     {
       "code": -2,
       "column": 27,
-      "concise_description": "Expected 2 positional arguments, got 4",
-      "description": "Expected 2 positional arguments, got 4",
-      "line": 66,
-      "name": "PyreError",
-      "stop_column": 30,
-      "stop_line": 66
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "Unexpected keyword argument `bound`",
-      "description": "Unexpected keyword argument `bound`",
+      "concise_description": "Unexpected keyword argument `bound` to TypeVarTuple",
+      "description": "Unexpected keyword argument `bound` to TypeVarTuple",
       "line": 67,
       "name": "PyreError",
       "stop_column": 36,
@@ -8180,26 +8180,6 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 100
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "untype, got TypeVarTuple",
-      "description": "untype, got TypeVarTuple",
-      "line": 106,
-      "name": "PyreError",
-      "stop_column": 26,
-      "stop_line": 106
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "untype, got TypeVarTuple",
-      "description": "untype, got TypeVarTuple",
-      "line": 106,
-      "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 106
     }
   ],
   "generics_typevartuple_callable.py": [
@@ -9205,24 +9185,24 @@
     },
     {
       "code": -2,
-      "column": 17,
+      "column": 38,
       "concise_description": "TypeVar cannot have both constraints and bound",
       "description": "TypeVar cannot have both constraints and bound",
       "line": 56,
       "name": "PyreError",
-      "stop_column": 50,
+      "stop_column": 49,
       "stop_line": 56
     }
   ],
   "generics_variance.py": [
     {
       "code": -2,
-      "column": 13,
+      "column": 36,
       "concise_description": "Contradictory variance specifications",
       "description": "Contradictory variance specifications",
       "line": 14,
       "name": "PyreError",
-      "stop_column": 55,
+      "stop_column": 54,
       "stop_line": 14
     }
   ],

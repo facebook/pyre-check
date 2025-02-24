@@ -23,7 +23,6 @@ use vec1::Vec1;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::answers::UNKNOWN;
 use crate::alt::callable::CallArg;
 use crate::alt::class::class_field::ClassField;
 use crate::alt::types::class_metadata::ClassMetadata;
@@ -682,6 +681,40 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()), errors)
             }
+            Binding::TypeVar(ann, name, x) => {
+                let ty = Type::type_form(self.typevar_from_call(name.clone(), x, errors).to_type());
+                if let Some(k) = ann
+                    && let Some(want) = &self.get_idx(*k).ty
+                {
+                    self.check_type(want, &ty, x.range, errors)
+                } else {
+                    ty
+                }
+            }
+            Binding::ParamSpec(ann, name, x) => {
+                let ty =
+                    Type::type_form(self.paramspec_from_call(name.clone(), x, errors).to_type());
+                if let Some(k) = ann
+                    && let Some(want) = &self.get_idx(*k).ty
+                {
+                    self.check_type(want, &ty, x.range, errors)
+                } else {
+                    ty
+                }
+            }
+            Binding::TypeVarTuple(ann, name, x) => {
+                let ty = Type::type_form(
+                    self.typevartuple_from_call(name.clone(), x, errors)
+                        .to_type(),
+                );
+                if let Some(k) = ann
+                    && let Some(want) = &self.get_idx(*k).ty
+                {
+                    self.check_type(want, &ty, x.range, errors)
+                } else {
+                    ty
+                }
+            }
             Binding::ReturnType(x) => {
                 let is_generator = !x.yields.is_empty();
                 let implicit_return = self.get_idx(x.implicit_return);
@@ -1139,20 +1172,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             expr_range,
                             errors,
                         ),
-                    (None, Type::Type(box t))
-                        if matches!(&**expr, Expr::Call(_))
-                            && let Some(tvar) = t.as_tvar_declaration() =>
-                    {
-                        let tvar_name = tvar.id();
-                        if *name != *tvar_name && *tvar_name != UNKNOWN {
-                            self.error(
-                                errors,
-                                expr_range,
-                                format!("TypeVar must be assigned to a variable named {tvar_name}"),
-                            );
-                        }
-                        ty
-                    }
                     // TODO(stroxler, rechen): Do we want to include Type::ClassDef(_)
                     // when there is no annotation, so that `mylist = list` is treated
                     // like a value assignment rather than a type alias?

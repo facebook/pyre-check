@@ -10,7 +10,9 @@ use std::mem;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprCall;
+use ruff_python_ast::ExprName;
 use ruff_python_ast::Identifier;
+use ruff_python_ast::Keyword;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtImportFrom;
 use ruff_text_size::Ranged;
@@ -60,6 +62,105 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    fn assign_type_var(&mut self, name: &ExprName, call: &mut ExprCall) {
+        self.ensure_expr(&call.func);
+        let mut iargs = call.arguments.args.iter_mut();
+        if let Some(expr) = iargs.next() {
+            self.ensure_expr(expr);
+        }
+        // The constraints (i.e., any positional arguments after the first)
+        // and some keyword arguments are types.
+        for arg in iargs {
+            self.ensure_type(arg, &mut None);
+        }
+        for kw in call.arguments.keywords.iter_mut() {
+            if let Some(id) = &kw.arg
+                && (id.id == "bound" || id.id == "default")
+            {
+                self.ensure_type(&mut kw.value, &mut None);
+            } else {
+                self.ensure_expr(&kw.value);
+            }
+        }
+        self.bind_assign(name, |ann| {
+            Binding::TypeVar(
+                ann,
+                Identifier::new(name.id.clone(), name.range()),
+                Box::new(call.clone()),
+            )
+        })
+    }
+
+    fn assign_param_spec(&mut self, name: &ExprName, call: &mut ExprCall) {
+        self.ensure_expr(&call.func);
+        self.bind_assign(name, |ann| {
+            Binding::ParamSpec(
+                ann,
+                Identifier::new(name.id.clone(), name.range()),
+                Box::new(call.clone()),
+            )
+        })
+    }
+
+    fn assign_type_var_tuple(&mut self, name: &ExprName, call: &mut ExprCall) {
+        self.ensure_expr(&call.func);
+        self.bind_assign(name, |ann| {
+            Binding::TypeVarTuple(
+                ann,
+                Identifier::new(name.id.clone(), name.range()),
+                Box::new(call.clone()),
+            )
+        })
+    }
+
+    fn assign_enum(&mut self, name: &ExprName, func: &Expr, arg_name: &Expr, members: &[Expr]) {
+        self.ensure_expr(func);
+        self.ensure_expr(arg_name);
+        for arg in members {
+            self.ensure_expr(arg);
+        }
+        self.check_functional_definition_name(&name.id, arg_name);
+        self.synthesize_enum_def(
+            Identifier::new(name.id.clone(), name.range()),
+            func.clone(),
+            members,
+        );
+    }
+
+    fn assign_typed_dict(
+        &mut self,
+        name: &ExprName,
+        func: &Expr,
+        arg_name: &Expr,
+        args: &[Expr],
+        keywords: &[Keyword],
+    ) {
+        self.ensure_expr(func);
+        self.check_functional_definition_name(&name.id, arg_name);
+        self.synthesize_typed_dict_def(
+            Identifier::new(name.id.clone(), name.range),
+            func.clone(),
+            args,
+            keywords,
+        );
+    }
+
+    fn assign_named_tuple(
+        &mut self,
+        name: &ExprName,
+        func: &Expr,
+        arg_name: &Expr,
+        members: &[Expr],
+    ) {
+        self.ensure_expr(func);
+        self.check_functional_definition_name(&name.id, arg_name);
+        self.synthesize_typing_named_tuple_def(
+            Identifier::new(name.id.clone(), name.range()),
+            func.clone(),
+            members,
+        );
+    }
+
     /// Evaluate the statements and update the bindings.
     /// Every statement should end up in the bindings, perhaps with a location that is never used.
     pub fn stmt(&mut self, x: Stmt) {
@@ -78,117 +179,66 @@ impl<'a> BindingsBuilder<'a> {
                 let name = if x.targets.len() == 1
                     && let Expr::Name(name) = &x.targets[0]
                 {
-                    Some(name.id.clone())
+                    Some(name)
                 } else {
                     None
                 };
                 let mut value = *x.value;
-                let mut is_synthesized_class = false;
-                match &mut value {
-                    // Handle forward references in a TypeVar call.
-                    Expr::Call(ExprCall {
-                        range: _,
-                        func,
-                        arguments,
-                    }) if self.as_special_export(func) == Some(SpecialExport::TypeVar)
-                        && !arguments.is_empty() =>
-                    {
-                        self.ensure_expr(func);
-                        // The constraints (i.e., any positional arguments after the first)
-                        // and some keyword arguments are types.
-                        for arg in arguments.args.iter_mut().skip(1) {
-                            self.ensure_type(arg, &mut None);
+                if let Some(name) = name
+                    && let Expr::Call(call) = &mut value
+                    && let Some(special) = self.as_special_export(&call.func)
+                {
+                    match special {
+                        SpecialExport::TypeVar => {
+                            self.assign_type_var(name, call);
+                            return;
                         }
-                        for kw in arguments.keywords.iter_mut() {
-                            if let Some(id) = &kw.arg
-                                && (id.id == "bound" || id.id == "default")
-                            {
-                                self.ensure_type(&mut kw.value, &mut None);
-                            } else {
-                                self.ensure_expr(&kw.value);
+                        SpecialExport::ParamSpec => {
+                            self.assign_param_spec(name, call);
+                            return;
+                        }
+                        SpecialExport::TypeVarTuple => {
+                            self.assign_type_var_tuple(name, call);
+                            return;
+                        }
+                        SpecialExport::Enum | SpecialExport::IntEnum | SpecialExport::StrEnum => {
+                            if let Some((arg_name, members)) = call.arguments.args.split_first() {
+                                self.assign_enum(name, &call.func, arg_name, members);
+                                return;
                             }
                         }
-                    }
-                    Expr::Call(ExprCall {
-                        range: _,
-                        func: box ref func @ Expr::Name(ref base_name),
-                        arguments,
-                    }) if matches!(
-                        self.as_special_export(func),
-                        Some(SpecialExport::Enum | SpecialExport::IntEnum | SpecialExport::StrEnum)
-                    ) && arguments.keywords.is_empty()
-                        && arguments.args.len() > 1
-                        && let Some(name) = &name =>
-                    {
-                        self.ensure_expr(func);
-                        for arg in arguments.args.iter_mut() {
-                            self.ensure_expr(arg);
+                        SpecialExport::TypedDict => {
+                            if let Some((arg_name, members)) = call.arguments.args.split_first() {
+                                self.assign_typed_dict(
+                                    name,
+                                    &call.func,
+                                    arg_name,
+                                    members,
+                                    &call.arguments.keywords,
+                                );
+                                return;
+                            }
                         }
-                        self.check_functional_definition_name(name, &arguments.args[0]);
-                        self.synthesize_enum_def(
-                            Identifier::new(name.clone(), x.targets[0].range()),
-                            base_name.clone(),
-                            &arguments.args[1..],
-                        );
-                        is_synthesized_class = true;
-                    }
-                    Expr::Call(ExprCall {
-                        range: _,
-                        func: box ref func @ Expr::Name(ref base_name),
-                        arguments,
-                    }) if matches!(
-                        self.as_special_export(func),
-                        Some(SpecialExport::TypedDict)
-                    ) && let Some(name) = &name
-                        && arguments.args.len() >= 1 =>
-                    {
-                        self.ensure_expr(func);
-                        for keyword in arguments.keywords.iter_mut() {
-                            self.ensure_expr(&keyword.value);
+                        SpecialExport::TypingNamedTuple => {
+                            if let Some((arg_name, members)) = call.arguments.args.split_first() {
+                                self.assign_named_tuple(name, &call.func, arg_name, members);
+                                return;
+                            }
                         }
-                        self.check_functional_definition_name(name, &arguments.args[0]);
-                        self.synthesize_typed_dict_def(
-                            Identifier::new(name.clone(), x.targets[0].range()),
-                            base_name.clone(),
-                            &arguments.args[1..],
-                            arguments.keywords.as_ref(),
-                        );
-                        is_synthesized_class = true;
+                        _ => {}
                     }
-                    Expr::Call(ExprCall {
-                        range: _,
-                        func: box ref func @ Expr::Name(ref base_name),
-                        arguments,
-                    }) if matches!(
-                        self.as_special_export(func),
-                        Some(SpecialExport::TypingNamedTuple)
-                    ) && let Some(name) = &name
-                        && arguments.args.len() > 1
-                        && arguments.keywords.is_empty() =>
-                    {
-                        self.ensure_expr(func);
-                        self.check_functional_definition_name(name, &arguments.args[0]);
-                        self.synthesize_typing_named_tuple_def(
-                            Identifier::new(name.clone(), x.targets[0].range()),
-                            base_name.clone(),
-                            &arguments.args[1..],
-                        );
-                        is_synthesized_class = true;
-                    }
-                    _ => self.ensure_expr(&value),
                 }
-                if !is_synthesized_class {
-                    for target in x.targets {
-                        let make_binding = |k: Option<Idx<KeyAnnotation>>| {
-                            if let Some(name) = &name {
-                                Binding::NameAssign(name.clone(), k, Box::new(value.clone()))
-                            } else {
-                                Binding::Expr(k, value.clone())
-                            }
-                        };
-                        self.bind_target(&target, &make_binding, Some(&value));
-                        self.ensure_expr(&target);
-                    }
+                self.ensure_expr(&value);
+                for target in &x.targets {
+                    let make_binding = |k: Option<Idx<KeyAnnotation>>| {
+                        if let Some(name) = &name {
+                            Binding::NameAssign(name.id.clone(), k, Box::new(value.clone()))
+                        } else {
+                            Binding::Expr(k, value.clone())
+                        }
+                    };
+                    self.bind_target(target, &make_binding, Some(&value));
+                    self.ensure_expr(target);
                 }
             }
             Stmt::AugAssign(x) => {

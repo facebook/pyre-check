@@ -9,11 +9,7 @@ use std::fmt;
 use std::fmt::Display;
 
 use dupe::Dupe;
-use ruff_python_ast::Arguments;
-use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
-use ruff_python_ast::Keyword;
-use starlark_map::small_set::SmallSet;
 
 use crate::module::module_info::ModuleInfo;
 use crate::types::qname::QName;
@@ -87,58 +83,5 @@ impl TypeVar {
 
     pub fn to_type(&self) -> Type {
         Type::TypeVar(self.dupe())
-    }
-
-    pub fn is_ctor(x: &Type) -> bool {
-        matches!(
-            x, Type::ClassDef(cls)
-            if cls.name() == "TypeVar" && matches!(cls.module_name().as_str(), "typing" | "typing_extensions"))
-    }
-}
-
-#[derive(Default, Debug)]
-pub struct TypeVarArgs<'a> {
-    pub name: Option<&'a Expr>,
-    pub constraints: Vec<&'a Expr>,
-    pub bound: Option<&'a Expr>,
-    pub default: Option<&'a Expr>,
-    pub covariant: Option<&'a Expr>,
-    pub contravariant: Option<&'a Expr>,
-    pub infer_variance: Option<&'a Expr>,
-    pub unknown: Vec<&'a Keyword>,
-}
-
-impl<'a> TypeVarArgs<'a> {
-    pub fn from_arguments(arguments: &'a Arguments) -> Self {
-        let mut res = Self::default();
-        let mut seen = SmallSet::new();
-        for kw in &arguments.keywords {
-            match &kw.arg {
-                Some(id) => {
-                    if !seen.insert(id) {
-                        res.unknown.push(kw);
-                        continue;
-                    }
-                    match id.id.as_str() {
-                        "bound" => res.bound = Some(&kw.value),
-                        "default" => res.default = Some(&kw.value),
-                        "covariant" => res.covariant = Some(&kw.value),
-                        "contravariant" => res.contravariant = Some(&kw.value),
-                        "infer_variance" => res.infer_variance = Some(&kw.value),
-                        "name" => res.name = Some(&kw.value),
-                        _ => res.unknown.push(kw),
-                    }
-                }
-                _ => res.unknown.push(kw),
-            }
-        }
-        for x in &arguments.args {
-            if res.name.is_none() {
-                res.name = Some(x)
-            } else {
-                res.constraints.push(x)
-            }
-        }
-        res
     }
 }

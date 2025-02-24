@@ -10,7 +10,6 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use dupe::Dupe;
-use ruff_python_ast::name::Name;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
@@ -47,8 +46,6 @@ use crate::util::lock::Mutex;
 use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
-
-pub const UNKNOWN: Name = Name::new_static("~unknown");
 
 #[derive(Debug, Default)]
 pub struct Traces {
