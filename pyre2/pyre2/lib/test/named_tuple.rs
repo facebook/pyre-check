@@ -127,3 +127,15 @@ class Pair3(Pair2, Foo):  # E: Named tuples do not support multiple inheritance
     pass
     "#,
 );
+
+testcase!(
+    test_named_tuple_init_requiredness,
+    r#"
+from typing import NamedTuple
+class Pair(NamedTuple):
+    x: int
+    y: str = "y"
+Pair(x=5)
+Pair(y="foo")  # E: Missing argument `x`
+    "#,
+);
