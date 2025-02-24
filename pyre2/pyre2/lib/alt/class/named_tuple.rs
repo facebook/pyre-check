@@ -10,9 +10,6 @@ use starlark_map::smallmap;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::class::class_field::ClassField;
-use crate::alt::class::class_field::ClassFieldInitialization;
-use crate::alt::class::class_field::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
@@ -57,14 +54,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn get_named_tuple_field_params(&self, cls: &Class, elements: &[Name]) -> Vec<Param> {
         elements.map(|name| {
-            let ClassField(ClassFieldInner::Simple {
-                ty, initialization, ..
-            }) = &*self.get_class_member(cls, name).unwrap().value;
-            let required = match initialization {
-                ClassFieldInitialization::Class(_) => Required::Optional,
-                ClassFieldInitialization::Instance => Required::Required,
-            };
-            Param::Pos(name.clone(), ty.clone(), required)
+            let member = &*self.get_class_member(cls, name).unwrap().value;
+            Param::Pos(
+                name.clone(),
+                member.as_named_tuple_type(),
+                member.as_named_tuple_requiredness(),
+            )
         })
     }
 
@@ -96,11 +91,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let params = vec![cls.self_param()];
         let element_types: Vec<Type> = elements
             .iter()
-            .map(|name| {
-                let ClassField(ClassFieldInner::Simple { ty, .. }) =
-                    &*self.get_class_member(cls, name).unwrap().value;
-                ty.clone()
-            })
+            .map(|name| (*self.get_class_member(cls, name).unwrap().value).as_named_tuple_type())
             .collect();
         let ty = Type::Callable(
             Box::new(Callable::list(

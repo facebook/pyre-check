@@ -251,6 +251,25 @@ impl ClassField {
         }
     }
 
+    pub fn as_named_tuple_type(&self) -> Type {
+        match &self.0 {
+            ClassFieldInner::Simple { ty, .. } => ty.clone(),
+        }
+    }
+
+    pub fn as_named_tuple_requiredness(&self) -> Required {
+        match &self.0 {
+            ClassFieldInner::Simple {
+                initialization: ClassFieldInitialization::Class(_),
+                ..
+            } => Required::Optional,
+            ClassFieldInner::Simple {
+                initialization: ClassFieldInitialization::Instance,
+                ..
+            } => Required::Required,
+        }
+    }
+
     pub fn as_typed_dict_field_info(self, required_by_default: bool) -> Option<TypedDictField> {
         match &self.0 {
             ClassFieldInner::Simple {
