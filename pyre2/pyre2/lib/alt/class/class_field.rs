@@ -73,10 +73,10 @@ impl ClassFieldInitialization {
 /// know whether it is initialized in the class body in order to determine
 /// both visibility rules and whether method binding should be performed.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ClassField(pub ClassFieldInner);
+pub struct ClassField(ClassFieldInner);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ClassFieldInner {
+enum ClassFieldInner {
     Simple {
         ty: Type,
         range: Option<TextRange>,
