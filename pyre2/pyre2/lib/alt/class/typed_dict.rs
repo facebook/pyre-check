@@ -140,13 +140,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .fields
             .iter()
             .filter_map(|(name, is_total)| {
-                if let Some((field, _)) = self.get_class_member(cls, name).and_then(|member| {
-                    Arc::unwrap_or_clone(member.value).as_typed_dict_field_info(*is_total)
-                }) {
-                    Some((name.clone(), field.substitute(&substitution)))
-                } else {
-                    None
-                }
+                self.get_class_member(cls, name)
+                    .and_then(|member| {
+                        Arc::unwrap_or_clone(member.value).as_typed_dict_field_info(*is_total)
+                    })
+                    .map(|field| (name.clone(), field.substitute(&substitution)))
             })
             .collect()
     }
@@ -161,18 +159,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // TODO(stroxler): Look into whether we can re-wire the code so that it is not possible to
             // have the typed dict think a field exists that cannot be converted to a `TypedDictField`
             // (this can happen for any unannotated field - e.g. a classmethod or staticmethod).
-            if let Some((field, has_default)) =
-                self.get_class_member(cls, name).and_then(|member| {
-                    Arc::unwrap_or_clone(member.value).as_typed_dict_field_info(*is_total)
-                })
-            {
+            if let Some(field) = self.get_class_member(cls, name).and_then(|member| {
+                Arc::unwrap_or_clone(member.value).as_typed_dict_field_info(*is_total)
+            }) {
                 params.push(Param::Pos(
                     name.clone(),
                     field.ty,
-                    if has_default {
-                        Required::Optional
-                    } else {
+                    if field.required {
                         Required::Required
+                    } else {
+                        Required::Optional
                     },
                 ));
             }

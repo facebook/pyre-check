@@ -1748,16 +1748,6 @@
     },
     {
       "code": -2,
-      "column": 11,
-      "concise_description": "Missing argument `v2`",
-      "description": "Missing argument `v2`",
-      "line": 49,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
       "column": 32,
       "concise_description": "Unexpected keyword argument `v4`",
       "description": "Unexpected keyword argument `v4`",

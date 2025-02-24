@@ -166,8 +166,7 @@
     "Line 101: Expected 1 errors",
     "Line 102: Expected 1 errors",
     "Line 111: Expected 1 errors",
-    "Line 122: Expected 1 errors",
-    "Line 49: Unexpected errors ['Missing argument `v2`']"
+    "Line 122: Expected 1 errors"
   ],
   "callables_protocol.py": [
     "Line 35: Expected 1 errors",

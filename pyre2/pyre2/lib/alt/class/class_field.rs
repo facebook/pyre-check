@@ -251,12 +251,7 @@ impl ClassField {
         }
     }
 
-    // TODO(stroxler): Simplify this - in a refactor, I preserved behavior of using a
-    // has_default flag, but this is a bug and should be removed in a follow-up.
-    pub fn as_typed_dict_field_info(
-        self,
-        required_by_default: bool,
-    ) -> Option<(TypedDictField, bool)> {
+    pub fn as_typed_dict_field_info(self, required_by_default: bool) -> Option<TypedDictField> {
         match &self.0 {
             ClassFieldInner::Simple {
                 annotation:
@@ -264,26 +259,18 @@ impl ClassField {
                         ty: Some(ty),
                         qualifiers,
                     }),
-                initialization,
                 ..
-            } => Some((
-                TypedDictField {
-                    ty: ty.clone(),
-                    read_only: qualifiers.contains(&Qualifier::ReadOnly),
-                    required: if qualifiers.contains(&Qualifier::Required) {
-                        true
-                    } else if qualifiers.contains(&Qualifier::NotRequired) {
-                        false
-                    } else {
-                        required_by_default
-                    },
+            } => Some(TypedDictField {
+                ty: ty.clone(),
+                read_only: qualifiers.contains(&Qualifier::ReadOnly),
+                required: if qualifiers.contains(&Qualifier::Required) {
+                    true
+                } else if qualifiers.contains(&Qualifier::NotRequired) {
+                    false
+                } else {
+                    required_by_default
                 },
-                // Does the field have a default value?
-                match initialization {
-                    ClassFieldInitialization::Class(_) => true,
-                    ClassFieldInitialization::Instance => false,
-                },
-            )),
+            }),
             _ => None,
         }
     }

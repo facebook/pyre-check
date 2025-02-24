@@ -355,6 +355,8 @@ class D(TypedDict):
      x: int
      y: int = 5  # E: TypedDict item `y` may not be initialized.
      z: NotRequired[int]
-D(x=5)  # E: Missing argument `z`
+# Default values are completely ignored in constructor behavior, so requiredness in `__init__` should be
+# determined entirely by whether the field is required in the resulting dict.
+D(x=5)  # E: Missing argument `y`
     "#,
 );
