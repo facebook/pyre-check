@@ -11,7 +11,6 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
-use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
 use std::time::Instant;
@@ -35,6 +34,7 @@ use crate::module::finder::find_module;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::report;
+use crate::run::CommandExitStatus;
 use crate::state::handle::Handle;
 use crate::state::loader::FindError;
 use crate::state::loader::Loader;
@@ -147,10 +147,10 @@ impl OutputFormat {
 }
 
 impl Args {
-    pub fn run(self, allow_forget: bool) -> anyhow::Result<ExitCode> {
+    pub fn run(self, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
         if self.watch {
             self.run_watch()?;
-            Ok(ExitCode::SUCCESS)
+            Ok(CommandExitStatus::Success)
         } else {
             self.run_inner(allow_forget)
         }
@@ -175,13 +175,13 @@ impl Args {
         }
     }
 
-    fn run_inner(self, allow_forget: bool) -> anyhow::Result<ExitCode> {
+    fn run_inner(self, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
         let args = self;
         let include = args.include;
 
         let files = Globs::new(args.files).resolve()?;
         if files.is_empty() {
-            return Ok(ExitCode::SUCCESS);
+            return Ok(CommandExitStatus::Success);
         }
 
         let mut to_check = SmallMap::with_capacity(files.len());
@@ -258,11 +258,11 @@ impl Args {
         }
         if args.expectations {
             state.check_against_expectations()?;
-            Ok(ExitCode::SUCCESS)
+            Ok(CommandExitStatus::Success)
         } else if count_errors > 0 {
-            Ok(ExitCode::FAILURE)
+            Ok(CommandExitStatus::UserError)
         } else {
-            Ok(ExitCode::SUCCESS)
+            Ok(CommandExitStatus::Success)
         }
     }
 }

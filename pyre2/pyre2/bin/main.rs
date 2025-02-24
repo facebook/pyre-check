@@ -14,6 +14,7 @@ use pyre2::get_args_expanded;
 use pyre2::init_tracing;
 use pyre2::run::run_command;
 use pyre2::run::Command;
+use pyre2::run::CommandExitStatus;
 
 #[derive(Debug, Parser)]
 #[command(name = "pyre2")]
@@ -40,6 +41,13 @@ fn exit_on_panic() {
     }));
 }
 
+fn to_exit_code(status: CommandExitStatus) -> ExitCode {
+    match status {
+        CommandExitStatus::Success => ExitCode::SUCCESS,
+        CommandExitStatus::UserError => ExitCode::FAILURE,
+    }
+}
+
 /// Run based on the command line arguments.
 fn run() -> anyhow::Result<ExitCode> {
     let args = Args::parse_from(get_args_expanded(args_os())?);
@@ -49,7 +57,7 @@ fn run() -> anyhow::Result<ExitCode> {
         }
     } else {
         init_tracing(args.verbose, false);
-        run_command(args.command, true)
+        run_command(args.command, true).map(to_exit_code)
     }
 }
 

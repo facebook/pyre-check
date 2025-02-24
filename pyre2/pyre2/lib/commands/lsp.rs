@@ -7,7 +7,6 @@
 
 use std::path::Path;
 use std::path::PathBuf;
-use std::process::ExitCode;
 use std::sync::Arc;
 
 use clap::Parser;
@@ -72,6 +71,7 @@ use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
+use crate::run::CommandExitStatus;
 use crate::state::handle::Handle;
 use crate::state::loader::FindError;
 use crate::state::loader::Loader;
@@ -98,7 +98,7 @@ struct Server<'a> {
 }
 
 impl Args {
-    pub fn run(self) -> anyhow::Result<ExitCode> {
+    pub fn run(self) -> anyhow::Result<CommandExitStatus> {
         // Note that  we must have our logging only write out to stderr.
         eprintln!("starting generic LSP server");
 
@@ -140,7 +140,7 @@ impl Args {
 
         // Shut down gracefully.
         eprintln!("shutting down server");
-        Ok(ExitCode::SUCCESS)
+        Ok(CommandExitStatus::Success)
     }
 }
 

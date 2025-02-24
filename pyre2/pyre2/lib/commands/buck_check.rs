@@ -7,7 +7,6 @@
 
 use std::path::Path;
 use std::path::PathBuf;
-use std::process::ExitCode;
 use std::str::FromStr;
 
 use anyhow::Context as _;
@@ -23,6 +22,7 @@ use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::module::module_path::ModulePath;
 use crate::module::source_db::BuckSourceDatabase;
+use crate::run::CommandExitStatus;
 use crate::state::handle::Handle;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
@@ -95,7 +95,7 @@ fn write_output(errors: &[Error], path: Option<&Path>) -> anyhow::Result<()> {
 }
 
 impl Args {
-    pub fn run(self) -> anyhow::Result<ExitCode> {
+    pub fn run(self) -> anyhow::Result<CommandExitStatus> {
         let input_file = read_input_file(self.input_path.as_path())?;
         let python_version = PythonVersion::from_str(&input_file.py_version)?;
         let config = Config::new(python_version, "linux".to_owned());
@@ -107,6 +107,6 @@ impl Args {
         let type_errors = compute_errors(config, sourcedb, &self.common);
         info!("Found {} type errors", type_errors.len());
         write_output(&type_errors, self.output_path.as_deref())?;
-        Ok(ExitCode::SUCCESS)
+        Ok(CommandExitStatus::Success)
     }
 }
