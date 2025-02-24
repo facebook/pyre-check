@@ -29,7 +29,7 @@ use crate::state::state::State;
 use crate::util::fs_anyhow;
 use crate::util::prelude::VecExt;
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Clone, Parser)]
 pub struct Args {
     /// Path to input JSON file
     input_path: PathBuf,
