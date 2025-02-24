@@ -51,6 +51,8 @@ use crate::util::prelude::SliceExt;
 enum IllegalIdentifierHandling {
     Error,
     Allow,
+    #[allow(dead_code)]
+    Rename, // this will be used in the next diff
 }
 
 impl<'a> BindingsBuilder<'a> {
@@ -279,7 +281,10 @@ impl<'a> BindingsBuilder<'a> {
             BindingClassSynthesizedFields(definition_key),
         );
         let mut fields = SmallMap::new();
-        for (member_name, range, member_annotation, member_value) in member_definitions {
+        for (idx, (member_name, range, member_annotation, member_value)) in
+            member_definitions.into_iter().enumerate()
+        {
+            let mut member_name = member_name;
             if !is_valid_identifier(member_name.as_str()) {
                 match illegal_identifier_handling {
                     IllegalIdentifierHandling::Allow => {}
@@ -287,9 +292,14 @@ impl<'a> BindingsBuilder<'a> {
                         self.error(range, format!("`{member_name}` is not a valid identifier"));
                         continue;
                     }
+                    IllegalIdentifierHandling::Rename => member_name = format!("_{idx}"),
                 }
             }
             let member_name = Name::new(member_name);
+            if fields.contains_key(&member_name) {
+                self.error(range, format!("Duplicate field `{member_name}`"));
+                continue;
+            }
             fields.insert(
                 member_name.clone(),
                 ClassFieldProperties {
@@ -433,6 +443,55 @@ impl<'a> BindingsBuilder<'a> {
             member_definitions,
             IllegalIdentifierHandling::Error,
             true,
+        );
+    }
+
+    // This functional form allows specifying types for each element, but not default values
+    pub fn synthesize_typing_named_tuple_def(
+        &mut self,
+        class_name: Identifier,
+        base_name: ExprName,
+        members: &[Expr],
+    ) {
+        let member_definitions: Vec<(String, TextRange, Option<Expr>, Option<Expr>)> =
+            match members {
+                // NamedTuple('Point', [('x', int), ('y', int)])
+                [Expr::List(ExprList { elts, .. })]
+                    if matches!(elts.as_slice(), [Expr::Tuple(_), ..]) =>
+                {
+                    self.decompose_key_value_pairs(elts)
+                }
+                // NamedTuple('Point', (('x', int), ('y', int)))
+                [Expr::Tuple(ExprTuple { elts, .. })]
+                    if matches!(elts.as_slice(), [Expr::Tuple(_), ..]) =>
+                {
+                    self.decompose_key_value_pairs(elts)
+                }
+                _ => {
+                    self.error(
+                        class_name.range,
+                        "Expected valid functional named tuple definition".to_owned(),
+                    );
+                    Vec::new()
+                }
+            }
+            .into_iter()
+            .map(|(name, range, annotation)| {
+                if let Some(mut ann) = annotation {
+                    self.ensure_type(&mut ann, &mut None);
+                    (name, range, Some(ann), None)
+                } else {
+                    (name, range, None, None)
+                }
+            })
+            .collect();
+        self.synthesize_class_def(
+            class_name,
+            base_name,
+            Box::new([]),
+            member_definitions,
+            IllegalIdentifierHandling::Error,
+            false,
         );
     }
 

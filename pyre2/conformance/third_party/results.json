@@ -3,7 +3,7 @@
   "pass": 20,
   "fail": 113,
   "pass_rate": 0.15,
-  "differences": 815,
+  "differences": 809,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -106,7 +106,7 @@
     "literals_literalstring.py": 12,
     "literals_parameterizations.py": 4,
     "namedtuples_define_class.py": 2,
-    "namedtuples_define_functional.py": 17,
+    "namedtuples_define_functional.py": 11,
     "namedtuples_usage.py": 1,
     "narrowing_typeguard.py": 8,
     "narrowing_typeis.py": 31,

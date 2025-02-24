@@ -155,6 +155,26 @@ impl<'a> BindingsBuilder<'a> {
                         );
                         is_synthesized_class = true;
                     }
+                    Expr::Call(ExprCall {
+                        range: _,
+                        func: box ref func @ Expr::Name(ref base_name),
+                        arguments,
+                    }) if matches!(
+                        self.as_special_export(func),
+                        Some(SpecialExport::TypingNamedTuple)
+                    ) && let Some(name) = &name
+                        && arguments.args.len() > 1
+                        && arguments.keywords.is_empty() =>
+                    {
+                        self.ensure_expr(func);
+                        self.check_functional_definition_name(name, &arguments.args[0]);
+                        self.synthesize_typing_named_tuple_def(
+                            Identifier::new(name.clone(), x.targets[0].range()),
+                            base_name.clone(),
+                            &arguments.args[1..],
+                        );
+                        is_synthesized_class = true;
+                    }
                     _ => self.ensure_expr(&value),
                 }
                 if !is_synthesized_class {
@@ -247,13 +267,13 @@ impl<'a> BindingsBuilder<'a> {
                     };
                     if !self.bind_attr_if_self(&attr, value_binding, Some(ann_key)) {
                         self.error(
-                            x.range,
-                            format!(
-                                "Type cannot be declared in assignment to non-self attribute `{}.{}`",
-                                attr.value.display_with(&self.module_info),
-                                attr.attr.id,
-                            ),
-                        );
+                             x.range,
+                             format!(
+                                 "Type cannot be declared in assignment to non-self attribute `{}.{}`",
+                                 attr.value.display_with(&self.module_info),
+                                 attr.attr.id,
+                             ),
+                         );
                     }
                     if let Some(box v) = x.value {
                         self.ensure_expr(&v);

@@ -23,6 +23,8 @@ pub enum SpecialExport {
     StrEnum,
     IntEnum,
     TypedDict,
+    CollectionsNamedTuple,
+    TypingNamedTuple,
 }
 
 impl SpecialExport {
@@ -36,15 +38,23 @@ impl SpecialExport {
             "StrEnum" => Some(Self::StrEnum),
             "IntEnum" => Some(Self::IntEnum),
             "TypedDict" => Some(Self::TypedDict),
+            "namedtuple" => Some(Self::CollectionsNamedTuple),
+            "NamedTuple" => Some(Self::TypingNamedTuple),
             _ => None,
         }
     }
 
     pub fn defined_in(self, m: ModuleName) -> bool {
         match self {
-            Self::TypeAlias | Self::TypeVar | Self::Annotated | Self::Literal | Self::TypedDict => {
+            Self::TypeAlias
+            | Self::TypeVar
+            | Self::Annotated
+            | Self::Literal
+            | Self::TypedDict
+            | Self::TypingNamedTuple => {
                 matches!(m.as_str(), "typing" | "typing_extensions")
             }
+            Self::CollectionsNamedTuple => matches!(m.as_str(), "collections"),
             Self::Enum | Self::StrEnum | Self::IntEnum => matches!(m.as_str(), "enum"),
         }
     }

@@ -27,6 +27,26 @@ assert_type(p[:2], tuple[int, str])
 );
 
 testcase!(
+    test_named_tuple_functional,
+    r#"
+from typing import NamedTuple, assert_type
+Point5 = NamedTuple('Point5', [('x', int), ('y', int)])
+Point6 = NamedTuple('Point6', (('x', int), ('y', int)))
+assert_type(Point5(1, 2).x, int)
+assert_type(Point5(x=1, y=2).x, int)
+assert_type(Point6(1, 2).x, int)
+    "#,
+);
+
+testcase!(
+    test_named_tuple_functional_duplicate,
+    r#"
+from typing import NamedTuple
+Point = NamedTuple('Point', [('x', int), ('x', int)])  # E: Duplicate field `x`
+    "#,
+);
+
+testcase!(
     test_named_tuple_subtype,
     r#"
 from typing import NamedTuple
