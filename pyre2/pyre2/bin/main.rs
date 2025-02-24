@@ -8,6 +8,29 @@
 use std::backtrace::Backtrace;
 use std::process::ExitCode;
 
+use clap::Parser;
+use pyre2::get_args_expanded;
+use pyre2::init_tracing;
+use pyre2::run::run_command;
+use pyre2::run::Command;
+
+#[derive(Debug, Parser)]
+#[command(name = "pyre2")]
+#[command(about = "Next generation of Pyre type checker", long_about = None)]
+struct Args {
+    /// Enable verbose logging.
+    #[clap(long = "verbose", short = 'v', global = true)]
+    verbose: bool,
+
+    /// Set this to true to run profiling of fast jobs.
+    /// Will run the command repeatedly.
+    #[clap(long = "profiling", global = true, hide = true)]
+    profiling: bool,
+
+    #[command(subcommand)]
+    command: Command,
+}
+
 fn exit_on_panic() {
     std::panic::set_hook(Box::new(move |info| {
         eprintln!("Thread panicked, shutting down: {}", info);
@@ -16,9 +39,22 @@ fn exit_on_panic() {
     }));
 }
 
+/// Run based on the command line arguments.
+fn run() -> anyhow::Result<ExitCode> {
+    let args = Args::parse_from(get_args_expanded()?);
+    if args.profiling {
+        loop {
+            let _ = run_command(args.command.clone(), false);
+        }
+    } else {
+        init_tracing(args.verbose, false);
+        run_command(args.command, true)
+    }
+}
+
 pub fn main() -> ExitCode {
     exit_on_panic();
-    let res = pyre2::run();
+    let res = run();
     match res {
         Ok(code) => code,
         Err(e) => {

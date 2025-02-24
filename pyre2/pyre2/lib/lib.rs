@@ -46,4 +46,6 @@ mod types;
 mod util;
 mod visitors;
 
-pub use crate::commands::run::run;
+pub use crate::commands::run;
+pub use crate::util::args::get_args_expanded;
+pub use crate::util::trace::init_tracing;
