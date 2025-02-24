@@ -230,3 +230,28 @@ class ChildA(ParentA):
     
  "#,
 );
+
+testcase_with_bug!(
+    "TODO: method4 should be marked as an error since it doesn't exist in the parent class",
+    test_overload_override_error,
+    r#"
+
+from typing import overload, override
+
+class ParentA:
+    ...
+
+class ChildA(ParentA):
+    @overload
+    def method4(self, x: int) -> int:
+        ...
+
+    @overload
+    def method4(self, x: str) -> str:
+        ...
+
+    @override
+    def method4(self, x: int | str) -> int | str: 
+        return 0
+ "#,
+);
