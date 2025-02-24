@@ -14,13 +14,10 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::class::class_field::ClassField;
-use crate::alt::class::class_field::ClassFieldInitialization;
-use crate::alt::class::class_field::ClassFieldInner;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
-use crate::types::annotation::Qualifier;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
@@ -104,35 +101,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         fields
             .iter()
             .filter_map(|name| {
-                let field @ ClassField(ClassFieldInner::Simple {
-                    annotation,
-                    initialization,
-                    ..
-                }) = &*self.get_class_member(cls, name).unwrap().value;
+                let field = &*self.get_class_member(cls, name).unwrap().value;
                 // A field with type KW_ONLY is a sentinel value that indicates that the remaining
                 // fields should be keyword-only params in the generated `__init__`.
                 if field.is_dataclass_kwonly_marker() {
                     kw_only = true;
                     None
                 } else {
-                    if let Some(annot) = annotation
-                        && annot.qualifiers.contains(&Qualifier::ClassVar)
-                    {
-                        return None; // Class variables are not dataclass fields
-                    }
-                    let mut props = match initialization {
-                        ClassFieldInitialization::Class(Some(field_props)) => field_props.clone(),
-                        ClassFieldInitialization::Class(None) => {
-                            let mut kws = BoolKeywords::new();
-                            kws.set(DataclassKeywords::DEFAULT.0, true);
-                            kws
-                        }
-                        ClassFieldInitialization::Instance => BoolKeywords::new(),
-                    };
-                    if kw_only {
-                        props.set(DataclassKeywords::KW_ONLY.0, true);
-                    }
-                    Some((name.clone(), field.clone(), props))
+                    field
+                        .dataclass_props_of(kw_only)
+                        .map(|props| (name.clone(), field.clone(), props))
                 }
             })
             .collect()

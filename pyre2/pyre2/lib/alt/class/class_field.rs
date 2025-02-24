@@ -323,6 +323,35 @@ impl ClassField {
             }
         }
     }
+
+    pub fn dataclass_props_of(&self, kw_only: bool) -> Option<BoolKeywords> {
+        match &self.0 {
+            ClassFieldInner::Simple {
+                initialization,
+                annotation,
+                ..
+            } => {
+                if let Some(annot) = annotation
+                    && annot.qualifiers.contains(&Qualifier::ClassVar)
+                {
+                    return None; // Class variables are not dataclass fields
+                }
+                let mut props = match initialization {
+                    ClassFieldInitialization::Class(Some(field_props)) => field_props.clone(),
+                    ClassFieldInitialization::Class(None) => {
+                        let mut kws = BoolKeywords::new();
+                        kws.set(DataclassKeywords::DEFAULT.0, true);
+                        kws
+                    }
+                    ClassFieldInitialization::Instance => BoolKeywords::new(),
+                };
+                if kw_only {
+                    props.set(DataclassKeywords::KW_ONLY.0, true);
+                }
+                Some(props)
+            }
+        }
+    }
 }
 
 pub fn is_unbound_function(ty: &Type) -> bool {
