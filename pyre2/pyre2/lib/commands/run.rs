@@ -8,6 +8,7 @@
 use std::process::ExitCode;
 
 use clap::Parser;
+use clap::Subcommand;
 
 use crate::util::args::get_args_expanded;
 use crate::util::trace::init_tracing;
@@ -17,16 +18,16 @@ use crate::util::trace::init_tracing;
 const PROFILING: bool = false;
 
 #[derive(Debug, Parser)]
-struct Standard<T: clap::Args> {
+struct Args {
     /// Enable verbose logging.
-    #[clap(long = "verbose", short = 'v')]
+    #[clap(long = "verbose", short = 'v', global = true)]
     verbose: bool,
 
-    #[clap(flatten)]
-    args: T,
+    #[command(subcommand)]
+    command: Command,
 }
 
-impl<T: clap::Args> Standard<T> {
+impl Args {
     fn init_tracing(&self) {
         if !PROFILING {
             init_tracing(self.verbose, false);
@@ -34,18 +35,18 @@ impl<T: clap::Args> Standard<T> {
     }
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Subcommand)]
 #[command(name = "pyre2")]
 #[command(about = "Next generation of Pyre type checker", long_about = None)]
-enum Args {
+enum Command {
     /// Full type checking on a file or a project
-    Check(Standard<crate::commands::check::Args>),
+    Check(crate::commands::check::Args),
 
     /// Entry point for Buck integration
-    BuckCheck(Standard<crate::commands::buck_check::Args>),
+    BuckCheck(crate::commands::buck_check::Args),
 
     /// Start an LSP server
-    Lsp(Standard<crate::commands::lsp::Args>),
+    Lsp(crate::commands::lsp::Args),
 }
 
 /// Run based on the command line arguments.
@@ -60,18 +61,10 @@ pub fn run() -> anyhow::Result<ExitCode> {
 
 fn run_once(allow_forget: bool) -> anyhow::Result<ExitCode> {
     let args = Args::parse_from(get_args_expanded()?);
-    match args {
-        Args::Check(args) => {
-            args.init_tracing();
-            args.args.run(allow_forget)
-        }
-        Args::BuckCheck(args) => {
-            args.init_tracing();
-            args.args.run()
-        }
-        Args::Lsp(args) => {
-            args.init_tracing();
-            args.args.run()
-        }
+    args.init_tracing();
+    match args.command {
+        Command::Check(args) => args.run(allow_forget),
+        Command::BuckCheck(args) => args.run(),
+        Command::Lsp(args) => args.run(),
     }
 }
