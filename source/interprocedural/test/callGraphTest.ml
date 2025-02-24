@@ -5843,6 +5843,85 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:[]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+     from typing import Callable, Any
+     def bar(f: Callable[Any, Any]) -> Callable[Any, Any]:
+       return f
+     def foo(after_functions: list[Callable[Any, Any]]) -> None:
+       for after_code in after_functions:
+         bar(after_code)
+  |}
+           ~define_name:"test.foo"
+           ~expected:
+             [
+               ( "6:6-6:35",
+                 LocationCallees.Compound
+                   (SerializableStringMap.of_alist_exn
+                      [
+                        ( "__iter__",
+                          ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     ~receiver_class:"list"
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "list";
+                                          method_name = "__iter__";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ()) );
+                        ( "__next__",
+                          ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     ~receiver_class:"typing.Iterator"
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "typing.Iterator";
+                                          method_name = "__next__";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ()) );
+                      ]) );
+               ( "7:4-7:19",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      (* Do not expect local variables to be considered as
+                                         functions. *)
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "$local_test?foo$after_code"; kind = Normal });
+                                    ];
+                                  unresolved = CallGraph.Unresolved.False;
+                                };
+                              ])
+                         ())) );
+             ]
+           ();
     ]
 
 
