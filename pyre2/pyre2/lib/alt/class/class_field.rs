@@ -315,6 +315,14 @@ impl ClassField {
             _ => None,
         }
     }
+
+    pub fn is_dataclass_kwonly_marker(&self) -> bool {
+        match &self.0 {
+            ClassFieldInner::Simple { ty, .. } => {
+                matches!(ty, Type::ClassType(cls) if cls.class_object().has_qname("dataclasses", "KW_ONLY"))
+            }
+        }
+    }
 }
 
 pub fn is_unbound_function(ty: &Type) -> bool {
