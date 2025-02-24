@@ -103,27 +103,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut kw_only = false;
         fields.iter().filter_map(|name| {
             let field @ ClassField(ClassFieldInner::Simple { ty, annotation, initialization, .. }) = &*self.get_class_member(cls, name).unwrap().value;
-            if let Some(annot) = annotation && annot.qualifiers.contains(&Qualifier::ClassVar) {
-                return None; // Class variables are not dataclass fields
-            }
-            let mut props = match initialization {
-                ClassFieldInitialization::Class(Some(field_props)) => field_props.clone(),
-                ClassFieldInitialization::Class(None) => {
-                    let mut kws = BoolKeywords::new();
-                    kws.set(DataclassKeywords::DEFAULT.0, true);
-                    kws
-                }
-                ClassFieldInitialization::Instance => BoolKeywords::new()
-            };
-            if kw_only {
-                props.set(DataclassKeywords::KW_ONLY.0, true);
-            }
-            // A field with type KW_ONLY is a sentinel value that indicates that the remaining
-            // fields should be keyword-only params in the generated `__init__`.
             if matches!(ty, Type::ClassType(cls) if cls.class_object().has_qname("dataclasses", "KW_ONLY")) {
+                // A field with type KW_ONLY is a sentinel value that indicates that the remaining
+                // fields should be keyword-only params in the generated `__init__`.
                 kw_only = true;
                 None
             } else {
+                if let Some(annot) = annotation && annot.qualifiers.contains(&Qualifier::ClassVar) {
+                    return None; // Class variables are not dataclass fields
+                }
+                let mut props = match initialization {
+                    ClassFieldInitialization::Class(Some(field_props)) => field_props.clone(),
+                    ClassFieldInitialization::Class(None) => {
+                        let mut kws = BoolKeywords::new();
+                        kws.set(DataclassKeywords::DEFAULT.0, true);
+                        kws
+                    }
+                    ClassFieldInitialization::Instance => BoolKeywords::new()
+                };
+                if kw_only {
+                    props.set(DataclassKeywords::KW_ONLY.0, true);
+                }
                 Some((name.clone(), field.clone(), props))
             }
         }).collect()
