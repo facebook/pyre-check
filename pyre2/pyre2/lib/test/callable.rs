@@ -43,6 +43,15 @@ def test(f: Callable[..., None]) -> Callable[[int, str], None]:
 );
 
 testcase!(
+    test_callable_unpack,
+    r#"
+from typing import Callable
+def test(f: Callable[[bool, *tuple[int, str], bool], None]) -> Callable[[*tuple[bool, int, str, bool]], None]:
+    return f
+"#,
+);
+
+testcase!(
     test_callable_unparameterized,
     r#"
 from typing import Callable, assert_type, Any

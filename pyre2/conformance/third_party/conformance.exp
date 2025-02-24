@@ -1556,6 +1556,16 @@
     },
     {
       "code": -2,
+      "column": 15,
+      "concise_description": "Invalid position for `...`",
+      "description": "Invalid position for `...`",
+      "line": 59,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 59
+    },
+    {
+      "code": -2,
       "column": 7,
       "concise_description": "EXPECTED (x: int) -> str <: (int, ParamSpec(...)) -> str",
       "description": "EXPECTED (x: int) -> str <: (int, ParamSpec(...)) -> str",
@@ -8196,8 +8206,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED (arg1: int, arg2: str) -> None <: (*@_) -> None",
-      "description": "EXPECTED (arg1: int, arg2: str) -> None <: (*@_) -> None",
+      "concise_description": "EXPECTED (arg1: int, arg2: str) -> None <: (**tuple[*@_]) -> None",
+      "description": "EXPECTED (arg1: int, arg2: str) -> None <: (**tuple[*@_]) -> None",
       "line": 25,
       "name": "PyreError",
       "stop_column": 21,
@@ -8206,8 +8216,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED (arg1: int, arg2: str) -> None <: (*@_) -> None",
-      "description": "EXPECTED (arg1: int, arg2: str) -> None <: (*@_) -> None",
+      "concise_description": "EXPECTED (arg1: int, arg2: str) -> None <: (**tuple[*@_]) -> None",
+      "description": "EXPECTED (arg1: int, arg2: str) -> None <: (**tuple[*@_]) -> None",
       "line": 26,
       "name": "PyreError",
       "stop_column": 21,
@@ -8216,8 +8226,8 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (int, *tuple[str, int], complex) -> tuple[complex, *tuple[str, int]]",
-      "description": "EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (int, *tuple[str, int], complex) -> tuple[complex, *tuple[str, int]]",
+      "concise_description": "EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (**tuple[int, *tuple[str, int], complex]) -> tuple[complex, *tuple[str, int]]",
+      "description": "EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (**tuple[int, *tuple[str, int], complex]) -> tuple[complex, *tuple[str, int]]",
       "line": 41,
       "name": "PyreError",
       "stop_column": 28,
@@ -8226,8 +8236,8 @@
     {
       "code": -2,
       "column": 19,
-      "concise_description": "EXPECTED (a: int, d: str) -> tuple[str] <: (int, *tuple[()], str) -> tuple[str, *tuple[()]]",
-      "description": "EXPECTED (a: int, d: str) -> tuple[str] <: (int, *tuple[()], str) -> tuple[str, *tuple[()]]",
+      "concise_description": "EXPECTED (a: int, d: str) -> tuple[str] <: (**tuple[int, *tuple[()], str]) -> tuple[str, *tuple[()]]",
+      "description": "EXPECTED (a: int, d: str) -> tuple[str] <: (**tuple[int, *tuple[()], str]) -> tuple[str, *tuple[()]]",
       "line": 42,
       "name": "PyreError",
       "stop_column": 28,

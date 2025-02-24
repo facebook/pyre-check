@@ -333,11 +333,11 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 l_after.reverse();
                 u_after.reverse();
                 self.is_subset_eq(
-                    &Tuple::unpacked(l_before, l_middle.clone(), l_after),
+                    &Type::Tuple(Tuple::unpacked(l_before, l_middle.clone(), l_after)),
                     u_middle,
                 ) && self.is_subset_eq(
                     l_middle,
-                    &Tuple::unpacked(u_before, u_middle.clone(), u_after),
+                    &Type::Tuple(Tuple::unpacked(u_before, u_middle.clone(), u_after)),
                 )
             }
             _ => false,

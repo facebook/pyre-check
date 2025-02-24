@@ -6,6 +6,7 @@
  */
 
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprList;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
@@ -31,6 +32,107 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
+    // Check if type args can be used to construct a valid tuple type
+    // Returns the successfully constructed tuple along with whether any arguments were unpacked
+    // Otherwise, records an error and falls back to Any
+    fn check_args_and_construct_tuple(
+        &self,
+        arguments: &[Expr],
+        errors: &ErrorCollector,
+    ) -> Result<(Tuple, bool), Type> {
+        let mut prefix: Vec<Type> = Vec::new();
+        let mut suffix: Vec<Type> = Vec::new();
+        let mut middle: Option<Type> = None;
+        let mut has_unpack = false;
+        for value in arguments.iter() {
+            if matches!(value, Expr::EllipsisLiteral(_)) {
+                if let [t] = prefix.as_slice()
+                    && middle.is_none()
+                {
+                    if t.is_unpack() {
+                        return Err(self.error(
+                            errors,
+                            value.range(),
+                            "`...` cannot be used with an unpacked TypeVarTuple or tuple"
+                                .to_owned(),
+                        ));
+                    } else {
+                        return Ok((Tuple::unbounded(t.clone()), false));
+                    }
+                } else {
+                    return Err(self.error(
+                        errors,
+                        value.range(),
+                        "Invalid position for `...`".to_owned(),
+                    ));
+                }
+            }
+            let ty = self.expr_untype(value, errors);
+            match ty {
+                Type::Unpack(box Type::Tuple(Tuple::Concrete(elts))) => {
+                    has_unpack = true;
+                    if middle.is_none() {
+                        prefix.extend(elts)
+                    } else {
+                        suffix.extend(elts)
+                    }
+                }
+                Type::Unpack(box ty @ Type::Tuple(Tuple::Unbounded(_))) => {
+                    has_unpack = true;
+                    if middle.is_none() {
+                        middle = Some(ty)
+                    } else {
+                        return Err(self.extra_unpack_error(errors, value.range()));
+                    }
+                }
+                Type::Unpack(box Type::Tuple(Tuple::Unpacked(box (pre, mid, suff)))) => {
+                    has_unpack = true;
+                    if middle.is_none() {
+                        prefix.extend(pre);
+                        middle = Some(mid);
+                        suffix.extend(suff)
+                    } else {
+                        return Err(self.extra_unpack_error(errors, value.range()));
+                    }
+                }
+                Type::Unpack(box ty) if ty.is_kind_type_var_tuple() => {
+                    has_unpack = true;
+                    if middle.is_none() {
+                        middle = Some(ty)
+                    } else {
+                        return Err(self.extra_unpack_error(errors, value.range()));
+                    }
+                }
+                Type::Unpack(box ty) => {
+                    return Err(self.error(
+                        errors,
+                        value.range(),
+                        format!("Expected a tuple or TypeVarTuple, got `{}`", ty),
+                    ));
+                }
+                ty if ty.is_kind_type_var_tuple() => {
+                    return Err(self.error(
+                        errors,
+                        value.range(),
+                        "TypeVarTuple must be unpacked".to_owned(),
+                    ));
+                }
+                _ => {
+                    if middle.is_none() {
+                        prefix.push(ty)
+                    } else {
+                        suffix.push(ty)
+                    }
+                }
+            }
+        }
+        if let Some(middle) = middle {
+            Ok((Tuple::unpacked(prefix, middle, suffix), has_unpack))
+        } else {
+            Ok((Tuple::concrete(prefix), has_unpack))
+        }
+    }
+
     pub fn apply_special_form(
         &self,
         special_form: SpecialForm,
@@ -54,94 +156,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             SpecialForm::Union => Type::type_form(Type::Union(
                 arguments.map(|arg| self.expr_untype(arg, errors)),
             )),
-            SpecialForm::Tuple => {
-                let mut prefix: Vec<Type> = Vec::new();
-                let mut suffix: Vec<Type> = Vec::new();
-                let mut middle: Option<Type> = None;
-                for value in arguments.iter() {
-                    if matches!(value, Expr::EllipsisLiteral(_)) {
-                        if let [t] = prefix.as_slice()
-                            && middle.is_none()
-                        {
-                            if t.is_unpack() {
-                                return self.error(
-                                    errors,
-                                    value.range(),
-                                    "`...` cannot be used with an unpacked TypeVarTuple or tuple"
-                                        .to_owned(),
-                                );
-                            } else {
-                                return Type::type_form(Type::Tuple(Tuple::unbounded(t.clone())));
-                            }
-                        } else {
-                            return self.error(
-                                errors,
-                                value.range(),
-                                "Invalid position for `...`".to_owned(),
-                            );
-                        }
-                    }
-                    let ty = self.expr_untype(value, errors);
-                    match ty {
-                        Type::Unpack(box Type::Tuple(Tuple::Concrete(elts))) => {
-                            if middle.is_none() {
-                                prefix.extend(elts)
-                            } else {
-                                suffix.extend(elts)
-                            }
-                        }
-                        Type::Unpack(box ty @ Type::Tuple(Tuple::Unbounded(_))) => {
-                            if middle.is_none() {
-                                middle = Some(ty)
-                            } else {
-                                return self.extra_unpack_error(errors, value.range());
-                            }
-                        }
-                        Type::Unpack(box Type::Tuple(Tuple::Unpacked(box (pre, mid, suff)))) => {
-                            if middle.is_none() {
-                                prefix.extend(pre);
-                                middle = Some(mid);
-                                suffix.extend(suff)
-                            } else {
-                                return self.extra_unpack_error(errors, value.range());
-                            }
-                        }
-                        Type::Unpack(box ty) if ty.is_kind_type_var_tuple() => {
-                            if middle.is_none() {
-                                middle = Some(ty)
-                            } else {
-                                return self.extra_unpack_error(errors, value.range());
-                            }
-                        }
-                        Type::Unpack(box ty) => {
-                            return self.error(
-                                errors,
-                                value.range(),
-                                format!("Expected a tuple or TypeVarTuple, got `{}`", ty),
-                            );
-                        }
-                        ty if ty.is_kind_type_var_tuple() => {
-                            return self.error(
-                                errors,
-                                value.range(),
-                                "TypeVarTuple must be unpacked".to_owned(),
-                            );
-                        }
-                        _ => {
-                            if middle.is_none() {
-                                prefix.push(ty)
-                            } else {
-                                suffix.push(ty)
-                            }
-                        }
-                    }
-                }
-                if let Some(middle) = middle {
-                    Type::type_form(Tuple::unpacked(prefix, middle, suffix))
-                } else {
-                    Type::type_form(Type::Tuple(Tuple::concrete(prefix)))
-                }
-            }
+            SpecialForm::Tuple => match self.check_args_and_construct_tuple(arguments, errors) {
+                Ok((tuple, _)) => Type::type_form(Type::Tuple(tuple)),
+                Err(ty) => ty,
+            },
             SpecialForm::Literal => {
                 let mut literals = Vec::new();
                 for x in arguments.iter() {
@@ -185,12 +203,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             SpecialForm::Callable if arguments.len() == 2 => {
                 let ret = self.expr_untype(&arguments[1], errors);
                 match &arguments[0] {
-                    Expr::List(params) => Type::type_form(Type::callable(
-                        params.elts.map(|x| {
-                            Param::PosOnly(self.expr_untype(x, errors), Required::Required)
-                        }),
-                        ret,
-                    )),
+                    Expr::List(ExprList { elts, .. }) => {
+                        match self.check_args_and_construct_tuple(elts, errors) {
+                            Ok((tuple, true)) => Type::type_form(Type::callable(
+                                vec![Param::VarArg(Type::Unpack(Box::new(Type::Tuple(tuple))))],
+                                ret,
+                            )),
+                            Ok((Tuple::Concrete(elts), false)) => Type::type_form(Type::callable(
+                                elts.map(|t| Param::PosOnly(t.clone(), Required::Required)),
+                                ret,
+                            )),
+                            Ok(_) => self.error(
+                                errors,
+                                range,
+                                "Unrecognized callable type form".to_owned(),
+                            ),
+                            Err(t) => t,
+                        }
+                    }
                     Expr::EllipsisLiteral(_) => Type::type_form(Type::callable_ellipsis(ret)),
                     name @ Expr::Name(_) => {
                         let ty = self.expr_untype(name, errors);
@@ -202,7 +232,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             Type::Concatenate(args, pspec) => {
                                 Type::type_form(Type::callable_concatenate(args , *pspec, ret))
                             }
-                            _ => self.error(errors,x.range(), format!("Callable types can only have `Concatenate` in this position, got `{}`", ty.deterministic_printing())),
+                            _ => self.error(errors, x.range(), format!("Callable types can only have `Concatenate` in this position, got `{}`", ty.deterministic_printing())),
                         }
                     }
                     x => self.todo(errors, "expr_infer, Callable type", x),

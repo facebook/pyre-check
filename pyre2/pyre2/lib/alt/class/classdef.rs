@@ -143,7 +143,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 let tuple_type = match middle.as_slice() {
                     [] => Type::tuple(prefix),
-                    [middle] => Tuple::unpacked(prefix, middle.clone(), suffix),
+                    [middle] => Type::Tuple(Tuple::unpacked(prefix, middle.clone(), suffix)),
                     // We can't precisely model unpacking two unbounded iterables, so we'll keep any
                     // concrete prefix and suffix elements and merge everything in between into an unbounded tuple
                     _ => {
@@ -154,11 +154,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     .unwrap_or(self.stdlib.object_class_type().clone().to_type())
                             })
                             .collect();
-                        Tuple::unpacked(
+                        Type::Tuple(Tuple::unpacked(
                             prefix,
                             Type::Tuple(Tuple::Unbounded(Box::new(self.unions(middle_types)))),
                             suffix,
-                        )
+                        ))
                     }
                 };
                 checked_targs.push(tuple_type);

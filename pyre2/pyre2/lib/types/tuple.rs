@@ -45,11 +45,14 @@ impl Tuple {
         Self::Unbounded(Box::new(elt))
     }
 
-    pub fn unpacked(prefix: Vec<Type>, middle: Type, suffix: Vec<Type>) -> Type {
-        if prefix.is_empty() && suffix.is_empty() && matches!(middle, Type::Tuple(_)) {
-            return middle;
+    pub fn unpacked(prefix: Vec<Type>, middle: Type, suffix: Vec<Type>) -> Tuple {
+        if prefix.is_empty()
+            && suffix.is_empty()
+            && let Type::Tuple(tuple) = middle
+        {
+            return tuple;
         }
-        Type::Tuple(Self::Unpacked(Box::new((prefix, middle, suffix))))
+        Self::Unpacked(Box::new((prefix, middle, suffix)))
     }
 
     pub fn fmt_with_type<'a, D: Display + 'a>(
