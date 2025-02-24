@@ -512,8 +512,14 @@ class PartialConfiguration:
         try:
             contents = path.read_text(encoding="utf-8")
             if is_toml:
-                configuration_toml = tomllib.loads(contents)["tool"]["pyre"]
-                return PartialConfiguration.from_dict(configuration_toml)
+                configuration_toml = tomllib.loads(contents)
+                configuration_tool = (
+                    configuration_toml["tool"] if "tool" in configuration_toml else {}
+                )
+                configuration_pyre = (
+                    configuration_tool["pyre"] if "pyre" in configuration_tool else {}
+                )
+                return PartialConfiguration.from_dict(configuration_pyre)
             else:
                 configuration_json = json.loads(contents)
                 return PartialConfiguration.from_dict(configuration_json)
