@@ -6,6 +6,7 @@
  */
 
 use std::backtrace::Backtrace;
+use std::env::args_os;
 use std::process::ExitCode;
 
 use clap::Parser;
@@ -41,7 +42,7 @@ fn exit_on_panic() {
 
 /// Run based on the command line arguments.
 fn run() -> anyhow::Result<ExitCode> {
-    let args = Args::parse_from(get_args_expanded()?);
+    let args = Args::parse_from(get_args_expanded(args_os())?);
     if args.profiling {
         loop {
             let _ = run_command(args.command.clone(), false);
