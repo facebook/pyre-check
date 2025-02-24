@@ -50,7 +50,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     && middle.is_none()
                     && arguments.len() == 2
                 {
-                    if t.is_unpack() {
+                    if has_unpack || t.is_unpack() {
                         return Err(self.error(
                             errors,
                             value.range(),

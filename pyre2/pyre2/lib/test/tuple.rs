@@ -41,6 +41,7 @@ x3: tuple[int, ..., ...]  # E: Invalid position for `...`
 x4: tuple[int, ..., int]  # E: Invalid position for `...`
 x5: tuple[int, int, ...]  # E: Invalid position for `...`
 x6: tuple[..., int]  # E: Invalid position for `...`
+x7: tuple[*tuple[int], ...]  # E: `...` cannot be used with an unpacked TypeVarTuple or tuple
 "#,
 );
 
