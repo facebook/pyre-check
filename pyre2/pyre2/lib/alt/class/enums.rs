@@ -5,14 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::sync::Arc;
+
 use ruff_python_ast::name::Name;
 use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::class::class_field::ClassField;
 use crate::alt::class::class_field::ClassFieldInitialization;
-use crate::alt::class::class_field::ClassFieldInner;
 use crate::types::class::Class;
 use crate::types::literal::Lit;
 use crate::types::types::Decoration;
@@ -20,16 +20,8 @@ use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_enum_member(&self, cls: &Class, name: &Name) -> Option<Lit> {
-        if let Some(ClassField(ClassFieldInner::Simple {
-            ty: Type::Literal(lit),
-            ..
-        })) = self.get_class_field(cls, name).as_deref()
-            && matches!(&lit, Lit::Enum(box (lit_cls, ..)) if lit_cls.class_object() == cls)
-        {
-            Some(lit.clone())
-        } else {
-            None
-        }
+        self.get_class_field(cls, name)
+            .and_then(|field| Arc::unwrap_or_clone(field).as_enum_member(cls))
     }
 
     pub fn get_enum_members(&self, cls: &Class) -> SmallSet<Lit> {

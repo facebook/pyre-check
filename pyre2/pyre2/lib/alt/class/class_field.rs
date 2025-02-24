@@ -303,6 +303,18 @@ impl ClassField {
             _ => None,
         }
     }
+
+    pub fn as_enum_member(self, enum_cls: &Class) -> Option<Lit> {
+        match self.0 {
+            ClassFieldInner::Simple {
+                ty: Type::Literal(lit),
+                ..
+            } if matches!(&lit, Lit::Enum(box (lit_cls, ..)) if lit_cls.class_object() == enum_cls) => {
+                Some(lit)
+            }
+            _ => None,
+        }
+    }
 }
 
 pub fn is_unbound_function(ty: &Type) -> bool {
