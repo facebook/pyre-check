@@ -897,12 +897,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.stdlib.bool().to_type()
             }
-            Expr::Call(x) if is_special_name(&x.func, "assert_type") => {
-                self.call_assert_type(&x.arguments.args, &x.arguments.keywords, x.range, errors)
-            }
-            Expr::Call(x) if is_special_name(&x.func, "reveal_type") => {
-                self.call_reveal_type(&x.arguments.args, &x.arguments.keywords, x.range, errors)
-            }
             Expr::Call(x) => {
                 let ty_fun = self.expr_infer(&x.func, errors);
                 let func_range = x.func.range();
@@ -926,6 +920,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &x.arguments.args,
                             &x.arguments.keywords,
                             func_range,
+                            errors,
+                        )
+                    }
+                    // Treat assert_type and reveal_type like pseudo-builtins for convenience. Note that we still
+                    // log a name-not-found error, but we also assert/reveal the type as requested.
+                    None if matches!(ty, Type::Any(AnyStyle::Error))
+                        && is_special_name(&x.func, "assert_type") =>
+                    {
+                        self.call_assert_type(
+                            &x.arguments.args,
+                            &x.arguments.keywords,
+                            x.range,
+                            errors,
+                        )
+                    }
+                    None if matches!(ty, Type::Any(AnyStyle::Error))
+                        && is_special_name(&x.func, "reveal_type") =>
+                    {
+                        self.call_reveal_type(
+                            &x.arguments.args,
+                            &x.arguments.keywords,
+                            x.range,
                             errors,
                         )
                     }

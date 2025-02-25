@@ -1242,3 +1242,15 @@ at(0, str)  # E: assert_type(Literal[0], str) failed
 rt(0)  # E: revealed type: Literal[0]
     "#,
 );
+
+testcase!(
+    test_special_calls_name_clash,
+    r#"
+def assert_type():
+    pass
+def reveal_type(x, y, z):
+    pass
+assert_type()
+reveal_type(1, 2, 3)
+    "#,
+);
