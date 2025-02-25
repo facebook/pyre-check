@@ -37,8 +37,8 @@ impl<'a> BindingsBuilder<'a> {
         key: Idx<Key>,
     ) -> NarrowOps {
         match pattern {
-            Pattern::MatchValue(p) => {
-                self.ensure_expr(&p.value);
+            Pattern::MatchValue(mut p) => {
+                self.ensure_expr(&mut p.value);
                 if let Some(subject_name) = subject_name {
                     NarrowOps(
                         smallmap! { subject_name.clone() => (NarrowOp::Eq(NarrowVal::Expr(p.value.clone())), p.range()) },
@@ -139,8 +139,8 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 narrow_ops
             }
-            Pattern::MatchClass(x) => {
-                self.ensure_expr(&x.cls);
+            Pattern::MatchClass(mut x) => {
+                self.ensure_expr(&mut x.cls);
                 let mut narrow_ops = if let Some(subject_name) = subject_name {
                     NarrowOps(
                         smallmap! { subject_name.clone() => (NarrowOp::IsInstance(NarrowVal::Expr(x.cls.clone())), x.cls.range()) },
@@ -208,8 +208,8 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    pub fn stmt_match(&mut self, x: StmtMatch) {
-        self.ensure_expr(&x.subject);
+    pub fn stmt_match(&mut self, mut x: StmtMatch) {
+        self.ensure_expr(&mut x.subject);
         let subject_name = if let Expr::Name(name) = &*x.subject {
             Some(name.id.clone())
         } else {
@@ -240,8 +240,8 @@ impl<'a> BindingsBuilder<'a> {
             self.bind_narrow_ops(&negated_prev_ops, case.range);
             self.bind_narrow_ops(&new_narrow_ops, case.range);
             negated_prev_ops.and_all(new_narrow_ops.negate());
-            if let Some(guard) = case.guard {
-                self.ensure_expr(&guard);
+            if let Some(mut guard) = case.guard {
+                self.ensure_expr(&mut guard);
                 self.table
                     .insert(Key::Anon(guard.range()), Binding::Expr(None, *guard));
             }

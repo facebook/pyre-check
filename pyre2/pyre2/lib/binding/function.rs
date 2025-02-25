@@ -144,7 +144,7 @@ impl<'a> BindingsBuilder<'a> {
         for (param, default) in Ast::parameters_iter_mut(&mut x.parameters) {
             self.ensure_type_opt(param.annotation.as_deref_mut(), &mut legacy);
             if let Some(default) = default {
-                self.ensure_expr_opt(default.as_deref());
+                self.ensure_expr_opt(default.as_deref_mut());
             }
         }
         self.ensure_type_opt(return_annotation.as_deref_mut(), &mut legacy);

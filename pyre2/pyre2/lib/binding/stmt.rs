@@ -63,7 +63,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn assign_type_var(&mut self, name: &ExprName, call: &mut ExprCall) {
-        self.ensure_expr(&call.func);
+        self.ensure_expr(&mut call.func);
         let mut iargs = call.arguments.args.iter_mut();
         if let Some(expr) = iargs.next() {
             self.ensure_expr(expr);
@@ -79,7 +79,7 @@ impl<'a> BindingsBuilder<'a> {
             {
                 self.ensure_type(&mut kw.value, &mut None);
             } else {
-                self.ensure_expr(&kw.value);
+                self.ensure_expr(&mut kw.value);
             }
         }
         self.bind_assign(name, |ann| {
@@ -92,7 +92,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn assign_param_spec(&mut self, name: &ExprName, call: &mut ExprCall) {
-        self.ensure_expr(&call.func);
+        self.ensure_expr(&mut call.func);
         self.bind_assign(name, |ann| {
             Binding::ParamSpec(
                 ann,
@@ -103,7 +103,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn assign_type_var_tuple(&mut self, name: &ExprName, call: &mut ExprCall) {
-        self.ensure_expr(&call.func);
+        self.ensure_expr(&mut call.func);
         self.bind_assign(name, |ann| {
             Binding::TypeVarTuple(
                 ann,
@@ -113,10 +113,16 @@ impl<'a> BindingsBuilder<'a> {
         })
     }
 
-    fn assign_enum(&mut self, name: &ExprName, func: &Expr, arg_name: &Expr, members: &[Expr]) {
+    fn assign_enum(
+        &mut self,
+        name: &ExprName,
+        func: &mut Expr,
+        arg_name: &mut Expr,
+        members: &mut [Expr],
+    ) {
         self.ensure_expr(func);
         self.ensure_expr(arg_name);
-        for arg in members {
+        for arg in &mut *members {
             self.ensure_expr(arg);
         }
         self.check_functional_definition_name(&name.id, arg_name);
@@ -130,10 +136,10 @@ impl<'a> BindingsBuilder<'a> {
     fn assign_typed_dict(
         &mut self,
         name: &ExprName,
-        func: &Expr,
+        func: &mut Expr,
         arg_name: &Expr,
-        args: &[Expr],
-        keywords: &[Keyword],
+        args: &mut [Expr],
+        keywords: &mut [Keyword],
     ) {
         self.ensure_expr(func);
         self.check_functional_definition_name(&name.id, arg_name);
@@ -148,7 +154,7 @@ impl<'a> BindingsBuilder<'a> {
     fn assign_named_tuple(
         &mut self,
         name: &ExprName,
-        func: &Expr,
+        func: &mut Expr,
         arg_name: &Expr,
         members: &[Expr],
     ) {
@@ -169,13 +175,13 @@ impl<'a> BindingsBuilder<'a> {
                 self.function_def(x);
             }
             Stmt::ClassDef(x) => self.class_def(x),
-            Stmt::Return(x) => {
-                self.ensure_expr_opt(x.value.as_deref());
+            Stmt::Return(mut x) => {
+                self.ensure_expr_opt(x.value.as_deref_mut());
                 self.functions.last_mut().returns.push(x);
                 self.scopes.current_mut().flow.no_next = true;
             }
             Stmt::Delete(x) => self.todo("Bindings::stmt", &x),
-            Stmt::Assign(x) => {
+            Stmt::Assign(mut x) => {
                 let name = if x.targets.len() == 1
                     && let Expr::Name(name) = &x.targets[0]
                 {
@@ -202,34 +208,38 @@ impl<'a> BindingsBuilder<'a> {
                             return;
                         }
                         SpecialExport::Enum | SpecialExport::IntEnum | SpecialExport::StrEnum => {
-                            if let Some((arg_name, members)) = call.arguments.args.split_first() {
-                                self.assign_enum(name, &call.func, arg_name, members);
+                            if let Some((arg_name, members)) = call.arguments.args.split_first_mut()
+                            {
+                                self.assign_enum(name, &mut call.func, arg_name, members);
                                 return;
                             }
                         }
                         SpecialExport::TypedDict => {
-                            if let Some((arg_name, members)) = call.arguments.args.split_first() {
+                            if let Some((arg_name, members)) = call.arguments.args.split_first_mut()
+                            {
                                 self.assign_typed_dict(
                                     name,
-                                    &call.func,
+                                    &mut call.func,
                                     arg_name,
                                     members,
-                                    &call.arguments.keywords,
+                                    &mut call.arguments.keywords,
                                 );
                                 return;
                             }
                         }
                         SpecialExport::TypingNamedTuple => {
-                            if let Some((arg_name, members)) = call.arguments.args.split_first() {
-                                self.assign_named_tuple(name, &call.func, arg_name, members);
+                            if let Some((arg_name, members)) = call.arguments.args.split_first_mut()
+                            {
+                                self.assign_named_tuple(name, &mut call.func, arg_name, members);
                                 return;
                             }
                         }
                         _ => {}
                     }
                 }
-                self.ensure_expr(&value);
-                for target in &x.targets {
+                self.ensure_expr(&mut value);
+                let name = name.cloned();
+                for target in &mut x.targets {
                     let make_binding = |k: Option<Idx<KeyAnnotation>>| {
                         if let Some(name) = &name {
                             Binding::NameAssign(name.id.clone(), k, Box::new(value.clone()))
@@ -241,9 +251,9 @@ impl<'a> BindingsBuilder<'a> {
                     self.ensure_expr(target);
                 }
             }
-            Stmt::AugAssign(x) => {
-                self.ensure_expr(&x.target);
-                self.ensure_expr(&x.value);
+            Stmt::AugAssign(mut x) => {
+                self.ensure_expr(&mut x.target);
+                self.ensure_expr(&mut x.value);
                 let make_binding = |_: Option<Idx<KeyAnnotation>>| Binding::AugAssign(x.clone());
                 self.bind_target(&x.target, &make_binding, None);
             }
@@ -286,7 +296,7 @@ impl<'a> BindingsBuilder<'a> {
                         if self.as_special_export(&x.annotation) == Some(SpecialExport::TypeAlias) {
                             self.ensure_type(&mut value, &mut None);
                         } else {
-                            self.ensure_expr(&value);
+                            self.ensure_expr(&mut value);
                         }
                         Binding::NameAssign(name.id.clone(), Some(ann_key), value)
                     } else {
@@ -304,8 +314,8 @@ impl<'a> BindingsBuilder<'a> {
                         );
                     }
                 }
-                Expr::Attribute(attr) => {
-                    self.ensure_expr(&attr.value);
+                Expr::Attribute(mut attr) => {
+                    self.ensure_expr(&mut attr.value);
                     self.ensure_type(&mut x.annotation, &mut None);
                     let ann_key = self.table.insert(
                         KeyAnnotation::AttrAnnotation(x.annotation.range()),
@@ -325,8 +335,8 @@ impl<'a> BindingsBuilder<'a> {
                              ),
                          );
                     }
-                    if let Some(box v) = x.value {
-                        self.ensure_expr(&v);
+                    if let Some(box mut v) = x.value {
+                        self.ensure_expr(&mut v);
                         self.table.insert(
                             KeyExpect(v.range()),
                             BindingExpect::CheckAssignExprToAttribute(Box::new((attr, v))),
@@ -347,19 +357,19 @@ impl<'a> BindingsBuilder<'a> {
                     self.todo("Bindings::stmt TypeAlias", &x);
                 }
             }
-            Stmt::For(x) => {
+            Stmt::For(mut x) => {
                 self.setup_loop(x.range, &NarrowOps::new());
-                self.ensure_expr(&x.iter);
+                self.ensure_expr(&mut x.iter);
                 let make_binding = |k| Binding::IterableValue(k, *x.iter.clone());
                 self.bind_target(&x.target, &make_binding, None);
-                self.ensure_expr(&x.target);
+                self.ensure_expr(&mut x.target);
                 self.stmts(x.body);
                 self.teardown_loop(x.range, &NarrowOps::new(), x.orelse);
             }
-            Stmt::While(x) => {
+            Stmt::While(mut x) => {
                 let narrow_ops = NarrowOps::from_expr(Some(&x.test));
                 self.setup_loop(x.range, &narrow_ops);
-                self.ensure_expr(&x.test);
+                self.ensure_expr(&mut x.test);
                 self.table
                     .insert(Key::Anon(x.test.range()), Binding::Expr(None, *x.test));
                 self.stmts(x.body);
@@ -386,8 +396,8 @@ impl<'a> BindingsBuilder<'a> {
                     self.bind_narrow_ops(&negated_prev_ops, range);
                     let mut base = self.scopes.current().flow.clone();
                     let new_narrow_ops = NarrowOps::from_expr(test.as_ref());
-                    if let Some(e) = test {
-                        self.ensure_expr(&e);
+                    if let Some(mut e) = test {
+                        self.ensure_expr(&mut e);
                         self.table
                             .insert(Key::Anon(e.range()), Binding::Expr(None, e));
                     } else {
@@ -421,14 +431,14 @@ impl<'a> BindingsBuilder<'a> {
                 } else {
                     ContextManagerKind::Sync
                 };
-                for item in x.items {
-                    self.ensure_expr(&item.context_expr);
-                    if let Some(opts) = item.optional_vars {
+                for mut item in x.items {
+                    self.ensure_expr(&mut item.context_expr);
+                    if let Some(mut opts) = item.optional_vars {
                         let make_binding = |k: Option<Idx<KeyAnnotation>>| {
                             Binding::ContextValue(k, item.context_expr.clone(), kind)
                         };
                         self.bind_target(&opts, &make_binding, None);
-                        self.ensure_expr(&opts);
+                        self.ensure_expr(&mut opts);
                     } else {
                         self.table.insert(
                             Key::Anon(item.range()),
@@ -442,10 +452,10 @@ impl<'a> BindingsBuilder<'a> {
                 self.stmt_match(x);
             }
             Stmt::Raise(x) => {
-                if let Some(exc) = x.exc {
-                    self.ensure_expr(&exc);
-                    let raised = if let Some(cause) = x.cause {
-                        self.ensure_expr(&cause);
+                if let Some(mut exc) = x.exc {
+                    self.ensure_expr(&mut exc);
+                    let raised = if let Some(mut cause) = x.cause {
+                        self.ensure_expr(&mut cause);
                         RaisedException::WithCause(Box::new((*exc, *cause)))
                     } else {
                         RaisedException::WithoutCause(*exc)
@@ -479,16 +489,16 @@ impl<'a> BindingsBuilder<'a> {
                     let range = h.range();
                     let h = h.except_handler().unwrap(); // Only one variant for now
                     if let Some(name) = h.name
-                        && let Some(type_) = h.type_
+                        && let Some(mut type_) = h.type_
                     {
-                        self.ensure_expr(&type_);
+                        self.ensure_expr(&mut type_);
                         self.bind_definition(
                             &name,
                             Binding::ExceptionHandler(type_, x.is_star),
                             None,
                         );
-                    } else if let Some(type_) = h.type_ {
-                        self.ensure_expr(&type_);
+                    } else if let Some(mut type_) = h.type_ {
+                        self.ensure_expr(&mut type_);
                         self.table.insert(
                             Key::Anon(range),
                             Binding::ExceptionHandler(type_, x.is_star),
@@ -502,13 +512,13 @@ impl<'a> BindingsBuilder<'a> {
                 self.scopes.current_mut().flow = self.merge_flow(branches, range);
                 self.stmts(x.finalbody);
             }
-            Stmt::Assert(x) => {
-                self.ensure_expr(&x.test);
+            Stmt::Assert(mut x) => {
+                self.ensure_expr(&mut x.test);
                 self.bind_narrow_ops(&NarrowOps::from_expr(Some(&x.test)), x.range);
                 self.table
                     .insert(Key::Anon(x.test.range()), Binding::Expr(None, *x.test));
-                if let Some(msg_expr) = x.msg {
-                    self.ensure_expr(&msg_expr);
+                if let Some(mut msg_expr) = x.msg {
+                    self.ensure_expr(&mut msg_expr);
                     self.table
                         .insert(Key::Anon(msg_expr.range()), Binding::Expr(None, *msg_expr));
                 };
@@ -627,8 +637,8 @@ impl<'a> BindingsBuilder<'a> {
             }
             Stmt::Global(x) => self.todo("Bindings::stmt", &x),
             Stmt::Nonlocal(x) => self.todo("Bindings::stmt", &x),
-            Stmt::Expr(x) => {
-                self.ensure_expr(&x.value);
+            Stmt::Expr(mut x) => {
+                self.ensure_expr(&mut x.value);
                 self.table.insert(
                     Key::StmtExpr(x.value.range()),
                     Binding::Expr(None, *x.value),

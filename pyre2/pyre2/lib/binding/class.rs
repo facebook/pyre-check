@@ -91,20 +91,22 @@ impl<'a> BindingsBuilder<'a> {
         });
 
         let mut keywords = Vec::new();
-        x.keywords().iter().for_each(|keyword| {
-            if let Some(name) = &keyword.arg {
-                self.ensure_expr(&keyword.value);
-                keywords.push((name.id.clone(), keyword.value.clone()));
-            } else {
-                self.error(
-                    keyword.range(),
-                    format!(
-                        "The use of unpacking in class header of `{}` is not supported",
-                        x.name
-                    ),
-                )
-            }
-        });
+        if let Some(args) = &mut x.arguments {
+            args.keywords.iter_mut().for_each(|keyword| {
+                if let Some(name) = &keyword.arg {
+                    self.ensure_expr(&mut keyword.value);
+                    keywords.push((name.id.clone(), keyword.value.clone()));
+                } else {
+                    self.error(
+                        keyword.range(),
+                        format!(
+                            "The use of unpacking in class header of `{}` is not supported",
+                            x.name
+                        ),
+                    )
+                }
+            });
+        }
 
         self.table.insert(
             KeyClassMetadata(class_name.clone()),
@@ -493,12 +495,12 @@ impl<'a> BindingsBuilder<'a> {
         &mut self,
         class_name: Identifier,
         base: Expr,
-        args: &[Expr],
-        keywords: &[Keyword],
+        args: &mut [Expr],
+        keywords: &mut [Keyword],
     ) {
         let mut base_class_keywords: Box<[(Name, Expr)]> = Box::new([]);
         for kw in keywords {
-            self.ensure_expr(&kw.value);
+            self.ensure_expr(&mut kw.value);
             if let Some(name) = &kw.arg
                 && name.id == "total"
                 && matches!(kw.value, Expr::BooleanLiteral(_))
@@ -514,9 +516,9 @@ impl<'a> BindingsBuilder<'a> {
         let member_definitions: Vec<(String, TextRange, Option<Expr>, Option<Expr>)> = match args {
             // Movie = TypedDict('Movie', {'name': str, 'year': int})
             [Expr::Dict(ExprDict { items, .. })] => items
-                .iter()
+                .iter_mut()
                 .filter_map(|item| {
-                    if let Some(key) = &item.key {
+                    if let Some(key) = &mut item.key {
                         self.ensure_expr(key);
                     }
                     self.ensure_type(&mut item.value.clone(), &mut None);

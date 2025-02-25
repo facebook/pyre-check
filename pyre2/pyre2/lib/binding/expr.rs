@@ -65,13 +65,13 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn bind_comprehensions(&mut self, comprehensions: &[Comprehension]) {
+    fn bind_comprehensions(&mut self, comprehensions: &mut [Comprehension]) {
         self.scopes.push(Scope::comprehension());
-        for comp in comprehensions.iter() {
+        for comp in comprehensions.iter_mut() {
             self.scopes.current_mut().stat.expr_lvalue(&comp.target);
             let make_binding = |k| Binding::IterableValue(k, comp.iter.clone());
             self.bind_target(&comp.target, &make_binding, None);
-            self.ensure_expr(&comp.target);
+            self.ensure_expr(&mut comp.target);
             for x in comp.ifs.iter() {
                 let narrow_ops = NarrowOps::from_expr(Some(x));
                 self.bind_narrow_ops(&narrow_ops, comp.range);
@@ -95,7 +95,7 @@ impl<'a> BindingsBuilder<'a> {
         &mut self,
         base: Flow,
         ops: &NarrowOps,
-        orelse: Option<&Expr>,
+        orelse: Option<&mut Expr>,
         range: TextRange,
     ) {
         let if_branch = mem::take(&mut self.scopes.current_mut().flow);
@@ -107,16 +107,17 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     /// Execute through the expr, ensuring every name has a binding.
-    pub fn ensure_expr(&mut self, x: &Expr) {
+    pub fn ensure_expr(&mut self, x: &mut Expr) {
         let new_scope = match x {
             Expr::If(x) => {
                 // Ternary operation. We treat it like an if/else statement.
                 let base = self.scopes.current().flow.clone();
-                self.ensure_expr(&x.test);
+                self.ensure_expr(&mut x.test);
                 let narrow_ops = NarrowOps::from_expr(Some(&x.test));
                 self.bind_narrow_ops(&narrow_ops, x.body.range());
-                self.ensure_expr(&x.body);
-                self.negate_and_merge_flow(base, &narrow_ops, Some(&x.orelse), x.range());
+                self.ensure_expr(&mut x.body);
+                let range = x.range();
+                self.negate_and_merge_flow(base, &narrow_ops, Some(&mut x.orelse), range);
                 return;
             }
             Expr::BoolOp(ExprBoolOp { range, op, values }) => {
@@ -153,19 +154,19 @@ impl<'a> BindingsBuilder<'a> {
                 false
             }
             Expr::ListComp(x) => {
-                self.bind_comprehensions(&x.generators);
+                self.bind_comprehensions(&mut x.generators);
                 true
             }
             Expr::SetComp(x) => {
-                self.bind_comprehensions(&x.generators);
+                self.bind_comprehensions(&mut x.generators);
                 true
             }
             Expr::DictComp(x) => {
-                self.bind_comprehensions(&x.generators);
+                self.bind_comprehensions(&mut x.generators);
                 true
             }
             Expr::Generator(x) => {
-                self.bind_comprehensions(&x.generators);
+                self.bind_comprehensions(&mut x.generators);
                 true
             }
             Expr::Lambda(x) => {
@@ -188,14 +189,14 @@ impl<'a> BindingsBuilder<'a> {
             }
             _ => false,
         };
-        Visitors::visit_expr(x, |x| self.ensure_expr(x));
+        Visitors::visit_expr_mut(x, |x| self.ensure_expr(x));
         if new_scope {
             self.scopes.pop();
         }
     }
 
     /// Execute through the expr, ensuring every name has a binding.
-    pub fn ensure_expr_opt(&mut self, x: Option<&Expr>) {
+    pub fn ensure_expr_opt(&mut self, x: Option<&mut Expr>) {
         if let Some(x) = x {
             self.ensure_expr(x);
         }
@@ -267,8 +268,8 @@ impl<'a> BindingsBuilder<'a> {
 
     pub fn ensure_and_bind_decorators(&mut self, decorators: Vec<Decorator>) -> Vec<Idx<Key>> {
         let mut decorator_keys = Vec::with_capacity(decorators.len());
-        for x in decorators {
-            self.ensure_expr(&x.expression);
+        for mut x in decorators {
+            self.ensure_expr(&mut x.expression);
             let k = self
                 .table
                 .insert(Key::Anon(x.range), Binding::Decorator(x.expression));
