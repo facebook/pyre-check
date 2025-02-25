@@ -154,6 +154,8 @@ impl FlowInfo {
             Some(FlowStyle::AnnotatedClassField {
                 initial_value: None,
             }) => ClassFieldInitialValue::Instance,
+            // All other styles (e.g. function def, import) indicate we do have
+            // a value, but it is not coming from a simple style.
             _ => ClassFieldInitialValue::Class(None),
         }
     }

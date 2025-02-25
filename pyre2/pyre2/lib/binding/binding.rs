@@ -940,11 +940,14 @@ impl DisplayWith<Bindings> for BindingClassField {
 /// The value that the class field is initialized to.
 #[derive(Clone, Debug)]
 pub enum ClassFieldInitialValue {
-    /// The field has an initial value. Stores the expression that the field is assigned to.
-    /// None means that we have something that isn't an assignment to an expression, like a function.
-    Class(Option<Expr>),
     /// The field does not have an initial value.
     Instance,
+    /// The field has an initial value.
+    ///
+    /// If the value is from an assignment, stores the expression that the field is assigned to,
+    /// which is needed for some cases like dataclass fields. The `None` case is for fields that
+    /// have values which don't come from assignment (e.g. function defs, imports in a class body)
+    Class(Option<Expr>),
 }
 
 /// Bindings for fields synthesized by a class, such as a dataclass's `__init__` method. This
