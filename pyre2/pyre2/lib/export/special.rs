@@ -28,6 +28,7 @@ pub enum SpecialExport {
     CollectionsNamedTuple,
     TypingNamedTuple,
     AssertType,
+    NewType,
 }
 
 impl SpecialExport {
@@ -46,6 +47,7 @@ impl SpecialExport {
             "namedtuple" => Some(Self::CollectionsNamedTuple),
             "NamedTuple" => Some(Self::TypingNamedTuple),
             "assert_type" => Some(Self::AssertType),
+            "NewType" => Some(Self::NewType),
             _ => None,
         }
     }
@@ -60,6 +62,7 @@ impl SpecialExport {
             | Self::Literal
             | Self::TypedDict
             | Self::TypingNamedTuple
+            | Self::NewType
             | Self::AssertType => {
                 matches!(m.as_str(), "typing" | "typing_extensions")
             }
