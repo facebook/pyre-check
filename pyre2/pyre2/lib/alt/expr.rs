@@ -11,6 +11,7 @@ use ruff_python_ast::BoolOp;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprSlice;
@@ -897,7 +898,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.stdlib.bool().to_type()
             }
-            Expr::Call(x) if is_special_name(&x.func, "assert_type") => {
+            Expr::Call(x) if is_special_name(&x.func, "typing", "assert_type") => {
                 if x.arguments.args.len() == 2 {
                     let expr_a = &x.arguments.args[0];
                     let expr_b = &x.arguments.args[1];
@@ -934,7 +935,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Type::None
             }
-            Expr::Call(x) if is_special_name(&x.func, "reveal_type") => {
+            Expr::Call(x) if is_special_name(&x.func, "typing", "reveal_type") => {
                 if x.arguments.args.len() == 1 {
                     let t = self
                         .solver()
@@ -1270,9 +1271,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 }
 
-fn is_special_name(x: &Expr, name: &str) -> bool {
+/// Match on an expression by name. Should be used only for special names that we essentially treat like keywords,
+/// like reveal_type.
+fn is_special_name(x: &Expr, module: &str, name: &str) -> bool {
     match x {
+        // It's convenient to be able to call functions like reveal_type in the course of debugging without scrolling
+        // to the top of the file to add an import.
         Expr::Name(x) => x.id.as_str() == name,
+        Expr::Attribute(ExprAttribute {
+            value: box Expr::Name(value),
+            attr,
+            ..
+        }) => value.id.as_str() == module && attr.as_str() == name,
         _ => false,
     }
 }
