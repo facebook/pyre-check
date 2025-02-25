@@ -318,6 +318,28 @@ impl Answers {
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
+    pub fn new(
+        answers: &'a Ans,
+        current: &'a Answers,
+        base_errors: &'a ErrorCollector,
+        bindings: &'a Bindings,
+        exports: &'a dyn LookupExport,
+        uniques: &'a UniqueFactory,
+        recurser: &'a Recurser<Var>,
+        stdlib: &'a Stdlib,
+    ) -> AnswersSolver<'a, Ans> {
+        AnswersSolver {
+            stdlib,
+            uniques,
+            answers,
+            bindings,
+            base_errors,
+            exports,
+            recurser,
+            current,
+        }
+    }
+
     pub fn bindings(&self) -> &Bindings {
         self.bindings
     }

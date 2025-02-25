@@ -21,6 +21,7 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
 use crate::alt::answers::Answers;
+use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::Solutions;
 use crate::alt::answers::SolutionsEntry;
@@ -66,6 +67,7 @@ use crate::util::lock::RwLock;
 use crate::util::locked_map::LockedMap;
 use crate::util::no_hash::BuildNoHash;
 use crate::util::prelude::SliceExt;
+use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
 use crate::util::upgrade_lock::UpgradeLock;
 
@@ -750,6 +752,33 @@ impl State {
             .dupe()
     }
 
+    #[expect(dead_code)]
+    pub fn ad_hoc_solve<R: Sized, F: FnOnce(AnswersSolver<StateHandle>) -> R>(
+        &self,
+        handle: &Handle,
+        solve: F,
+    ) -> Option<R> {
+        let module_data = self.modules.get(handle)?;
+        let lookup = self.lookup(module_data.dupe());
+        let steps = &module_data.state.read().steps;
+        let errors = &steps.load.as_ref()?.errors;
+        let (bindings, answers) = steps.answers.as_deref().as_ref()?;
+        let stdlib = self.get_stdlib(handle);
+        let recurser = Recurser::new();
+        let solver = AnswersSolver::new(
+            &lookup,
+            answers,
+            errors,
+            bindings,
+            &lookup,
+            &self.uniques,
+            &recurser,
+            &stdlib,
+        );
+        let result = solve(solver);
+        Some(result)
+    }
+
     pub fn debug_info(&self, handles: &[Handle]) -> DebugInfo {
         let owned = handles.map(|x| {
             let module = self.get_module(x);
@@ -833,7 +862,7 @@ impl State {
     */
 }
 
-struct StateHandle<'a> {
+pub struct StateHandle<'a> {
     state: &'a State,
     module_data: Arc<ModuleData>,
 }
