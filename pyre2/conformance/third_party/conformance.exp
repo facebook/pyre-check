@@ -4880,26 +4880,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(ForwardReference, Any) failed",
-      "description": "assert_type(ForwardReference, Any) failed",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 39,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "untype, got Literal['ForwardReference']",
-      "description": "untype, got Literal['ForwardReference']",
-      "line": 24,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "assert_type(int | str, int) failed",
       "description": "assert_type(int | str, int) failed",
       "line": 27,

@@ -1165,3 +1165,14 @@ from typing import Literal as L
 x: L["foo"] = "foo"
 "#,
 );
+
+testcase!(
+    test_assert_type_forward_ref,
+    r#"
+from typing import assert_type
+x: "ForwardRef"
+assert_type(x, "ForwardRef")
+class ForwardRef:
+    pass
+    "#,
+);

@@ -376,9 +376,7 @@
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed']",
     "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']"
   ],
-  "directives_assert_type.py": [
-    "Line 24: Unexpected errors ['assert_type(ForwardReference, Any) failed', \"untype, got Literal['ForwardReference']\"]"
-  ],
+  "directives_assert_type.py": [],
   "directives_cast.py": [
     "Line 16: Expected 1 errors"
   ],

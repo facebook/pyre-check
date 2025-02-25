@@ -13,6 +13,7 @@ use ruff_python_ast::Comprehension;
 use ruff_python_ast::Decorator;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBoolOp;
+use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprLambda;
 use ruff_python_ast::ExprSubscript;
 use ruff_python_ast::Identifier;
@@ -139,6 +140,27 @@ impl<'a> BindingsBuilder<'a> {
                     }
                 }
                 self.negate_and_merge_flow(base, &narrow_ops, None, *range);
+                return;
+            }
+            Expr::Call(ExprCall {
+                range: _,
+                func,
+                arguments,
+            }) if self.as_special_export(func) == Some(SpecialExport::AssertType)
+                && arguments.args.len() > 1 =>
+            {
+                // Handle forward references in the second argument to an assert_type call
+                self.ensure_expr(func);
+                for (i, arg) in arguments.args.iter_mut().enumerate() {
+                    if i == 1 {
+                        self.ensure_type(arg, &mut None);
+                    } else {
+                        self.ensure_expr(arg);
+                    }
+                }
+                for kw in arguments.keywords.iter_mut() {
+                    self.ensure_expr(&mut kw.value);
+                }
                 return;
             }
             Expr::Name(x) => {
