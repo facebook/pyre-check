@@ -12,7 +12,6 @@
  */
 
 use ruff_python_ast::Expr;
-use ruff_python_ast::ExprCall;
 use ruff_python_ast::Keyword;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
@@ -23,10 +22,16 @@ use crate::error::collector::ErrorCollector;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    pub fn call_assert_type(&self, x: &ExprCall, errors: &ErrorCollector) -> Type {
-        if x.arguments.args.len() == 2 {
-            let expr_a = &x.arguments.args[0];
-            let expr_b = &x.arguments.args[1];
+    pub fn call_assert_type(
+        &self,
+        args: &[Expr],
+        keywords: &[Keyword],
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        if args.len() == 2 {
+            let expr_a = &args[0];
+            let expr_b = &args[1];
             let a = self.expr_infer(expr_a, errors);
             let b = self.expr_untype(expr_b, errors);
             let a = self.canonicalize_all_class_types(
@@ -40,7 +45,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             if a != b {
                 self.error(
                     errors,
-                    x.range,
+                    range,
                     format!(
                         "assert_type({}, {}) failed",
                         a.deterministic_printing(),
@@ -51,34 +56,62 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             self.error(
                 errors,
-                x.range,
+                range,
                 format!(
-                    "assert_type needs 2 arguments, got {:#?}",
-                    x.arguments.args.len()
+                    "assert_type needs 2 positional arguments, got {:#?}",
+                    args.len()
                 ),
+            );
+        }
+        for keyword in keywords {
+            let desc = if let Some(id) = &keyword.arg {
+                format!(" `{}`", id)
+            } else {
+                "".to_owned()
+            };
+            self.error(
+                errors,
+                range,
+                format!("`assert_type` got an unexpected keyword argument{desc}"),
             );
         }
         Type::None
     }
 
-    pub fn call_reveal_type(&self, x: &ExprCall, errors: &ErrorCollector) -> Type {
-        if x.arguments.args.len() == 1 {
-            let t = self
-                .solver()
-                .deep_force(self.expr_infer(&x.arguments.args[0], errors));
+    pub fn call_reveal_type(
+        &self,
+        args: &[Expr],
+        keywords: &[Keyword],
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        if args.len() == 1 {
+            let t = self.solver().deep_force(self.expr_infer(&args[0], errors));
             self.error(
                 errors,
-                x.range,
+                range,
                 format!("revealed type: {}", t.deterministic_printing()),
             );
         } else {
             self.error(
                 errors,
-                x.range,
+                range,
                 format!(
-                    "reveal_type needs 1 argument, got {}",
-                    x.arguments.args.len()
+                    "reveal_type needs 1 positional argument, got {}",
+                    args.len()
                 ),
+            );
+        }
+        for keyword in keywords {
+            let desc = if let Some(id) = &keyword.arg {
+                format!(" `{}`", id)
+            } else {
+                "".to_owned()
+            };
+            self.error(
+                errors,
+                range,
+                format!("`reveal_type` got an unexpected keyword argument{desc}"),
             );
         }
         Type::None

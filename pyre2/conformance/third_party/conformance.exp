@@ -4960,8 +4960,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type needs 2 arguments, got 0",
-      "description": "assert_type needs 2 arguments, got 0",
+      "concise_description": "assert_type needs 2 positional arguments, got 0",
+      "description": "assert_type needs 2 positional arguments, got 0",
       "line": 31,
       "name": "PyreError",
       "stop_column": 18,
@@ -4980,8 +4980,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type needs 2 arguments, got 3",
-      "description": "assert_type needs 2 arguments, got 3",
+      "concise_description": "assert_type needs 2 positional arguments, got 3",
+      "description": "assert_type needs 2 positional arguments, got 3",
       "line": 33,
       "name": "PyreError",
       "stop_column": 33,
@@ -5158,8 +5158,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "reveal_type needs 1 argument, got 0",
-      "description": "reveal_type needs 1 argument, got 0",
+      "concise_description": "reveal_type needs 1 positional argument, got 0",
+      "description": "reveal_type needs 1 positional argument, got 0",
       "line": 19,
       "name": "PyreError",
       "stop_column": 18,
@@ -5168,8 +5168,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "reveal_type needs 1 argument, got 2",
-      "description": "reveal_type needs 1 argument, got 2",
+      "concise_description": "reveal_type needs 1 positional argument, got 2",
+      "description": "reveal_type needs 1 positional argument, got 2",
       "line": 20,
       "name": "PyreError",
       "stop_column": 22,

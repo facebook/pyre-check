@@ -899,10 +899,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.stdlib.bool().to_type()
             }
             Expr::Call(x) if is_special_name(&x.func, "typing", "assert_type") => {
-                self.call_assert_type(x, errors)
+                self.call_assert_type(&x.arguments.args, &x.arguments.keywords, x.range, errors)
             }
             Expr::Call(x) if is_special_name(&x.func, "typing", "reveal_type") => {
-                self.call_reveal_type(x, errors)
+                self.call_reveal_type(&x.arguments.args, &x.arguments.keywords, x.range, errors)
             }
             Expr::Call(x) => {
                 let ty_fun = self.expr_infer(&x.func, errors);

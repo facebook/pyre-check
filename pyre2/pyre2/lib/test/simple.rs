@@ -458,7 +458,7 @@ testcase!(
     test_reveal_type,
     r#"
 from typing import reveal_type
-reveal_type()  # E: reveal_type needs 1 argument, got 0
+reveal_type()  # E: reveal_type needs 1 positional argument, got 0
 reveal_type(1)  # E: revealed type: Literal[1]
     "#,
 );
@@ -1220,5 +1220,14 @@ assert_type(w, str)
 
 cast()  # E: `typing.cast` missing required argument `typ`  # E: `typing.cast` missing required argument `val`
 cast(1, 1)  # E: First argument to `typing.cast` must be a type
+    "#,
+);
+
+testcase!(
+    test_special_calls_unexpected_keyword,
+    r#"
+from typing import assert_type, reveal_type, Literal
+assert_type(0, Literal[0], oops=1)  # E: `assert_type` got an unexpected keyword argument `oops`
+reveal_type(0, oops=1)  # E: revealed type: Literal[0]  # E: `reveal_type` got an unexpected keyword argument `oops`
     "#,
 );
