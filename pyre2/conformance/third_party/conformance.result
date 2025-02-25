@@ -9,7 +9,7 @@
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
     "Line 38: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]\"]",
-    "Line 41: Unexpected errors ['untype, got list[type[str]]']",
+    "Line 41: Unexpected errors ['Expected a type form, got instance of `list[type[str]]`']",
     "Line 53: Unexpected errors ['assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed']",
     "Line 54: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
     "Line 57: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
@@ -29,7 +29,7 @@
     "Line 14: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Vector, type[Iterable[tuple[TypeVar[TFloat], TypeVar[TFloat]]]]]\"]",
     "Line 18: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Vector, type[Iterable[tuple[TypeVar[TFloat], TypeVar[TFloat]]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Vector, type[Iterable[tuple[TypeVar[TFloat], TypeVar[TFloat]]]]]\"]",
     "Line 51: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]\"]",
-    "Line 54: Unexpected errors ['untype, got list[type[str]]']",
+    "Line 54: Unexpected errors ['Expected a type form, got instance of `list[type[str]]`']",
     "Line 64: Unexpected errors ['assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed']",
     "Line 65: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
     "Line 68: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
@@ -43,7 +43,7 @@
     "Line 51: Expected 1 errors",
     "Line 58: Expected 1 errors",
     "Line 62: Expected 1 errors",
-    "Line 13: Unexpected errors ['untype, got NewType', 'EXPECTED Literal[42] <: TypeVar[_T]']",
+    "Line 13: Unexpected errors ['Expected a type form, got instance of `NewType`', 'EXPECTED Literal[42] <: TypeVar[_T]']",
     "Line 15: Unexpected errors ['assert_type(Any, int) failed', 'Object of class `TypeVar` has no attribute `__add__`', 'EXPECTED Literal[5] <: TypeVar[_T]']"
   ],
   "aliases_recursive.py": [
@@ -56,10 +56,10 @@
     "Line 52: Expected 1 errors",
     "Line 72: Expected 1 errors",
     "Line 75: Expected 1 errors",
-    "Line 14: Unexpected errors [\"untype, got Literal['Json']\", \"untype, got Literal['Json']\"]",
-    "Line 24: Unexpected errors [\"untype, got Literal['Json2']\", \"untype, got Literal['Json2']\"]",
-    "Line 30: Unexpected errors [\"untype, got Literal['RecursiveTuple']\"]",
-    "Line 42: Unexpected errors [\"untype, got Literal['RecursiveMapping']\"]",
+    "Line 14: Unexpected errors [\"Expected a type form, got instance of `Literal['Json']`\", \"Expected a type form, got instance of `Literal['Json']`\"]",
+    "Line 24: Unexpected errors [\"Expected a type form, got instance of `Literal['Json2']`\", \"Expected a type form, got instance of `Literal['Json2']`\"]",
+    "Line 30: Unexpected errors [\"Expected a type form, got instance of `Literal['RecursiveTuple']`\"]",
+    "Line 42: Unexpected errors [\"Expected a type form, got instance of `Literal['RecursiveMapping']`\"]",
     "Line 58: Unexpected errors ['Object of class `str` has no attribute `__or__`']",
     "Line 59: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GenericTypeAlias1, type[list[Error]]]\"]",
     "Line 62: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GenericTypeAlias1, type[list[Error]]]\"]",
@@ -80,7 +80,7 @@
     "Line 84: Expected 1 errors",
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
-    "Line 82: Unexpected errors ['untype, got list[type[int] | type[str]]']"
+    "Line 82: Unexpected errors ['Expected a type form, got instance of `list[type[int] | type[str]]`']"
   ],
   "aliases_typealiastype.py": [
     "Line 44: Expected 1 errors",
@@ -103,11 +103,11 @@
     "Line 18: Unexpected errors ['EXPECTED tuple[type[TypeVar[S]], type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]']",
     "Line 19: Unexpected errors ['EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]']",
     "Line 23: Unexpected errors ['EXPECTED tuple[type[TypeVar[S]], type[TypeVar[TStr]], type[ParamSpec[P]], type[TypeVarTuple[Ts]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]']",
-    "Line 35: Unexpected errors ['untype, got GenericAlias']",
-    "Line 36: Unexpected errors ['untype, got GenericAlias']",
-    "Line 37: Unexpected errors ['untype, got GenericAlias']",
-    "Line 38: Unexpected errors ['untype, got GenericAlias']",
-    "Line 39: Unexpected errors ['untype, got GenericAlias', 'Expected an iterable, got type[tuple[int, str, int]]']"
+    "Line 35: Unexpected errors ['Expected a type form, got instance of `GenericAlias`']",
+    "Line 36: Unexpected errors ['Expected a type form, got instance of `GenericAlias`']",
+    "Line 37: Unexpected errors ['Expected a type form, got instance of `GenericAlias`']",
+    "Line 38: Unexpected errors ['Expected a type form, got instance of `GenericAlias`']",
+    "Line 39: Unexpected errors ['Expected a type form, got instance of `GenericAlias`', 'Expected an iterable, got type[tuple[int, str, int]]']"
   ],
   "aliases_variance.py": [
     "Line 24: Expected 1 errors",
@@ -126,7 +126,7 @@
     "Line 48: Expected 1 errors",
     "Line 53: Expected 1 errors",
     "Line 66: Expected 1 errors",
-    "Line 87: Unexpected errors ['untype, got (self: ClassD) -> None']",
+    "Line 87: Unexpected errors ['Expected a type form, got instance of `(self: ClassD) -> None`']",
     "Line 96: Unexpected errors ['assert_type(Any, int) failed']"
   ],
   "annotations_generators.py": [
@@ -415,7 +415,7 @@
     "Line 39: Expected 1 errors",
     "Line 19: Unexpected errors ['EXPECTED EnumMeta <: type[@_]', 'EXPECTED int <: str']",
     "Line 20: Unexpected errors ['assert_type(Any, Color) failed']",
-    "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for class `Color`, got 1.', \"untype, got Literal['RED']\"]",
+    "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for class `Color`, got 1.', \"Expected a type form, got instance of `Literal['RED']`\"]",
     "Line 27: Unexpected errors ['assert_type(Enum, Color) failed']"
   ],
   "enums_definition.py": [],
@@ -454,15 +454,15 @@
     "Line 73: Unexpected errors ['Unexpected keyword argument `default` to ParamSpec']",
     "Line 79: Unexpected errors ['assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[str]]) failed', 'Expected 1 type argument for class `Class_ParamSpec`, got 2.']",
     "Line 80: Unexpected errors ['assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[str]) failed', 'Expected 1 type argument for class `Class_ParamSpec`, got 2.']",
-    "Line 81: Unexpected errors ['assert_type(Class_ParamSpec[Any], Class_ParamSpec[bool]) failed', 'untype, got list[type[bool]]', 'Expected 1 type argument for class `Class_ParamSpec`, got 2.']",
+    "Line 81: Unexpected errors ['assert_type(Class_ParamSpec[Any], Class_ParamSpec[bool]) failed', 'Expected a type form, got instance of `list[type[bool]]`', 'Expected 1 type argument for class `Class_ParamSpec`, got 2.']",
     "Line 88: Unexpected errors ['Unexpected keyword argument `default` to TypeVarTuple']",
     "Line 94: Unexpected errors ['assert_type(type[Class_TypeVarTuple[Error]], type[Class_TypeVarTuple[tuple[str, int]]]) failed']",
     "Line 95: Unexpected errors ['assert_type(Class_TypeVarTuple[tuple[Any, ...]], Class_TypeVarTuple[tuple[str, int]]) failed']",
     "Line 127: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 145: Unexpected errors ['Unexpected keyword argument `default` to ParamSpec']",
     "Line 148: Unexpected errors ['Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base']",
-    "Line 151: Unexpected errors ['assert_type(type[Foo6[int, tuple[str]]], type[Foo6[int, tuple[str, Any]]]) failed', 'untype, got list[type[bool] | type[float]]']",
-    "Line 152: Unexpected errors ['untype, got list[type[bytes]]', 'untype, got list[type[bytes]]']",
+    "Line 151: Unexpected errors ['assert_type(type[Foo6[int, tuple[str]]], type[Foo6[int, tuple[str, Any]]]) failed', 'Expected a type form, got instance of `list[type[bool] | type[float]]`']",
+    "Line 152: Unexpected errors ['Expected a type form, got instance of `list[type[bytes]]`', 'Expected a type form, got instance of `list[type[bytes]]`']",
     "Line 166: Unexpected errors ['assert_type(Any, (Foo7[int]) -> Foo7[int]) failed', 'Generic attribute `meth` of class `Foo7` is not visible on the class']",
     "Line 167: Unexpected errors ['assert_type(Any, int) failed', 'Instance-only attribute `attr` of class `Foo7` is not visible on the class']"
   ],
@@ -481,7 +481,7 @@
   ],
   "generics_defaults_specialization.py": [
     "Line 30: Expected 1 errors",
-    "Line 25: Unexpected errors ['untype, got Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]']",
+    "Line 25: Unexpected errors ['Expected a type form, got instance of `Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]`']",
     "Line 26: Unexpected errors ['assert_type(Any, SomethingWithNoDefaults[int, str]) failed']",
     "Line 46: Unexpected errors ['assert_type(Bar[Any], Bar[str]) failed']"
   ],
@@ -509,14 +509,14 @@
   ],
   "generics_paramspec_semantics.py": [
     "Line 22: Unexpected errors ['assert_type((str, bool) -> str, (str, bool) -> str) failed']",
-    "Line 82: Unexpected errors ['assert_type(Y[int, (int)], Y[int, Any]) failed', 'untype, got list[type[int]]']",
+    "Line 82: Unexpected errors ['assert_type(Y[int, (int)], Y[int, Any]) failed', 'Expected a type form, got instance of `list[type[int]]`']",
     "Line 84: Unexpected errors ['assert_type((int) -> str, (int) -> str) failed']"
   ],
   "generics_paramspec_specialization.py": [
     "Line 44: Expected 1 errors",
-    "Line 32: Unexpected errors ['untype, got list[type[bool] | type[int]]']",
-    "Line 40: Unexpected errors ['untype, got list[@_]', 'untype, got list[@_]']",
-    "Line 52: Unexpected errors ['untype, got list[type[bool] | type[int] | type[str]]']",
+    "Line 32: Unexpected errors ['Expected a type form, got instance of `list[type[bool] | type[int]]`']",
+    "Line 40: Unexpected errors ['Expected a type form, got instance of `list[@_]`', 'Expected a type form, got instance of `list[@_]`']",
+    "Line 52: Unexpected errors ['Expected a type form, got instance of `list[type[bool] | type[int] | type[str]]`']",
     "Line 53: Unexpected errors ['Unexpected ParamSpec type']",
     "Line 58: Unexpected errors ['Expected 1 type argument for class `ClassC`, got 3.']",
     "Line 59: Unexpected errors ['Unexpected ParamSpec type']"
@@ -624,12 +624,12 @@
     "Line 66: Expected 1 errors",
     "Line 99: Expected 1 errors",
     "Line 106: Expected 1 errors",
-    "Line 36: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[2] <: TypeVar[_T]']",
-    "Line 37: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]']",
-    "Line 38: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
+    "Line 36: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[2] <: TypeVar[_T]']",
+    "Line 37: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]']",
+    "Line 38: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
     "Line 39: Unexpected errors ['EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]']",
     "Line 85: Unexpected errors ['EXPECTED tuple[float] <: tuple[*tuple[int]]']",
-    "Line 97: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']"
+    "Line 97: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']"
   ],
   "generics_typevartuple_callable.py": [
     "Line 25: Unexpected errors ['EXPECTED (arg1: int, arg2: str) -> None <: (**tuple[*@_]) -> None']",
@@ -638,13 +638,13 @@
     "Line 49: Unexpected errors ['assert_type(tuple[Any, *Any], tuple[float, str, complex]) failed', 'EXPECTED Literal[1] <: *tuple[int, *@_, @_]', \"EXPECTED Literal[''] <: *tuple[int, *@_, @_]\", 'EXPECTED complex <: *tuple[int, *@_, @_]', 'EXPECTED float <: *tuple[int, *@_, @_]']"
   ],
   "generics_typevartuple_concat.py": [
-    "Line 26: Unexpected errors ['untype, got NewType']",
-    "Line 30: Unexpected errors ['untype, got NewType']",
-    "Line 34: Unexpected errors ['untype, got NewType', 'untype, got NewType']",
-    "Line 38: Unexpected errors ['untype, got NewType', 'untype, got NewType']",
-    "Line 40: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
-    "Line 42: Unexpected errors ['untype, got NewType', 'untype, got NewType']",
-    "Line 44: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
+    "Line 26: Unexpected errors ['Expected a type form, got instance of `NewType`']",
+    "Line 30: Unexpected errors ['Expected a type form, got instance of `NewType`']",
+    "Line 34: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
+    "Line 38: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
+    "Line 40: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
+    "Line 42: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
+    "Line 44: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
     "Line 56: Unexpected errors ['EXPECTED tuple[*tuple[Unknown, ...], Unknown] <: tuple[*?_TypeVarTuple, ?_TypeVar]']"
   ],
   "generics_typevartuple_overloads.py": [
@@ -652,16 +652,16 @@
     "Line 31: Unexpected errors ['assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]) failed', 'No matching overload found']"
   ],
   "generics_typevartuple_specialization.py": [
-    "Line 28: Unexpected errors ['untype, got NewType', 'untype, got NewType']",
-    "Line 33: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
+    "Line 28: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
+    "Line 33: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
     "Line 45: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTuple, type[tuple[int, *TypeVarTuple[Ts]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array[tuple[*TypeVarTuple[Ts]]]]]]\"]",
     "Line 46: Unexpected errors ['assert_type(Any, tuple[int, float, bool]) failed']",
-    "Line 47: Unexpected errors ['assert_type(Any, tuple[str, Array[tuple[Any]]]) failed', 'untype, got NewType']",
+    "Line 47: Unexpected errors ['assert_type(Any, tuple[str, Array[tuple[Any]]]) failed', 'Expected a type form, got instance of `NewType`']",
     "Line 50: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTuple, type[tuple[int, *TypeVarTuple[Ts]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array[tuple[*TypeVarTuple[Ts]]]]]]\"]",
     "Line 51: Unexpected errors ['assert_type(Any, tuple[int]) failed']",
     "Line 52: Unexpected errors ['assert_type(Any, tuple[str, Array[tuple[Any, ...]]]) failed']",
     "Line 59: Unexpected errors ['Class `Array2` uses type variables not specified in `Generic` or `Protocol` base']",
-    "Line 67: Unexpected errors ['untype, got Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, tuple[Any]]]]]']",
+    "Line 67: Unexpected errors ['Expected a type form, got instance of `Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, tuple[Any]]]]]`']",
     "Line 68: Unexpected errors ['assert_type(Any, Array2[Any, tuple[Any]]) failed']",
     "Line 76: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[float, tuple[*TypeVarTuple[Shape]]]]]\"]",
     "Line 80: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[FloatArray, type[Array2[float, tuple[*TypeVarTuple[Shape]]]]]\"]",
@@ -688,10 +688,10 @@
     "Line 159: Unexpected errors ['assert_type(Any, tuple[*tuple[int, ...], str]) failed']"
   ],
   "generics_typevartuple_unpack.py": [
-    "Line 21: Unexpected errors ['untype, got NewType', 'untype, got NewType']",
-    "Line 26: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
-    "Line 36: Unexpected errors ['untype, got NewType']",
-    "Line 40: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']"
+    "Line 21: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
+    "Line 26: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
+    "Line 36: Unexpected errors ['Expected a type form, got instance of `NewType`']",
+    "Line 40: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']"
   ],
   "generics_upper_bound.py": [
     "Line 24: Expected 1 errors",
@@ -1038,7 +1038,7 @@
     "Line 63: Expected 1 errors",
     "Line 68: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[int]`']",
     "Line 70: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[Annotated[int, \"\"]]`']",
-    "Line 74: Unexpected errors [\"untype, got Literal['RecursiveMovie']\"]"
+    "Line 74: Unexpected errors [\"Expected a type form, got instance of `Literal['RecursiveMovie']`\"]"
   ],
   "typeddicts_type_consistency.py": [
     "Line 21: Expected 1 errors",

@@ -1489,7 +1489,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                format!("untype, got {}", ty.deterministic_printing()),
+                format!(
+                    "Expected a type form, got instance of `{}`",
+                    ty.deterministic_printing()
+                ),
             )
         }
     }

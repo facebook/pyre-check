@@ -84,7 +84,7 @@ class X(Generic[T, P]):
 
 def f1(x: X[int, P_2]) -> str: ...                    # Accepted
 def f2(x: X[int, Concatenate[int, P_2]]) -> str: ...  # Accepted
-def f3(x: X[int, [int, bool]]) -> str: ...            # Accepted # E: untype, got list[type[bool] | type[int]]
+def f3(x: X[int, [int, bool]]) -> str: ...            # Accepted # E: Expected a type form, got instance of `list[type[bool] | type[int]]`
 def f4(x: X[int, ...]) -> str: ...                    # Accepted
 def f5(x: X[int, int]) -> str: ...                    # Rejected
 
@@ -92,7 +92,7 @@ class X2[T, **P]:
   f: Callable[P, int]
   x: T
 
-def f6(x: X2[int, [int, bool]]) -> str: ...           # Accepted # E: untype, got list[type[bool] | type[int]]
+def f6(x: X2[int, [int, bool]]) -> str: ...           # Accepted # E: Expected a type form, got instance of `list[type[bool] | type[int]]`
 "#,
 );
 
@@ -107,7 +107,7 @@ P = ParamSpec("P")
 class Z(Generic[P]):
   f: Callable[P, int]
 
-def f(x: Z[[int, str, bool]]) -> str: ...   # Accepted # E: untype, got list[type[bool] | type[int] | type[str]]
+def f(x: Z[[int, str, bool]]) -> str: ...   # Accepted # E: Expected a type form, got instance of `list[type[bool] | type[int] | type[str]]`
 def f(x: Z[int, str, bool]) -> str: ...     # Equivalent  # E: Expected 1 type argument for class `Z`, got 3.
 "#,
 );

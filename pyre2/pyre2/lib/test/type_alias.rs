@@ -191,7 +191,7 @@ type X3 = "A"  # Forward ref
 class A:
     pass
 
-def f(x1: X1):  # E: untype, got Literal['A']
+def f(x1: X1):  # E: Expected a type form, got instance of `Literal['A']`
     pass
 
 def g(x2: X2, x3: X3):

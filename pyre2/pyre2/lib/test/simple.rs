@@ -870,7 +870,7 @@ testcase!(
     r#"
 x = 42
 def foo(y): ...
-z: foo(y=x)  # E: untype, got Never
+z: foo(y=x)  # E: Expected a type form, got instance of `Never`
 "#,
 );
 
@@ -1144,7 +1144,7 @@ testcase_with_bug!(
     test_resolving_any_correctly,
     r#"
 import typing
-x: typing.Any = 1  # E: untype, got object
+x: typing.Any = 1  # E: Expected a type form, got instance of `object`
 class Any: ...
 a: Any = Any()  # E: Expected a callable, got type[Any]
 "#,
