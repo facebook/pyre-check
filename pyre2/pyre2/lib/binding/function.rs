@@ -176,7 +176,7 @@ impl<'a> BindingsBuilder<'a> {
             self.scopes.push(Scope::method(func_name.clone()));
         }
 
-        let legacy_tparams = legacy_tparam_builder.lookup_keys(self);
+        let legacy_tparams = legacy_tparam_builder.lookup_keys();
 
         self.parameters(
             &mut x.parameters,

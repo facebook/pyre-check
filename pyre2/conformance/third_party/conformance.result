@@ -36,7 +36,6 @@
     "Line 72: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']"
   ],
   "aliases_newtype.py": [
-    "Line 11: Expected 1 errors",
     "Line 32: Expected 1 errors",
     "Line 44: Expected 1 errors",
     "Line 47: Expected 1 errors",
@@ -44,7 +43,8 @@
     "Line 51: Expected 1 errors",
     "Line 58: Expected 1 errors",
     "Line 62: Expected 1 errors",
-    "Line 13: Unexpected errors ['untype, got NewType']"
+    "Line 13: Unexpected errors ['untype, got NewType', 'EXPECTED Literal[42] <: TypeVar[_T]']",
+    "Line 15: Unexpected errors ['assert_type(Any, int) failed', 'Object of class `TypeVar` has no attribute `__add__`', 'EXPECTED Literal[5] <: TypeVar[_T]']"
   ],
   "aliases_recursive.py": [
     "Line 19: Expected 1 errors",
@@ -624,9 +624,10 @@
     "Line 66: Expected 1 errors",
     "Line 99: Expected 1 errors",
     "Line 106: Expected 1 errors",
-    "Line 36: Unexpected errors ['untype, got NewType', 'untype, got NewType']",
-    "Line 37: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
+    "Line 36: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[2] <: TypeVar[_T]']",
+    "Line 37: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]']",
     "Line 38: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']",
+    "Line 39: Unexpected errors ['EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]']",
     "Line 85: Unexpected errors ['EXPECTED tuple[float] <: tuple[*tuple[int]]']",
     "Line 97: Unexpected errors ['untype, got NewType', 'untype, got NewType', 'untype, got NewType', 'untype, got NewType']"
   ],
@@ -928,14 +929,16 @@
   ],
   "qualifiers_final_decorator.py": [
     "Line 21: Expected 1 errors",
-    "Line 56: Expected 1 errors",
-    "Lines 59, 60: Expected error (tag 'method2')",
-    "Lines 63, 64: Expected error (tag 'method3')",
     "Lines 67, 75: Expected error (tag 'method4')",
     "Lines 80, 89: Expected error (tag 'Derived3')",
-    "Lines 84, 85, 86: Expected error (tag 'Derived3-2')",
     "Lines 94, 102: Expected error (tag 'Derived4')",
-    "Lines 125, 126: Expected error (tag 'func')"
+    "Line 26: Unexpected errors ['EXPECTED (self: Base2) -> None <: TypeVar[_T]']",
+    "Line 30: Unexpected errors ['EXPECTED classmethod[(cls: Base2) -> None] <: TypeVar[_T]']",
+    "Line 35: Unexpected errors ['EXPECTED staticmethod[() -> None] <: TypeVar[_T]']",
+    "Line 50: Unexpected errors ['EXPECTED (self: Base2, x: int | str) -> int | str <: TypeVar[_T]']",
+    "Line 81: Unexpected errors ['Class member `method` overrides parent class `Base3` in an inconsistent manner']",
+    "Line 95: Unexpected errors ['Class member `method` overrides parent class `Base4` in an inconsistent manner']",
+    "Line 111: Unexpected errors ['EXPECTED (self: Base5_2, v: int) -> None <: TypeVar[_T]']"
   ],
   "specialtypes_any.py": [
     "Line 87: Unexpected errors ['Object of class `ClassA` has no attribute `method2`']",

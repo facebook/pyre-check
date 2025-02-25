@@ -457,6 +457,16 @@
   "aliases_newtype.py": [
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "EXPECTED Literal['user'] <: TypeVar[_T]",
+      "description": "EXPECTED Literal['user'] <: TypeVar[_T]",
+      "line": 11,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 11
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "untype, got NewType",
       "description": "untype, got NewType",
@@ -474,6 +484,46 @@
       "name": "PyreError",
       "stop_column": 11,
       "stop_line": 13
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "EXPECTED Literal[42] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[42] <: TypeVar[_T]",
+      "line": 13,
+      "name": "PyreError",
+      "stop_column": 23,
+      "stop_line": 13
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, int) failed",
+      "description": "assert_type(Any, int) failed",
+      "line": 15,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 15
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Object of class `TypeVar` has no attribute `__add__`",
+      "description": "Object of class `TypeVar` has no attribute `__add__`",
+      "line": 15,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 15
+    },
+    {
+      "code": -2,
+      "column": 20,
+      "concise_description": "EXPECTED Literal[5] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[5] <: TypeVar[_T]",
+      "line": 15,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 15
     },
     {
       "code": -2,
@@ -7863,6 +7913,26 @@
     },
     {
       "code": -2,
+      "column": 42,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 43,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 52,
+      "concise_description": "EXPECTED Literal[2] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[2] <: TypeVar[_T]",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 53,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
       "column": 11,
       "concise_description": "untype, got NewType",
       "description": "untype, got NewType",
@@ -7889,6 +7959,36 @@
       "line": 37,
       "name": "PyreError",
       "stop_column": 31,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 48,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 49,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 59,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 60,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 69,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 70,
       "stop_line": 37
     },
     {
@@ -7934,6 +8034,46 @@
     {
       "code": -2,
       "column": 11,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 12,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 33,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 42,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 39,
+      "name": "PyreError",
+      "stop_column": 43,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 11,
       "concise_description": "untype, got NewType",
       "description": "untype, got NewType",
       "line": 42,
@@ -7954,11 +8094,21 @@
     {
       "code": -2,
       "column": 34,
-      "concise_description": "EXPECTED int <: tuple[*@_]",
-      "description": "EXPECTED int <: tuple[*@_]",
+      "concise_description": "EXPECTED TypeVar[_T] <: tuple[*@_]",
+      "description": "EXPECTED TypeVar[_T] <: tuple[*@_]",
       "line": 42,
       "name": "PyreError",
       "stop_column": 43,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 42,
       "stop_line": 42
     },
     {
@@ -7994,11 +8144,31 @@
     {
       "code": -2,
       "column": 35,
-      "concise_description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Error, Error, Error]]",
-      "description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Error, Error, Error]]",
+      "concise_description": "EXPECTED Array[tuple[TypeVar[_T], TypeVar[_T]]] <: Array[tuple[Error, Error, Error]]",
+      "description": "EXPECTED Array[tuple[TypeVar[_T], TypeVar[_T]]] <: Array[tuple[Error, Error, Error]]",
       "line": 43,
       "name": "PyreError",
       "stop_column": 62,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 48,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 49,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 58,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 59,
       "stop_line": 43
     },
     {
@@ -8040,6 +8210,46 @@
       "name": "PyreError",
       "stop_column": 37,
       "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 12,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 31,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 45
+    },
+    {
+      "code": -2,
+      "column": 42,
+      "concise_description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "description": "EXPECTED Literal[1] <: TypeVar[_T]",
+      "line": 45,
+      "name": "PyreError",
+      "stop_column": 43,
+      "stop_line": 45
     },
     {
       "code": -2,
@@ -11788,6 +11998,116 @@
   "qualifiers_final_decorator.py": [
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (self: Base2) -> None <: TypeVar[_T]",
+      "description": "EXPECTED (self: Base2) -> None <: TypeVar[_T]",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED classmethod[(cls: Base2) -> None] <: TypeVar[_T]",
+      "description": "EXPECTED classmethod[(cls: Base2) -> None] <: TypeVar[_T]",
+      "line": 30,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED staticmethod[() -> None] <: TypeVar[_T]",
+      "description": "EXPECTED staticmethod[() -> None] <: TypeVar[_T]",
+      "line": 35,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (self: Base2, x: int | str) -> int | str <: TypeVar[_T]",
+      "description": "EXPECTED (self: Base2, x: int | str) -> int | str <: TypeVar[_T]",
+      "line": 50,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 50
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Class member `method1` overrides parent class `Base2` in an inconsistent manner",
+      "description": "Class member `method1` overrides parent class `Base2` in an inconsistent manner",
+      "line": 56,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Class member `method2` overrides parent class `Base2` in an inconsistent manner",
+      "description": "Class member `method2` overrides parent class `Base2` in an inconsistent manner",
+      "line": 60,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Class member `method3` overrides parent class `Base2` in an inconsistent manner",
+      "description": "Class member `method3` overrides parent class `Base2` in an inconsistent manner",
+      "line": 64,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 64
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Class member `method` overrides parent class `Base3` in an inconsistent manner",
+      "description": "Class member `method` overrides parent class `Base3` in an inconsistent manner",
+      "line": 81,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 81
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (self: Derived3, x: str) -> str <: TypeVar[_T]",
+      "description": "EXPECTED (self: Derived3, x: str) -> str <: TypeVar[_T]",
+      "line": 85,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 85
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Class member `method` overrides parent class `Base4` in an inconsistent manner",
+      "description": "Class member `method` overrides parent class `Base4` in an inconsistent manner",
+      "line": 95,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 95
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "EXPECTED (self: Base5_2, v: int) -> None <: TypeVar[_T]",
+      "description": "EXPECTED (self: Base5_2, v: int) -> None <: TypeVar[_T]",
+      "line": 111,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 111
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "Class member `method` overrides parent class `Base5_2` in an inconsistent manner",
       "description": "Class member `method` overrides parent class `Base5_2` in an inconsistent manner",
@@ -11795,6 +12115,16 @@
       "name": "PyreError",
       "stop_column": 15,
       "stop_line": 118
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "EXPECTED () -> int <: TypeVar[_T]",
+      "description": "EXPECTED () -> int <: TypeVar[_T]",
+      "line": 125,
+      "name": "PyreError",
+      "stop_column": 7,
+      "stop_line": 125
     }
   ],
   "specialtypes_any.py": [

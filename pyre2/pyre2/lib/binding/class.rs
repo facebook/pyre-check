@@ -190,7 +190,7 @@ impl<'a> BindingsBuilder<'a> {
         let self_binding = Binding::SelfType(definition_key);
         self.table.insert(Key::SelfType(class_name), self_binding);
 
-        let legacy_tparams = legacy_tparam_builder.lookup_keys(self);
+        let legacy_tparams = legacy_tparam_builder.lookup_keys();
 
         self.bind_definition(
             &x.name,

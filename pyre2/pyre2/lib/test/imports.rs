@@ -156,7 +156,8 @@ fn env_redefine_class() -> TestEnv {
     TestEnv::one("foo", "class Foo: ...")
 }
 
-testcase!(
+testcase_with_bug!(
+    "The anywhere lookup of Foo in the function body finds both the imported and locally defined classes",
     test_redefine_class,
     env_redefine_class(),
     r#"
@@ -164,7 +165,7 @@ from typing import assert_type
 from foo import *
 class Foo: ...
 def f(x: Foo) -> Foo:
-    return Foo()
+    return Foo() # E: EXPECTED foo.Foo | main.Foo <: main.Foo
 assert_type(f(Foo()), Foo)
 "#,
 );

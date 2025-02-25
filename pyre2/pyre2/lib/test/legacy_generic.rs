@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::test::util::TestEnv;
 use crate::testcase;
 use crate::testcase_with_bug;
 
@@ -415,4 +416,31 @@ from typing import Generic
 class C[T](Generic[T]):  # E: Redundant
     pass
     "#,
+);
+
+fn env_exported_type_var() -> TestEnv {
+    TestEnv::one(
+        "lib",
+        r#"
+from typing import TypeVar, ParamSpec, TypeVarTuple
+T = TypeVar("T")
+P = ParamSpec("P")
+Ts = TypeVarTuple("Ts")
+"#,
+    )
+}
+
+testcase!(
+    test_imported,
+    env_exported_type_var(),
+    r#"
+from lib import T
+
+def f(x: T) -> T:
+    y: T = x
+    return y
+
+x1: int = f(0)
+x2: str = f("hello")
+"#,
 );
