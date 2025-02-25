@@ -5,21 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::testcase;
 use crate::testcase_with_bug;
 
 testcase_with_bug!(
-    "TODO: support NewType",
+    "TODO: assert type should be int",
     test_new_type_simple,
     r#"
-from typing import NewType, assert_type 
+from typing import NewType, assert_type, Any
 
 UserId = NewType("UserId", int)
 
 UserId("user") 
-u1: UserId = 42 # E: untype, got NewType  
-u2: UserId = UserId(42) # E: untype, got NewType
+u1: UserId = 42 
+u2: UserId = UserId(42) 
 
-assert_type(UserId(5) + 1, int) 
+assert_type(UserId(5) + 1, Any) 
      "#,
 );
 
@@ -36,7 +37,15 @@ GoodNewType1 = NewType("GoodNewType1", list)
 
 GoodNewType2 = NewType("GoodNewType2", GoodNewType1) 
 
-nt1: GoodNewType1[int] # E:  `NewType` has no attribute `__getitem__`
+nt1: GoodNewType1[int]
 
+     "#,
+);
+
+testcase!(
+    test_new_type_wrong_arity,
+    r#"
+from typing import NewType 
+UserId = NewType("UserId", int, int) # E: NewType requires 2 positional arguments, got 3
      "#,
 );

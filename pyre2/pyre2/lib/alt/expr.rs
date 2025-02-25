@@ -958,20 +958,41 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Call(x) => {
                 let ty_fun = self.expr_infer(&x.func, errors);
-                let func_range = x.func.range();
-                let args = x.arguments.args.map(|arg| match arg {
-                    Expr::Starred(x) => CallArg::Star(&x.value, x.range),
-                    _ => CallArg::Expr(arg),
-                });
-                self.distribute_over_union(&ty_fun, |ty| {
-                    let callable = self.as_call_target_or_error(
-                        ty.clone(),
-                        CallStyle::FreeForm,
-                        func_range,
-                        errors,
-                    );
-                    self.call_infer(callable, &args, &x.arguments.keywords, func_range, errors)
-                })
+                let is_new_type = match &ty_fun {
+                    Type::ClassDef(t) => t.has_qname("typing", "NewType"),
+                    _ => false,
+                };
+                if is_new_type {
+                    if x.arguments.args.len() != 2 {
+                        self.error(
+                            errors,
+                            x.range,
+                            format!(
+                                "NewType requires 2 positional arguments, got {}",
+                                x.arguments.args.len()
+                            ),
+                        )
+                    } else {
+                        // TODO: zeina. Determine what type to synthesize exprs of the form NewType("UserId", int) to.
+                        // right now it is set to unknown.
+                        Type::any_implicit()
+                    }
+                } else {
+                    let func_range = x.func.range();
+                    let args = x.arguments.args.map(|arg| match arg {
+                        Expr::Starred(x) => CallArg::Star(&x.value, x.range),
+                        _ => CallArg::Expr(arg),
+                    });
+                    self.distribute_over_union(&ty_fun, |ty| {
+                        let callable = self.as_call_target_or_error(
+                            ty.clone(),
+                            CallStyle::FreeForm,
+                            func_range,
+                            errors,
+                        );
+                        self.call_infer(callable, &args, &x.arguments.keywords, func_range, errors)
+                    })
+                }
             }
             Expr::FString(x) => {
                 // Ensure we detect type errors in f-string expressions.
