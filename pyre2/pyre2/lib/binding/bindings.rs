@@ -56,6 +56,8 @@ use crate::config::Config;
 use crate::error::collector::ErrorCollector;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
+use crate::export::special::SpecialEntry;
+use crate::export::special::SpecialEnv;
 use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::graph::index::Index;
@@ -383,7 +385,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     pub fn as_special_export(&self, e: &Expr) -> Option<SpecialExport> {
-        self.scopes.as_special_export(e, self.module_info.name())
+        SpecialExport::as_special_export(self, e)
     }
 
     pub fn error(&self, range: TextRange, msg: String) {
@@ -671,6 +673,16 @@ impl<'a> BindingsBuilder<'a> {
     fn merge_loop_into_current(&mut self, mut branches: Vec<Flow>, range: TextRange) {
         branches.push(mem::take(&mut self.scopes.current_mut().flow));
         self.scopes.current_mut().flow = self.merge_flow(branches, range);
+    }
+}
+
+impl SpecialEnv for BindingsBuilder<'_> {
+    fn current_module(&self) -> ModuleName {
+        self.module_info.name()
+    }
+
+    fn lookup_special(&self, name: &Name) -> Option<SpecialEntry> {
+        self.scopes.get_special_entry(name)
     }
 }
 

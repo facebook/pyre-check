@@ -7,10 +7,10 @@
 
 use std::fmt::Debug;
 
+use dupe::Dupe;
 use parse_display::Display;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
-use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Stmt;
@@ -29,7 +29,7 @@ use crate::config::Config;
 use crate::export::definitions::DefinitionStyle;
 use crate::export::definitions::Definitions;
 use crate::export::exports::LookupExport;
-use crate::export::special::SpecialExport;
+use crate::export::special::SpecialEntry;
 use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
@@ -327,46 +327,15 @@ impl Scopes {
         None
     }
 
-    pub fn as_special_export(&self, e: &Expr, current_module: ModuleName) -> Option<SpecialExport> {
-        // Only works for things with `Foo`, or `source.Foo`, or `F` where `from module import Foo as F`.
-        // Does not work for things with nested modules - but no SpecialExport's have that.
-        match e {
-            Expr::Name(name) => {
-                let name = &name.id;
-                let flow = self.get_flow_info(name)?;
-                match &flow.style {
-                    Some(FlowStyle::Import(m, name2)) => {
-                        let special = SpecialExport::new(name2)?;
-                        if special.defined_in(*m) {
-                            Some(special)
-                        } else {
-                            None
-                        }
-                    }
-                    _ => {
-                        let special = SpecialExport::new(name)?;
-                        if special.defined_in(current_module) {
-                            Some(special)
-                        } else {
-                            None
-                        }
-                    }
-                }
+    pub fn get_special_entry<'a>(&'a self, name: &Name) -> Option<SpecialEntry<'a>> {
+        let flow = self.get_flow_info(name)?;
+        let entry = match &flow.style {
+            Some(FlowStyle::Import(m, name)) => SpecialEntry::ImportName(m.dupe(), name),
+            Some(FlowStyle::MergeableImport(m) | FlowStyle::ImportAs(m)) => {
+                SpecialEntry::ImportModule(m.dupe())
             }
-            Expr::Attribute(ExprAttribute {
-                value: box Expr::Name(module),
-                attr: name,
-                ..
-            }) => {
-                let special = SpecialExport::new(&name.id)?;
-                let flow = self.get_flow_info(&module.id)?;
-                match flow.style {
-                    Some(FlowStyle::MergeableImport(m)) if special.defined_in(m) => Some(special),
-                    Some(FlowStyle::ImportAs(m)) if special.defined_in(m) => Some(special),
-                    _ => None,
-                }
-            }
-            _ => None,
-        }
+            _ => SpecialEntry::Local,
+        };
+        Some(entry)
     }
 }
