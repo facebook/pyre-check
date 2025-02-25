@@ -145,8 +145,20 @@ impl State {
             ));
         }
         let attribute = self.attribute_at(handle, position)?;
-        self.get_answers(handle)?
-            .get_definition_trace(attribute.range)
+        let base_type = self
+            .get_answers(handle)?
+            .get_type_trace(attribute.value.range())?;
+        self.ad_hoc_solve(handle, |solver| {
+            let mut def_opt = None;
+            solver.distribute_over_union(&base_type, |obj| {
+                if def_opt.is_none() {
+                    def_opt = solver.lookup_attr_def_range(obj.clone(), attribute.attr.id());
+                }
+                obj.clone()
+            });
+            def_opt
+        })
+        .flatten()
     }
 
     pub fn inlay_hints(&self, handle: &Handle) -> Option<Vec<(TextSize, String)>> {

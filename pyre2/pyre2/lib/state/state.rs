@@ -752,7 +752,6 @@ impl State {
             .dupe()
     }
 
-    #[expect(dead_code)]
     pub fn ad_hoc_solve<R: Sized, F: FnOnce(AnswersSolver<StateHandle>) -> R>(
         &self,
         handle: &Handle,

@@ -47,7 +47,7 @@ enum LookupResult {
 /// on an attribute, each of which can be allowed with some type or disallowed.
 #[derive(Debug)]
 pub struct Attribute {
-    definition_range: Option<TextRangeWithModuleInfo>,
+    pub definition_range: Option<TextRangeWithModuleInfo>,
     inner: AttributeInner,
 }
 
@@ -227,14 +227,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
         todo_ctx: &str,
-    ) -> (Option<TextRangeWithModuleInfo>, Type) {
+    ) -> Type {
         let lookup_result = self.lookup_attr(base, attr_name);
-        let def_range = match &lookup_result {
-            LookupResult::Found(attribute) => attribute.definition_range.clone(),
-            LookupResult::NotFound(_) => None,
-            LookupResult::InternalError(_) => None,
-        };
-        let ty = match self.get_type_or_conflated_error_msg(
+        match self.get_type_or_conflated_error_msg(
             lookup_result,
             attr_name,
             range,
@@ -243,8 +238,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ) {
             Ok(ty) => ty,
             Err(msg) => self.error(errors, range, msg),
-        };
-        (def_range, ty)
+        }
     }
 
     /// Compute the get (i.e. read) type of an attribute, if it can be found. If read is not
@@ -497,6 +491,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             },
             LookupResult::NotFound(err) => Err(err.to_error_msg(attr_name)),
             LookupResult::InternalError(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
+        }
+    }
+
+    pub fn lookup_attr_def_range(
+        &self,
+        base: Type,
+        attr_name: &Name,
+    ) -> Option<TextRangeWithModuleInfo> {
+        match self.lookup_attr(base, attr_name) {
+            LookupResult::Found(attribute) => attribute.definition_range.clone(),
+            LookupResult::NotFound(_) => None,
+            LookupResult::InternalError(_) => None,
         }
     }
 

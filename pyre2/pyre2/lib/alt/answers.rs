@@ -28,7 +28,6 @@ use crate::graph::calculation::Calculation;
 use crate::graph::index::Idx;
 use crate::graph::index_map::IndexMap;
 use crate::module::module_info::ModuleInfo;
-use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::solver::solver::Solver;
 use crate::solver::type_order::TypeOrder;
@@ -50,7 +49,6 @@ use crate::util::uniques::UniqueFactory;
 #[derive(Debug, Default)]
 pub struct Traces {
     types: SmallMap<TextRange, Arc<Type>>,
-    definitions: SmallMap<TextRange, TextRangeWithModuleInfo>,
 }
 
 /// Invariants:
@@ -309,12 +307,6 @@ impl Answers {
         let ty = lock.types.get(&range)?.dupe();
         Some(ty)
     }
-
-    pub fn get_definition_trace(&self, range: TextRange) -> Option<TextRangeWithModuleInfo> {
-        let lock = self.trace.as_ref()?.lock();
-        let ty = lock.definitions.get(&range)?.clone();
-        Some(ty)
-    }
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -444,12 +436,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn record_type_trace(&self, loc: TextRange, ty: &Type) {
         if let Some(trace) = &self.current.trace {
             trace.lock().types.insert(loc, Arc::new(ty.clone()));
-        }
-    }
-
-    pub fn record_definition_trace(&self, loc: TextRange, def: &TextRangeWithModuleInfo) {
-        if let Some(trace) = &self.current.trace {
-            trace.lock().definitions.insert(loc, def.clone());
         }
     }
 
