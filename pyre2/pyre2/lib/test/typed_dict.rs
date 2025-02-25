@@ -360,3 +360,13 @@ class D(TypedDict):
 D(x=5)  # E: Missing argument `y`
     "#,
 );
+
+testcase!(
+    test_typing_typeddict_functional,
+    r#"
+import typing
+from typing import assert_type
+X = typing.TypedDict('X', {'x': int})
+assert_type(X, type[X])
+    "#,
+);
