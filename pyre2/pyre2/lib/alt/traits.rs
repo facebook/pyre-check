@@ -44,6 +44,7 @@ use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::KeyYield;
 use crate::binding::binding::KeyYieldFrom;
 use crate::binding::binding::Keyed;
+use crate::binding::binding::NoneIfRecursive;
 use crate::error::collector::ErrorCollector;
 use crate::types::annotation::Annotation;
 use crate::types::class::Class;
@@ -97,9 +98,9 @@ impl SolveRecursive for KeyFunction {
 impl SolveRecursive for KeyClass {
     type Recursive = ();
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
-        unreachable!("Classes cannot be recursive");
+        NoneIfRecursive(None)
     }
-    fn visit_type_mut(_v: &mut Class, _f: &mut dyn FnMut(&mut Type)) {}
+    fn visit_type_mut(_v: &mut NoneIfRecursive<Class>, _f: &mut dyn FnMut(&mut Type)) {}
 }
 impl SolveRecursive for KeyClassField {
     type Recursive = ();
@@ -259,7 +260,7 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyClass {
         answers: &AnswersSolver<Ans>,
         binding: &BindingClass,
         errors: &ErrorCollector,
-    ) -> Arc<Class> {
+    ) -> Arc<NoneIfRecursive<Class>> {
         answers.solve_class(binding, errors)
     }
 

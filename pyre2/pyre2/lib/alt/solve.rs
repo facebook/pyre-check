@@ -49,6 +49,7 @@ use crate::binding::binding::FunctionKind;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyExport;
+use crate::binding::binding::NoneIfRecursive;
 use crate::binding::binding::RaisedException;
 use crate::binding::binding::SizeExpectation;
 use crate::binding::binding::UnpackedPosition;
@@ -136,8 +137,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             keywords,
             decorators,
         } = binding;
-        let cls = self.get_idx(*k);
-        Arc::new(self.class_metadata_of(&cls, bases, keywords, decorators, errors))
+        let metadata = match &self.get_idx(*k).0 {
+            None => ClassMetadata::recursive(),
+            Some(cls) => self.class_metadata_of(cls, bases, keywords, decorators, errors),
+        };
+        Arc::new(metadata)
     }
 
     pub fn solve_annotation(
@@ -626,8 +630,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Arc::new(EmptyAnswer)
     }
 
-    pub fn solve_class(&self, cls: &BindingClass, errors: &ErrorCollector) -> Arc<Class> {
-        Arc::new(match cls {
+    pub fn solve_class(
+        &self,
+        cls: &BindingClass,
+        errors: &ErrorCollector,
+    ) -> Arc<NoneIfRecursive<Class>> {
+        let cls = match cls {
             BindingClass::ClassDef(x) => self.class_definition(
                 &x.def,
                 x.fields.clone(),
@@ -638,7 +646,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             BindingClass::FunctionalClassDef(x, fields) => {
                 self.functional_class_definition(x, fields)
             }
-        })
+        };
+        Arc::new(NoneIfRecursive(Some(cls)))
     }
 
     pub fn solve_class_field(
@@ -646,33 +655,38 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         field: &BindingClassField,
         errors: &ErrorCollector,
     ) -> Arc<ClassField> {
-        let value_ty = self.solve_binding(&field.value, errors);
-        let annotation = field.annotation.map(|a| self.get_idx(a));
-        Arc::new(self.calculate_class_field(
-            &field.name,
-            value_ty.as_ref(),
-            annotation.as_deref(),
-            &field.initial_value,
-            &self.get_idx(field.class),
-            field.range,
-            errors,
-        ))
+        let field = match &self.get_idx(field.class).0 {
+            None => ClassField::recursive(),
+            Some(class) => {
+                let value_ty = self.solve_binding(&field.value, errors);
+                let annotation = field.annotation.map(|a| self.get_idx(a));
+                self.calculate_class_field(
+                    &field.name,
+                    value_ty.as_ref(),
+                    annotation.as_deref(),
+                    &field.initial_value,
+                    class,
+                    field.range,
+                    errors,
+                )
+            }
+        };
+        Arc::new(field)
     }
 
     pub fn solve_class_synthesized_fields(
         &self,
         fields: &BindingClassSynthesizedFields,
     ) -> Arc<ClassSynthesizedFields> {
-        let cls = self.get_idx(fields.0);
-        if let Some(fields) = self.get_typed_dict_synthesized_fields(&cls) {
-            Arc::new(fields)
-        } else if let Some(fields) = self.get_dataclass_synthesized_fields(&cls) {
-            Arc::new(fields)
-        } else if let Some(fields) = self.get_named_tuple_synthesized_fields(&cls) {
-            Arc::new(fields)
-        } else {
-            Arc::new(ClassSynthesizedFields::default())
-        }
+        let fields = match &self.get_idx(fields.0).0 {
+            None => ClassSynthesizedFields::default(),
+            Some(cls) => self
+                .get_typed_dict_synthesized_fields(cls)
+                .or_else(|| self.get_dataclass_synthesized_fields(cls))
+                .or_else(|| self.get_named_tuple_synthesized_fields(cls))
+                .unwrap_or_default(),
+        };
+        Arc::new(fields)
     }
 
     fn solve_binding_inner(&self, binding: &Binding, errors: &ErrorCollector) -> Type {
@@ -1092,14 +1106,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::Import(m, name) => self
                 .get_from_module(*m, &KeyExport(name.clone()))
                 .arc_clone(),
-            Binding::ClassDef(x, decorators) => {
-                let mut ty = Type::ClassDef((*self.get_idx(*x)).clone());
-                for x in decorators.iter().rev() {
-                    ty = self.apply_decorator(*x, ty, &mut false, errors)
+            Binding::ClassDef(x, decorators) => match &self.get_idx(*x).0 {
+                None => Type::any_implicit(),
+                Some(cls) => {
+                    let mut ty = Type::ClassDef(cls.clone());
+                    for x in decorators.iter().rev() {
+                        ty = self.apply_decorator(*x, ty, &mut false, errors)
+                    }
+                    ty
                 }
-                ty
-            }
-            Binding::SelfType(k) => self.get_idx(*k).self_type(),
+            },
+            Binding::SelfType(k) => match &self.get_idx(*k).0 {
+                None => Type::any_implicit(),
+                Some(cls) => cls.self_type(),
+            },
             Binding::Forward(k) => self.get_idx(*k).arc_clone(),
             Binding::Phi(ks) => {
                 if ks.len() == 1 {

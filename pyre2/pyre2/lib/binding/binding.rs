@@ -98,7 +98,7 @@ impl Keyed for KeyExpect {
 }
 impl Keyed for KeyClass {
     type Value = BindingClass;
-    type Answer = Class;
+    type Answer = NoneIfRecursive<Class>;
 }
 impl Keyed for KeyClassField {
     const EXPORTED: bool = true;
@@ -317,6 +317,21 @@ pub struct EmptyAnswer;
 impl Display for EmptyAnswer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "()")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NoneIfRecursive<T>(pub Option<T>);
+
+impl<T> Display for NoneIfRecursive<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self.0 {
+            Some(x) => x.fmt(f),
+            None => write!(f, "recursive"),
+        }
     }
 }
 
