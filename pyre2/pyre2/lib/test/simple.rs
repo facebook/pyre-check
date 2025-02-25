@@ -1231,3 +1231,14 @@ assert_type(0, Literal[0], oops=1)  # E: `assert_type` got an unexpected keyword
 reveal_type(0, oops=1)  # E: revealed type: Literal[0]  # E: `reveal_type` got an unexpected keyword argument `oops`
     "#,
 );
+
+testcase!(
+    test_special_calls_alias,
+    r#"
+from typing import assert_type, reveal_type
+at = assert_type
+rt = reveal_type
+at(0, str)  # E: assert_type(Literal[0], str) failed
+rt(0)  # E: revealed type: Literal[0]
+    "#,
+);

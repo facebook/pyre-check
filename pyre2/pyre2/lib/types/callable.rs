@@ -147,6 +147,8 @@ pub enum CallableKind {
     Def,
     Anon,
     Cast,
+    AssertType,
+    RevealType,
 }
 
 /// A map from keywords to boolean values. Useful for storing sets of keyword arguments for various
@@ -384,6 +386,8 @@ impl CallableKind {
             ("typing", "overload") => Self::Overload,
             ("typing", "override") => Self::Override,
             ("typing", "cast") => Self::Cast,
+            ("typing", "assert_type") => Self::AssertType,
+            ("typing", "reveal_type") => Self::RevealType,
             _ => Self::Def,
         }
     }

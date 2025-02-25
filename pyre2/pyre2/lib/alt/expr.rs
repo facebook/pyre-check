@@ -11,7 +11,6 @@ use ruff_python_ast::BoolOp;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
-use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprSlice;
@@ -898,20 +897,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.stdlib.bool().to_type()
             }
-            Expr::Call(x) if is_special_name(&x.func, "typing", "assert_type") => {
+            Expr::Call(x) if is_special_name(&x.func, "assert_type") => {
                 self.call_assert_type(&x.arguments.args, &x.arguments.keywords, x.range, errors)
             }
-            Expr::Call(x) if is_special_name(&x.func, "typing", "reveal_type") => {
+            Expr::Call(x) if is_special_name(&x.func, "reveal_type") => {
                 self.call_reveal_type(&x.arguments.args, &x.arguments.keywords, x.range, errors)
             }
             Expr::Call(x) => {
                 let ty_fun = self.expr_infer(&x.func, errors);
                 let func_range = x.func.range();
-                self.distribute_over_union(&ty_fun, |ty| {
-                    if matches!(
-                        ty.callee_kind(),
-                        Some(CalleeKind::Callable(CallableKind::Cast))
-                    ) {
+                self.distribute_over_union(&ty_fun, |ty| match ty.callee_kind() {
+                    Some(CalleeKind::Callable(CallableKind::AssertType)) => self.call_assert_type(
+                        &x.arguments.args,
+                        &x.arguments.keywords,
+                        x.range,
+                        errors,
+                    ),
+                    Some(CalleeKind::Callable(CallableKind::RevealType)) => self.call_reveal_type(
+                        &x.arguments.args,
+                        &x.arguments.keywords,
+                        x.range,
+                        errors,
+                    ),
+                    Some(CalleeKind::Callable(CallableKind::Cast)) => {
                         // For typing.cast, we have to hard-code a check for whether the first argument
                         // is a type, so it's simplest to special-case the entire call.
                         self.call_typing_cast(
@@ -920,7 +928,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             func_range,
                             errors,
                         )
-                    } else {
+                    }
+                    _ => {
                         let args = x.arguments.args.map(|arg| match arg {
                             Expr::Starred(x) => CallArg::Star(&x.value, x.range),
                             _ => CallArg::Expr(arg),
@@ -935,7 +944,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 })
             }
-
             Expr::FString(x) => {
                 // Ensure we detect type errors in f-string expressions.
                 Visitors::visit_fstring_expr(x, |x| {
@@ -1233,16 +1241,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
 /// Match on an expression by name. Should be used only for special names that we essentially treat like keywords,
 /// like reveal_type.
-fn is_special_name(x: &Expr, module: &str, name: &str) -> bool {
+fn is_special_name(x: &Expr, name: &str) -> bool {
     match x {
-        // It's convenient to be able to call functions like reveal_type in the course of debugging without scrolling
-        // to the top of the file to add an import.
+        // Note that this matches on a bare name regardless of whether it's been imported.
+        // It's convenient to be able to call functions like reveal_type in the course of
+        // debugging without scrolling to the top of the file to add an import.
         Expr::Name(x) => x.id.as_str() == name,
-        Expr::Attribute(ExprAttribute {
-            value: box Expr::Name(value),
-            attr,
-            ..
-        }) => value.id.as_str() == module && attr.as_str() == name,
         _ => false,
     }
 }
