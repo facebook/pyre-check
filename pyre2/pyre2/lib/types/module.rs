@@ -91,7 +91,10 @@ impl Module {
         self.modules = Arc::new(modules);
     }
 
-    pub fn is_imported_directly(&self) -> bool {
-        self.modules.contains(&ModuleName::from_parts(self.path()))
+    pub fn is_submodules_imported_directly(&self) -> bool {
+        let prefix = self.path();
+        self.modules
+            .iter()
+            .any(|name| name.components().starts_with(prefix))
     }
 }

@@ -621,13 +621,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     // `module_name.attr_name`:
                     // - Has been imported directly. Unless `module_name` re-exports `attr_name` from itself
                     //   (in which can `attr_name` will be included in the exports map), we want to make sure that
-                    //   `module_name.attr_name` is only valid when there's an explicit `import module_name.attr_name`
-                    //   statement. Just importing `module_name` shouldn't automatically make the submodule name
-                    //   `module_name.attr_name` accessible.
+                    //   `module_name.attr_name` is only valid when there's an explicit import statement for either
+                    //   `module_name.attr_name` or its submodules. Just importing `module_name`, for example,
+                    //   shouldn't automatically make the submodule name `module_name.attr_name` accessible.
                     // - Actually exists as a submodule on the filesystem.
                     let submodule = module.push_path(attr_name.clone());
                     let submodule_name = module_name.append(attr_name);
-                    if submodule.is_imported_directly()
+                    if submodule.is_submodules_imported_directly()
                         && self.get_module_exports(submodule_name).is_some()
                     {
                         Some(submodule.to_type())
