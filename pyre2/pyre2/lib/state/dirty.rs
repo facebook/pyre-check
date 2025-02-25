@@ -7,39 +7,21 @@
 
 #[derive(Debug, Default, Clone)]
 pub struct Dirty {
-    dirty_load: bool,
-    dirty_find: bool,
-    dirty_deps: bool,
+    /// The result from loading has potentially changed, either
+    /// `load_from_memory` on `Loader` (if a memory file path) or
+    /// the underlying disk if a disk file path.
+    pub load: bool,
+    /// The result from finding has potentially changed.
+    /// Given all data is indexed by `Handle`, the path in the `Handle` can't
+    /// change or it would simply represent a different `Handle`.
+    /// This instead represents the modules I found from my imports have changed.
+    pub find: bool,
+    /// The result I got from my dependencies have potentially changed.
+    pub deps: bool,
 }
 
 impl Dirty {
-    pub fn set_dirty_load(&mut self) {
-        self.dirty_load = true;
-    }
-
-    pub fn set_dirty_find(&mut self) {
-        self.dirty_find = true;
-    }
-
-    pub fn set_dirty_deps(&mut self) {
-        self.dirty_deps = true;
-    }
-
-    pub fn is_dirty_load(&self) -> bool {
-        self.dirty_load
-    }
-
-    pub fn is_dirty_find(&self) -> bool {
-        self.dirty_find
-    }
-
-    pub fn is_dirty_deps(&self) -> bool {
-        self.dirty_deps
-    }
-
     pub fn clean(&mut self) {
-        self.dirty_load = false;
-        self.dirty_find = false;
-        self.dirty_deps = false;
+        *self = Dirty::default();
     }
 }

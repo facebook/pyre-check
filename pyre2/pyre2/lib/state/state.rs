@@ -171,7 +171,7 @@ impl State {
         };
 
         // Validate the load flag.
-        if exclusive.dirty.is_dirty_load()
+        if exclusive.dirty.load
             && let Some(old_load) = exclusive.steps.load.dupe()
         {
             let (code, self_error) =
@@ -199,7 +199,7 @@ impl State {
         }
 
         // Validate the find flag.
-        if exclusive.dirty.is_dirty_find() {
+        if exclusive.dirty.find {
             let loader = self.get_cached_loader(module_data.handle.loader());
             let mut is_dirty = false;
             for x in module_data.dependencies.read().values() {
@@ -228,7 +228,7 @@ impl State {
         }
 
         // Validate the dependencies.
-        let mut is_dirty_deps = exclusive.dirty.is_dirty_deps();
+        let mut is_dirty_deps = exclusive.dirty.deps;
         if !is_dirty_deps {
             for x in module_data.dependencies.read().values() {
                 if exclusive.epochs.computed < x.state.read().epochs.changed {
@@ -650,7 +650,7 @@ impl State {
                     .write(Step::Load)
                     .unwrap()
                     .dirty
-                    .set_dirty_deps();
+                    .deps = true;
             }
         }
     }
@@ -782,12 +782,7 @@ impl State {
         }
         for (handle, module_data) in self.modules.iter_unordered() {
             if handle.loader() == loader {
-                module_data
-                    .state
-                    .write(Step::Load)
-                    .unwrap()
-                    .dirty
-                    .set_dirty_find();
+                module_data.state.write(Step::Load).unwrap().dirty.find = true;
             }
         }
     }
@@ -801,12 +796,7 @@ impl State {
                 && let ModulePathDetails::Memory(x) = handle.path().details()
                 && files.contains(x)
             {
-                module_data
-                    .state
-                    .write(Step::Load)
-                    .unwrap()
-                    .dirty
-                    .set_dirty_load();
+                module_data.state.write(Step::Load).unwrap().dirty.load = true;
             }
         }
     }
@@ -821,12 +811,7 @@ impl State {
             if let ModulePathDetails::FileSystem(x) = handle.path().details()
                 && files.contains(x)
             {
-                module_data
-                    .state
-                    .write(Step::Load)
-                    .unwrap()
-                    .dirty
-                    .set_dirty_load();
+                module_data.state.write(Step::Load).unwrap().dirty.load = true;
             }
         }
     }
