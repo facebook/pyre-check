@@ -725,7 +725,6 @@ let initialize
       ~call_graph
       ~dependency_graph
       ~override_graph_shared_memory
-      ~initial_callables
       ~skip_analysis_targets:Target.Set.empty
       ~decorator_resolution
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)

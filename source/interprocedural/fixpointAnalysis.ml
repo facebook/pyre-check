@@ -784,11 +784,11 @@ module Make (Analysis : ANALYSIS) = struct
       ~shared_fixpoint
       ~dependency_graph
       ~all_callables
-      ~previous_callables
+      ~analyzed_callables
       ~step
     =
     let might_change_if_reanalyzed =
-      List.fold previous_callables ~init:Target.Set.empty ~f:(fun accumulator callable ->
+      List.fold analyzed_callables ~init:Target.Set.empty ~f:(fun accumulator callable ->
           if not (State.SharedFixpoint.get_is_partial shared_fixpoint callable) then
             accumulator
           else
@@ -916,7 +916,7 @@ module Make (Analysis : ANALYSIS) = struct
             ~shared_fixpoint
             ~dependency_graph
             ~all_callables
-            ~previous_callables:callables_to_analyze
+            ~analyzed_callables:callables_to_analyze
             ~step
         in
         (* Additional dependencies may imply new callables that need to be analyzed. *)

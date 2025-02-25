@@ -108,9 +108,6 @@ Call dependencies
     "_test_sink (fun)", "decorator_location.with_logging.some_helper (fun)",
     "decorator_location.with_logging2.inner (fun)[local($parameter$f)=decorator_location.decorated_logging_logging2 (fun)]"
   ],
-  "decorator_location.with_logging.inner (fun)[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper (fun)]": [
-    "_test_sink (fun)", "decorator_location.with_logging.some_helper (fun)"
-  ],
   "decorator_location.with_logging.some_helper (fun)": [
     "_test_sink (fun)", "print (fun)"
   ],

@@ -4960,6 +4960,8 @@ module SharedMemory = struct
     let get handle ~cache ~callable = T.ReadOnly.get handle ~cache callable
   end
 
+  let callables = T.keys
+
   let read_only = T.read_only
 
   let cleanup = T.cleanup

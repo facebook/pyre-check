@@ -877,7 +877,6 @@ let run_taint_analysis
           ~call_graph:original_call_graphs
           ~dependency_graph:original_dependency_graph
           ~override_graph_shared_memory
-          ~initial_callables
           ~skip_analysis_targets
           ~decorator_resolution
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)

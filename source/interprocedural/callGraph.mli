@@ -602,6 +602,8 @@ module SharedMemory : sig
     val get : t -> cache:bool -> callable:Target.t -> DefineCallGraph.t option
   end
 
+  val callables : t -> Target.t list
+
   val read_only : t -> ReadOnly.t
 
   val cleanup : t -> unit

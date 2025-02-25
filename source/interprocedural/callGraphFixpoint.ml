@@ -210,28 +210,15 @@ let compute
     ~scheduler_policy
     ~pyre_api
     ~call_graph:{ CallGraph.SharedMemory.define_call_graphs; _ }
-    ~dependency_graph:
-      { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ }
+    ~dependency_graph:{ DependencyGraph.dependency_graph; override_targets; _ }
     ~override_graph_shared_memory
-    ~initial_callables
     ~skip_analysis_targets
     ~decorator_resolution
     ~method_kinds
     ~max_iterations
   =
-  let decorated_callables =
-    CallGraph.DecoratorResolution.Results.decorated_callables decorator_resolution
-  in
-  let skip_analysis_targets =
-    skip_analysis_targets |> Target.Set.elements |> Target.HashSet.of_list
-  in
-  let definitions =
-    initial_callables
-    |> FetchCallables.get_definitions
-    |> List.filter ~f:(not_skip_analysis_target ~skip_analysis_targets)
-    |> List.rev_append decorated_callables
-  in
-  let initial_models =
+  let callables_with_call_graphs = CallGraph.SharedMemory.callables define_call_graphs in
+  let initial_models_for_callables_with_call_graphs =
     let policy =
       Scheduler.Policy.fixed_chunk_size
         ~minimum_chunks_per_worker:1
@@ -261,22 +248,19 @@ let compute
       ~map
       ~reduce:(fun left right ->
         Fixpoint.SharedModels.AddOnly.merge_same_handle_disjoint_keys ~smaller:left ~larger:right)
-      ~inputs:definitions
+      ~inputs:callables_with_call_graphs
       ()
     |> Fixpoint.SharedModels.from_add_only
   in
   let state =
     Fixpoint.record_initial_models
       ~scheduler
-      ~callables_to_analyze:definitions
+      ~callables_to_analyze:[]
       ~stubs:[]
         (* No need to initialize models for stubs, since we cannot build call graphs for them
            anyway. *)
       ~override_targets
-      ~initial_models
-  in
-  let callables_to_analyze =
-    List.filter ~f:(not_skip_analysis_target ~skip_analysis_targets) callables_to_analyze
+      ~initial_models:initial_models_for_callables_with_call_graphs
   in
   let ({ Fixpoint.state; _ } as fixpoint) =
     Fixpoint.compute
@@ -290,9 +274,11 @@ let compute
           define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
           decorator_resolution;
           method_kinds;
-          skip_analysis_targets;
+          skip_analysis_targets =
+            skip_analysis_targets |> Target.Set.elements |> Target.HashSet.of_list;
         }
-      ~callables_to_analyze:(List.rev_append callables_to_analyze decorated_callables)
+      ~callables_to_analyze:(List.rev_append override_targets callables_with_call_graphs)
+        (* Build higher order call graphs only for targets that have call graphs. *)
       ~max_iterations
       ~error_on_max_iterations:false
       ~epoch:Fixpoint.Epoch.initial
