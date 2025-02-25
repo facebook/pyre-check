@@ -9,9 +9,6 @@ open Ast
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
-(* Evaluates to the representation of literal strings, integers and enums. *)
-val extract_constant_name : Expression.t -> string option
-
 (* Evaluates to whether the provided expression is a superclass of define. *)
 val is_super
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->

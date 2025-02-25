@@ -90,6 +90,9 @@ val of_expression : self_variable:Root.t option -> Expression.t -> t option
 
 val get_index : Expression.t -> Abstract.TreeDomain.Label.t
 
+(* Evaluates to the representation of literal strings, integers and enums. *)
+val extract_constant_name : Expression.t -> string option
+
 type argument_match = {
   root: Root.t;
   actual_path: Path.t;

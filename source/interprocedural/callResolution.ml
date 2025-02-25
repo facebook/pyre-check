@@ -16,25 +16,6 @@ open Pyre
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
-(* Evaluates to the representation of literal strings, integers and enums. *)
-let extract_constant_name { Node.value = expression; _ } =
-  match expression with
-  | Expression.Constant (Constant.String literal) -> Some literal.value
-  | Expression.Constant (Constant.Integer i) -> Some (string_of_int i)
-  | Expression.Constant Constant.False -> Some "False"
-  | Expression.Constant Constant.True -> Some "True"
-  | Expression.Name name -> (
-      let name = name_to_reference name >>| Reference.delocalize >>| Reference.last in
-      match name with
-      (* Heuristic: All uppercase names tend to be enums, so only taint the field in those cases. *)
-      | Some name
-        when String.for_all name ~f:(fun character ->
-                 (not (Char.is_alpha character)) || Char.is_uppercase character) ->
-          Some name
-      | _ -> None)
-  | _ -> None
-
-
 (* Check whether `successor` extends `predecessor`.
  * Returns false on untracked types.
  * Returns `reflexive` if `predecessor` and `successor` are equal. *)
@@ -170,11 +151,23 @@ let extract_coroutine_value annotation =
 let rec resolve_ignoring_errors ~pyre_in_context expression =
   let resolve_expression_to_type expression =
     match resolve_ignoring_untracked ~pyre_in_context expression, Node.value expression with
-    | ( Type.Callable ({ Type.Callable.kind = Anonymous; _ } as callable),
+    | ( (Type.Callable ({ Type.Callable.kind = Anonymous; _ } as callable) as annotation),
         Expression.Name (Name.Identifier function_name) )
       when function_name |> String.is_prefix ~prefix:"$local_" ->
-        (* Treat nested functions as named callables. *)
-        Type.Callable { callable with kind = Named (Reference.create function_name) }
+        let function_name = Reference.create function_name in
+        if
+          function_name
+          |> Reference.delocalize
+          |> Target.create_function
+          |> Target.get_module_and_definition
+               ~pyre_api:(PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
+          |> Option.is_some
+        then
+          (* Treat nested functions as named callables, only if `function_name` refers to functions
+             / methods that have bodies. *)
+          Type.Callable { callable with kind = Named function_name }
+        else
+          annotation
     | annotation, _ -> annotation
   in
   let annotation =

@@ -5903,22 +5903,6 @@ let test_call_graph_of_define =
                              CallTarget.create_regular
                                (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
-                         ~higher_order_parameters:
-                           (HigherOrderParameterMap.from_list
-                              [
-                                {
-                                  index = 0;
-                                  call_targets =
-                                    [
-                                      (* Do not expect local variables to be considered as
-                                         functions. *)
-                                      CallTarget.create_regular
-                                        (Target.Regular.Function
-                                           { name = "$local_test?foo$after_code"; kind = Normal });
-                                    ];
-                                  unresolved = CallGraph.Unresolved.False;
-                                };
-                              ])
                          ())) );
              ]
            ();

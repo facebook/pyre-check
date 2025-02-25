@@ -476,9 +476,7 @@ module ViaFeature = struct
   let via_value_of_breadcrumb ?tag ~arguments () =
     let open Ast.Expression.Call.Argument in
     let extract_constant_value arguments =
-      List.find_map
-        ~f:(fun argument -> Interprocedural.CallResolution.extract_constant_name argument.value)
-        arguments
+      List.find_map ~f:(fun argument -> AccessPath.extract_constant_name argument.value) arguments
     in
     let argument_kind = function
       | { value = { Node.value = Starred (Once _); _ }; _ } -> "args"

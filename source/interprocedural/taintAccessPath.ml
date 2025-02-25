@@ -391,8 +391,28 @@ let create root path = { root; path }
 
 let extend { root; path = original_path } ~path = { root; path = original_path @ path }
 
+(* Evaluates to the representation of literal strings, integers and enums. *)
+let extract_constant_name { Node.value = expression; _ } =
+  let open Option in
+  match expression with
+  | Expression.Constant (Constant.String literal) -> Some literal.value
+  | Expression.Constant (Constant.Integer i) -> Some (string_of_int i)
+  | Expression.Constant Constant.False -> Some "False"
+  | Expression.Constant Constant.True -> Some "True"
+  | Expression.Name name -> (
+      let name = name_to_reference name >>| Reference.delocalize >>| Reference.last in
+      match name with
+      (* Heuristic: All uppercase names tend to be enums, so only taint the field in those cases. *)
+      | Some name
+        when String.for_all name ~f:(fun character ->
+                 (not (Char.is_alpha character)) || Char.is_uppercase character) ->
+          Some name
+      | _ -> None)
+  | _ -> None
+
+
 let get_index expression =
-  match CallResolution.extract_constant_name expression with
+  match extract_constant_name expression with
   | Some "True" -> Abstract.TreeDomain.Label.Index "1"
   | Some "False" -> Abstract.TreeDomain.Label.Index "0"
   | Some name -> Abstract.TreeDomain.Label.Index name
