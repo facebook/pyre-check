@@ -26,6 +26,7 @@ use lsp_types::request::Completion;
 use lsp_types::request::GotoDefinition;
 use lsp_types::request::HoverRequest;
 use lsp_types::request::InlayHintRequest;
+use lsp_types::CompletionItem;
 use lsp_types::CompletionList;
 use lsp_types::CompletionOptions;
 use lsp_types::CompletionParams;
@@ -368,10 +369,27 @@ impl<'a> Server<'a> {
         }))
     }
 
-    fn completion(&self, _params: CompletionParams) -> anyhow::Result<CompletionResponse> {
+    fn completion(&self, params: CompletionParams) -> anyhow::Result<CompletionResponse> {
+        let state = self.state.lock();
+        let handle = self.make_handle(&params.text_document_position.text_document.uri);
+        let items = if let Some(results) = state.get_module_info(&handle).map(|info| {
+            state.completion(
+                &handle,
+                position_to_text_size(&info, params.text_document_position.position),
+            )
+        }) {
+            results
+                .into_iter()
+                .map(|name| {
+                    CompletionItem::new_simple(name.as_str().to_owned(), name.as_str().to_owned())
+                })
+                .collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        };
         Ok(CompletionResponse::List(CompletionList {
-            is_incomplete: true,
-            items: Vec::new(),
+            is_incomplete: false,
+            items,
         }))
     }
 

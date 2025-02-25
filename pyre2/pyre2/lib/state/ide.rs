@@ -8,6 +8,7 @@
 use std::sync::Arc;
 
 use dupe::Dupe;
+use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::Identifier;
@@ -159,6 +160,20 @@ impl State {
             def_opt
         })
         .flatten()
+    }
+
+    pub fn completion(&self, handle: &Handle, position: TextSize) -> Vec<Name> {
+        self.completion_opt(handle, position).unwrap_or_default()
+    }
+
+    fn completion_opt(&self, handle: &Handle, position: TextSize) -> Option<Vec<Name>> {
+        let attribute = self.attribute_at(handle, position)?;
+        let base_type = self
+            .get_answers(handle)?
+            .get_type_trace(attribute.value.range())?;
+        self.ad_hoc_solve(handle, |solver| {
+            solver.lookup_all_attributes(base_type.arc_clone())
+        })
     }
 
     pub fn inlay_hints(&self, handle: &Handle) -> Option<Vec<(TextSize, String)>> {

@@ -18,6 +18,7 @@ use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyExport;
 use crate::error::collector::ErrorCollector;
 use crate::export::exports::Exports;
+use crate::export::exports::LookupExport;
 use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::types::callable::Param;
@@ -721,6 +722,45 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             | Type::Concatenate(_, _)
             | Type::ParamSpecValue(_)
             | Type::Quantified(_) => None,
+        }
+    }
+}
+
+impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
+    pub fn lookup_all_attributes(&self, base: Type) -> Vec<Name> {
+        match self.as_attribute_base(base.clone(), self.stdlib) {
+            Some(AttributeBase::ClassInstance(class)) => {
+                class.class_object().fields().cloned().collect()
+            }
+            Some(AttributeBase::ClassObject(class)) => class.fields().cloned().collect(),
+            Some(AttributeBase::Module(module)) => self.get_module_export_names(&module),
+            Some(AttributeBase::Quantified(q)) => {
+                let class = q.as_value(self.stdlib);
+                class.class_object().fields().cloned().collect()
+            }
+            Some(AttributeBase::TypeAny(_)) => {
+                let builtins_type_classtype = self.stdlib.builtins_type();
+                builtins_type_classtype
+                    .class_object()
+                    .fields()
+                    .cloned()
+                    .collect()
+            }
+            Some(AttributeBase::Any(_)) => Vec::new(),
+            Some(AttributeBase::Never) => Vec::new(),
+            Some(AttributeBase::Property(_)) => {
+                // TODO(samzhou19815): Support autocomplete for properties
+                vec![]
+            }
+            None => Vec::new(),
+        }
+    }
+
+    fn get_module_export_names(&self, module: &Module) -> Vec<Name> {
+        let module_name = ModuleName::from_parts(module.path());
+        match self.get_module_exports(module_name) {
+            None => Vec::new(),
+            Some(exports) => exports.wildcard(self.exports).iter().cloned().collect(),
         }
     }
 }

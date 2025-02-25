@@ -172,7 +172,16 @@ pub fn code_frame_of_source_at_range(source: &str, range: TextRange) -> String {
     let index = LineIndex::from_source_text(source);
     let start_loc = index.source_location(range.start(), source);
     let end_loc = index.source_location(range.end(), source);
-    if start_loc.row == end_loc.row {
+    if (range.start().checked_add(TextSize::from(1))) == Some(range.end()) {
+        let full_line = source.lines().nth(start_loc.row.to_zero_indexed()).unwrap();
+        format!(
+            "{} | {}\n{}   {}^",
+            start_loc.row,
+            full_line,
+            " ".repeat(start_loc.row.to_string().len()),
+            " ".repeat(start_loc.column.to_zero_indexed())
+        )
+    } else if start_loc.row == end_loc.row {
         let full_line = source.lines().nth(start_loc.row.to_zero_indexed()).unwrap();
         format!(
             "{} | {}\n{}   {}{}",
@@ -209,7 +218,7 @@ pub fn extract_cursors_for_test(source: &str) -> Vec<TextSize> {
     let index = LineIndex::from_source_text(source);
     for (line_index, line_str) in source.lines().enumerate() {
         for (row_index, _) in line_str.match_indices('^') {
-            if prev_line.len() <= row_index {
+            if prev_line.len() < row_index {
                 panic!("Invald cursor at {}:{}", line_index, row_index);
             }
             let position = index.offset(

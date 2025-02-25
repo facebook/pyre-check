@@ -7,6 +7,7 @@
 
 #![cfg(test)]
 
+mod completion;
 mod definition;
 mod hover;
 mod inlay_hint;
