@@ -109,8 +109,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None
                 } else {
                     field
-                        .dataclass_props_of(kw_only)
-                        .map(|props| (name.clone(), field.clone(), props))
+                        .dataclass_flags_of(kw_only)
+                        .map(|flags| (name.clone(), field.clone(), flags))
                 }
             })
             .collect()
@@ -124,12 +124,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         kw_only: bool,
     ) -> ClassSynthesizedField {
         let mut params = vec![cls.self_param()];
-        for (name, field, field_props) in self.iter_fields(cls, fields) {
-            if field_props.is_set(&DataclassKeywords::INIT) {
+        for (name, field, field_flags) in self.iter_fields(cls, fields) {
+            if field_flags.is_set(&DataclassKeywords::INIT) {
                 params.push(field.as_param(
                     &name,
-                    field_props.is_set(&DataclassKeywords::DEFAULT),
-                    kw_only || field_props.is_set(&DataclassKeywords::KW_ONLY),
+                    field_flags.is_set(&DataclassKeywords::DEFAULT),
+                    kw_only || field_flags.is_set(&DataclassKeywords::KW_ONLY),
                 ));
             }
         }
@@ -153,8 +153,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let filtered_fields = self.iter_fields(cls, fields);
             filtered_fields
                 .iter()
-                .filter_map(|(name, _, field_props)| {
-                    if field_props.is_set(&DataclassKeywords::KW_ONLY) {
+                .filter_map(|(name, _, field_flags)| {
+                    if field_flags.is_set(&DataclassKeywords::KW_ONLY) {
                         None
                     } else {
                         Some(Type::Literal(Lit::String(name.as_str().into())))

@@ -49,7 +49,8 @@ use crate::types::types::Type;
 /// are assigned values in the class body.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ClassFieldInitialization {
-    /// If this is a dataclass field, BoolKeywords stores the field's dataclass properties.
+    /// If this is a dataclass field, BoolKeywords stores the field's dataclass
+    /// flags (which are boolean options that control how fields behave).
     Class(Option<BoolKeywords>),
     Instance,
 }
@@ -324,7 +325,7 @@ impl ClassField {
         }
     }
 
-    pub fn dataclass_props_of(&self, kw_only: bool) -> Option<BoolKeywords> {
+    pub fn dataclass_flags_of(&self, kw_only: bool) -> Option<BoolKeywords> {
         match &self.0 {
             ClassFieldInner::Simple {
                 initialization,
@@ -336,8 +337,8 @@ impl ClassField {
                 {
                     return None; // Class variables are not dataclass fields
                 }
-                let mut props = match initialization {
-                    ClassFieldInitialization::Class(Some(field_props)) => field_props.clone(),
+                let mut flags = match initialization {
+                    ClassFieldInitialization::Class(Some(field_flags)) => field_flags.clone(),
                     ClassFieldInitialization::Class(None) => {
                         let mut kws = BoolKeywords::new();
                         kws.set(DataclassKeywords::DEFAULT.0, true);
@@ -346,9 +347,9 @@ impl ClassField {
                     ClassFieldInitialization::Instance => BoolKeywords::new(),
                 };
                 if kw_only {
-                    props.set(DataclassKeywords::KW_ONLY.0, true);
+                    flags.set(DataclassKeywords::KW_ONLY.0, true);
                 }
-                Some(props)
+                Some(flags)
             }
         }
     }
@@ -572,7 +573,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ClassFieldInitialValue::Instance => ClassFieldInitialization::Instance,
             ClassFieldInitialValue::Class(None) => ClassFieldInitialization::Class(None),
             ClassFieldInitialValue::Class(Some(e)) => {
-                // If this field was created via a call to a dataclass field specifier, extract field properties from the call.
+                // If this field was created via a call to a dataclass field specifier, extract field flags from the call.
                 if metadata.dataclass_metadata().is_some()
                     && let Expr::Call(ExprCall {
                         range: _,
@@ -580,7 +581,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         arguments: Arguments { keywords, .. },
                     }) = e
                 {
-                    let mut props = BoolKeywords::new();
+                    let mut flags = BoolKeywords::new();
                     // We already type-checked this expression as part of computing the type for the ClassField,
                     // so we can ignore any errors encountered here.
                     let ignore_errors =
@@ -595,14 +596,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 && (id.id == DataclassKeywords::DEFAULT.0
                                     || id.id == "default_factory")
                             {
-                                props.set(DataclassKeywords::DEFAULT.0, true);
+                                flags.set(DataclassKeywords::DEFAULT.0, true);
                             } else {
                                 let val = self.expr_infer(&kw.value, &ignore_errors);
-                                props.set_keyword(kw.arg.as_ref(), val);
+                                flags.set_keyword(kw.arg.as_ref(), val);
                             }
                         }
                     }
-                    ClassFieldInitialization::Class(Some(props))
+                    ClassFieldInitialization::Class(Some(flags))
                 } else {
                     ClassFieldInitialization::Class(None)
                 }
