@@ -457,22 +457,62 @@
   "aliases_newtype.py": [
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, int) failed",
-      "description": "assert_type(Any, int) failed",
-      "line": 15,
+      "column": 5,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 12,
       "name": "PyreError",
-      "stop_column": 32,
-      "stop_line": 15
+      "stop_column": 11,
+      "stop_line": 12
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "NewType requires 2 positional arguments, got 3",
-      "description": "NewType requires 2 positional arguments, got 3",
+      "column": 5,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 13,
+      "name": "PyreError",
+      "stop_column": 11,
+      "stop_line": 13
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "EXPECTED NewType <: UnionType | type | tuple[Unknown, ...]",
+      "description": "EXPECTED NewType <: UnionType | type | tuple[Unknown, ...]",
+      "line": 20,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 20
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 23,
+      "name": "PyreError",
+      "stop_column": 27,
+      "stop_line": 23
+    },
+    {
+      "code": -2,
+      "column": 6,
+      "concise_description": "`NewType` has no attribute `__getitem__`",
+      "description": "`NewType` has no attribute `__getitem__`",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 23,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 43,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
       "line": 60,
       "name": "PyreError",
-      "stop_column": 47,
+      "stop_column": 46,
       "stop_line": 60
     }
   ],
@@ -7803,13 +7843,203 @@
   "generics_typevartuple_basic.py": [
     {
       "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 19,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 37,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 30,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 17,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 19,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 34,
+      "concise_description": "EXPECTED int <: tuple[*@_]",
+      "description": "EXPECTED int <: tuple[*@_]",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 43,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 16,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 43,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 43
+    },
+    {
+      "code": -2,
       "column": 35,
-      "concise_description": "EXPECTED Array[tuple[Unknown, Unknown]] <: Array[tuple[Unknown, Unknown, Unknown]]",
-      "description": "EXPECTED Array[tuple[Unknown, Unknown]] <: Array[tuple[Unknown, Unknown, Unknown]]",
+      "concise_description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Error, Error, Error]]",
+      "description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Error, Error, Error]]",
       "line": 43,
       "name": "PyreError",
       "stop_column": 62,
       "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 22,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 30,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 32,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 37,
+      "stop_line": 44
     },
     {
       "code": -2,
@@ -7883,9 +8113,49 @@
     },
     {
       "code": -2,
+      "column": 20,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
+      "column": 38,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 43,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
+      "column": 55,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 61,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
+      "column": 63,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 97,
+      "name": "PyreError",
+      "stop_column": 68,
+      "stop_line": 97
+    },
+    {
+      "code": -2,
       "column": 17,
-      "concise_description": "EXPECTED Array[tuple[Unknown, Unknown]] <: Array[tuple[*tuple[Unknown]]]",
-      "description": "EXPECTED Array[tuple[Unknown, Unknown]] <: Array[tuple[*tuple[Unknown]]]",
+      "concise_description": "EXPECTED Array[tuple[Error, Error]] <: Array[tuple[*tuple[Error]]]",
+      "description": "EXPECTED Array[tuple[Error, Error]] <: Array[tuple[*tuple[Error]]]",
       "line": 100,
       "name": "PyreError",
       "stop_column": 18,
@@ -7987,6 +8257,156 @@
   "generics_typevartuple_concat.py": [
     {
       "code": -2,
+      "column": 47,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 52,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 29,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 30,
+      "name": "PyreError",
+      "stop_column": 34,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 51,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 34,
+      "name": "PyreError",
+      "stop_column": 56,
+      "stop_line": 34
+    },
+    {
+      "code": -2,
+      "column": 66,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 34,
+      "name": "PyreError",
+      "stop_column": 74,
+      "stop_line": 34
+    },
+    {
+      "code": -2,
+      "column": 20,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 28,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 38,
+      "name": "PyreError",
+      "stop_column": 33,
+      "stop_line": 38
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 39,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 46,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 34,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 42,
+      "name": "PyreError",
+      "stop_column": 39,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 31,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 39,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 41,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 46,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 48,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 44,
+      "name": "PyreError",
+      "stop_column": 56,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
       "column": 12,
       "concise_description": "EXPECTED tuple[*tuple[Unknown, ...], Unknown] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
       "description": "EXPECTED tuple[*tuple[Unknown, ...], Unknown] <: tuple[*?_TypeVarTuple, ?_TypeVar]",
@@ -8041,6 +8461,56 @@
   "generics_typevartuple_specialization.py": [
     {
       "code": -2,
+      "column": 20,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 28,
+      "name": "PyreError",
+      "stop_column": 26,
+      "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 28,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 28,
+      "name": "PyreError",
+      "stop_column": 33,
+      "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 20,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 33,
+      "name": "PyreError",
+      "stop_column": 24,
+      "stop_line": 33
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 33,
+      "name": "PyreError",
+      "stop_column": 32,
+      "stop_line": 33
+    },
+    {
+      "code": -2,
+      "column": 34,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 33,
+      "name": "PyreError",
+      "stop_column": 39,
+      "stop_line": 33
+    },
+    {
+      "code": -2,
       "column": 14,
       "concise_description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTuple, type[tuple[int, *TypeVarTuple[Ts]]]]",
       "description": "Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTuple, type[tuple[int, *TypeVarTuple[Ts]]]]",
@@ -8077,6 +8547,16 @@
       "line": 47,
       "name": "PyreError",
       "stop_column": 46,
+      "stop_line": 47
+    },
+    {
+      "code": -2,
+      "column": 37,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 47,
+      "name": "PyreError",
+      "stop_column": 43,
       "stop_line": 47
     },
     {
@@ -8493,13 +8973,153 @@
   "generics_typevartuple_unpack.py": [
     {
       "code": -2,
+      "column": 37,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 21,
+      "name": "PyreError",
+      "stop_column": 42,
+      "stop_line": 21
+    },
+    {
+      "code": -2,
+      "column": 62,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 21,
+      "name": "PyreError",
+      "stop_column": 70,
+      "stop_line": 21
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 19,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 27,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 29,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 34,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 36,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 44,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 56,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 61,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 63,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 71,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 83,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 26,
+      "name": "PyreError",
+      "stop_column": 88,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
       "column": 28,
-      "concise_description": "EXPECTED Array[tuple[Unknown]] <: Array[tuple[Unknown, *tuple[Any, ...], Unknown]]",
-      "description": "EXPECTED Array[tuple[Unknown]] <: Array[tuple[Unknown, *tuple[Any, ...], Unknown]]",
+      "concise_description": "EXPECTED Array[tuple[Error]] <: Array[tuple[Error, *tuple[Any, ...], Error]]",
+      "description": "EXPECTED Array[tuple[Error]] <: Array[tuple[Error, *tuple[Any, ...], Error]]",
       "line": 30,
       "name": "PyreError",
       "stop_column": 29,
       "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 36,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 36,
+      "name": "PyreError",
+      "stop_column": 41,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 35,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 40,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 42,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 48,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 50,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 55,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 57,
+      "concise_description": "untype, got NewType",
+      "description": "untype, got NewType",
+      "line": 40,
+      "name": "PyreError",
+      "stop_column": 65,
+      "stop_line": 40
     }
   ],
   "generics_upper_bound.py": [
