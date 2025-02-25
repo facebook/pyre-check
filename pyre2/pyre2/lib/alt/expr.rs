@@ -536,6 +536,92 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.call_infer(call_target, &[arg], &[], range, errors)
     }
 
+    /// Simulates a call to `typing.cast`, whose signature is
+    /// `(typ: type[T], val: Any) -> T: ...`
+    /// (ignoring corner cases like special forms and forward references).
+    /// The actual definition has additional overloads to accommodate said corner
+    /// cases, with imprecise return types, which is why we need to hard-code this.
+    fn call_typing_cast(
+        &self,
+        args: &[Expr],
+        keywords: &[Keyword],
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        let mut typ = None;
+        let mut val = None;
+        let mut extra = 0;
+        match args {
+            [] => {}
+            [arg1] => {
+                typ = Some(arg1);
+            }
+            [arg1, arg2, tail @ ..] => {
+                typ = Some(arg1);
+                val = Some(arg2);
+                extra += tail.len();
+            }
+        }
+        for keyword in keywords {
+            match keyword.arg.as_ref().map(|id| id.as_str()) {
+                Some("typ") => {
+                    if typ.is_some() {
+                        self.error(
+                            errors,
+                            range,
+                            "`typing.cast` got multiple values for argument `typ`".to_owned(),
+                        );
+                    }
+                    typ = Some(&keyword.value);
+                }
+                Some("val") => {
+                    if val.is_some() {
+                        self.error(
+                            errors,
+                            range,
+                            "`typing.cast` got multiple values for argument `val`".to_owned(),
+                        );
+                    }
+                    val = Some(&keyword.value);
+                }
+                _ => {
+                    extra += 1;
+                }
+            }
+        }
+        if extra > 0 {
+            self.error(
+                errors,
+                range,
+                format!("`typing.cast` expected 2 arguments, got {}", extra + 2),
+            );
+        }
+        let ret = if let Some(t) = typ {
+            match self.untype_opt(self.expr_infer(t, errors), range) {
+                Some(t) => t,
+                None => self.error(
+                    errors,
+                    range,
+                    "First argument to `typing.cast` must be a type".to_owned(),
+                ),
+            }
+        } else {
+            self.error(
+                errors,
+                range,
+                "`typing.cast` missing required argument `typ`".to_owned(),
+            )
+        };
+        if val.is_none() {
+            self.error(
+                errors,
+                range,
+                "`typing.cast` missing required argument `val`".to_owned(),
+            );
+        }
+        ret
+    }
+
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>, errors: &ErrorCollector) -> Type {
         let ty = match x {
             Expr::BoolOp(x) => self.boolop(&x.values, x.op, errors),
@@ -959,20 +1045,33 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Call(x) => {
                 let ty_fun = self.expr_infer(&x.func, errors);
-
                 let func_range = x.func.range();
-                let args = x.arguments.args.map(|arg| match arg {
-                    Expr::Starred(x) => CallArg::Star(&x.value, x.range),
-                    _ => CallArg::Expr(arg),
-                });
                 self.distribute_over_union(&ty_fun, |ty| {
-                    let callable = self.as_call_target_or_error(
-                        ty.clone(),
-                        CallStyle::FreeForm,
-                        func_range,
-                        errors,
-                    );
-                    self.call_infer(callable, &args, &x.arguments.keywords, func_range, errors)
+                    if matches!(
+                        ty.callee_kind(),
+                        Some(CalleeKind::Callable(CallableKind::Cast))
+                    ) {
+                        // For typing.cast, we have to hard-code a check for whether the first argument
+                        // is a type, so it's simplest to special-case the entire call.
+                        self.call_typing_cast(
+                            &x.arguments.args,
+                            &x.arguments.keywords,
+                            func_range,
+                            errors,
+                        )
+                    } else {
+                        let args = x.arguments.args.map(|arg| match arg {
+                            Expr::Starred(x) => CallArg::Star(&x.value, x.range),
+                            _ => CallArg::Expr(arg),
+                        });
+                        let callable = self.as_call_target_or_error(
+                            ty.clone(),
+                            CallStyle::FreeForm,
+                            func_range,
+                            errors,
+                        );
+                        self.call_infer(callable, &args, &x.arguments.keywords, func_range, errors)
+                    }
                 })
             }
 

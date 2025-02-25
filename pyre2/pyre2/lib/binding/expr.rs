@@ -163,6 +163,32 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 return;
             }
+            Expr::Call(ExprCall {
+                range: _,
+                func,
+                arguments,
+            }) if self.as_special_export(func) == Some(SpecialExport::Cast)
+                && !arguments.is_empty() =>
+            {
+                // Handle forward references in the first argument to a cast call
+                self.ensure_expr(func);
+                if let Some(arg) = arguments.args.first_mut() {
+                    self.ensure_type(arg, &mut None)
+                }
+                for arg in arguments.args.iter_mut().skip(1) {
+                    self.ensure_expr(arg);
+                }
+                for kw in arguments.keywords.iter_mut() {
+                    if let Some(id) = &kw.arg
+                        && id.as_str() == "typ"
+                    {
+                        self.ensure_type(&mut kw.value, &mut None);
+                    } else {
+                        self.ensure_expr(&mut kw.value);
+                    }
+                }
+                return;
+            }
             Expr::Name(x) => {
                 let name = Ast::expr_name_identifier(x.clone());
                 let binding = self.forward_lookup(&name);

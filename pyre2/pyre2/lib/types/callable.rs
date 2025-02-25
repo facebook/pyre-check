@@ -146,6 +146,7 @@ pub enum CallableKind {
     Override,
     Def,
     Anon,
+    Cast,
 }
 
 /// A map from keywords to boolean values. Useful for storing sets of keyword arguments for various
@@ -382,7 +383,7 @@ impl CallableKind {
             ("dataclasses", "field") => Self::DataclassField,
             ("typing", "overload") => Self::Overload,
             ("typing", "override") => Self::Override,
-
+            ("typing", "cast") => Self::Cast,
             _ => Self::Def,
         }
     }

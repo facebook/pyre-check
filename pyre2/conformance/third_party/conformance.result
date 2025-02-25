@@ -377,9 +377,7 @@
     "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']"
   ],
   "directives_assert_type.py": [],
-  "directives_cast.py": [
-    "Line 16: Expected 1 errors"
-  ],
+  "directives_cast.py": [],
   "directives_deprecated.py": [
     "Line 18: Expected 1 errors",
     "Line 24: Expected 1 errors",

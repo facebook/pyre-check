@@ -4992,8 +4992,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "`typing.cast` missing required argument `typ`",
+      "description": "`typing.cast` missing required argument `typ`",
       "line": 15,
       "name": "PyreError",
       "stop_column": 12,
@@ -5002,8 +5002,28 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "`typing.cast` missing required argument `val`",
+      "description": "`typing.cast` missing required argument `val`",
+      "line": 15,
+      "name": "PyreError",
+      "stop_column": 12,
+      "stop_line": 15
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "First argument to `typing.cast` must be a type",
+      "description": "First argument to `typing.cast` must be a type",
+      "line": 16,
+      "name": "PyreError",
+      "stop_column": 12,
+      "stop_line": 16
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "`typing.cast` expected 2 arguments, got 3",
+      "description": "`typing.cast` expected 2 arguments, got 3",
       "line": 17,
       "name": "PyreError",
       "stop_column": 12,

@@ -1200,3 +1200,25 @@ typing.reveal_type(0)  # E: revealed type: Literal[0]
 reveal_type(0)  # E: revealed type: Literal[0]  # E: Could not find name `reveal_type`
     "#,
 );
+
+testcase!(
+    test_cast,
+    r#"
+from typing import assert_type, cast
+
+x = cast(str, 1)
+assert_type(x, str)
+
+y = cast("str", 1)
+assert_type(y, str)
+
+z = cast(val=1, typ=str)
+assert_type(z, str)
+
+w = cast(val=1, typ="str")
+assert_type(w, str)
+
+cast()  # E: `typing.cast` missing required argument `typ`  # E: `typing.cast` missing required argument `val`
+cast(1, 1)  # E: First argument to `typing.cast` must be a type
+    "#,
+);
