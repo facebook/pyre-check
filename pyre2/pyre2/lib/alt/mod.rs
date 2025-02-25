@@ -13,6 +13,7 @@ pub mod class;
 pub mod expr;
 pub mod narrow;
 pub mod solve;
+pub mod special_calls;
 pub mod specials;
 pub mod traits;
 pub mod types;
