@@ -462,13 +462,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             _ => value_ty,
         };
 
+        // Enum handling
         let value_ty = if let Some(enum_) = metadata.enum_metadata()
             && self.is_valid_enum_member(name, value_ty, &initialization)
         {
             if annotation.is_some() {
                 self.error(errors, range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
             }
-
             if let Some(enum_value_ty) = self.type_of_enum_value(enum_) {
                 if !matches!(value_ty, Type::Tuple(_))
                     && !self
@@ -487,6 +487,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             value_ty
         };
+
+        // TypedDict handling
         if metadata.is_typed_dict() && matches!(initialization, ClassFieldInitialization::Class(_))
         {
             self.error(
@@ -495,6 +497,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 format!("TypedDict item `{}` may not be initialized.", name),
             );
         }
+
+        // Types provided in annotations shadow inferred types
         let (ty, ann) = if let Some(ann) = annotation {
             match &ann.ty {
                 Some(ty) => (ty, Some(ann)),
@@ -503,13 +507,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             (value_ty, None)
         };
+
+        // Dataclass read-onlyness (does not currently handle other kinds of readonlyness)
         let readonly = metadata
             .dataclass_metadata()
             .is_some_and(|dataclass| dataclass.kws.is_set(&DataclassKeywords::FROZEN));
+
+        // Create the field
         let class_field =
             ClassField::new(ty.clone(), range, ann.cloned(), initialization, readonly);
 
-        // check if this attribute is compatible with the parent attribute
+        // Perform override checks
         let class_type = match class.self_type() {
             Type::ClassType(class_type) => Some(class_type),
             _ => None,
