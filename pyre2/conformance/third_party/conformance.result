@@ -532,9 +532,11 @@
   "generics_self_advanced.py": [
     "Line 19: Unexpected errors ['assert_type(ParentA, ChildA) failed']",
     "Line 35: Unexpected errors ['assert_type(ChildB, Self) failed']",
-    "Line 38: Unexpected errors ['assert_type(ParentB, Self) failed', 'EXPECTED type[ChildB] <: ParentB']",
-    "Line 42: Unexpected errors ['assert_type(ChildB, type[Self]) failed']",
-    "Line 45: Unexpected errors ['assert_type(ParentB, Self) failed', 'EXPECTED type[ChildB] <: ParentB']"
+    "Line 38: Unexpected errors ['assert_type(ParentB, Self) failed']",
+    "Line 42: Unexpected errors ['assert_type(type[ChildB], type[Self]) failed']",
+    "Line 43: Unexpected errors ['assert_type(Any, list[Self]) failed', 'Instance-only attribute `a` of class `ChildB` is not visible on the class']",
+    "Line 44: Unexpected errors ['assert_type(Any, Self) failed', 'Instance-only attribute `a` of class `ChildB` is not visible on the class']",
+    "Line 45: Unexpected errors ['assert_type(ParentB, Self) failed']"
   ],
   "generics_self_attributes.py": [
     "Line 29: Unexpected errors ['EXPECTED OrdinalLinkedList <: Self | None']"
@@ -544,13 +546,10 @@
     "Line 33: Expected 1 errors",
     "Line 14: Unexpected errors ['assert_type(Shape, Self) failed']",
     "Line 15: Unexpected errors ['Object of class `Shape` has no attribute `scale`']",
-    "Line 27: Unexpected errors ['assert_type(Shape, type[Self]) failed']",
-    "Line 28: Unexpected errors ['Expected a callable, got Shape']",
-    "Line 37: Unexpected errors ['Expected a callable, got Shape']",
+    "Line 27: Unexpected errors ['assert_type(type[Shape], type[Self]) failed']",
     "Line 40: Unexpected errors ['assert_type(Shape, Self) failed']",
     "Line 52: Unexpected errors ['assert_type(Shape, Circle) failed']",
-    "Line 54: Unexpected errors ['EXPECTED type[Shape] <: Shape']",
-    "Line 55: Unexpected errors ['assert_type(Shape, Circle) failed', 'EXPECTED type[Circle] <: Shape']"
+    "Line 55: Unexpected errors ['assert_type(Shape, Circle) failed']"
   ],
   "generics_self_protocols.py": [
     "Line 64: Expected 1 errors"
@@ -567,8 +566,6 @@
     "Line 116: Expected 1 errors",
     "Line 121: Expected 1 errors",
     "Line 125: Expected 1 errors",
-    "Line 15: Unexpected errors ['Expected a callable, got ReturnsSelf']",
-    "Line 30: Unexpected errors ['EXPECTED ReturnsSelf <: type[ReturnsSelf]']",
     "Line 50: Unexpected errors ['EXPECTED (self: CallableAttribute) -> int <: (Self) -> int']",
     "Line 60: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)']",
     "Line 63: Unexpected errors ['EXPECTED HasNestedFunction <: Self']",
@@ -782,8 +779,6 @@
     "Line 107: Expected 1 errors",
     "Line 17: Unexpected errors ['assert_type(tuple[?_TypeVar, ?_TypeVar], tuple[str, str]) failed']",
     "Line 32: Unexpected errors ['assert_type(set[?_TypeVar], set[int]) failed']",
-    "Line 72: Unexpected errors ['EXPECTED type[A] <: A']",
-    "Line 76: Unexpected errors ['EXPECTED type[A] <: A']",
     "Line 89: Unexpected errors ['assert_type(A, B) failed']",
     "Line 93: Unexpected errors ['assert_type(A, B) failed']"
   ],
@@ -803,9 +798,7 @@
     "Line 56: Unexpected errors ['EXPECTED bool <: TypeIs[A]']",
     "Line 59: Unexpected errors ['EXPECTED bool <: TypeIs[?_TypeVar]']",
     "Line 72: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 75: Unexpected errors ['EXPECTED type[A] <: A']",
     "Line 76: Unexpected errors ['assert_type(object, int) failed']",
-    "Line 79: Unexpected errors ['EXPECTED type[A] <: A']",
     "Line 80: Unexpected errors ['assert_type(object, int) failed']",
     "Line 84: Unexpected errors ['assert_type(object, int) failed']",
     "Line 88: Unexpected errors ['assert_type(object, int) failed']",
@@ -931,7 +924,7 @@
     "Lines 80, 89: Expected error (tag 'Derived3')",
     "Lines 94, 102: Expected error (tag 'Derived4')",
     "Line 26: Unexpected errors ['EXPECTED (self: Base2) -> None <: TypeVar[_T]']",
-    "Line 30: Unexpected errors ['EXPECTED classmethod[(cls: Base2) -> None] <: TypeVar[_T]']",
+    "Line 30: Unexpected errors ['EXPECTED classmethod[(cls: type[Base2]) -> None] <: TypeVar[_T]']",
     "Line 35: Unexpected errors ['EXPECTED staticmethod[() -> None] <: TypeVar[_T]']",
     "Line 50: Unexpected errors ['EXPECTED (self: Base2, x: int | str) -> int | str <: TypeVar[_T]']",
     "Line 81: Unexpected errors ['Class member `method` overrides parent class `Base3` in an inconsistent manner']",

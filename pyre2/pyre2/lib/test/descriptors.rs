@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_staticmethod_with_explicit_parameter_type,
@@ -31,8 +30,7 @@ def f(c: C):
     "#,
 );
 
-testcase_with_bug!(
-    "We do not yet correctly bind the type of the first parameter of a staticmethod",
+testcase!(
     test_staticmethod_calls_with_implicit_parameter_type,
     r#"
 from typing import assert_type, Callable, Any
@@ -41,8 +39,8 @@ class C:
     def bar(x) -> int:
         return 42
 def f(c: C):
-    assert_type(c.bar(42), int) # E: EXPECTED Literal[42] <: C
-    assert_type(c.bar(42), int) # E: EXPECTED Literal[42] <: C
+    assert_type(c.bar(42), int)
+    assert_type(c.bar(42), int)
     "#,
 );
 
@@ -55,8 +53,8 @@ class C:
     def foo(cls) -> int:
         return 42
 def f(c: C):
-    reveal_type(C.foo)  # E: revealed type: BoundMethod[type[C], (cls: C) -> int]
-    reveal_type(c.foo)  # E: revealed type: BoundMethod[type[C], (cls: C) -> int]
+    reveal_type(C.foo)  # E: revealed type: BoundMethod[type[C], (cls: type[C]) -> int]
+    reveal_type(c.foo)  # E: revealed type: BoundMethod[type[C], (cls: type[C]) -> int]
     "#,
 );
 
@@ -74,8 +72,7 @@ def f(c: C):
     "#,
 );
 
-testcase_with_bug!(
-    "We do not yet correctly bind the type of the first parameter of a classmethod",
+testcase!(
     test_classmethod_calls_with_implicit_parameter_type,
     r#"
 from typing import assert_type
@@ -84,8 +81,8 @@ class C:
     def foo(cls) -> int:
         return 42
 def f(c: C):
-    assert_type(C.foo(), int)  # E: EXPECTED type[C] <: C
-    assert_type(c.foo(), int)  # E: EXPECTED type[C] <: C
+    assert_type(C.foo(), int)
+    assert_type(c.foo(), int)
     "#,
 );
 

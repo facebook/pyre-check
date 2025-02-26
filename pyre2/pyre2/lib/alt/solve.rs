@@ -66,6 +66,7 @@ use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
+use crate::types::class::ClassKind;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::quantified::Quantified;
@@ -74,6 +75,7 @@ use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
 use crate::types::type_var::Variance;
 use crate::types::types::AnyStyle;
+use crate::types::types::CalleeKind;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -1321,12 +1323,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             required
         };
+
         let mut self_type = if x.def.name.id == dunder::NEW {
             // __new__ is a staticmethod, and does not take a self parameter.
             None
         } else {
-            x.self_type.map(|idx| self.get_idx(idx))
+            x.self_type.map(|idx| self.get_idx(idx).arc_clone())
         };
+
+        // Look for a @classmethod or @staticmethod decorator and change the "self" type
+        // accordingly. This is not totally correct, since it doesn't account for chaining
+        // decorators, or weird cases like both decorators existing at the same time.
+        for x in &x.decorators {
+            match self.get_idx(*x).callee_kind() {
+                Some(CalleeKind::Class(ClassKind::StaticMethod)) => {
+                    self_type = None;
+                    break;
+                }
+                Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
+                    self_type = self_type.map(|ty| Type::Type(Box::new(ty)));
+                    break;
+                }
+                _ => {}
+            }
+        }
+
         let mut get_param_ty = |name: &Identifier| {
             let ty = match self.bindings().get_function_param(name) {
                 Either::Left(idx) => self.get_idx(idx).get_type().clone(),

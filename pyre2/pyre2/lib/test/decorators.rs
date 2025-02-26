@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_simple_function_decorator,
@@ -114,8 +113,7 @@ def decorated(x: int) -> int:
     "#,
 );
 
-testcase_with_bug!(
-    "The first parameter of a classmethod should be type[Self]",
+testcase!(
     test_classmethod_first_param,
     r#"
 from typing import assert_type
@@ -123,19 +121,18 @@ from typing import assert_type
 class C:
     @classmethod
     def f(cls) -> int:
-        return cls.g() # E: EXPECTED type[C] <: C
+        return cls.g()
 
     @classmethod
     def g(cls) -> int:
         return 42
 
-assert_type(C.f(), int) # E: EXPECTED type[C] <: C
-assert_type(C.g(), int) # E: EXPECTED type[C] <: C
+assert_type(C.f(), int)
+assert_type(C.g(), int)
     "#,
 );
 
-testcase_with_bug!(
-    "The first parameter of a staticmethod is just a normal parameter",
+testcase!(
     test_staticmethod_first_param,
     r#"
 from typing import assert_type, Any
@@ -143,13 +140,13 @@ from typing import assert_type, Any
 class C:
     @staticmethod
     def f(x):
-        assert_type(x, Any) # E: assert_type(C, Any) failed
+        assert_type(x, Any)
 
     @staticmethod
     def g(x: int):
         return x
 
-C.f(0) # E: EXPECTED Literal[0] <: C
+C.f(0)
 assert_type(C.g(0), int)
     "#,
 );
