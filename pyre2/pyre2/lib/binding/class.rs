@@ -491,6 +491,18 @@ impl<'a> BindingsBuilder<'a> {
         );
     }
 
+    // Synthesize a class definition for NewType
+    pub fn synthesize_typing_new_type(&mut self, class_name: Identifier, base: Expr) {
+        self.synthesize_class_def(
+            class_name,
+            base,
+            Box::new([]),
+            Vec::new(),
+            IllegalIdentifierHandling::Error,
+            false,
+        );
+    }
+
     pub fn synthesize_typed_dict_def(
         &mut self,
         class_name: Identifier,

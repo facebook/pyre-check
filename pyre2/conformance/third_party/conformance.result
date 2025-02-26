@@ -36,15 +36,16 @@
     "Line 72: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']"
   ],
   "aliases_newtype.py": [
-    "Line 32: Expected 1 errors",
+    "Line 11: Expected 1 errors",
+    "Line 20: Expected 1 errors",
+    "Line 23: Expected 1 errors",
     "Line 44: Expected 1 errors",
     "Line 47: Expected 1 errors",
     "Line 49: Expected 1 errors",
     "Line 51: Expected 1 errors",
     "Line 58: Expected 1 errors",
     "Line 62: Expected 1 errors",
-    "Line 13: Unexpected errors ['Expected a type form, got instance of `NewType`', 'EXPECTED Literal[42] <: TypeVar[_T]']",
-    "Line 15: Unexpected errors ['assert_type(Any, int) failed', 'Object of class `TypeVar` has no attribute `__add__`', 'EXPECTED Literal[5] <: TypeVar[_T]']"
+    "Line 13: Unexpected errors ['EXPECTED int <: UserId']"
   ],
   "aliases_recursive.py": [
     "Line 19: Expected 1 errors",
@@ -609,24 +610,14 @@
     "Line 52: Expected 1 errors",
     "Line 59: Expected 1 errors",
     "Line 66: Expected 1 errors",
-    "Line 99: Expected 1 errors",
     "Line 106: Expected 1 errors",
-    "Line 36: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[2] <: TypeVar[_T]']",
-    "Line 37: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]']",
-    "Line 38: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
-    "Line 39: Unexpected errors ['EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]', 'EXPECTED Literal[1] <: TypeVar[_T]']",
-    "Line 85: Unexpected errors ['EXPECTED tuple[float] <: tuple[*tuple[int]]']",
-    "Line 97: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']"
+    "Line 36: Unexpected errors ['EXPECTED Array[tuple[int, int]] <: Array[tuple[Height, Width]]']",
+    "Line 37: Unexpected errors ['EXPECTED Array[tuple[int, int, int]] <: Array[tuple[Batch, Height, Width]]']",
+    "Line 38: Unexpected errors ['EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]']",
+    "Line 85: Unexpected errors ['EXPECTED tuple[float] <: tuple[*tuple[int]]']"
   ],
   "generics_typevartuple_callable.py": [],
   "generics_typevartuple_concat.py": [
-    "Line 26: Unexpected errors ['Expected a type form, got instance of `NewType`']",
-    "Line 30: Unexpected errors ['Expected a type form, got instance of `NewType`']",
-    "Line 34: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
-    "Line 38: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
-    "Line 40: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
-    "Line 42: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
-    "Line 44: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
     "Line 56: Unexpected errors ['EXPECTED tuple[*tuple[Unknown, ...], Unknown] <: tuple[*?_TypeVarTuple, ?_TypeVar]']"
   ],
   "generics_typevartuple_overloads.py": [
@@ -634,11 +625,9 @@
     "Line 31: Unexpected errors ['assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]) failed', 'No matching overload found']"
   ],
   "generics_typevartuple_specialization.py": [
-    "Line 28: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
-    "Line 33: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
     "Line 45: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTuple, type[tuple[int, *TypeVarTuple[Ts]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array[tuple[*TypeVarTuple[Ts]]]]]]\"]",
     "Line 46: Unexpected errors ['assert_type(Any, tuple[int, float, bool]) failed']",
-    "Line 47: Unexpected errors ['assert_type(Any, tuple[str, Array[tuple[Any]]]) failed', 'Expected a type form, got instance of `NewType`']",
+    "Line 47: Unexpected errors ['assert_type(Any, tuple[str, Array[tuple[Height]]]) failed']",
     "Line 50: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTuple, type[tuple[int, *TypeVarTuple[Ts]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[NamedArray, type[tuple[str, Array[tuple[*TypeVarTuple[Ts]]]]]]\"]",
     "Line 51: Unexpected errors ['assert_type(Any, tuple[int]) failed']",
     "Line 52: Unexpected errors ['assert_type(Any, tuple[str, Array[tuple[Any, ...]]]) failed']",
@@ -669,12 +658,7 @@
     "Line 158: Unexpected errors ['assert_type(Any, tuple[*tuple[int, ...], str]) failed']",
     "Line 159: Unexpected errors ['assert_type(Any, tuple[*tuple[int, ...], str]) failed']"
   ],
-  "generics_typevartuple_unpack.py": [
-    "Line 21: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
-    "Line 26: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']",
-    "Line 36: Unexpected errors ['Expected a type form, got instance of `NewType`']",
-    "Line 40: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']"
-  ],
+  "generics_typevartuple_unpack.py": [],
   "generics_upper_bound.py": [
     "Line 24: Expected 1 errors",
     "Line 51: Expected 1 errors",
