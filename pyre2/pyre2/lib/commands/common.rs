@@ -8,9 +8,11 @@
 use clap::Parser;
 use tracing::debug;
 
+use crate::clap_env;
+
 #[derive(Debug, Parser, Clone)]
 pub struct CommonArgs {
-    #[clap(long, short = 'j', default_value = "0")]
+    #[clap(long, short = 'j', default_value = "0", env = clap_env("THREADS"))]
     threads: usize,
 }
 

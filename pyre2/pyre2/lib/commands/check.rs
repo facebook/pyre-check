@@ -22,6 +22,7 @@ use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
 use tracing::info;
 
+use crate::clap_env;
 use crate::commands::common::CommonArgs;
 use crate::commands::util::module_from_path;
 use crate::config::ConfigFile;
@@ -60,34 +61,35 @@ enum OutputFormat {
 pub struct Args {
     files: Vec<String>,
     /// Write the errors to a file, instead of printing them.
-    #[arg(long, short = 'o')]
+    #[arg(long, short = 'o', env = clap_env("OUTPUT"))]
     output: Option<PathBuf>,
-    #[clap(long, short = 'I')]
+    #[clap(long, short = 'I', env = clap_env("INCLUDE"))]
     include: Vec<PathBuf>,
-    #[clap(long, value_enum, default_value_t)]
+    #[clap(long, value_enum, default_value_t, env = clap_env("OUTPUT_FORMAT"))]
     output_format: OutputFormat,
     /// Check all reachable modules, not just the ones that are passed in explicitly on CLI positional arguments.
-    #[clap(long, short = 'a')]
+    #[clap(long, short = 'a', env = clap_env("CHECK_ALL"))]
     check_all: bool,
     /// Watch for file changes and re-check them.
-    #[clap(long)]
+    #[clap(long, env = clap_env("WATCH"))]
     pub watch: bool,
     /// Produce debugging information about the type checking process.
-    #[clap(long)]
+    #[clap(long, env = clap_env("DEBUG_INFO"))]
     debug_info: Option<PathBuf>,
-    #[clap(long)]
+    #[clap(long, env = clap_env("REPORT_BINDING_MEMORY"))]
     report_binding_memory: Option<PathBuf>,
     #[clap(
         long,
         default_missing_value = "5",
         require_equals = true,
-        num_args = 0..=1
+        num_args = 0..=1,
+        env = clap_env("SUMMARIZE_ERRORS")
     )]
     summarize_errors: Option<usize>,
-    #[clap(long)]
+    #[clap(long, env = clap_env("PYTHON_VERSION"))]
     python_version: Option<String>,
     /// Check against any `E:` lines in the file.
-    #[clap(long)]
+    #[clap(long, env = clap_env("EXPECTATIONS"))]
     expectations: bool,
 
     #[clap(flatten)]

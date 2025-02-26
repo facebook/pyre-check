@@ -15,6 +15,7 @@ use dupe::Dupe;
 use serde::Deserialize;
 use tracing::info;
 
+use crate::clap_env;
 use crate::commands::common::CommonArgs;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
@@ -35,7 +36,7 @@ pub struct Args {
     input_path: PathBuf,
 
     /// Path to output JSON file
-    #[arg(long = "output", short = 'o')]
+    #[arg(long = "output", short = 'o', env = clap_env("OUTPUT_PATH"))]
     output_path: Option<PathBuf>,
 
     #[clap(flatten)]

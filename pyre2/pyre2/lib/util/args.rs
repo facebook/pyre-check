@@ -10,6 +10,8 @@ use std::ffi::OsString;
 use anyhow::Context as _;
 use argfile::Argument;
 
+pub static ENV_VAR_OVERRIDE_PREFIX: &str = "PYRE_";
+
 /// Do `@` file expansion
 pub fn get_args_expanded(args: impl Iterator<Item = OsString>) -> anyhow::Result<Vec<OsString>> {
     // Most programs drop empty lines, so we do too.
@@ -24,4 +26,8 @@ pub fn get_args_expanded(args: impl Iterator<Item = OsString>) -> anyhow::Result
 
     argfile::expand_args_from(args, parse_file_skipping_blanks, argfile::PREFIX)
         .context("When parsing @arg files")
+}
+
+pub fn clap_env(suffix: &str) -> String {
+    ENV_VAR_OVERRIDE_PREFIX.to_owned() + suffix
 }

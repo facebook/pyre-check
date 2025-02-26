@@ -13,6 +13,7 @@ use std::path::Path;
 use std::process::ExitCode;
 
 use clap::Parser;
+use pyre2::clap_env;
 use pyre2::get_args_expanded;
 use pyre2::init_tracing;
 use pyre2::run::Command;
@@ -24,12 +25,12 @@ use pyre2::ConfigFile;
 #[command(about = "Next generation of Pyre type checker", long_about = None)]
 struct Args {
     /// Enable verbose logging.
-    #[clap(long = "verbose", short = 'v', global = true)]
+    #[clap(long = "verbose", short = 'v', global = true, env = clap_env("VERBOSE"))]
     verbose: bool,
 
     /// Set this to true to run profiling of fast jobs.
     /// Will run the command repeatedly.
-    #[clap(long = "profiling", global = true, hide = true)]
+    #[clap(long = "profiling", global = true, hide = true, env = clap_env("PROFILING"))]
     profiling: bool,
 
     #[command(subcommand)]

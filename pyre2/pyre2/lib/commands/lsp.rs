@@ -61,6 +61,7 @@ use ruff_text_size::TextSize;
 use serde::de::DeserializeOwned;
 use starlark_map::small_map::SmallMap;
 
+use crate::clap_env;
 use crate::commands::util::module_from_path;
 use crate::error::style::ErrorStyle;
 use crate::metadata::RuntimeMetadata;
@@ -83,7 +84,7 @@ use crate::util::prelude::VecExt;
 
 #[derive(Debug, Parser, Clone)]
 pub struct Args {
-    #[clap(long = "include", short = 'I')]
+    #[clap(long = "include", short = 'I', env = clap_env("INCLUDE"))]
     include: Vec<PathBuf>,
 }
 

@@ -49,6 +49,7 @@ mod visitors;
 
 pub use crate::commands::run;
 pub use crate::config::ConfigFile;
+pub use crate::util::args::clap_env;
 pub use crate::util::args::get_args_expanded;
 pub use crate::util::trace::init_tracing;
 pub use crate::util::watcher::Watcher;
