@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::testcase;
 use crate::testcase_with_bug;
 
 testcase_with_bug!(
@@ -39,8 +40,7 @@ nt1: GoodNewType1[int] # E: Expected 0 type arguments for class `GoodNewType1`, 
      "#,
 );
 
-testcase_with_bug!(
-    "TODO: determine what binding to generate for the LHS of a NewType declaration name NewType has the wrong arguments",
+testcase!(
     test_new_type_wrong_arity,
     r#"
 from typing import NewType 
