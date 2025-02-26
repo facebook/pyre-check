@@ -62,16 +62,6 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    // Check that NewType has the right number of arguments.
-    fn check_new_type_args(&mut self, args: &[Expr], range: TextRange) {
-        if args.len() != 2 {
-            self.error(
-                range,
-                format!("NewType expects 2 args. Got `{}`.", args.len()),
-            );
-        }
-    }
-
     fn assign_type_var(&mut self, name: &ExprName, call: &mut ExprCall) {
         self.ensure_expr(&mut call.func);
         let mut iargs = call.arguments.args.iter_mut();
@@ -177,21 +167,13 @@ impl<'a> BindingsBuilder<'a> {
         );
     }
 
-    fn assign_new_type(&mut self, name: &ExprName, args: &[Expr]) {
-        self.check_new_type_args(args, name.range());
-        match args {
-            [new_type_name, member] => {
-                self.check_functional_definition_name(&name.id, new_type_name);
-                self.ensure_type(&mut member.clone(), &mut None);
-                self.synthesize_typing_new_type(
-                    Identifier::new(name.id.clone(), name.range()),
-                    member.clone(),
-                );
-            }
-            // TODO zeina: what binding to create when we have the wrong number of arguments?
-            // this is currently causing an error of the form Could not find flow binding for <name>
-            _ => {}
-        }
+    fn assign_new_type(&mut self, name: &ExprName, new_type_name: &Expr, base: &Expr) {
+        self.check_functional_definition_name(&name.id, new_type_name);
+        self.ensure_type(&mut base.clone(), &mut None);
+        self.synthesize_typing_new_type(
+            Identifier::new(name.id.clone(), name.range()),
+            base.clone(),
+        );
     }
 
     /// Evaluate the statements and update the bindings.
@@ -263,8 +245,10 @@ impl<'a> BindingsBuilder<'a> {
                         }
                         SpecialExport::NewType => {
                             let args = &call.arguments.args;
-                            self.assign_new_type(name, args);
-                            return;
+                            if args.len() == 2 {
+                                self.assign_new_type(name, &args[0], &args[1]);
+                                return;
+                            }
                         }
                         _ => {}
                     }

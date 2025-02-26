@@ -497,22 +497,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "Could not find flow binding for `BadNewType6`",
-      "description": "Could not find flow binding for `BadNewType6`",
+      "column": 43,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
       "line": 60,
       "name": "PyreError",
-      "stop_column": 12,
-      "stop_line": 60
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "NewType expects 2 args. Got `3`.",
-      "description": "NewType expects 2 args. Got `3`.",
-      "line": 60,
-      "name": "PyreError",
-      "stop_column": 12,
+      "stop_column": 46,
       "stop_line": 60
     }
   ],

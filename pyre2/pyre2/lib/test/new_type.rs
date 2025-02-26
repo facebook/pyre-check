@@ -44,8 +44,8 @@ testcase_with_bug!(
     test_new_type_wrong_arity,
     r#"
 from typing import NewType 
-UserId = NewType("UserId", int, int) # E: NewType expects 2 args. Got `3`. # E: Could not find flow binding for `UserId`
-UserId = NewType("UserId") # E: NewType expects 2 args. Got `1`.
-userId = NewType() # E: NewType expects 2 args. Got `0`. # E: Could not find flow binding for `userId 
+UserId = NewType("UserId", int, int) # E: Expected 2 positional arguments, got 3
+UserId = NewType("UserId") # E: Missing argument `tp`
+userId = NewType() # E: Missing argument `name` # E: Missing argument `tp`
      "#,
 );
