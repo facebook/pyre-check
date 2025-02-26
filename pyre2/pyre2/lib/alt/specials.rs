@@ -33,13 +33,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     // Check if type args can be used to construct a valid tuple type
-    // Returns the successfully constructed tuple along with whether any arguments were unpacked
-    // Otherwise, records an error and falls back to Any
+    // If successful, returns the constructed tuple along with whether any arguments were unpacked
+    // Otherwise, records an error and return None
     fn check_args_and_construct_tuple(
         &self,
         arguments: &[Expr],
         errors: &ErrorCollector,
-    ) -> Result<(Tuple, bool), Type> {
+    ) -> Option<(Tuple, bool)> {
         let mut prefix: Vec<Type> = Vec::new();
         let mut suffix: Vec<Type> = Vec::new();
         let mut middle: Option<Type> = None;
@@ -51,21 +51,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     && arguments.len() == 2
                 {
                     if has_unpack || t.is_unpack() {
-                        return Err(self.error(
+                        self.error(
                             errors,
                             value.range(),
                             "`...` cannot be used with an unpacked TypeVarTuple or tuple"
                                 .to_owned(),
-                        ));
+                        );
+                        return None;
                     } else {
-                        return Ok((Tuple::unbounded(t.clone()), false));
+                        return Some((Tuple::unbounded(t.clone()), false));
                     }
                 } else {
-                    return Err(self.error(
+                    self.error(
                         errors,
                         value.range(),
                         "Invalid position for `...`".to_owned(),
-                    ));
+                    );
+                    return None;
                 }
             }
             let ty = self.expr_untype(value, errors);
@@ -83,7 +85,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     if middle.is_none() {
                         middle = Some(ty)
                     } else {
-                        return Err(self.extra_unpack_error(errors, value.range()));
+                        self.extra_unpack_error(errors, value.range());
+                        return None;
                     }
                 }
                 Type::Unpack(box Type::Tuple(Tuple::Unpacked(box (pre, mid, suff)))) => {
@@ -93,7 +96,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         middle = Some(mid);
                         suffix.extend(suff)
                     } else {
-                        return Err(self.extra_unpack_error(errors, value.range()));
+                        self.extra_unpack_error(errors, value.range());
+                        return None;
                     }
                 }
                 Type::Unpack(box ty) if ty.is_kind_type_var_tuple() => {
@@ -101,22 +105,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     if middle.is_none() {
                         middle = Some(ty)
                     } else {
-                        return Err(self.extra_unpack_error(errors, value.range()));
+                        self.extra_unpack_error(errors, value.range());
+                        return None;
                     }
                 }
                 Type::Unpack(box ty) => {
-                    return Err(self.error(
+                    self.error(
                         errors,
                         value.range(),
                         format!("Expected a tuple or TypeVarTuple, got `{}`", ty),
-                    ));
+                    );
+                    return None;
                 }
                 ty if ty.is_kind_type_var_tuple() => {
-                    return Err(self.error(
+                    self.error(
                         errors,
                         value.range(),
                         "TypeVarTuple must be unpacked".to_owned(),
-                    ));
+                    );
+                    return None;
                 }
                 _ => {
                     if middle.is_none() {
@@ -128,9 +135,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
         }
         if let Some(middle) = middle {
-            Ok((Tuple::unpacked(prefix, middle, suffix), has_unpack))
+            Some((Tuple::unpacked(prefix, middle, suffix), has_unpack))
         } else {
-            Ok((Tuple::concrete(prefix), has_unpack))
+            Some((Tuple::concrete(prefix), has_unpack))
         }
     }
 
@@ -158,8 +165,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 arguments.map(|arg| self.expr_untype(arg, errors)),
             )),
             SpecialForm::Tuple => match self.check_args_and_construct_tuple(arguments, errors) {
-                Ok((tuple, _)) => Type::type_form(Type::Tuple(tuple)),
-                Err(ty) => ty,
+                Some((tuple, _)) => Type::type_form(Type::Tuple(tuple)),
+                None => Type::type_form(Type::Tuple(Tuple::unbounded(Type::any_error()))),
             },
             SpecialForm::Literal => {
                 let mut literals = Vec::new();
@@ -206,20 +213,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 match &arguments[0] {
                     Expr::List(ExprList { elts, .. }) => {
                         match self.check_args_and_construct_tuple(elts, errors) {
-                            Ok((tuple, true)) => Type::type_form(Type::callable(
+                            Some((tuple, true)) => Type::type_form(Type::callable(
                                 vec![Param::VarArg(Type::Unpack(Box::new(Type::Tuple(tuple))))],
                                 ret,
                             )),
-                            Ok((Tuple::Concrete(elts), false)) => Type::type_form(Type::callable(
-                                elts.map(|t| Param::PosOnly(t.clone(), Required::Required)),
-                                ret,
-                            )),
-                            Ok(_) => self.error(
-                                errors,
-                                range,
-                                "Unrecognized callable type form".to_owned(),
-                            ),
-                            Err(t) => t,
+                            Some((Tuple::Concrete(elts), false)) => {
+                                Type::type_form(Type::callable(
+                                    elts.map(|t| Param::PosOnly(t.clone(), Required::Required)),
+                                    ret,
+                                ))
+                            }
+                            Some(_) => {
+                                self.error(
+                                    errors,
+                                    range,
+                                    "Unrecognized callable type form".to_owned(),
+                                );
+                                Type::type_form(Type::callable_ellipsis(Type::any_error()))
+                            }
+                            None => Type::type_form(Type::callable_ellipsis(Type::any_error())),
                         }
                     }
                     Expr::EllipsisLiteral(_) => Type::type_form(Type::callable_ellipsis(ret)),
@@ -231,22 +243,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         let ty = self.expr_untype(x, errors);
                         match ty {
                             Type::Concatenate(args, pspec) => {
-                                Type::type_form(Type::callable_concatenate(args , *pspec, ret))
+                                Type::type_form(Type::callable_concatenate(args, *pspec, ret))
                             }
-                            _ => self.error(errors, x.range(), format!("Callable types can only have `Concatenate` in this position, got `{}`", ty.deterministic_printing())),
+                            _ => {
+                                self.error(errors, x.range(), format!("Callable types can only have `Concatenate` in this position, got `{}`", ty.deterministic_printing()));
+                                Type::type_form(Type::callable_ellipsis(Type::any_error()))
+                            }
                         }
                     }
-                    x => self.todo(errors, "expr_infer, Callable type", x),
+                    x => {
+                        self.todo(errors, "expr_infer, Callable type", x);
+                        Type::type_form(Type::callable_ellipsis(Type::any_error()))
+                    }
                 }
             }
-            SpecialForm::Callable => self.error(
-                errors,
-                range,
-                format!(
-                    "Callable requires exactly two arguments but {} was found",
-                    arguments.len()
-                ),
-            ),
+            SpecialForm::Callable => {
+                self.error(
+                    errors,
+                    range,
+                    format!(
+                        "Callable requires exactly two arguments but {} was found",
+                        arguments.len()
+                    ),
+                );
+                Type::type_form(Type::callable_ellipsis(Type::any_error()))
+            }
             SpecialForm::TypeGuard if arguments.len() == 1 => Type::type_form(Type::TypeGuard(
                 Box::new(self.expr_untype(&arguments[0], errors)),
             )),
