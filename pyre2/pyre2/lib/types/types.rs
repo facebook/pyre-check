@@ -436,6 +436,17 @@ impl Type {
         }
     }
 
+    pub fn is_kind_param_spec(&self) -> bool {
+        match self {
+            Type::Ellipsis
+            | Type::ParamSpec(_)
+            | Type::ParamSpecValue(_)
+            | Type::Concatenate(_, _) => true,
+            Type::Quantified(q) if q.is_param_spec() => true,
+            _ => false,
+        }
+    }
+
     pub fn as_typeguard(&self) -> Option<&Type> {
         match self {
             Type::Callable(

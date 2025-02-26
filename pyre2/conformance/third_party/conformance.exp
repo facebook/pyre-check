@@ -13,16 +13,6 @@
     },
     {
       "code": -2,
-      "column": 24,
-      "concise_description": "Expected a type form, got instance of `list[type[str]]`",
-      "description": "Expected a type form, got instance of `list[type[str]]`",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed",
       "description": "assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed",
@@ -44,8 +34,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
-      "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
+      "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
+      "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
       "line": 57,
       "name": "PyreError",
       "stop_column": 53,
@@ -275,16 +265,6 @@
     },
     {
       "code": -2,
-      "column": 24,
-      "concise_description": "Expected a type form, got instance of `list[type[str]]`",
-      "description": "Expected a type form, got instance of `list[type[str]]`",
-      "line": 54,
-      "name": "PyreError",
-      "stop_column": 34,
-      "stop_line": 54
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed",
       "description": "assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed",
@@ -306,8 +286,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
-      "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
+      "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
+      "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
       "line": 68,
       "name": "PyreError",
       "stop_column": 53,
@@ -828,16 +808,6 @@
       "name": "PyreError",
       "stop_column": 20,
       "stop_line": 69
-    },
-    {
-      "code": -2,
-      "column": 37,
-      "concise_description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
-      "description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
-      "line": 82,
-      "name": "PyreError",
-      "stop_column": 47,
-      "stop_line": 82
     }
   ],
   "aliases_typealiastype.py": [
@@ -1006,16 +976,6 @@
   ],
   "annotations_coroutines.py": [],
   "annotations_forward_refs.py": [
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
-      "description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 42
-    },
     {
       "code": -2,
       "column": 9,
@@ -1325,16 +1285,6 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
-      "description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
-      "line": 89,
-      "name": "PyreError",
-      "stop_column": 19,
-      "stop_line": 89
-    },
-    {
-      "code": -2,
-      "column": 9,
       "concise_description": "Expected a type form, got instance of `tuple[type[int], type[str]]`",
       "description": "Expected a type form, got instance of `tuple[type[int], type[str]]`",
       "line": 90,
@@ -1523,16 +1473,6 @@
       "name": "PyreError",
       "stop_column": 18,
       "stop_line": 55
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "Expected a type form, got instance of `list[type[int]]`",
-      "description": "Expected a type form, got instance of `list[type[int]]`",
-      "line": 57,
-      "name": "PyreError",
-      "stop_column": 23,
-      "stop_line": 57
     },
     {
       "code": -2,
@@ -5856,8 +5796,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[str]]) failed",
-      "description": "assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[str]]) failed",
+      "concise_description": "assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[(str, int)]]) failed",
+      "description": "assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[(str, int)]]) failed",
       "line": 79,
       "name": "PyreError",
       "stop_column": 62,
@@ -5865,63 +5805,13 @@
     },
     {
       "code": -2,
-      "column": 35,
-      "concise_description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
-      "description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
-      "line": 79,
-      "name": "PyreError",
-      "stop_column": 60,
-      "stop_line": 79
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[str]) failed",
-      "description": "assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[str]) failed",
+      "concise_description": "assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[(str, int)]) failed",
+      "description": "assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[(str, int)]) failed",
       "line": 80,
       "name": "PyreError",
       "stop_column": 58,
       "stop_line": 80
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
-      "description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
-      "line": 80,
-      "name": "PyreError",
-      "stop_column": 57,
-      "stop_line": 80
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class_ParamSpec[Any], Class_ParamSpec[bool]) failed",
-      "description": "assert_type(Class_ParamSpec[Any], Class_ParamSpec[bool]) failed",
-      "line": 81,
-      "name": "PyreError",
-      "stop_column": 74,
-      "stop_line": 81
-    },
-    {
-      "code": -2,
-      "column": 29,
-      "concise_description": "Expected a type form, got instance of `list[type[bool]]`",
-      "description": "Expected a type form, got instance of `list[type[bool]]`",
-      "line": 81,
-      "name": "PyreError",
-      "stop_column": 41,
-      "stop_line": 81
-    },
-    {
-      "code": -2,
-      "column": 46,
-      "concise_description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
-      "description": "Expected 1 type argument for class `Class_ParamSpec`, got 2.",
-      "line": 81,
-      "name": "PyreError",
-      "stop_column": 73,
-      "stop_line": 81
     },
     {
       "code": -2,
@@ -6006,8 +5896,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(type[Foo6[int, tuple[str]]], type[Foo6[int, tuple[str, Any]]]) failed",
-      "description": "assert_type(type[Foo6[int, tuple[str]]], type[Foo6[int, tuple[str, Any]]]) failed",
+      "concise_description": "assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed",
+      "description": "assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed",
       "line": 151,
       "name": "PyreError",
       "stop_column": 65,
@@ -6015,32 +5905,42 @@
     },
     {
       "code": -2,
-      "column": 49,
-      "concise_description": "Expected a type form, got instance of `list[type[bool] | type[float]]`",
-      "description": "Expected a type form, got instance of `list[type[bool] | type[float]]`",
+      "column": 13,
+      "concise_description": "Expected a valid ParamSpec expression",
+      "description": "Expected a valid ParamSpec expression",
       "line": 151,
       "name": "PyreError",
-      "stop_column": 62,
+      "stop_column": 27,
       "stop_line": 151
     },
     {
       "code": -2,
-      "column": 28,
-      "concise_description": "Expected a type form, got instance of `list[type[bytes]]`",
-      "description": "Expected a type form, got instance of `list[type[bytes]]`",
+      "column": 34,
+      "concise_description": "Expected a valid ParamSpec expression",
+      "description": "Expected a valid ParamSpec expression",
+      "line": 151,
+      "name": "PyreError",
+      "stop_column": 63,
+      "stop_line": 151
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Expected a valid ParamSpec expression",
+      "description": "Expected a valid ParamSpec expression",
       "line": 152,
       "name": "PyreError",
-      "stop_column": 35,
+      "stop_column": 36,
       "stop_line": 152
     },
     {
       "code": -2,
-      "column": 58,
-      "concise_description": "Expected a type form, got instance of `list[type[bytes]]`",
-      "description": "Expected a type form, got instance of `list[type[bytes]]`",
+      "column": 43,
+      "concise_description": "Expected a valid ParamSpec expression",
+      "description": "Expected a valid ParamSpec expression",
       "line": 152,
       "name": "PyreError",
-      "stop_column": 65,
+      "stop_column": 66,
       "stop_line": 152
     },
     {
@@ -6228,6 +6128,16 @@
       "name": "PyreError",
       "stop_column": 31,
       "stop_line": 10
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "ParamSpec cannot be used for type parameter",
+      "description": "ParamSpec cannot be used for type parameter",
+      "line": 31,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 31
     }
   ],
   "generics_paramspec_components.py": [
@@ -6396,26 +6306,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Y[int, (int)], Y[int, Any]) failed",
-      "description": "assert_type(Y[int, (int)], Y[int, Any]) failed",
-      "line": 82,
-      "name": "PyreError",
-      "stop_column": 35,
-      "stop_line": 82
-    },
-    {
-      "code": -2,
-      "column": 28,
-      "concise_description": "Expected a type form, got instance of `list[type[int]]`",
-      "description": "Expected a type form, got instance of `list[type[int]]`",
-      "line": 82,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 82
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "assert_type((int) -> str, (int) -> str) failed",
       "description": "assert_type((int) -> str, (int) -> str) failed",
       "line": 84,
@@ -6487,49 +6377,19 @@
   "generics_paramspec_specialization.py": [
     {
       "code": -2,
-      "column": 27,
-      "concise_description": "Expected a type form, got instance of `list[type[bool] | type[int]]`",
-      "description": "Expected a type form, got instance of `list[type[bool] | type[int]]`",
-      "line": 32,
+      "column": 15,
+      "concise_description": "Expected a valid ParamSpec expression",
+      "description": "Expected a valid ParamSpec expression",
+      "line": 44,
       "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "Expected a type form, got instance of `list[@_]`",
-      "description": "Expected a type form, got instance of `list[@_]`",
-      "line": 40,
-      "name": "PyreError",
-      "stop_column": 29,
-      "stop_line": 40
-    },
-    {
-      "code": -2,
-      "column": 31,
-      "concise_description": "Expected a type form, got instance of `list[@_]`",
-      "description": "Expected a type form, got instance of `list[@_]`",
-      "line": 40,
-      "name": "PyreError",
-      "stop_column": 33,
-      "stop_line": 40
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "Expected a type form, got instance of `list[type[bool] | type[int] | type[str]]`",
-      "description": "Expected a type form, got instance of `list[type[bool] | type[int] | type[str]]`",
-      "line": 52,
-      "name": "PyreError",
-      "stop_column": 38,
-      "stop_line": 52
+      "stop_column": 31,
+      "stop_line": 44
     },
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
+      "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 53,
       "name": "PyreError",
       "stop_column": 8,
@@ -6537,9 +6397,39 @@
     },
     {
       "code": -2,
+      "column": 9,
+      "concise_description": "EXPECTED Literal[0] <: str",
+      "description": "EXPECTED Literal[0] <: str",
+      "line": 53,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 53
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED Literal[''] <: bool",
+      "description": "EXPECTED Literal[''] <: bool",
+      "line": 53,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 53
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
+      "line": 53,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 53
+    },
+    {
+      "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
+      "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 54,
       "name": "PyreError",
       "stop_column": 8,
@@ -6547,9 +6437,29 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED Literal[''] <: bool",
+      "description": "EXPECTED Literal[''] <: bool",
+      "line": 54,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 54
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
+      "line": 54,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 54
+    },
+    {
+      "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
+      "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 55,
       "name": "PyreError",
       "stop_column": 8,
@@ -6557,19 +6467,39 @@
     },
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "Expected 1 type argument for class `ClassC`, got 3.",
-      "description": "Expected 1 type argument for class `ClassC`, got 3.",
-      "line": 58,
+      "column": 9,
+      "concise_description": "EXPECTED Literal[0] <: str",
+      "description": "EXPECTED Literal[0] <: str",
+      "line": 55,
       "name": "PyreError",
-      "stop_column": 37,
-      "stop_line": 58
+      "stop_column": 10,
+      "stop_line": 55
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED Literal[''] <: bool",
+      "description": "EXPECTED Literal[''] <: bool",
+      "line": 55,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 55
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
+      "line": 55,
+      "name": "PyreError",
+      "stop_column": 18,
+      "stop_line": 55
     },
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
+      "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 59,
       "name": "PyreError",
       "stop_column": 8,
@@ -6577,9 +6507,39 @@
     },
     {
       "code": -2,
+      "column": 9,
+      "concise_description": "EXPECTED Literal[0] <: str",
+      "description": "EXPECTED Literal[0] <: str",
+      "line": 59,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 59
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED Literal[''] <: bool",
+      "description": "EXPECTED Literal[''] <: bool",
+      "line": 59,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 59
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
+      "line": 59,
+      "name": "PyreError",
+      "stop_column": 20,
+      "stop_line": 59
+    },
+    {
+      "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
+      "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 60,
       "name": "PyreError",
       "stop_column": 8,
@@ -6587,12 +6547,62 @@
     },
     {
       "code": -2,
+      "column": 13,
+      "concise_description": "EXPECTED Literal[''] <: bool",
+      "description": "EXPECTED Literal[''] <: bool",
+      "line": 60,
+      "name": "PyreError",
+      "stop_column": 15,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
+      "line": 60,
+      "name": "PyreError",
+      "stop_column": 21,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
       "column": 5,
-      "concise_description": "Unexpected ParamSpec type",
-      "description": "Unexpected ParamSpec type",
+      "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
+      "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 61,
       "name": "PyreError",
       "stop_column": 8,
+      "stop_line": 61
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "EXPECTED Literal[0] <: str",
+      "description": "EXPECTED Literal[0] <: str",
+      "line": 61,
+      "name": "PyreError",
+      "stop_column": 10,
+      "stop_line": 61
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "EXPECTED Literal[''] <: bool",
+      "description": "EXPECTED Literal[''] <: bool",
+      "line": 61,
+      "name": "PyreError",
+      "stop_column": 14,
+      "stop_line": 61
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
+      "line": 61,
+      "name": "PyreError",
+      "stop_column": 18,
       "stop_line": 61
     }
   ],
@@ -6980,16 +6990,6 @@
       "name": "PyreError",
       "stop_column": 21,
       "stop_line": 34
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
-      "description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
-      "line": 50,
-      "name": "PyreError",
-      "stop_column": 27,
-      "stop_line": 50
     },
     {
       "code": -2,

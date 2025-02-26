@@ -27,6 +27,9 @@ use crate::binding::binding::KeyLegacyTypeParam;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::graph::index::Idx;
+use crate::types::callable::Param;
+use crate::types::callable::ParamList;
+use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassType;
@@ -91,6 +94,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> TArgs {
         let tparams = cls.tparams();
+        let nparams = tparams.len();
         let nargs = targs.len();
         let mut checked_targs = Vec::new();
         let mut targ_idx = 0;
@@ -164,6 +168,38 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 checked_targs.push(tuple_type);
             } else if param.quantified.is_type_var_tuple() {
                 checked_targs.push(Type::any_tuple())
+            } else if param.quantified.is_param_spec()
+                && nparams == 1
+                && let Some(arg) = targs.get(targ_idx)
+            {
+                if arg.is_kind_param_spec() {
+                    checked_targs.push(arg.clone());
+                    targ_idx += 1;
+                } else {
+                    // If the only type param is a ParamSpec and the type argument
+                    // is not a parameter expression, then treat the entire type argument list
+                    // as a parameter list
+                    let params: Vec<Param> =
+                        targs.map(|t| Param::PosOnly(t.clone(), Required::Required));
+                    checked_targs.push(Type::ParamSpecValue(ParamList::new(params)));
+                    targ_idx = nargs;
+                }
+            } else if param.quantified.is_param_spec()
+                && let Some(arg) = targs.get(targ_idx)
+            {
+                if arg.is_kind_param_spec() {
+                    checked_targs.push(arg.clone());
+                } else {
+                    self.error(
+                        errors,
+                        range,
+                        "Expected a valid ParamSpec expression".to_owned(),
+                    );
+                    checked_targs.push(Type::Ellipsis);
+                }
+                targ_idx += 1;
+            } else if param.quantified.is_param_spec() {
+                checked_targs.push(Type::Ellipsis);
             } else if let Some(arg) = targs.get(targ_idx) {
                 match arg {
                     Type::Unpack(_) => {
@@ -179,6 +215,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     _ => {
                         let arg = if arg.is_kind_type_var_tuple() {
                             self.error(errors, range, "TypeVarTuple must be unpacked".to_owned())
+                        } else if arg.is_kind_param_spec() {
+                            self.error(
+                                errors,
+                                range,
+                                "ParamSpec cannot be used for type parameter".to_owned(),
+                            )
                         } else {
                             arg.clone()
                         };

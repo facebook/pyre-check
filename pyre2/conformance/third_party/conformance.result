@@ -9,10 +9,9 @@
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
     "Line 38: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]\"]",
-    "Line 41: Unexpected errors ['Expected a type form, got instance of `list[type[str]]`']",
     "Line 53: Unexpected errors ['assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed']",
     "Line 54: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
-    "Line 57: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
+    "Line 57: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed']",
     "Line 60: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']",
     "Line 98: Unexpected errors ['assert_type(list[Any], list[str]) failed']"
   ],
@@ -29,10 +28,9 @@
     "Line 14: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Vector, type[Iterable[tuple[TypeVar[TFloat], TypeVar[TFloat]]]]]\"]",
     "Line 18: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Vector, type[Iterable[tuple[TypeVar[TFloat], TypeVar[TFloat]]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[Vector, type[Iterable[tuple[TypeVar[TFloat], TypeVar[TFloat]]]]]\"]",
     "Line 51: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GoodTypeAlias6, type[tuple[int, int, TypeVar[S], TypeVar[T]]]]\"]",
-    "Line 54: Unexpected errors ['Expected a type form, got instance of `list[type[str]]`']",
     "Line 64: Unexpected errors ['assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed']",
     "Line 65: Unexpected errors ['assert_type(Any, tuple[int, int, int, str]) failed']",
-    "Line 68: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
+    "Line 68: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed']",
     "Line 72: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']"
   ],
   "aliases_newtype.py": [
@@ -80,8 +78,7 @@
     "Line 81: Expected 1 errors",
     "Line 84: Expected 1 errors",
     "Line 86: Expected 1 errors",
-    "Line 90: Expected 1 errors",
-    "Line 82: Unexpected errors ['Expected a type form, got instance of `list[type[int] | type[str]]`']"
+    "Line 90: Expected 1 errors"
   ],
   "aliases_typealiastype.py": [
     "Line 44: Expected 1 errors",
@@ -122,6 +119,7 @@
     "Line 24: Expected 1 errors",
     "Line 25: Expected 1 errors",
     "Line 41: Expected 1 errors",
+    "Line 42: Expected 1 errors",
     "Line 46: Expected 1 errors",
     "Line 47: Expected 1 errors",
     "Line 48: Expected 1 errors",
@@ -141,6 +139,7 @@
     "Line 23: Unexpected errors ['Expected a callable, got type[?_TypeVar]']"
   ],
   "annotations_typeexpr.py": [
+    "Line 89: Expected 1 errors",
     "Line 93: Expected 1 errors",
     "Line 94: Expected 1 errors",
     "Line 95: Expected 1 errors",
@@ -148,6 +147,7 @@
   ],
   "callables_annotation.py": [
     "Line 56: Expected 1 errors",
+    "Line 57: Expected 1 errors",
     "Line 51: Unexpected errors ['assert_type(int, tuple[int, ...]) failed']",
     "Line 52: Unexpected errors ['assert_type(int, dict[str, int]) failed']",
     "Line 90: Unexpected errors ['EXPECTED (x: int) -> str <: (int, ParamSpec(...)) -> str']",
@@ -451,17 +451,16 @@
     "Line 111: Expected 1 errors",
     "Line 45: Unexpected errors ['assert_type(type[AllTheDefaults[Error, Error, str, int, bool]], type[AllTheDefaults[Any, Any, str, int, bool]]) failed']",
     "Line 73: Unexpected errors ['Unexpected keyword argument `default` to ParamSpec']",
-    "Line 79: Unexpected errors ['assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[str]]) failed', 'Expected 1 type argument for class `Class_ParamSpec`, got 2.']",
-    "Line 80: Unexpected errors ['assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[str]) failed', 'Expected 1 type argument for class `Class_ParamSpec`, got 2.']",
-    "Line 81: Unexpected errors ['assert_type(Class_ParamSpec[Any], Class_ParamSpec[bool]) failed', 'Expected a type form, got instance of `list[type[bool]]`', 'Expected 1 type argument for class `Class_ParamSpec`, got 2.']",
+    "Line 79: Unexpected errors ['assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[(str, int)]]) failed']",
+    "Line 80: Unexpected errors ['assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[(str, int)]) failed']",
     "Line 88: Unexpected errors ['Unexpected keyword argument `default` to TypeVarTuple']",
     "Line 94: Unexpected errors ['assert_type(type[Class_TypeVarTuple[Error]], type[Class_TypeVarTuple[tuple[str, int]]]) failed']",
     "Line 95: Unexpected errors ['assert_type(Class_TypeVarTuple[tuple[Any, ...]], Class_TypeVarTuple[tuple[str, int]]) failed']",
     "Line 127: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 145: Unexpected errors ['Unexpected keyword argument `default` to ParamSpec']",
     "Line 148: Unexpected errors ['Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base']",
-    "Line 151: Unexpected errors ['assert_type(type[Foo6[int, tuple[str]]], type[Foo6[int, tuple[str, Any]]]) failed', 'Expected a type form, got instance of `list[type[bool] | type[float]]`']",
-    "Line 152: Unexpected errors ['Expected a type form, got instance of `list[type[bytes]]`', 'Expected a type form, got instance of `list[type[bytes]]`']",
+    "Line 151: Unexpected errors ['assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed', 'Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",
+    "Line 152: Unexpected errors ['Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",
     "Line 166: Unexpected errors ['assert_type(Any, (Foo7[int]) -> Foo7[int]) failed', 'Generic attribute `meth` of class `Foo7` is not visible on the class']",
     "Line 167: Unexpected errors ['assert_type(Any, int) failed', 'Instance-only attribute `attr` of class `Foo7` is not visible on the class']"
   ],
@@ -488,7 +487,6 @@
     "Line 15: Expected 1 errors",
     "Line 23: Expected 1 errors",
     "Line 27: Expected 1 errors",
-    "Line 31: Expected 1 errors",
     "Line 35: Expected 1 errors",
     "Line 39: Expected 1 errors"
   ],
@@ -508,17 +506,11 @@
   ],
   "generics_paramspec_semantics.py": [
     "Line 22: Unexpected errors ['assert_type((str, bool) -> str, (str, bool) -> str) failed']",
-    "Line 82: Unexpected errors ['assert_type(Y[int, (int)], Y[int, Any]) failed', 'Expected a type form, got instance of `list[type[int]]`']",
     "Line 84: Unexpected errors ['assert_type((int) -> str, (int) -> str) failed']"
   ],
   "generics_paramspec_specialization.py": [
-    "Line 44: Expected 1 errors",
-    "Line 32: Unexpected errors ['Expected a type form, got instance of `list[type[bool] | type[int]]`']",
-    "Line 40: Unexpected errors ['Expected a type form, got instance of `list[@_]`', 'Expected a type form, got instance of `list[@_]`']",
-    "Line 52: Unexpected errors ['Expected a type form, got instance of `list[type[bool] | type[int] | type[str]]`']",
-    "Line 53: Unexpected errors ['Unexpected ParamSpec type']",
-    "Line 58: Unexpected errors ['Expected 1 type argument for class `ClassC`, got 3.']",
-    "Line 59: Unexpected errors ['Unexpected ParamSpec type']"
+    "Line 53: Unexpected errors ['EXPECTED ClassC[(int, str, bool)] <: int', 'EXPECTED Literal[0] <: str', \"EXPECTED Literal[''] <: bool\", 'Expected 2 positional arguments, got 3']",
+    "Line 59: Unexpected errors ['EXPECTED ClassC[(int, str, bool)] <: int', 'EXPECTED Literal[0] <: str', \"EXPECTED Literal[''] <: bool\", 'Expected 2 positional arguments, got 3']"
   ],
   "generics_scoping.py": [
     "Line 50: Expected 1 errors",
@@ -575,6 +567,7 @@
   "generics_syntax_compatibility.py": [],
   "generics_syntax_declarations.py": [
     "Line 46: Expected 1 errors",
+    "Line 50: Expected 1 errors",
     "Line 62: Expected 1 errors",
     "Line 66: Expected 1 errors",
     "Line 14: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']",

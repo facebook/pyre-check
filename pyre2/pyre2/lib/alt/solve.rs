@@ -64,6 +64,7 @@ use crate::types::annotation::Qualifier;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
+use crate::types::callable::ParamList;
 use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassKind;
@@ -1598,6 +1599,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn expr_untype(&self, x: &Expr, errors: &ErrorCollector) -> Type {
-        self.untype(self.expr(x, None, errors), x.range(), errors)
+        match x {
+            // TODO: this is only valid in a type argument list for generics or Callable, not as a standalone annotation
+            Expr::List(x) => {
+                let elts: Vec<Param> = x
+                    .elts
+                    .iter()
+                    .map(|x| Param::PosOnly(self.expr_untype(x, errors), Required::Required))
+                    .collect();
+                Type::ParamSpecValue(ParamList::new(elts))
+            }
+            _ => self.untype(self.expr(x, None, errors), x.range(), errors),
+        }
     }
 }
