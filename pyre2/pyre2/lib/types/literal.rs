@@ -28,6 +28,7 @@ use ruff_text_size::TextRange;
 
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
@@ -86,6 +87,7 @@ impl Lit {
                 errors.add(
                     x.range(),
                     "Int literal exceeds range, expected to fit within 64 bits".to_owned(),
+                    ErrorKind::Unknown,
                 );
                 Type::any_error()
             }
@@ -123,13 +125,18 @@ impl Lit {
                             "`{}.{}` is not a valid enum member",
                             maybe_enum_name.id, member_name.id
                         ),
+                        ErrorKind::Unknown,
                     );
                     Type::any_error()
                 }
             },
             Expr::NoneLiteral(_) => Type::None,
             _ => {
-                errors.add(x.range(), "Invalid literal expression".to_owned());
+                errors.add(
+                    x.range(),
+                    "Invalid literal expression".to_owned(),
+                    ErrorKind::Unknown,
+                );
                 Type::any_error()
             }
         }
@@ -142,7 +149,11 @@ impl Lit {
                 None => stdlib.int().to_type(), // Loss of precision
             },
             _ => {
-                errors.add(range, format!("Cannot negate type {self}"));
+                errors.add(
+                    range,
+                    format!("Cannot negate type {self}"),
+                    ErrorKind::Unknown,
+                );
                 Type::any_error()
             }
         }
@@ -155,7 +166,11 @@ impl Lit {
                 Lit::Int(x).to_type()
             }
             _ => {
-                errors.add(range, format!("Cannot invert type {self}"));
+                errors.add(
+                    range,
+                    format!("Cannot invert type {self}"),
+                    ErrorKind::Unknown,
+                );
                 Type::any_error()
             }
         }

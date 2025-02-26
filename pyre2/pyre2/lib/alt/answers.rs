@@ -22,6 +22,7 @@ use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::export::exports::LookupExport;
 use crate::graph::calculation::Calculation;
@@ -478,7 +479,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn error(&self, errors: &ErrorCollector, range: TextRange, msg: String) -> Type {
-        errors.add(range, msg);
+        errors.add(range, msg, ErrorKind::Unknown);
         Type::any_error()
     }
 }

@@ -37,6 +37,7 @@ use crate::config::Config;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
 use crate::error::expectation::Expectation;
+use crate::error::kind::ErrorKind;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
 use crate::module::module_info::ModuleInfo;
@@ -372,7 +373,7 @@ impl State {
 
     fn add_error(&self, module_data: &Arc<ModuleData>, range: TextRange, msg: String) {
         let load = module_data.state.read().steps.load.dupe().unwrap();
-        load.errors.add(range, msg);
+        load.errors.add(range, msg, ErrorKind::Unknown);
     }
 
     fn lookup<'a>(&'a self, module_data: Arc<ModuleData>) -> StateHandle<'a> {

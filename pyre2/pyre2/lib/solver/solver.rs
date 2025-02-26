@@ -18,6 +18,7 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::LookupAnswer;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::solver::type_order::TypeOrder;
 use crate::types::callable::ParamList;
 use crate::types::display::TypeDisplayContext;
@@ -267,6 +268,7 @@ impl Solver {
         errors.add(
             loc,
             format!("EXPECTED {} <: {}", ctx.display(&got), ctx.display(&want)),
+            ErrorKind::Unknown,
         );
     }
 

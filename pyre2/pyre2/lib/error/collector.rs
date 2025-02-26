@@ -101,7 +101,7 @@ impl ErrorCollector {
         }
     }
 
-    pub fn add(&self, range: TextRange, msg: String) {
+    pub fn add(&self, range: TextRange, msg: String, error_kind: ErrorKind) {
         let source_range = self.module_info.source_range(range);
         let is_ignored = self.module_info.is_ignored(&source_range, &msg);
         if self.style != ErrorStyle::Never {
@@ -110,7 +110,7 @@ impl ErrorCollector {
                 source_range,
                 msg,
                 is_ignored,
-                ErrorKind::Unknown,
+                error_kind,
             );
             self.errors.lock().push(err);
         }
@@ -157,10 +157,14 @@ impl ErrorCollector {
         let s = format!("{v:?}");
         if s == format!("{:?}", v.range()) {
             // The v is just a range, so don't add the constructor
-            self.add(v.range(), format!("TODO: {msg}"));
+            self.add(v.range(), format!("TODO: {msg}"), ErrorKind::Unknown);
         } else {
             let prefix = s.split_once(' ').map_or(s.as_str(), |x| x.0);
-            self.add(v.range(), format!("TODO: {prefix} - {msg}"));
+            self.add(
+                v.range(),
+                format!("TODO: {prefix} - {msg}"),
+                ErrorKind::Unknown,
+            );
         }
     }
 
@@ -195,22 +199,27 @@ mod tests {
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "b".to_owned(),
+            ErrorKind::Unknown,
         );
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "a".to_owned(),
+            ErrorKind::Unknown,
         );
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "a".to_owned(),
+            ErrorKind::Unknown,
         );
         errors.add(
             TextRange::new(TextSize::new(2), TextSize::new(3)),
             "a".to_owned(),
+            ErrorKind::Unknown,
         );
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "b".to_owned(),
+            ErrorKind::Unknown,
         );
         assert_eq!(errors.collect().map(|x| x.msg()), vec!["a", "b", "a"]);
     }

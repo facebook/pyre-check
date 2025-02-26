@@ -20,6 +20,7 @@ use crate::alt::answers::Solutions;
 use crate::binding::bindings::Bindings;
 use crate::config::Config;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
@@ -90,6 +91,7 @@ impl Load {
                     "Failed to load `{name}` from `{}`, got {err:#}",
                     module_info.path()
                 ),
+                ErrorKind::Unknown,
             );
         }
         Self {

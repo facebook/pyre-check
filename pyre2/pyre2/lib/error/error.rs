@@ -16,9 +16,9 @@ use crate::module::module_path::ModulePath;
 pub struct Error {
     path: ModulePath,
     range: SourceRange,
+    error_kind: ErrorKind,
     msg: String,
     is_ignored: bool,
-    error_kind: ErrorKind,
 }
 
 impl Display for Error {
@@ -38,9 +38,9 @@ impl Error {
         Self {
             path,
             range,
+            error_kind,
             msg,
             is_ignored,
-            error_kind,
         }
     }
 

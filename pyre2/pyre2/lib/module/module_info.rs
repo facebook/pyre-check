@@ -19,6 +19,7 @@ use ruff_text_size::TextSize;
 
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::module::ignore::Ignore;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
@@ -116,7 +117,11 @@ impl ModuleInfo {
     pub fn parse(&self, errors: &ErrorCollector) -> ModModule {
         let (module, parse_errors) = Ast::parse(self.contents());
         for err in parse_errors {
-            errors.add(err.location, format!("Parse error: {err}"));
+            errors.add(
+                err.location,
+                format!("Parse error: {err}"),
+                ErrorKind::Unknown,
+            );
         }
         module
     }

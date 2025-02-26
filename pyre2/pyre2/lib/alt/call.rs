@@ -18,6 +18,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::callable::CallArg;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
@@ -29,7 +30,6 @@ use crate::types::types::AnyStyle;
 use crate::types::types::BoundMethod;
 use crate::types::types::Type;
 use crate::types::types::Var;
-
 pub enum CallStyle<'a> {
     Method(&'a Name),
     BinaryOp(Operator),
@@ -71,7 +71,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         msg: String,
     ) -> (Vec<Var>, CallTarget) {
-        errors.add(range, msg);
+        errors.add(range, msg, ErrorKind::Unknown);
         (Vec::new(), CallTarget::any(AnyStyle::Error))
     }
 

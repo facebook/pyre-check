@@ -57,6 +57,7 @@ use crate::binding::scope::Scopes;
 use crate::binding::table::TableKeyed;
 use crate::config::Config;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
 use crate::export::special::SpecialEntry;
@@ -279,7 +280,11 @@ impl Bindings {
                     .table
                     .insert(Key::Anon(x.range()), Binding::Expr(None, *x));
             }
-            errors.add(x.range, "Invalid `return` outside of a function".to_owned());
+            errors.add(
+                x.range,
+                "Invalid `return` outside of a function".to_owned(),
+                ErrorKind::Unknown,
+            );
         }
         let last_scope = builder.scopes.finish();
         for (k, static_info) in last_scope.stat.0 {
@@ -298,6 +303,7 @@ impl Bindings {
                     errors.add(
                         static_info.loc,
                         format!("Could not find flow binding for `{k}`"),
+                        ErrorKind::Unknown,
                     );
                     Binding::AnyType(AnyStyle::Error)
                 }
@@ -411,7 +417,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     pub fn error(&self, range: TextRange, msg: String) {
-        self.errors.add(range, msg);
+        self.errors.add(range, msg, ErrorKind::Unknown);
     }
 
     fn lookup_name(&mut self, name: &Name) -> Option<Idx<Key>> {

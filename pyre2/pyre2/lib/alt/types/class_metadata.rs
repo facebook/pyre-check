@@ -18,6 +18,7 @@ use vec1::Vec1;
 
 use crate::alt::class::class_field::ClassField;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::types::callable::BoolKeywords;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
@@ -449,6 +450,7 @@ impl Linearization {
                             ClassName(cls.qname()),
                             ClassName(base.qname()),
                         ),
+                        ErrorKind::Unknown,
                     );
                     // Signal that we detected a cycle
                     return Linearization::Cyclic;
@@ -525,6 +527,7 @@ impl Linearization {
                         ClassName(cls.qname()),
                         ClassName(first_candidate.qname()),
                     ),
+                    ErrorKind::Unknown,
                 );
 
                 ancestor_chains = Vec::new()
