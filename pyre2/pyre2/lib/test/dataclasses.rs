@@ -185,6 +185,23 @@ C(x=0)  # E: Unexpected keyword argument
     "#,
 );
 
+testcase!(
+    test_with_methods,
+    r#"
+from typing import assert_type, Any, Literal
+from dataclasses import dataclass
+@dataclass
+class C:
+    x: int = 0
+    def m(self) -> int: return self.x
+c = C()  # Ok
+assert_type(c.m(), int) # Ok
+a: Any = ...
+C(m=a)  # E: Unexpected keyword argument `m`
+assert_type(c.__match_args__, tuple[Literal['x']])  # Ok
+    "#,
+);
+
 testcase_with_bug!(
     "TODO: consider erroring on unannotated attributes",
     test_unannotated_attribute,
