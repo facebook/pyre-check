@@ -1437,10 +1437,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     // Given the index to a function binding, return the previous function binding, if any.
-    pub fn step_overload_pred(
-        &self,
-        pred: &mut Option<Idx<Key>>,
-    ) -> Option<Arc<DecoratedFunction>> {
+    fn step_overload_pred(&self, pred: &mut Option<Idx<Key>>) -> Option<Arc<DecoratedFunction>> {
         let pred_idx = (*pred)?;
         let mut b = self.bindings().get(pred_idx);
         while let Binding::Forward(k) = b {
@@ -1556,7 +1553,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Unwraps a type, originally evaluated as a value, so that it can be used as a type annotation.
     /// For example, in `def f(x: int): ...`, we evaluate `int` as a value, gettings its type as
     /// `type[int]`, then call `untype(type[int])` to get the `int` annotation.
-    pub fn untype(&self, ty: Type, range: TextRange, errors: &ErrorCollector) -> Type {
+    fn untype(&self, ty: Type, range: TextRange, errors: &ErrorCollector) -> Type {
         if let Some(t) = self.untype_opt(ty.clone(), range) {
             t
         } else {
