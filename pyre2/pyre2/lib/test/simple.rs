@@ -411,16 +411,31 @@ y = "bar" # TODO: y can not be assigned
 );
 
 testcase_with_bug!(
-    "todo zeina: Incorrect error message. The error message should be that a final class cannot be overridden",
+    "TODO(steven): We are failing to promote literals that have an annotation.",
+    test_literal_attr_with_annotation,
+    r#"
+from typing import ClassVar, assert_type
+class C:
+    x0 = 0
+    x1: ClassVar = 0
+assert_type(C.x0, int)
+assert_type(C.x1, int)  # E: assert_type(Literal[0], int)
+"#,
+);
+
+testcase_with_bug!(
+    "TODO(zeina): We are not enforcing `Final` override bans when the type matches",
     test_final_annotated_override,
     r#"
 from typing import Final
 
+def f() -> int: ...
+
 class Base:
-    p: Final = 0
+    p: Final = f()
     
 class Derived(Base):
-    p = 1  # E: Class member `p` overrides parent class `Base` in an inconsistent manner
+    p = f()  # Oops, this should be an error
 "#,
 );
 
