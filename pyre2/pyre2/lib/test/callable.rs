@@ -52,6 +52,39 @@ def test(f: Callable[[bool, *tuple[int, str], bool], None]) -> Callable[[*tuple[
 );
 
 testcase!(
+    test_callable_unpack_vararg,
+    r#"
+from typing import Protocol
+class P1(Protocol):
+    def __call__(self, *args: int): ...
+class P2(Protocol):
+    def __call__(self, *args: *tuple[int, int]): ...
+class P3(Protocol):
+    def __call__(self, *args: *tuple[int, str]): ...
+class P4(Protocol):
+    def __call__(self, *args: *tuple[int, ...]): ...
+class P5(Protocol):
+    def __call__(self, x: int, y: int, /): ...
+class P6(Protocol):
+    def __call__(self, x: int, /, *args: *tuple[int]): ...
+class P7(Protocol):
+    def __call__(self, x: int, y: int = 2, /): ...
+
+def test(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7):
+    x1: P2 = p1
+    x2: P1 = p2  # E: EXPECTED P2 <: P1
+    x3: P2 = p3  # E: EXPECTED P3 <: P2
+    x4: P2 = p4
+    x5: P4 = p2  # E: EXPECTED P2 <: P4
+    x6: P5 = p2
+    x7: P2 = p5
+    x8: P2 = p6
+    x9: P6 = p2
+    x10: P2 = p7
+"#,
+);
+
+testcase!(
     test_callable_unparameterized,
     r#"
 from typing import Callable, assert_type, Any

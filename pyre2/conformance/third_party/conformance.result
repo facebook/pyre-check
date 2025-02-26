@@ -627,9 +627,6 @@
     "Line 97: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']"
   ],
   "generics_typevartuple_callable.py": [
-    "Line 25: Unexpected errors ['EXPECTED (arg1: int, arg2: str) -> None <: (**tuple[*@_]) -> None']",
-    "Line 41: Unexpected errors ['EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (**tuple[int, *tuple[str, int], complex]) -> tuple[complex, *tuple[str, int]]']",
-    "Line 42: Unexpected errors ['EXPECTED (a: int, d: str) -> tuple[str] <: (**tuple[int, *tuple[()], str]) -> tuple[str, *tuple[()]]']",
     "Line 49: Unexpected errors ['assert_type(tuple[Any, *Any], tuple[float, str, complex]) failed', 'EXPECTED Literal[1] <: *tuple[int, *@_, @_]', \"EXPECTED Literal[''] <: *tuple[int, *@_, @_]\", 'EXPECTED complex <: *tuple[int, *@_, @_]', 'EXPECTED float <: *tuple[int, *@_, @_]']"
   ],
   "generics_typevartuple_concat.py": [

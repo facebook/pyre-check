@@ -8355,43 +8355,13 @@
   "generics_typevartuple_callable.py": [
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED (arg1: int, arg2: str) -> None <: (**tuple[*@_]) -> None",
-      "description": "EXPECTED (arg1: int, arg2: str) -> None <: (**tuple[*@_]) -> None",
-      "line": 25,
-      "name": "PyreError",
-      "stop_column": 21,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "EXPECTED (arg1: int, arg2: str) -> None <: (**tuple[*@_]) -> None",
-      "description": "EXPECTED (arg1: int, arg2: str) -> None <: (**tuple[*@_]) -> None",
+      "column": 28,
+      "concise_description": "EXPECTED tuple[Literal[''], Literal[0]] <: tuple[*tuple[int, str]]",
+      "description": "EXPECTED tuple[Literal[''], Literal[0]] <: tuple[*tuple[int, str]]",
       "line": 26,
       "name": "PyreError",
-      "stop_column": 21,
+      "stop_column": 35,
       "stop_line": 26
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (**tuple[int, *tuple[str, int], complex]) -> tuple[complex, *tuple[str, int]]",
-      "description": "EXPECTED (a: int, b: str, c: int, d: complex) -> tuple[complex, str, int] <: (**tuple[int, *tuple[str, int], complex]) -> tuple[complex, *tuple[str, int]]",
-      "line": 41,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 41
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "EXPECTED (a: int, d: str) -> tuple[str] <: (**tuple[int, *tuple[()], str]) -> tuple[str, *tuple[()]]",
-      "description": "EXPECTED (a: int, d: str) -> tuple[str] <: (**tuple[int, *tuple[()], str]) -> tuple[str, *tuple[()]]",
-      "line": 42,
-      "name": "PyreError",
-      "stop_column": 28,
-      "stop_line": 42
     },
     {
       "code": -2,

@@ -60,6 +60,13 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         return false;
                     }
                 }
+                (Some(Param::VarArg(Type::Unpack(l))), None) => {
+                    if self.is_subset_eq(&Type::tuple(Vec::new()), l) {
+                        l_arg = l_args.iter().next();
+                    } else {
+                        return false;
+                    }
+                }
                 (
                     Some(
                         Param::PosOnly(_, Required::Optional)
@@ -70,8 +77,121 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     ),
                     None,
                 ) => return true,
+                (
+                    Some(Param::VarArg(Type::Unpack(box l))),
+                    Some(Param::PosOnly(_, Required::Required)),
+                ) => {
+                    let mut u_types = Vec::new();
+                    loop {
+                        if let Some(Param::PosOnly(u, Required::Required)) = u_arg {
+                            u_types.push(u.clone());
+                            u_arg = u_args_iter.next();
+                        } else if let Some(Param::VarArg(Type::Unpack(box u))) = u_arg {
+                            if self.is_subset_eq(
+                                &Type::Tuple(Tuple::unpacked(u_types, u.clone(), Vec::new())),
+                                l,
+                            ) {
+                                l_arg = l_args_iter.next();
+                                u_arg = u_args_iter.next();
+                                break;
+                            } else {
+                                return false;
+                            }
+                        } else if let Some(Param::VarArg(u)) = u_arg {
+                            if self.is_subset_eq(
+                                &Type::Tuple(Tuple::unpacked(
+                                    u_types,
+                                    Type::Tuple(Tuple::unbounded(u.clone())),
+                                    Vec::new(),
+                                )),
+                                l,
+                            ) {
+                                l_arg = l_args_iter.next();
+                                u_arg = u_args_iter.next();
+                                break;
+                            } else {
+                                return false;
+                            }
+                        } else if self.is_subset_eq(&Type::tuple(u_types), l) {
+                            l_arg = l_args_iter.next();
+                            break;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                (
+                    Some(Param::PosOnly(_, _) | Param::Pos(_, _, _)),
+                    Some(Param::VarArg(Type::Unpack(box u))),
+                ) => {
+                    let mut l_types = Vec::new();
+                    loop {
+                        if let Some(Param::PosOnly(l, _) | Param::Pos(_, l, _)) = l_arg {
+                            l_types.push(l.clone());
+                            l_arg = l_args_iter.next();
+                        } else if let Some(Param::VarArg(Type::Unpack(box l))) = l_arg {
+                            if self.is_subset_eq(
+                                u,
+                                &Type::Tuple(Tuple::unpacked(l_types, l.clone(), Vec::new())),
+                            ) {
+                                l_arg = l_args_iter.next();
+                                u_arg = u_args_iter.next();
+                                break;
+                            } else {
+                                return false;
+                            }
+                        } else if let Some(Param::VarArg(l)) = l_arg {
+                            if self.is_subset_eq(
+                                u,
+                                &Type::Tuple(Tuple::unpacked(
+                                    l_types,
+                                    Type::Tuple(Tuple::unbounded(l.clone())),
+                                    Vec::new(),
+                                )),
+                            ) {
+                                l_arg = l_args_iter.next();
+                                u_arg = u_args_iter.next();
+                                break;
+                            } else {
+                                return false;
+                            }
+                        } else if self.is_subset_eq(u, &Type::tuple(l_types)) {
+                            u_arg = u_args_iter.next();
+                            break;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
                 (Some(Param::VarArg(l)), Some(Param::PosOnly(u, Required::Required))) => {
                     if self.is_subset_eq(u, l) {
+                        u_arg = u_args_iter.next();
+                    } else {
+                        return false;
+                    }
+                }
+                (
+                    Some(Param::VarArg(Type::Unpack(box l))),
+                    Some(Param::VarArg(Type::Unpack(box u))),
+                ) => {
+                    if self.is_subset_eq(u, l) {
+                        l_arg = l_args_iter.next();
+                        u_arg = u_args_iter.next();
+                    } else {
+                        return false;
+                    }
+                }
+                (Some(Param::VarArg(l)), Some(Param::VarArg(Type::Unpack(box u)))) => {
+                    if self.is_subset_eq(u, &Type::Tuple(Tuple::unbounded(l.clone()))) {
+                        l_arg = l_args_iter.next();
+                        u_arg = u_args_iter.next();
+                    } else {
+                        return false;
+                    }
+                }
+                (Some(Param::VarArg(Type::Unpack(box l))), Some(Param::VarArg(u))) => {
+                    if self.is_subset_eq(&Type::Tuple(Tuple::unbounded(u.clone())), l) {
+                        l_arg = l_args_iter.next();
                         u_arg = u_args_iter.next();
                     } else {
                         return false;
