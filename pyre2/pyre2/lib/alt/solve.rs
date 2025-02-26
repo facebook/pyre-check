@@ -12,6 +12,7 @@ use dupe::Dupe;
 use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
+use ruff_python_ast::Identifier;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
@@ -47,7 +48,6 @@ use crate::binding::binding::EmptyAnswer;
 use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::Key;
-use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::NoneIfRecursive;
 use crate::binding::binding::RaisedException;
@@ -161,9 +161,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Arc::new(ann)
             }
             BindingAnnotation::Type(x) => Arc::new(Annotation::new_type(x.clone())),
-            BindingAnnotation::Forward(k) => {
-                Arc::new(Annotation::new_type(self.get_idx(*k).arc_clone()))
-            }
         }
     }
 
@@ -1288,6 +1285,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::Decorator(expr) => self.expr_infer(expr, errors),
             Binding::LambdaParameter(var) => var.to_type(),
+            Binding::FunctionParameter(param) => {
+                match param {
+                    Either::Left(key) => self.get_idx(*key).ty.clone().unwrap_or_else(|| {
+                        // This annotation isn't valid. It's something like `: Final` that doesn't
+                        // have enough information to create a real type.
+                        Type::any_implicit()
+                    }),
+                    Either::Right((var, function_idx)) => {
+                        // Force the function binding to be evaluated, if it hasn't already.
+                        // Solving the function will also force the Var type to some concrete type,
+                        // and this must happen first so the Var can not interact with other types.
+                        self.get_idx(*function_idx);
+                        var.to_type()
+                    }
+                }
+            }
         }
     }
 
@@ -1308,45 +1321,65 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             required
         };
+        let mut self_type = if x.def.name.id == dunder::NEW {
+            // __new__ is a staticmethod, and does not take a self parameter.
+            None
+        } else {
+            x.self_type.map(|idx| self.get_idx(idx))
+        };
+        let mut get_param_ty = |name: &Identifier| {
+            let ty = match self.bindings().get_function_param(name) {
+                Either::Left(idx) => self.get_idx(idx).get_type().clone(),
+                Either::Right(var) => {
+                    // If this is the first parameter and there is a self type, solve to `Self`.
+                    // We only try to solve the first param for now. Other unannotated params
+                    // are also Var, but will always be forced to Any. In the future, we might
+                    // consider contextual information to infer parameter types, like decorator
+                    // applications.
+                    if let Some(ty) = &self_type {
+                        self.solver()
+                            .is_subset_eq(&var.to_type(), ty, self.type_order());
+                    }
+                    self.solver().force_var(var)
+                }
+            };
+            self_type = None; // Stop using `self` type solve Var params after the first param.
+            ty
+        };
         let mut params = Vec::with_capacity(x.def.parameters.len());
         params.extend(x.def.parameters.posonlyargs.iter().map(|x| {
-            let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
-                &x.parameter.name,
-            )));
-            let ty = annot.get_type();
-            let required = check_default(&x.default, ty);
-            Param::PosOnly(ty.clone(), required)
+            let ty = get_param_ty(&x.parameter.name);
+            let required = check_default(&x.default, &ty);
+            Param::PosOnly(ty, required)
         }));
         params.extend(x.def.parameters.args.iter().map(|x| {
-            let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
-                &x.parameter.name,
-            )));
-            let ty = annot.get_type();
-            let required = check_default(&x.default, ty);
-            Param::Pos(x.parameter.name.id.clone(), ty.clone(), required)
+            let ty = get_param_ty(&x.parameter.name);
+            let required = check_default(&x.default, &ty);
+            Param::Pos(x.parameter.name.id.clone(), ty, required)
         }));
         params.extend(x.def.parameters.vararg.iter().map(|x| {
-            let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(&x.name)));
-            let ty = annot.get_type();
-            Param::VarArg(ty.clone())
+            let ty = get_param_ty(&x.name);
+            Param::VarArg(ty)
         }));
         params.extend(x.def.parameters.kwonlyargs.iter().map(|x| {
-            let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(
-                &x.parameter.name,
-            )));
-            let ty = annot.get_type();
-            let required = check_default(&x.default, ty);
-            Param::KwOnly(x.parameter.name.id.clone(), ty.clone(), required)
+            let ty = get_param_ty(&x.parameter.name);
+            let required = check_default(&x.default, &ty);
+            Param::KwOnly(x.parameter.name.id.clone(), ty, required)
         }));
         params.extend(x.def.parameters.kwarg.iter().map(|x| {
-            let annot = self.get(&KeyAnnotation::Annotation(ShortIdentifier::new(&x.name)));
-            let ty = annot.get_type();
-            let is_unpack = annot.qualifiers.contains(&Qualifier::Unpack);
-            Param::Kwargs(if is_unpack {
-                Type::Unpack(Box::new(ty.clone()))
-            } else {
-                ty.clone()
-            })
+            let ty = match self.bindings().get_function_param(&x.name) {
+                Either::Left(idx) => {
+                    let annot = self.get_idx(idx);
+                    let ty = annot.get_type().clone();
+                    if annot.qualifiers.contains(&Qualifier::Unpack) {
+                        Type::Unpack(Box::new(ty))
+                    } else {
+                        ty
+                    }
+                }
+                Either::Right(var) => self.solver().force_var(var),
+            };
+            Param::Kwargs(ty)
         }));
         let ret = self
             .get(&Key::ReturnType(ShortIdentifier::new(&x.def.name)))

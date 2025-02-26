@@ -15,6 +15,7 @@ use dupe::Dupe;
 use itertools::Either;
 use itertools::Itertools;
 use ruff_python_ast::name::Name;
+use ruff_python_ast::AnyParameterRef;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprName;
@@ -32,12 +33,14 @@ use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
 use crate::binding::binding::Binding;
+use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyExport;
+use crate::binding::binding::KeyFunction;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::KeyYield;
 use crate::binding::binding::KeyYieldFrom;
@@ -200,6 +203,25 @@ impl Bindings {
         } else {
             panic!(
                 "Internal error: unexpected binding for lambda parameter `{}` @  {:?}: {}, module={}, path={}",
+                &name.id,
+                name.range,
+                b.display_with(self),
+                self.module_info().name(),
+                self.module_info().path(),
+            )
+        }
+    }
+
+    pub fn get_function_param(&self, name: &Identifier) -> Either<Idx<KeyAnnotation>, Var> {
+        let b = self.get(self.key_to_idx(&Key::Definition(ShortIdentifier::new(name))));
+        if let Binding::FunctionParameter(p) = b {
+            match p {
+                Either::Left(idx) => Either::Left(*idx),
+                Either::Right((var, _)) => Either::Right(*var),
+            }
+        } else {
+            panic!(
+                "Internal error: unexpected binding for parameter `{}` @  {:?}: {}, module={}, path={}",
                 &name.id,
                 name.range,
                 b.display_with(self),
@@ -600,6 +622,47 @@ impl<'a> BindingsBuilder<'a> {
             .stat
             .add(name.id.clone(), name.range, None);
         self.bind_key(&name.id, bind_key, None);
+    }
+
+    pub fn bind_function_param(
+        &mut self,
+        x: AnyParameterRef,
+        function_idx: Idx<KeyFunction>,
+        self_type: Option<Idx<Key>>,
+    ) {
+        let name = x.name();
+        let annot = x.annotation().map(|x| {
+            self.table.insert(
+                KeyAnnotation::Annotation(ShortIdentifier::new(name)),
+                BindingAnnotation::AnnotateExpr(x.clone(), self_type),
+            )
+        });
+        let (annot, def) = match annot {
+            Some(annot) => (annot, Either::Left(annot)),
+            None => {
+                let var = self.solver.fresh_contained(self.uniques);
+                let annot = self.table.insert(
+                    KeyAnnotation::Annotation(ShortIdentifier::new(name)),
+                    BindingAnnotation::Type(var.to_type()),
+                );
+                (annot, Either::Right((var, function_idx)))
+            }
+        };
+        let key = self.table.insert(
+            Key::Definition(ShortIdentifier::new(name)),
+            Binding::FunctionParameter(def),
+        );
+        self.scopes
+            .current_mut()
+            .stat
+            .add(name.id.clone(), name.range, Some(annot));
+        self.bind_key(
+            &name.id,
+            key,
+            Some(FlowStyle::Annotated {
+                is_initialized: x.default().is_some(),
+            }),
+        );
     }
 
     /// Helper for loops, inserts a phi key for every name in the given flow.

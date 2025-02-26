@@ -568,6 +568,7 @@ pub struct FunctionBinding {
     /// A function definition, but with the return/body stripped out.
     pub def: StmtFunctionDef,
     pub kind: FunctionKind,
+    pub self_type: Option<Idx<Key>>,
     pub decorators: Box<[Idx<Key>]>,
     pub legacy_tparams: Box<[Idx<KeyLegacyTypeParam>]>,
     pub successor: Option<Idx<KeyFunction>>,
@@ -707,6 +708,10 @@ pub enum Binding {
     Decorator(Expr),
     /// Binding for a lambda parameter.
     LambdaParameter(Var),
+    /// Binding for a function parameter. We either have an annotation, or we will determine the
+    /// parameter type when solving the function type. To ensure the parameter is solved before it
+    /// can be observed as a Var, we include the function key and force it to be solved first.
+    FunctionParameter(Either<Idx<KeyAnnotation>, (Var, Idx<KeyFunction>)>),
 }
 
 impl Binding {
@@ -883,6 +888,7 @@ impl DisplayWith<Bindings> for Binding {
             }
             Self::Decorator(e) => write!(f, "decorator {}", m.display(e)),
             Self::LambdaParameter(_) => write!(f, "lambda parameter"),
+            Self::FunctionParameter(_) => write!(f, "function parameter"),
         }
     }
 }
@@ -895,8 +901,6 @@ pub enum BindingAnnotation {
     AnnotateExpr(Expr, Option<Idx<Key>>),
     /// A literal type we know statically.
     Type(Type),
-    /// A forward reference to another binding.
-    Forward(Idx<Key>),
 }
 
 impl DisplayWith<Bindings> for BindingAnnotation {
@@ -911,7 +915,6 @@ impl DisplayWith<Bindings> for BindingAnnotation {
                     Some(t) => format!(" (self {})", ctx.display(*t)),
                 }
             ),
-            Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
             Self::Type(t) => write!(f, "type {t}"),
         }
     }
