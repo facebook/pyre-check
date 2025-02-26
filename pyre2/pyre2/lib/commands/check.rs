@@ -47,6 +47,7 @@ use crate::util::globs::Globs;
 use crate::util::memory::MemoryUsageTrace;
 use crate::util::notify_watcher::NotifyWatcher;
 use crate::util::prelude::VecExt;
+use crate::util::watcher::Watcher;
 
 #[derive(Debug, Clone, ValueEnum, Default)]
 enum OutputFormat {

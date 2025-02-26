@@ -25,4 +25,5 @@ pub mod recurser;
 pub mod trace;
 pub mod uniques;
 pub mod upgrade_lock;
+pub mod watcher;
 pub mod with_hash;

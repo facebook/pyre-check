@@ -19,6 +19,8 @@ use notify::RecommendedWatcher;
 use notify::RecursiveMode;
 use notify::Watcher as _;
 
+use crate::util::watcher::Watcher;
+
 pub struct NotifyWatcher {
     receiver: Receiver<notify::Result<Event>>,
     watcher: RecommendedWatcher,
@@ -30,16 +32,18 @@ impl NotifyWatcher {
         let watcher = recommended_watcher(sender)?;
         Ok(Self { receiver, watcher })
     }
+}
 
-    pub fn watch_dir(&mut self, path: &Path) -> anyhow::Result<()> {
+impl Watcher for NotifyWatcher {
+    fn watch_dir(&mut self, path: &Path) -> anyhow::Result<()> {
         Ok(self.watcher.watch(path, RecursiveMode::Recursive)?)
     }
 
-    pub fn unwatch_dir(&mut self, path: &Path) -> anyhow::Result<()> {
+    fn unwatch_dir(&mut self, path: &Path) -> anyhow::Result<()> {
         Ok(self.watcher.unwatch(path)?)
     }
 
-    pub fn wait(&mut self) -> anyhow::Result<Vec<Event>> {
+    fn wait(&mut self) -> anyhow::Result<Vec<Event>> {
         let mut res = Vec::new();
         res.push(self.receiver.recv()??);
         // Wait up to 0.1s to buffer up events
