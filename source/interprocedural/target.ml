@@ -501,37 +501,55 @@ type definitions_result = {
   qualifier: Reference.t;
   (* Mapping from a target to its selected definition. *)
   callables: Define.t Node.t Map.t;
-  (* True if there was multiple non-stub definitions. *)
-  has_multiple_definitions: bool;
 }
 
 (** This is the source of truth for the mapping of callables to definitions. All parts of the
     analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
-let get_definitions ~pyre_api define_name =
+let get_definitions ~pyre_api ~warn_multiple_definitions define_name =
   PyrePysaEnvironment.ReadOnly.get_function_definition pyre_api define_name
   >>| PyrePysaLogic.qualifier_and_bodies_of_function_definition
   >>| fun (qualifier, bodies) ->
-  let fold ({ callables; _ } as result) define =
-    let target = create define_name (Node.value define) in
-    match Map.find_opt target callables with
-    | None -> { result with callables = Map.add target define callables }
-    | Some previous_define -> (
-        (* Prefer the non-stub definition, so we can analyze its body. *)
-        match Define.is_stub (Node.value previous_define), Define.is_stub (Node.value define) with
-        | true, true -> result
-        | false, true -> result
-        | true, false -> { result with callables = Map.add target define callables }
-        | false, false -> { result with has_multiple_definitions = true })
+  let get_priority define =
+    (* Prefer the non-stub and non-overload definition, so we can analyze its body. *)
+    if not (Define.is_stub define) then
+      0
+    else if not (Define.is_overloaded_function define) then
+      -1
+    else
+      -2
   in
-  List.fold
-    ~init:{ qualifier; callables = Map.empty; has_multiple_definitions = false }
-    ~f:fold
-    bodies
+  let resolve_multiple_defines left right =
+    if
+      warn_multiple_definitions
+      && (not (Define.is_stub left.Node.value))
+      && not (Define.is_stub right.Node.value)
+    then
+      Log.warning
+        "Found multiple definitions for the given symbol: `%a`. We will only consider the last \
+         definition."
+        Reference.pp
+        define_name;
+    let left_priority = get_priority left.Node.value in
+    let right_priority = get_priority right.Node.value in
+    if left_priority > right_priority then
+      left
+    else if Int.equal left_priority right_priority then (* The last definition wins. *)
+      right
+    else
+      right
+  in
+  {
+    qualifier;
+    callables =
+      bodies
+      |> List.map ~f:(fun body -> create define_name (Node.value body), body)
+      |> Map.of_alist ~f:resolve_multiple_defines;
+  }
 
 
 let get_module_and_definition ~pyre_api callable =
   define_name_exn callable
-  |> get_definitions ~pyre_api
+  |> get_definitions ~pyre_api ~warn_multiple_definitions:false
   >>= fun { qualifier; callables; _ } ->
   Map.find_opt callable callables >>| fun define -> qualifier, define
 

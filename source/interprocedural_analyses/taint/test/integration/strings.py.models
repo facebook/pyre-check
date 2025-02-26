@@ -559,6 +559,8 @@
   "kind": "model",
   "data": {
     "callable": "str.__add__",
+    "filename": "builtins.pyi",
+    "callable_line": 353,
     "tito": [
       {
         "port": "formal(other, position=1)",

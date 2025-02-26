@@ -67,6 +67,8 @@
   "kind": "model",
   "data": {
     "callable": "dict.get",
+    "filename": "builtins.pyi",
+    "callable_line": 401,
     "tito": [
       {
         "port": "formal(self, position=0)",

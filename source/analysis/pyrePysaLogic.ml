@@ -32,10 +32,7 @@ exception UntrackedClass = ClassHierarchy.Untracked
 let qualified_name_of_define = FunctionDefinition.qualified_name_of_define
 
 let qualifier_and_bodies_of_function_definition ({ FunctionDefinition.qualifier; _ } as definition) =
-  ( qualifier,
-    FunctionDefinition.all_bodies definition
-    |> List.filter ~f:(fun { Ast.Node.value; _ } ->
-           not (Ast.Statement.Define.is_overloaded_function value)) )
+  qualifier, FunctionDefinition.all_bodies definition
 
 
 let artifact_path_of_module_path = ArtifactPaths.artifact_path_of_module_path

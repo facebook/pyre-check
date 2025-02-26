@@ -59,10 +59,10 @@ let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath
       true
   in
   let fetch_callables define_name =
-    let { Target.qualifier = define_qualifier; callables; has_multiple_definitions } =
+    let { Target.qualifier = define_qualifier; callables } =
       Option.value_exn
         ~message:"Missing definitions for define name"
-        (Target.get_definitions ~pyre_api define_name)
+        (Target.get_definitions ~pyre_api ~warn_multiple_definitions:true define_name)
     in
     if not (Reference.equal qualifier define_qualifier) then
       let () =
@@ -78,14 +78,6 @@ let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath
       in
       None
     else
-      let () =
-        if has_multiple_definitions then
-          Log.warning
-            "Found multiple definitions for the given symbol: `%a`. We will only consider the last \
-             definition."
-            Reference.pp
-            define_name
-      in
       Some callables
   in
   let merge_callables callables_left callables_right =

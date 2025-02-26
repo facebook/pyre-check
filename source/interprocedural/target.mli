@@ -187,14 +187,13 @@ type definitions_result = {
   qualifier: Reference.t;
   (* Mapping from a target to its selected definition. *)
   callables: Define.t Node.t Map.t;
-  (* True if there was multiple non-stub definitions. *)
-  has_multiple_definitions: bool;
 }
 
 (** This is the source of truth for the mapping of callables to definitions. All parts of the
     analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
 val get_definitions
   :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  warn_multiple_definitions:bool ->
   Reference.t ->
   definitions_result option
 

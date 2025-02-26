@@ -1663,6 +1663,8 @@
   "kind": "model",
   "data": {
     "callable": "filter.__init__",
+    "filename": "builtins.pyi",
+    "callable_line": 521,
     "tito": [
       {
         "port": "formal(__iterable, position=2, positional_only)[*]",
@@ -1739,6 +1741,8 @@
   "kind": "model",
   "data": {
     "callable": "list.__init__",
+    "filename": "builtins.pyi",
+    "callable_line": 408,
     "tito": [
       {
         "port": "formal(__iterable, position=1, positional_only)[*]",
