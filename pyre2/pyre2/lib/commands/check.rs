@@ -45,7 +45,6 @@ use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
 use crate::util::globs::Globs;
 use crate::util::memory::MemoryUsageTrace;
-use crate::util::notify_watcher::NotifyWatcher;
 use crate::util::prelude::VecExt;
 use crate::util::watcher::Watcher;
 
@@ -71,7 +70,7 @@ pub struct Args {
     check_all: bool,
     /// Watch for file changes and re-check them.
     #[clap(long)]
-    watch: bool,
+    pub watch: bool,
     /// Produce debugging information about the type checking process.
     #[clap(long)]
     debug_info: Option<PathBuf>,
@@ -148,19 +147,22 @@ impl OutputFormat {
 }
 
 impl Args {
-    pub fn run(self, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
-        if self.watch {
-            self.run_watch()?;
+    pub fn run(
+        self,
+        watcher: Option<Box<dyn Watcher>>,
+        allow_forget: bool,
+    ) -> anyhow::Result<CommandExitStatus> {
+        if let Some(watcher) = watcher {
+            self.run_watch(watcher)?;
             Ok(CommandExitStatus::Success)
         } else {
             self.run_inner(allow_forget)
         }
     }
 
-    fn run_watch(self) -> anyhow::Result<()> {
-        let mut watch = NotifyWatcher::new()?;
+    fn run_watch(self, mut watcher: Box<dyn Watcher>) -> anyhow::Result<()> {
         for path in Globs::new(self.files.clone()).roots() {
-            watch.watch_dir(&path)?;
+            watcher.watch_dir(&path)?;
         }
         loop {
             let res = self.clone().run_inner(false);
@@ -168,7 +170,7 @@ impl Args {
                 eprintln!("{e:#}");
             }
             loop {
-                let events = watch.wait()?;
+                let events = watcher.wait()?;
                 if events.iter().any(|x| !x.kind.is_access()) {
                     break;
                 }

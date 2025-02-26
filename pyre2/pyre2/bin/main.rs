@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+mod oss_watcher;
+
 use std::backtrace::Backtrace;
 use std::env::args_os;
 use std::process::ExitCode;
@@ -49,7 +51,17 @@ fn to_exit_code(status: CommandExitStatus) -> ExitCode {
 
 fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
     match command {
-        Command::Check(args) => args.run(allow_forget),
+        Command::Check(args) => {
+            let is_watch_mode = args.watch;
+            args.run(
+                if is_watch_mode {
+                    Some(Box::new(oss_watcher::OpenSourceWatcher::new()?))
+                } else {
+                    None
+                },
+                allow_forget,
+            )
+        }
         Command::BuckCheck(args) => args.run(),
         Command::Lsp(args) => args.run(),
     }
