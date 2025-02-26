@@ -9,6 +9,7 @@ mod oss_watcher;
 
 use std::backtrace::Backtrace;
 use std::env::args_os;
+use std::path::Path;
 use std::process::ExitCode;
 
 use clap::Parser;
@@ -16,6 +17,7 @@ use pyre2::get_args_expanded;
 use pyre2::init_tracing;
 use pyre2::run::Command;
 use pyre2::run::CommandExitStatus;
+use pyre2::ConfigFile;
 
 #[derive(Debug, Parser)]
 #[command(name = "pyre2")]
@@ -42,6 +44,11 @@ fn exit_on_panic() {
     }));
 }
 
+fn get_open_source_config(_: &Path) -> ConfigFile {
+    // TODO: Implement upward-searching for open source config.
+    ConfigFile
+}
+
 fn to_exit_code(status: CommandExitStatus) -> ExitCode {
     match status {
         CommandExitStatus::Success => ExitCode::SUCCESS,
@@ -59,6 +66,7 @@ fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandEx
                 } else {
                     None
                 },
+                &get_open_source_config,
                 allow_forget,
             )
         }

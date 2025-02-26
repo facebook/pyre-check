@@ -32,6 +32,7 @@ mod alt;
 mod ast;
 mod binding;
 mod commands;
+mod config;
 mod dunder;
 mod error;
 mod export;
@@ -47,6 +48,7 @@ mod util;
 mod visitors;
 
 pub use crate::commands::run;
+pub use crate::config::ConfigFile;
 pub use crate::util::args::get_args_expanded;
 pub use crate::util::trace::init_tracing;
 pub use crate::util::watcher::Watcher;

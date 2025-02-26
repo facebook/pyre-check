@@ -24,6 +24,7 @@ use tracing::info;
 
 use crate::commands::common::CommonArgs;
 use crate::commands::util::module_from_path;
+use crate::config::ConfigFile;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::error::style::ErrorStyle;
@@ -150,22 +151,27 @@ impl Args {
     pub fn run(
         self,
         watcher: Option<Box<dyn Watcher>>,
+        config_finder: &dyn Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
         if let Some(watcher) = watcher {
-            self.run_watch(watcher)?;
+            self.run_watch(watcher, config_finder)?;
             Ok(CommandExitStatus::Success)
         } else {
-            self.run_inner(allow_forget)
+            self.run_inner(config_finder, allow_forget)
         }
     }
 
-    fn run_watch(self, mut watcher: Box<dyn Watcher>) -> anyhow::Result<()> {
+    fn run_watch(
+        self,
+        mut watcher: Box<dyn Watcher>,
+        config_finder: &dyn Fn(&Path) -> ConfigFile,
+    ) -> anyhow::Result<()> {
         for path in Globs::new(self.files.clone()).roots() {
             watcher.watch_dir(&path)?;
         }
         loop {
-            let res = self.clone().run_inner(false);
+            let res = self.clone().run_inner(config_finder, false);
             if let Err(e) = res {
                 eprintln!("{e:#}");
             }
@@ -178,7 +184,12 @@ impl Args {
         }
     }
 
-    fn run_inner(self, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
+    fn run_inner(
+        self,
+        // TODO: use this to calculate the config for each checked file
+        _config_finder: &dyn Fn(&Path) -> ConfigFile,
+        allow_forget: bool,
+    ) -> anyhow::Result<CommandExitStatus> {
         let args = self;
         let include = args.include;
 
