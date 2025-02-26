@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-pub mod collector;
-pub mod error;
-pub mod expectation;
-pub mod kind;
-pub mod legacy;
-pub mod style;
+use dupe::Dupe;
+
+#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash, Copy, Dupe)]
+pub enum ErrorKind {
+    Unknown,
+}

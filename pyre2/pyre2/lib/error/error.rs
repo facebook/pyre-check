@@ -9,15 +9,16 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 
+use crate::error::kind::ErrorKind;
 use crate::module::module_info::SourceRange;
 use crate::module::module_path::ModulePath;
-
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Error {
     path: ModulePath,
     range: SourceRange,
     msg: String,
     is_ignored: bool,
+    error_kind: ErrorKind,
 }
 
 impl Display for Error {
@@ -27,12 +28,19 @@ impl Display for Error {
 }
 
 impl Error {
-    pub fn new(path: ModulePath, range: SourceRange, msg: String, is_ignored: bool) -> Self {
+    pub fn new(
+        path: ModulePath,
+        range: SourceRange,
+        msg: String,
+        is_ignored: bool,
+        error_kind: ErrorKind,
+    ) -> Self {
         Self {
             path,
             range,
             msg,
             is_ignored,
+            error_kind,
         }
     }
 

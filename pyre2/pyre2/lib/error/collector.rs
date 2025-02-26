@@ -16,6 +16,7 @@ use starlark_map::small_map::SmallMap;
 use tracing::error;
 
 use crate::error::error::Error;
+use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::module::module_info::ModuleInfo;
 use crate::util::lock::Mutex;
@@ -109,6 +110,7 @@ impl ErrorCollector {
                 source_range,
                 msg,
                 is_ignored,
+                ErrorKind::Unknown,
             );
             self.errors.lock().push(err);
         }
