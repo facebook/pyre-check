@@ -26,13 +26,3 @@ pub enum CommandExitStatus {
     /// The command completed, but problems (e.g. type errors) were found.
     UserError,
 }
-
-/// `Ok` means we successfully ran the command and returned with the given status.
-/// `Err` means we unexpectedly crashed while running the command.
-pub fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
-    match command {
-        Command::Check(args) => args.run(allow_forget),
-        Command::BuckCheck(args) => args.run(),
-        Command::Lsp(args) => args.run(),
-    }
-}

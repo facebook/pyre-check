@@ -12,7 +12,6 @@ use std::process::ExitCode;
 use clap::Parser;
 use pyre2::get_args_expanded;
 use pyre2::init_tracing;
-use pyre2::run::run_command;
 use pyre2::run::Command;
 use pyre2::run::CommandExitStatus;
 
@@ -45,6 +44,14 @@ fn to_exit_code(status: CommandExitStatus) -> ExitCode {
     match status {
         CommandExitStatus::Success => ExitCode::SUCCESS,
         CommandExitStatus::UserError => ExitCode::FAILURE,
+    }
+}
+
+fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
+    match command {
+        Command::Check(args) => args.run(allow_forget),
+        Command::BuckCheck(args) => args.run(),
+        Command::Lsp(args) => args.run(),
     }
 }
 
