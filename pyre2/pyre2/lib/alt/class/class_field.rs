@@ -446,6 +446,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let metadata = self.get_metadata_for_class(class);
         let initialization = self.get_class_field_initialization(&metadata, initial_value);
 
+        // Ban typed dict from containing values; fields should be annotation-only.
+        // TODO(stroxler): we ought to look into this more: class-level attributes make sense on a `TypedDict` class;
+        // the typing spec does not explicitly define whether this is permitted.
+        if metadata.is_typed_dict() && matches!(initialization, ClassFieldInitialization::Class(_))
+        {
+            self.error(
+                errors,
+                range,
+                format!("TypedDict item `{}` may not be initialized.", name),
+            );
+        }
+
         // Promote literals. The check on `annotation` is an optimization, it does not (currently) affect semantics.
         // TODO(stroxler): if we see a read-only `Qualifier` like `Final`, it is sound to preserve literals.
         let value_ty = if annotation.map_or(true, |a| a.ty.is_none()) && value_ty.is_literal() {
@@ -488,16 +500,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             value_ty
         };
-
-        // TypedDict handling
-        if metadata.is_typed_dict() && matches!(initialization, ClassFieldInitialization::Class(_))
-        {
-            self.error(
-                errors,
-                range,
-                format!("TypedDict item `{}` may not be initialized.", name),
-            );
-        }
 
         // Types provided in annotations shadow inferred types
         let (ty, ann) = if let Some(ann) = annotation {
