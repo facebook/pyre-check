@@ -17,8 +17,8 @@ from typing import NewType, assert_type
 UserId = NewType("UserId", int)
 
 UserId("user") 
-u1: UserId = 42 # E: untype, got NewType 
-u2: UserId = UserId(42) # E: untype, got NewType 
+u1: UserId = 42 # E: Expected a type form, got instance of `NewType`
+u2: UserId = UserId(42) # E: Expected a type form, got instance of `NewType`
 
 assert_type(UserId(5) + 1, int) 
      "#,
