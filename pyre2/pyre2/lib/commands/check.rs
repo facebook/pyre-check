@@ -45,8 +45,8 @@ use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
 use crate::util::globs::Globs;
 use crate::util::memory::MemoryUsageTrace;
+use crate::util::notify_watcher::NotifyWatcher;
 use crate::util::prelude::VecExt;
-use crate::util::watcher::Watcher;
 
 #[derive(Debug, Clone, ValueEnum, Default)]
 enum OutputFormat {
@@ -157,7 +157,7 @@ impl Args {
     }
 
     fn run_watch(self) -> anyhow::Result<()> {
-        let mut watch = Watcher::new()?;
+        let mut watch = NotifyWatcher::new()?;
         for path in Globs::new(self.files.clone()).roots() {
             watch.watch_dir(&path)?;
         }

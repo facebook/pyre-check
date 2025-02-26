@@ -19,12 +19,12 @@ use notify::RecommendedWatcher;
 use notify::RecursiveMode;
 use notify::Watcher as _;
 
-pub struct Watcher {
+pub struct NotifyWatcher {
     receiver: Receiver<notify::Result<Event>>,
     watcher: RecommendedWatcher,
 }
 
-impl Watcher {
+impl NotifyWatcher {
     pub fn new() -> anyhow::Result<Self> {
         let (sender, receiver) = channel();
         let watcher = recommended_watcher(sender)?;
