@@ -443,14 +443,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> ClassField {
+        let metadata = self.get_metadata_for_class(class);
+        let initialization = self.get_class_field_initialization(&metadata, initial_value);
+
         let value_ty = if annotation.is_none() && value_ty.is_literal() {
             &value_ty.clone().promote_literals(self.stdlib)
         } else {
             value_ty
         };
-
-        let metadata = self.get_metadata_for_class(class);
-        let initialization = self.get_class_field_initialization(&metadata, initial_value);
 
         // todo: consider revisiting the attr subset check to account for override decorator
         // stripping the override decorator from the type when we don't know where it appears
