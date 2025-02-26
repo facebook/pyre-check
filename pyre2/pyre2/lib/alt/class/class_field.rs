@@ -446,7 +446,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let metadata = self.get_metadata_for_class(class);
         let initialization = self.get_class_field_initialization(&metadata, initial_value);
 
-        let value_ty = if annotation.is_none() && value_ty.is_literal() {
+        // Promote literals. The check on `annotation` is an optimization, it does not (currently) affect semantics.
+        // TODO(stroxler): if we see a read-only `Qualifier` like `Final`, it is sound to preserve literals.
+        let value_ty = if annotation.map_or(true, |a| a.ty.is_none()) && value_ty.is_literal() {
             &value_ty.clone().promote_literals(self.stdlib)
         } else {
             value_ty

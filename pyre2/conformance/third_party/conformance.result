@@ -884,7 +884,6 @@
     "Line 149: Expected 1 errors",
     "Line 152: Expected 1 errors",
     "Line 155: Expected 1 errors",
-    "Line 96: Unexpected errors ['Class member `__private` overrides parent class `ClassC` in an inconsistent manner']",
     "Line 131: Unexpected errors ['Expected first item to be a string literal', 'Expected first item to be a string literal']",
     "Line 133: Unexpected errors ['Unexpected keyword argument `x`', 'Unexpected keyword argument `y`']",
     "Line 139: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']"

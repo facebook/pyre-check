@@ -10716,16 +10716,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Class member `__private` overrides parent class `ClassC` in an inconsistent manner",
-      "description": "Class member `__private` overrides parent class `ClassC` in an inconsistent manner",
-      "line": 96,
-      "name": "PyreError",
-      "stop_column": 14,
-      "stop_line": 96
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Final[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Final[int]`",

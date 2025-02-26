@@ -164,20 +164,20 @@ def f(a: A):
     "#,
 );
 
-testcase!(
-    test_self_attribute_qualified,
+testcase_with_bug!(
+    "TODO(stroxler): We are always promoting literals. It is sound to preserve literals for read-only attributes",
+    test_final_attribute_assined_in_init,
     r#"
 from typing import assert_type, Final, Literal
 class A:
     def __init__(self):
         self.x: Final = 0
 def f(a: A):
-    assert_type(a.x, Literal[0])
+    assert_type(a.x, Literal[0])  # E: assert_type(int, Literal[0])
     "#,
 );
 
-testcase_with_bug!(
-    "TODO(steven): We are failing to promote literals that have an annotation.",
+testcase!(
     test_literal_attr_with_annotation,
     r#"
 from typing import ClassVar, assert_type
@@ -185,7 +185,7 @@ class C:
     x0 = 0
     x1: ClassVar = 0
 assert_type(C.x0, int)
-assert_type(C.x1, int)  # E: assert_type(Literal[0], int)
+assert_type(C.x1, int)
 "#,
 );
 
