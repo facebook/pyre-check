@@ -10,4 +10,5 @@ use dupe::Dupe;
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash, Copy, Dupe)]
 pub enum ErrorKind {
     Unknown,
+    ParseError,
 }

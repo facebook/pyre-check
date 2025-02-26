@@ -120,7 +120,7 @@ impl ModuleInfo {
             errors.add(
                 err.location,
                 format!("Parse error: {err}"),
-                ErrorKind::Unknown,
+                ErrorKind::ParseError,
             );
         }
         module
