@@ -604,15 +604,7 @@
   "generics_type_erasure.py": [
     "Line 56: Unexpected errors ['assert_type(Any, bytes) failed']"
   ],
-  "generics_typevartuple_args.py": [
-    "Line 20: Unexpected errors ['assert_type(tuple[*Any], tuple[int, str]) failed', 'EXPECTED Literal[1] <: *@_', \"EXPECTED Literal['a'] <: *@_\"]",
-    "Line 31: Unexpected errors ['assert_type(tuple[*Any], tuple[()]) failed', 'EXPECTED Env <: *tuple[*@_, Env]']",
-    "Line 32: Unexpected errors ['assert_type(tuple[*Any], tuple[int, str]) failed', 'EXPECTED Literal[0] <: *tuple[*@_, Env]', \"EXPECTED Literal[''] <: *tuple[*@_, Env]\", 'EXPECTED Env <: *tuple[*@_, Env]']",
-    "Line 47: Unexpected errors ['EXPECTED Literal[1] <: *tuple[int, ...]', 'EXPECTED Literal[2] <: *tuple[int, ...]', 'EXPECTED Literal[3] <: *tuple[int, ...]', 'EXPECTED Literal[4] <: *tuple[int, ...]', 'EXPECTED Literal[5] <: *tuple[int, ...]']",
-    "Line 55: Unexpected errors ['EXPECTED Literal[1] <: *tuple[int, *tuple[str, ...], str]', \"EXPECTED Literal[''] <: *tuple[int, *tuple[str, ...], str]\"]",
-    "Line 56: Unexpected errors ['EXPECTED Literal[1] <: *tuple[int, *tuple[str, ...], str]', \"EXPECTED Literal[''] <: *tuple[int, *tuple[str, ...], str]\", \"EXPECTED Literal[''] <: *tuple[int, *tuple[str, ...], str]\", \"EXPECTED Literal[''] <: *tuple[int, *tuple[str, ...], str]\", \"EXPECTED Literal[''] <: *tuple[int, *tuple[str, ...], str]\"]",
-    "Line 66: Unexpected errors ['EXPECTED Literal[1] <: *tuple[int, str]', \"EXPECTED Literal['hello'] <: *tuple[int, str]\"]"
-  ],
+  "generics_typevartuple_args.py": [],
   "generics_typevartuple_basic.py": [
     "Line 52: Expected 1 errors",
     "Line 59: Expected 1 errors",
@@ -626,9 +618,7 @@
     "Line 85: Unexpected errors ['EXPECTED tuple[float] <: tuple[*tuple[int]]']",
     "Line 97: Unexpected errors ['Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`', 'Expected a type form, got instance of `NewType`']"
   ],
-  "generics_typevartuple_callable.py": [
-    "Line 49: Unexpected errors ['assert_type(tuple[Any, *Any], tuple[float, str, complex]) failed', 'EXPECTED Literal[1] <: *tuple[int, *@_, @_]', \"EXPECTED Literal[''] <: *tuple[int, *@_, @_]\", 'EXPECTED complex <: *tuple[int, *@_, @_]', 'EXPECTED float <: *tuple[int, *@_, @_]']"
-  ],
+  "generics_typevartuple_callable.py": [],
   "generics_typevartuple_concat.py": [
     "Line 26: Unexpected errors ['Expected a type form, got instance of `NewType`']",
     "Line 30: Unexpected errors ['Expected a type form, got instance of `NewType`']",
@@ -666,13 +656,13 @@
     "Line 108: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[IntTupleGeneric, type[tuple[int, TypeVar[T]]]]\"]",
     "Line 130: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]\"]",
     "Line 134: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA7, type[tuple[*TypeVarTuple[Ts], TypeVar[T1], TypeVar[T2]]]]\"]",
-    "Line 135: Unexpected errors ['assert_type(tuple[tuple[*Any], Any, Any], tuple[tuple[()], str, bool]) failed']",
-    "Line 136: Unexpected errors ['assert_type(tuple[tuple[*Any], Any, Any], tuple[tuple[str], bool, float]) failed']",
-    "Line 137: Unexpected errors ['assert_type(tuple[tuple[*Any], Any, Any], tuple[tuple[str, bool], float, int]) failed']",
+    "Line 135: Unexpected errors ['assert_type(tuple[Any, Any, Any], tuple[tuple[()], str, bool]) failed']",
+    "Line 136: Unexpected errors ['assert_type(tuple[Any, Any, Any], tuple[tuple[str], bool, float]) failed']",
+    "Line 137: Unexpected errors ['assert_type(tuple[Any, Any, Any], tuple[tuple[str, bool], float, int]) failed']",
     "Line 143: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA8, type[tuple[TypeVar[T1], *TypeVarTuple[Ts], TypeVar[T2], TypeVar[T3]]]]\"]",
     "Line 147: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA8, type[tuple[TypeVar[T1], *TypeVarTuple[Ts], TypeVar[T2], TypeVar[T3]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA8, type[tuple[TypeVar[T1], *TypeVarTuple[Ts], TypeVar[T2], TypeVar[T3]]]]\"]",
-    "Line 148: Unexpected errors ['assert_type(tuple[tuple[*Any], Any, Any, Any], tuple[tuple[()], str, bool, float]) failed']",
-    "Line 149: Unexpected errors ['assert_type(tuple[tuple[*Any], Any, Any, Any], tuple[tuple[bool], str, float, int]) failed']",
+    "Line 148: Unexpected errors ['assert_type(tuple[Any, Any, Any, Any], tuple[tuple[()], str, bool, float]) failed']",
+    "Line 149: Unexpected errors ['assert_type(tuple[Any, Any, Any, Any], tuple[tuple[bool], str, float, int]) failed']",
     "Line 153: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA9, type[tuple[*TypeVarTuple[Ts], TypeVar[T1]]]]\"]",
     "Line 156: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA9, type[tuple[*TypeVarTuple[Ts], TypeVar[T1]]]]\", \"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[TA9, type[tuple[*TypeVarTuple[Ts], TypeVar[T1]]]]\"]",
     "Line 157: Unexpected errors ['assert_type(Any, tuple[*tuple[int, ...], int]) failed']",

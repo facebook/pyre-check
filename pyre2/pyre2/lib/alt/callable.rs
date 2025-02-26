@@ -22,6 +22,7 @@ use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
 use crate::types::quantified::Quantified;
+use crate::types::tuple::Tuple;
 use crate::types::types::Type;
 use crate::util::display::count;
 use crate::util::prelude::VecExt;
@@ -150,6 +151,19 @@ impl CallArgPreEval<'_> {
         }
     }
 
+    // Step the argument or mark it as done similar to `post_infer`, but without checking the type
+    // Intended for arguments matched to unpack-annotated *args, which are typechecked separately later
+    fn post_skip(&mut self) {
+        match self {
+            Self::Type(_, done) | Self::Expr(_, done) | Self::Star(_, done) => {
+                *done = true;
+            }
+            Self::Fixed(_, i) => {
+                *i += 1;
+            }
+        }
+    }
+
     fn post_infer<Ans: LookupAnswer>(
         &mut self,
         solver: &AnswersSolver<Ans>,
@@ -188,16 +202,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         call_errors: &ErrorCollector,
     ) {
         let iargs = self_arg.iter().chain(args.iter());
-
         let mut iparams = params.items().iter().enumerate().peekable();
         let mut num_positional_params = 0;
         let mut num_positional_args = 0;
         let mut seen_names: SmallMap<Name, usize> = SmallMap::new();
         let mut extra_arg_pos = None;
+        let mut unpacked_vararg = None;
+        let mut unpacked_vararg_matched_args = Vec::new();
         for arg in iargs {
             let mut arg_pre = arg.pre_eval(self, arg_errors);
             while arg_pre.step() {
                 num_positional_args += 1;
+                let mut matched_unpacked_vararg = false;
                 let param = if let Some((p_idx, p)) = iparams.peek() {
                     match p {
                         Param::PosOnly(ty, _required) => {
@@ -211,6 +227,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             iparams.next();
                             Some((ty, false))
                         }
+                        Param::VarArg(Type::Unpack(box ty)) => {
+                            // Store args that get matched to an unpacked *args param
+                            // Matched args are typechecked separately later
+                            unpacked_vararg = Some(ty);
+                            unpacked_vararg_matched_args.push(arg_pre.clone());
+                            matched_unpacked_vararg = true;
+                            None
+                        }
                         Param::VarArg(ty) => Some((ty, true)),
                         Param::KwOnly(..) | Param::Kwargs(..) => None,
                     }
@@ -221,6 +245,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Some((hint, vararg)) => {
                         arg_pre.post_check(self, hint, vararg, arg.range(), arg_errors, call_errors)
                     }
+                    None if matched_unpacked_vararg => arg_pre.post_skip(),
                     None => {
                         arg_pre.post_infer(self, arg_errors);
                         if arg_pre.is_star() {
@@ -233,6 +258,57 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
             }
+        }
+        if let Some(unpacked_param_ty) = unpacked_vararg {
+            let mut prefix = Vec::new();
+            let mut middle = Vec::new();
+            let mut suffix = Vec::new();
+            for arg in unpacked_vararg_matched_args {
+                match arg {
+                    CallArgPreEval::Type(ty, _) => {
+                        if middle.is_empty() {
+                            prefix.push(ty.clone())
+                        } else {
+                            suffix.push(ty.clone())
+                        }
+                    }
+                    CallArgPreEval::Expr(e, _) => {
+                        if middle.is_empty() {
+                            prefix.push(self.expr_infer(e, arg_errors))
+                        } else {
+                            suffix.push(self.expr_infer(e, arg_errors))
+                        }
+                    }
+                    CallArgPreEval::Fixed(tys, idx) => {
+                        if middle.is_empty() {
+                            prefix.push(tys[idx].clone());
+                        } else {
+                            suffix.push(tys[idx].clone());
+                        }
+                    }
+                    CallArgPreEval::Star(ty, _) => {
+                        if !middle.is_empty() {
+                            middle.extend(suffix);
+                            suffix = Vec::new();
+                        }
+                        middle.push(ty);
+                    }
+                }
+            }
+            let unpacked_args_ty = match middle.as_slice() {
+                [] => Type::tuple(prefix),
+                [middle] => Type::Tuple(Tuple::unpacked(
+                    prefix,
+                    Type::Tuple(Tuple::unbounded(middle.clone())),
+                    suffix,
+                )),
+                _ => Type::Tuple(Tuple::unpacked(
+                    prefix,
+                    Type::Tuple(Tuple::Unbounded(Box::new(self.unions(middle)))),
+                    suffix,
+                )),
+            };
+            self.check_type(unpacked_param_ty, &unpacked_args_ty, range, arg_errors);
         }
         if let Some(arg_range) = extra_arg_pos {
             let (expected, actual) = if self_arg.is_none() {
