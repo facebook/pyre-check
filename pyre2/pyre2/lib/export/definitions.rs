@@ -23,8 +23,8 @@ use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 
 use crate::ast::Ast;
-use crate::config::Config;
 use crate::dunder;
+use crate::metadata::RuntimeMetadata;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModuleStyle;
 use crate::module::short_identifier::ShortIdentifier;
@@ -113,12 +113,17 @@ impl DunderAllEntry {
 struct DefinitionsBuilder<'a> {
     module_name: ModuleName,
     is_init: bool,
-    config: &'a Config,
+    config: &'a RuntimeMetadata,
     inner: Definitions,
 }
 
 impl Definitions {
-    pub fn new(x: &[Stmt], module_name: ModuleName, is_init: bool, config: &Config) -> Self {
+    pub fn new(
+        x: &[Stmt],
+        module_name: ModuleName,
+        is_init: bool,
+        config: &RuntimeMetadata,
+    ) -> Self {
         let mut builder = DefinitionsBuilder {
             module_name,
             config,
@@ -391,7 +396,7 @@ mod tests {
             &ast.body,
             ModuleName::from_str("main"),
             false,
-            &Config::default(),
+            &RuntimeMetadata::default(),
         );
         assert_eq!(
             import_all,

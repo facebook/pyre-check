@@ -15,10 +15,10 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Stmt;
 use starlark_map::small_set::SmallSet;
 
-use crate::config::Config;
 use crate::export::definitions::Definitions;
 use crate::export::definitions::DunderAllEntry;
 use crate::graph::calculation::Calculation;
+use crate::metadata::RuntimeMetadata;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::state::loader::FindError;
@@ -59,7 +59,7 @@ impl Display for Exports {
 }
 
 impl Exports {
-    pub fn new(x: &[Stmt], module_info: &ModuleInfo, config: &Config) -> Self {
+    pub fn new(x: &[Stmt], module_info: &ModuleInfo, config: &RuntimeMetadata) -> Self {
         let mut definitions =
             Definitions::new(x, module_info.name(), module_info.path().is_init(), config);
         definitions.ensure_dunder_all(module_info.path().style());
@@ -148,7 +148,7 @@ mod tests {
             path,
             Arc::new(contents.to_owned()),
         );
-        Exports::new(&ast.body, &module_info, &Config::default())
+        Exports::new(&ast.body, &module_info, &RuntimeMetadata::default())
     }
 
     fn eq_wildcards(exports: &Exports, lookup: &dyn LookupExport, all: &[&str]) {

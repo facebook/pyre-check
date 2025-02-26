@@ -83,23 +83,26 @@ impl PythonVersion {
 }
 
 #[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash)]
-pub struct Config(Arc<WithHash<ConfigInner>>);
+pub struct RuntimeMetadata(Arc<WithHash<RuntimeMetadataInner>>);
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-struct ConfigInner {
+struct RuntimeMetadataInner {
     version: PythonVersion,
     platform: String,
 }
 
-impl Default for Config {
+impl Default for RuntimeMetadata {
     fn default() -> Self {
         Self::new(PythonVersion::default(), "linux".to_owned())
     }
 }
 
-impl Config {
+impl RuntimeMetadata {
     pub fn new(version: PythonVersion, platform: String) -> Self {
-        Self(Arc::new(WithHash::new(ConfigInner { version, platform })))
+        Self(Arc::new(WithHash::new(RuntimeMetadataInner {
+            version,
+            platform,
+        })))
     }
 }
 
@@ -147,7 +150,7 @@ impl Value {
     }
 }
 
-impl Config {
+impl RuntimeMetadata {
     /// Return true/false if we can statically evaluate it, and None if we can't.
     pub fn evaluate_bool(&self, x: &Expr) -> Option<bool> {
         Some(self.evaluate(x)?.to_bool())

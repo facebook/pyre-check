@@ -55,7 +55,6 @@ use crate::binding::scope::LoopExit;
 use crate::binding::scope::ScopeKind;
 use crate::binding::scope::Scopes;
 use crate::binding::table::TableKeyed;
-use crate::config::Config;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::export::exports::Exports;
@@ -66,6 +65,7 @@ use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::graph::index::Index;
 use crate::graph::index_map::IndexMap;
+use crate::metadata::RuntimeMetadata;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
@@ -120,7 +120,7 @@ impl Display for Bindings {
 pub struct BindingsBuilder<'a> {
     pub module_info: ModuleInfo,
     pub lookup: &'a dyn LookupExport,
-    pub config: &'a Config,
+    pub config: &'a RuntimeMetadata,
     errors: &'a ErrorCollector,
     solver: &'a Solver,
     uniques: &'a UniqueFactory,
@@ -238,7 +238,7 @@ impl Bindings {
         exports: Exports,
         solver: &Solver,
         lookup: &dyn LookupExport,
-        config: &Config,
+        config: &RuntimeMetadata,
         errors: &ErrorCollector,
         uniques: &UniqueFactory,
     ) -> Self {

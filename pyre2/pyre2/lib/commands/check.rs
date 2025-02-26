@@ -24,11 +24,11 @@ use tracing::info;
 
 use crate::commands::common::CommonArgs;
 use crate::commands::util::module_from_path;
-use crate::config::Config;
-use crate::config::PythonVersion;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::error::style::ErrorStyle;
+use crate::metadata::PythonVersion;
+use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
 use crate::module::finder::find_module;
 use crate::module::module_name::ModuleName;
@@ -193,8 +193,10 @@ impl Args {
             to_check.entry(module).or_insert_with(|| file.clone());
         }
         let config = match &args.python_version {
-            None => Config::default(),
-            Some(version) => Config::new(PythonVersion::from_str(version)?, "linux".to_owned()),
+            None => RuntimeMetadata::default(),
+            Some(version) => {
+                RuntimeMetadata::new(PythonVersion::from_str(version)?, "linux".to_owned())
+            }
         };
         let error_style_for_sources = ErrorStyle::Delayed;
         let loader = LoaderId::new(CheckLoader {

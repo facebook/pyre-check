@@ -33,13 +33,13 @@ use crate::binding::bindings::BindingEntry;
 use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
-use crate::config::Config;
 use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
 use crate::error::expectation::Expectation;
 use crate::error::kind::ErrorKind;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
+use crate::metadata::RuntimeMetadata;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
@@ -75,7 +75,7 @@ use crate::util::upgrade_lock::UpgradeLock;
 pub struct State {
     uniques: UniqueFactory,
     parallel: bool,
-    stdlib: SmallMap<(Config, LoaderId), Arc<Stdlib>>,
+    stdlib: SmallMap<(RuntimeMetadata, LoaderId), Arc<Stdlib>>,
     modules: LockedMap<Handle, Arc<ModuleData>>,
     loaders: SmallMap<LoaderId, Arc<LoaderFindCache<LoaderId>>>,
     /// Items we still need to process. Stored in a max heap, so that
@@ -547,7 +547,7 @@ impl State {
             .dupe()
     }
 
-    fn compute_stdlib(&mut self, configs: SmallSet<(Config, LoaderId)>) {
+    fn compute_stdlib(&mut self, configs: SmallSet<(RuntimeMetadata, LoaderId)>) {
         self.stdlib = configs
             .iter()
             .map(|k| (k.dupe(), Arc::new(Stdlib::for_bootstrapping())))

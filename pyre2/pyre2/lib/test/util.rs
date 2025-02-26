@@ -24,8 +24,8 @@ use ruff_text_size::TextSize;
 use starlark_map::small_map::SmallMap;
 
 use crate::binding::binding::KeyExport;
-use crate::config::Config;
 use crate::error::style::ErrorStyle;
+use crate::metadata::RuntimeMetadata;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::handle::Handle;
@@ -139,8 +139,8 @@ impl TestEnv {
             .insert(module_name, (ModulePath::filesystem(path), None));
     }
 
-    pub fn config() -> Config {
-        Config::default()
+    pub fn config() -> RuntimeMetadata {
+        RuntimeMetadata::default()
     }
 
     pub fn to_state(self) -> (State, impl Fn(&str) -> Handle) {

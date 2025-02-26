@@ -37,9 +37,9 @@ use crate::binding::bindings::LegacyTParamBuilder;
 use crate::binding::scope::FlowStyle;
 use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
-use crate::config::Config;
 use crate::dunder;
 use crate::graph::index::Idx;
+use crate::metadata::RuntimeMetadata;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::util::prelude::SliceExt;
 use crate::util::prelude::VecExt;
@@ -270,8 +270,8 @@ impl<'a> BindingsBuilder<'a> {
 /// * Return None to say there are branches that fall off the end always.
 /// * Return Some([]) to say that we can never reach the end (e.g. always return, raise)
 /// * Return Some(xs) to say this set might be the last expression.
-fn function_last_expressions<'a>(x: &'a [Stmt], config: &Config) -> Option<Vec<&'a Expr>> {
-    fn f<'a>(config: &Config, x: &'a [Stmt], res: &mut Vec<&'a Expr>) -> Option<()> {
+fn function_last_expressions<'a>(x: &'a [Stmt], config: &RuntimeMetadata) -> Option<Vec<&'a Expr>> {
+    fn f<'a>(config: &RuntimeMetadata, x: &'a [Stmt], res: &mut Vec<&'a Expr>) -> Option<()> {
         match x.last()? {
             Stmt::Expr(x) => res.push(&x.value),
             Stmt::Return(_) | Stmt::Raise(_) => {}

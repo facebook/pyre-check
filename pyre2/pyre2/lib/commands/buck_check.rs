@@ -16,10 +16,10 @@ use serde::Deserialize;
 use tracing::info;
 
 use crate::commands::common::CommonArgs;
-use crate::config::Config;
-use crate::config::PythonVersion;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
+use crate::metadata::PythonVersion;
+use crate::metadata::RuntimeMetadata;
 use crate::module::module_path::ModulePath;
 use crate::module::source_db::BuckSourceDatabase;
 use crate::run::CommandExitStatus;
@@ -57,7 +57,11 @@ fn read_input_file(path: &Path) -> anyhow::Result<InputFile> {
     Ok(input_file)
 }
 
-fn compute_errors(config: Config, sourcedb: BuckSourceDatabase, common: &CommonArgs) -> Vec<Error> {
+fn compute_errors(
+    config: RuntimeMetadata,
+    sourcedb: BuckSourceDatabase,
+    common: &CommonArgs,
+) -> Vec<Error> {
     let modules = sourcedb.modules_to_check();
     let loader = LoaderId::new(sourcedb);
     let modules_to_check = modules.into_map(|(name, path)| {
@@ -98,7 +102,7 @@ impl Args {
     pub fn run(self) -> anyhow::Result<CommandExitStatus> {
         let input_file = read_input_file(self.input_path.as_path())?;
         let python_version = PythonVersion::from_str(&input_file.py_version)?;
-        let config = Config::new(python_version, "linux".to_owned());
+        let config = RuntimeMetadata::new(python_version, "linux".to_owned());
         let sourcedb = BuckSourceDatabase::from_manifest_files(
             input_file.sources.as_slice(),
             input_file.dependencies.as_slice(),

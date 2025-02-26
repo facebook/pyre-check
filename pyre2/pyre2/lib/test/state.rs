@@ -14,9 +14,9 @@ use std::sync::Arc;
 use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
 
-use crate::config::Config;
-use crate::config::PythonVersion;
 use crate::error::style::ErrorStyle;
+use crate::metadata::PythonVersion;
+use crate::metadata::RuntimeMetadata;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::handle::Handle;
@@ -31,8 +31,8 @@ use crate::util::prelude::SliceExt;
 
 #[test]
 fn test_multiple_config() {
-    let linux = Config::new(PythonVersion::default(), "linux".to_owned());
-    let windows = Config::new(PythonVersion::default(), "windows".to_owned());
+    let linux = RuntimeMetadata::new(PythonVersion::default(), "linux".to_owned());
+    let windows = RuntimeMetadata::new(PythonVersion::default(), "windows".to_owned());
 
     const LIB: &str = r#"
 import sys
@@ -52,7 +52,7 @@ else:
     let mut state = State::new(true);
     let loader = LoaderId::new(test_env);
 
-    let f = |name: &str, config: &Config| {
+    let f = |name: &str, config: &RuntimeMetadata| {
         let name = ModuleName::from_str(name);
         let path = loader.find(name).unwrap().0;
         Handle::new(name, path, config.dupe(), loader.dupe())
@@ -182,7 +182,7 @@ impl Incremental {
         Handle::new(
             ModuleName::from_str(x),
             ModulePath::memory(PathBuf::from(x)),
-            Config::default(),
+            RuntimeMetadata::default(),
             self.loader.dupe(),
         )
     }

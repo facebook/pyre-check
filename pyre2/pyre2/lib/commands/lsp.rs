@@ -62,8 +62,8 @@ use serde::de::DeserializeOwned;
 use starlark_map::small_map::SmallMap;
 
 use crate::commands::util::module_from_path;
-use crate::config::Config;
 use crate::error::style::ErrorStyle;
+use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
 use crate::module::finder::find_module;
 use crate::module::module_info::ModuleInfo;
@@ -93,7 +93,7 @@ struct Server<'a> {
     initialize_params: InitializeParams,
     include: Vec<PathBuf>,
     state: Mutex<State>,
-    config: Config,
+    config: RuntimeMetadata,
     loader: LoaderId,
     open_files: Arc<Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>>,
 }
@@ -251,7 +251,7 @@ impl<'a> Server<'a> {
             initialize_params,
             include,
             state: Mutex::new(State::new(true)),
-            config: Config::default(),
+            config: RuntimeMetadata::default(),
             loader,
             open_files,
         }

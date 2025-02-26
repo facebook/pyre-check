@@ -25,12 +25,12 @@ use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyFunction;
-use crate::config::Config;
 use crate::export::definitions::DefinitionStyle;
 use crate::export::definitions::Definitions;
 use crate::export::exports::LookupExport;
 use crate::export::special::SpecialEntry;
 use crate::graph::index::Idx;
+use crate::metadata::RuntimeMetadata;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
@@ -81,7 +81,7 @@ impl Static {
         module_info: &ModuleInfo,
         top_level: bool,
         lookup: &dyn LookupExport,
-        config: &Config,
+        config: &RuntimeMetadata,
         mut get_annotation_idx: impl FnMut(ShortIdentifier) -> Idx<KeyAnnotation>,
     ) {
         let mut d = Definitions::new(x, module_info.name(), module_info.path().is_init(), config);

@@ -18,12 +18,12 @@ use crate::alt::answers::Answers;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::Solutions;
 use crate::binding::bindings::Bindings;
-use crate::config::Config;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
+use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
@@ -39,7 +39,7 @@ pub struct Context<'a, Lookup> {
     pub retain_memory: bool,
     pub module: ModuleName,
     pub path: &'a ModulePath,
-    pub config: &'a Config,
+    pub config: &'a RuntimeMetadata,
     pub loader: &'a dyn Loader,
     pub uniques: &'a UniqueFactory,
     pub stdlib: &'a Stdlib,

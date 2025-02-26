@@ -7,7 +7,7 @@
 
 use dupe::Dupe;
 
-use crate::config::Config;
+use crate::metadata::RuntimeMetadata;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::loader::LoaderId;
@@ -16,12 +16,17 @@ use crate::state::loader::LoaderId;
 pub struct Handle {
     module: ModuleName,
     path: ModulePath,
-    config: Config,
+    config: RuntimeMetadata,
     loader: LoaderId,
 }
 
 impl Handle {
-    pub fn new(module: ModuleName, path: ModulePath, config: Config, loader: LoaderId) -> Self {
+    pub fn new(
+        module: ModuleName,
+        path: ModulePath,
+        config: RuntimeMetadata,
+        loader: LoaderId,
+    ) -> Self {
         Self {
             module,
             path,
@@ -38,7 +43,7 @@ impl Handle {
         &self.path
     }
 
-    pub fn config(&self) -> &Config {
+    pub fn config(&self) -> &RuntimeMetadata {
         &self.config
     }
 
