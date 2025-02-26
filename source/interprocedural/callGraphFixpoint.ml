@@ -7,11 +7,6 @@
 
 open Core
 
-let not_skip_analysis_target ~skip_analysis_targets callable =
-  (* We assume `skip_analysis_targets` only contains regular callables. *)
-  not (Hash_set.mem skip_analysis_targets (Target.strip_parameters callable))
-
-
 module CallGraphAnalysis = struct
   module Context = struct
     type t = {
@@ -19,7 +14,6 @@ module CallGraphAnalysis = struct
       define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
       decorator_resolution: CallGraph.DecoratorResolution.Results.t;
       method_kinds: CallGraph.MethodKind.SharedMemory.ReadOnly.t;
-      skip_analysis_targets: Target.HashSet.t;
     }
   end
 
@@ -86,14 +80,7 @@ module CallGraphAnalysis = struct
   end
 
   let analyze_define
-      ~context:
-        {
-          Context.pyre_api;
-          define_call_graphs;
-          decorator_resolution;
-          method_kinds;
-          skip_analysis_targets;
-        }
+      ~context:{ Context.pyre_api; define_call_graphs; decorator_resolution; method_kinds }
       ~callable
       ~previous_model:{ CallGraph.HigherOrderCallGraph.call_graph = previous_call_graph; _ }
       ~get_callee_model
@@ -134,7 +121,6 @@ module CallGraphAnalysis = struct
       in
       let additional_dependencies =
         Target.Set.diff (dependencies call_graph) (dependencies previous_call_graph)
-        |> Target.Set.filter (not_skip_analysis_target ~skip_analysis_targets)
       in
       if CallGraph.debug_higher_order_call_graph define then (
         Log.dump
@@ -268,14 +254,13 @@ let compute
       ~scheduler_policy
       ~override_graph:(OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
       ~dependency_graph
+      ~skip_analysis_targets
       ~context:
         {
           CallGraphAnalysis.Context.pyre_api;
           define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
           decorator_resolution;
           method_kinds;
-          skip_analysis_targets =
-            skip_analysis_targets |> Target.Set.elements |> Target.HashSet.of_list;
         }
       ~callables_to_analyze:(List.rev_append override_targets callables_with_call_graphs)
         (* Build higher order call graphs only for targets that have call graphs. *)

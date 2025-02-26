@@ -248,12 +248,10 @@ module Analysis = struct
       |> CallModel.StringFormatCall.declared_partial_sink_tree
     in
     if Model.ModeSet.contains Model.Mode.SkipAnalysis modes then
-      let () = Log.info "Skipping taint analysis of %a" Interprocedural.Target.pp_pretty callable in
-      {
-        AnalyzeDefineResult.result = Result.empty;
-        model = previous_model;
-        additional_dependencies = [];
-      }
+      failwithf
+        "Expect the global fixpoint to skip analyzing %s"
+        (Interprocedural.Target.show_pretty callable)
+        ()
     else
       analyze_define_with_sanitizers_and_modes
         ~taint_configuration

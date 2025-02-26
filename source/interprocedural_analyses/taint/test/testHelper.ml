@@ -950,6 +950,7 @@ let end_to_end_integration_test path context =
         ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
         ~override_graph:override_graph_shared_memory_read_only
         ~dependency_graph
+        ~skip_analysis_targets:(SharedModels.skip_analysis ~scheduler initial_models)
         ~context:
           {
             TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;

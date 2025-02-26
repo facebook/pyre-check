@@ -67,13 +67,15 @@ let assert_fixpoint
       ~stubs
       ~override_targets
   in
+  let scheduler = Test.mock_scheduler () in
   let ({ TaintFixpoint.fixpoint_reached_iterations; _ } as fixpoint) =
     TaintFixpoint.compute
-      ~scheduler:(Test.mock_scheduler ())
+      ~scheduler
       ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
       ~override_graph:
         (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
       ~dependency_graph
+      ~skip_analysis_targets:(SharedModels.skip_analysis ~scheduler initial_models)
       ~context:
         {
           TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;

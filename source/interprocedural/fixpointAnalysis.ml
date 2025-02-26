@@ -840,11 +840,21 @@ module Make (Analysis : ANALYSIS) = struct
     state: State.t;
   }
 
+  (* Define the meaning of `skip_analysis_targets`. We assume `skip_analysis_targets` only contains
+     regular callables. *)
+  let not_skip_analysis_target ~skip_analysis_targets callable =
+    let should_skip = Hash_set.mem skip_analysis_targets (Target.strip_parameters callable) in
+    if should_skip then
+      Log.info "Skipping global fixpoint analysis of %a" Target.pp_pretty callable;
+    not should_skip
+
+
   let compute
       ~scheduler
       ~scheduler_policy
       ~override_graph
       ~dependency_graph
+      ~skip_analysis_targets
       ~context
       ~callables_to_analyze:initial_callables_to_analyze
       ~max_iterations
@@ -852,6 +862,9 @@ module Make (Analysis : ANALYSIS) = struct
       ~epoch
       ~state
     =
+    let skip_analysis_targets =
+      skip_analysis_targets |> Target.Set.elements |> Target.HashSet.of_list
+    in
     let rec iterate
         ~iteration
         ~dependency_graph
@@ -926,6 +939,7 @@ module Make (Analysis : ANALYSIS) = struct
               (additional_dependencies |> DependencyGraph.keys |> Target.Set.of_list)
               (Target.Set.of_list all_callables)
             |> Target.Set.elements
+            |> List.filter ~f:(not_skip_analysis_target ~skip_analysis_targets)
           else
             []
         in
@@ -939,6 +953,9 @@ module Make (Analysis : ANALYSIS) = struct
           ~all_callables:(List.rev_append new_callables all_callables)
           ~state
           (List.rev_append new_callables callables_to_analyze)
+    in
+    let initial_callables_to_analyze =
+      List.filter ~f:(not_skip_analysis_target ~skip_analysis_targets) initial_callables_to_analyze
     in
     let state, iterations =
       iterate

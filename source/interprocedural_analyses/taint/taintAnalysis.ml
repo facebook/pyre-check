@@ -987,6 +987,7 @@ let run_taint_analysis
       ~scheduler_policy:(Taint.TaintFixpoint.get_scheduler_policy scheduler_policies)
       ~override_graph:override_graph_shared_memory_read_only
       ~dependency_graph
+      ~skip_analysis_targets
       ~context:
         {
           Taint.TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
