@@ -8,6 +8,9 @@
 use clap::Subcommand;
 
 use crate::clap_env;
+pub use crate::commands::buck_check::Args as BuckCheckArgs;
+pub use crate::commands::check::Args as CheckArgs;
+pub use crate::commands::lsp::Args as LspArgs;
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
@@ -20,14 +23,14 @@ pub enum Command {
         watch: bool,
 
         #[clap(flatten)]
-        args: crate::commands::check::Args,
+        args: CheckArgs,
     },
 
     /// Entry point for Buck integration
-    BuckCheck(crate::commands::buck_check::Args),
+    BuckCheck(BuckCheckArgs),
 
     /// Start an LSP server
-    Lsp(crate::commands::lsp::Args),
+    Lsp(LspArgs),
 }
 
 /// Exit status of a command, if the run is completed.
