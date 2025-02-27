@@ -14,15 +14,16 @@ const allFlowVersions = require('./src/js/flow-versions');
 
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
-  title: 'Flow',
-  tagline: 'A Static Type Checker for JavaScript',
-  url: 'https://flow.org',
+  title: 'Pyre2',
+  tagline: 'A Static Type Checker for Python',
+  // TODO: to be updated
+  url: 'https://pyre2.github.io',
   baseUrl: process.env.DOCUSAURUS_BASE_URL || '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.png',
   organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'flow', // Usually your repo name.
+  projectName: 'Pyre', // Usually your repo name.
   trailingSlash: true,
   markdown: {
     mermaid: true,
@@ -112,7 +113,7 @@ module.exports = {
           position: 'left',
         },
         process.env.INTERNAL_STATIC_DOCS
-          ? {to: 'https://flow.org/try', label: 'Try', position: 'left'}
+          ? {to: 'https://pyre2.org/try', label: 'Try', position: 'left'}
           : {
               to: 'try/',
               activeBasePath: 'try',
@@ -125,12 +126,14 @@ module.exports = {
           position: 'left',
         },
         {
+          // TODO (T216437697): Update links to the new Pyre2 website
           href: 'https://twitter.com/flowtype',
           'aria-label': 'Twitter',
           position: 'right',
           className: 'navbar__icon twitter__link',
         },
         {
+          // TODO (T216437697): Update links to the new Pyre2 website
           href: 'http://stackoverflow.com/questions/tagged/flowtype',
           'aria-label': 'Stack Overflow',
           position: 'right',
@@ -162,10 +165,12 @@ module.exports = {
           items: [
             {
               label: 'Twitter',
+              // TODO (T216437697): Update links to the new Pyre2 website
               href: 'https://twitter.com/flowtype',
             },
             {
               label: 'Discord',
+              // TODO (T216437697): Update links to the new Pyre2 website
               href: 'https://discordapp.com/invite/8ezwRUK',
             },
           ],
@@ -175,10 +180,12 @@ module.exports = {
           items: [
             {
               label: 'Medium',
+              // TODO (T216437697): Update links to the new Pyre2 website
               to: 'https://medium.com/flow-type',
             },
             {
               label: 'GitHub',
+              // TODO (T216437697): Update links to the new Pyre2 website
               href: 'https://github.com/facebook/flow',
             },
           ],
@@ -231,15 +238,16 @@ module.exports = {
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: fbContent({
             internal:
-              'https://www.internalfb.com/code/fbsource/fbcode/flow/website/',
-            external: 'https://github.com/facebook/flow/edit/main/website/',
+              'https://www.internalfb.com/code/fbsource/fbcode/tools/pyre/pyre2/website/',
+            external:
+              'https://github.com/facebook/pyre-check/pyre2/edit/main/website/',
           }),
           remarkPlugins: [
             [require('@docusaurus/remark-plugin-npm2yarn'), {sync: true}],
             require('./src/js/flow-check-remark-plugin'),
           ],
         },
-        staticDocsProject: 'flow',
+        staticDocsProject: 'Pyre2',
         blog: {
           path: 'blog',
           postsPerPage: 50,
