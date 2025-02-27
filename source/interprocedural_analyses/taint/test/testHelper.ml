@@ -456,7 +456,7 @@ module TestEnvironment = struct
     global_constants: GlobalConstants.SharedMemory.t;
     stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
     method_kinds: CallGraph.MethodKind.SharedMemory.t;
-    qualifiers_defines: Interprocedural.Target.QualifiersDefinesSharedMemory.t;
+    callables_to_definitions_map: Interprocedural.Target.DefinesSharedMemory.t;
   }
 
   let cleanup
@@ -480,7 +480,7 @@ module TestEnvironment = struct
         global_constants;
         stubs_shared_memory_handle;
         method_kinds;
-        qualifiers_defines;
+        callables_to_definitions_map;
       }
     =
     CallGraph.SharedMemory.cleanup define_call_graphs;
@@ -495,7 +495,7 @@ module TestEnvironment = struct
     Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle;
     GlobalConstants.SharedMemory.cleanup global_constants;
     CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
-    Interprocedural.Target.QualifiersDefinesSharedMemory.cleanup qualifiers_defines
+    Interprocedural.Target.DefinesSharedMemory.cleanup callables_to_definitions_map
 end
 
 let set_up_decorator_preprocessing ~handle models =
@@ -576,20 +576,23 @@ let initialize
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~pyre_api ~source in
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
-  let qualifiers_defines =
-    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+  let definitions_and_stubs =
+    Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
+  in
+  let callables_to_definitions_map =
+    Interprocedural.Target.DefinesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
-      (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
+      definitions_and_stubs
   in
   let method_kinds =
     CallGraph.MethodKind.SharedMemory.from_targets
       ~scheduler
       ~scheduler_policy
-      ~qualifiers_defines:
-        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
-      definitions
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+      definitions_and_stubs
   in
   let user_models, model_query_results =
     let models_source =
@@ -690,8 +693,8 @@ let initialize
   (* The call graph building depends on initial models for global targets. *)
   let decorators =
     CallGraph.CallableToDecoratorsMap.create
-      ~qualifiers_defines:
-        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
       definitions
@@ -721,6 +724,8 @@ let initialize
       ~skip_analysis_targets:Target.Set.empty
       ~definitions
       ~decorator_resolution
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
   in
   let dependency_graph =
     DependencyGraph.build_whole_program_dependency_graph
@@ -743,6 +748,8 @@ let initialize
       ~skip_analysis_targets:Target.Set.empty
       ~decorator_resolution
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~max_iterations:higher_order_call_graph_max_iterations
   in
   let initial_models =
@@ -777,7 +784,7 @@ let initialize
     global_constants;
     stubs_shared_memory_handle;
     method_kinds;
-    qualifiers_defines;
+    callables_to_definitions_map;
   }
 
 
@@ -909,6 +916,7 @@ let end_to_end_integration_test path context =
            class_interval_graph_shared_memory;
            global_constants;
            call_graph_fixpoint_state;
+           callables_to_definitions_map;
            _;
          } as test_environment)
       =
@@ -976,6 +984,8 @@ let end_to_end_integration_test path context =
             global_constants =
               Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
             decorator_inlined = false;
+            callables_to_definitions_map =
+              Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map;
           }
         ~callables_to_analyze
         ~max_iterations:100

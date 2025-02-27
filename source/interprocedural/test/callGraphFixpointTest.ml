@@ -42,8 +42,8 @@ let assert_higher_order_call_graph_fixpoint
   let definitions_and_stubs =
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
-  let qualifiers_defines =
-    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+  let callables_to_definitions_map =
+    Interprocedural.Target.DefinesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -51,8 +51,8 @@ let assert_higher_order_call_graph_fixpoint
   in
   let decorators =
     CallGraph.CallableToDecoratorsMap.create
-      ~qualifiers_defines:
-        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
       definitions
@@ -61,8 +61,8 @@ let assert_higher_order_call_graph_fixpoint
     CallGraph.MethodKind.SharedMemory.from_targets
       ~scheduler
       ~scheduler_policy
-      ~qualifiers_defines:
-        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       definitions_and_stubs
   in
   let decorator_resolution =
@@ -90,6 +90,8 @@ let assert_higher_order_call_graph_fixpoint
       ~skip_analysis_targets
       ~definitions
       ~decorator_resolution
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
   in
   let dependency_graph =
     DependencyGraph.build_whole_program_dependency_graph
@@ -110,6 +112,8 @@ let assert_higher_order_call_graph_fixpoint
       ~skip_analysis_targets
       ~decorator_resolution
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~max_iterations
   in
   List.iter expected ~f:(fun { Expected.callable; call_graph; returned_callables } ->

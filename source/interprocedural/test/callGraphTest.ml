@@ -25,8 +25,8 @@ let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configurat
   let definitions_and_stubs =
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
-  let qualifiers_defines =
-    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+  let callables_to_definitions_map =
+    Interprocedural.Target.DefinesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -36,8 +36,8 @@ let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configurat
     CallGraph.MethodKind.SharedMemory.from_targets
       ~scheduler
       ~scheduler_policy
-      ~qualifiers_defines:
-        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       definitions_and_stubs
   in
   let call_graph =
@@ -50,8 +50,8 @@ let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configurat
         (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
       ~decorators:
         (CallGraph.CallableToDecoratorsMap.create
-           ~qualifiers_defines:
-             (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+           ~callables_to_definitions_map:
+             (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
            ~scheduler
            ~scheduler_policy
            definitions)
@@ -61,7 +61,7 @@ let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configurat
   in
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
   CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
-  call_graph
+  call_graph, callables_to_definitions_map
 
 
 let find_define_exn ~define_name ~module_name source =
@@ -92,16 +92,15 @@ let assert_call_graph_of_define
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
   let define = find_define_exn ~define_name ~module_name source in
-  let actual =
+  let actual, _ =
     compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configuration ~object_targets
-    |> DefineCallGraph.for_test
   in
   assert_equal
     ~cmp
     ~printer:DefineCallGraphForTest.show
     ~pp_diff:(Test.diff ~print:DefineCallGraphForTest.pp)
     expected
-    actual
+    (DefineCallGraph.for_test actual)
 
 
 let assert_higher_order_call_graph_of_define
@@ -131,17 +130,15 @@ let assert_higher_order_call_graph_of_define
   in
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
   let define = find_define_exn ~define_name ~module_name source in
+  let define_call_graph, callables_to_definitions_map =
+    compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configuration ~object_targets
+  in
   let actual =
     CallGraph.higher_order_call_graph_of_define
       ~pyre_api
-      ~define_call_graph:
-        (compute_define_call_graph
-           ~define
-           ~source
-           ~module_name
-           ~pyre_api
-           ~configuration
-           ~object_targets)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+      ~define_call_graph
       ~qualifier:module_name
       ~define
       ~initial_state
@@ -7657,8 +7654,8 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
   let definitions = FetchCallables.get_definitions initial_callables in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
-  let qualifiers_defines =
-    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+  let callables_to_definitions_map =
+    Interprocedural.Target.DefinesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -7666,8 +7663,8 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
   in
   let decorators =
     CallGraph.CallableToDecoratorsMap.create
-      ~qualifiers_defines:
-        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
       definitions
@@ -7676,8 +7673,8 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
     CallGraph.MethodKind.SharedMemory.from_targets
       ~scheduler
       ~scheduler_policy
-      ~qualifiers_defines:
-        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       definitions
   in
   let actual =

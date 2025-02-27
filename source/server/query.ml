@@ -627,8 +627,8 @@ let rec process_request_exn
       let definitions_and_stubs =
         Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
       in
-      let qualifiers_defines =
-        Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+      let callables_to_definitions_map =
+        Interprocedural.Target.DefinesSharedMemory.from_callables
           ~scheduler
           ~scheduler_policy:
             (Scheduler.Policy.fixed_chunk_count
@@ -648,8 +648,8 @@ let rec process_request_exn
                ~minimum_chunk_size:1
                ~preferred_chunks_per_worker:1000
                ())
-          ~qualifiers_defines:
-            (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+          ~callables_to_definitions_map:
+            (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
           (Interprocedural.FetchCallables.get ~definitions:true ~stubs:true initial_callables)
       in
       Taint.ModelQueryExecution.generate_models_from_queries

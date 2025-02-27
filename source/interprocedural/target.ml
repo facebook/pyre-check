@@ -599,7 +599,7 @@ module SharedMemoryKey = struct
   let from_string sexp_string = Sexp.of_string sexp_string |> t_of_sexp
 end
 
-module QualifiersDefinesSharedMemory = struct
+module DefinesSharedMemory = struct
   type qualifier_and_define = Reference.t * Define.t Node.t
 
   module T =

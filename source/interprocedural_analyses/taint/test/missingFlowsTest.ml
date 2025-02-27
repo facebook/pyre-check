@@ -68,10 +68,18 @@ let assert_fixpoint
       ~override_targets
   in
   let scheduler = Test.mock_scheduler () in
+  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let callables_to_definitions_map =
+    Interprocedural.Target.DefinesSharedMemory.from_callables
+      ~scheduler
+      ~scheduler_policy
+      ~pyre_api
+      (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
+  in
   let ({ TaintFixpoint.fixpoint_reached_iterations; _ } as fixpoint) =
     TaintFixpoint.compute
       ~scheduler
-      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~scheduler_policy
       ~override_graph:
         (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
       ~dependency_graph
@@ -85,6 +93,8 @@ let assert_fixpoint
           global_constants =
             GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only;
           decorator_inlined = false;
+          callables_to_definitions_map =
+            Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map;
         }
       ~callables_to_analyze
       ~max_iterations:100

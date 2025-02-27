@@ -58,8 +58,8 @@ let assert_taint ?models ?models_source ~context source expect =
   let definitions_and_stubs =
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
-  let qualifiers_defines =
-    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+  let callables_to_definitions_map =
+    Interprocedural.Target.DefinesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -69,8 +69,8 @@ let assert_taint ?models ?models_source ~context source expect =
     CallGraph.MethodKind.SharedMemory.from_targets
       ~scheduler
       ~scheduler_policy
-      ~qualifiers_defines:
-        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       definitions_and_stubs
   in
   let analyze_and_store_in_order models define =

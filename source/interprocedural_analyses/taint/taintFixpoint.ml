@@ -31,6 +31,7 @@ module Context = struct
     global_constants: Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t;
     (* Whether decorators are inlined during pre-processing. *)
     decorator_inlined: bool;
+    callables_to_definitions_map: Interprocedural.Target.DefinesSharedMemory.ReadOnly.t;
   }
 end
 
@@ -214,6 +215,7 @@ module Analysis = struct
           get_define_call_graph;
           global_constants;
           decorator_inlined;
+          callables_to_definitions_map;
         }
       ~callable
       ~previous_model:({ Model.modes; sanitizers; _ } as previous_model)
@@ -227,7 +229,7 @@ module Analysis = struct
       =
       callable
       |> Interprocedural.Target.strip_parameters
-      |> Interprocedural.Target.get_module_and_definition ~pyre_api
+      |> Interprocedural.Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
       |> Option.value_exn
     in
     let define_qualifier = Ast.Reference.delocalize name in

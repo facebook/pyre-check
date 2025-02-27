@@ -625,7 +625,7 @@ module ScheduleIdentifier = struct
     | TaintKindCoverage
     | DecoratorResolution
     | CallableToDecoratorsMap
-    | QualifiersDefinesSharedMemory
+    | DefinesSharedMemory
   [@@deriving sexp, compare, hash]
 
   let of_string = function
@@ -671,7 +671,7 @@ module ScheduleIdentifier = struct
     | TaintKindCoverage -> "taint_kind_coverage"
     | DecoratorResolution -> "decorator_resolution"
     | CallableToDecoratorsMap -> "callable_to_decorators_map"
-    | QualifiersDefinesSharedMemory -> "qualifiers_defines"
+    | DefinesSharedMemory -> "callables_to_definitions_map"
 end
 
 module SchedulerPolicies = struct

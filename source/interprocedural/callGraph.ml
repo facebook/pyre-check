@@ -203,10 +203,10 @@ module CallableToDecoratorsMap = struct
     not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order)
 
 
-  let create ~qualifiers_defines ~scheduler ~scheduler_policy callables =
+  let create ~callables_to_definitions_map ~scheduler ~scheduler_policy callables =
     let collect_decorators callable =
       callable
-      |> Target.QualifiersDefinesSharedMemory.ReadOnly.get qualifiers_defines
+      |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
       >>= fun ( _,
                 {
                   Node.value = { Define.signature = { decorators; _ }; _ };
@@ -271,13 +271,13 @@ module MethodKind = struct
 
     let read_only = T.read_only
 
-    let compute_method_kind ~qualifiers_defines target =
+    let compute_method_kind ~callables_to_definitions_map target =
       match Target.get_regular target with
       | Target.Regular.Method { method_name = "__new__"; _ } -> Some Static
       | Target.Regular.Method _ as target ->
           target
           |> Target.from_regular
-          |> Target.QualifiersDefinesSharedMemory.ReadOnly.get qualifiers_defines
+          |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
           >>| fun (_, { Node.value = define; _ }) ->
           if List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define) then
             Class
@@ -292,13 +292,13 @@ module MethodKind = struct
 
     let empty = T.create
 
-    let from_targets ~scheduler ~scheduler_policy ~qualifiers_defines targets =
+    let from_targets ~scheduler ~scheduler_policy ~callables_to_definitions_map targets =
       let shared_memory = T.create () in
       let shared_memory_add_only = T.add_only shared_memory in
       let empty_shared_memory = T.AddOnly.create_empty shared_memory_add_only in
       let map =
         List.fold ~init:empty_shared_memory ~f:(fun shared_memory target ->
-            match compute_method_kind ~qualifiers_defines target with
+            match compute_method_kind ~callables_to_definitions_map target with
             | Some method_kind -> T.AddOnly.add shared_memory target method_kind
             | None -> shared_memory)
       in
@@ -4267,6 +4267,8 @@ module HigherOrderCallGraph = struct
 
     val define_name : Reference.t
 
+    val callables_to_definitions_map : Target.DefinesSharedMemory.ReadOnly.t
+
     val input_define_call_graph : DefineCallGraph.t
 
     (* Outputs. *)
@@ -4331,7 +4333,7 @@ module HigherOrderCallGraph = struct
             None
           else
             target
-            |> Target.get_module_and_definition ~pyre_api:Context.pyre_api
+            |> Target.DefinesSharedMemory.ReadOnly.get Context.callables_to_definitions_map
             >>= fun (_, { Node.value = define; _ }) -> formal_arguments_from_non_stub_define define
         in
         let create_parameter_target_excluding_args_kwargs (parameter_target, (_, argument_matches)) =
@@ -4768,7 +4770,7 @@ let debug_higher_order_call_graph define =
   || Ast.Statement.Define.dump_higher_order_call_graph define
 
 
-let get_module_and_definition_exn ~pyre_api ~decorator_resolution callable =
+let get_module_and_definition_exn ~callables_to_definitions_map ~decorator_resolution callable =
   let no_definition_error_message =
     Format.asprintf "Found no definition for `%a`" Target.pp_pretty
   in
@@ -4779,13 +4781,14 @@ let get_module_and_definition_exn ~pyre_api ~decorator_resolution callable =
   else
     callable
     |> Target.strip_parameters
-    |> Target.get_module_and_definition ~pyre_api
+    |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
     |> Option.value_exn ~message:(no_definition_error_message callable)
 
 
 let higher_order_call_graph_of_define
     ~define_call_graph
     ~pyre_api
+    ~callables_to_definitions_map
     ~qualifier
     ~define
     ~initial_state
@@ -4807,6 +4810,8 @@ let higher_order_call_graph_of_define
     let define = define
 
     let define_name = PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define
+
+    let callables_to_definitions_map = callables_to_definitions_map
   end
   in
   log
@@ -4914,9 +4919,10 @@ let call_graph_of_callable
     ~attribute_targets
     ~decorators
     ~method_kinds
+    ~callables_to_definitions_map
     ~callable
   =
-  match Target.get_module_and_definition callable ~pyre_api with
+  match Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map callable with
   | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
   | Some (qualifier, define) ->
       call_graph_of_define
@@ -5046,6 +5052,7 @@ module SharedMemory = struct
       ~skip_analysis_targets
       ~definitions
       ~decorator_resolution
+      ~callables_to_definitions_map
     =
     let attribute_targets = attribute_targets |> Target.Set.elements |> Target.HashSet.of_list in
     let define_call_graphs, whole_program_call_graph =
@@ -5066,6 +5073,7 @@ module SharedMemory = struct
                   ~attribute_targets
                   ~decorators
                   ~method_kinds
+                  ~callables_to_definitions_map
                   ~callable)
               ()
           in

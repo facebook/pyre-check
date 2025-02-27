@@ -202,7 +202,7 @@ val get_module_and_definition
   t ->
   (Reference.t * Define.t Node.t) option
 
-module QualifiersDefinesSharedMemory : sig
+module DefinesSharedMemory : sig
   type t
 
   module ReadOnly : sig

@@ -54,8 +54,8 @@ let create_call_graph ?(other_sources = []) ~context source_text =
   let definitions_and_stubs =
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
-  let qualifiers_defines =
-    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+  let callables_to_definitions_map =
+    Interprocedural.Target.DefinesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -65,8 +65,8 @@ let create_call_graph ?(other_sources = []) ~context source_text =
     CallGraph.MethodKind.SharedMemory.from_targets
       ~scheduler
       ~scheduler_policy
-      ~qualifiers_defines:
-        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       definitions_and_stubs
   in
   let fold call_graph callable =
@@ -79,6 +79,8 @@ let create_call_graph ?(other_sources = []) ~context source_text =
         ~attribute_targets:(Target.HashSet.create ())
         ~decorators:CallGraph.CallableToDecoratorsMap.empty
         ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+        ~callables_to_definitions_map:
+          (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
         ~callable
       |> CallGraph.DefineCallGraph.all_targets
            ~use_case:CallGraph.AllTargetsUseCase.TaintAnalysisDependency

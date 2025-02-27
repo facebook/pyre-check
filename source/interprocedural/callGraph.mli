@@ -45,7 +45,7 @@ module MethodKind : sig
     val from_targets
       :  scheduler:Scheduler.t ->
       scheduler_policy:Scheduler.Policy.t ->
-      qualifiers_defines:Target.QualifiersDefinesSharedMemory.ReadOnly.t ->
+      callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
       Target.t list ->
       t
 
@@ -441,7 +441,7 @@ module CallableToDecoratorsMap : sig
   val empty : t
 
   val create
-    :  qualifiers_defines:Target.QualifiersDefinesSharedMemory.ReadOnly.t ->
+    :  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
     scheduler:Scheduler.t ->
     scheduler_policy:Scheduler.Policy.t ->
     Target.t list ->
@@ -523,6 +523,7 @@ val call_graph_of_callable
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.t ->
   method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
+  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
   callable:Target.t ->
   DefineCallGraph.t
 
@@ -557,7 +558,7 @@ end
 val debug_higher_order_call_graph : Ast.Statement.Define.t -> bool
 
 val get_module_and_definition_exn
-  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  :  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
   decorator_resolution:DecoratorResolution.Results.t ->
   Target.t ->
   Reference.t * Ast.Statement.Define.t Node.t
@@ -565,6 +566,7 @@ val get_module_and_definition_exn
 val higher_order_call_graph_of_define
   :  define_call_graph:DefineCallGraph.t ->
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
   initial_state:HigherOrderCallGraph.State.t ->
@@ -637,5 +639,6 @@ module SharedMemory : sig
     skip_analysis_targets:Target.Set.t ->
     definitions:Target.t list ->
     decorator_resolution:DecoratorResolution.Results.t ->
+    callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
     call_graphs
 end

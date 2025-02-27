@@ -14,6 +14,7 @@ module CallGraphAnalysis = struct
       define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
       decorator_resolution: CallGraph.DecoratorResolution.Results.t;
       method_kinds: CallGraph.MethodKind.SharedMemory.ReadOnly.t;
+      callables_to_definitions_map: Target.DefinesSharedMemory.ReadOnly.t;
     }
   end
 
@@ -80,7 +81,14 @@ module CallGraphAnalysis = struct
   end
 
   let analyze_define
-      ~context:{ Context.pyre_api; define_call_graphs; decorator_resolution; method_kinds }
+      ~context:
+        {
+          Context.pyre_api;
+          define_call_graphs;
+          decorator_resolution;
+          method_kinds;
+          callables_to_definitions_map;
+        }
       ~callable
       ~previous_model:{ CallGraph.HigherOrderCallGraph.call_graph = previous_call_graph; _ }
       ~get_callee_model
@@ -88,7 +96,7 @@ module CallGraphAnalysis = struct
     let qualifier, { Ast.Node.value = define; _ } =
       callable
       |> Target.strip_parameters
-      |> CallGraph.get_module_and_definition_exn ~pyre_api ~decorator_resolution
+      |> CallGraph.get_module_and_definition_exn ~callables_to_definitions_map ~decorator_resolution
     in
     if Ast.Statement.Define.is_stub define then
       (* Skip analyzing stubs, which do not have initial call graphs. Otherwise we would fail to get
@@ -107,6 +115,7 @@ module CallGraphAnalysis = struct
         CallGraph.higher_order_call_graph_of_define
           ~define_call_graph
           ~pyre_api
+          ~callables_to_definitions_map
           ~qualifier
           ~define
           ~initial_state:
@@ -201,6 +210,7 @@ let compute
     ~skip_analysis_targets
     ~decorator_resolution
     ~method_kinds
+    ~callables_to_definitions_map
     ~max_iterations
   =
   let callables_with_call_graphs = CallGraph.SharedMemory.callables define_call_graphs in
@@ -261,6 +271,7 @@ let compute
           define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
           decorator_resolution;
           method_kinds;
+          callables_to_definitions_map;
         }
       ~callables_to_analyze:(List.rev_append override_targets callables_with_call_graphs)
         (* Build higher order call graphs only for targets that have call graphs. *)
