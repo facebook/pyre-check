@@ -70,7 +70,7 @@ let initialize_for_tests () =
     1024 * 1024 * 1024
   in
   let dep_table_pow = 18 in
-  let hash_table_pow = 18 in
+  let hash_table_pow = 20 in
   let log_level = 0 in
   initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level ()
 

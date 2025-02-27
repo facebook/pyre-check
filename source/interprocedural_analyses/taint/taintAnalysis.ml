@@ -637,7 +637,16 @@ let run_taint_analysis
         let initial_callables =
           Interprocedural.FetchCallables.from_qualifiers
             ~scheduler
-            ~scheduler_policies
+            ~scheduler_policy:
+              (Scheduler.Policy.from_configuration_or_default
+                 scheduler_policies
+                 Configuration.ScheduleIdentifier.TaintFetchCallables
+                 ~default:
+                   (Scheduler.Policy.fixed_chunk_count
+                      ~minimum_chunks_per_worker:1
+                      ~minimum_chunk_size:1
+                      ~preferred_chunks_per_worker:1
+                      ()))
             ~configuration
             ~pyre_api
             ~qualifiers

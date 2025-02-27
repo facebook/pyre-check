@@ -141,7 +141,7 @@ let from_source ~configuration ~pyre_api ~source =
     Target.Map.fold add_definition definitions empty
 
 
-let from_qualifiers ~scheduler ~scheduler_policies ~pyre_api ~configuration ~qualifiers =
+let from_qualifiers ~scheduler ~scheduler_policy ~pyre_api ~configuration ~qualifiers =
   let map qualifiers =
     let callables_of_qualifier callables qualifier =
       PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier
@@ -150,17 +150,6 @@ let from_qualifiers ~scheduler ~scheduler_policies ~pyre_api ~configuration ~qua
       |> join callables
     in
     List.fold qualifiers ~f:callables_of_qualifier ~init:empty
-  in
-  let scheduler_policy =
-    Scheduler.Policy.from_configuration_or_default
-      scheduler_policies
-      Configuration.ScheduleIdentifier.TaintFetchCallables
-      ~default:
-        (Scheduler.Policy.fixed_chunk_count
-           ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:1
-           ~preferred_chunks_per_worker:1
-           ())
   in
   Scheduler.map_reduce
     scheduler

@@ -608,7 +608,12 @@ let rec process_request_exn
       let initial_callables =
         Interprocedural.FetchCallables.from_qualifiers
           ~scheduler
-          ~scheduler_policies:Configuration.SchedulerPolicies.empty
+          ~scheduler_policy:
+            (Scheduler.Policy.fixed_chunk_count
+               ~minimum_chunks_per_worker:1
+               ~minimum_chunk_size:1
+               ~preferred_chunks_per_worker:1000
+               ())
           ~configuration
           ~pyre_api
           ~qualifiers

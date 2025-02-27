@@ -561,7 +561,6 @@ let initialize
   let configuration, pyre_api =
     initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_source
   in
-  let scheduler = Test.mock_scheduler () in
   let taint_configuration_shared_memory =
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
@@ -570,14 +569,25 @@ let initialize
   in
   let qualifier = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
   let source = source_from_qualifier ~pyre_api qualifier in
-  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
-  let stubs = FetchCallables.get_stubs initial_callables in
-  let definitions = FetchCallables.get_definitions initial_callables in
+  let initial_callables_in_source = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let stubs = FetchCallables.get_stubs initial_callables_in_source in
+  let definitions = FetchCallables.get_definitions initial_callables_in_source in
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~pyre_api ~source in
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
+  let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let qualifiers = PyrePysaEnvironment.ReadOnly.explicit_qualifiers pyre_api in
+  let all_initial_callables =
+    (* Also include typeshed stubs so that we can build `qualifiers_defines` for them. *)
+    Interprocedural.FetchCallables.from_qualifiers
+      ~scheduler
+      ~scheduler_policy
+      ~configuration
+      ~pyre_api
+      ~qualifiers
+  in
   let definitions_and_stubs =
-    Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
+    Interprocedural.FetchCallables.get all_initial_callables ~definitions:true ~stubs:true
   in
   let callables_to_definitions_map =
     Interprocedural.Target.DefinesSharedMemory.from_callables
@@ -731,7 +741,7 @@ let initialize
     DependencyGraph.build_whole_program_dependency_graph
       ~static_analysis_configuration
       ~prune:DependencyGraph.PruneMethod.None
-      ~initial_callables
+      ~initial_callables:initial_callables_in_source
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
   in
@@ -774,7 +784,7 @@ let initialize
     call_graph_fixpoint_state;
     override_graph_heap;
     override_graph_shared_memory;
-    initial_callables;
+    initial_callables = initial_callables_in_source;
     model_query_results;
     stubs;
     initial_models;

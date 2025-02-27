@@ -18,7 +18,7 @@ val from_source
 
 val from_qualifiers
   :  scheduler:Scheduler.t ->
-  scheduler_policies:Configuration.SchedulerPolicies.t ->
+  scheduler_policy:Scheduler.Policy.t ->
   pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
   configuration:Configuration.Analysis.t ->
   qualifiers:Reference.t list ->
