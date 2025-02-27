@@ -12,7 +12,7 @@ import {createOnigScanner, createOnigString, loadWASM} from 'vscode-oniguruma';
 import flowGrammar from './flow-grammar.json';
 import flowRegexGrammar from './flow-regex-grammar.json';
 import THEME from './light_vs';
-import styles from './TryFlow.module.css';
+import styles from './TryPyre2.module.css';
 
 const grammars = {
   'source.js': flowGrammar,

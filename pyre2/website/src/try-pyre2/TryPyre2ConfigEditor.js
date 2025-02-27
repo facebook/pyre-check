@@ -11,7 +11,7 @@ import * as React from 'react';
 import Link from '@docusaurus/Link';
 
 import type FlowJsServices from './flow-services';
-import styles from './TryFlow.module.css';
+import styles from './TryPyre2.module.css';
 
 component DocsLink(kind: 'option' | 'lint', id: string) {
   let href;
@@ -24,7 +24,7 @@ component DocsLink(kind: 'option' | 'lint', id: string) {
   return <Link to={href}>[docs]</Link>;
 }
 
-component TryFlowConfigRows(
+component TryPyre2ConfigRows(
   name: string,
   schema: FlowJsConfigSchema,
   config: {[string]: mixed},
@@ -88,7 +88,7 @@ component TryFlowConfigRows(
   );
 }
 
-export default component TryFlowConfigEditor(
+export default component TryPyre2ConfigEditor(
   flowService: ?FlowJsServices,
   setConfig: ({[string]: mixed}) => void,
 ) {
@@ -113,13 +113,13 @@ export default component TryFlowConfigEditor(
   return (
     <table>
       <tbody>
-        <TryFlowConfigRows
+        <TryPyre2ConfigRows
           name="Options"
           schema={optionsSchema}
           config={flowService.config}
           setConfig={setConfig}
         />
-        <TryFlowConfigRows
+        <TryPyre2ConfigRows
           name="Lints"
           schema={lintsSchema}
           config={flowService.config}

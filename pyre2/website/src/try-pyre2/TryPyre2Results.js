@@ -13,7 +13,7 @@ import * as React from 'react';
 import {useState, type MixedElement} from 'react';
 import ReactJson from 'react-json-view';
 import clsx from 'clsx';
-import styles from './TryFlow.module.css';
+import styles from './TryPyre2.module.css';
 
 component ErrorMessage(msg: FlowJsErrorMessage) {
   if (msg.loc && msg.context != null) {
@@ -105,7 +105,7 @@ function shouldCollapse(cursorPosition: Position, json: mixed): boolean {
   return true;
 }
 
-export default component TryFlowResults(
+export default component TryPyre2Results(
   flowVersion: string,
   flowVersions: $ReadOnlyArray<string>,
   changeFlowVersion: (SyntheticInputEvent<>) => void,
@@ -173,7 +173,7 @@ export default component TryFlowResults(
         <pre className={clsx(styles.resultBody, styles.errors)}>
           <ul>
             {internalError ? (
-              <li>TryFlow encountered an internal error: {internalError}</li>
+              <li>TryPyre2 encountered an internal error: {internalError}</li>
             ) : errors.length === 0 ? (
               <li>No errors!</li>
             ) : (

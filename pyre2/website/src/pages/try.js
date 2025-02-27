@@ -13,22 +13,22 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import Navbar from '@theme/Navbar';
 
-const TryFlow = React.lazy(() => import('../try-flow/TryFlow'));
+const TryPyre2 = React.lazy(() => import('../try-pyre2/TryPyre2'));
 
-export default component TryFlowPage() {
+export default component TryPyre2Page() {
   const context = useDocusaurusContext();
   const {siteConfig = ({}: any)} = context;
   return (
     <Layout
       // $FlowFixMe[prop-missing]
-      title="Try Flow: the Flow Playground"
+      title="Try Pyre2: the Pyre2 Playground"
       // $FlowFixMe[prop-missing]
       description={siteConfig.description}
       noFooter>
       <BrowserOnly>
         {() => (
           <React.Suspense fallback={<div>Loading...</div>}>
-            <TryFlow
+            <TryPyre2
               defaultFlowVersion={siteConfig.customFields.flowVersion}
               flowVersions={siteConfig.customFields.allFlowVersions}
             />

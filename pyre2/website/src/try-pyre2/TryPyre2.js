@@ -12,9 +12,9 @@ import {useBaseUrlUtils} from '@docusaurus/useBaseUrl';
 import clsx from 'clsx';
 import Editor from '@monaco-editor/react';
 import * as LZString from 'lz-string';
-import styles from './TryFlow.module.css';
-import TryFlowConfigEditor from './TryFlowConfigEditor';
-import TryFlowResults from './TryFlowResults';
+import styles from './TryPyre2.module.css';
+import TryPyre2ConfigEditor from './TryPyre2ConfigEditor';
+import TryPyre2Results from './TryPyre2Results';
 import {
   monaco,
   setAutoCompleteFunction,
@@ -26,12 +26,15 @@ import FlowJsServices from './flow-services';
 import createTokensProvider from './tokens-theme-provider';
 import flowLanguageConfiguration from './flow-configuration.json';
 
-const TRY_FLOW_LAST_CONTENT_STORAGE_KEY = 'tryFlowLastContent';
+const TRY_FLOW_LAST_CONTENT_STORAGE_KEY = 'TryPyre2LastContent';
 const DEFAULT_PYTHON_PROGRAM = `
+# Pyre is being run in gradual typing mode: https://pyre-check.org/docs/types-in-python/#gradual-typing
+# Use the \`# pyre-strict\` header to run in strict mode, which requires annotations.
+
 from typing import *
 
 # reveal_type will produce a type error that tells you the type Pyre has
-# computed for the argument (in this case, str)
+# computed for the argument (in this case, int)
 def test(x: int) -> str:
   return f"{x}"
 
@@ -88,7 +91,7 @@ function setHashedValue(
 
 const initialStateFromURI = getHashedValue(location.hash);
 const initialState: InitialStateFromHash = initialStateFromURI || {
-  // Only default to an example if we haven't used Try Flow before
+  // Only default to an example if we haven't used Try Pyre2 before
   code:
     localStorage.getItem(TRY_FLOW_LAST_CONTENT_STORAGE_KEY) != null
       ? ''
@@ -101,7 +104,7 @@ const REFINED_VALUE_DECORATION_OPTIONS = {
   inlineClassName: styles.refinedValueDecoration,
 };
 
-export default component TryFlow(
+export default component TryPyre2(
   defaultFlowVersion: string,
   flowVersions: $ReadOnlyArray<string>,
 ) {
@@ -303,7 +306,7 @@ export default component TryFlow(
           <div
             style={{display: activeToolbarTab === 'config' ? 'block' : 'none'}}
             className={styles.tryEditorConfig}>
-            <TryFlowConfigEditor
+            <TryPyre2ConfigEditor
               flowService={flowService}
               setConfig={config =>
                 setFlowService(flowService?.withUpdatedConfig(config))
@@ -326,7 +329,7 @@ export default component TryFlow(
           />
         </div>
       </div>
-      <TryFlowResults
+      <TryPyre2Results
         flowVersion={flowVersion}
         flowVersions={flowVersions}
         changeFlowVersion={event => setFlowVersion(event.target.value)}
