@@ -27,14 +27,16 @@ import createTokensProvider from './tokens-theme-provider';
 import flowLanguageConfiguration from './flow-configuration.json';
 
 const TRY_FLOW_LAST_CONTENT_STORAGE_KEY = 'tryFlowLastContent';
-const DEFAULT_FLOW_PROGRAM = `
-function foo(x: ?number): string {
-  if (x) {
-    return x; // Error: number is not a string
-    // Fix: return String(x);
-  }
-  return "default string";
-}
+const DEFAULT_PYTHON_PROGRAM = `
+from typing import *
+
+# reveal_type will produce a type error that tells you the type Pyre has
+# computed for the argument (in this case, str)
+def test(x: int) -> str:
+  return f"{x}"
+
+reveal_type(test(42))
+
 `;
 
 type InitialStateFromHash = {
@@ -90,7 +92,7 @@ const initialState: InitialStateFromHash = initialStateFromURI || {
   code:
     localStorage.getItem(TRY_FLOW_LAST_CONTENT_STORAGE_KEY) != null
       ? ''
-      : DEFAULT_FLOW_PROGRAM,
+      : DEFAULT_PYTHON_PROGRAM,
   version: null,
   config: null,
 };
