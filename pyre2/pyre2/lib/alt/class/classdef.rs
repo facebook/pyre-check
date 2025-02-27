@@ -17,14 +17,10 @@ use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
-use crate::alt::attr::Attribute;
-use crate::alt::class::class_field::ClassField;
-use crate::alt::class::class_field::WithDefiningClass;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyLegacyTypeParam;
-use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::graph::index::Idx;
 use crate::types::callable::Param;
@@ -380,104 +376,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             self.get_ancestor(class.class_object(), want)
                 .map(|ancestor| ancestor.substitute(&class.substitution()))
-        }
-    }
-
-    pub(in crate::alt::class) fn get_class_member(
-        &self,
-        cls: &Class,
-        name: &Name,
-    ) -> Option<WithDefiningClass<Arc<ClassField>>> {
-        if let Some(field) = self.get_class_field(cls, name) {
-            Some(WithDefiningClass {
-                value: field,
-                defining_class: cls.dupe(),
-            })
-        } else {
-            self.get_metadata_for_class(cls)
-                .ancestors(self.stdlib)
-                .filter_map(|ancestor| {
-                    self.get_class_field(ancestor.class_object(), name)
-                        .map(|field| WithDefiningClass {
-                            value: Arc::new(field.instantiate_for(ancestor)),
-                            defining_class: ancestor.class_object().dupe(),
-                        })
-                })
-                .next()
-        }
-    }
-
-    pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
-        self.get_class_member(cls.class_object(), name)
-            .map(|member| Arc::unwrap_or_clone(member.value).as_instance_attribute(cls))
-    }
-
-    /// Looks up an attribute on a super instance.
-    pub fn get_super_attribute(
-        &self,
-        lookup_cls: &ClassType,
-        super_obj: &ClassType,
-        name: &Name,
-    ) -> Option<Attribute> {
-        self.get_class_member(lookup_cls.class_object(), name)
-            .map(|member| Arc::unwrap_or_clone(member.value).as_instance_attribute(super_obj))
-    }
-
-    /// Gets an attribute from a class definition.
-    ///
-    /// Returns `None` if there is no such attribute, otherwise an `Attribute` object
-    /// that describes whether access is allowed and the type if so.
-    ///
-    /// Access is disallowed for instance-only attributes and for attributes whose
-    /// type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
-    pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<Attribute> {
-        let member = self.get_class_member(cls, name)?.value;
-        Some(Arc::unwrap_or_clone(member).as_class_attribute(cls))
-    }
-
-    /// Get the class's `__new__` method.
-    ///
-    /// This lookup skips normal method binding logic (it behaves like a cross
-    /// between a classmethod and a constructor; downstream code handles this
-    /// using the raw callable type).
-    pub fn get_dunder_new(&self, cls: &ClassType) -> Option<Type> {
-        let new_member = self.get_class_member(cls.class_object(), &dunder::NEW)?;
-        if new_member.defined_on(self.stdlib.object_class_type().class_object()) {
-            // The default behavior of `object.__new__` is already baked into our implementation of
-            // class construction; we only care about `__new__` if it is overridden.
-            None
-        } else {
-            Arc::unwrap_or_clone(new_member.value).as_raw_special_method_type(cls)
-        }
-    }
-
-    /// Get the class's `__init__` method, if we should analyze it
-    /// We skip analyzing the call to `__init__` if:
-    /// (1) it isn't defined (possible if we've been passed a custom typeshed), or
-    /// (2) the class overrides `object.__new__` but not `object.__init__`, in wich case the
-    ///     `__init__` call always succeeds at runtime.
-    pub fn get_dunder_init(&self, cls: &ClassType, overrides_new: bool) -> Option<Type> {
-        let init_method = self.get_class_member(cls.class_object(), &dunder::INIT)?;
-        if !(overrides_new
-            && init_method.defined_on(self.stdlib.object_class_type().class_object()))
-        {
-            Arc::unwrap_or_clone(init_method.value).as_special_method_type(cls)
-        } else {
-            None
-        }
-    }
-
-    /// Get the metaclass `__call__` method.
-    pub fn get_metaclass_dunder_call(&self, cls: &ClassType) -> Option<Type> {
-        let metadata = self.get_metadata_for_class(cls.class_object());
-        let metaclass = metadata.metaclass()?;
-        let attr = self.get_class_member(metaclass.class_object(), &dunder::CALL)?;
-        if attr.defined_on(self.stdlib.builtins_type().class_object()) {
-            // The behavior of `type.__call__` is already baked into our implementation of constructors,
-            // so we can skip analyzing it at the type level.
-            None
-        } else {
-            Arc::unwrap_or_clone(attr.value).as_special_method_type(metaclass)
         }
     }
 }
