@@ -208,25 +208,18 @@ impl<'a> BindingsBuilder<'a> {
                     unexpected_keyword(&|msg| self.error(*range, msg), "super", kw);
                 }
                 let nargs = posargs.len();
-                let (cls_key, obj_key) = if nargs == 0 {
+                let style = if nargs == 0 {
                     self.todo("no-argument super()", *range);
-                    (
-                        self.table.insert(
-                            Key::Anon(TextRange::new(range.start(), range.start())),
-                            Binding::AnyType(AnyStyle::Implicit),
-                        ),
-                        self.table.insert(
-                            Key::Anon(TextRange::new(range.end(), range.end())),
-                            Binding::AnyType(AnyStyle::Implicit),
-                        ),
-                    )
+                    SuperStyle::Any
                 } else if nargs == 2 {
                     let mut bind = |expr: &mut Expr| {
                         self.ensure_expr(expr);
                         self.table
                             .insert(Key::Anon(expr.range()), Binding::Expr(None, expr.clone()))
                     };
-                    (bind(&mut posargs[0]), bind(&mut posargs[1]))
+                    let cls_key = bind(&mut posargs[0]);
+                    let obj_key = bind(&mut posargs[1]);
+                    SuperStyle::ExplicitArgs(cls_key, obj_key)
                 } else {
                     if nargs != 1 {
                         // Calling super() with one argument is technically legal: https://stackoverflow.com/a/30190341.
@@ -239,20 +232,11 @@ impl<'a> BindingsBuilder<'a> {
                     for arg in posargs {
                         self.ensure_expr(arg);
                     }
-                    (
-                        self.table.insert(
-                            Key::Anon(TextRange::new(range.start(), range.start())),
-                            Binding::AnyType(AnyStyle::Implicit),
-                        ),
-                        self.table.insert(
-                            Key::Anon(TextRange::new(range.end(), range.end())),
-                            Binding::AnyType(AnyStyle::Implicit),
-                        ),
-                    )
+                    SuperStyle::Any
                 };
                 self.table.insert(
                     Key::SuperInstance(*range),
-                    Binding::SuperInstance(SuperStyle::ExplicitArgs(cls_key, obj_key), *range),
+                    Binding::SuperInstance(style, *range),
                 );
                 return;
             }

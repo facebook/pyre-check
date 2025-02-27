@@ -1356,6 +1356,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             ),
                         }
                     }
+                    SuperStyle::Any => Type::any_implicit(),
                 }
             }
         }
