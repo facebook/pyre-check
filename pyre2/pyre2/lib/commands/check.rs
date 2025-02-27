@@ -59,7 +59,6 @@ enum OutputFormat {
 
 #[derive(Debug, Parser, Clone)]
 pub struct Args {
-    pub files: Vec<String>,
     /// Write the errors to a file, instead of printing them.
     #[arg(long, short = 'o', env = clap_env("OUTPUT"))]
     output: Option<PathBuf>,
@@ -70,9 +69,6 @@ pub struct Args {
     /// Check all reachable modules, not just the ones that are passed in explicitly on CLI positional arguments.
     #[clap(long, short = 'a', env = clap_env("CHECK_ALL"))]
     check_all: bool,
-    /// Watch for file changes and re-check them.
-    #[clap(long, env = clap_env("WATCH"))]
-    pub watch: bool,
     /// Produce debugging information about the type checking process.
     #[clap(long, env = clap_env("DEBUG_INFO"))]
     debug_info: Option<PathBuf>,

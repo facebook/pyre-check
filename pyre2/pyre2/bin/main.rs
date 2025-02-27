@@ -60,11 +60,10 @@ fn to_exit_code(status: CommandExitStatus) -> ExitCode {
 
 fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
     match command {
-        Command::Check(args) => {
-            let is_watch_mode = args.watch;
-            let files_to_check = Globs::new(args.files.clone());
+        Command::Check { files, watch, args } => {
+            let files_to_check = Globs::new(files);
             args.run(
-                if is_watch_mode {
+                if watch {
                     Some(Box::new(notify_watcher::NotifyWatcher::new()?))
                 } else {
                     None

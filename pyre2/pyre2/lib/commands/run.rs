@@ -7,10 +7,21 @@
 
 use clap::Subcommand;
 
+use crate::clap_env;
+
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
     /// Full type checking on a file or a project
-    Check(crate::commands::check::Args),
+    Check {
+        /// Files to check (glob supported)
+        files: Vec<String>,
+        /// Watch for file changes and re-check them.
+        #[clap(long, env = clap_env("WATCH"))]
+        watch: bool,
+
+        #[clap(flatten)]
+        args: crate::commands::check::Args,
+    },
 
     /// Entry point for Buck integration
     BuckCheck(crate::commands::buck_check::Args),
