@@ -156,13 +156,17 @@ reveal_type(MyEnum.D)  # E: revealed type: (self: MyEnum) -> None
 "#,
 );
 
-testcase!(
-    test_member_annotation,
+testcase_with_bug!(
+    "TODO(stroxler) At runtime, an annotated member is still a member. We are dropping this.",
+    test_member_with_explicit_annotation,
     r#"
+from typing import assert_type, Literal
 from enum import Enum
 
 class MyEnum(Enum):
-    X: int = 1  # E: Enum member `X` may not be annotated directly. Instead, annotate the _value_ attribute.
+    X: float = 5  # E: Enum member `X` may not be annotated directly. Instead, annotate the _value_ attribute
+
+assert_type(MyEnum.X, Literal[MyEnum.X])  # E: assert_type(float, Any)  # E: `MyEnum.X` is not a valid enum member
 "#,
 );
 
