@@ -1497,16 +1497,6 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED (x: int) -> str <: (int, ParamSpec(...)) -> str",
-      "description": "EXPECTED (x: int) -> str <: (int, ParamSpec(...)) -> str",
-      "line": 90,
-      "name": "unknown",
-      "stop_column": 15,
-      "stop_line": 90
-    },
-    {
-      "code": -2,
-      "column": 7,
       "concise_description": "EXPECTED () -> str <: (int, ParamSpec(...)) -> str",
       "description": "EXPECTED () -> str <: (int, ParamSpec(...)) -> str",
       "line": 91,
@@ -1517,32 +1507,12 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED (a: int, b: int, c: int) -> str <: (int, ParamSpec(...)) -> str",
-      "description": "EXPECTED (a: int, b: int, c: int) -> str <: (int, ParamSpec(...)) -> str",
-      "line": 92,
-      "name": "unknown",
-      "stop_column": 15,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 7,
       "concise_description": "EXPECTED (*, a: int) -> str <: (int, ParamSpec(...)) -> str",
       "description": "EXPECTED (*, a: int) -> str <: (int, ParamSpec(...)) -> str",
       "line": 93,
       "name": "unknown",
       "stop_column": 15,
       "stop_line": 93
-    },
-    {
-      "code": -2,
-      "column": 50,
-      "concise_description": "EXPECTED Proto2 <: (int, ParamSpec(...)) -> None",
-      "description": "EXPECTED Proto2 <: (int, ParamSpec(...)) -> None",
-      "line": 151,
-      "name": "unknown",
-      "stop_column": 52,
-      "stop_line": 151
     },
     {
       "code": -2,
@@ -1623,16 +1593,6 @@
       "name": "unknown",
       "stop_column": 23,
       "stop_line": 175
-    },
-    {
-      "code": -2,
-      "column": 48,
-      "concise_description": "EXPECTED (int, str) -> str <: (int, ParamSpec(...)) -> str",
-      "description": "EXPECTED (int, str) -> str <: (int, ParamSpec(...)) -> str",
-      "line": 186,
-      "name": "unknown",
-      "stop_column": 50,
-      "stop_line": 186
     },
     {
       "code": -2,
