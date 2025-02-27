@@ -16,7 +16,9 @@ pub use crate::commands::lsp::Args as LspArgs;
 pub enum Command {
     /// Full type checking on a file or a project
     Check {
-        /// Files to check (glob supported)
+        /// Files to check (glob supported).
+        /// If no file is specified, switch to project-checking mode where the files to
+        /// check are determined from the closest configuration file.
         files: Vec<String>,
         /// Watch for file changes and re-check them.
         #[clap(long, env = clap_env("WATCH"))]
