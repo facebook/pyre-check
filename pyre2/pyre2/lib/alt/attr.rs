@@ -721,7 +721,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             | Type::Unpack(_)
             | Type::Concatenate(_, _)
             | Type::ParamSpecValue(_)
-            | Type::Quantified(_) => None,
+            | Type::Quantified(_)
+            // TODO: support this
+            | Type::SuperInstance(..) => None,
         }
     }
 }

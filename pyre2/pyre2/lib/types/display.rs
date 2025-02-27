@@ -316,6 +316,14 @@ impl<'a> TypeDisplayContext<'a> {
                 )
             }
             Type::Decoration(d) => self.fmt_decoration(d, f),
+            Type::SuperInstance(cls, obj) => {
+                write!(f, "super[")?;
+                self.fmt_qname(cls.qname(), f)?;
+                write!(f, ", ")?;
+                self.fmt_qname(obj.qname(), f)?;
+                self.fmt_targs(obj.targs(), f)?;
+                write!(f, "]")
+            }
             Type::None => write!(f, "None"),
         }
     }

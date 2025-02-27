@@ -351,6 +351,18 @@ pub enum Type {
     /// represented in terms of normal types - for example, builtin descriptors
     /// like `@classmethod`, or the result of `@some_property.setter`.
     Decoration(Decoration),
+    /// Represents the result of a super() call. The first ClassType is the class that attribute lookup
+    /// on the super instance should be done on (*not* the class passed to the super() call), and the second
+    /// ClassType is the second argument (implicit or explicit) to the super() call. For example, in:
+    ///   class A: ...
+    ///   class B(A): ...
+    ///   class C(B):
+    ///     def f(self):
+    ///       super(B, self)
+    /// attribute lookup should be done on the class above `B` in the MRO of the type of `self` -
+    /// that is, attribute lookup should be done on class `A`. And the type of `self` is class `C`.
+    /// So the super instance is represented as `SuperInstance[ClassType(A), ClassType(C)]`.
+    SuperInstance(Box<ClassType>, Box<ClassType>),
     None,
 }
 
@@ -638,6 +650,10 @@ impl Type {
             | Type::TypeIs(x)
             | Type::Unpack(x)
             | Type::TypeAlias(TypeAlias { ty: x, .. }) => f(x),
+            Type::SuperInstance(cls1, cls2) => {
+                cls1.visit(&mut f);
+                cls2.visit(f)
+            }
             Type::Literal(_)
             | Type::Never(_)
             | Type::LiteralString
@@ -683,6 +699,10 @@ impl Type {
             | Type::TypeIs(x)
             | Type::Unpack(x)
             | Type::TypeAlias(TypeAlias { ty: x, .. }) => f(x),
+            Type::SuperInstance(cls1, cls2) => {
+                cls1.visit_mut(&mut f);
+                cls2.visit_mut(f);
+            }
             Type::Literal(_)
             | Type::Never(_)
             | Type::LiteralString

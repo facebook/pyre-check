@@ -38,8 +38,8 @@ class B:
 
 class C(B, A):
     def g(self):
-        assert_type(super(C, self).f(), bool)  # E: assert_type
-        assert_type(super(B, self).f(), int)  # E: assert_type
+        assert_type(super(C, self).f(), bool)  # E: assert_type  # E: attribute base undefined
+        assert_type(super(B, self).f(), int)  # E: assert_type  # E: attribute base undefined
     "#,
 );
 
@@ -71,9 +71,29 @@ testcase!(
     r#"
 super(1, 2, 3)  # E: `super` takes at most 2 arguments, got 3
 
+class Unrelated:
+    pass
+
+class C:
+    def f1(self):
+        super(C, self, oops=42)  # E: `super` got an unexpected keyword argument `oops`
+    def f2(self):
+        super(42, self)  # E: Expected first argument to `super` to be a class object, got `Literal[42]`
+    def f3(self):
+        super(C, int | str)  # E: Expected second argument to `super` to be a class instance, got `type[int | str]`
+    def f4(self):
+        super(Unrelated, self)  # E: Illegal `super(type[Unrelated], C)` call: `C` is not an instance or subclass of `type[Unrelated]`
+    "#,
+);
+
+testcase!(
+    test_super_object,
+    r#"
+# Trying to call super() on `object` is a weird thing to do (although the Python runtime allows it).
+# Either accepting this or producing a good error message would be ok.
 class C:
     def f(self):
-        super(C, self, oops=42)  # E: `super` got an unexpected keyword argument `oops`
+        super(object, self)
     "#,
 );
 
