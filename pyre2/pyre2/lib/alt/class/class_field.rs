@@ -469,6 +469,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             value_ty
         };
 
+        // Types provided in annotations shadow inferred types
+        let ty = if let Some(ann) = annotation {
+            match &ann.ty {
+                Some(ty) => ty,
+                None => &value_ty,
+            }
+        } else {
+            &value_ty
+        };
+
         // Enum handling:
         // - Check whether the field is a member (which depends only on its type and name)
         // - Validate that a member should not have an annotation, and should respect any explicit annotatin on `_value_`
@@ -476,17 +486,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // TODO(stroxler, yangdanny): We currently operate on promoted types, which means we do not infer `Literal[...]`
         // types for the `.value` / `._value_` attributes of literals. This is permitted in the spec although not optimal
         // for most cases; we are handling it this way in part because generic enum behavior is not yet well-specified.
-        let value_ty = if let Some(enum_) = metadata.enum_metadata()
-            && self.is_valid_enum_member(name, &value_ty, &initialization)
+        let ty = if let Some(enum_) = metadata.enum_metadata()
+            && self.is_valid_enum_member(name, ty, &initialization)
         {
             if annotation.is_some() {
                 self.error(errors, range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
             }
             if let Some(enum_value_ty) = self.type_of_enum_value(enum_) {
-                if !matches!(value_ty, Type::Tuple(_))
+                if !matches!(ty, Type::Tuple(_))
                     && !self
                         .solver()
-                        .is_subset_eq(&value_ty, &enum_value_ty, self.type_order())
+                        .is_subset_eq(ty, &enum_value_ty, self.type_order())
                 {
                     self.error(errors, range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name));
                 }
@@ -494,20 +504,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &Type::Literal(Lit::Enum(Box::new((
                 enum_.cls.clone(),
                 name.clone(),
-                value_ty.clone(),
+                ty.clone(),
             ))))
         } else {
-            &value_ty
-        };
-
-        // Types provided in annotations shadow inferred types
-        let ty = if let Some(ann) = annotation {
-            match &ann.ty {
-                Some(ty) => ty,
-                None => value_ty,
-            }
-        } else {
-            value_ty
+            ty
         };
 
         // Dataclass read-onlyness (does not currently handle other kinds of readonlyness)
