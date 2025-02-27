@@ -12,6 +12,7 @@ use std::fmt::Display;
 use crate::error::kind::ErrorKind;
 use crate::module::module_info::SourceRange;
 use crate::module::module_path::ModulePath;
+
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Error {
     path: ModulePath,
@@ -58,5 +59,9 @@ impl Error {
 
     pub fn is_ignored(&self) -> bool {
         self.is_ignored
+    }
+
+    pub fn error_kind(&self) -> ErrorKind {
+        self.error_kind
     }
 }

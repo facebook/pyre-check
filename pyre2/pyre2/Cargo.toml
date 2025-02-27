@@ -20,6 +20,7 @@ path = "bin/main.rs"
 anyhow = "1.0.95"
 argfile = "0.1.6"
 clap = { version = "4.5.30", features = ["derive", "env", "string", "unicode", "wrap_help"] }
+convert_case = "0.6"
 dupe = "0.9.1"
 enum-iterator = "1.4.1"
 equivalent = "1.0"
