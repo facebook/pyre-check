@@ -24,6 +24,7 @@ use ruff_text_size::TextRange;
 use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::Key;
+use crate::binding::binding::SuperStyle;
 use crate::binding::bindings::BindingsBuilder;
 use crate::binding::bindings::LegacyTParamBuilder;
 use crate::binding::narrow::NarrowOps;
@@ -251,7 +252,7 @@ impl<'a> BindingsBuilder<'a> {
                 };
                 self.table.insert(
                     Key::SuperInstance(*range),
-                    Binding::SuperInstance(cls_key, obj_key, *range),
+                    Binding::SuperInstance(SuperStyle::ExplicitArgs(cls_key, obj_key), *range),
                 );
                 return;
             }

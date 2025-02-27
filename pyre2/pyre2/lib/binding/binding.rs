@@ -627,6 +627,12 @@ pub struct ImplicitReturn {
 }
 
 #[derive(Clone, Debug)]
+pub enum SuperStyle {
+    /// A `super(cls, obj)` call. The keys are the arguments.
+    ExplicitArgs(Idx<Key>, Idx<Key>),
+}
+
+#[derive(Clone, Debug)]
 pub enum Binding {
     /// An expression, optionally with a Key saying what the type must be.
     /// The Key must be a type of types, e.g. `Type::Type`.
@@ -716,9 +722,8 @@ pub enum Binding {
     /// parameter type when solving the function type. To ensure the parameter is solved before it
     /// can be observed as a Var, we include the function key and force it to be solved first.
     FunctionParameter(Either<Idx<KeyAnnotation>, (Var, Idx<KeyFunction>)>),
-    /// The result of a `super(cls, obj)`` call. The keys are the two arguments. In a no-argument
-    /// `super()` call, the arguments are implicitly `type[Self]` and `Self`.
-    SuperInstance(Idx<Key>, Idx<Key>, TextRange),
+    /// The result of a `super()` call.
+    SuperInstance(SuperStyle, TextRange),
 }
 
 impl Binding {
@@ -896,7 +901,7 @@ impl DisplayWith<Bindings> for Binding {
             Self::Decorator(e) => write!(f, "decorator {}", m.display(e)),
             Self::LambdaParameter(_) => write!(f, "lambda parameter"),
             Self::FunctionParameter(_) => write!(f, "function parameter"),
-            Self::SuperInstance(cls, obj, _range) => {
+            Self::SuperInstance(SuperStyle::ExplicitArgs(cls, obj), _range) => {
                 write!(f, "super({}, {})", ctx.display(*cls), ctx.display(*obj))
             }
         }

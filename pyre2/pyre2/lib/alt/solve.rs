@@ -52,6 +52,7 @@ use crate::binding::binding::KeyExport;
 use crate::binding::binding::NoneIfRecursive;
 use crate::binding::binding::RaisedException;
 use crate::binding::binding::SizeExpectation;
+use crate::binding::binding::SuperStyle;
 use crate::binding::binding::UnpackedPosition;
 use crate::dunder;
 use crate::dunder::inplace_dunder;
@@ -1304,53 +1305,57 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
             }
-            Binding::SuperInstance(cls_binding, obj_binding, range) => {
-                match &*self.get_idx(*cls_binding) {
-                    Type::Any(style) => style.propagate(),
-                    cls_type @ Type::ClassDef(cls) => {
-                        match &*self.get_idx(*obj_binding) {
+            Binding::SuperInstance(style, range) => {
+                match style {
+                    SuperStyle::ExplicitArgs(cls_binding, obj_binding) => {
+                        match &*self.get_idx(*cls_binding) {
                             Type::Any(style) => style.propagate(),
-                            Type::ClassType(obj_cls) => {
-                                // Get the class that attribute lookup on the super instance should be done on.
-                                // This is the class above `cls` in `obj_cls`'s MRO.
-                                let mut lookup_cls = None;
-                                let metadata = self.get_metadata_for_class(obj_cls.class_object());
-                                let mut found = false;
-                                for ancestor in
-                                    [obj_cls].into_iter().chain(metadata.ancestors(self.stdlib))
-                                {
-                                    if ancestor.class_object() == cls {
-                                        found = true;
-                                        // Handle the corner case of `ancestor` being `object` (and
-                                        // therefore having no ancestor of its own).
-                                        lookup_cls = Some(ancestor);
-                                    } else if found {
-                                        lookup_cls = Some(ancestor);
-                                        break;
+                            cls_type @ Type::ClassDef(cls) => {
+                                match &*self.get_idx(*obj_binding) {
+                                    Type::Any(style) => style.propagate(),
+                                    Type::ClassType(obj_cls) => {
+                                        // Get the class that attribute lookup on the super instance should be done on.
+                                        // This is the class above `cls` in `obj_cls`'s MRO.
+                                        let mut lookup_cls = None;
+                                        let metadata = self.get_metadata_for_class(obj_cls.class_object());
+                                        let mut found = false;
+                                        for ancestor in
+                                            [obj_cls].into_iter().chain(metadata.ancestors(self.stdlib))
+                                        {
+                                            if ancestor.class_object() == cls {
+                                                found = true;
+                                                // Handle the corner case of `ancestor` being `object` (and
+                                                // therefore having no ancestor of its own).
+                                                lookup_cls = Some(ancestor);
+                                            } else if found {
+                                                lookup_cls = Some(ancestor);
+                                                break;
+                                            }
+                                        }
+                                        lookup_cls.map_or_else(|| {
+                                            self.error(
+                                                errors,
+                                                *range,
+                                                format!("Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`", cls_type, obj_cls, obj_cls, cls_type)
+                                            )
+                                        }, |lookup_cls| Type::SuperInstance(Box::new(lookup_cls.clone()), Box::new(obj_cls.clone())))
+                                    }
+                                    t => {
+                                        // TODO: handle the case when the second argument is a class
+                                        self.error(errors, *range, format!("Expected second argument to `super` to be a class instance, got `{}`", t.clone().deterministic_printing()))
                                     }
                                 }
-                                lookup_cls.map_or_else(|| {
-                                    self.error(
-                                        errors,
-                                        *range,
-                                        format!("Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`", cls_type, obj_cls, obj_cls, cls_type)
-                                    )
-                                }, |lookup_cls| Type::SuperInstance(Box::new(lookup_cls.clone()), Box::new(obj_cls.clone())))
                             }
-                            t => {
-                                // TODO: handle the case when the second argument is a class
-                                self.error(errors, *range, format!("Expected second argument to `super` to be a class instance, got `{}`", t.clone().deterministic_printing()))
-                            }
+                            t => self.error(
+                                errors,
+                                *range,
+                                format!(
+                                    "Expected first argument to `super` to be a class object, got `{}`",
+                                    t.clone().deterministic_printing()
+                                ),
+                            ),
                         }
                     }
-                    t => self.error(
-                        errors,
-                        *range,
-                        format!(
-                            "Expected first argument to `super` to be a class object, got `{}`",
-                            t.clone().deterministic_printing()
-                        ),
-                    ),
                 }
             }
         }
