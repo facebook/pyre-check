@@ -34,6 +34,7 @@ pub enum SpecialExport {
     Cast,
 }
 
+#[derive(Debug)]
 pub enum SpecialEntry<'a> {
     ImportModule(ModuleName),
     ImportName(ModuleName, &'a Name),
