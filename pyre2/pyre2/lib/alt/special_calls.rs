@@ -19,6 +19,7 @@ use ruff_text_size::TextRange;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::error::collector::ErrorCollector;
+use crate::types::callable::unexpected_keyword;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -64,15 +65,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
         }
         for keyword in keywords {
-            let desc = if let Some(id) = &keyword.arg {
-                format!(" `{}`", id)
-            } else {
-                "".to_owned()
-            };
-            self.error(
-                errors,
-                range,
-                format!("`assert_type` got an unexpected keyword argument{desc}"),
+            unexpected_keyword(
+                &|msg| {
+                    self.error(errors, range, msg);
+                },
+                "assert_type",
+                keyword,
             );
         }
         Type::None
@@ -103,15 +101,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
         }
         for keyword in keywords {
-            let desc = if let Some(id) = &keyword.arg {
-                format!(" `{}`", id)
-            } else {
-                "".to_owned()
-            };
-            self.error(
-                errors,
-                range,
-                format!("`reveal_type` got an unexpected keyword argument{desc}"),
+            unexpected_keyword(
+                &|msg| {
+                    self.error(errors, range, msg);
+                },
+                "reveal_type",
+                keyword,
             );
         }
         Type::None

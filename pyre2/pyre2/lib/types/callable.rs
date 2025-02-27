@@ -11,6 +11,7 @@ use std::fmt::Display;
 
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
+use ruff_python_ast::Keyword;
 use starlark_map::ordered_map::OrderedMap;
 
 use crate::module::module_name::ModuleName;
@@ -391,4 +392,13 @@ impl CallableKind {
             _ => Self::Def,
         }
     }
+}
+
+pub fn unexpected_keyword(error: &dyn Fn(String), func: &str, keyword: &Keyword) {
+    let desc = if let Some(id) = &keyword.arg {
+        format!(" `{}`", id)
+    } else {
+        "".to_owned()
+    };
+    error(format!("`{func}` got an unexpected keyword argument{desc}"));
 }
