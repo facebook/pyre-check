@@ -152,7 +152,7 @@ impl ClassField {
         }
     }
 
-    pub(in crate::alt::class) fn instantiate_for(&self, cls: &ClassType) -> Self {
+    fn instantiate_for(&self, cls: &ClassType) -> Self {
         match &self.0 {
             ClassFieldInner::Simple {
                 ty,
@@ -192,7 +192,7 @@ impl ClassField {
         tparams.quantified().any(|q| qs.contains(&q))
     }
 
-    pub(in crate::alt::class) fn as_raw_special_method_type(self, cls: &ClassType) -> Option<Type> {
+    fn as_raw_special_method_type(self, cls: &ClassType) -> Option<Type> {
         match self.instantiate_for(cls).0 {
             ClassFieldInner::Simple { ty, .. } => match self.initialization() {
                 ClassFieldInitialization::Class(_) => Some(ty),
@@ -201,7 +201,7 @@ impl ClassField {
         }
     }
 
-    pub(in crate::alt::class) fn as_special_method_type(self, cls: &ClassType) -> Option<Type> {
+    fn as_special_method_type(self, cls: &ClassType) -> Option<Type> {
         self.as_raw_special_method_type(cls).and_then(|ty| {
             if is_unbound_function(&ty) {
                 Some(make_bound_method(cls.self_type(), ty))
@@ -211,7 +211,7 @@ impl ClassField {
         })
     }
 
-    pub(in crate::alt::class) fn as_instance_attribute(self, cls: &ClassType) -> Attribute {
+    fn as_instance_attribute(self, cls: &ClassType) -> Attribute {
         match self.instantiate_for(cls).0 {
             ClassFieldInner::Simple {
                 ty,
@@ -235,7 +235,7 @@ impl ClassField {
         }
     }
 
-    pub(in crate::alt::class) fn as_class_attribute(self, cls: &Class) -> Attribute {
+    fn as_class_attribute(self, cls: &Class) -> Attribute {
         match &self.0 {
             ClassFieldInner::Simple {
                 initialization: ClassFieldInitialization::Instance,
