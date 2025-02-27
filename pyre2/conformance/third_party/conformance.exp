@@ -1497,8 +1497,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED () -> str <: (int, ParamSpec(...)) -> str",
-      "description": "EXPECTED () -> str <: (int, ParamSpec(...)) -> str",
+      "concise_description": "EXPECTED () -> str <: (int, ...) -> str",
+      "description": "EXPECTED () -> str <: (int, ...) -> str",
       "line": 91,
       "name": "unknown",
       "stop_column": 15,
@@ -1507,8 +1507,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "EXPECTED (*, a: int) -> str <: (int, ParamSpec(...)) -> str",
-      "description": "EXPECTED (*, a: int) -> str <: (int, ParamSpec(...)) -> str",
+      "concise_description": "EXPECTED (*, a: int) -> str <: (int, ...) -> str",
+      "description": "EXPECTED (*, a: int) -> str <: (int, ...) -> str",
       "line": 93,
       "name": "unknown",
       "stop_column": 15,
@@ -1597,8 +1597,8 @@
     {
       "code": -2,
       "column": 48,
-      "concise_description": "EXPECTED (int, str) -> str <: (str, ParamSpec(...)) -> str",
-      "description": "EXPECTED (int, str) -> str <: (str, ParamSpec(...)) -> str",
+      "concise_description": "EXPECTED (int, str) -> str <: (str, ...) -> str",
+      "description": "EXPECTED (int, str) -> str <: (str, ...) -> str",
       "line": 187,
       "name": "unknown",
       "stop_column": 50,

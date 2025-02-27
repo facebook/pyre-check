@@ -226,7 +226,7 @@ impl Callable {
                         if !args.is_empty() {
                             write!(f, ", ")?;
                         }
-                        write!(f, "ParamSpec(...)")?;
+                        write!(f, "...")?;
                     }
                     _ => {
                         if !args.is_empty() {
