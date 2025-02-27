@@ -461,23 +461,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // Promote literals. The check on `annotation` is an optimization, it does not (currently) affect semantics.
         // TODO(stroxler): if we see a read-only `Qualifier` like `Final`, it is sound to preserve literals.
         let value_ty = if annotation.map_or(true, |a| a.ty.is_none()) && value_ty.is_literal() {
-            &value_ty.clone().promote_literals(self.stdlib)
+            value_ty.clone().promote_literals(self.stdlib)
         } else {
-            value_ty
+            value_ty.clone()
         };
 
-        // todo: consider revisiting the attr subset check to account for override decorator
-        // stripping the override decorator from the type when we don't know where it appears
-        // may not be the most efficient approach
-        let is_override = value_ty.contains_override(); // save the result of override checks before stripping them from the type
-        let value_ty = match value_ty {
-            Type::Decoration(Decoration::Override(ty)) => ty.as_ref(),
-            _ => value_ty,
-        };
+        // Determine whether this is an explicit `@override` and remove the decoration from the type if so.
+        let (value_ty, is_override) = value_ty.extract_override();
 
         // Enum handling
         let value_ty = if let Some(enum_) = metadata.enum_metadata()
-            && self.is_valid_enum_member(name, value_ty, &initialization)
+            && self.is_valid_enum_member(name, &value_ty, &initialization)
         {
             if annotation.is_some() {
                 self.error(errors, range, format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name));
@@ -486,7 +480,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if !matches!(value_ty, Type::Tuple(_))
                     && !self
                         .solver()
-                        .is_subset_eq(value_ty, &enum_value_ty, self.type_order())
+                        .is_subset_eq(&value_ty, &enum_value_ty, self.type_order())
                 {
                     self.error(errors, range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name));
                 }
@@ -498,7 +492,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 value_ty.clone(),
             ))))
         } else {
-            value_ty
+            &value_ty
         };
 
         // Types provided in annotations shadow inferred types

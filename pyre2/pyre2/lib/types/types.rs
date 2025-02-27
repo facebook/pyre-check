@@ -546,17 +546,21 @@ impl Type {
         seen
     }
 
-    pub fn contains_override(&self) -> bool {
-        fn f(ty: &Type, seen: &mut bool) {
-            if *seen || matches!(ty, Type::Decoration(Decoration::Override(_))) {
-                *seen = true;
-            } else {
-                ty.visit(|ty| f(ty, seen));
+    /// Strip the `@override` decoration from a type, and return whether we saw it.
+    ///
+    /// TODO(stroxler): Ideally decorator metadata like `@override`  and `@final` would live to the side of the type,
+    /// like `Qualifier` does. The current code works, but in principle would allow the override to appear somewhere
+    /// nonsensical like in a return type.
+    pub fn extract_override(self) -> (Type, bool) {
+        let mut is_override = false;
+        let stripped_ty = self.transform(|ty: &mut Type| match &ty {
+            Type::Decoration(Decoration::Override(box inner_ty)) => {
+                is_override = true;
+                *ty = inner_ty.clone()
             }
-        }
-        let mut seen = false;
-        f(self, &mut seen);
-        seen
+            _ => {}
+        });
+        (stripped_ty, is_override)
     }
 
     pub fn promote_literals(self, stdlib: &Stdlib) -> Type {
