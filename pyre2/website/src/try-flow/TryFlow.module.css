@@ -1,0 +1,202 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @format
+ */
+
+.editorContainer {
+    position: relative;
+}
+
+.toolbar {
+    display: flex;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+}
+
+.tryEditorConfig {
+    position: absolute;
+    width: 100%;
+    height: calc(100vh - var(--ifm-navbar-height) - 40px);
+    z-index: 10;
+    background-color: white;
+    overflow: auto;
+}
+
+.tryEditorConfig table {
+    display: table;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.tryEditorConfig tr:first-child {
+    border: none;
+}
+
+.tryEditorConfig td {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+
+.tryEditorConfig h3 {
+    margin-bottom: 0;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.tryEditorConfigInputCell {
+    text-align: right;
+}
+
+.tryEditorConfigLabelCell {
+    width: 100%;
+}
+
+.tryEditorConfigLabelCell a {
+    padding-left: 5px;
+}
+
+.tryEditorConfigLabel {
+    font-weight: bold;
+}
+
+.resetBanner {
+    display: flex;
+    margin-left: auto;
+    margin-right: 10px;
+    justify-content: flex-end;
+    gap: 10px;
+    align-items: center;
+}
+
+.tryEditor {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - var(--ifm-navbar-height));
+}
+
+.code,
+.results {
+    flex: 1;
+    width: 50%;
+}
+
+.code {
+    background: #fff;
+}
+
+.results {
+    position: relative;
+    font-size: 12px;
+    background: #f7f7f7;
+    border-left: 1px solid #ddd;
+}
+
+.resultBody {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - var(--ifm-navbar-height) - 40px);
+    overflow: auto;
+}
+
+.tabs {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tab {
+    border-right: 1px solid #ddd;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 7px 15px;
+}
+
+.version {
+    margin-left: auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.versionWarning {
+    color: red;
+}
+
+.selectedTab {
+    background: white;
+    border-bottom: 2px solid #404040;
+    margin-bottom: -1px; /* cover up container bottom border */
+}
+
+.loader {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+@keyframes sk-bouncedelay {0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.loader > div {
+    width: 14px;
+    height: 14px;
+    background-color: #ccc;
+    border-radius: 100%;
+    animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+}
+
+.loader > .bounce1 {
+    animation-delay: -320ms;
+}
+
+.loader > .bounce2 {
+    animation-delay: -160ms;
+}
+
+.resultBody {
+    padding: 7px 10px;
+    margin-bottom: 0;
+}
+
+.errors ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.errors  li + li {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: solid #eee 1px;
+}
+
+.errors li ul li,
+.errors li ul li + li {
+    padding: inherit;
+    padding-left: 20px;
+    margin: inherit;
+    border: none;
+}
+
+.msgHighlight,
+.msgType {
+    cursor: pointer;
+}
+
+.refinedValueDecoration {
+    background-color: rgba(156, 204, 44, 0.25) !important;
+}

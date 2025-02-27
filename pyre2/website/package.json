@@ -1,0 +1,53 @@
+{
+  "name": "new-website",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve"
+  },
+  "dependencies": {
+    "@docusaurus/core": "2.4.1",
+    "@docusaurus/preset-classic": "2.4.1",
+    "@docusaurus/theme-mermaid": "^2.4.1",
+    "@mdx-js/react": "^1.6.22",
+    "@monaco-editor/react": "^4.4.5",
+    "@svgr/webpack": "^5.5.0",
+    "clsx": "^1.2.1",
+    "docusaurus-plugin-internaldocs-fb": "1.4.0",
+    "file-loader": "^6.2.0",
+    "lz-string": "^1.4.4",
+    "monaco-editor": "^0.34.0",
+    "monaco-editor-webpack-plugin": "^7.1.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-json-view": "^1.21.3",
+    "url-loader": "^4.1.1",
+    "vscode-oniguruma": "^1.6.2",
+    "vscode-textmate": "^7.0.1"
+  },
+  "devDependencies": {
+    "@babel/preset-flow": "^7.16.7",
+    "@docusaurus/remark-plugin-npm2yarn": "^2.0.1",
+    "babel-plugin-syntax-hermes-parser": "0.25.1",
+    "flow-typed": "^3.7.0",
+    "raw-loader": "^4.0.2"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
