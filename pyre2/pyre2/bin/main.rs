@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-mod oss_watcher;
+mod notify_watcher;
 
 use std::backtrace::Backtrace;
 use std::env::args_os;
@@ -63,7 +63,7 @@ fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandEx
             let is_watch_mode = args.watch;
             args.run(
                 if is_watch_mode {
-                    Some(Box::new(oss_watcher::OpenSourceWatcher::new()?))
+                    Some(Box::new(notify_watcher::NotifyWatcher::new()?))
                 } else {
                     None
                 },

@@ -20,12 +20,12 @@ use notify::RecursiveMode;
 use notify::Watcher as _;
 use pyre2::Watcher;
 
-pub struct OpenSourceWatcher {
+pub struct NotifyWatcher {
     receiver: Receiver<notify::Result<Event>>,
     watcher: RecommendedWatcher,
 }
 
-impl OpenSourceWatcher {
+impl NotifyWatcher {
     pub fn new() -> anyhow::Result<Self> {
         let (sender, receiver) = channel();
         let watcher = recommended_watcher(sender)?;
@@ -33,7 +33,7 @@ impl OpenSourceWatcher {
     }
 }
 
-impl Watcher for OpenSourceWatcher {
+impl Watcher for NotifyWatcher {
     fn watch_dir(&mut self, path: &Path) -> anyhow::Result<()> {
         Ok(self.watcher.watch(path, RecursiveMode::Recursive)?)
     }
