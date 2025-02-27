@@ -1240,3 +1240,20 @@ assert_type()
 reveal_type(1, 2, 3)
     "#,
 );
+
+// Regression test for a bug where special exports were no longer recognized
+// after a loop, due to flow styles being dropped.
+testcase!(
+    test_special_export_after_loop,
+    r#"
+from enum import Enum
+from typing import assert_type
+
+for _ in []:
+    pass
+
+# Enum's functional form is detected via a special export.
+X = Enum('X', ['X'])
+assert_type(X, type[X])
+    "#,
+);

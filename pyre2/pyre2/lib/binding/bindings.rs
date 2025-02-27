@@ -685,7 +685,11 @@ impl<'a> BindingsBuilder<'a> {
                 .types
                 .0
                 .insert(Key::Phi(name.key().clone(), range));
-            res.insert_hashed(name, FlowInfo { key, style: None });
+            let style = x
+                .info
+                .get_hashed(name.as_ref())
+                .and_then(|old_info| old_info.style.clone());
+            res.insert_hashed(name, FlowInfo { key, style });
         }
         Flow {
             info: res,
