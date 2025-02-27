@@ -501,13 +501,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         };
 
         // Types provided in annotations shadow inferred types
-        let (ty, ann) = if let Some(ann) = annotation {
+        let ty = if let Some(ann) = annotation {
             match &ann.ty {
-                Some(ty) => (ty, Some(ann)),
-                None => (value_ty, Some(ann)),
+                Some(ty) => ty,
+                None => value_ty,
             }
         } else {
-            (value_ty, None)
+            value_ty
         };
 
         // Dataclass read-onlyness (does not currently handle other kinds of readonlyness)
@@ -516,8 +516,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .is_some_and(|dataclass| dataclass.kws.is_set(&DataclassKeywords::FROZEN));
 
         // Create the resulting field and check for override inconsistencies before returning
-        let class_field =
-            ClassField::new(ty.clone(), range, ann.cloned(), initialization, readonly);
+        let class_field = ClassField::new(
+            ty.clone(),
+            range,
+            annotation.cloned(),
+            initialization,
+            readonly,
+        );
         self.check_class_field_for_override_mismatch(
             name,
             &class_field,
