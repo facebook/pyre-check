@@ -412,6 +412,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .map(|member| Arc::unwrap_or_clone(member.value).as_instance_attribute(cls))
     }
 
+    /// Looks up an attribute on a super instance.
+    pub fn get_super_attribute(
+        &self,
+        lookup_cls: &ClassType,
+        super_obj: &ClassType,
+        name: &Name,
+    ) -> Option<Attribute> {
+        self.get_class_member(lookup_cls.class_object(), name)
+            .map(|member| Arc::unwrap_or_clone(member.value).as_instance_attribute(super_obj))
+    }
+
     /// Gets an attribute from a class definition.
     ///
     /// Returns `None` if there is no such attribute, otherwise an `Attribute` object

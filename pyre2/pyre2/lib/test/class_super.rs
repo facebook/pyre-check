@@ -22,8 +22,7 @@ class B(A):
 "#,
 );
 
-testcase_with_bug!(
-    "We don't understand super()",
+testcase!(
     test_class_super_with_args,
     r#"
 from typing import assert_type
@@ -38,8 +37,8 @@ class B:
 
 class C(B, A):
     def g(self):
-        assert_type(super(C, self).f(), bool)  # E: assert_type  # E: attribute base undefined
-        assert_type(super(B, self).f(), int)  # E: assert_type  # E: attribute base undefined
+        assert_type(super(C, self).f(), bool)
+        assert_type(super(B, self).f(), int)
     "#,
 );
 

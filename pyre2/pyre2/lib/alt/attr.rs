@@ -216,6 +216,8 @@ enum AttributeBase {
     /// Properties are handled via a special case so that we can understand
     /// setter decorators.
     Property(Type),
+    /// Result of a super() call. See Type::SuperInstance for details on what these ClassTypes are.
+    SuperInstance(ClassType, ClassType),
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -515,6 +517,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => LookupResult::NotFound(NotFound::Attribute(class)),
                 }
             }
+            Some(AttributeBase::SuperInstance(cls, obj)) => {
+                match self.get_super_attribute(&cls, &obj, attr_name) {
+                    Some(attr) => LookupResult::Found(attr),
+                    None => LookupResult::NotFound(NotFound::Attribute(cls)),
+                }
+            }
             Some(AttributeBase::ClassObject(class)) => {
                 match self.get_class_attribute(&class, attr_name) {
                     Some(attr) => LookupResult::Found(attr),
@@ -713,6 +721,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::Decoration(Decoration::EnumMember(box ty)) => self.as_attribute_base(ty, stdlib),
             Type::Decoration(_) => None,
+            Type::SuperInstance(cls, obj) => Some(AttributeBase::SuperInstance(*cls, *obj)),
             // TODO: check to see which ones should have class representations
             Type::Union(_)
             | Type::SpecialForm(_)
@@ -721,9 +730,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             | Type::Unpack(_)
             | Type::Concatenate(_, _)
             | Type::ParamSpecValue(_)
-            | Type::Quantified(_)
-            // TODO: support this
-            | Type::SuperInstance(..) => None,
+            | Type::Quantified(_) => None,
         }
     }
 }
@@ -732,6 +739,9 @@ impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
     pub fn lookup_all_attributes(&self, base: Type) -> Vec<Name> {
         match self.as_attribute_base(base.clone(), self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
+                class.class_object().fields().cloned().collect()
+            }
+            Some(AttributeBase::SuperInstance(class, _)) => {
                 class.class_object().fields().cloned().collect()
             }
             Some(AttributeBase::ClassObject(class)) => class.fields().cloned().collect(),
