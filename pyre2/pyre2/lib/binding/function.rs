@@ -102,7 +102,7 @@ impl<'a> BindingsBuilder<'a> {
             _ => (None, None),
         };
 
-        self.scopes.push(Scope::annotation());
+        self.scopes.push(Scope::annotation(x.range));
 
         let tparams = x
             .type_params
@@ -143,9 +143,9 @@ impl<'a> BindingsBuilder<'a> {
         legacy_tparam_builder.add_name_definitions(self);
 
         if self_type.is_none() {
-            self.scopes.push(Scope::function());
+            self.scopes.push(Scope::function(x.range));
         } else {
-            self.scopes.push(Scope::method(func_name.clone()));
+            self.scopes.push(Scope::method(x.range, func_name.clone()));
         }
 
         let legacy_tparams = legacy_tparam_builder.lookup_keys();

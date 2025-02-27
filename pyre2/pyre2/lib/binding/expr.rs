@@ -66,8 +66,8 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn bind_comprehensions(&mut self, comprehensions: &mut [Comprehension]) {
-        self.scopes.push(Scope::comprehension());
+    fn bind_comprehensions(&mut self, range: TextRange, comprehensions: &mut [Comprehension]) {
+        self.scopes.push(Scope::comprehension(range));
         for comp in comprehensions.iter_mut() {
             self.scopes.current_mut().stat.expr_lvalue(&comp.target);
             let make_binding = |k| Binding::IterableValue(k, comp.iter.clone());
@@ -81,7 +81,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     pub fn bind_lambda(&mut self, lambda: &ExprLambda) {
-        self.scopes.push(Scope::function());
+        self.scopes.push(Scope::function(lambda.range));
         if let Some(parameters) = &lambda.parameters {
             for x in parameters.iter() {
                 self.bind_lambda_param(x.name());
@@ -202,19 +202,19 @@ impl<'a> BindingsBuilder<'a> {
                 false
             }
             Expr::ListComp(x) => {
-                self.bind_comprehensions(&mut x.generators);
+                self.bind_comprehensions(x.range, &mut x.generators);
                 true
             }
             Expr::SetComp(x) => {
-                self.bind_comprehensions(&mut x.generators);
+                self.bind_comprehensions(x.range, &mut x.generators);
                 true
             }
             Expr::DictComp(x) => {
-                self.bind_comprehensions(&mut x.generators);
+                self.bind_comprehensions(x.range, &mut x.generators);
                 true
             }
             Expr::Generator(x) => {
-                self.bind_comprehensions(&mut x.generators);
+                self.bind_comprehensions(x.range, &mut x.generators);
                 true
             }
             Expr::Lambda(x) => {

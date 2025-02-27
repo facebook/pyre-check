@@ -212,7 +212,9 @@ impl Step {
         exports: Exports,
     ) -> Arc<(Bindings, Arc<Answers>)> {
         let solver = Solver::new();
+        let enable_trace = ctx.retain_memory;
         let bindings = Bindings::new(
+            ast.range,
             Arc::unwrap_or_clone(ast).body,
             load.module_info.dupe(),
             exports,
@@ -221,8 +223,8 @@ impl Step {
             ctx.config,
             &load.errors,
             ctx.uniques,
+            enable_trace,
         );
-        let enable_trace = ctx.retain_memory;
         let answers = Answers::new(&bindings, solver, enable_trace);
         Arc::new((bindings, Arc::new(answers)))
     }

@@ -59,7 +59,7 @@ impl<'a> BindingsBuilder<'a> {
         let body = mem::take(&mut x.body);
         let decorators = self.ensure_and_bind_decorators(mem::take(&mut x.decorator_list));
 
-        self.scopes.push(Scope::annotation());
+        self.scopes.push(Scope::annotation(x.range));
 
         let class_name = ShortIdentifier::new(&x.name);
         let class_key = KeyClass(class_name.clone());
@@ -125,7 +125,7 @@ impl<'a> BindingsBuilder<'a> {
         let legacy_tparam_builder = legacy.unwrap();
         legacy_tparam_builder.add_name_definitions(self);
 
-        self.scopes.push(Scope::class_body(x.name.clone()));
+        self.scopes.push(Scope::class_body(x.range, x.name.clone()));
         self.init_static_scope(&body, false);
         self.stmts(body);
 

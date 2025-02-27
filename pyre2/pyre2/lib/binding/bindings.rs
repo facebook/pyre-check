@@ -28,6 +28,7 @@ use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
+use ruff_text_size::TextSize;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
@@ -53,6 +54,7 @@ use crate::binding::scope::InstanceAttribute;
 use crate::binding::scope::Loop;
 use crate::binding::scope::LoopExit;
 use crate::binding::scope::ScopeKind;
+use crate::binding::scope::ScopeTrace;
 use crate::binding::scope::Scopes;
 use crate::binding::table::TableKeyed;
 use crate::error::collector::ErrorCollector;
@@ -93,6 +95,7 @@ table! {
 struct BindingsInner {
     module_info: ModuleInfo,
     table: BindingTable,
+    scope_trace: Option<ScopeTrace>,
 }
 
 impl Display for Bindings {
@@ -153,6 +156,15 @@ impl Bindings {
 
     pub fn module_info(&self) -> &ModuleInfo {
         &self.0.module_info
+    }
+
+    #[expect(dead_code)]
+    pub fn available_definitions(&self, position: TextSize) -> SmallSet<Idx<Key>> {
+        if let Some(trace) = &self.0.scope_trace {
+            trace.available_definitions(&self.0.table, position)
+        } else {
+            SmallSet::new()
+        }
     }
 
     pub fn key_to_idx<K: Keyed>(&self, k: &K) -> Idx<K>
@@ -233,6 +245,7 @@ impl Bindings {
     }
 
     pub fn new(
+        module_scope_range: TextRange,
         x: Vec<Stmt>,
         module_info: ModuleInfo,
         exports: Exports,
@@ -241,6 +254,7 @@ impl Bindings {
         config: &RuntimeMetadata,
         errors: &ErrorCollector,
         uniques: &UniqueFactory,
+        enable_trace: bool,
     ) -> Self {
         let mut builder = BindingsBuilder {
             module_info: module_info.dupe(),
@@ -249,7 +263,7 @@ impl Bindings {
             errors,
             solver,
             uniques,
-            scopes: Scopes::module(),
+            scopes: Scopes::module(module_scope_range, enable_trace),
             functions: Vec1::new(FuncInfo::default()),
             table: Default::default(),
         };
@@ -286,9 +300,10 @@ impl Bindings {
                 ErrorKind::Unknown,
             );
         }
-        let last_scope = builder.scopes.finish();
-        for (k, static_info) in last_scope.stat.0 {
-            let info = last_scope.flow.info.get(&k);
+        let scope_trace = builder.scopes.finish();
+        let last_scope = scope_trace.toplevel_scope();
+        for (k, static_info) in &last_scope.stat.0 {
+            let info = last_scope.flow.info.get(k);
             let val = match info {
                 Some(FlowInfo { key, .. }) => {
                     if let Some(ann) = static_info.annot {
@@ -308,13 +323,18 @@ impl Bindings {
                     Binding::AnyType(AnyStyle::Error)
                 }
             };
-            if exports.contains(&k, lookup) {
-                builder.table.insert(KeyExport(k), val);
+            if exports.contains(k, lookup) {
+                builder.table.insert(KeyExport(k.clone()), val);
             }
         }
         Self(Arc::new(BindingsInner {
             module_info,
             table: builder.table,
+            scope_trace: if enable_trace {
+                Some(scope_trace)
+            } else {
+                None
+            },
         }))
     }
 }
@@ -428,20 +448,7 @@ impl<'a> BindingsBuilder<'a> {
             } else if !matches!(scope.kind, ScopeKind::ClassBody(_))
                 && let Some(info) = scope.stat.0.get(name)
             {
-                let key = if info.count == 1 {
-                    if info.uses_key_import {
-                        Key::Import(name.clone(), info.loc)
-                    } else {
-                        // We are constructing an identifier, but it must have been one that we saw earlier
-                        assert_ne!(info.loc, TextRange::default());
-                        Key::Definition(ShortIdentifier::new(&Identifier {
-                            id: name.clone(),
-                            range: info.loc,
-                        }))
-                    }
-                } else {
-                    Key::Anywhere(name.clone(), info.loc)
-                };
+                let key = info.as_key(name);
                 return Some(self.table.types.0.insert(key));
             }
             barrier = barrier || scope.barrier;

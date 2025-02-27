@@ -15,7 +15,9 @@ use ruff_python_ast::ExprName;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Stmt;
 use ruff_text_size::TextRange;
+use ruff_text_size::TextSize;
 use starlark_map::small_map::SmallMap;
+use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
 use crate::ast::Ast;
@@ -25,6 +27,7 @@ use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyFunction;
+use crate::binding::bindings::BindingTable;
 use crate::export::definitions::DefinitionStyle;
 use crate::export::definitions::Definitions;
 use crate::export::exports::LookupExport;
@@ -50,6 +53,25 @@ pub struct StaticInfo {
     /// True if this is going to appear as a `Key::Import``.
     /// A little fiddly to keep syncronised with the other field.
     pub uses_key_import: bool,
+}
+
+impl StaticInfo {
+    pub fn as_key(&self, name: &Name) -> Key {
+        if self.count == 1 {
+            if self.uses_key_import {
+                Key::Import(name.clone(), self.loc)
+            } else {
+                // We are constructing an identifier, but it must have been one that we saw earlier
+                assert_ne!(self.loc, TextRange::default());
+                Key::Definition(ShortIdentifier::new(&Identifier {
+                    id: name.clone(),
+                    range: self.loc,
+                }))
+            }
+        } else {
+            Key::Anywhere(name.clone(), self.loc)
+        }
+    }
 }
 
 impl Static {
@@ -214,6 +236,7 @@ pub struct Loop(pub Vec<(LoopExit, Flow)>);
 
 #[derive(Clone, Debug)]
 pub struct Scope {
+    pub range: TextRange,
     pub stat: Static,
     pub flow: Flow,
     /// Are Flow types above this unreachable.
@@ -225,8 +248,9 @@ pub struct Scope {
 }
 
 impl Scope {
-    fn new(barrier: bool, kind: ScopeKind) -> Self {
+    fn new(range: TextRange, barrier: bool, kind: ScopeKind) -> Self {
         Self {
+            range,
             stat: Default::default(),
             flow: Default::default(),
             barrier,
@@ -235,12 +259,13 @@ impl Scope {
         }
     }
 
-    pub fn annotation() -> Self {
-        Self::new(false, ScopeKind::Annotation)
+    pub fn annotation(range: TextRange) -> Self {
+        Self::new(range, false, ScopeKind::Annotation)
     }
 
-    pub fn class_body(name: Identifier) -> Self {
+    pub fn class_body(range: TextRange, name: Identifier) -> Self {
         Self::new(
+            range,
             false,
             ScopeKind::ClassBody(ClassBodyInner {
                 name,
@@ -249,16 +274,17 @@ impl Scope {
         )
     }
 
-    pub fn comprehension() -> Self {
-        Self::new(false, ScopeKind::Comprehension)
+    pub fn comprehension(range: TextRange) -> Self {
+        Self::new(range, false, ScopeKind::Comprehension)
     }
 
-    pub fn function() -> Self {
-        Self::new(true, ScopeKind::Function)
+    pub fn function(range: TextRange) -> Self {
+        Self::new(range, true, ScopeKind::Function)
     }
 
-    pub fn method(name: Identifier) -> Self {
+    pub fn method(range: TextRange, name: Identifier) -> Self {
         Self::new(
+            range,
             true,
             ScopeKind::Method(MethodInner {
                 name,
@@ -268,47 +294,111 @@ impl Scope {
         )
     }
 
-    fn module() -> Self {
-        Self::new(false, ScopeKind::Module)
+    fn module(range: TextRange) -> Self {
+        Self::new(range, false, ScopeKind::Module)
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct Scopes(Vec1<Scope>);
+struct ScopeTreeNode {
+    scope: Scope,
+    children: Vec<ScopeTreeNode>,
+}
+
+impl ScopeTreeNode {
+    /// Return whether we hit a child scope with a barrier
+    fn collect_available_definitions(
+        &self,
+        table: &BindingTable,
+        position: TextSize,
+        collector: &mut SmallSet<Idx<Key>>,
+    ) -> bool {
+        if !self.scope.range.contains(position) {
+            return false;
+        }
+        let mut barrier = false;
+        for node in &self.children {
+            let hit_barrier = node.collect_available_definitions(table, position, collector);
+            barrier = barrier || hit_barrier
+        }
+        if !barrier {
+            for info in self.scope.flow.info.values() {
+                collector.insert(info.key);
+            }
+        }
+        for (name, info) in &self.scope.stat.0 {
+            if let Some(key) = table.types.0.key_to_idx(&info.as_key(name)) {
+                collector.insert(key);
+            }
+        }
+        barrier || self.scope.barrier
+    }
+}
+
+/// Scopes keep track of the current stack of the scopes we are in.
+#[derive(Clone, Debug)]
+pub struct Scopes {
+    scopes: Vec1<ScopeTreeNode>,
+    /// When `keep_scope_tree` flag is on, the stack will maintain a tree of all the scopes
+    /// throughout the program, even if the scope has already been popped. This is useful
+    /// for autocomplete purposes.
+    keep_scope_tree: bool,
+}
 
 impl Scopes {
-    pub fn module() -> Self {
-        Self(Vec1::new(Scope::module()))
+    pub fn module(range: TextRange, keep_scope_tree: bool) -> Self {
+        let module_scope = Scope::module(range);
+        Self {
+            scopes: Vec1::new(ScopeTreeNode {
+                scope: module_scope,
+                children: Vec::new(),
+            }),
+            keep_scope_tree,
+        }
     }
 
     pub fn current(&self) -> &Scope {
-        self.0.last()
+        &self.scopes.last().scope
     }
 
     pub fn current_mut(&mut self) -> &mut Scope {
-        self.0.last_mut()
+        &mut self.current_mut_node().scope
+    }
+
+    fn current_mut_node(&mut self) -> &mut ScopeTreeNode {
+        self.scopes.last_mut()
     }
 
     /// There is only one scope remaining, return it.
-    pub fn finish(self) -> Scope {
-        assert_eq!(self.0.len(), 1);
-        self.0.to_vec().pop().unwrap()
+    pub fn finish(self) -> ScopeTrace {
+        assert_eq!(self.scopes.len(), 1);
+        ScopeTrace(self.scopes.to_vec().pop().unwrap())
     }
 
     pub fn push(&mut self, scope: Scope) {
-        self.0.push(scope);
+        self.scopes.push(ScopeTreeNode {
+            scope,
+            children: Vec::new(),
+        });
     }
 
     pub fn pop(&mut self) -> Scope {
-        self.0.pop().unwrap()
+        let ScopeTreeNode { scope, children } = self.scopes.pop().unwrap();
+        if self.keep_scope_tree {
+            self.current_mut_node().children.push(ScopeTreeNode {
+                scope: scope.clone(),
+                children,
+            });
+        }
+        scope
     }
 
     pub fn iter_rev(&self) -> impl Iterator<Item = &Scope> {
-        self.0.iter().rev()
+        self.scopes.iter().map(|node| &node.scope).rev()
     }
 
     pub fn iter_rev_mut(&mut self) -> impl Iterator<Item = &mut Scope> {
-        self.0.iter_mut().rev()
+        self.scopes.iter_mut().map(|node| &mut node.scope).rev()
     }
 
     pub fn update_flow_info(&mut self, name: &Name, key: Idx<Key>, style: Option<FlowStyle>) {
@@ -337,5 +427,25 @@ impl Scopes {
             _ => SpecialEntry::Local,
         };
         Some(entry)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ScopeTrace(ScopeTreeNode);
+
+impl ScopeTrace {
+    pub fn toplevel_scope(&self) -> &Scope {
+        &self.0.scope
+    }
+
+    pub fn available_definitions(
+        &self,
+        table: &BindingTable,
+        position: TextSize,
+    ) -> SmallSet<Idx<Key>> {
+        let mut collector = SmallSet::new();
+        self.0
+            .collect_available_definitions(table, position, &mut collector);
+        collector
     }
 }
