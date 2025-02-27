@@ -147,7 +147,12 @@ impl State {
     fn clean(&self, module_data: &Arc<ModuleData>) {
         let exclusive;
         loop {
-            match module_data.state.exclusive(Step::first()) {
+            let reader = module_data.state.read();
+            if reader.epochs.checked == self.now {
+                // Someone already checked us
+                return;
+            }
+            match reader.exclusive(Step::first()) {
                 None => continue,
                 Some(ex) => {
                     exclusive = ex;
@@ -155,10 +160,7 @@ impl State {
                 }
             }
         }
-        if exclusive.epochs.checked == self.now {
-            // Someone already checked us
-            return;
-        }
+
         // We need to clean up the state.
         // If things have changed, we need to update the last_step.
         // We clear memory as an optimisation only.
