@@ -3519,7 +3519,9 @@ module CalleeVisitor = struct
       let register_targets ~expression_identifier ?(location = location) callees =
         log
           ~debug
-          "Resolved callees for expression `%a`:@,%a"
+          "Resolved callees at `%a` for expression `%a`:@,%a "
+          Location.pp
+          location
           Expression.pp
           expression
           ExpressionCallees.pp
@@ -3940,7 +3942,7 @@ module DecoratorResolution = struct
         ~context
         ~callees_at_location:call_graph
     in
-    let create_and_resolve_decorator_call previous_argument decorator =
+    let create_decorator_call previous_argument decorator =
       Node.create
         ~location:decorator.Node.location
           (* Avoid later registering all callees to the same location. *)
@@ -3974,7 +3976,7 @@ module DecoratorResolution = struct
             List.fold
               decorators
               ~init:(Expression.Name callable_name |> Node.create ~location:define_location)
-              ~f:create_and_resolve_decorator_call
+              ~f:create_decorator_call
           in
           let call_graph = ref DefineCallGraph.empty in
           resolve_callees ~call_graph expression;
@@ -4259,6 +4261,10 @@ module HigherOrderCallGraph = struct
 
     val debug : bool
 
+    val define : Ast.Statement.Define.t
+
+    val define_name : Reference.t
+
     val input_define_call_graph : DefineCallGraph.t
 
     (* Outputs. *)
@@ -4314,7 +4320,7 @@ module HigherOrderCallGraph = struct
         decorated_targets, non_decorated_targets
 
 
-      let rec analyze_call ~location ~call ~arguments ~state =
+      let rec analyze_call ~pyre_in_context ~location ~call ~arguments ~state =
         let formal_arguments_if_non_stub target =
           if Target.is_override target || Target.is_object target then
             (* TODO(T204630385): It is possible for a target to be an `Override`, which we do not
@@ -4344,7 +4350,9 @@ module HigherOrderCallGraph = struct
             state_so_far
             { Call.Argument.value = argument; _ }
           =
-          let callees, new_state = analyze_expression ~state:state_so_far ~expression:argument in
+          let callees, new_state =
+            analyze_expression ~pyre_in_context ~state:state_so_far ~expression:argument
+          in
           let call_targets_from_higher_order_parameters =
             match HigherOrderParameterMap.Map.find_opt index higher_order_parameters with
             | Some { HigherOrderParameter.call_targets; _ } -> call_targets
@@ -4379,22 +4387,24 @@ module HigherOrderCallGraph = struct
           |> Option.value_exn
                ~message:
                  (Format.asprintf
-                    "Could not find callees for `%a` in `%a` at `%a` in the call graph."
-                    Expression.pp
-                    (Expression.Call call
-                    |> Node.create_with_default_location
-                    |> Ast.Expression.delocalize)
+                    "Could not find callees for `%a` in `%a` at `%a` in the call graph: `%a`"
+                    Ast.Expression.Call.pp
+                    call
                     Reference.pp
                     Context.qualifier
                     Location.pp
-                    location)
+                    location
+                    DefineCallGraph.pp
+                    Context.input_define_call_graph)
         in
         let decorated_targets, non_decorated_targets =
           partition_decorated_targets original_call_targets
         in
         (* The analysis of the callee AST handles the redirection to artifically created decorator
            defines. *)
-        let callee_return_values, state = analyze_expression ~state ~expression:call.Call.callee in
+        let callee_return_values, state =
+          analyze_expression ~pyre_in_context ~state ~expression:call.Call.callee
+        in
         let call_targets_from_callee =
           non_decorated_targets
           |> CallTarget.Set.of_list
@@ -4502,7 +4512,11 @@ module HigherOrderCallGraph = struct
 
 
       (* Return possible callees and the new state. *)
-      and analyze_expression ~state ~expression:({ Node.value; location } as expression) =
+      and analyze_expression
+          ~pyre_in_context
+          ~state
+          ~expression:({ Node.value; location } as expression)
+        =
         log
           "Analyzing expression `%a` with state `%a`"
           Expression.pp_expression
@@ -4510,13 +4524,13 @@ module HigherOrderCallGraph = struct
           State.pp
           state;
         let call_targets, state =
-          match value with
-          | Expression.Await expression -> analyze_expression ~state ~expression
+          match redirect_expressions ~pyre_in_context ~location value with
+          | Expression.Await expression -> analyze_expression ~pyre_in_context ~state ~expression
           | BinaryOperator _ -> CallTarget.Set.bottom, state
           | BooleanOperator _ -> CallTarget.Set.bottom, state
           | ComparisonOperator _ -> CallTarget.Set.bottom, state
           | Call ({ callee = _; arguments } as call) ->
-              analyze_call ~location ~call ~arguments ~state
+              analyze_call ~pyre_in_context ~location ~call ~arguments ~state
           | Constant _ -> CallTarget.Set.bottom, state
           | Dictionary _ -> CallTarget.Set.bottom, state
           | DictionaryComprehension _ -> CallTarget.Set.bottom, state
@@ -4593,7 +4607,7 @@ module HigherOrderCallGraph = struct
           | Yield None -> CallTarget.Set.bottom, state
           | Yield (Some expression)
           | YieldFrom expression ->
-              let callees, state = analyze_expression ~state ~expression in
+              let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
               ( callees,
                 store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state )
         in
@@ -4606,7 +4620,7 @@ module HigherOrderCallGraph = struct
         call_targets, state
 
 
-      let analyze_statement ~state ~statement =
+      let analyze_statement ~pyre_in_context ~state ~statement =
         log "Analyzing statement `%a` with state `%a`" Statement.pp statement State.pp state;
         let state =
           match Node.value statement with
@@ -4614,7 +4628,9 @@ module HigherOrderCallGraph = struct
               match TaintAccessPath.of_expression ~self_variable:None target with
               | None -> state
               | Some { root; path = _ } ->
-                  let callees, state = analyze_expression ~state ~expression:value in
+                  let callees, state =
+                    analyze_expression ~pyre_in_context ~state ~expression:value
+                  in
                   store_callees ~weak:false ~root ~callees state)
           | Assign { Assign.target; value = None; _ } -> (
               match TaintAccessPath.of_expression ~self_variable:None target with
@@ -4702,7 +4718,8 @@ module HigherOrderCallGraph = struct
                 ~callees
                 state
           | Delete _ -> state
-          | Expression expression -> analyze_expression ~state ~expression |> Core.snd
+          | Expression expression ->
+              analyze_expression ~pyre_in_context ~state ~expression |> Core.snd
           | For _
           | Global _
           | If _
@@ -4714,7 +4731,7 @@ module HigherOrderCallGraph = struct
               state
           | Raise { expression = Some _; _ } -> state
           | Return { expression = Some expression; _ } ->
-              let callees, state = analyze_expression ~state ~expression in
+              let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
               store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
           | Return { expression = None; _ }
           | Try _
@@ -4727,7 +4744,16 @@ module HigherOrderCallGraph = struct
         state
 
 
-      let forward ~statement_key:_ state ~statement = analyze_statement ~state ~statement
+      let forward ~statement_key state ~statement =
+        let pyre_in_context =
+          PyrePysaEnvironment.InContext.create_at_statement_key
+            Context.pyre_api
+            ~define_name:Context.define_name
+            ~define:Context.define
+            ~statement_key
+        in
+        analyze_statement ~pyre_in_context ~state ~statement
+
 
       let backward ~statement_key:_ _ ~statement:_ = failwith "unused"
     end)
@@ -4775,6 +4801,10 @@ let higher_order_call_graph_of_define
     let get_callee_model = get_callee_model
 
     let debug = debug_higher_order_call_graph define
+
+    let define = define
+
+    let define_name = PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define
   end
   in
   log

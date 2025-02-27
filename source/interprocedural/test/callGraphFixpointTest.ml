@@ -998,6 +998,38 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     class A:
+       @classmethod
+       def f(x, g):
+         return g
+     def foo():
+       return
+     @functools.partial(A.f, "abc")
+     def bar():
+       return foo
+     def baz():
+       return bar()  # Test resolving calls that require redirecting expressions
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.baz"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "12:9-12:14",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call (CallCallees.create ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
     ]
 
 

@@ -22,9 +22,6 @@ Call dependencies
     "partial.PartialDecorator.__call__ (method)"
   ],
   "partial.a_flows_to_sink (fun)": [ "_test_sink (fun)" ],
-  "partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]": [
-    "_test_sink (fun)"
-  ],
   "partial.dunder_call_partial_constructor (fun)": [
     "functools.partial.__call__ (method)", "object.__new__ (method)"
   ],
@@ -35,19 +32,15 @@ Call dependencies
     "_test_source (fun)", "partial.a_flows_to_sink (fun)"
   ],
   "partial.partial_application_with_benign (fun)": [
-    "partial.a_flows_to_sink (fun)",
-    "partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]"
+    "partial.a_flows_to_sink (fun)"
   ],
   "partial.partial_application_with_named_a (fun)": [
-    "_test_source (fun)", "partial.a_flows_to_sink (fun)",
-    "partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]"
+    "_test_source (fun)", "partial.a_flows_to_sink (fun)"
   ],
   "partial.partial_application_with_named_b (fun)": [
-    "_test_source (fun)", "partial.a_flows_to_sink (fun)",
-    "partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]"
+    "_test_source (fun)", "partial.a_flows_to_sink (fun)"
   ],
   "partial.partial_application_with_tainted (fun)": [
-    "_test_source (fun)", "partial.a_flows_to_sink (fun)",
-    "partial.a_flows_to_sink (fun)[formal(a, position=0)=partial.a_flows_to_sink (fun)]"
+    "_test_source (fun)", "partial.a_flows_to_sink (fun)"
   ]
 }

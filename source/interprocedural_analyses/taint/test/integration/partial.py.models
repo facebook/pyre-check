@@ -909,35 +909,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "partial.a_flows_to_sink[formal(a, position=0)=partial.a_flows_to_sink]",
-    "sinks": [
-      {
-        "port": "formal(a, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "partial.py",
-              "line": 14,
-              "start": 15,
-              "end": 16
-            },
-            "call_site": "14:4-14:17"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "partial.dunder_call_nested_define_constructor",
     "filename": "partial.py",
     "callable_line": 92,
