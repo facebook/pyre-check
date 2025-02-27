@@ -69,6 +69,7 @@ use crate::types::callable::ParamList;
 use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassKind;
+use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::quantified::Quantified;
@@ -688,6 +689,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .unwrap_or_default(),
         };
         Arc::new(fields)
+    }
+
+    /// Get the class that attribute lookup on `super(cls, obj)` should be done on.
+    /// This is the class above `cls` in `obj`'s MRO.
+    fn get_super_lookup_class(&self, cls: &Class, obj: &ClassType) -> Option<ClassType> {
+        let mut lookup_cls = None;
+        let metadata = self.get_metadata_for_class(obj.class_object());
+        let mut found = false;
+        for ancestor in [obj].into_iter().chain(metadata.ancestors(self.stdlib)) {
+            if ancestor.class_object() == cls {
+                found = true;
+                // Handle the corner case of `ancestor` being `object` (and
+                // therefore having no ancestor of its own).
+                lookup_cls = Some(ancestor);
+            } else if found {
+                lookup_cls = Some(ancestor);
+                break;
+            }
+        }
+        lookup_cls.cloned()
     }
 
     fn solve_binding_inner(&self, binding: &Binding, errors: &ErrorCollector) -> Type {
@@ -1314,31 +1335,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 match &*self.get_idx(*obj_binding) {
                                     Type::Any(style) => style.propagate(),
                                     Type::ClassType(obj_cls) => {
-                                        // Get the class that attribute lookup on the super instance should be done on.
-                                        // This is the class above `cls` in `obj_cls`'s MRO.
-                                        let mut lookup_cls = None;
-                                        let metadata = self.get_metadata_for_class(obj_cls.class_object());
-                                        let mut found = false;
-                                        for ancestor in
-                                            [obj_cls].into_iter().chain(metadata.ancestors(self.stdlib))
-                                        {
-                                            if ancestor.class_object() == cls {
-                                                found = true;
-                                                // Handle the corner case of `ancestor` being `object` (and
-                                                // therefore having no ancestor of its own).
-                                                lookup_cls = Some(ancestor);
-                                            } else if found {
-                                                lookup_cls = Some(ancestor);
-                                                break;
-                                            }
-                                        }
-                                        lookup_cls.map_or_else(|| {
-                                            self.error(
-                                                errors,
-                                                *range,
-                                                format!("Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`", cls_type, obj_cls, obj_cls, cls_type)
-                                            )
-                                        }, |lookup_cls| Type::SuperInstance(Box::new(lookup_cls.clone()), Box::new(obj_cls.clone())))
+                                        let lookup_cls = self.get_super_lookup_class(cls, obj_cls);
+                                        lookup_cls.map_or_else(
+                                            || {
+                                                self.error(
+                                                    errors,
+                                                    *range,
+                                                    format!(
+                                                        "Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`",
+                                                        cls_type, obj_cls, obj_cls, cls_type
+                                                    ),
+                                                )
+                                            },
+                                            |lookup_cls| {
+                                                Type::SuperInstance(Box::new(lookup_cls), Box::new(obj_cls.clone()))
+                                            },
+                                        )
                                     }
                                     t => {
                                         // TODO: handle the case when the second argument is a class
@@ -1356,6 +1368,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             ),
                         }
                     }
+                    SuperStyle::ImplicitArgs(self_binding) => match &*self.get_idx(*self_binding) {
+                        Type::ClassType(obj_cls) => {
+                            let lookup_cls = self
+                                .get_super_lookup_class(obj_cls.class_object(), obj_cls)
+                                .unwrap();
+                            Type::SuperInstance(Box::new(lookup_cls), Box::new(obj_cls.clone()))
+                        }
+                        _ => Type::any_implicit(),
+                    },
                     SuperStyle::Any => Type::any_implicit(),
                 }
             }

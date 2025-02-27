@@ -30,6 +30,7 @@ use crate::binding::bindings::LegacyTParamBuilder;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::scope::Flow;
 use crate::binding::scope::Scope;
+use crate::binding::scope::ScopeKind;
 use crate::dunder;
 use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
@@ -209,8 +210,24 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 let nargs = posargs.len();
                 let style = if nargs == 0 {
-                    self.todo("no-argument super()", *range);
-                    SuperStyle::Any
+                    let mut self_type = None;
+                    for scope in self.scopes.iter_rev() {
+                        if let ScopeKind::ClassBody(class_body) = &scope.kind {
+                            self_type = Some(class_body.as_self_type_key());
+                            break;
+                        }
+                    }
+                    match self_type {
+                        Some(key) => SuperStyle::ImplicitArgs(self.table.types.0.insert(key)),
+                        None => {
+                            self.error(
+                                *range,
+                                "`super` call with no arguments is valid only inside a method"
+                                    .to_owned(),
+                            );
+                            SuperStyle::Any
+                        }
+                    }
                 } else if nargs == 2 {
                     let mut bind = |expr: &mut Expr| {
                         self.ensure_expr(expr);
