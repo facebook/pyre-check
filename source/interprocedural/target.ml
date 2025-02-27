@@ -599,6 +599,58 @@ module SharedMemoryKey = struct
   let from_string sexp_string = Sexp.of_string sexp_string |> t_of_sexp
 end
 
+module QualifiersDefinesSharedMemory = struct
+  type qualifier_and_define = Reference.t * Define.t Node.t
+
+  module T =
+    Hack_parallel.Std.SharedMemory.FirstClassWithKeys.Make
+      (SharedMemoryKey)
+      (struct
+        type t = qualifier_and_define
+
+        let prefix = Hack_parallel.Std.Prefix.make ()
+
+        let description = "qualifiers and defines"
+      end)
+
+  type t = T.t
+
+  module ReadOnly = struct
+    type t = T.ReadOnly.t
+
+    let get = T.ReadOnly.get ~cache:true
+  end
+
+  let read_only = T.read_only
+
+  let empty = T.create
+
+  let cleanup = T.cleanup ~clean_old:true
+
+  let from_callables ~scheduler ~scheduler_policy ~pyre_api callables =
+    let shared_memory = T.create () in
+    let shared_memory_add_only = T.add_only shared_memory in
+    let empty_shared_memory = T.AddOnly.create_empty shared_memory_add_only in
+    let map =
+      List.fold ~init:empty_shared_memory ~f:(fun shared_memory target ->
+          match get_module_and_definition ~pyre_api target with
+          | Some value -> T.AddOnly.add shared_memory target value
+          | None -> shared_memory)
+    in
+    let shared_memory_add_only =
+      Scheduler.map_reduce
+        scheduler
+        ~policy:scheduler_policy
+        ~initial:shared_memory_add_only
+        ~map
+        ~reduce:(fun left right ->
+          T.AddOnly.merge_same_handle_disjoint_keys ~smaller:left ~larger:right)
+        ~inputs:callables
+        ()
+    in
+    T.from_add_only shared_memory_add_only
+end
+
 (* Represent a hashset of targets inside the shared memory *)
 module HashsetSharedMemory = struct
   type target = T.t

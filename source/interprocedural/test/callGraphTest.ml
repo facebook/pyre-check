@@ -22,12 +22,23 @@ let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configurat
   let definitions = FetchCallables.get_definitions initial_callables in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let definitions_and_stubs =
+    Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
+  in
+  let qualifiers_defines =
+    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+      ~scheduler
+      ~scheduler_policy
+      ~pyre_api
+      definitions_and_stubs
+  in
   let method_kinds =
     CallGraph.MethodKind.SharedMemory.from_targets
       ~scheduler
       ~scheduler_policy
-      ~pyre_api
-      (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
+      ~qualifiers_defines:
+        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      definitions_and_stubs
   in
   let call_graph =
     CallGraph.call_graph_of_define
@@ -39,7 +50,8 @@ let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configurat
         (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
       ~decorators:
         (CallGraph.CallableToDecoratorsMap.create
-           ~pyre_api
+           ~qualifiers_defines:
+             (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
            ~scheduler
            ~scheduler_policy
            definitions)
@@ -7645,14 +7657,27 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
   let definitions = FetchCallables.get_definitions initial_callables in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let qualifiers_defines =
+    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+      ~scheduler
+      ~scheduler_policy
+      ~pyre_api
+      definitions
+  in
   let decorators =
-    CallGraph.CallableToDecoratorsMap.create ~pyre_api ~scheduler ~scheduler_policy definitions
+    CallGraph.CallableToDecoratorsMap.create
+      ~qualifiers_defines:
+        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~scheduler
+      ~scheduler_policy
+      definitions
   in
   let method_kinds =
     CallGraph.MethodKind.SharedMemory.from_targets
       ~scheduler
       ~scheduler_policy
-      ~pyre_api
+      ~qualifiers_defines:
+        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
       definitions
   in
   let actual =

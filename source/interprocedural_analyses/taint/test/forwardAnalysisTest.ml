@@ -53,12 +53,25 @@ let assert_taint ?models ?models_source ~context source expect =
   in
   let defines = source |> Preprocessing.defines |> List.rev in
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let scheduler = Test.mock_scheduler () in
+  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let definitions_and_stubs =
+    Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
+  in
+  let qualifiers_defines =
+    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+      ~scheduler
+      ~scheduler_policy
+      ~pyre_api
+      definitions_and_stubs
+  in
   let method_kinds =
     CallGraph.MethodKind.SharedMemory.from_targets
-      ~scheduler:(Test.mock_scheduler ())
-      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~pyre_api
-      (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
+      ~scheduler
+      ~scheduler_policy
+      ~qualifiers_defines:
+        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      definitions_and_stubs
   in
   let analyze_and_store_in_order models define =
     let define_name =

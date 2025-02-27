@@ -203,10 +203,10 @@ module CallableToDecoratorsMap = struct
     not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order)
 
 
-  let create ~pyre_api ~scheduler ~scheduler_policy callables =
+  let create ~qualifiers_defines ~scheduler ~scheduler_policy callables =
     let collect_decorators callable =
       callable
-      |> Target.get_module_and_definition ~pyre_api
+      |> Target.QualifiersDefinesSharedMemory.ReadOnly.get qualifiers_defines
       >>= fun ( _,
                 {
                   Node.value = { Define.signature = { decorators; _ }; _ };
@@ -271,11 +271,13 @@ module MethodKind = struct
 
     let read_only = T.read_only
 
-    let compute_method_kind ~pyre_api target =
+    let compute_method_kind ~qualifiers_defines target =
       match Target.get_regular target with
       | Target.Regular.Method { method_name = "__new__"; _ } -> Some Static
       | Target.Regular.Method _ as target ->
-          Target.get_module_and_definition ~pyre_api (Target.from_regular target)
+          target
+          |> Target.from_regular
+          |> Target.QualifiersDefinesSharedMemory.ReadOnly.get qualifiers_defines
           >>| fun (_, { Node.value = define; _ }) ->
           if List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define) then
             Class
@@ -290,13 +292,13 @@ module MethodKind = struct
 
     let empty = T.create
 
-    let from_targets ~scheduler ~scheduler_policy ~pyre_api targets =
+    let from_targets ~scheduler ~scheduler_policy ~qualifiers_defines targets =
       let shared_memory = T.create () in
       let shared_memory_add_only = T.add_only shared_memory in
       let empty_shared_memory = T.AddOnly.create_empty shared_memory_add_only in
       let map =
         List.fold ~init:empty_shared_memory ~f:(fun shared_memory target ->
-            match compute_method_kind ~pyre_api target with
+            match compute_method_kind ~qualifiers_defines target with
             | Some method_kind -> T.AddOnly.add shared_memory target method_kind
             | None -> shared_memory)
       in

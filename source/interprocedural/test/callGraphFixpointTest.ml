@@ -39,15 +39,31 @@ let assert_higher_order_call_graph_fixpoint
   let definitions = FetchCallables.get_definitions initial_callables in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let definitions_and_stubs =
+    Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
+  in
+  let qualifiers_defines =
+    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+      ~scheduler
+      ~scheduler_policy
+      ~pyre_api
+      definitions_and_stubs
+  in
   let decorators =
-    CallGraph.CallableToDecoratorsMap.create ~pyre_api ~scheduler ~scheduler_policy definitions
+    CallGraph.CallableToDecoratorsMap.create
+      ~qualifiers_defines:
+        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~scheduler
+      ~scheduler_policy
+      definitions
   in
   let method_kinds =
     CallGraph.MethodKind.SharedMemory.from_targets
-      ~scheduler:(Test.mock_scheduler ())
-      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~pyre_api
-      (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
+      ~scheduler
+      ~scheduler_policy
+      ~qualifiers_defines:
+        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      definitions_and_stubs
   in
   let decorator_resolution =
     CallGraph.DecoratorResolution.Results.resolve_batch_exn

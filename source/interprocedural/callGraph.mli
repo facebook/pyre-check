@@ -45,7 +45,7 @@ module MethodKind : sig
     val from_targets
       :  scheduler:Scheduler.t ->
       scheduler_policy:Scheduler.Policy.t ->
-      pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+      qualifiers_defines:Target.QualifiersDefinesSharedMemory.ReadOnly.t ->
       Target.t list ->
       t
 
@@ -441,7 +441,7 @@ module CallableToDecoratorsMap : sig
   val empty : t
 
   val create
-    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    :  qualifiers_defines:Target.QualifiersDefinesSharedMemory.ReadOnly.t ->
     scheduler:Scheduler.t ->
     scheduler_policy:Scheduler.Policy.t ->
     Target.t list ->

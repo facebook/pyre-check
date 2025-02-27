@@ -202,6 +202,29 @@ val get_module_and_definition
   t ->
   (Reference.t * Define.t Node.t) option
 
+module QualifiersDefinesSharedMemory : sig
+  type t
+
+  module ReadOnly : sig
+    type t
+
+    val get : t -> T.t -> (Reference.t * Define.t Node.t) option
+  end
+
+  val empty : unit -> t
+
+  val from_callables
+    :  scheduler:Scheduler.t ->
+    scheduler_policy:Scheduler.Policy.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    T.t list ->
+    t
+
+  val read_only : t -> ReadOnly.t
+
+  val cleanup : t -> unit
+end
+
 val get_callable_location
   :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   t ->

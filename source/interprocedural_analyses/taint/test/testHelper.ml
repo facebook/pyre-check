@@ -456,6 +456,7 @@ module TestEnvironment = struct
     global_constants: GlobalConstants.SharedMemory.t;
     stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
     method_kinds: CallGraph.MethodKind.SharedMemory.t;
+    qualifiers_defines: Interprocedural.Target.QualifiersDefinesSharedMemory.t;
   }
 
   let cleanup
@@ -479,6 +480,7 @@ module TestEnvironment = struct
         global_constants;
         stubs_shared_memory_handle;
         method_kinds;
+        qualifiers_defines;
       }
     =
     CallGraph.SharedMemory.cleanup define_call_graphs;
@@ -492,7 +494,8 @@ module TestEnvironment = struct
       class_interval_graph;
     Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle;
     GlobalConstants.SharedMemory.cleanup global_constants;
-    CallGraph.MethodKind.SharedMemory.cleanup method_kinds
+    CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
+    Interprocedural.Target.QualifiersDefinesSharedMemory.cleanup qualifiers_defines
 end
 
 let set_up_decorator_preprocessing ~handle models =
@@ -573,11 +576,19 @@ let initialize
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~pyre_api ~source in
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let qualifiers_defines =
+    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+      ~scheduler
+      ~scheduler_policy
+      ~pyre_api
+      (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
+  in
   let method_kinds =
     CallGraph.MethodKind.SharedMemory.from_targets
       ~scheduler
       ~scheduler_policy
-      ~pyre_api
+      ~qualifiers_defines:
+        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
       definitions
   in
   let user_models, model_query_results =
@@ -677,9 +688,13 @@ let initialize
 
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
-  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
   let decorators =
-    CallGraph.CallableToDecoratorsMap.create ~pyre_api ~scheduler ~scheduler_policy definitions
+    CallGraph.CallableToDecoratorsMap.create
+      ~qualifiers_defines:
+        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      ~scheduler
+      ~scheduler_policy
+      definitions
   in
   let decorator_resolution =
     CallGraph.DecoratorResolution.Results.resolve_batch_exn
@@ -762,6 +777,7 @@ let initialize
     global_constants;
     stubs_shared_memory_handle;
     method_kinds;
+    qualifiers_defines;
   }
 
 

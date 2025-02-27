@@ -624,6 +624,21 @@ let rec process_request_exn
         Interprocedural.Target.HashsetSharedMemory.from_heap
           (Interprocedural.FetchCallables.get_stubs initial_callables)
       in
+      let definitions_and_stubs =
+        Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
+      in
+      let qualifiers_defines =
+        Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+          ~scheduler
+          ~scheduler_policy:
+            (Scheduler.Policy.fixed_chunk_count
+               ~minimum_chunks_per_worker:1
+               ~minimum_chunk_size:1
+               ~preferred_chunks_per_worker:1000
+               ())
+          ~pyre_api
+          definitions_and_stubs
+      in
       let method_kinds =
         Interprocedural.CallGraph.MethodKind.SharedMemory.from_targets
           ~scheduler
@@ -633,7 +648,8 @@ let rec process_request_exn
                ~minimum_chunk_size:1
                ~preferred_chunks_per_worker:1000
                ())
-          ~pyre_api
+          ~qualifiers_defines:
+            (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
           (Interprocedural.FetchCallables.get ~definitions:true ~stubs:true initial_callables)
       in
       Taint.ModelQueryExecution.generate_models_from_queries

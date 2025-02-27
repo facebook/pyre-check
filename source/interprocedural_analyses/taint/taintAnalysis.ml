@@ -650,22 +650,43 @@ let run_taint_analysis
         initial_callables)
   in
 
+  let definitions_and_stubs =
+    Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
+  in
+  let step_logger =
+    StepLogger.start
+      ~start_message:"Building a map from callable names to definitions"
+      ~end_message:"Map from callable names to definitions built"
+  in
+  let qualifiers_defines =
+    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+      ~scheduler
+      ~scheduler_policy:
+        (Scheduler.Policy.from_configuration_or_default
+           scheduler_policies
+           Configuration.ScheduleIdentifier.QualifiersDefinesSharedMemory
+           ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+      ~pyre_api
+      definitions_and_stubs
+  in
+  let () = StepLogger.finish step_logger in
+
   let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
   let step_logger =
     StepLogger.start ~start_message:"Computing method kinds" ~end_message:"Method kinds computed"
   in
   let method_kinds =
     (* TODO(T215258952): Cache this step. *)
-    initial_callables
-    |> Interprocedural.FetchCallables.get ~definitions:true ~stubs:true
-    |> Interprocedural.CallGraph.MethodKind.SharedMemory.from_targets
-         ~scheduler
-         ~scheduler_policy:
-           (Scheduler.Policy.from_configuration_or_default
-              scheduler_policies
-              Configuration.ScheduleIdentifier.MethodKinds
-              ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
-         ~pyre_api
+    Interprocedural.CallGraph.MethodKind.SharedMemory.from_targets
+      ~scheduler
+      ~scheduler_policy:
+        (Scheduler.Policy.from_configuration_or_default
+           scheduler_policies
+           Configuration.ScheduleIdentifier.MethodKinds
+           ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+      ~qualifiers_defines:
+        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      definitions_and_stubs
   in
   let () = StepLogger.finish step_logger in
 
@@ -748,7 +769,8 @@ let run_taint_analysis
       in
       let callables_to_decorators_map =
         Interprocedural.CallGraph.CallableToDecoratorsMap.create
-          ~pyre_api
+          ~qualifiers_defines:
+            (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
           ~scheduler
           ~scheduler_policy:
             (Scheduler.Policy.from_configuration_or_default

@@ -49,12 +49,25 @@ let create_call_graph ?(other_sources = []) ~context source_text =
   in
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
   let definitions = FetchCallables.get_definitions initial_callables in
+  let scheduler = Test.mock_scheduler () in
+  let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+  let definitions_and_stubs =
+    Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
+  in
+  let qualifiers_defines =
+    Interprocedural.Target.QualifiersDefinesSharedMemory.from_callables
+      ~scheduler
+      ~scheduler_policy
+      ~pyre_api
+      definitions_and_stubs
+  in
   let method_kinds =
     CallGraph.MethodKind.SharedMemory.from_targets
-      ~scheduler:(Test.mock_scheduler ())
-      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~pyre_api
-      (FetchCallables.get ~definitions:true ~stubs:true initial_callables)
+      ~scheduler
+      ~scheduler_policy
+      ~qualifiers_defines:
+        (Interprocedural.Target.QualifiersDefinesSharedMemory.read_only qualifiers_defines)
+      definitions_and_stubs
   in
   let fold call_graph callable =
     let callees =
