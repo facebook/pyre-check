@@ -39,6 +39,7 @@ pub struct ClassMetadata {
     dataclass_metadata: Option<DataclassMetadata>,
     bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
     has_base_any: bool,
+    is_new_type: bool,
 }
 
 impl Display for ClassMetadata {
@@ -59,6 +60,7 @@ impl ClassMetadata {
         protocol_metadata: Option<ProtocolMetadata>,
         dataclass_metadata: Option<DataclassMetadata>,
         has_base_any: bool,
+        is_new_type: bool,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         let mro = Mro::new(cls, &bases_with_metadata, errors);
@@ -73,6 +75,7 @@ impl ClassMetadata {
             dataclass_metadata,
             bases_with_metadata,
             has_base_any,
+            is_new_type,
         }
     }
 
@@ -88,6 +91,7 @@ impl ClassMetadata {
             dataclass_metadata: None,
             bases_with_metadata: Vec::new(),
             has_base_any: false,
+            is_new_type: false,
         }
     }
 
@@ -126,6 +130,10 @@ impl ClassMetadata {
 
     pub fn is_protocol(&self) -> bool {
         self.protocol_metadata.is_some()
+    }
+
+    pub fn is_new_type(&self) -> bool {
+        self.is_new_type
     }
 
     pub fn protocol_metadata(&self) -> Option<&ProtocolMetadata> {

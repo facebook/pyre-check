@@ -141,10 +141,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             bases,
             keywords,
             decorators,
+            is_new_type,
         } = binding;
         let metadata = match &self.get_idx(*k).0 {
             None => ClassMetadata::recursive(),
-            Some(cls) => self.class_metadata_of(cls, bases, keywords, decorators, errors),
+            Some(cls) => {
+                self.class_metadata_of(cls, bases, keywords, decorators, *is_new_type, errors)
+            }
         };
         Arc::new(metadata)
     }
@@ -686,6 +689,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .get_typed_dict_synthesized_fields(cls)
                 .or_else(|| self.get_dataclass_synthesized_fields(cls))
                 .or_else(|| self.get_named_tuple_synthesized_fields(cls))
+                .or_else(|| self.get_new_type_synthesized_fields(cls))
                 .unwrap_or_default(),
         };
         Arc::new(fields)

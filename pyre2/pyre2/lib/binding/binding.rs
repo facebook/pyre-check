@@ -1014,6 +1014,7 @@ pub struct BindingClassMetadata {
     pub bases: Box<[Expr]>,
     pub keywords: Box<[(Name, Expr)]>,
     pub decorators: Box<[Idx<Key>]>,
+    pub is_new_type: bool,
 }
 
 impl DisplayWith<Bindings> for BindingClassMetadata {

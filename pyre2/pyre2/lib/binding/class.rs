@@ -115,6 +115,7 @@ impl<'a> BindingsBuilder<'a> {
                 bases: bases.clone().into_boxed_slice(),
                 keywords: keywords.into_boxed_slice(),
                 decorators: decorators.clone().into_boxed_slice(),
+                is_new_type: false,
             },
         );
         self.table.insert(
@@ -264,6 +265,7 @@ impl<'a> BindingsBuilder<'a> {
         member_definitions: Vec<(String, TextRange, Option<Expr>, Option<Expr>)>,
         illegal_identifier_handling: IllegalIdentifierHandling,
         force_class_initialization: bool,
+        is_new_type: bool,
     ) {
         let short_class_name = ShortIdentifier::new(&class_name);
         let class_key = KeyClass(short_class_name.clone());
@@ -275,6 +277,7 @@ impl<'a> BindingsBuilder<'a> {
                 bases: Box::new([base]),
                 keywords,
                 decorators: Box::new([]),
+                is_new_type,
             },
         );
         self.table.insert(
@@ -439,6 +442,7 @@ impl<'a> BindingsBuilder<'a> {
             member_definitions,
             IllegalIdentifierHandling::Error,
             true,
+            false,
         );
     }
 
@@ -488,6 +492,7 @@ impl<'a> BindingsBuilder<'a> {
             member_definitions,
             IllegalIdentifierHandling::Error,
             false,
+            false,
         );
     }
 
@@ -500,6 +505,7 @@ impl<'a> BindingsBuilder<'a> {
             Vec::new(),
             IllegalIdentifierHandling::Error,
             false,
+            true,
         );
     }
 
@@ -566,6 +572,7 @@ impl<'a> BindingsBuilder<'a> {
             base_class_keywords,
             member_definitions,
             IllegalIdentifierHandling::Allow,
+            false,
             false,
         );
     }

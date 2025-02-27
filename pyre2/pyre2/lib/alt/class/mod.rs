@@ -11,4 +11,5 @@ pub mod classdef;
 pub mod dataclass;
 pub mod enums;
 pub mod named_tuple;
+pub mod new_type;
 pub mod typed_dict;

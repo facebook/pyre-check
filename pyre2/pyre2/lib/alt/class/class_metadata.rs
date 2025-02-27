@@ -76,6 +76,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         bases: &[Expr],
         keywords: &[(Name, Expr)],
         decorators: &[Idx<Key>],
+        is_new_type: bool,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         let mut is_typed_dict = false;
@@ -252,6 +253,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             protocol_metadata,
             dataclass_metadata,
             has_base_any,
+            is_new_type,
             errors,
         )
     }
