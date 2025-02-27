@@ -899,6 +899,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Call(x) => {
                 let ty_fun = self.expr_infer(&x.func, errors);
+                if matches!(&ty_fun, Type::ClassDef(cls) if cls.has_qname("builtins", "super")) {
+                    if is_special_name(&x.func, "super") {
+                        return self.get(&Key::SuperInstance(x.range)).arc_clone();
+                    } else {
+                        // Because we have to construct a binding for super in order to fill in
+                        // implicit arguments, we can't handle things like local aliases to super.
+                        return Type::any_implicit();
+                    }
+                }
                 let func_range = x.func.range();
                 self.distribute_over_union(&ty_fun, |ty| match ty.callee_kind() {
                     Some(CalleeKind::Callable(CallableKind::AssertType)) => self.call_assert_type(

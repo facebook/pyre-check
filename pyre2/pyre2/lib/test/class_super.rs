@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::testcase;
 use crate::testcase_with_bug;
 
 testcase_with_bug!(
@@ -17,7 +18,7 @@ class A:
 
 class B(A):
     def m(self) -> int:
-        return super().m() # E: Object of class `super` has no attribute `m`
+        return super().m() # E: TODO
 "#,
 );
 
@@ -37,8 +38,8 @@ class B:
 
 class C(B, A):
     def g(self):
-        assert_type(super(C, self).f(), bool)  # E: assert_type  # E: no attribute `f`
-        assert_type(super(B, self).f(), int)  # E: assert_type  # E: no attribute `f`
+        assert_type(super(C, self).f(), bool)  # E: assert_type
+        assert_type(super(B, self).f(), int)  # E: assert_type
     "#,
 );
 
@@ -53,7 +54,7 @@ class A:
         return 0
 class B(A):
     def f(self):
-        return super().f()  # E: Object of class `super` has no attribute `f`
+        return super().f()  # E: TODO
 class C:
     def f(self) -> bool:
         return True
@@ -62,5 +63,26 @@ class D(B, C, A):
 
 # The super() call in B.f should be evaluated with D as the starting class, so that C.f is called
 assert_type(D().f(), bool)  # E: assert_type
+    "#,
+);
+
+testcase!(
+    test_bad_args,
+    r#"
+super(1, 2, 3)  # E: `super` takes at most 2 arguments, got 3
+
+class C:
+    def f(self):
+        super(C, self, oops=42)  # E: `super` got an unexpected keyword argument `oops`
+    "#,
+);
+
+testcase!(
+    test_super_alias,
+    r#"
+_super = super
+class C:
+    def f(self):
+        _super(C, self)
     "#,
 );

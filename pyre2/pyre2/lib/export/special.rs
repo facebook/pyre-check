@@ -32,6 +32,7 @@ pub enum SpecialExport {
     AssertType,
     NewType,
     Cast,
+    Super,
 }
 
 #[derive(Debug)]
@@ -64,6 +65,7 @@ impl SpecialExport {
             "assert_type" => Some(Self::AssertType),
             "NewType" => Some(Self::NewType),
             "cast" => Some(Self::Cast),
+            "super" => Some(Self::Super),
             _ => None,
         }
     }
@@ -85,6 +87,7 @@ impl SpecialExport {
             }
             Self::CollectionsNamedTuple => matches!(m.as_str(), "collections"),
             Self::Enum | Self::StrEnum | Self::IntEnum => matches!(m.as_str(), "enum"),
+            Self::Super => matches!(m.as_str(), "builtins"),
         }
     }
 

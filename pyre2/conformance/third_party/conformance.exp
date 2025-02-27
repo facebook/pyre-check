@@ -2501,21 +2501,11 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class1",
-      "description": "EXPECTED object <: Class1",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 20,
       "name": "unknown",
-      "stop_column": 36,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 20,
-      "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 20
     },
     {
@@ -2541,51 +2531,31 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class2",
-      "description": "EXPECTED object <: Class2",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 33,
       "name": "unknown",
-      "stop_column": 36,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 33,
-      "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 33
     },
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Object of class `super` has no attribute `__call__`",
-      "description": "Object of class `super` has no attribute `__call__`",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 43,
       "name": "unknown",
-      "stop_column": 32,
+      "stop_column": 23,
       "stop_line": 43
     },
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class3",
-      "description": "EXPECTED object <: Class3",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 48,
       "name": "unknown",
-      "stop_column": 36,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 48,
-      "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 48
     },
     {
@@ -2601,31 +2571,21 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Object of class `super` has no attribute `__call__`",
-      "description": "Object of class `super` has no attribute `__call__`",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 57,
       "name": "unknown",
-      "stop_column": 32,
+      "stop_column": 23,
       "stop_line": 57
     },
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class4",
-      "description": "EXPECTED object <: Class4",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 62,
       "name": "unknown",
-      "stop_column": 36,
-      "stop_line": 62
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 62,
-      "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 62
     },
     {
@@ -2643,21 +2603,11 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class1[?_TypeVar]",
-      "description": "EXPECTED object <: Class1[?_TypeVar]",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 16,
       "name": "unknown",
-      "stop_column": 36,
-      "stop_line": 16
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 16,
-      "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 16
     },
     {
@@ -2673,21 +2623,11 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class2[?_TypeVar]",
-      "description": "EXPECTED object <: Class2[?_TypeVar]",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 29,
       "name": "unknown",
-      "stop_column": 36,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 29,
-      "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 29
     },
     {
@@ -2732,23 +2672,13 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "column": 16,
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 98,
       "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 98
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(object, Class7) failed",
-      "description": "assert_type(object, Class7) failed",
-      "line": 104,
-      "name": "unknown",
-      "stop_column": 31,
-      "stop_line": 104
     },
     {
       "code": -2,
@@ -2765,11 +2695,11 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class1",
-      "description": "EXPECTED object <: Class1",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 25,
       "name": "unknown",
-      "stop_column": 48,
+      "stop_column": 23,
       "stop_line": 25
     },
     {
@@ -2795,21 +2725,11 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class2",
-      "description": "EXPECTED object <: Class2",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 35,
       "name": "unknown",
-      "stop_column": 36,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 35,
-      "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 35
     },
     {
@@ -3187,21 +3107,11 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class5",
-      "description": "EXPECTED object <: Class5",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 93,
       "name": "unknown",
-      "stop_column": 36,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 93,
-      "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 93
     },
     {
@@ -3316,12 +3226,12 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "column": 16,
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 134,
       "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 134
     },
     {
@@ -3427,21 +3337,11 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class8[?_TypeVar]",
-      "description": "EXPECTED object <: Class8[?_TypeVar]",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 178,
       "name": "unknown",
-      "stop_column": 36,
-      "stop_line": 178
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 178,
-      "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 178
     },
     {
@@ -3549,21 +3449,11 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED object <: Class1",
-      "description": "EXPECTED object <: Class1",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 22,
       "name": "unknown",
-      "stop_column": 36,
-      "stop_line": 22
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 22,
-      "name": "unknown",
-      "stop_column": 35,
+      "stop_column": 23,
       "stop_line": 22
     }
   ],
@@ -10149,11 +10039,11 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Object of class `super` has no attribute `draw`",
-      "description": "Object of class `super` has no attribute `draw`",
+      "concise_description": "TODO: no-argument super()",
+      "description": "TODO: no-argument super()",
       "line": 27,
       "name": "unknown",
-      "stop_column": 28,
+      "stop_column": 23,
       "stop_line": 27
     },
     {

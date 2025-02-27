@@ -8,6 +8,7 @@
 use std::mem;
 
 use itertools::Either;
+use ruff_python_ast::Arguments;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Decorator;
@@ -32,6 +33,7 @@ use crate::dunder;
 use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::types::callable::unexpected_keyword;
 use crate::types::types::AnyStyle;
 use crate::visitors::Visitors;
 
@@ -187,6 +189,70 @@ impl<'a> BindingsBuilder<'a> {
                         self.ensure_expr(&mut kw.value);
                     }
                 }
+                return;
+            }
+            Expr::Call(ExprCall {
+                range,
+                func,
+                arguments:
+                    Arguments {
+                        range: _,
+                        args: posargs,
+                        keywords,
+                    },
+            }) if self.as_special_export(func) == Some(SpecialExport::Super) => {
+                self.ensure_expr(func);
+                for kw in keywords {
+                    self.ensure_expr(&mut kw.value);
+                    unexpected_keyword(&|msg| self.error(*range, msg), "super", kw);
+                }
+                let nargs = posargs.len();
+                let (cls_key, obj_key) = if nargs == 0 {
+                    self.todo("no-argument super()", *range);
+                    (
+                        self.table.insert(
+                            Key::Anon(TextRange::new(range.start(), range.start())),
+                            Binding::AnyType(AnyStyle::Implicit),
+                        ),
+                        self.table.insert(
+                            Key::Anon(TextRange::new(range.end(), range.end())),
+                            Binding::AnyType(AnyStyle::Implicit),
+                        ),
+                    )
+                } else if nargs == 2 {
+                    let mut bind = |expr: &mut Expr| {
+                        self.ensure_expr(expr);
+                        self.table
+                            .insert(Key::Anon(expr.range()), Binding::Expr(None, expr.clone()))
+                    };
+                    (bind(&mut posargs[0]), bind(&mut posargs[1]))
+                } else {
+                    if nargs != 1 {
+                        // Calling super() with one argument is technically legal: https://stackoverflow.com/a/30190341.
+                        // This is a very niche use case, and we don't support it aside from not erroring.
+                        self.error(
+                            *range,
+                            format!("`super` takes at most 2 arguments, got {}", nargs),
+                        );
+                    }
+                    for arg in posargs {
+                        self.ensure_expr(arg);
+                    }
+                    (
+                        self.table.insert(
+                            Key::Anon(TextRange::new(range.start(), range.start())),
+                            Binding::AnyType(AnyStyle::Implicit),
+                        ),
+                        self.table.insert(
+                            Key::Anon(TextRange::new(range.end(), range.end())),
+                            Binding::AnyType(AnyStyle::Implicit),
+                        ),
+                    )
+                };
+                self.table.insert(
+                    Key::SuperInstance(*range),
+                    Binding::SuperInstance(cls_key, obj_key, *range),
+                );
                 return;
             }
             Expr::Name(x) => {

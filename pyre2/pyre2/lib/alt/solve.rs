@@ -1304,6 +1304,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
             }
+            Binding::SuperInstance(..) => Type::any_implicit(), // TODO: support super()
         }
     }
 
