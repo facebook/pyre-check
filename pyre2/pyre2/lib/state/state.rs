@@ -71,6 +71,7 @@ use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
 use crate::util::upgrade_lock::UpgradeLock;
+use crate::util::upgrade_lock::UpgradeLockExclusiveGuard;
 
 pub struct State {
     uniques: UniqueFactory,
@@ -144,23 +145,11 @@ impl State {
         ))
     }
 
-    fn clean(&self, module_data: &Arc<ModuleData>) {
-        let exclusive;
-        loop {
-            let reader = module_data.state.read();
-            if reader.epochs.checked == self.now {
-                // Someone already checked us
-                return;
-            }
-            match reader.exclusive(Step::first()) {
-                None => continue,
-                Some(ex) => {
-                    exclusive = ex;
-                    break;
-                }
-            }
-        }
-
+    fn clean(
+        &self,
+        module_data: &Arc<ModuleData>,
+        exclusive: UpgradeLockExclusiveGuard<Step, ModuleState>,
+    ) {
         // We need to clean up the state.
         // If things have changed, we need to update the last_step.
         // We clear memory as an optimisation only.
@@ -270,8 +259,9 @@ impl State {
         loop {
             let reader = module_data.state.read();
             if reader.epochs.checked != self.now {
-                drop(reader);
-                self.clean(module_data);
+                if let Some(ex) = reader.exclusive(Step::first()) {
+                    self.clean(module_data, ex);
+                }
                 continue;
             }
 
