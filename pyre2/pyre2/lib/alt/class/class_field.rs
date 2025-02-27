@@ -211,58 +211,6 @@ impl ClassField {
         })
     }
 
-    fn as_instance_attribute(self, cls: &ClassType) -> Attribute {
-        match self.instantiate_for(cls).0 {
-            ClassFieldInner::Simple {
-                ty,
-                range,
-                readonly,
-                ..
-            } => {
-                let module_info = cls.qname().module_info().dupe();
-                match self.initialization() {
-                    ClassFieldInitialization::Class(_) => bind_instance_attribute(cls, range, ty),
-                    ClassFieldInitialization::Instance if readonly => {
-                        let def_range = TextRangeWithModuleInfo::opt_new(module_info, range);
-                        Attribute::read_only(def_range, ty)
-                    }
-                    ClassFieldInitialization::Instance => {
-                        let def_range = TextRangeWithModuleInfo::opt_new(module_info, range);
-                        Attribute::read_write(def_range, ty)
-                    }
-                }
-            }
-        }
-    }
-
-    fn as_class_attribute(self, cls: &Class) -> Attribute {
-        match &self.0 {
-            ClassFieldInner::Simple {
-                initialization: ClassFieldInitialization::Instance,
-                range,
-                ..
-            } => Attribute::no_access(
-                TextRangeWithModuleInfo::opt_new(cls.module_info().dupe(), *range),
-                NoAccessReason::ClassUseOfInstanceAttribute(cls.clone()),
-            ),
-            ClassFieldInner::Simple {
-                range,
-                initialization: ClassFieldInitialization::Class(_),
-                ty,
-                ..
-            } => {
-                if self.depends_on_class_type_parameter(cls) {
-                    Attribute::no_access(
-                        TextRangeWithModuleInfo::opt_new(cls.module_info().dupe(), *range),
-                        NoAccessReason::ClassAttributeIsGeneric(cls.clone()),
-                    )
-                } else {
-                    bind_class_attribute(cls, *range, ty.clone())
-                }
-            }
-        }
-    }
-
     pub fn as_named_tuple_type(&self) -> Type {
         match &self.0 {
             ClassFieldInner::Simple { ty, .. } => ty.clone(),
@@ -582,6 +530,58 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn as_instance_attribute(&self, field: ClassField, cls: &ClassType) -> Attribute {
+        match field.instantiate_for(cls).0 {
+            ClassFieldInner::Simple {
+                ty,
+                range,
+                readonly,
+                ..
+            } => {
+                let module_info = cls.qname().module_info().dupe();
+                match field.initialization() {
+                    ClassFieldInitialization::Class(_) => bind_instance_attribute(cls, range, ty),
+                    ClassFieldInitialization::Instance if readonly => {
+                        let def_range = TextRangeWithModuleInfo::opt_new(module_info, range);
+                        Attribute::read_only(def_range, ty)
+                    }
+                    ClassFieldInitialization::Instance => {
+                        let def_range = TextRangeWithModuleInfo::opt_new(module_info, range);
+                        Attribute::read_write(def_range, ty)
+                    }
+                }
+            }
+        }
+    }
+
+    fn as_class_attribute(&self, field: ClassField, cls: &Class) -> Attribute {
+        match &field.0 {
+            ClassFieldInner::Simple {
+                initialization: ClassFieldInitialization::Instance,
+                range,
+                ..
+            } => Attribute::no_access(
+                TextRangeWithModuleInfo::opt_new(cls.module_info().dupe(), *range),
+                NoAccessReason::ClassUseOfInstanceAttribute(cls.clone()),
+            ),
+            ClassFieldInner::Simple {
+                range,
+                initialization: ClassFieldInitialization::Class(_),
+                ty,
+                ..
+            } => {
+                if field.depends_on_class_type_parameter(cls) {
+                    Attribute::no_access(
+                        TextRangeWithModuleInfo::opt_new(cls.module_info().dupe(), *range),
+                        NoAccessReason::ClassAttributeIsGeneric(cls.clone()),
+                    )
+                } else {
+                    bind_class_attribute(cls, *range, ty.clone())
+                }
+            }
+        }
+    }
+
     fn check_class_field_for_override_mismatch(
         &self,
         name: &Name,
@@ -597,7 +597,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             _ => None,
         };
         if let Some(class_type) = class_type {
-            let got = class_field.clone().as_instance_attribute(&class_type);
+            let got = self.as_instance_attribute(class_field.clone(), &class_type);
             let metadata = self.get_metadata_for_class(class);
             let parents = metadata.bases_with_metadata();
 
@@ -695,7 +695,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
-            .map(|member| Arc::unwrap_or_clone(member.value).as_instance_attribute(cls))
+            .map(|member| self.as_instance_attribute(Arc::unwrap_or_clone(member.value), cls))
     }
 
     /// Looks up an attribute on a super instance.
@@ -706,7 +706,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         name: &Name,
     ) -> Option<Attribute> {
         self.get_class_member(lookup_cls.class_object(), name)
-            .map(|member| Arc::unwrap_or_clone(member.value).as_instance_attribute(super_obj))
+            .map(|member| self.as_instance_attribute(Arc::unwrap_or_clone(member.value), super_obj))
     }
 
     /// Gets an attribute from a class definition.
@@ -717,8 +717,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Access is disallowed for instance-only attributes and for attributes whose
     /// type contains a class-scoped type parameter - e.g., `class A[T]: x: T`.
     pub fn get_class_attribute(&self, cls: &Class, name: &Name) -> Option<Attribute> {
-        let member = self.get_class_member(cls, name)?.value;
-        Some(Arc::unwrap_or_clone(member).as_class_attribute(cls))
+        self.get_class_member(cls, name)
+            .map(|member| self.as_class_attribute(Arc::unwrap_or_clone(member.value), cls))
     }
 
     /// Get the class's `__new__` method.
