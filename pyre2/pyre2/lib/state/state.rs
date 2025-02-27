@@ -153,15 +153,31 @@ impl State {
         // We need to clean up the state.
         // If things have changed, we need to update the last_step.
         // We clear memory as an optimisation only.
-        let cleanup = |w: &mut ModuleState| {
+
+        // Mark ourselves as having completed everything.
+        let finish = |w: &mut ModuleState| {
             w.epochs.checked = self.now;
             w.dirty.clean();
-            if w.steps.last_step != Some(Step::last()) {
-                w.epochs.computed = self.now;
-                if let Some(subscriber) = &self.subscriber {
-                    subscriber.start_work(module_data.handle.dupe());
-                }
+        };
+        // Rebuild stuff. Pass clear_ast to indicate we need to rebuild the AST, otherwise can reuse it (if present).
+        let rebuild = |w: &mut ModuleState, clear_ast: bool| {
+            w.steps.last_step = if clear_ast || w.steps.ast.is_none() {
+                Some(Step::Load)
+            } else {
+                Some(Step::Ast)
+            };
+            if clear_ast {
+                w.steps.ast = None;
             }
+            w.steps.exports = None;
+            w.steps.answers = None;
+            // Do not clear solutions, since we can use that for equality
+            w.epochs.computed = self.now;
+            if let Some(subscriber) = &self.subscriber {
+                subscriber.start_work(module_data.handle.dupe());
+            }
+            module_data.deps.write().clear();
+            finish(w);
         };
 
         // Validate the load flag.
@@ -172,7 +188,6 @@ impl State {
                 Load::load_from_path(module_data.handle.path(), module_data.handle.loader());
             if self_error.is_some() || &code != old_load.module_info.contents() {
                 let mut write = exclusive.write();
-                write.steps.last_step = Some(Step::Load);
                 write.steps.load = Some(Arc::new(Load::load_from_data(
                     module_data.handle.module(),
                     module_data.handle.path().dupe(),
@@ -180,13 +195,7 @@ impl State {
                     code,
                     self_error,
                 )));
-                // Clear the memory
-                write.steps.ast = None;
-                write.steps.exports = None;
-                write.steps.answers = None;
-                module_data.deps.write().clear();
-                // Don't clear solutions, since we can use that for equality
-                cleanup(&mut write);
+                rebuild(&mut write, true);
                 return;
             }
             // The contents are the same, so we can just reuse the old load
@@ -207,16 +216,7 @@ impl State {
             }
             if is_dirty {
                 let mut write = exclusive.write();
-                write.steps.last_step = Some(if write.steps.ast.is_none() {
-                    Step::Load
-                } else {
-                    Step::Ast
-                });
-                write.steps.exports = None;
-                write.steps.answers = None;
-                module_data.deps.write().clear();
-                cleanup(&mut write);
-                // Don't clear solutions, since we can use that for equality
+                rebuild(&mut write, false);
                 return;
             }
         }
@@ -231,26 +231,20 @@ impl State {
                 }
             }
         }
-        let mut write = exclusive.write();
         if is_dirty_deps {
-            write.steps.last_step = Some(if write.steps.ast.is_none() {
-                Step::Load
-            } else {
-                Step::Ast
-            });
-            write.steps.exports = None;
-            write.steps.answers = None;
-            module_data.deps.write().clear();
+            let mut write = exclusive.write();
+            rebuild(&mut write, false);
+            return;
         }
-        cleanup(&mut write);
-        if !is_dirty_deps {
-            drop(write);
-            // I am clean, but I need to make sure my dependencies are too
-            let mut todo = self.todo.lock();
-            for x in module_data.deps.read().values() {
-                // Important we use solutions, so they don't early exit
-                todo.push_lifo(Step::Solutions, x.dupe());
-            }
+
+        // The module was not dirty. Make sure our dependencies aren't dirty either.
+        let mut write = exclusive.write();
+        finish(&mut write);
+        drop(write);
+        let mut todo = self.todo.lock();
+        for x in module_data.deps.read().values() {
+            // Important we use solutions, so they don't early exit
+            todo.push_lifo(Step::Solutions, x.dupe());
         }
     }
 
