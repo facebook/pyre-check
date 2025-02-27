@@ -167,6 +167,22 @@ impl State {
     }
 
     fn completion_opt(&self, handle: &Handle, position: TextSize) -> Option<Vec<Name>> {
+        if self.identifier_at(handle, position).is_some() {
+            let bindings = self.get_bindings(handle)?;
+            let module_info = self.get_module_info(handle)?;
+            let names = bindings
+                .available_definitions(position)
+                .into_iter()
+                .filter_map(|idx| {
+                    if let Key::Definition(id) = bindings.idx_to_key(idx) {
+                        Some(Name::new(module_info.code_at(id.range())))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+            return Some(names);
+        }
         let attribute = self.attribute_at(handle, position)?;
         let base_type = self
             .get_answers(handle)?

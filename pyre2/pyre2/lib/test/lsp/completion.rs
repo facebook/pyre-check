@@ -22,7 +22,7 @@ fn get_test_report(state: &State, handle: &Handle, position: TextSize) -> String
 }
 
 #[test]
-fn basic_test() {
+fn dot_complete_basic_test() {
     let code = r#"
 class Foo:
     x: int
@@ -48,6 +48,42 @@ Completion Results:
          ^
 Completion Results:
 - y
+"#
+        .trim(),
+        report.trim(),
+    );
+}
+
+#[test]
+fn variable_complete_basic_test() {
+    let code = r#"
+def foo():
+  xxxx = 3
+  x
+# ^
+  def bar():
+    yyyy = 4;
+    y
+#   ^
+"#;
+    let report = get_batched_lsp_operations_report_allow_error(&[("main", code)], get_test_report);
+    assert_eq!(
+        r#"
+# main.py
+4 |   x
+      ^
+Completion Results:
+- xxxx
+- bar
+- foo
+
+8 |     y
+        ^
+Completion Results:
+- yyyy
+- xxxx
+- bar
+- foo
 "#
         .trim(),
         report.trim(),

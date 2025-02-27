@@ -158,7 +158,6 @@ impl Bindings {
         &self.0.module_info
     }
 
-    #[expect(dead_code)]
     pub fn available_definitions(&self, position: TextSize) -> SmallSet<Idx<Key>> {
         if let Some(trace) = &self.0.scope_trace {
             trace.available_definitions(&self.0.table, position)
