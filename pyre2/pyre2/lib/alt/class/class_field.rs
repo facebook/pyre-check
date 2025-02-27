@@ -469,7 +469,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             value_ty
         };
 
-        // Enum handling
+        // Enum handling:
+        // - Check whether the field is a member (which depends only on its type and name)
+        // - Validate that a member should not have an annotation, and should respect any explicit annotatin on `_value_`
+        //
+        // TODO(stroxler, yangdanny): We currently operate on promoted types, which means we do not infer `Literal[...]`
+        // types for the `.value` / `._value_` attributes of literals. This is permitted in the spec although not optimal
+        // for most cases; we are handling it this way in part because generic enum behavior is not yet well-specified.
         let value_ty = if let Some(enum_) = metadata.enum_metadata()
             && self.is_valid_enum_member(name, &value_ty, &initialization)
         {
@@ -485,7 +491,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(errors, range, format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name));
                 }
             }
-
             &Type::Literal(Lit::Enum(Box::new((
                 enum_.cls.clone(),
                 name.clone(),
