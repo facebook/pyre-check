@@ -559,7 +559,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     _ => {
                         // This could well be our error, but not really sure
-                        self.error(call_errors, range, "Unexpected ParamSpec type".to_owned());
+                        self.error(
+                            call_errors,
+                            range,
+                            format!("Unexpected ParamSpec type: `{p}`"),
+                        );
                     }
                 }
             }
