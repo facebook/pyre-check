@@ -19,6 +19,7 @@ use pyre2::init_tracing;
 use pyre2::run::Command;
 use pyre2::run::CommandExitStatus;
 use pyre2::ConfigFile;
+use pyre2::Globs;
 
 #[derive(Debug, Parser)]
 #[command(name = "pyre2")]
@@ -61,12 +62,14 @@ fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandEx
     match command {
         Command::Check(args) => {
             let is_watch_mode = args.watch;
+            let files_to_check = Globs::new(args.files.clone());
             args.run(
                 if is_watch_mode {
                     Some(Box::new(notify_watcher::NotifyWatcher::new()?))
                 } else {
                     None
                 },
+                files_to_check,
                 &get_open_source_config,
                 allow_forget,
             )

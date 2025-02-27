@@ -59,7 +59,7 @@ enum OutputFormat {
 
 #[derive(Debug, Parser, Clone)]
 pub struct Args {
-    files: Vec<String>,
+    pub files: Vec<String>,
     /// Write the errors to a file, instead of printing them.
     #[arg(long, short = 'o', env = clap_env("OUTPUT"))]
     output: Option<PathBuf>,
@@ -153,27 +153,31 @@ impl Args {
     pub fn run(
         self,
         watcher: Option<Box<dyn Watcher>>,
+        files_to_check: Globs,
         config_finder: &dyn Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
         if let Some(watcher) = watcher {
-            self.run_watch(watcher, config_finder)?;
+            self.run_watch(watcher, files_to_check, config_finder)?;
             Ok(CommandExitStatus::Success)
         } else {
-            self.run_inner(config_finder, allow_forget)
+            self.run_inner(files_to_check, config_finder, allow_forget)
         }
     }
 
     fn run_watch(
         self,
         mut watcher: Box<dyn Watcher>,
+        files_to_check: Globs,
         config_finder: &dyn Fn(&Path) -> ConfigFile,
     ) -> anyhow::Result<()> {
-        for path in Globs::new(self.files.clone()).roots() {
+        for path in files_to_check.roots() {
             watcher.watch_dir(&path)?;
         }
         loop {
-            let res = self.clone().run_inner(config_finder, false);
+            let res = self
+                .clone()
+                .run_inner(files_to_check.clone(), config_finder, false);
             if let Err(e) = res {
                 eprintln!("{e:#}");
             }
@@ -188,6 +192,7 @@ impl Args {
 
     fn run_inner(
         self,
+        files_to_check: Globs,
         // TODO: use this to calculate the config for each checked file
         _config_finder: &dyn Fn(&Path) -> ConfigFile,
         allow_forget: bool,
@@ -195,13 +200,13 @@ impl Args {
         let args = self;
         let include = args.include;
 
-        let files = Globs::new(args.files).resolve()?;
-        if files.is_empty() {
+        let expanded_file_list = files_to_check.resolve()?;
+        if expanded_file_list.is_empty() {
             return Ok(CommandExitStatus::Success);
         }
 
-        let mut to_check = SmallMap::with_capacity(files.len());
-        for file in &files {
+        let mut to_check = SmallMap::with_capacity(expanded_file_list.len());
+        for file in &expanded_file_list {
             let module = module_from_path(file, &include);
             to_check.entry(module).or_insert_with(|| file.clone());
         }
@@ -222,7 +227,7 @@ impl Args {
                 ErrorStyle::Never
             },
         });
-        let handles = files.into_map(|x| {
+        let handles = expanded_file_list.into_map(|x| {
             Handle::new(
                 module_from_path(&x, &include),
                 ModulePath::filesystem(x),
