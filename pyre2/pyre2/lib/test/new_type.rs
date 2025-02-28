@@ -6,8 +6,10 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
-testcase!(
+testcase_with_bug!(
+    "TODO: NewType not allowed in isinstance call and subclassing not allowed",
     test_new_type_simple,
     r#"
 from typing import NewType, assert_type
@@ -18,6 +20,11 @@ u1: UserId = 42 # E: EXPECTED Literal[42] <: UserId
 u2: UserId = UserId(42) 
 
 assert_type(UserId(5) + 1, int)
+
+isinstance(u2, UserId)  
+
+class UserIdDerived(UserId):
+    pass
      "#,
 );
 
@@ -34,6 +41,23 @@ GoodNewType2 = NewType("GoodNewType2", GoodNewType1)
 
 nt1: GoodNewType1[int] # E: Expected 0 type arguments for class `GoodNewType1`, got 1.
 
+     "#,
+);
+
+testcase_with_bug!(
+    "TODO: None of these types are allowed for a NewType. We will add checks for that.",
+    test_new_type_generic,
+    r#"
+from typing import NewType, TypeVar, Hashable, Literal
+
+BadNewType1 = NewType("BadNewType1", int | str)  
+
+T = TypeVar("T")
+BadNewType2 = NewType("BadNewType2", list[T])  
+
+BadNewType3 = NewType("BadNewType3", Hashable) 
+
+BadNewType4 = NewType("BadNewType4", Literal[7]) 
      "#,
 );
 
