@@ -29,7 +29,6 @@ use crate::binding::binding::Key;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::error::collector::ErrorCollector;
 use crate::graph::index::Idx;
-use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::CallableKind;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
@@ -263,9 +262,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// `expr_untype` and creating a `BaseClass::Type`.
     ///
     /// TODO(stroxler): See if there's a way to express this more clearly in the types.
-    fn special_base_class(&self, base_expr: &Expr) -> Option<BaseClass> {
-        if let Expr::Name(name) = base_expr {
-            match &*self.get(&Key::Usage(ShortIdentifier::expr_name(name))) {
+    fn special_base_class(&self, base_expr: &Expr, errors: &ErrorCollector) -> Option<BaseClass> {
+        if matches!(base_expr, Expr::Name(_) | Expr::Attribute(_)) {
+            match self.expr_infer(base_expr, errors) {
                 Type::Type(box Type::SpecialForm(special)) => match special {
                     SpecialForm::Protocol => Some(BaseClass::Protocol(Vec::new())),
                     SpecialForm::Generic => Some(BaseClass::Generic(Vec::new())),
@@ -280,11 +279,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn base_class_of(&self, base_expr: &Expr, errors: &ErrorCollector) -> BaseClass {
-        if let Some(special_base_class) = self.special_base_class(base_expr) {
+        if let Some(special_base_class) = self.special_base_class(base_expr, errors) {
             // This branch handles cases like `Protocol`
             special_base_class
         } else if let Expr::Subscript(subscript) = base_expr
-            && let Some(mut special_base_class) = self.special_base_class(&subscript.value)
+            && let Some(mut special_base_class) = self.special_base_class(&subscript.value, errors)
             && special_base_class.can_apply()
         {
             // This branch handles `Generic[...]` and `Protocol[...]`

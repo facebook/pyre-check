@@ -116,13 +116,12 @@ append(v, "test")  # E: Literal['test'] <: int
 "#,
 );
 
-testcase_with_bug!(
-    "special_base_class doesn't support qualified names",
+testcase!(
     test_generics_legacy_qualified,
     r#"
 import typing
 T = typing.TypeVar("T")
-class C(typing.Generic[T]): ...  # E: TODO: Answers::apply_special_form cannot handle `Generic[T]`
+class C(typing.Generic[T]): ...
 def append(x: C[T], y: T):
     pass
 v: C[int]
