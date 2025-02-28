@@ -6,6 +6,7 @@
  */
 
 use dupe::Dupe;
+use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Keyword;
 use ruff_python_ast::Operator;
@@ -24,6 +25,7 @@ use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Params;
+use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::AnyStyle;
@@ -474,5 +476,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let call_target =
             self.as_call_target_or_error(setter_method, CallStyle::FreeForm, range, errors);
         self.call_infer(call_target, &[got], &[], range, errors)
+    }
+
+    /// Helper function hide details of call synthesis from the attribute resolution code.
+    #[expect(dead_code)]
+    pub fn call_descriptor_getter(
+        &self,
+        getter_method: Type,
+        base: Either<ClassType, Class>,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        // When a descriptor is accessed on an instance, it gets the instance and the class object as
+        // the `obj` and `objtype` arguments. When it is accessed on a class, it gets `None` as `obj`
+        // and the class object as `objtype`.
+        let (objtype, obj) = match base {
+            Either::Left(classtype) => (
+                Type::ClassDef(classtype.class_object().clone()),
+                Type::ClassType(classtype),
+            ),
+            Either::Right(class) => (Type::ClassDef(class), Type::None),
+        };
+        let args = [CallArg::Type(&obj, range), CallArg::Type(&objtype, range)];
+        let call_target =
+            self.as_call_target_or_error(getter_method, CallStyle::FreeForm, range, errors);
+        self.call_infer(call_target, &args, &[], range, errors)
     }
 }
