@@ -36,10 +36,8 @@
   "aliases_newtype.py": [
     "Line 11: Expected 1 errors",
     "Line 23: Expected 1 errors",
-    "Line 44: Expected 1 errors",
     "Line 47: Expected 1 errors",
     "Line 49: Expected 1 errors",
-    "Line 51: Expected 1 errors",
     "Line 58: Expected 1 errors",
     "Line 62: Expected 1 errors",
     "Line 13: Unexpected errors ['EXPECTED int <: UserId']"

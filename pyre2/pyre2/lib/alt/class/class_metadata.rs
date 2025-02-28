@@ -153,7 +153,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     // todo zeina: Ideally, we can directly add this class to the list of base classes. Revist this when fixing the "Any" representation.  
                     Type::Any(_) =>  {has_base_any = true; None}
-                    _ => None,
+                    _ =>
+                    {if is_new_type {
+                        self.error(
+                            errors,
+                            cls.range(),
+                            ErrorKind::Unknown,
+                            "Second argument to NewType must be a proper class".to_owned(),
+                        );
+                    }
+                    None},
                 },
                 BaseClass::TypedDict => {
                     is_typed_dict = true;

@@ -487,6 +487,26 @@
     },
     {
       "code": -2,
+      "column": 1,
+      "concise_description": "Second argument to NewType must be a proper class",
+      "description": "Second argument to NewType must be a proper class",
+      "line": 44,
+      "name": "unknown",
+      "stop_column": 12,
+      "stop_line": 44
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Second argument to NewType must be a proper class",
+      "description": "Second argument to NewType must be a proper class",
+      "line": 51,
+      "name": "unknown",
+      "stop_column": 12,
+      "stop_line": 51
+    },
+    {
+      "code": -2,
       "column": 43,
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",

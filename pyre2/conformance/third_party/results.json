@@ -3,7 +3,7 @@
   "pass": 27,
   "fail": 106,
   "pass_rate": 0.2,
-  "differences": 759,
+  "differences": 757,
   "passing": [
     "annotations_coroutines.py",
     "dataclasses_hash.py",
@@ -36,7 +36,7 @@
   "failing": {
     "aliases_explicit.py": 13,
     "aliases_implicit.py": 16,
-    "aliases_newtype.py": 9,
+    "aliases_newtype.py": 7,
     "aliases_recursive.py": 19,
     "aliases_type_statement.py": 12,
     "aliases_typealiastype.py": 25,
