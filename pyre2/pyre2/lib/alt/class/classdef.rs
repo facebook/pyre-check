@@ -30,6 +30,7 @@ use crate::types::class::Class;
 use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
+use crate::types::quantified::QuantifiedKind;
 use crate::types::tuple::Tuple;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::TParams;
@@ -162,8 +163,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 };
                 checked_targs.push(tuple_type);
-            } else if param.quantified.is_type_var_tuple() {
-                checked_targs.push(Type::any_tuple())
             } else if param.quantified.is_param_spec()
                 && nparams == 1
                 && let Some(arg) = targs.get(targ_idx)
@@ -194,8 +193,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     checked_targs.push(Type::Ellipsis);
                 }
                 targ_idx += 1;
-            } else if param.quantified.is_param_spec() {
-                checked_targs.push(Type::Ellipsis);
             } else if let Some(arg) = targs.get(targ_idx) {
                 match arg {
                     Type::Unpack(_) => {
@@ -227,17 +224,31 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             } else if let Some(default) = &param.default {
                 checked_targs.push(default.clone());
             } else {
-                self.error(
-                    errors,
-                    range,
-                    format!(
-                        "Expected {} for class `{}`, got {}.",
-                        count(tparams.len(), "type argument"),
-                        cls.name(),
-                        nargs
-                    ),
-                );
-                checked_targs.extend(vec![Type::any_error(); tparams.len().saturating_sub(nargs)]);
+                let only_type_var_tuples_left = tparams
+                    .iter()
+                    .skip(param_idx)
+                    .all(|x| x.quantified.is_type_var_tuple());
+                if !only_type_var_tuples_left {
+                    self.error(
+                        errors,
+                        range,
+                        format!(
+                            "Expected {} for class `{}`, got {}.",
+                            count(tparams.len(), "type argument"),
+                            cls.name(),
+                            nargs
+                        ),
+                    );
+                }
+                let defaults = tparams
+                    .iter()
+                    .skip(param_idx)
+                    .map(|x| match x.quantified.kind() {
+                        QuantifiedKind::TypeVarTuple => Type::any_tuple(),
+                        QuantifiedKind::TypeVar => Type::any_error(),
+                        QuantifiedKind::ParamSpec => Type::Ellipsis,
+                    });
+                checked_targs.extend(defaults);
                 break;
             }
         }

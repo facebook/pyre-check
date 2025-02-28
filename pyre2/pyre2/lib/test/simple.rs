@@ -79,6 +79,24 @@ assert_type(x, C)
 );
 
 testcase!(
+    test_type_argument_error_default,
+    r#"
+from typing import Any, assert_type
+class C[T1, *Ts, T2]: pass
+C_Alias = C[int]  # E: Expected 3 type arguments for class `C`, got 1.
+assert_type(C[int], type[C[int, *tuple[Any, ...], Any]])  # E: Expected 3 type arguments for class `C`, got 1.
+
+AnyClassMethod = classmethod[Any]  # E: Expected 3 type arguments for class `classmethod`, got 1.
+assert_type(classmethod[Any], type[classmethod[Any, ..., Any]])  # E: Expected 3 type arguments for class `classmethod`, got 1.
+
+# No error if it's a TypeVarTuple w/ nothing after, because a TypeVarTuple can be empty
+class C2[T, *Ts]: pass
+C2_Alias = C2[int]
+assert_type(C2[int], type[C2[int, *tuple[Any, ...]]])
+"#,
+);
+
+testcase!(
     test_class_method,
     r#"
 from typing import assert_type

@@ -109,8 +109,8 @@ _ClassInfo = type | tuple[_ClassInfo, ...]
 def isinstance(obj: object, class_or_tuple: _ClassInfo, /) -> bool: ...
 def issubclass(cls: type, class_or_tuple: _ClassInfo, /) -> bool: ...
 
-class staticmethod: pass
-class classmethod: pass
+class staticmethod[_P, _R_co](): pass
+class classmethod[_T, **_P, _R_co](): pass
 class property: pass
 
 class super:
