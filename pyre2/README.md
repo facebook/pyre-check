@@ -33,6 +33,13 @@ From this directory, you can run:
 - Fetch Typeshed from upstream
   `HTTPS_PROXY=https://fwdproxy:8080 fbpython scripts/fetch_typeshed.py -o pyre2/third_party`
 
+## Packaging
+
+We use [maturin](https://github.com/PyO3/maturin) to build wheels and source
+distributions. This also means that you can pip install `maturin` and use
+`maturin build` and `maturin develop` for local development. `pip install .` in
+the `pyre2/pyre2` directory works as well.
+
 ## Coding conventions
 
 We follow the
