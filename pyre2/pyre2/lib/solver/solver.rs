@@ -20,6 +20,8 @@ use crate::alt::answers::LookupAnswer;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::solver::type_order::TypeOrder;
+use crate::types::callable::Callable;
+use crate::types::callable::Params;
 use crate::types::display::TypeDisplayContext;
 use crate::types::module::Module;
 use crate::types::quantified::Quantified;
@@ -187,6 +189,52 @@ impl Solver {
             }
             if let Type::Tuple(tuple) = x {
                 *x = simplify_tuples(mem::take(tuple));
+            }
+            // When a param spec is resolved, collapse any Concatenate and Callable types that use it
+            if let Type::Concatenate(box ts, box Type::ParamSpecValue(paramlist)) = x {
+                let params = mem::take(paramlist).prepend_types(ts).into_owned();
+                *x = Type::ParamSpecValue(params);
+            }
+            if let Type::Concatenate(box ts, box Type::Concatenate(ts2, pspec)) = x {
+                let mut params = ts.to_vec();
+                params.extend(ts2.to_vec());
+                *x = Type::Concatenate(params.into_boxed_slice(), pspec.clone());
+            }
+            if let Type::Callable(
+                box Callable {
+                    params: Params::ParamSpec(box ts, pspec),
+                    ret,
+                },
+                kind,
+            ) = x
+            {
+                match pspec {
+                    Type::ParamSpecValue(paramlist) => {
+                        let params = mem::take(paramlist).prepend_types(ts).into_owned();
+                        let new_callable = Type::Callable(
+                            Box::new(Callable::list(params, ret.clone())),
+                            kind.clone(),
+                        );
+                        *x = new_callable;
+                    }
+                    Type::Ellipsis if ts.is_empty() => {
+                        *x =
+                            Type::Callable(Box::new(Callable::ellipsis(ret.clone())), kind.clone());
+                    }
+                    Type::Concatenate(box ts2, box pspec) => {
+                        let mut params = ts.to_vec();
+                        params.extend(ts2.to_vec());
+                        *x = Type::Callable(
+                            Box::new(Callable::concatenate(
+                                params.into_boxed_slice(),
+                                pspec.clone(),
+                                ret.clone(),
+                            )),
+                            kind.clone(),
+                        );
+                    }
+                    _ => {}
+                }
             }
         });
     }

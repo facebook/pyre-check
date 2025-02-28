@@ -6175,16 +6175,6 @@
   "generics_paramspec_semantics.py": [
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type((str, bool) -> str, (str, bool) -> str) failed",
-      "description": "assert_type((str, bool) -> str, (str, bool) -> str) failed",
-      "line": 22,
-      "name": "unknown",
-      "stop_column": 44,
-      "stop_line": 22
-    },
-    {
-      "code": -2,
       "column": 4,
       "concise_description": "Expected 2 more positional arguments",
       "description": "Expected 2 more positional arguments",
@@ -6242,16 +6232,6 @@
       "name": "unknown",
       "stop_column": 37,
       "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type((int) -> str, (int) -> str) failed",
-      "description": "assert_type((int) -> str, (int) -> str) failed",
-      "line": 84,
-      "name": "unknown",
-      "stop_column": 42,
-      "stop_line": 84
     },
     {
       "code": -2,

@@ -23,6 +23,30 @@ def test(f: Callable[P, None]) -> Callable[P, None]:
 );
 
 testcase!(
+    test_param_spec_solve,
+    r#"
+from typing import Callable, ParamSpec, Concatenate, assert_type
+def f1[**P](x: Callable[P, int]) -> Callable[P, int]: ...
+def f2[**P](x: Callable[Concatenate[int, P], int]) -> Callable[P, int]: ...
+def f3[**P](x: Callable[P, int]) -> Callable[Concatenate[int, P], int]: ...
+def f4[**P](x: Callable[Concatenate[int, P], int]) -> Callable[Concatenate[str, P], int]: ...
+
+def test(x1: Callable[[int, str], int], x2: Callable[..., int]):
+    assert_type(f1(x1), Callable[[int, str], int])
+    assert_type(f1(x2), Callable[..., int])
+
+    assert_type(f2(x1), Callable[[str], int])
+    assert_type(f2(x2), Callable[..., int])
+
+    assert_type(f3(x1), Callable[[int, int, str], int])
+    assert_type(f3(x2), Callable[Concatenate[int, ...], int])
+
+    assert_type(f4(x1), Callable[[str, str], int])
+    assert_type(f4(x2), Callable[Concatenate[str, ...], int])
+"#,
+);
+
+testcase!(
     test_function_concatenate,
     r#"
 from typing import Callable, ParamSpec, Concatenate

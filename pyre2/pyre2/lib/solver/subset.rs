@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::cmp::Ordering;
+
 use itertools::izip;
 use itertools::EitherOrBoth;
 use itertools::Itertools;
@@ -464,6 +466,91 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         }
     }
 
+    pub fn is_paramlist_subset_of_paramspec(
+        &mut self,
+        got: &ParamList,
+        want_ts: &[Type],
+        want_pspec: &Type,
+    ) -> bool {
+        let args = ParamList::new_types(want_ts);
+        if got.len() < args.len() {
+            return false;
+        }
+        let (pre, post) = got.items().split_at(args.len());
+        if !self.is_subset_param_list(pre, args.items()) {
+            return false;
+        }
+        self.is_subset_eq(
+            &Type::ParamSpecValue(ParamList::new(post.to_vec())),
+            want_pspec,
+        )
+    }
+
+    pub fn is_paramspec_subset_of_paramlist(
+        &mut self,
+        got_ts: &[Type],
+        got_pspec: &Type,
+        want: &ParamList,
+    ) -> bool {
+        let args = ParamList::new_types(got_ts);
+        if want.len() < args.len() {
+            return false;
+        }
+        let (pre, post) = want.items().split_at(args.len());
+        if !self.is_subset_param_list(args.items(), pre) {
+            return false;
+        }
+        self.is_subset_eq(
+            got_pspec,
+            &Type::ParamSpecValue(ParamList::new(post.to_vec())),
+        )
+    }
+
+    pub fn is_paramspec_subset_of_paramspec(
+        &mut self,
+        got_ts: &[Type],
+        got_pspec: &Type,
+        want_ts: &[Type],
+        want_pspec: &Type,
+    ) -> bool {
+        match got_ts.len().cmp(&want_ts.len()) {
+            Ordering::Greater => {
+                let (pre, post) = got_ts.split_at(want_ts.len());
+                for (l, u) in pre.iter().zip(want_ts.iter()) {
+                    if !self.is_subset_eq(u, l) {
+                        return false;
+                    }
+                }
+                let post = post.to_vec().into_boxed_slice();
+                self.is_subset_eq(
+                    &Type::Concatenate(post, Box::new(want_pspec.clone())),
+                    got_pspec,
+                )
+            }
+            Ordering::Less => {
+                let (pre, post) = want_ts.split_at(got_ts.len());
+                for (l, u) in got_ts.iter().zip(pre.iter()) {
+                    if !self.is_subset_eq(u, l) {
+                        return false;
+                    }
+                }
+                let post = post.to_vec().into_boxed_slice();
+                self.is_subset_eq(
+                    want_pspec,
+                    &Type::Concatenate(post, Box::new(got_pspec.clone())),
+                )
+            }
+            Ordering::Equal => {
+                for (l, u) in got_ts.iter().zip(want_ts.iter()) {
+                    if !self.is_subset_eq(u, l) {
+                        return false;
+                    }
+                }
+                self.is_subset_eq(want_pspec, got_pspec)
+            }
+        }
+    }
+
     /// Implementation of subset equality for Type, other than Var.
     pub fn is_subset_eq_impl(&mut self, got: &Type, want: &Type) -> bool {
         match (got, want) {
@@ -499,39 +586,24 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (Type::Callable(l, _), Type::Callable(u, _)) => {
                 self.is_subset_eq(&l.ret, &u.ret)
                     && match (&l.params, &u.params) {
+                        (Params::Ellipsis, Params::ParamSpec(_, pspec)) => {
+                            self.is_subset_eq(&Type::Ellipsis, pspec)
+                        }
+                        (Params::ParamSpec(_, pspec), Params::Ellipsis) => {
+                            self.is_subset_eq(pspec, &Type::Ellipsis)
+                        }
                         (Params::Ellipsis, _) | (_, Params::Ellipsis) => true,
                         (Params::List(l_args), Params::List(u_args)) => {
                             self.is_subset_param_list(l_args.items(), u_args.items())
                         }
                         (Params::List(ls), Params::ParamSpec(args, pspec)) => {
-                            let args = ParamList::new_types(args);
-                            if ls.len() < args.len() {
-                                return false;
-                            }
-                            let (pre, post) = ls.items().split_at(args.len());
-                            if !self.is_subset_param_list(pre, args.items()) {
-                                return false;
-                            }
-                            self.is_subset_eq(
-                                &Type::ParamSpecValue(ParamList::new(post.to_vec())),
-                                pspec,
-                            )
+                            self.is_paramlist_subset_of_paramspec(ls, args, pspec)
                         }
-                        (Params::ParamSpec(ls, p1), Params::ParamSpec(us, p2)) if p1 == p2 => {
-                            // TODO(yangdanny): this is too restrictive
-                            if ls.len() != us.len() {
-                                return false;
-                            }
-                            for (l, u) in ls.iter().zip(us.iter()) {
-                                if !self.is_subset_eq(u, l) {
-                                    return false;
-                                }
-                            }
-                            true
+                        (Params::ParamSpec(args, pspec), Params::List(ls)) => {
+                            self.is_paramspec_subset_of_paramlist(args, pspec, ls)
                         }
-                        (Params::ParamSpec(_, _), _) => {
-                            // TODO: need instantiation for param spec
-                            false
+                        (Params::ParamSpec(box ls, p1), Params::ParamSpec(box us, p2)) => {
+                            self.is_paramspec_subset_of_paramspec(ls, p1, us, p2)
                         }
                     }
             }
@@ -671,10 +743,19 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (Type::TypeGuard(_) | Type::TypeIs(_), _) => {
                 self.is_subset_eq(&self.type_order.stdlib().bool().to_type(), want)
             }
-            (Type::Ellipsis, Type::ParamSpecValue(_))
-            | (Type::ParamSpecValue(_), Type::Ellipsis) => true,
-            (Type::ParamSpecValue(l_args), Type::ParamSpecValue(u_args)) => {
-                self.is_subset_param_list(l_args.items(), u_args.items())
+            (Type::Ellipsis, Type::ParamSpecValue(_) | Type::Concatenate(_, _))
+            | (Type::ParamSpecValue(_) | Type::Concatenate(_, _), Type::Ellipsis) => true,
+            (Type::ParamSpecValue(ls), Type::ParamSpecValue(us)) => {
+                self.is_subset_param_list(ls.items(), us.items())
+            }
+            (Type::ParamSpecValue(ls), Type::Concatenate(box us, box u_pspec)) => {
+                self.is_paramlist_subset_of_paramspec(ls, us, u_pspec)
+            }
+            (Type::Concatenate(box ls, box l_pspec), Type::ParamSpecValue(us)) => {
+                self.is_paramspec_subset_of_paramlist(ls, l_pspec, us)
+            }
+            (Type::Concatenate(box ls, box l_pspec), Type::Concatenate(box us, box u_pspec)) => {
+                self.is_paramspec_subset_of_paramspec(ls, l_pspec, us, u_pspec)
             }
             (Type::Ellipsis, _) => {
                 // Bit of a weird case - pretty sure we should be modelling these slightly differently

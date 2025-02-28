@@ -498,10 +498,7 @@
     "Line 96: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int']",
     "Line 97: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int']"
   ],
-  "generics_paramspec_semantics.py": [
-    "Line 22: Unexpected errors ['assert_type((str, bool) -> str, (str, bool) -> str) failed']",
-    "Line 84: Unexpected errors ['assert_type((int) -> str, (int) -> str) failed']"
-  ],
+  "generics_paramspec_semantics.py": [],
   "generics_paramspec_specialization.py": [
     "Line 53: Unexpected errors ['EXPECTED ClassC[(int, str, bool)] <: int', 'EXPECTED Literal[0] <: str', \"EXPECTED Literal[''] <: bool\", 'Expected 2 positional arguments, got 3']",
     "Line 59: Unexpected errors ['EXPECTED ClassC[(int, str, bool)] <: int', 'EXPECTED Literal[0] <: str', \"EXPECTED Literal[''] <: bool\", 'Expected 2 positional arguments, got 3']"
