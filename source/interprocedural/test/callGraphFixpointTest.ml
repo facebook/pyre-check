@@ -50,7 +50,7 @@ let assert_higher_order_call_graph_fixpoint
       definitions_and_stubs
   in
   let decorators =
-    CallGraph.CallableToDecoratorsMap.create
+    CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
         (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~scheduler
@@ -73,7 +73,7 @@ let assert_higher_order_call_graph_fixpoint
       ~scheduler_policy
       ~override_graph:override_graph_shared_memory
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
-      ~decorators
+      ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       definitions
   in
   let ({ SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
@@ -85,7 +85,7 @@ let assert_higher_order_call_graph_fixpoint
       ~override_graph:(Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
       ~store_shared_memory:true
       ~attribute_targets:Target.Set.empty
-      ~decorators
+      ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~skip_analysis_targets
       ~definitions

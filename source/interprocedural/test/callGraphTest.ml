@@ -40,6 +40,14 @@ let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configurat
         (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       definitions_and_stubs
   in
+  let decorators =
+    CallGraph.CallableToDecoratorsMap.SharedMemory.create
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+      ~scheduler
+      ~scheduler_policy
+      definitions
+  in
   let call_graph =
     CallGraph.call_graph_of_define
       ~static_analysis_configuration
@@ -48,13 +56,7 @@ let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configurat
         (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
       ~attribute_targets:
         (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
-      ~decorators:
-        (CallGraph.CallableToDecoratorsMap.create
-           ~callables_to_definitions_map:
-             (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
-           ~scheduler
-           ~scheduler_policy
-           definitions)
+      ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~qualifier:module_name
       ~define
@@ -7662,7 +7664,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
       definitions
   in
   let decorators =
-    CallGraph.CallableToDecoratorsMap.create
+    CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
         (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~scheduler
@@ -7688,7 +7690,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
                 ~override_graph:
                   (Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
                 ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
-                ~decorators
+                ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
            |> TestResult.from_actual
            |> fun result -> callable, result)
     |> Target.Map.of_alist_exn

@@ -64,7 +64,9 @@ let assert_taint ~context source expected =
           |> Registry.object_targets
           |> Target.Set.elements
           |> Target.HashSet.of_list)
-        ~decorators:CallGraph.CallableToDecoratorsMap.empty
+        ~decorators:
+          (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
+          |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
         ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
         ~qualifier
         ~define:(Ast.Node.value define)

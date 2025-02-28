@@ -457,6 +457,7 @@ module TestEnvironment = struct
     stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
     method_kinds: CallGraph.MethodKind.SharedMemory.t;
     callables_to_definitions_map: Interprocedural.Target.DefinesSharedMemory.t;
+    decorators: Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.t;
   }
 
   let cleanup
@@ -481,6 +482,7 @@ module TestEnvironment = struct
         stubs_shared_memory_handle;
         method_kinds;
         callables_to_definitions_map;
+        decorators;
       }
     =
     CallGraph.SharedMemory.cleanup define_call_graphs;
@@ -495,7 +497,8 @@ module TestEnvironment = struct
     Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle;
     GlobalConstants.SharedMemory.cleanup global_constants;
     CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
-    Interprocedural.Target.DefinesSharedMemory.cleanup callables_to_definitions_map
+    Interprocedural.Target.DefinesSharedMemory.cleanup callables_to_definitions_map;
+    Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.cleanup decorators
 end
 
 let set_up_decorator_preprocessing ~handle models =
@@ -702,7 +705,7 @@ let initialize
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
   let decorators =
-    CallGraph.CallableToDecoratorsMap.create
+    CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
         (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~scheduler
@@ -717,7 +720,7 @@ let initialize
       ~scheduler_policy
       ~override_graph:override_graph_shared_memory
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
-      ~decorators
+      ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       definitions
   in
   let ({ CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
@@ -729,7 +732,7 @@ let initialize
       ~override_graph:(Some override_graph_shared_memory_read_only)
       ~store_shared_memory:true
       ~attribute_targets:(SharedModels.object_targets initial_models)
-      ~decorators
+      ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~skip_analysis_targets:Target.Set.empty
       ~definitions
@@ -795,6 +798,7 @@ let initialize
     stubs_shared_memory_handle;
     method_kinds;
     callables_to_definitions_map;
+    decorators;
   }
 
 

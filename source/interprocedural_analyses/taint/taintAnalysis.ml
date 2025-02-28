@@ -777,7 +777,7 @@ let run_taint_analysis
           ~end_message:"Map from callables to decorators built"
       in
       let callables_to_decorators_map =
-        Interprocedural.CallGraph.CallableToDecoratorsMap.create
+        Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.create
           ~callables_to_definitions_map:
             (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
           ~scheduler
@@ -806,7 +806,9 @@ let run_taint_analysis
                ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
           ~override_graph:override_graph_shared_memory
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
-          ~decorators:callables_to_decorators_map
+          ~decorators:
+            (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
+               callables_to_decorators_map)
           definitions
       in
       let () = StepLogger.finish step_logger in
@@ -842,7 +844,9 @@ let run_taint_analysis
           ~store_shared_memory:true
           ~attribute_targets
           ~skip_analysis_targets
-          ~decorators:Interprocedural.CallGraph.CallableToDecoratorsMap.empty
+          ~decorators:
+            (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
+            |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
           ~definitions
           ~decorator_resolution

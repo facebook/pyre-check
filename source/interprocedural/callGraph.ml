@@ -165,10 +165,6 @@ module CallableToDecoratorsMap = struct
     define_location: Location.t;
   }
 
-  type t = decorators Target.Map.t
-
-  let empty = Target.Map.empty
-
   let ignored_decorators_for_higher_order =
     [
       "property";
@@ -203,44 +199,76 @@ module CallableToDecoratorsMap = struct
     not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order)
 
 
-  let create ~callables_to_definitions_map ~scheduler ~scheduler_policy callables =
-    let collect_decorators callable =
-      callable
-      |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
-      >>= fun ( _,
-                {
-                  Node.value = { Define.signature = { decorators; _ }; _ };
-                  location = define_location;
-                } ) ->
-      let decorators = decorators |> List.filter ~f:filter_decorator |> List.rev in
-      if List.is_empty decorators then
-        None
-      else
-        Some { decorators; define_location }
-    in
-    let map =
-      List.fold
-        ~f:(fun so_far callable ->
-          match collect_decorators callable with
-          | Some decorators -> Target.Map.add callable decorators so_far
-          | None -> so_far)
-        ~init:Target.Map.empty
-    in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:scheduler_policy
-      ~initial:Target.Map.empty
-      ~map
-      ~reduce:(Target.Map.union (fun _ _ _ -> failwith "Unexpected"))
-      ~inputs:callables
-      ()
+  let collect_decorators ~callables_to_definitions_map callable =
+    callable
+    |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
+    >>= fun ( _,
+              {
+                Node.value = { Define.signature = { decorators; _ }; _ };
+                location = define_location;
+              } ) ->
+    let decorators = decorators |> List.filter ~f:filter_decorator |> List.rev in
+    if List.is_empty decorators then
+      None
+    else
+      Some { decorators; define_location }
 
 
-  let find_opt = Target.Map.find_opt
+  module SharedMemory = struct
+    module T =
+      Hack_parallel.Std.SharedMemory.FirstClassWithKeys.Make
+        (Target.SharedMemoryKey)
+        (struct
+          type t = decorators
+
+          let prefix = Hack_parallel.Std.Prefix.make ()
+
+          let description = "callables to decorators"
+        end)
+
+    type t = T.t
+
+    module ReadOnly = struct
+      type t = T.ReadOnly.t
+
+      let get = T.ReadOnly.get ~cache:true
+
+      let mem = T.ReadOnly.mem
+    end
+
+    let empty = T.create
+
+    let read_only = T.read_only
+
+    let cleanup = T.cleanup ~clean_old:true
+
+    let create ~callables_to_definitions_map ~scheduler ~scheduler_policy callables =
+      let shared_memory = T.create () in
+      let shared_memory_add_only = T.add_only shared_memory in
+      let empty_shared_memory = T.AddOnly.create_empty shared_memory_add_only in
+      let map =
+        List.fold ~init:empty_shared_memory ~f:(fun shared_memory target ->
+            match collect_decorators ~callables_to_definitions_map target with
+            | Some value -> T.AddOnly.add shared_memory target value
+            | None -> shared_memory)
+      in
+      let shared_memory_add_only =
+        Scheduler.map_reduce
+          scheduler
+          ~policy:scheduler_policy
+          ~initial:shared_memory_add_only
+          ~map
+          ~reduce:(fun left right ->
+            T.AddOnly.merge_same_handle_disjoint_keys ~smaller:left ~larger:right)
+          ~inputs:callables
+          ()
+      in
+      T.from_add_only shared_memory_add_only
+  end
 
   (* Redirect any call to callable `foo` to its decorated version, if any. *)
   let redirect_to_decorated ~callable decorators =
-    if Target.is_normal callable && Target.Map.mem callable decorators then
+    if Target.is_normal callable && SharedMemory.ReadOnly.mem decorators callable then
       Target.set_kind Target.Decorated callable
     else
       callable
@@ -3959,7 +3987,7 @@ module DecoratorResolution = struct
     in
     match
       ( callable |> Target.get_regular |> Target.Regular.kind,
-        CallableToDecoratorsMap.find_opt callable decorators_map )
+        CallableToDecoratorsMap.SharedMemory.ReadOnly.get decorators_map callable )
     with
     | None, _ -> Format.asprintf "Do not support `Override` or `Object` targets." |> failwith
     | Some Target.PropertySetter, _ -> PropertySetterUnsupported

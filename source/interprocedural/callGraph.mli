@@ -436,16 +436,26 @@ end
 
 (* A map from each callable to its decorators. *)
 module CallableToDecoratorsMap : sig
-  type t
+  module SharedMemory : sig
+    type t
 
-  val empty : t
+    module ReadOnly : sig
+      type t
+    end
 
-  val create
-    :  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
-    scheduler:Scheduler.t ->
-    scheduler_policy:Scheduler.Policy.t ->
-    Target.t list ->
-    t
+    val read_only : t -> ReadOnly.t
+
+    val empty : unit -> t
+
+    val create
+      :  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+      scheduler:Scheduler.t ->
+      scheduler_policy:Scheduler.Policy.t ->
+      Target.t list ->
+      t
+
+    val cleanup : t -> unit
+  end
 end
 
 module DecoratorResolution : sig
@@ -473,7 +483,7 @@ module DecoratorResolution : sig
     pyre_in_context:PyrePysaEnvironment.InContext.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
     method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
-    decorators:CallableToDecoratorsMap.t ->
+    decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
     Target.t ->
     t
 
@@ -491,7 +501,7 @@ module DecoratorResolution : sig
       scheduler_policy:Scheduler.Policy.t ->
       override_graph:OverrideGraph.SharedMemory.t ->
       method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
-      decorators:CallableToDecoratorsMap.t ->
+      decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
       Target.t list ->
       t
   end
@@ -502,7 +512,7 @@ val call_graph_of_define
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
-  decorators:CallableToDecoratorsMap.t ->
+  decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
@@ -521,7 +531,7 @@ val call_graph_of_callable
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
-  decorators:CallableToDecoratorsMap.t ->
+  decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
   callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
   callable:Target.t ->
@@ -634,7 +644,7 @@ module SharedMemory : sig
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
     store_shared_memory:bool ->
     attribute_targets:Target.Set.t ->
-    decorators:CallableToDecoratorsMap.t ->
+    decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
     method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
     skip_analysis_targets:Target.Set.t ->
     definitions:Target.t list ->
