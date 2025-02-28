@@ -1256,3 +1256,13 @@ X = Enum('X', ['X'])
 assert_type(X, type[X])
     "#,
 );
+
+testcase!(
+    test_bad_type_in_cast,
+    r#"
+from typing import cast
+cast(lambda x: x, 1)  # E: First argument to `typing.cast` must be a type
+# Passing a listcomp as a type is nonsense; it's okay if we don't handle it optimally as long as we don't crash.
+cast([x for x in []], 1)  # E: First argument to `typing.cast` must be a type  # E: Could not find name `x`
+    "#,
+);

@@ -367,6 +367,8 @@ impl<'a> BindingsBuilder<'a> {
                     }
                 }
             }
+            // Bind the lambda so we don't crash on undefined parameter names.
+            Expr::Lambda(_) => self.ensure_expr(x),
             _ => Visitors::visit_expr_mut(x, |x| self.ensure_type(x, tparams_builder)),
         }
     }
