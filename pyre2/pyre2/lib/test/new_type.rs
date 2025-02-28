@@ -9,7 +9,7 @@ use crate::testcase;
 use crate::testcase_with_bug;
 
 testcase_with_bug!(
-    "TODO: NewType not allowed in isinstance call and subclassing not allowed",
+    "TODO: subclassing not allowed",
     test_new_type_simple,
     r#"
 from typing import NewType, assert_type
@@ -21,7 +21,7 @@ u2: UserId = UserId(42)
 
 assert_type(UserId(5) + 1, int)
 
-isinstance(u2, UserId)  
+isinstance(u2, UserId) # E: NewType `UserId` not allowed in isinstance.
 
 class UserIdDerived(UserId):
     pass

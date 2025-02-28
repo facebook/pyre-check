@@ -457,6 +457,16 @@
     },
     {
       "code": -2,
+      "column": 1,
+      "concise_description": "NewType `UserId` not allowed in isinstance.",
+      "description": "NewType `UserId` not allowed in isinstance.",
+      "line": 20,
+      "name": "unknown",
+      "stop_column": 23,
+      "stop_line": 20
+    },
+    {
+      "code": -2,
       "column": 20,
       "concise_description": "Expected string literal \"GoodName\"",
       "description": "Expected string literal \"GoodName\"",

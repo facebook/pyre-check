@@ -509,6 +509,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.expr_infer_with_hint(x, None, errors)
     }
 
+    pub fn check_isinstance(&self, ty_fun: &Type, x: &ExprCall, errors: &ErrorCollector) {
+        if let Some(CalleeKind::Callable(CallableKind::IsInstance)) = ty_fun.callee_kind() {
+            if x.arguments.args.len() == 2 {
+                let is_instance_class_type = self.expr_infer(&x.arguments.args[1], errors);
+                if let Type::ClassDef(cls) = is_instance_class_type {
+                    let metadata = self.get_metadata_for_class(&cls);
+                    if metadata.is_new_type() {
+                        self.error(
+                            errors,
+                            x.range,
+                            ErrorKind::Unknown,
+                            format!("NewType `{}` not allowed in isinstance.", cls.name()),
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     /// Apply a decorator. This effectively synthesizes a function call.
     pub fn apply_decorator(
         &self,
@@ -999,6 +1018,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         )
                     }
                     _ => {
+                        self.check_isinstance(&ty_fun, x, errors);
                         let args = x.arguments.args.map(|arg| match arg {
                             Expr::Starred(x) => CallArg::Star(&x.value, x.range),
                             _ => CallArg::Expr(arg),
