@@ -10,7 +10,6 @@
 import * as monaco from 'monaco-editor';
 import {loader} from '@monaco-editor/react';
 import type FlowJsServices from './flow-services';
-import createTokensProvider from './tokens-theme-provider';
 import flowLanguageConfiguration from './flow-configuration.json';
 
 type Position = {lineNumber: number, column: number};
@@ -76,15 +75,14 @@ function setSignatureHelpFunction(flowService: ?FlowJsServices): void {
 }
 
 monaco.languages.register({
-  id: 'flow',
-  extensions: ['.js', '.flow'],
-  aliases: ['Flow'],
+  id: 'python',
+  extensions: ['.py'],
+  aliases: ['Python'],
 });
-monaco.languages.setLanguageConfiguration('flow', flowLanguageConfiguration);
-const languageId = monaco.languages.getEncodedLanguageId('flow');
-monaco.languages.setTokensProvider('flow', createTokensProvider(languageId));
+monaco.languages.setLanguageConfiguration('python', flowLanguageConfiguration);
+const languageId = monaco.languages.getEncodedLanguageId('python');
 
-monaco.languages.registerCompletionItemProvider('flow', {
+monaco.languages.registerCompletionItemProvider('python', {
   triggerCharacters: [
     '.',
     'A',
@@ -164,7 +162,7 @@ monaco.languages.registerCompletionItemProvider('flow', {
     }
   },
 });
-monaco.languages.registerDefinitionProvider('flow', {
+monaco.languages.registerDefinitionProvider('python', {
   provideDefinition(model, position) {
     try {
       return getDefFunctionForMonaco(model.getValue(), position).map(loc => ({
@@ -182,7 +180,7 @@ monaco.languages.registerDefinitionProvider('flow', {
     }
   },
 });
-monaco.languages.registerHoverProvider('flow', {
+monaco.languages.registerHoverProvider('python', {
   provideHover(model, position) {
     const result = typeAsPosFunctionForMonaco(model.getValue(), position);
     if (result == null) return null;
@@ -223,5 +221,4 @@ export {
   setAutoCompleteFunction,
   setGetDefFunction,
   setTypeAtPosFunction,
-  setSignatureHelpFunction,
 };

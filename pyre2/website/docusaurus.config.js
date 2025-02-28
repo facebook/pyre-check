@@ -38,25 +38,6 @@ module.exports = {
         },
       };
     },
-    function enableWasm() {
-      return {
-        name: 'enableWasm',
-        configureWebpack() {
-          return {
-            experiments: {syncWebAssembly: true},
-            module: {
-              rules: [
-                {
-                  test: /\.wasm$/i,
-                  loader: 'file-loader',
-                  type: 'javascript/auto',
-                },
-              ],
-            },
-          };
-        },
-      };
-    },
     function enableSomeEnvVarsAsBuildTimeConstants() {
       return {
         name: 'enableSomeEnvVarsAsBuildTimeConstants',

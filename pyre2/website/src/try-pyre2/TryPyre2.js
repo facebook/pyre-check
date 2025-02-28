@@ -20,10 +20,8 @@ import {
   setAutoCompleteFunction,
   setGetDefFunction,
   setTypeAtPosFunction,
-  setSignatureHelpFunction,
 } from './configured-monaco';
 import FlowJsServices from './flow-services';
-import createTokensProvider from './tokens-theme-provider';
 import flowLanguageConfiguration from './flow-configuration.json';
 
 const TRY_FLOW_LAST_CONTENT_STORAGE_KEY = 'TryPyre2LastContent';
@@ -195,7 +193,6 @@ export default component TryPyre2(
     setAutoCompleteFunction(flowService);
     setGetDefFunction(flowService);
     setTypeAtPosFunction(flowService);
-    setSignatureHelpFunction(flowService);
 
     const model = monaco.editor.getModels()[0];
     if (model == null || flowService == null) return;
@@ -314,8 +311,8 @@ export default component TryPyre2(
             />
           </div>
           <Editor
+            defaultLanguage="python"
             defaultValue={initialState.code}
-            defaultLanguage="flow"
             theme="vs-light"
             height="calc(100vh - var(--ifm-navbar-height) - 40px)"
             onChange={forceRecheck}
