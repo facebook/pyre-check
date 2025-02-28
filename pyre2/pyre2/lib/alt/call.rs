@@ -431,7 +431,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     }
                 }
-                return self.error(errors, range, "No matching overload found".to_owned());
+                return self.error(
+                    errors,
+                    range,
+                    ErrorKind::Unknown,
+                    "No matching overload found".to_owned(),
+                );
             }
         };
         self.solver().finish_quantified(&call_target.0);

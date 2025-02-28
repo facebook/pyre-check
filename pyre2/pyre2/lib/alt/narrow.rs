@@ -14,6 +14,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::binding::narrow::NarrowOp;
 use crate::binding::narrow::NarrowVal;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::types::callable::CallableKind;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
@@ -128,7 +129,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Option<Type> {
         let unwrapped = self.unwrap_class_object_silently(ty);
         if unwrapped.is_none() {
-            self.error(errors, range, format!("Expected class object, got {}", ty));
+            self.error(
+                errors,
+                range,
+                ErrorKind::Unknown,
+                format!("Expected class object, got {}", ty),
+            );
         }
         unwrapped
     }

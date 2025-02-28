@@ -478,8 +478,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Type::any_error()
     }
 
-    pub fn error(&self, errors: &ErrorCollector, range: TextRange, msg: String) -> Type {
-        errors.add(range, msg, ErrorKind::Unknown);
+    pub fn error(
+        &self,
+        errors: &ErrorCollector,
+        range: TextRange,
+        kind: ErrorKind,
+        msg: String,
+    ) -> Type {
+        errors.add(range, msg, kind);
         Type::any_error()
     }
 }

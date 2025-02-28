@@ -23,6 +23,7 @@ use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
@@ -59,6 +60,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             errors,
                             key.range(),
+                            ErrorKind::Unknown,
                             format!(
                                 "Key `{}` is not defined in TypedDict `{}`",
                                 name,
@@ -71,6 +73,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         key.range(),
+                        ErrorKind::Unknown,
                         format!("Expected string literal key, got `{}`", key_type),
                     );
                 }
@@ -90,6 +93,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         range,
+                        ErrorKind::Unknown,
                         format!(
                             "Missing required key `{}` for TypedDict `{}`",
                             key,

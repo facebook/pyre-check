@@ -22,6 +22,7 @@ use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyLegacyTypeParam;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::graph::index::Idx;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
@@ -127,6 +128,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.error(
                                     errors,
                                     range,
+                                    ErrorKind::Unknown,
                                     "TypeVarTuple must be unpacked".to_owned(),
                                 )
                             } else {
@@ -188,6 +190,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         range,
+                        ErrorKind::Unknown,
                         "Expected a valid ParamSpec expression".to_owned(),
                     );
                     checked_targs.push(Type::Ellipsis);
@@ -199,6 +202,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         checked_targs.push(self.error(
                             errors,
                             range,
+                            ErrorKind::Unknown,
                             format!(
                                 "Unpacked argument cannot be used for type parameter {}.",
                                 param.name
@@ -207,11 +211,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     _ => {
                         let arg = if arg.is_kind_type_var_tuple() {
-                            self.error(errors, range, "TypeVarTuple must be unpacked".to_owned())
+                            self.error(
+                                errors,
+                                range,
+                                ErrorKind::Unknown,
+                                "TypeVarTuple must be unpacked".to_owned(),
+                            )
                         } else if arg.is_kind_param_spec() {
                             self.error(
                                 errors,
                                 range,
+                                ErrorKind::Unknown,
                                 "ParamSpec cannot be used for type parameter".to_owned(),
                             )
                         } else {
@@ -232,6 +242,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         range,
+                        ErrorKind::Unknown,
                         format!(
                             "Expected {} for class `{}`, got {}.",
                             count(tparams.len(), "type argument"),
@@ -256,6 +267,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
+                ErrorKind::Unknown,
                 format!(
                     "Expected {} for class `{}`, got {}.",
                     count(tparams.len(), "type argument"),

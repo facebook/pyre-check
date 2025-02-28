@@ -17,6 +17,7 @@ use crate::alt::callable::CallArg;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyExport;
 use crate::error::collector::ErrorCollector;
+use crate::error::kind::ErrorKind;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
 use crate::module::module_info::TextRangeWithModuleInfo;
@@ -240,7 +241,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             todo_ctx,
         ) {
             Ok(ty) => ty,
-            Err(msg) => self.error(errors, range, msg),
+            Err(msg) => self.error(errors, range, ErrorKind::Unknown, msg),
         }
     }
 
@@ -258,11 +259,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => match self.resolve_get_access(attr, range, errors) {
                 Ok(ty) => Some(ty),
-                Err(e) => Some(self.error(errors, range, e.to_error_msg(attr_name))),
+                Err(e) => {
+                    Some(self.error(errors, range, ErrorKind::Unknown, e.to_error_msg(attr_name)))
+                }
             },
-            LookupResult::InternalError(e) => {
-                Some(self.error(errors, range, e.to_error_msg(attr_name, todo_ctx)))
-            }
+            LookupResult::InternalError(e) => Some(self.error(
+                errors,
+                range,
+                ErrorKind::Unknown,
+                e.to_error_msg(attr_name, todo_ctx),
+            )),
             _ => None,
         }
     }
@@ -297,7 +303,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => match attr.inner {
                 AttributeInner::NoAccess(e) => {
-                    self.error(errors, range, e.to_error_msg(attr_name));
+                    self.error(errors, range, ErrorKind::Unknown, e.to_error_msg(attr_name));
                 }
                 AttributeInner::ReadWrite(want) => match got {
                     Either::Left(got) => {
@@ -308,6 +314,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 range,
+                                ErrorKind::Unknown,
                                 format!(
                                     "Could not assign type `{}` to attribute `{}` with type `{}`",
                                     got.clone().deterministic_printing(),
@@ -322,12 +329,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         range,
+                        ErrorKind::Unknown,
                         format!("Could not assign to read-only field `{attr_name}`"),
                     );
                 }
                 AttributeInner::Property(_, None, cls) => {
                     let e = NoAccessReason::SettingReadOnlyProperty(cls);
-                    self.error(errors, range, e.to_error_msg(attr_name));
+                    self.error(errors, range, ErrorKind::Unknown, e.to_error_msg(attr_name));
                 }
                 AttributeInner::Property(_, Some(setter), _) => {
                     let got = match &got {
@@ -338,10 +346,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             },
             LookupResult::InternalError(e) => {
-                self.error(errors, range, e.to_error_msg(attr_name, todo_ctx));
+                self.error(
+                    errors,
+                    range,
+                    ErrorKind::Unknown,
+                    e.to_error_msg(attr_name, todo_ctx),
+                );
             }
             LookupResult::NotFound(e) => {
-                self.error(errors, range, e.to_error_msg(attr_name));
+                self.error(errors, range, ErrorKind::Unknown, e.to_error_msg(attr_name));
             }
         }
     }
