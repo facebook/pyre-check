@@ -14,8 +14,9 @@ use parse_display::Display;
     Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash, Copy, Dupe, Display
 )]
 pub enum ErrorKind {
-    Unknown,
+    InvalidArgument,
     ParseError,
+    Unknown,
 }
 
 impl ErrorKind {

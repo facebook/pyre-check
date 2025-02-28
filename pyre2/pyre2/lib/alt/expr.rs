@@ -230,7 +230,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     arg.range(),
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidArgument,
                     "Expected first argument of TypeVar to be a string literal".to_owned(),
                 );
             }
@@ -446,7 +446,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     arg.range(),
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidArgument,
                     "Expected first argument of TypeVarTuple to be a string literal".to_owned(),
                 );
             }
