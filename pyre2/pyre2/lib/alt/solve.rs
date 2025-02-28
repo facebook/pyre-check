@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::f64::consts::E;
 use std::ops::Deref;
 use std::sync::Arc;
 
