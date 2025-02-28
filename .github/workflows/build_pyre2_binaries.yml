@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  PACKAGE_NAME: pyre2
-  BINARY_NAME: pyre2
+  PACKAGE_NAME: pyrefly
+  BINARY_NAME: pyrefly
   PYTHON_VERSION: "3.12"
 
 jobs:
