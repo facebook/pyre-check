@@ -479,7 +479,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     /// Helper function hide details of call synthesis from the attribute resolution code.
-    #[expect(dead_code)]
     pub fn call_descriptor_getter(
         &self,
         getter_method: Type,

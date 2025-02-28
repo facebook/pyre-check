@@ -69,6 +69,28 @@ enum AttributeInner {
     /// A property is a special attribute were regular access invokes a getter.
     /// It optionally might have a setter method; if not, trying to set it is an access error
     Property(Type, Option<Type>, Class),
+    /// A descriptor is a user-defined type whose actions may dispatch to special method calls
+    /// for the get and set actions.
+    #[expect(dead_code)]
+    Descriptor(Descriptor),
+}
+
+#[derive(Clone, Debug)]
+struct Descriptor {
+    /// This is the raw type of the descriptor, which is needed both for attribute subtyping
+    /// checks in structural types and in the case where there is no getter method.
+    descriptor_ty: Type,
+    /// Descriptor behavior depends on the base against which the attribute is resolved, so
+    /// we have to preserve that base. Descriptors only apply to classes, and there are two
+    /// cases: an instance, in which case we will have a `ClassType`, or a class def in
+    /// which case we will have a `Class`.
+    base: Either<ClassType, Class>,
+    /// If `__get__` exists on the descriptor, this is the type of `__get__`
+    /// method type (as resolved by accessing it on an instance of the
+    /// desriptor). It is typically a `BoundMethod` although it is possible for
+    /// a user to erronously define a `__get__` with any type, including a
+    /// non-callable one.
+    getter: Option<Type>,
 }
 
 #[derive(Debug)]
@@ -88,6 +110,11 @@ pub enum NoAccessReason {
     ClassAttributeIsGeneric(Class),
     /// A set operation on a read-only property is an access error.
     SettingReadOnlyProperty(Class),
+    /// A descriptor that only has `__get__` should be treated as read-only on instances.
+    SettingReadOnlyDescriptor(Class),
+    /// We do not allow class-level mutation of descriptors (this is conservative,
+    /// it is unspecified whether monkey-patching descriptors should be permitted).
+    SettingDescriptorOnClass(Class),
 }
 
 #[derive(Debug)]
@@ -153,6 +180,18 @@ impl NoAccessReason {
                 let class_name = class.name();
                 format!(
                     "Attribute `{attr_name}` of class `{class_name}` is a read-only property and cannot be set"
+                )
+            }
+            NoAccessReason::SettingDescriptorOnClass(class) => {
+                let class_name = class.name();
+                format!(
+                    "Attribute `{attr_name}` of class `{class_name}` is a descriptor, which may not be overwritten"
+                )
+            }
+            NoAccessReason::SettingReadOnlyDescriptor(class) => {
+                let class_name = class.name();
+                format!(
+                    "Attribute `{attr_name}` of class `{class_name}` is a read-only descriptor with no `__set__` and cannot be set"
                 )
             }
         }
@@ -283,7 +322,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 AttributeInner::ReadWrite(ty) => Some(ty),
                 AttributeInner::ReadOnly(_)
                 | AttributeInner::NoAccess(_)
-                | AttributeInner::Property(..) => None,
+                | AttributeInner::Property(..)
+                | AttributeInner::Descriptor(..) => None,
             },
             _ => None,
         }
@@ -343,6 +383,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Either::Right(got) => CallArg::Type(got, range),
                     };
                     self.call_property_setter(setter, got, range, errors);
+                }
+                // TODO(stroxler) Descriptors can define setters. We don't analyze those yet, so we are
+                // currently treating all descriptors as read-only.
+                AttributeInner::Descriptor(d) => {
+                    let e = match d.base {
+                        Either::Left(class_type) => NoAccessReason::SettingReadOnlyDescriptor(
+                            class_type.class_object().dupe(),
+                        ),
+                        Either::Right(class) => {
+                            NoAccessReason::SettingDescriptorOnClass(class.dupe())
+                        }
+                    };
+                    self.error(errors, range, ErrorKind::Unknown, e.to_error_msg(attr_name));
                 }
             },
             LookupResult::InternalError(e) => {
@@ -453,6 +506,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
             }
+            (
+                AttributeInner::Descriptor(
+                    Descriptor {
+                        descriptor_ty: got_ty,
+                        ..
+                    },
+                    ..,
+                ),
+                AttributeInner::Descriptor(
+                    Descriptor {
+                        descriptor_ty: want_ty,
+                        ..
+                    },
+                    ..,
+                ),
+            ) => is_subset(got_ty, want_ty),
+            (AttributeInner::Descriptor(..), _) | (_, AttributeInner::Descriptor(..)) => false,
         }
     }
 
@@ -467,6 +537,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             AttributeInner::ReadWrite(ty) | AttributeInner::ReadOnly(ty) => Ok(ty),
             AttributeInner::Property(getter, ..) => {
                 Ok(self.call_property_getter(getter, range, errors))
+            }
+            AttributeInner::Descriptor(d, ..) => {
+                match d {
+                    // Reading a descriptor with a getter resolves to a method call
+                    //
+                    // TODO(stroxler): Once we have more complex error traces, it would be good to pass
+                    // context down so that errors inside the call can mention that it was a descriptor read.
+                    Descriptor {
+                        base,
+                        getter: Some(getter),
+                        ..
+                    } => Ok(self.call_descriptor_getter(getter, base, range, errors)),
+                    // Reading descriptor with no getter resolves to the descriptor itself
+                    Descriptor {
+                        descriptor_ty,
+                        getter: None,
+                        ..
+                    } => Ok(descriptor_ty),
+                }
             }
         }
     }
@@ -486,7 +575,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             AttributeInner::ReadWrite(ty) => Some(ty),
             AttributeInner::ReadOnly(_)
             | AttributeInner::NoAccess(_)
-            | AttributeInner::Property(..) => None,
+            | AttributeInner::Property(..)
+            | AttributeInner::Descriptor(..) => None,
         }
     }
 
