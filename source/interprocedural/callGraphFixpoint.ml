@@ -224,24 +224,26 @@ let compute
     in
     let initial_models = Fixpoint.SharedModels.create () |> Fixpoint.SharedModels.add_only in
     let empty_initial_models = Fixpoint.SharedModels.AddOnly.create_empty initial_models in
-    let initial_call_graph callable =
+    let initial_call_graph ~define_call_graphs callable =
       define_call_graphs
-      |> CallGraph.SharedMemory.read_only
       |> CallGraph.SharedMemory.ReadOnly.get ~cache:false ~callable
       |> Option.value ~default:CallGraph.DefineCallGraph.empty
     in
-    let map =
+    let map ~define_call_graphs =
       List.fold ~init:empty_initial_models ~f:(fun initial_models callable ->
           Fixpoint.SharedModels.AddOnly.add
             initial_models
             callable
-            { CallGraph.HigherOrderCallGraph.empty with call_graph = initial_call_graph callable })
+            {
+              CallGraph.HigherOrderCallGraph.empty with
+              call_graph = initial_call_graph ~define_call_graphs callable;
+            })
     in
     Scheduler.map_reduce
       scheduler
       ~policy
       ~initial:initial_models
-      ~map
+      ~map:(map ~define_call_graphs:(CallGraph.SharedMemory.read_only define_call_graphs))
       ~reduce:(fun left right ->
         Fixpoint.SharedModels.AddOnly.merge_same_handle_disjoint_keys ~smaller:left ~larger:right)
       ~inputs:callables_with_call_graphs
