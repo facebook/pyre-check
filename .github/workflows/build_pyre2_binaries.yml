@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - .github/workflows/build_pyre2_binaries.yml
+      - pyre2/pyre2/pyproject.toml
   workflow_dispatch:
 
 env:
@@ -12,6 +13,32 @@ env:
   PYTHON_VERSION: "3.12"
 
 jobs:
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+          working-directory: pyre2/pyre2
+      - name: Test sdist
+        run: |
+          pip install pyre2/pyre2/dist/"${PACKAGE_NAME}"-*.tar.gz --force-reinstall
+          "${BINARY_NAME}" --help
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-sdist
+          path: pyre2/pyre2/dist
+
   macos:
     runs-on: macos-14
     strategy:
@@ -118,3 +145,17 @@ jobs:
         with:
           name: wheels-${{ matrix.target }}
           path: pyre2/pyre2/dist
+
+  merge:
+    name: Merge artifacts
+    runs-on: ubuntu-latest
+    needs:
+      - sdist
+      - macos
+      - windows
+      - linux
+    steps:
+      - name: Merge artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: dist
