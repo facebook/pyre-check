@@ -31,6 +31,7 @@
 mod alt;
 mod ast;
 mod binding;
+#[cfg(not(target_arch = "wasm32"))]
 mod commands;
 mod config;
 mod dunder;
@@ -47,6 +48,7 @@ mod types;
 mod util;
 mod visitors;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub use crate::commands::run;
 pub use crate::config::ConfigFile;
 pub use crate::util::args::clap_env;
