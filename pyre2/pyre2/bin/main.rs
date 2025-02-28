@@ -10,6 +10,7 @@ mod notify_watcher;
 use std::backtrace::Backtrace;
 use std::env::args_os;
 use std::path::Path;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::Parser;
@@ -61,6 +62,7 @@ fn to_exit_code(status: CommandExitStatus) -> ExitCode {
 
 fn run_check_on_project(
     _watcher: Option<Box<dyn Watcher>>,
+    _config_file: Option<PathBuf>,
     _args: pyre2::run::CheckArgs,
     _allow_forget: bool,
 ) -> anyhow::Result<CommandExitStatus> {
@@ -83,14 +85,22 @@ fn run_check_on_files(
 
 fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
     match command {
-        Command::Check { files, watch, args } => {
+        Command::Check {
+            files,
+            watch,
+            config_file,
+            args,
+        } => {
             let watcher: Option<Box<dyn Watcher>> = if watch {
                 Some(Box::new(notify_watcher::NotifyWatcher::new()?))
             } else {
                 None
             };
+            if !files.is_empty() && config_file.is_some() {
+                panic!("Can either supply `FILES...` OR `--config-file`, not both.")
+            }
             if files.is_empty() {
-                run_check_on_project(watcher, args, allow_forget)
+                run_check_on_project(watcher, config_file, args, allow_forget)
             } else {
                 run_check_on_files(Globs::new(files), watcher, args, allow_forget)
             }

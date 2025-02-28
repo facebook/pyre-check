@@ -24,6 +24,14 @@ pub enum Command {
         #[clap(long, env = clap_env("WATCH"))]
         watch: bool,
 
+        /// Explicitly set the Pyre configuration to use when type checking or starting a language server.
+        /// It is an error to pass this flag in "single-file checking mode".
+        /// When not set, Pyre will perform an upward-filesystem-walk approach to find the nearest
+        /// pyre.toml or 'pyproject.toml with `tool.pyre` section'. If no config is found, Pyre exits with error.
+        /// If both a pyre.toml and valid pyproject.toml are found, pyre.toml takes precedence.
+        #[clap(long = "config-file", env = clap_env("CONFIG_FILE"))]
+        config_file: Option<std::path::PathBuf>,
+
         #[clap(flatten)]
         args: CheckArgs,
     },
