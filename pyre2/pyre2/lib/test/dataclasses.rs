@@ -462,3 +462,25 @@ class D5(Unhashable):
 f(D5())  # OK
     "#,
 );
+
+testcase!(
+    test_bad_mro,
+    r#"
+from dataclasses import dataclass
+
+@dataclass
+class A:
+  x: int
+
+@dataclass
+class B:
+  pass
+
+@dataclass
+class C(A, B, A):  # E: nonlinearizable inheritance chain
+  pass
+
+def f(c: C):
+    return c.x  # E: `C` has no attribute `x`
+    "#,
+);

@@ -101,7 +101,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         fields
             .iter()
             .filter_map(|name| {
-                let field = &*self.get_class_member(cls, name).unwrap().value;
+                // Even though we know the class member exists, it can be None if the class has an invalid MRO.
+                let member = self.get_class_member(cls, name)?;
+                let field = &*member.value;
                 // A field with type KW_ONLY is a sentinel value that indicates that the remaining
                 // fields should be keyword-only params in the generated `__init__`.
                 if field.is_dataclass_kwonly_marker() {
