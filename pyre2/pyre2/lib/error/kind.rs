@@ -15,6 +15,7 @@ use parse_display::Display;
 )]
 pub enum ErrorKind {
     InvalidArgument,
+    InvalidInheritance,
     ParseError,
     Unknown,
 }

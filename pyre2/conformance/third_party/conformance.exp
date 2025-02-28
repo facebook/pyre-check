@@ -9154,7 +9154,7 @@
       "concise_description": "Named tuples do not support multiple inheritance",
       "description": "Named tuples do not support multiple inheritance",
       "line": 105,
-      "name": "unknown",
+      "name": "invalid-inheritance",
       "stop_column": 11,
       "stop_line": 105
     }

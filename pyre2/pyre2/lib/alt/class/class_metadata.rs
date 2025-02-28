@@ -166,7 +166,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 cls.range(),
-                ErrorKind::Unknown,
+                ErrorKind::InvalidInheritance,
                 "Named tuples do not support multiple inheritance".to_owned(),
             );
         }
@@ -454,7 +454,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             {
                 self.error(errors,
                     cls.range(),
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidInheritance,
                     format!(
                         "Class `{}` has metaclass `{}` which is not a subclass of metaclass `{}` from base class `{}`",
                         cls.name(),
@@ -485,7 +485,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         raw_metaclass.range(),
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidInheritance,
                         format!(
                             "Metaclass of `{}` has type `{}` which is not a subclass of `type`",
                             cls.name(),
@@ -499,7 +499,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     cls.range(),
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidInheritance,
                     format!(
                         "Metaclass of `{}` has type `{}` is not a simple class type.",
                         cls.name(),
