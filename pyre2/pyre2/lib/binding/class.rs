@@ -21,6 +21,7 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
+use crate::alt::class::class_metadata::BaseClass;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClass;
@@ -50,8 +51,7 @@ use crate::util::prelude::SliceExt;
 enum IllegalIdentifierHandling {
     Error,
     Allow,
-    #[allow(dead_code)]
-    Rename, // this will be used in the next diff
+    Rename,
 }
 
 impl<'a> BindingsBuilder<'a> {
@@ -116,6 +116,7 @@ impl<'a> BindingsBuilder<'a> {
                 keywords: keywords.into_boxed_slice(),
                 decorators: decorators.clone().into_boxed_slice(),
                 is_new_type: false,
+                special_base: None,
             },
         );
         self.table.insert(
@@ -259,13 +260,14 @@ impl<'a> BindingsBuilder<'a> {
     fn synthesize_class_def(
         &mut self,
         class_name: Identifier,
-        base: Expr,
+        base: Option<Expr>,
         keywords: Box<[(Name, Expr)]>,
         // name, position, annotation, value
         member_definitions: Vec<(String, TextRange, Option<Expr>, Option<Expr>)>,
         illegal_identifier_handling: IllegalIdentifierHandling,
         force_class_initialization: bool,
         is_new_type: bool,
+        special_base: Option<Box<BaseClass>>,
     ) {
         let short_class_name = ShortIdentifier::new(&class_name);
         let class_key = KeyClass(short_class_name.clone());
@@ -274,10 +276,11 @@ impl<'a> BindingsBuilder<'a> {
             KeyClassMetadata(short_class_name.clone()),
             BindingClassMetadata {
                 def: definition_key,
-                bases: Box::new([base]),
+                bases: base.into_iter().collect::<Vec<_>>().into_boxed_slice(),
                 keywords,
                 decorators: Box::new([]),
                 is_new_type,
+                special_base,
             },
         );
         self.table.insert(
@@ -311,7 +314,7 @@ impl<'a> BindingsBuilder<'a> {
                     range: Some(range),
                 },
             );
-            let initial_value = if force_class_initialization {
+            let initial_value = if force_class_initialization || member_value.is_some() {
                 ClassFieldInitialValue::Class(member_value.clone())
             } else {
                 ClassFieldInitialValue::Instance
@@ -437,12 +440,112 @@ impl<'a> BindingsBuilder<'a> {
             .collect();
         self.synthesize_class_def(
             class_name,
-            base,
+            Some(base),
             Box::new([]),
             member_definitions,
             IllegalIdentifierHandling::Error,
             true,
             false,
+            None,
+        );
+    }
+
+    // This functional form supports renaming illegal identifiers and specifying defaults
+    // but cannot specify the type of each element
+    pub fn synthesize_collections_named_tuple_def(
+        &mut self,
+        class_name: Identifier,
+        members: &[Expr],
+        keywords: &[Keyword],
+    ) {
+        let member_definitions: Vec<(String, TextRange, Option<Expr>)> = match members {
+            // namedtuple('Point', 'x y')
+            // namedtuple('Point', 'x, y')
+            [Expr::StringLiteral(x)] => {
+                let s = x.value.to_str();
+                if s.contains(',') {
+                    s.split(',')
+                        .map(str::trim)
+                        .map(|s| (s.to_owned(), x.range(), None))
+                        .collect()
+                } else {
+                    s.split_whitespace()
+                        .map(|s| (s.to_owned(), x.range(), None))
+                        .collect()
+                }
+            }
+            // namedtuple('Point', ['x', 'y'])
+            [Expr::List(ExprList { elts, .. })]
+                if matches!(elts.as_slice(), [Expr::StringLiteral(_), ..]) =>
+            {
+                self.extract_string_literals(elts)
+            }
+            // namedtuple('Point', ('x', 'y'))
+            [Expr::Tuple(ExprTuple { elts, .. })]
+                if matches!(elts.as_slice(), [Expr::StringLiteral(_), ..]) =>
+            {
+                self.extract_string_literals(elts)
+            }
+            _ => {
+                self.error(
+                    class_name.range,
+                    "Expected valid functional named tuple definition".to_owned(),
+                );
+                Vec::new()
+            }
+        };
+        let n_members = member_definitions.len();
+        let mut illegal_identifier_handling = IllegalIdentifierHandling::Error;
+        let mut defaults: Vec<Option<Expr>> = vec![None; n_members];
+        for kw in keywords {
+            if let Some(name) = &kw.arg
+                && name.id == "rename"
+                && let Expr::BooleanLiteral(lit) = &kw.value
+            {
+                if lit.value {
+                    illegal_identifier_handling = IllegalIdentifierHandling::Rename;
+                }
+            } else if let Some(name) = &kw.arg
+                && name.id == "defaults"
+                && let Expr::Tuple(ExprTuple { elts, .. }) = &kw.value
+            {
+                let n_defaults = elts.len();
+                if n_defaults > n_members {
+                    self.error(
+                        kw.value.range(),
+                        format!(
+                            "Too many defaults values: expected up to {}, got {}",
+                            n_members, n_defaults
+                        ),
+                    );
+                    let n_to_drop = n_defaults - n_members;
+                    defaults = elts[n_to_drop..].map(|x| Some(x.clone()));
+                } else {
+                    defaults.splice(n_members - n_defaults.., elts.map(|x| Some(x.clone())));
+                }
+            } else {
+                self.error(
+                    kw.value.range(),
+                    "Unrecognized argument for typed dictionary definition".to_owned(),
+                );
+            }
+        }
+        let member_definitions_with_defaults: Vec<(String, TextRange, Option<Expr>, Option<Expr>)> =
+            member_definitions
+                .into_iter()
+                .zip(defaults)
+                .map(|((name, range, annotation), default)| (name, range, annotation, default))
+                .collect();
+        let range = class_name.range();
+        self.synthesize_class_def(
+            class_name,
+            None,
+            Box::new([]),
+            member_definitions_with_defaults,
+            illegal_identifier_handling,
+            false,
+            false,
+            Some(Box::new(BaseClass::CollectionsNamedTuple(range))),
         );
     }
 
@@ -487,12 +590,13 @@ impl<'a> BindingsBuilder<'a> {
             .collect();
         self.synthesize_class_def(
             class_name,
-            base,
+            Some(base),
             Box::new([]),
             member_definitions,
             IllegalIdentifierHandling::Error,
             false,
             false,
+            None,
         );
     }
 
@@ -500,12 +604,13 @@ impl<'a> BindingsBuilder<'a> {
     pub fn synthesize_typing_new_type(&mut self, class_name: Identifier, base: Expr) {
         self.synthesize_class_def(
             class_name,
-            base,
+            Some(base),
             Box::new([]),
             Vec::new(),
             IllegalIdentifierHandling::Error,
             false,
             true,
+            None,
         );
     }
 
@@ -568,18 +673,60 @@ impl<'a> BindingsBuilder<'a> {
         };
         self.synthesize_class_def(
             class_name,
-            base,
+            Some(base),
             base_class_keywords,
             member_definitions,
             IllegalIdentifierHandling::Allow,
             false,
             false,
+            None,
         );
     }
+}
+
+fn is_keyword(name: &str) -> bool {
+    matches!(
+        name,
+        "False"
+            | "None"
+            | "True"
+            | "and"
+            | "as"
+            | "assert"
+            | "async"
+            | "await"
+            | "break"
+            | "class"
+            | "continue"
+            | "def"
+            | "del"
+            | "elif"
+            | "else"
+            | "except"
+            | "finally"
+            | "for"
+            | "from"
+            | "global"
+            | "if"
+            | "import"
+            | "in"
+            | "is"
+            | "lambda"
+            | "nonlocal"
+            | "not"
+            | "or"
+            | "pass"
+            | "raise"
+            | "return"
+            | "try"
+            | "while"
+            | "with"
+            | "yield",
+    )
 }
 
 pub fn is_valid_identifier(name: &str) -> bool {
     static IDENTIFIER_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new("^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap());
-    IDENTIFIER_REGEX.is_match(name)
+    !is_keyword(name) && IDENTIFIER_REGEX.is_match(name)
 }

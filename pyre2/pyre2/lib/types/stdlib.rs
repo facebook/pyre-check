@@ -58,6 +58,7 @@ pub struct Stdlib {
     method_type: StdlibResult<Class>,
     enum_meta: StdlibResult<Class>,
     enum_flag: StdlibResult<Class>,
+    named_tuple: StdlibResult<Class>,
     // We want an owned ClassType for object because it allows the MRO code to clone less frequently.
     object_class_type: StdlibResult<ClassType>,
 }
@@ -118,6 +119,7 @@ impl Stdlib {
             mapping: lookup_str(typing, "Mapping"),
             enum_meta: lookup_str(enum_, "EnumMeta"),
             enum_flag: lookup_str(enum_, "Flag"),
+            named_tuple: lookup_str(typing, "NamedTuple"),
             object_class_type: lookup_str(builtins, "object")
                 .map(|obj| ClassType::new_for_stdlib(obj, TArgs::default())),
         }
@@ -174,6 +176,10 @@ impl Stdlib {
 
     pub fn enum_flag(&self) -> ClassType {
         Self::primitive(&self.enum_flag)
+    }
+
+    pub fn named_tuple(&self) -> ClassType {
+        Self::primitive(&self.named_tuple)
     }
 
     pub fn ellipsis_type(&self) -> ClassType {

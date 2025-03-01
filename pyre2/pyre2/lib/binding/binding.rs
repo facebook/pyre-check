@@ -30,6 +30,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::alt::class::class_field::ClassField;
+use crate::alt::class::class_metadata::BaseClass;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::decorated_function::DecoratedFunction;
@@ -74,7 +75,7 @@ mod check_size {
     assert_eq_size!(BindingExpect, [usize; 8]);
     assert_eq_size!(BindingAnnotation, [usize; 9]);
     assert_eq_size!(BindingClass, [usize; 21]);
-    assert_eq_size!(BindingClassMetadata, [usize; 7]);
+    assert_eq_size!(BindingClassMetadata, [usize; 8]);
     assert_eq_size!(BindingClassField, [usize; 22]);
     assert_eq_size!(BindingClassSynthesizedFields, [u8; 4]); // Equivalent to 0.5 usize
     assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
@@ -1015,6 +1016,7 @@ pub struct BindingClassMetadata {
     pub keywords: Box<[(Name, Expr)]>,
     pub decorators: Box<[Idx<Key>]>,
     pub is_new_type: bool,
+    pub special_base: Option<Box<BaseClass>>,
 }
 
 impl DisplayWith<Bindings> for BindingClassMetadata {

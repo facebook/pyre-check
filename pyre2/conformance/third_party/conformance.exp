@@ -9253,28 +9253,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]",
-      "line": 14,
-      "name": "unknown",
-      "stop_column": 14,
-      "stop_line": 14
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]",
-      "line": 15,
-      "name": "unknown",
-      "stop_column": 14,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point1, type[tuple[Any, ...]]]",
+      "concise_description": "Missing argument `y`",
+      "description": "Missing argument `y`",
       "line": 16,
       "name": "unknown",
       "stop_column": 14,
@@ -9283,28 +9263,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]",
-      "line": 19,
-      "name": "unknown",
-      "stop_column": 14,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]",
-      "line": 20,
-      "name": "unknown",
-      "stop_column": 14,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point2, type[tuple[Any, ...]]]",
+      "concise_description": "Missing argument `x`",
+      "description": "Missing argument `x`",
       "line": 21,
       "name": "unknown",
       "stop_column": 14,
@@ -9313,61 +9273,51 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point3, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point3, type[tuple[Any, ...]]]",
-      "line": 24,
+      "concise_description": "Missing argument `y`",
+      "description": "Missing argument `y`",
+      "line": 21,
       "name": "unknown",
       "stop_column": 14,
-      "stop_line": 24
+      "stop_line": 21
     },
     {
       "code": -2,
-      "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point3, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point3, type[tuple[Any, ...]]]",
-      "line": 25,
-      "name": "unknown",
-      "stop_column": 14,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point3, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point3, type[tuple[Any, ...]]]",
+      "column": 21,
+      "concise_description": "Expected 2 positional arguments, got 3",
+      "description": "Expected 2 positional arguments, got 3",
       "line": 26,
       "name": "unknown",
-      "stop_column": 14,
+      "stop_column": 22,
+      "stop_line": 26
+    },
+    {
+      "code": -2,
+      "column": 21,
+      "concise_description": "Expected 3 positional arguments, got 4",
+      "description": "Expected 3 positional arguments, got 4",
+      "line": 26,
+      "name": "unknown",
+      "stop_column": 22,
       "stop_line": 26
     },
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point4, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point4, type[tuple[Any, ...]]]",
-      "line": 29,
-      "name": "unknown",
-      "stop_column": 14,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point4, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point4, type[tuple[Any, ...]]]",
-      "line": 30,
-      "name": "unknown",
-      "stop_column": 14,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[Point4, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[Point4, type[tuple[Any, ...]]]",
+      "concise_description": "Missing argument `y`",
+      "description": "Missing argument `y`",
       "line": 31,
       "name": "unknown",
       "stop_column": 14,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "Unexpected keyword argument `z`",
+      "description": "Unexpected keyword argument `z`",
+      "line": 31,
+      "name": "unknown",
+      "stop_column": 21,
       "stop_line": 31
     },
     {
@@ -9422,39 +9372,39 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[NT4, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[NT4, type[tuple[Any, ...]]]",
-      "line": 57,
+      "column": 31,
+      "concise_description": "Duplicate field `a`",
+      "description": "Duplicate field `a`",
+      "line": 52,
       "name": "unknown",
-      "stop_column": 4,
-      "stop_line": 57
+      "stop_column": 34,
+      "stop_line": 52
+    },
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "`def` is not a valid identifier",
+      "description": "`def` is not a valid identifier",
+      "line": 53,
+      "name": "unknown",
+      "stop_column": 38,
+      "stop_line": 53
+    },
+    {
+      "code": -2,
+      "column": 33,
+      "concise_description": "`def` is not a valid identifier",
+      "description": "`def` is not a valid identifier",
+      "line": 54,
+      "name": "unknown",
+      "stop_column": 38,
+      "stop_line": 54
     },
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]",
-      "line": 64,
-      "name": "unknown",
-      "stop_column": 4,
-      "stop_line": 64
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]",
-      "line": 65,
-      "name": "unknown",
-      "stop_column": 4,
-      "stop_line": 65
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]",
-      "description": "Expected a callable, got LegacyImplicitTypeAlias[NT5, type[tuple[Any, ...]]]",
+      "concise_description": "Missing argument `a`",
+      "description": "Missing argument `a`",
       "line": 66,
       "name": "unknown",
       "stop_column": 4,

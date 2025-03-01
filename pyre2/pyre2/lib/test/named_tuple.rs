@@ -29,12 +29,34 @@ assert_type(p[:2], tuple[int, str])
 testcase!(
     test_named_tuple_functional,
     r#"
-from typing import NamedTuple, assert_type
+from typing import NamedTuple, Any, assert_type
+from collections import namedtuple
+Point1 = namedtuple('Point1', ['x', 'y'])
+Point2 = namedtuple('Point2', ('x', 'y'))
+Point3 = namedtuple('Point3', 'x y')
+Point4 = namedtuple('Point4', 'x, y')
 Point5 = NamedTuple('Point5', [('x', int), ('y', int)])
 Point6 = NamedTuple('Point6', (('x', int), ('y', int)))
+assert_type(Point1(1, 2).x, Any)
+assert_type(Point2(1, 2).x, Any)
+assert_type(Point3(1, 2).x, Any)
+assert_type(Point4(1, 2).x, Any)
 assert_type(Point5(1, 2).x, int)
 assert_type(Point5(x=1, y=2).x, int)
 assert_type(Point6(1, 2).x, int)
+    "#,
+);
+
+testcase!(
+    test_named_tuple_functional_rename,
+    r#"
+from collections import namedtuple
+NT1 = namedtuple("NT1", ["a", "a"])  # E: Duplicate field `a`
+NT2 = namedtuple("NT2", ["abc", "def"], rename=False)  # E: `def` is not a valid identifier
+NT3 = namedtuple("NT3", ["abc", "def"], rename=True)
+NT4 = namedtuple("NT4", ["def", "ghi"], rename=True)
+NT3(abc="", _1="")
+NT4(_0="", ghi="")
     "#,
 );
 

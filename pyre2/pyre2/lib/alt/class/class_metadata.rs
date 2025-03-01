@@ -13,6 +13,7 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
+use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
@@ -52,6 +53,7 @@ pub enum BaseClass {
     Generic(Vec<Type>),
     Protocol(Vec<Type>),
     Expr(Expr),
+    CollectionsNamedTuple(TextRange),
 }
 
 impl BaseClass {
@@ -77,13 +79,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[(Name, Expr)],
         decorators: &[Idx<Key>],
         is_new_type: bool,
+        special_base: &Option<Box<BaseClass>>,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         let mut is_typed_dict = false;
         let mut named_tuple_metadata = None;
         let mut enum_metadata = None;
         let mut dataclass_metadata = None;
-        let bases: Vec<BaseClass> = bases.map(|x| self.base_class_of(x, errors));
+        let mut bases: Vec<BaseClass> = bases.map(|x| self.base_class_of(x, errors));
+        if let Some(box special_base) = special_base {
+            bases.push(special_base.clone());
+        }
         let mut protocol_metadata = if bases.iter().any(|x| matches!(x, BaseClass::Protocol(_))) {
             Some(ProtocolMetadata {
                 members: cls.fields().cloned().collect(),
@@ -94,9 +100,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut has_base_any = false;
         let bases_with_metadata = bases
             .iter()
-            .filter_map(|x| match x {
-                BaseClass::Expr(x) => match self.expr_untype(x, errors) {
-                    Type::ClassType(c) => {
+            .filter_map(|x| {
+                let base_type_and_range = match x {
+                    BaseClass::Expr(x) => Some((self.expr_untype(x, errors), x.range())),
+                    BaseClass::TypedDict => {
+                        is_typed_dict = true;
+                        None
+                    }
+                    BaseClass::CollectionsNamedTuple(range) => {
+                        Some((self.stdlib.named_tuple().to_type(), *range))
+                    }
+                    _ => None,
+                };
+                match base_type_and_range {
+                    Some((Type::ClassType(c), range)) => {
                         let base_cls = c.class_object();
                         let base_class_metadata = self.get_metadata_for_class(base_cls);
                         if base_class_metadata.is_new_type() && !is_new_type {
@@ -127,7 +144,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 proto.members.extend(base_proto.members.clone());
                             } else {
                                 self.error(errors,
-                                    x.range(),
+                                    range,
                                     ErrorKind::Unknown,
                                     "If `Protocol` is included as a base class, all other bases must be protocols.".to_owned(),
                                 );
@@ -140,17 +157,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                         Some((c, base_class_metadata))
                     }
-                    Type::Tuple(Tuple::Concrete(ts)) => {
+                    Some((Type::Tuple(Tuple::Concrete(ts)), _)) => {
                         let class_ty = self.stdlib.tuple(self.unions(ts));
                         let metadata = self.get_metadata_for_class(class_ty.class_object());
                         Some((class_ty, metadata))
                     }
-                    Type::Tuple(Tuple::Unbounded(t)) => {
+                    Some((Type::Tuple(Tuple::Unbounded(t)), _)) => {
                         let class_ty = self.stdlib.tuple(*t);
                         let metadata = self.get_metadata_for_class(class_ty.class_object());
                         Some((class_ty, metadata))
                     }
-                    Type::TypedDict(typed_dict) => {
+                    Some((Type::TypedDict(typed_dict), _)) => {
                         is_typed_dict = true;
                         let class_object = typed_dict.class_object();
                         let class_metadata = self.get_metadata_for_class(class_object);
@@ -160,7 +177,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ))
                     }
                     // todo zeina: Ideally, we can directly add this class to the list of base classes. Revist this when fixing the "Any" representation.  
-                    Type::Any(_) =>  {has_base_any = true; None}
+                    Some((Type::Any(_), _)) =>  {has_base_any = true; None}
                     _ =>
                     {if is_new_type {
                         self.error(
@@ -171,12 +188,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         );
                     }
                     None},
-                },
-                BaseClass::TypedDict => {
-                    is_typed_dict = true;
-                    None
                 }
-                _ => None,
             })
             .collect::<Vec<_>>();
         if named_tuple_metadata.is_some() && bases_with_metadata.len() > 1 {

@@ -335,6 +335,18 @@ class PyreReadOnly[T]:
     pass
 "#;
 
+static COLLECTIONS: &str = r#"
+from typing import Iterable, Any
+def namedtuple(
+    typename: str,
+    field_names: str | Iterable[str],
+    *,
+    rename: bool = False,
+    module: str | None = None,
+    defaults: Iterable[Any] | None = None,
+) -> type[tuple[Any, ...]]: ...
+"#;
+
 static STDLIB: &[(&str, &str)] = &[
     ("builtins", BUILTINS),
     ("typing", TYPING),
@@ -343,6 +355,7 @@ static STDLIB: &[(&str, &str)] = &[
     ("dataclasses", DATACLASSES),
     ("sys", SYS),
     ("pyre_extensions", PYRE_EXTENSIONS),
+    ("collections", COLLECTIONS),
 ];
 
 pub fn lookup_stdlib(module: ModuleName) -> Option<&'static str> {

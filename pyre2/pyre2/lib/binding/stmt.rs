@@ -151,7 +151,7 @@ impl<'a> BindingsBuilder<'a> {
         );
     }
 
-    fn assign_named_tuple(
+    fn assign_typing_named_tuple(
         &mut self,
         name: &ExprName,
         func: &mut Expr,
@@ -164,6 +164,23 @@ impl<'a> BindingsBuilder<'a> {
             Identifier::new(name.id.clone(), name.range()),
             func.clone(),
             members,
+        );
+    }
+
+    fn assign_collections_named_tuple(
+        &mut self,
+        name: &ExprName,
+        func: &mut Expr,
+        arg_name: &Expr,
+        members: &mut [Expr],
+        keywords: &mut [Keyword],
+    ) {
+        self.ensure_expr(func);
+        self.check_functional_definition_name(&name.id, arg_name);
+        self.synthesize_collections_named_tuple_def(
+            Identifier::new(name.id.clone(), name.range()),
+            members,
+            keywords,
         );
     }
 
@@ -239,7 +256,25 @@ impl<'a> BindingsBuilder<'a> {
                         SpecialExport::TypingNamedTuple => {
                             if let Some((arg_name, members)) = call.arguments.args.split_first_mut()
                             {
-                                self.assign_named_tuple(name, &mut call.func, arg_name, members);
+                                self.assign_typing_named_tuple(
+                                    name,
+                                    &mut call.func,
+                                    arg_name,
+                                    members,
+                                );
+                                return;
+                            }
+                        }
+                        SpecialExport::CollectionsNamedTuple => {
+                            if let Some((arg_name, members)) = call.arguments.args.split_first_mut()
+                            {
+                                self.assign_collections_named_tuple(
+                                    name,
+                                    &mut call.func,
+                                    arg_name,
+                                    members,
+                                    &mut call.arguments.keywords,
+                                );
                                 return;
                             }
                         }

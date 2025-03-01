@@ -143,12 +143,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             keywords,
             decorators,
             is_new_type,
+            special_base,
         } = binding;
         let metadata = match &self.get_idx(*k).0 {
             None => ClassMetadata::recursive(),
-            Some(cls) => {
-                self.class_metadata_of(cls, bases, keywords, decorators, *is_new_type, errors)
-            }
+            Some(cls) => self.class_metadata_of(
+                cls,
+                bases,
+                keywords,
+                decorators,
+                *is_new_type,
+                special_base,
+                errors,
+            ),
         };
         Arc::new(metadata)
     }
