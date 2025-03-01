@@ -71,7 +71,6 @@ enum AttributeInner {
     Property(Type, Option<Type>, Class),
     /// A descriptor is a user-defined type whose actions may dispatch to special method calls
     /// for the get and set actions.
-    #[expect(dead_code)]
     Descriptor(Descriptor),
 }
 
@@ -157,6 +156,22 @@ impl Attribute {
         Attribute {
             definition_range,
             inner: AttributeInner::Property(getter, setter, cls),
+        }
+    }
+
+    pub fn descriptor(
+        definition_range: Option<TextRangeWithModuleInfo>,
+        ty: Type,
+        base: Either<ClassType, Class>,
+        getter: Option<Type>,
+    ) -> Self {
+        Attribute {
+            definition_range,
+            inner: AttributeInner::Descriptor(Descriptor {
+                descriptor_ty: ty,
+                base,
+                getter,
+            }),
         }
     }
 }

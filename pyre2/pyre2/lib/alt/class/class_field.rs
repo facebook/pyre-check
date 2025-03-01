@@ -10,6 +10,7 @@ use std::fmt::Display;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Arguments;
 use ruff_python_ast::Expr;
@@ -80,12 +81,17 @@ pub struct ClassField(ClassFieldInner);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ClassFieldInner {
+    // TODO(stroxler): We should refactor `ClassFieldInner` into enum cases; currently
+    // the semantics are encoded ad-hoc into the fields of a large product which
+    // has made hacking features relatively easy, but makes the code hard to read.
     Simple {
         ty: Type,
         range: Option<TextRange>,
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
         readonly: bool,
+        // Descriptor getter method, if there is one. `None`` if this is not a desciptor.
+        descriptor_getter: Option<Type>,
     },
 }
 
@@ -106,6 +112,7 @@ impl ClassField {
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
         readonly: bool,
+        descriptor_getter: Option<Type>,
     ) -> Self {
         Self(ClassFieldInner::Simple {
             ty,
@@ -113,6 +120,7 @@ impl ClassField {
             annotation,
             initialization,
             readonly,
+            descriptor_getter,
         })
     }
 
@@ -123,6 +131,7 @@ impl ClassField {
             annotation: None,
             initialization: ClassFieldInitialization::Class(None),
             readonly: false,
+            descriptor_getter: None,
         })
     }
 
@@ -133,6 +142,7 @@ impl ClassField {
             annotation: None,
             initialization: ClassFieldInitialization::recursive(),
             readonly: false,
+            descriptor_getter: None,
         })
     }
 
@@ -161,12 +171,16 @@ impl ClassField {
                 annotation,
                 initialization,
                 readonly,
+                descriptor_getter,
             } => Self(ClassFieldInner::Simple {
                 ty: cls.instantiate_member(ty.clone()),
                 range: *range,
                 annotation: annotation.clone(),
                 initialization: initialization.clone(),
                 readonly: *readonly,
+                descriptor_getter: descriptor_getter
+                    .as_ref()
+                    .map(|ty| cls.instantiate_member(ty.clone())),
             }),
         }
     }
@@ -480,6 +494,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             annotation.cloned(),
             initialization,
             readonly,
+            None,
         );
         self.check_class_field_for_override_mismatch(
             name,
@@ -542,6 +557,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn as_instance_attribute(&self, field: ClassField, cls: &ClassType) -> Attribute {
         match field.instantiate_for(cls).0 {
             ClassFieldInner::Simple {
+                range,
+                ty,
+                descriptor_getter: Some(getter),
+                ..
+            } => {
+                let module_info = cls.qname().module_info().dupe();
+                Attribute::descriptor(
+                    TextRangeWithModuleInfo::opt_new(module_info, range),
+                    ty,
+                    Either::Left(cls.clone()),
+                    Some(getter),
+                )
+            }
+            ClassFieldInner::Simple {
                 ty,
                 range,
                 readonly,
@@ -565,6 +594,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn as_class_attribute(&self, field: ClassField, cls: &Class) -> Attribute {
         match &field.0 {
+            ClassFieldInner::Simple {
+                range,
+                ty,
+                descriptor_getter: Some(getter),
+                ..
+            } => {
+                let module_info = cls.qname().module_info().dupe();
+                Attribute::descriptor(
+                    TextRangeWithModuleInfo::opt_new(module_info, *range),
+                    ty.clone(),
+                    Either::Right(cls.clone()),
+                    Some(getter.clone()),
+                )
+            }
             ClassFieldInner::Simple {
                 initialization: ClassFieldInitialization::Instance,
                 range,
