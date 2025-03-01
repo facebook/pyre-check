@@ -6,7 +6,6 @@
  */
 
 use dupe::Dupe;
-use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Keyword;
 use ruff_python_ast::Operator;
@@ -16,6 +15,7 @@ use vec1::Vec1;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::attr::DescriptorBase;
 use crate::alt::callable::CallArg;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
@@ -25,7 +25,6 @@ use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Params;
-use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::AnyStyle;
@@ -482,7 +481,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn call_descriptor_getter(
         &self,
         getter_method: Type,
-        base: Either<ClassType, Class>,
+        base: DescriptorBase,
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
@@ -490,11 +489,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // the `obj` and `objtype` arguments. When it is accessed on a class, it gets `None` as `obj`
         // and the class object as `objtype`.
         let (objtype, obj) = match base {
-            Either::Left(classtype) => (
+            DescriptorBase::Instance(classtype) => (
                 Type::ClassDef(classtype.class_object().clone()),
                 Type::ClassType(classtype),
             ),
-            Either::Right(class) => (Type::ClassDef(class), Type::None),
+            DescriptorBase::ClassDef(class) => (Type::ClassDef(class), Type::None),
         };
         let args = [CallArg::Type(&obj, range), CallArg::Type(&objtype, range)];
         let call_target =

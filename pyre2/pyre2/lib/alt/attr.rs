@@ -80,16 +80,20 @@ struct Descriptor {
     /// checks in structural types and in the case where there is no getter method.
     descriptor_ty: Type,
     /// Descriptor behavior depends on the base against which the attribute is resolved, so
-    /// we have to preserve that base. Descriptors only apply to classes, and there are two
-    /// cases: an instance, in which case we will have a `ClassType`, or a class def in
-    /// which case we will have a `Class`.
-    base: Either<ClassType, Class>,
+    /// we have to preserve information about whether it is a class instance or class def.
+    base: DescriptorBase,
     /// If `__get__` exists on the descriptor, this is the type of `__get__`
     /// method type (as resolved by accessing it on an instance of the
     /// desriptor). It is typically a `BoundMethod` although it is possible for
     /// a user to erronously define a `__get__` with any type, including a
     /// non-callable one.
     getter: Option<Type>,
+}
+
+#[derive(Clone, Debug)]
+pub enum DescriptorBase {
+    Instance(ClassType),
+    ClassDef(Class),
 }
 
 #[derive(Debug)]
@@ -162,7 +166,7 @@ impl Attribute {
     pub fn descriptor(
         definition_range: Option<TextRangeWithModuleInfo>,
         ty: Type,
-        base: Either<ClassType, Class>,
+        base: DescriptorBase,
         getter: Option<Type>,
     ) -> Self {
         Attribute {
@@ -403,10 +407,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // currently treating all descriptors as read-only.
                 AttributeInner::Descriptor(d) => {
                     let e = match d.base {
-                        Either::Left(class_type) => NoAccessReason::SettingReadOnlyDescriptor(
-                            class_type.class_object().dupe(),
-                        ),
-                        Either::Right(class) => {
+                        DescriptorBase::Instance(class_type) => {
+                            NoAccessReason::SettingReadOnlyDescriptor(
+                                class_type.class_object().dupe(),
+                            )
+                        }
+                        DescriptorBase::ClassDef(class) => {
                             NoAccessReason::SettingDescriptorOnClass(class.dupe())
                         }
                     };

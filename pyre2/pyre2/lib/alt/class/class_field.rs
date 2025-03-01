@@ -10,7 +10,6 @@ use std::fmt::Display;
 use std::sync::Arc;
 
 use dupe::Dupe;
-use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Arguments;
 use ruff_python_ast::Expr;
@@ -21,6 +20,7 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::Attribute;
+use crate::alt::attr::DescriptorBase;
 use crate::alt::attr::NoAccessReason;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::binding::binding::ClassFieldInitialValue;
@@ -586,7 +586,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Attribute::descriptor(
                     TextRangeWithModuleInfo::opt_new(module_info, range),
                     ty,
-                    Either::Left(cls.clone()),
+                    DescriptorBase::Instance(cls.clone()),
                     Some(getter),
                 )
             }
@@ -624,7 +624,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Attribute::descriptor(
                     TextRangeWithModuleInfo::opt_new(module_info, *range),
                     ty.clone(),
-                    Either::Right(cls.clone()),
+                    DescriptorBase::ClassDef(cls.clone()),
                     Some(getter.clone()),
                 )
             }
