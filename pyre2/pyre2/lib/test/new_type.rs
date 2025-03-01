@@ -8,8 +8,7 @@
 use crate::testcase;
 use crate::testcase_with_bug;
 
-testcase_with_bug!(
-    "TODO: subclassing not allowed",
+testcase!(
     test_new_type_simple,
     r#"
 from typing import NewType, assert_type
@@ -23,7 +22,7 @@ assert_type(UserId(5) + 1, int)
 
 isinstance(u2, UserId) # E: NewType `UserId` not allowed in isinstance.
 
-class UserIdDerived(UserId):
+class UserIdDerived(UserId): # E: Subclassing a NewType not allowed
     pass
      "#,
 );

@@ -99,6 +99,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::ClassType(c) => {
                         let base_cls = c.class_object();
                         let base_class_metadata = self.get_metadata_for_class(base_cls);
+                        if base_class_metadata.is_new_type() && !is_new_type {
+                                self.error(
+                                    errors,
+                                    cls.range(),
+                                    ErrorKind::Unknown,
+                                    "Subclassing a NewType not allowed".to_owned(),
+                                );
+                        }
                         if base_class_metadata.is_typed_dict() {
                             is_typed_dict = true;
                         }

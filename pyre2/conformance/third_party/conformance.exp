@@ -467,6 +467,16 @@
     },
     {
       "code": -2,
+      "column": 7,
+      "concise_description": "Subclassing a NewType not allowed",
+      "description": "Subclassing a NewType not allowed",
+      "line": 23,
+      "name": "unknown",
+      "stop_column": 20,
+      "stop_line": 23
+    },
+    {
+      "code": -2,
       "column": 20,
       "concise_description": "Expected string literal \"GoodName\"",
       "description": "Expected string literal \"GoodName\"",
