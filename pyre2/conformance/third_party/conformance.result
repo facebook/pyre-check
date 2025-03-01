@@ -264,14 +264,7 @@
     "Line 22: Unexpected errors ['EXPECTED object <: Class1', 'Expected 0 positional arguments, got 1']"
   ],
   "dataclasses_descriptors.py": [
-    "Line 35: Unexpected errors ['EXPECTED Literal[3] <: Desc1']",
-    "Line 37: Unexpected errors ['assert_type(Desc1, int) failed']",
-    "Line 61: Unexpected errors ['assert_type(Any, list[int]) failed', 'Instance-only attribute `x` of class `DC2` is not visible on the class']",
-    "Line 62: Unexpected errors ['assert_type(Any, list[str]) failed', 'Instance-only attribute `y` of class `DC2` is not visible on the class']",
-    "Line 63: Unexpected errors ['assert_type(Desc2[str], list[str]) failed']",
-    "Line 66: Unexpected errors ['assert_type(Desc2[int], int) failed']",
-    "Line 67: Unexpected errors ['assert_type(Desc2[str], str) failed']",
-    "Line 68: Unexpected errors ['assert_type(Desc2[str], str) failed']"
+    "Line 35: Unexpected errors ['EXPECTED Literal[3] <: Desc1']"
   ],
   "dataclasses_final.py": [
     "Line 27: Expected 1 errors",

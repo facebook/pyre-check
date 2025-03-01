@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_staticmethod_with_explicit_parameter_type,
@@ -130,8 +129,7 @@ class C:
     "#,
 );
 
-testcase_with_bug!(
-    "TODO(stroxler) We do not yet support user-defined descriptors.",
+testcase!(
     test_simple_user_defined_get_descriptor,
     r#"
 from typing import assert_type
@@ -139,7 +137,7 @@ class D:
     def __get__(self, obj, classobj) -> int: ...
 class C:
     d = D()
-assert_type(C.d, int)  # E: assert_type(D, int)
-assert_type(C().d, int)  # E: assert_type(D, int)
+assert_type(C.d, int)
+assert_type(C().d, int)
     "#,
 );

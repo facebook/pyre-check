@@ -487,6 +487,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .dataclass_metadata()
             .is_some_and(|dataclass| dataclass.kws.is_set(&DataclassKeywords::FROZEN));
 
+        // Identify whether this is a descriptor
+        let __get__ = &Name::new("__get__");
+        let descriptor_getter = match ty {
+            // TODO(stroxler): This works for simple descriptors. There three known gaps, there may be others:
+            // - If the field is instance-only, descriptor dispatching won't occur, an instance-only attribute
+            //   that happens to be a descriptor just behaves like a normal instance-only attribute.
+            // - Gracefully handle instance-only `__get__`. Descriptors only seem to be detected
+            //   when the descriptor attribute is initialized on the class body of the descriptor.
+            // - Do we care about distributing descriptor behavior over unions? If so, what about the case when
+            //   the raw class field is a union of a descriptor and a non-descriptor? Do we want to allow this?
+            Type::ClassType(c) if c.class_object().contains(__get__) => {
+                if c.class_object().contains(__get__) {
+                    Some(self.attr_infer(ty, __get__, range, errors))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+
         // Create the resulting field and check for override inconsistencies before returning
         let class_field = ClassField::new(
             ty.clone(),
@@ -494,7 +514,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             annotation.cloned(),
             initialization,
             readonly,
-            None,
+            descriptor_getter,
         );
         self.check_class_field_for_override_mismatch(
             name,

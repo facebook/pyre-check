@@ -3557,96 +3557,6 @@
       "name": "unknown",
       "stop_column": 12,
       "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Desc1, int) failed",
-      "description": "assert_type(Desc1, int) failed",
-      "line": 37,
-      "name": "unknown",
-      "stop_column": 24,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, list[int]) failed",
-      "description": "assert_type(Any, list[int]) failed",
-      "line": 61,
-      "name": "unknown",
-      "stop_column": 30,
-      "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Instance-only attribute `x` of class `DC2` is not visible on the class",
-      "description": "Instance-only attribute `x` of class `DC2` is not visible on the class",
-      "line": 61,
-      "name": "unknown",
-      "stop_column": 18,
-      "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, list[str]) failed",
-      "description": "assert_type(Any, list[str]) failed",
-      "line": 62,
-      "name": "unknown",
-      "stop_column": 30,
-      "stop_line": 62
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Instance-only attribute `y` of class `DC2` is not visible on the class",
-      "description": "Instance-only attribute `y` of class `DC2` is not visible on the class",
-      "line": 62,
-      "name": "unknown",
-      "stop_column": 18,
-      "stop_line": 62
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Desc2[str], list[str]) failed",
-      "description": "assert_type(Desc2[str], list[str]) failed",
-      "line": 63,
-      "name": "unknown",
-      "stop_column": 30,
-      "stop_line": 63
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Desc2[int], int) failed",
-      "description": "assert_type(Desc2[int], int) failed",
-      "line": 66,
-      "name": "unknown",
-      "stop_column": 24,
-      "stop_line": 66
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Desc2[str], str) failed",
-      "description": "assert_type(Desc2[str], str) failed",
-      "line": 67,
-      "name": "unknown",
-      "stop_column": 24,
-      "stop_line": 67
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Desc2[str], str) failed",
-      "description": "assert_type(Desc2[str], str) failed",
-      "line": 68,
-      "name": "unknown",
-      "stop_column": 24,
-      "stop_line": 68
     }
   ],
   "dataclasses_final.py": [
@@ -5427,12 +5337,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(staticmethod[(x: int), int], Any) failed",
-      "description": "assert_type(staticmethod[(x: int), int], Any) failed",
+      "column": 13,
+      "concise_description": "No matching overload found",
+      "description": "No matching overload found",
       "line": 83,
       "name": "unknown",
-      "stop_column": 53,
+      "stop_column": 27,
       "stop_line": 83
     },
     {
