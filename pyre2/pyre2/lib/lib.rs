@@ -40,6 +40,8 @@ mod export;
 mod graph;
 mod metadata;
 mod module;
+#[cfg(target_arch = "wasm32")]
+pub mod playground;
 mod report;
 mod solver;
 mod state;
