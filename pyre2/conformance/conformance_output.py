@@ -17,6 +17,7 @@ import sys
 import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -188,20 +189,15 @@ def compare_conformance_output(
 
 
 def get_pyre2_command(test: bool) -> list[str]:
-    command = ["buck2"]
-    if test:
-        command += ["--isolation-dir", "pyre2"]
-    return command + [
-        "run",
-        "--reuse-current-config",
-        "fbcode//tools/pyre/pyre2:pyre2",
-        "--",
-        "check",
-        "--expectations",
-        # We seem to be a bit non-deterministic in some places, so let's disable
-        # parallelism for now.
-        "--threads=1",
-    ]
+    with resources.path(__package__, "pyre2.exe") as pyre2_path:
+        return [
+            str(pyre2_path),
+            "check",
+            "--expectations",
+            # We seem to be a bit non-deterministic in some places, so let's disable
+            # parallelism for now.
+            "--threads=1",
+        ]
 
 
 def get_conformance_output(
