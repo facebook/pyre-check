@@ -6,7 +6,7 @@
  */
 
 //! A minimal stdlib that is meant to be approximately the same as from typeshed,
-//! but only contain the bits that matter for our tests.
+//! but only contain the bits that matter for our tests and web playground
 
 use crate::module::module_name::ModuleName;
 
@@ -345,7 +345,7 @@ static STDLIB: &[(&str, &str)] = &[
     ("pyre_extensions", PYRE_EXTENSIONS),
 ];
 
-pub fn lookup_test_stdlib(module: ModuleName) -> Option<&'static str> {
+pub fn lookup_stdlib(module: ModuleName) -> Option<&'static str> {
     STDLIB.iter().find_map(|(name, source)| {
         if *name == module.as_str() {
             Some(*source)

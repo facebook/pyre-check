@@ -34,9 +34,9 @@ use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
 use crate::state::subscriber::TestSubscriber;
-use crate::test::stdlib::lookup_test_stdlib;
 use crate::types::class::Class;
 use crate::types::types::Type;
+use crate::util::reduced_stdlib::lookup_stdlib;
 use crate::util::trace::init_tracing;
 
 #[macro_export]
@@ -304,7 +304,7 @@ impl Loader for TestEnv {
         let style = ErrorStyle::Delayed;
         if let Some((path, _)) = self.0.get(&module) {
             Ok((path.dupe(), style))
-        } else if lookup_test_stdlib(module).is_some() {
+        } else if lookup_stdlib(module).is_some() {
             Ok((
                 ModulePath::memory(default_path(module, TestPathStyle::Stub)),
                 style,
@@ -326,7 +326,7 @@ impl Loader for TestEnv {
             }
         }
         Some(Arc::new(
-            lookup_test_stdlib(ModuleName::from_str(path.file_stem()?.to_str()?))?.to_owned(),
+            lookup_stdlib(ModuleName::from_str(path.file_stem()?.to_str()?))?.to_owned(),
         ))
     }
 }
