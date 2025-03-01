@@ -299,6 +299,18 @@ def outer(f: Callable[P, None]) -> Callable[P, None]:
 "#,
 );
 
+testcase!(
+    test_paramspec_different_origins,
+    r#"
+from typing import Callable, ParamSpec
+
+P1 = ParamSpec("P1")
+P2 = ParamSpec("P2")
+
+def foo(x: int, *args: P1.args, **kwargs: P2.kwargs) -> None: ...  # E: *args and **kwargs must come from the same ParamSpec
+"#,
+);
+
 testcase_with_bug!(
     "Rejects everything",
     test_paramspec_twice,

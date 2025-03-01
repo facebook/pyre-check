@@ -1477,8 +1477,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self_type = None; // Stop using `self` type solve Var params after the first param.
             ty
         };
-        let mut has_paramspec_args = false;
-        let mut has_paramspec_kwargs = false;
+        let mut paramspec_args = None;
+        let mut paramspec_kwargs = None;
         let mut params = Vec::with_capacity(x.def.parameters.len());
         params.extend(x.def.parameters.posonlyargs.iter().map(|x| {
             let ty = get_param_ty(&x.parameter.name);
@@ -1492,8 +1492,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }));
         params.extend(x.def.parameters.vararg.iter().map(|x| {
             let ty = get_param_ty(&x.name);
-            if let Type::Args(_) = ty {
-                has_paramspec_args = true;
+            if let Type::Args(q) = ty {
+                paramspec_args = Some(q);
             }
             Param::VarArg(ty)
         }));
@@ -1515,17 +1515,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Either::Right(var) => self.solver().force_var(var),
             };
-            if let Type::Kwargs(_) = ty {
-                has_paramspec_kwargs = true;
+            if let Type::Kwargs(q) = ty {
+                paramspec_kwargs = Some(q);
             }
             Param::Kwargs(ty)
         }));
-        if has_paramspec_kwargs != has_paramspec_args {
+        if paramspec_args.is_some() != paramspec_kwargs.is_some() {
             self.error(
                 errors,
                 x.def.range,
                 ErrorKind::Unknown,
                 "ParamSpec *args and **kwargs must be used together".to_owned(),
+            );
+        } else if paramspec_args != paramspec_kwargs {
+            self.error(
+                errors,
+                x.def.range,
+                ErrorKind::Unknown,
+                "*args and **kwargs must come from the same ParamSpec".to_owned(),
             );
         }
         let ret = self
