@@ -483,13 +483,9 @@
   "generics_paramspec_components.py": [
     "Line 17: Expected 1 errors",
     "Line 20: Expected 1 errors",
-    "Line 23: Expected 1 errors",
-    "Line 26: Expected 1 errors",
     "Line 30: Expected 1 errors",
     "Line 35: Expected 1 errors",
     "Line 36: Expected 1 errors",
-    "Line 38: Expected 1 errors",
-    "Line 41: Expected 1 errors",
     "Line 60: Expected 1 errors",
     "Line 96: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int']",
     "Line 97: Unexpected errors ['EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int']"

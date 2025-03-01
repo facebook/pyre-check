@@ -1477,6 +1477,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self_type = None; // Stop using `self` type solve Var params after the first param.
             ty
         };
+        let mut has_paramspec_args = false;
+        let mut has_paramspec_kwargs = false;
         let mut params = Vec::with_capacity(x.def.parameters.len());
         params.extend(x.def.parameters.posonlyargs.iter().map(|x| {
             let ty = get_param_ty(&x.parameter.name);
@@ -1490,6 +1492,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }));
         params.extend(x.def.parameters.vararg.iter().map(|x| {
             let ty = get_param_ty(&x.name);
+            if let Type::Args(_) = ty {
+                has_paramspec_args = true;
+            }
             Param::VarArg(ty)
         }));
         params.extend(x.def.parameters.kwonlyargs.iter().map(|x| {
@@ -1510,8 +1515,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Either::Right(var) => self.solver().force_var(var),
             };
+            if let Type::Kwargs(_) = ty {
+                has_paramspec_kwargs = true;
+            }
             Param::Kwargs(ty)
         }));
+        if has_paramspec_kwargs != has_paramspec_args {
+            self.error(
+                errors,
+                x.def.range,
+                ErrorKind::Unknown,
+                "ParamSpec *args and **kwargs must be used together".to_owned(),
+            );
+        }
         let ret = self
             .get(&Key::ReturnType(ShortIdentifier::new(&x.def.name)))
             .arc_clone();

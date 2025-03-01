@@ -6123,6 +6123,46 @@
   "generics_paramspec_components.py": [
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "ParamSpec *args and **kwargs must be used together",
+      "description": "ParamSpec *args and **kwargs must be used together",
+      "line": 23,
+      "name": "unknown",
+      "stop_column": 13,
+      "stop_line": 24
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "ParamSpec *args and **kwargs must be used together",
+      "description": "ParamSpec *args and **kwargs must be used together",
+      "line": 26,
+      "name": "unknown",
+      "stop_column": 13,
+      "stop_line": 27
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "ParamSpec *args and **kwargs must be used together",
+      "description": "ParamSpec *args and **kwargs must be used together",
+      "line": 38,
+      "name": "unknown",
+      "stop_column": 13,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "ParamSpec *args and **kwargs must be used together",
+      "description": "ParamSpec *args and **kwargs must be used together",
+      "line": 41,
+      "name": "unknown",
+      "stop_column": 13,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
       "description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",

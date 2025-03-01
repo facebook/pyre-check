@@ -251,10 +251,10 @@ def puts_p_into_scope(f: Callable[P, int]) -> None:
 
   stored_kwargs: P.kwargs                       # Rejected
 
-  def just_args(*args: P.args) -> None:         # Rejected
+  def just_args(*args: P.args) -> None:         # E: ParamSpec *args and **kwargs must be used together
     pass
 
-  def just_kwargs(**kwargs: P.kwargs) -> None:  # Rejected
+  def just_kwargs(**kwargs: P.kwargs) -> None:  # E: ParamSpec *args and **kwargs must be used together
     pass
 "#,
 );
