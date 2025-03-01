@@ -1497,6 +1497,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Param::VarArg(ty)
         }));
+        if paramspec_args.is_some()
+            && let Some(param) = x.def.parameters.kwonlyargs.first()
+        {
+            self.error(
+                errors,
+                param.range,
+                ErrorKind::Unknown,
+                format!(
+                    "Keyword-only parameter `{}` may not appear after ParamSpec args parameter",
+                    param.parameter.name
+                ),
+            );
+        }
         params.extend(x.def.parameters.kwonlyargs.iter().map(|x| {
             let ty = get_param_ty(&x.parameter.name);
             let required = check_default(&x.default, &ty);

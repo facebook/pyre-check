@@ -6183,6 +6183,16 @@
     },
     {
       "code": -2,
+      "column": 28,
+      "concise_description": "Keyword-only parameter `s` may not appear after ParamSpec args parameter",
+      "description": "Keyword-only parameter `s` may not appear after ParamSpec args parameter",
+      "line": 60,
+      "name": "unknown",
+      "stop_column": 34,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
       "description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
