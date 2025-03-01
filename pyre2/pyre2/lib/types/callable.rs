@@ -240,33 +240,6 @@ impl Callable {
         }
     }
 
-    /// Like `list`, but if the last two arguments are
-    /// `*args: P.args, **kwargs: P.kwargs` it produces a `concatenate` type.
-    pub fn make(params: Vec<Param>, ret: Type) -> Self {
-        if params.len() >= 2
-            && let Param::VarArg(Type::Args(q1)) = params[params.len() - 2]
-            && let Param::Kwargs(Type::Kwargs(q2)) = params[params.len() - 1]
-            && q1 == q2
-        {
-            let len = params.len() - 2;
-            let args = params
-                .into_iter()
-                .take(len)
-                .map(|x| match x {
-                    Param::PosOnly(ty, _) => ty,
-                    Param::Pos(_, ty, _) => ty,
-                    // TODO: Probably these are errors?
-                    Param::VarArg(ty) => ty,
-                    Param::KwOnly(_, ty, _) => ty,
-                    Param::Kwargs(ty) => ty,
-                })
-                .collect();
-            Self::concatenate(args, Type::Quantified(q1), ret)
-        } else {
-            Self::list(ParamList(params), ret)
-        }
-    }
-
     pub fn list(params: ParamList, ret: Type) -> Self {
         Self {
             params: Params::List(params),

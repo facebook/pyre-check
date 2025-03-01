@@ -1533,21 +1533,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Param::Kwargs(ty)
         }));
-        if paramspec_args.is_some() != paramspec_kwargs.is_some() {
-            self.error(
-                errors,
-                x.def.range,
-                ErrorKind::Unknown,
-                "ParamSpec *args and **kwargs must be used together".to_owned(),
-            );
-        } else if paramspec_args != paramspec_kwargs {
-            self.error(
-                errors,
-                x.def.range,
-                ErrorKind::Unknown,
-                "*args and **kwargs must come from the same ParamSpec".to_owned(),
-            );
-        }
         let ret = self
             .get(&Key::ReturnType(ShortIdentifier::new(&x.def.name)))
             .arc_clone();
@@ -1559,17 +1544,70 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             ret
         };
-
         let mut tparams = self.scoped_type_params(x.def.type_params.as_deref(), errors);
         let legacy_tparams = x
             .legacy_tparams
             .iter()
             .filter_map(|key| self.get_idx(*key).deref().parameter().cloned());
         tparams.extend(legacy_tparams);
-        let callable = Type::Callable(
-            Box::new(Callable::make(params, ret)),
-            CallableKind::from_name(self.module_info().name(), &x.def.name.id),
-        );
+        if paramspec_args != paramspec_kwargs {
+            if paramspec_args.is_some() != paramspec_kwargs.is_some() {
+                self.error(
+                    errors,
+                    x.def.range,
+                    ErrorKind::Unknown,
+                    "ParamSpec *args and **kwargs must be used together".to_owned(),
+                );
+            } else {
+                self.error(
+                    errors,
+                    x.def.range,
+                    ErrorKind::Unknown,
+                    "*args and **kwargs must come from the same ParamSpec".to_owned(),
+                );
+            }
+            // If ParamSpec args and kwargs are invalid, fall back to Any
+            params = params
+                .into_iter()
+                .map(|p| match p {
+                    Param::Kwargs(Type::Kwargs(_)) => Param::Kwargs(Type::any_error()),
+                    Param::VarArg(Type::Args(_)) => Param::VarArg(Type::any_error()),
+                    _ => p,
+                })
+                .collect();
+        } else {
+            params = params
+                .into_iter()
+                .filter_map(|p| match p {
+                    Param::Kwargs(Type::Kwargs(_)) | Param::VarArg(Type::Args(_)) => None,
+                    _ => Some(p),
+                })
+                .collect();
+        }
+        let callable = if let Some(q) = paramspec_args
+            && paramspec_args == paramspec_kwargs
+        {
+            Type::Callable(
+                Box::new(Callable::concatenate(
+                    params
+                        .into_iter()
+                        .filter_map(|p| match p {
+                            Param::PosOnly(ty, _) => Some(ty),
+                            Param::Pos(_, ty, _) => Some(ty),
+                            _ => None,
+                        })
+                        .collect(),
+                    Type::Quantified(q),
+                    ret,
+                )),
+                CallableKind::from_name(self.module_info().name(), &x.def.name.id),
+            )
+        } else {
+            Type::Callable(
+                Box::new(Callable::list(ParamList::new(params), ret)),
+                CallableKind::from_name(self.module_info().name(), &x.def.name.id),
+            )
+        };
         let mut ty = callable.forall(self.type_params(x.def.range, tparams, errors));
         let mut is_overload = false;
         for x in x.decorators.iter().rev() {
