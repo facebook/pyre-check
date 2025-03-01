@@ -14,64 +14,25 @@ import flowLanguageConfiguration from './flow-configuration.json';
 
 type Position = {lineNumber: number, column: number};
 
-let autoCompleteFunctionForMonaco = (
-  value: string,
-  position: Position,
+let autoCompleteFunctionForMonaco = (line: number, column: number,
 ): any => {
-  throw JSON.stringify({position, error: 'not implemented'});
+  throw 'not implemented';
 };
 
-function setAutoCompleteFunction(flowService: ?FlowJsServices): void {
-  autoCompleteFunctionForMonaco = (value, position) =>
-    flowService?.autocomplete?.(
-      '-',
-      value,
-      position.lineNumber,
-      position.column - 1,
-    ) ?? {incomplete: false, suggestions: []};
+function setAutoCompleteFunction(f: (_l: number, _c: number) => any): void {
+  autoCompleteFunctionForMonaco = f;
 }
 
-let getDefFunctionForMonaco = (
-  value: string,
-  position: Position,
-): $ReadOnlyArray<FlowLoc> => [];
+let getDefFunctionForMonaco = (_l: number, _c: number): any => null;
 
-function setGetDefFunction(flowService: ?FlowJsServices): void {
-  getDefFunctionForMonaco = (value, position) =>
-    flowService?.getDef?.(
-      '-',
-      value,
-      position.lineNumber,
-      position.column - 1,
-    ) ?? [];
+function setGetDefFunction(f: (_l: number, _c: number) => any): void {
+  getDefFunctionForMonaco = (l, c) => f(l, c)
 }
 
-let typeAsPosFunctionForMonaco = (
-  value: string,
-  position: Position,
-): ?string | Array<{type: 'flow' | 'markdown', value: string}> => null;
+let hoverFunctionForMonaco = (_l: number, _c: number): any => null;
 
-function setTypeAtPosFunction(flowService: ?FlowJsServices): void {
-  typeAsPosFunctionForMonaco = (value, position) =>
-    flowService?.typeAtPos(
-      '-',
-      value,
-      position.lineNumber,
-      position.column - 1,
-    );
-}
-
-let signatureHelpFunctionForMonaco = (value: string, position: Position): any =>
-  null;
-
-function setSignatureHelpFunction(flowService: ?FlowJsServices): void {
-  signatureHelpFunctionForMonaco = (value, position) =>
-    flowService?.signatureHelp(
-      '-',
-      value,
-      position.lineNumber,
-      position.column - 1,
-    );
+function setHoverFunctionForMonaco(f: (_l: number, _c: number) => any): void {
+  hoverFunctionForMonaco = f
 }
 
 monaco.languages.register({
@@ -154,8 +115,9 @@ monaco.languages.registerCompletionItemProvider('python', {
 
   provideCompletionItems(model, position) {
     try {
-      const result = autoCompleteFunctionForMonaco(model.getValue(), position);
-      return result;
+      const result = autoCompleteFunctionForMonaco(position.lineNumber, position.column);
+      console.log('completion', position, result);
+      return {suggestions: result.map(r => ({...r, insertText: r.label}))};
     } catch (e) {
       console.error(e);
       return null;
@@ -165,15 +127,8 @@ monaco.languages.registerCompletionItemProvider('python', {
 monaco.languages.registerDefinitionProvider('python', {
   provideDefinition(model, position) {
     try {
-      return getDefFunctionForMonaco(model.getValue(), position).map(loc => ({
-        uri: model.uri,
-        range: {
-          startLineNumber: loc.start.line,
-          startColumn: loc.start.column,
-          endLineNumber: loc.end.line,
-          endColumn: loc.end.column + 1,
-        },
-      }));
+      const range = getDefFunctionForMonaco(position.lineNumber, position.column);
+      return range != null ? { uri: model.uri, range } : null;
     } catch (e) {
       console.error(e);
       return null;
@@ -182,36 +137,8 @@ monaco.languages.registerDefinitionProvider('python', {
 });
 monaco.languages.registerHoverProvider('python', {
   provideHover(model, position) {
-    const result = typeAsPosFunctionForMonaco(model.getValue(), position);
-    if (result == null) return null;
-    function markdownValue(value: string, type: 'flow' | 'markdown' = 'flow') {
-      return value.startsWith('type_repr: ')
-        ? {
-            value: `\`\`\`ocaml\n${value.substring('type_repr: '.length)}\n\`\`\``,
-          }
-        : type === 'markdown'
-          ? {value}
-          : {value: `\`\`\`${type}\n${value}\n\`\`\``};
-    }
-    if (typeof result === 'string') {
-      return {
-        contents: [markdownValue(result)],
-      };
-    }
-    return {contents: result.map(r => markdownValue(r.value, r.type))};
-  },
-});
-monaco.languages.registerSignatureHelpProvider('flow', {
-  signatureHelpTriggerCharacters: ['(', ',', '{'],
-  provideSignatureHelp(model, position) {
-    try {
-      const result = signatureHelpFunctionForMonaco(model.getValue(), position);
-      if (result == null) return null;
-      return {value: result, dispose() {}};
-    } catch (e) {
-      console.error(e);
-      return null;
-    }
+    const result = hoverFunctionForMonaco(position.lineNumber, position.column);
+    return result;
   },
 });
 loader.config({monaco});
@@ -220,5 +147,5 @@ export {
   monaco,
   setAutoCompleteFunction,
   setGetDefFunction,
-  setTypeAtPosFunction,
+  setHoverFunctionForMonaco,
 };

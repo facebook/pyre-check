@@ -1,0 +1,23 @@
+[package]
+name = "pyre2_wasm"
+version = "0.0.0"
+authors = ["Meta"]
+edition = "2021"
+repository = "https://github.com/facebook/pyre-check/tree/main/pyre2"
+license = "MIT"
+
+[lib]
+path = "lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+dupe = "0.9.1"
+pyrefly = { path = "../pyre2" }
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.5"
+starlark_map = "0.13.0"
+wasm-bindgen = "0.2.95"
+getrandom = { version = "*", default-features = false, features = ["js"] }
+
+[lints]
+rust = { unexpected_cfgs = { check-cfg = ["cfg(fbcode_build)"], level = "warn" } }
