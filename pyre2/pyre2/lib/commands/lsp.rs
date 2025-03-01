@@ -85,7 +85,7 @@ use crate::util::prelude::VecExt;
 #[derive(Debug, Parser, Clone)]
 pub struct Args {
     #[clap(long = "include", short = 'I', env = clap_env("INCLUDE"))]
-    include: Vec<PathBuf>,
+    pub(crate) include: Vec<PathBuf>,
 }
 
 struct Server<'a> {

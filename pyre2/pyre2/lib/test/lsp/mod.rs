@@ -11,3 +11,4 @@ mod completion;
 mod definition;
 mod hover;
 mod inlay_hint;
+mod lsp_interaction;
