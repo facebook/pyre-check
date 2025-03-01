@@ -99,6 +99,51 @@ struct Server<'a> {
     open_files: Arc<Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>>,
 }
 
+pub fn run_lsp(
+    connection: &Connection,
+    wait_on_connection: impl FnOnce() -> anyhow::Result<()>,
+    args: Args,
+) -> anyhow::Result<CommandExitStatus> {
+    // Run the server and wait for the two threads to end (typically by trigger LSP Exit event).
+    let server_capabilities = serde_json::to_value(&ServerCapabilities {
+        text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::FULL)),
+        definition_provider: Some(OneOf::Left(true)),
+        completion_provider: Some(CompletionOptions {
+            trigger_characters: Some(vec![".".to_owned()]),
+            ..Default::default()
+        }),
+        hover_provider: Some(HoverProviderCapability::Simple(true)),
+        inlay_hint_provider: Some(OneOf::Left(true)),
+        ..Default::default()
+    })
+    .unwrap();
+    let initialization_params = match connection.initialize(server_capabilities) {
+        Ok(it) => serde_json::from_value(it).unwrap(),
+        Err(e) => {
+            // Use this in later versions of LSP server
+            // if e.channel_is_disconnected() {
+            // io_threads.join()?;
+            // }
+            return Err(e.into());
+        }
+    };
+    let include = args.include;
+    let send = |msg| connection.sender.send(msg).unwrap();
+    let server = Server::new(&send, initialization_params, include);
+    eprintln!("Reading messages");
+    for msg in &connection.receiver {
+        if matches!(&msg, Message::Request(req) if connection.handle_shutdown(req)?) {
+            break;
+        }
+        server.process(msg)?;
+    }
+    wait_on_connection()?;
+
+    // Shut down gracefully.
+    eprintln!("shutting down server");
+    Ok(CommandExitStatus::Success)
+}
+
 impl Args {
     pub fn run(self) -> anyhow::Result<CommandExitStatus> {
         // Note that  we must have our logging only write out to stderr.
@@ -108,44 +153,11 @@ impl Args {
         // also be implemented to use sockets or HTTP.
         let (connection, io_threads) = Connection::stdio();
 
-        // Run the server and wait for the two threads to end (typically by trigger LSP Exit event).
-        let server_capabilities = serde_json::to_value(&ServerCapabilities {
-            text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::FULL)),
-            definition_provider: Some(OneOf::Left(true)),
-            completion_provider: Some(CompletionOptions {
-                trigger_characters: Some(vec![".".to_owned()]),
-                ..Default::default()
-            }),
-            hover_provider: Some(HoverProviderCapability::Simple(true)),
-            inlay_hint_provider: Some(OneOf::Left(true)),
-            ..Default::default()
-        })
-        .unwrap();
-        let initialization_params = match connection.initialize(server_capabilities) {
-            Ok(it) => serde_json::from_value(it).unwrap(),
-            Err(e) => {
-                // Use this in later versions of LSP server
-                // if e.channel_is_disconnected() {
-                // io_threads.join()?;
-                // }
-                return Err(e.into());
-            }
-        };
-        let include = self.include;
-        let send = |msg| connection.sender.send(msg).unwrap();
-        let server = Server::new(&send, initialization_params, include);
-        eprintln!("Reading messages");
-        for msg in &connection.receiver {
-            if matches!(&msg, Message::Request(req) if connection.handle_shutdown(req)?) {
-                break;
-            }
-            server.process(msg)?;
-        }
-        io_threads.join()?;
-
-        // Shut down gracefully.
-        eprintln!("shutting down server");
-        Ok(CommandExitStatus::Success)
+        run_lsp(
+            &connection,
+            move || io_threads.join().map_err(anyhow::Error::from),
+            self,
+        )
     }
 }
 
