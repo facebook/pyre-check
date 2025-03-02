@@ -1064,11 +1064,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             match pos {
                                 UnpackedPosition::Index(i) | UnpackedPosition::ReverseIndex(i) => {
                                     let idx = if matches!(pos, UnpackedPosition::Index(_)) {
-                                        *i
+                                        Some(*i)
                                     } else {
-                                        ts.len() - *i
+                                        ts.len().checked_sub(*i)
                                     };
-                                    if let Some(element) = ts.get(idx) {
+                                    if let Some(idx) = idx
+                                        && let Some(element) = ts.get(idx)
+                                    {
                                         element.clone()
                                     } else {
                                         // We'll report this error when solving for Binding::UnpackedLength.
@@ -1077,9 +1079,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 }
                                 UnpackedPosition::Slice(i, j) => {
                                     let start = *i;
-                                    let end = ts.len() - *j;
-                                    if start <= ts.len() && end >= start {
-                                        let elem_ty = self.unions(ts[start..end].to_vec());
+                                    let end = ts.len().checked_sub(*j);
+                                    if let Some(end) = end
+                                        && end >= start
+                                        && let Some(items) = ts.get(start..end)
+                                    {
+                                        let elem_ty = self.unions(items.to_vec());
                                         self.stdlib.list(elem_ty).to_type()
                                     } else {
                                         // We'll report this error when solving for Binding::UnpackedLength.

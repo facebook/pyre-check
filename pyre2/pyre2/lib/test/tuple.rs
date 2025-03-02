@@ -234,3 +234,10 @@ for x in C2():
     assert_type(x, int)
     "#,
 );
+
+testcase!(
+    test_tuple_short_unpack,
+    r#"
+*a, b, c = (1,) # E: Cannot unpack tuple[Literal[1]] (of size 1) into 2+ values
+"#,
+);
