@@ -128,7 +128,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> Option<Type> {
         let unwrapped = self.unwrap_class_object_silently(ty);
-        if unwrapped.is_none() {
+        if unwrapped.is_none() && !ty.is_error() {
             self.error(
                 errors,
                 range,
