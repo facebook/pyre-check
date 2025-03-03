@@ -860,36 +860,38 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 }
 
 impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
+    /// List all the attributes available from a type. Used to power completion.
     pub fn lookup_all_attributes(&self, base: Type) -> Vec<Name> {
+        let mut res = Vec::new();
+
+        fn add_class(cls: &Class, res: &mut Vec<Name>) {
+            res.extend(cls.fields().cloned());
+        }
+
         match self.as_attribute_base(base, self.stdlib) {
-            Some(AttributeBase::ClassInstance(class)) => {
-                class.class_object().fields().cloned().collect()
-            }
+            Some(AttributeBase::ClassInstance(class)) => add_class(class.class_object(), &mut res),
             Some(AttributeBase::SuperInstance(class, _)) => {
-                class.class_object().fields().cloned().collect()
+                add_class(class.class_object(), &mut res)
             }
-            Some(AttributeBase::ClassObject(class)) => class.fields().cloned().collect(),
-            Some(AttributeBase::Module(module)) => self.get_module_export_names(&module),
+            Some(AttributeBase::ClassObject(class)) => add_class(&class, &mut res),
             Some(AttributeBase::Quantified(q)) => {
-                let class = q.as_value(self.stdlib);
-                class.class_object().fields().cloned().collect()
+                add_class(q.as_value(self.stdlib).class_object(), &mut res)
             }
             Some(AttributeBase::TypeAny(_)) => {
-                let builtins_type_classtype = self.stdlib.builtins_type();
-                builtins_type_classtype
-                    .class_object()
-                    .fields()
-                    .cloned()
-                    .collect()
+                add_class(self.stdlib.builtins_type().class_object(), &mut res)
             }
-            Some(AttributeBase::Any(_)) => Vec::new(),
-            Some(AttributeBase::Never) => Vec::new(),
+            Some(AttributeBase::Module(module)) => {
+                res.extend(self.get_module_export_names(&module))
+            }
+            Some(AttributeBase::Any(_)) => {}
+            Some(AttributeBase::Never) => {}
             Some(AttributeBase::Property(_)) => {
                 // TODO(samzhou19815): Support autocomplete for properties
-                vec![]
+                {}
             }
-            None => Vec::new(),
+            None => {}
         }
+        res
     }
 
     fn get_module_export_names(&self, module: &Module) -> Vec<Name> {
