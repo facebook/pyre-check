@@ -756,14 +756,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             self.get_metadata_for_class(cls)
                 .ancestors(self.stdlib)
-                .filter_map(|ancestor| {
+                .find_map(|ancestor| {
                     self.get_class_field(ancestor.class_object(), name)
                         .map(|field| WithDefiningClass {
                             value: Arc::new(field.instantiate_for(ancestor)),
                             defining_class: ancestor.class_object().dupe(),
                         })
                 })
-                .next()
         }
     }
 
