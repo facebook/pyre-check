@@ -69,10 +69,6 @@
   background-color: rgba(255, 255, 255, 0.7);
 }
 
-.navbar .twitter__link:before {
-  background: url(/img/icon-twitter.svg);
-  background-repeat: no-repeat;
-}
 .navbar .stackoverflow__link:before {
   background: url(/img/icon-stackoverflow.svg);
   background-repeat: no-repeat;
