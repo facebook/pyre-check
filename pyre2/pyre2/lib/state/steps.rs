@@ -138,9 +138,7 @@ pub struct ComputeStep<Lookup: LookupExport + LookupAnswer>(
     /// First you get given the `ModuleSteps`, from which you should grab what you need (cloning it).
     /// Second you get given the configs, from which you should compute the result.
     /// Thrid you get given the `ModuleSteps` to update.
-    pub  Box<
-        dyn for<'a> Fn(&Steps) -> Box<dyn FnOnce(&Context<Lookup>) -> Box<dyn FnOnce(&mut Steps)>>,
-    >,
+    pub Box<dyn Fn(&Steps) -> Box<dyn FnOnce(&Context<Lookup>) -> Box<dyn FnOnce(&mut Steps)>>>,
 );
 
 macro_rules! compute_step {
