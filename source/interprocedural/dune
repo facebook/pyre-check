@@ -26,4 +26,5 @@
   pyrelib.statistics
   pyrelib.alarm
   pyrelib.version
-  pyrelib.file))
+  pyrelib.file
+  pyrelib.perfProfiler))
