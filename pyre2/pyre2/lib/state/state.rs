@@ -572,10 +572,11 @@ impl State {
             .map(|x| (x.config().dupe(), x.loader().dupe()))
             .collect::<SmallSet<_>>();
 
-        self.loaders = configs
-            .iter()
-            .map(|x| (x.1.dupe(), Arc::new(LoaderFindCache::new(x.1.dupe()))))
-            .collect::<SmallMap<_, _>>();
+        for (_, loader) in configs.iter() {
+            self.loaders
+                .entry(loader.dupe())
+                .or_insert_with(|| Arc::new(LoaderFindCache::new(loader.dupe())));
+        }
 
         {
             let mut lock = self.todo.lock();
