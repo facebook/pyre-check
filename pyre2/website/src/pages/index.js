@@ -24,14 +24,14 @@ export default component Home() {
   const {siteConfig} = context;
   return (
     <Layout
-      title="Flow: A Static Type Checker for JavaScript"
+      title="Pyrefly: A Static Type Checker for Python"
       description={siteConfig.description}>
       <header className={clsx(styles.feature, styles.featureHero)}>
         <div className="container">
           <p className={styles.featureHeading}>
-            <span>Flow is</span> <br className={styles.hiddenLargerUp} /> a
+            <span>Pyrefly is</span> <br className={styles.hiddenLargerUp} /> a
             static type <br className={styles.hiddenLargerUp} /> checker for{' '}
-            <br className={styles.hiddenLargerUp} /> <span>JavaScript.</span>
+            <br className={styles.hiddenLargerUp} /> <span>Python.</span>
           </p>
           <Link
             className={styles.featureButton}
@@ -41,11 +41,11 @@ export default component Home() {
           <Link
             className={styles.featureButton}
             to={useBaseUrl('en/docs/install')}>
-            Install Flow
+            Install Pyrefly
           </Link>
           <iframe
             className="gh-btn"
-            src="https://ghbtns.com/github-btn.html?user=facebook&repo=flow&type=star&count=false&size=large"
+            src="https://ghbtns.com/github-btn.html?user=facebook&repo=pyrefly&type=star&count=false&size=large"
             frameBorder="0"
             scrolling="0"
             width="160px"
@@ -56,9 +56,9 @@ export default component Home() {
             <strong className="navbar-text">
               {/* TODO: add release */}
               <a
-                href={`https://github.com/facebook/flow/releases/tag/${siteConfig.customFields.flowVersion}`}
+                href={`https://github.com/facebook/pyrefly/releases/tag/${siteConfig.customFields.PyreflyVersion}`}
                 className={styles.releaseVersion}>
-                {siteConfig.customFields.flowVersion}
+                {siteConfig.customFields.PyreflyVersion}
               </a>
             </strong>
           </div>
@@ -83,9 +83,9 @@ export default component Home() {
                   Code Faster.
                 </h2>
                 <p className={styles.featureText}>
-                  Tired of having to run your code to find bugs? Flow identifies
-                  problems as you code. Stop wasting your time guessing and
-                  checking.
+                  Tired of having to run your code to find bugs? Pyrefly
+                  identifies problems as you code. Stop wasting your time
+                  guessing and checking.
                 </p>
               </div>
               <div className="col col--5">
@@ -121,9 +121,9 @@ export default component Home() {
                 </h2>
                 <p className={styles.featureText}>
                   It's hard to build smart tools for dynamic languages like
-                  JavaScript. Flow understands your code and makes its knowledge
+                  Python. Pyrefly understands your code and makes its knowledge
                   available, enabling other smart tools to be built on top of
-                  Flow.
+                  Pyrefly.
                 </p>
               </div>
             </div>
@@ -154,7 +154,7 @@ export default component Home() {
                   Code Confidently.
                 </h2>
                 <p className={styles.featureText}>
-                  Making major changes to large codebases can be scary. Flow
+                  Making major changes to large codebases can be scary. Pyrefly
                   helps you refactor safely, so you can focus on the changes you
                   want to make, and stop worrying about what you might break.
                 </p>
@@ -192,10 +192,11 @@ export default component Home() {
                 </h2>
                 <p className={styles.featureText}>
                   Working in a codebase with lots of developers can make it
-                  difficult to keep your master branch working. Flow can help
-                  prevent bad rebases. Flow can help protect your carefully
-                  designed library from misuse and misinterpretation. And Flow
-                  can help you understand the code you wrote six months ago.
+                  difficult to keep your master branch working. Pyrefly can help
+                  prevent bad rebases. Pyrefly can help protect your carefully
+                  designed library from misuse and misinterpretation. And
+                  Pyrefly can help you understand the code you wrote six months
+                  ago.
                 </p>
               </div>
             </div>
@@ -231,7 +232,7 @@ export default component Home() {
               <Link
                 className={styles.featureButton}
                 to={useBaseUrl('en/docs/install')}>
-                Install Flow
+                Install Pyrefly
               </Link>
             </div>
           </div>
@@ -248,15 +249,15 @@ export default component Home() {
               <div className={clsx('col col--6', styles.featurette)}>
                 <h2 className={styles.featuretteHeading}>Realtime Feedback</h2>
                 <p className={styles.featuretteText}>
-                  Flow gives you fast feedback while you code by incrementally
-                  rechecking your code as you make changes.
+                  Pyrefly gives you fast feedback while you code by
+                  incrementally rechecking your code as you make changes.
                 </p>
               </div>
               <div className={clsx('col col--6', styles.featurette)}>
                 <h2 className={styles.featuretteHeading}>Easy Integration</h2>
                 <p className={styles.featuretteText}>
-                  Flow integrates well with many tools, making it easy to insert
-                  into your existing workflow and toolchain.
+                  Pyrefly integrates well with many tools, making it easy to
+                  insert into your existing workflow and toolchain.
                 </p>
               </div>
             </div>
