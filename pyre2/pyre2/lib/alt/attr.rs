@@ -868,17 +868,19 @@ impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
             res.extend(cls.fields().cloned());
         }
 
+        fn add_class_type(cls: &ClassType, res: &mut Vec<Name>) {
+            add_class(cls.class_object(), res);
+        }
+
         match self.as_attribute_base(base, self.stdlib) {
-            Some(AttributeBase::ClassInstance(class)) => add_class(class.class_object(), &mut res),
-            Some(AttributeBase::SuperInstance(class, _)) => {
-                add_class(class.class_object(), &mut res)
-            }
+            Some(AttributeBase::ClassInstance(class)) => add_class_type(&class, &mut res),
+            Some(AttributeBase::SuperInstance(class, _)) => add_class_type(&class, &mut res),
             Some(AttributeBase::ClassObject(class)) => add_class(&class, &mut res),
             Some(AttributeBase::Quantified(q)) => {
-                add_class(q.as_value(self.stdlib).class_object(), &mut res)
+                add_class_type(&q.as_value(self.stdlib), &mut res)
             }
             Some(AttributeBase::TypeAny(_)) => {
-                add_class(self.stdlib.builtins_type().class_object(), &mut res)
+                add_class_type(&self.stdlib.builtins_type(), &mut res)
             }
             Some(AttributeBase::Module(module)) => {
                 res.extend(self.get_module_export_names(&module))
