@@ -5,10 +5,5 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-pub mod collector;
-pub mod context;
-pub mod error;
-pub mod expectation;
-pub mod kind;
-pub mod legacy;
-pub mod style;
+/// The context in which a got <: want type check occurs
+pub struct TypeCheckContext;

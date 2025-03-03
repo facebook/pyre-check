@@ -22,6 +22,7 @@ use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
 use crate::error::collector::ErrorCollector;
+use crate::error::context::TypeCheckContext;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::export::exports::LookupExport;
@@ -446,6 +447,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         got: &Type,
         loc: TextRange,
         errors: &ErrorCollector,
+        check_context: &TypeCheckContext,
     ) -> Type {
         if matches!(got, Type::Any(AnyStyle::Error)) {
             // Don't propagate errors
@@ -453,7 +455,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else if self.solver().is_subset_eq(got, want, self.type_order()) {
             got.clone()
         } else {
-            self.solver().error(want, got, errors, loc);
+            self.solver().error(want, got, errors, loc, check_context);
             want.clone()
         }
     }

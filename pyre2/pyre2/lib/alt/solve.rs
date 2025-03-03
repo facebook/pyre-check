@@ -57,6 +57,7 @@ use crate::binding::binding::UnpackedPosition;
 use crate::dunder;
 use crate::dunder::inplace_dunder;
 use crate::error::collector::ErrorCollector;
+use crate::error::context::TypeCheckContext;
 use crate::error::kind::ErrorKind;
 use crate::graph::index::Idx;
 use crate::module::module_path::ModuleStyle;
@@ -496,6 +497,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &exit_type,
             range,
             errors,
+            &TypeCheckContext,
         );
         // TODO: `exit_type` may also affect exceptional control flow, which is yet to be supported:
         // https://typing.readthedocs.io/en/latest/spec/exceptions.html#context-managers
@@ -778,7 +780,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(k) = ann
                     && let Some(want) = &self.get_idx(*k).ty
                 {
-                    self.check_type(want, &ty, x.range, errors)
+                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext)
                 } else {
                     ty
                 }
@@ -789,7 +791,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(k) = ann
                     && let Some(want) = &self.get_idx(*k).ty
                 {
-                    self.check_type(want, &ty, x.range, errors)
+                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext)
                 } else {
                     ty
                 }
@@ -802,7 +804,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(k) = ann
                     && let Some(want) = &self.get_idx(*k).ty
                 {
-                    self.check_type(want, &ty, x.range, errors)
+                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext)
                 } else {
                     ty
                 }
@@ -827,7 +829,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     } else if is_generator {
                         if let Some((_, _, return_ty)) = self.decompose_generator(&ty) {
-                            self.check_type(&return_ty, &implicit_return, *range, errors);
+                            self.check_type(
+                                &return_ty,
+                                &implicit_return,
+                                *range,
+                                errors,
+                                &TypeCheckContext,
+                            );
                         } else {
                             self.error(
                                 errors,
@@ -837,7 +845,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             );
                         }
                     } else {
-                        self.check_type(&ty, &implicit_return, *range, errors);
+                        self.check_type(&ty, &implicit_return, *range, errors, &TypeCheckContext);
                     }
                     ty
                 } else {
@@ -945,7 +953,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 let check_exception_type = |exception_type: Type, range| {
                     let exception = self.untype(exception_type, range, errors);
-                    self.check_type(&base_exception_type, &exception, range, errors);
+                    self.check_type(
+                        &base_exception_type,
+                        &exception,
+                        range,
+                        errors,
+                        &TypeCheckContext,
+                    );
                     if let Some(base_exception_group_any_type) =
                         base_exception_group_any_type.as_ref()
                         && !exception.is_any()
@@ -1023,7 +1037,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let context_value = self.context_value(context_manager, *kind, e.range(), errors);
                 let ty = ann.map(|k| self.get_idx(k));
                 match ty.as_ref().and_then(|x| x.ty.as_ref()) {
-                    Some(ty) => self.check_type(ty, &context_value, e.range(), errors),
+                    Some(ty) => {
+                        self.check_type(ty, &context_value, e.range(), errors, &TypeCheckContext)
+                    }
                     None => context_value,
                 }
             }
@@ -1705,7 +1721,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let yield_ty = if let Some(expr) = x.value.as_ref() {
                         self.expr(expr, Some(&yield_hint), errors)
                     } else {
-                        self.check_type(&yield_hint, &Type::None, x.range, errors)
+                        self.check_type(
+                            &yield_hint,
+                            &Type::None,
+                            x.range,
+                            errors,
+                            &TypeCheckContext,
+                        )
                     };
                     Arc::new(YieldResult { yield_ty, send_ty })
                 } else {
@@ -1768,7 +1790,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     YieldFromResult::any_error()
                 };
                 if let Some(want) = want {
-                    self.check_type(want, &ty, x.range, errors);
+                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext);
                 }
                 Arc::new(res)
             }

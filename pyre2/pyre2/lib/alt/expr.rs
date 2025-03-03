@@ -34,6 +34,7 @@ use crate::binding::binding::KeyYield;
 use crate::binding::binding::KeyYieldFrom;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
+use crate::error::context::TypeCheckContext;
 use crate::error::kind::ErrorKind;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
@@ -109,7 +110,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match &check {
             Some((want, check_errors)) if !want.is_any() => {
                 let got = self.expr_infer_with_hint(x, Some(want), errors);
-                self.check_type(want, &got, x.range(), check_errors)
+                self.check_type(want, &got, x.range(), check_errors, &TypeCheckContext)
             }
             _ => self.expr_infer(x, errors),
         }
