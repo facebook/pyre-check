@@ -40,7 +40,7 @@ pub struct Class(ArcId<ClassInner>);
 #[derive(Clone, Debug)]
 pub struct ClassFieldProperties {
     pub is_annotated: bool,
-    pub range: Option<TextRange>,
+    pub range: TextRange,
 }
 
 #[derive(Clone)]
@@ -190,7 +190,7 @@ impl Class {
     }
 
     pub fn field_decl_range(&self, name: &Name) -> Option<TextRange> {
-        self.0.fields.get(name).and_then(|prop| prop.range)
+        Some(self.0.fields.get(name)?.range)
     }
 
     pub fn has_qname(&self, module: &str, name: &str) -> bool {

@@ -149,7 +149,7 @@ impl<'a> BindingsBuilder<'a> {
                     name.clone(),
                     ClassFieldProperties {
                         is_annotated: stat_info.annot.is_some(),
-                        range: Some(stat_info.loc),
+                        range: stat_info.loc,
                     },
                 );
                 self.table
@@ -165,7 +165,7 @@ impl<'a> BindingsBuilder<'a> {
                                 name.clone(),
                                 ClassFieldProperties {
                                     is_annotated: annotation.is_some(),
-                                    range: Some(range),
+                                    range,
                                 },
                             );
                             self.table.insert(
@@ -311,7 +311,7 @@ impl<'a> BindingsBuilder<'a> {
                 member_name.clone(),
                 ClassFieldProperties {
                     is_annotated: member_annotation.is_some(),
-                    range: Some(range),
+                    range,
                 },
             );
             let initial_value = if force_class_initialization || member_value.is_some() {
