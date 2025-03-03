@@ -158,3 +158,19 @@ C.d = 42  # E: Attribute `d` of class `C` is a descriptor, which may not be over
 C().d = 42
     "#,
 );
+
+testcase!(
+    test_simple_user_defined_get_and_set_descriptor,
+    r#"
+from typing import assert_type
+class D:
+    def __get__(self, obj, classobj) -> int: ...
+    def __set__(self, obj, value: str) -> None: ...
+class C:
+    d = D()
+assert_type(C.d, int)
+assert_type(C().d, int)
+C.d = "42"  # E: Attribute `d` of class `C` is a descriptor, which may not be overwritten
+C().d = "42"
+    "#,
+);
