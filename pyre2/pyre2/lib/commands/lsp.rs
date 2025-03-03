@@ -417,8 +417,13 @@ impl<'a> Server<'a> {
         let t = state.hover(&handle, range)?;
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
-                kind: MarkupKind::PlainText,
-                value: t.to_string(),
+                kind: MarkupKind::Markdown,
+                value: format!(
+                    r#"```python
+{}
+```"#,
+                    t
+                ),
             }),
             range: None,
         })
