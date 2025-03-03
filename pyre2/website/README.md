@@ -5,9 +5,16 @@ static website generator.
 
 ## Local Development
 
+Install dependencies:
+
+```bash
+$ yarn install
+```
+
+Start a local development server:
+
 ```bash
 $ yarn start --port 3000
 ```
 
-This command starts a local development server. Most changes are reflected live
-without having to restart the server.
+Most changes are reflected live without having to restart the server.
