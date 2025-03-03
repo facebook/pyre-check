@@ -20,6 +20,7 @@ use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
+use crate::module::module_info::ModuleInfo;
 use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::types::callable::Param;
@@ -862,6 +863,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 #[derive(Debug)]
 pub struct AttrInfo {
     pub name: Name,
+    #[expect(dead_code)]
+    pub module: Option<ModuleInfo>,
+    #[expect(dead_code)]
+    pub range: Option<TextRange>,
 }
 
 impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
@@ -870,7 +875,11 @@ impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
         let mut res = Vec::new();
 
         fn add_class(cls: &Class, res: &mut Vec<AttrInfo>) {
-            res.extend(cls.fields().map(|x| AttrInfo { name: x.clone() }));
+            res.extend(cls.fields().map(|x| AttrInfo {
+                name: x.clone(),
+                module: Some(cls.module_info().dupe()),
+                range: cls.field_decl_range(x),
+            }));
         }
 
         fn add_class_type(cls: &ClassType, res: &mut Vec<AttrInfo>) {
@@ -908,7 +917,11 @@ impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
             Some(exports) => exports
                 .wildcard(self.exports)
                 .iter()
-                .map(|x| AttrInfo { name: x.clone() })
+                .map(|x| AttrInfo {
+                    name: x.clone(),
+                    module: None,
+                    range: None,
+                })
                 .collect(),
         }
     }
