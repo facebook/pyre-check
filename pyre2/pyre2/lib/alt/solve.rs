@@ -458,7 +458,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match kind {
             ContextManagerKind::Sync => self.call_method_or_error(
                 context_manager_type,
-                &dunder::EXIT,
+                &kind.as_exit_dunder(),
                 range,
                 &exit_arg_types,
                 &[],
@@ -466,7 +466,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ),
             ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_or_error(
                 context_manager_type,
-                &dunder::AEXIT,
+                &kind.as_exit_dunder(),
                 range,
                 &exit_arg_types,
                 &[],
@@ -497,7 +497,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &exit_type,
             range,
             errors,
-            &TypeCheckContext::Unknown,
+            &TypeCheckContext::FunctionReturn(kind.as_exit_dunder(), Some(context_manager_type)),
         );
         // TODO: `exit_type` may also affect exceptional control flow, which is yet to be supported:
         // https://typing.readthedocs.io/en/latest/spec/exceptions.html#context-managers

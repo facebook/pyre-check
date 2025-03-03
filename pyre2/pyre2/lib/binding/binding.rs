@@ -39,6 +39,7 @@ use crate::alt::types::yields::YieldFromResult;
 use crate::alt::types::yields::YieldResult;
 use crate::binding::bindings::Bindings;
 use crate::binding::narrow::NarrowOp;
+use crate::dunder;
 use crate::graph::index::Idx;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
@@ -560,6 +561,15 @@ pub enum RaisedException {
 pub enum ContextManagerKind {
     Sync,
     Async,
+}
+
+impl ContextManagerKind {
+    pub fn as_exit_dunder(self) -> Name {
+        match self {
+            Self::Sync => dunder::EXIT,
+            Self::Async => dunder::AEXIT,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
