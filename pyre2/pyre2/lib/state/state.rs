@@ -243,8 +243,7 @@ impl State {
         drop(write);
         let mut todo = self.todo.lock();
         for x in module_data.deps.read().values() {
-            // Important we use solutions, so they don't early exit
-            todo.push_lifo(Step::Solutions, x.dupe());
+            todo.push_lifo(Step::first(), x.dupe());
         }
     }
 
