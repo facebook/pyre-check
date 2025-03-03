@@ -2,4 +2,5 @@
 
 export DOCUSAURUS_BASE_URL="$1"
 export INTERNAL_STATIC_DOCS=1
-../facebook/build_website.sh
+yarn install
+yarn build
