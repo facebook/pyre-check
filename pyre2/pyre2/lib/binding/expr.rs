@@ -210,11 +210,18 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 let nargs = posargs.len();
                 let style = if nargs == 0 {
+                    let mut in_method = false;
                     let mut self_type = None;
                     for scope in self.scopes.iter_rev() {
-                        if let ScopeKind::ClassBody(class_body) = &scope.kind {
-                            self_type = Some(class_body.as_self_type_key());
-                            break;
+                        match &scope.kind {
+                            ScopeKind::Method(_) => {
+                                in_method = true;
+                            }
+                            ScopeKind::ClassBody(class_body) if in_method => {
+                                self_type = Some(class_body.as_self_type_key());
+                                break;
+                            }
+                            _ => {}
                         }
                     }
                     match self_type {

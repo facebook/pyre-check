@@ -123,7 +123,9 @@ class A:
 # This is unusual but legal
 super(A, A())
 
-# This is a runtime error
+# The following are runtime errors
 super()  # E: `super` call with no arguments is valid only inside a method
+class B:
+    super()  # E: `super` call with no arguments is valid only inside a method
     "#,
 );
