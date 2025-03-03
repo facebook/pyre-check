@@ -165,7 +165,7 @@ impl<'a> BindingsBuilder<'a> {
                                 name.clone(),
                                 ClassFieldProperties {
                                     is_annotated: annotation.is_some(),
-                                    range: None,
+                                    range: Some(range),
                                 },
                             );
                             self.table.insert(
