@@ -478,8 +478,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .is_some_and(|dataclass| dataclass.kws.is_set(&DataclassKeywords::FROZEN));
 
         // Identify whether this is a descriptor
-        let __get__ = &Name::new("__get__");
-        let __set__ = &Name::new("__set__");
         let (mut descriptor_getter, mut descriptor_setter) = (None, None);
         match ty {
             // TODO(stroxler): This works for simple descriptors. There three known gaps, there may be others:
@@ -490,11 +488,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // - Do we care about distributing descriptor behavior over unions? If so, what about the case when
             //   the raw class field is a union of a descriptor and a non-descriptor? Do we want to allow this?
             Type::ClassType(c) => {
-                if c.class_object().contains(__get__) {
-                    descriptor_getter = Some(self.attr_infer(ty, __get__, range, errors));
+                if c.class_object().contains(&dunder::GET) {
+                    descriptor_getter = Some(self.attr_infer(ty, &dunder::GET, range, errors));
                 }
-                if c.class_object().contains(__set__) {
-                    descriptor_setter = Some(self.attr_infer(ty, __set__, range, errors));
+                if c.class_object().contains(&dunder::SET) {
+                    descriptor_setter = Some(self.attr_infer(ty, &dunder::SET, range, errors));
                 }
             }
             _ => {}

@@ -19,6 +19,7 @@ pub const EQ: Name = Name::new_static("__eq__");
 pub const EXIT: Name = Name::new_static("__exit__");
 pub const FILE: Name = Name::new_static("__file__");
 pub const GE: Name = Name::new_static("__ge__");
+pub const GET: Name = Name::new_static("__get__");
 pub const GETITEM: Name = Name::new_static("__getitem__");
 pub const GT: Name = Name::new_static("__gt__");
 pub const HASH: Name = Name::new_static("__hash__");
@@ -35,6 +36,7 @@ pub const NEW: Name = Name::new_static("__new__");
 #[allow(dead_code)]
 pub const NEXT: Name = Name::new_static("__next__");
 pub const POS: Name = Name::new_static("__pos__");
+pub const SET: Name = Name::new_static("__set__");
 pub const SETITEM: Name = Name::new_static("__setitem__");
 
 /// Given the operator, what is the name of the dunder methods that implements
