@@ -508,6 +508,16 @@
     {
       "code": -2,
       "column": 1,
+      "concise_description": "Second argument to NewType cannot be a protocol",
+      "description": "Second argument to NewType cannot be a protocol",
+      "line": 49,
+      "name": "unknown",
+      "stop_column": 12,
+      "stop_line": 49
+    },
+    {
+      "code": -2,
+      "column": 1,
       "concise_description": "Second argument to NewType is incorrect",
       "description": "Second argument to NewType is incorrect",
       "line": 51,

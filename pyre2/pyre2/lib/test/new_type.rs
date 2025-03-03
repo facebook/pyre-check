@@ -54,7 +54,7 @@ BadNewType1 = NewType("BadNewType1", int | str) # E: Second argument to NewType 
 T = TypeVar("T")
 BadNewType2 = NewType("BadNewType2", list[T])
 
-BadNewType3 = NewType("BadNewType3", Hashable)
+BadNewType3 = NewType("BadNewType3", Hashable) # E: Second argument to NewType cannot be a protocol
 
 BadNewType4 = NewType("BadNewType4", Literal[7]) # E: Second argument to NewType is incorrect
      "#,

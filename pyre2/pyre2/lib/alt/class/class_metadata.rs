@@ -93,7 +93,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             // TODO: raise an error for generic classes and other forbidden types such as hashable
-            (Some((Type::ClassType(_), _)), true) => {}
+            (Some((Type::ClassType(c), _)), true) => {
+                let base_cls = c.class_object();
+                let base_class_metadata = self.get_metadata_for_class(base_cls);
+                if base_class_metadata.is_protocol() {
+                    self.error(
+                        errors,
+                        cls.range(),
+                        ErrorKind::Unknown,
+                        "Second argument to NewType cannot be a protocol".to_owned(),
+                    );
+                }
+            }
             (_, true) => {
                 self.error(
                     errors,
