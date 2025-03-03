@@ -25,6 +25,7 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::types::types::Type;
+use crate::util::prelude::VecExt;
 use crate::visitors::Visitors;
 
 impl State {
@@ -188,7 +189,9 @@ impl State {
             .get_answers(handle)?
             .get_type_trace(attribute.value.range())?;
         self.ad_hoc_solve(handle, |solver| {
-            solver.lookup_all_attributes(base_type.arc_clone())
+            solver
+                .lookup_all_attributes(base_type.arc_clone())
+                .into_map(|x| x.name)
         })
     }
 

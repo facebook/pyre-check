@@ -859,16 +859,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 }
 
+#[derive(Debug)]
+pub struct AttrInfo {
+    pub name: Name,
+}
+
 impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
     /// List all the attributes available from a type. Used to power completion.
-    pub fn lookup_all_attributes(&self, base: Type) -> Vec<Name> {
+    pub fn lookup_all_attributes(&self, base: Type) -> Vec<AttrInfo> {
         let mut res = Vec::new();
 
-        fn add_class(cls: &Class, res: &mut Vec<Name>) {
-            res.extend(cls.fields().cloned());
+        fn add_class(cls: &Class, res: &mut Vec<AttrInfo>) {
+            res.extend(cls.fields().map(|x| AttrInfo { name: x.clone() }));
         }
 
-        fn add_class_type(cls: &ClassType, res: &mut Vec<Name>) {
+        fn add_class_type(cls: &ClassType, res: &mut Vec<AttrInfo>) {
             add_class(cls.class_object(), res);
         }
 
@@ -896,11 +901,15 @@ impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
         res
     }
 
-    fn get_module_export_names(&self, module: &Module) -> Vec<Name> {
+    fn get_module_export_names(&self, module: &Module) -> Vec<AttrInfo> {
         let module_name = ModuleName::from_parts(module.path());
         match self.get_module_exports(module_name) {
             None => Vec::new(),
-            Some(exports) => exports.wildcard(self.exports).iter().cloned().collect(),
+            Some(exports) => exports
+                .wildcard(self.exports)
+                .iter()
+                .map(|x| AttrInfo { name: x.clone() })
+                .collect(),
         }
     }
 }
