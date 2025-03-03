@@ -823,11 +823,14 @@ impl State {
     /// You must use the same absolute/relative paths as were given by `find`.
     #[expect(dead_code)]
     pub fn invalidate_disk(&mut self, files: &[PathBuf]) {
-        let files = SmallSet::from_iter(files);
+        // We create the set out of ModulePath as it allows us to reuse the fact `ModulePath` has cheap hash
+        // when checking the modules.
+        let files = files
+            .iter()
+            .map(|x| ModulePath::filesystem(x.clone()))
+            .collect::<SmallSet<_>>();
         for (handle, module_data) in self.modules.iter_unordered() {
-            if let ModulePathDetails::FileSystem(x) = handle.path().details()
-                && files.contains(x)
-            {
+            if files.contains(handle.path()) {
                 module_data.state.write(Step::Load).unwrap().dirty.load = true;
             }
         }
