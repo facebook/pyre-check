@@ -8,8 +8,8 @@
 pub mod dirty;
 pub mod epoch;
 pub mod handle;
-pub mod ide;
 pub mod loader;
+pub mod lsp;
 pub mod state;
 pub mod steps;
 pub mod subscriber;
