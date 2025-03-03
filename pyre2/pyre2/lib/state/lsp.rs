@@ -190,7 +190,7 @@ impl State {
             .get_type_trace(attribute.value.range())?;
         self.ad_hoc_solve(handle, |solver| {
             solver
-                .lookup_all_attributes(base_type.arc_clone())
+                .completions(base_type.arc_clone())
                 .into_map(|x| x.name)
         })
     }

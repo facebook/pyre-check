@@ -871,34 +871,49 @@ pub struct AttrInfo {
 }
 
 impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
+    fn completions_class(&self, cls: &Class, res: &mut Vec<AttrInfo>) {
+        res.extend(cls.fields().map(|x| AttrInfo {
+            name: x.clone(),
+            module: Some(cls.module_info().dupe()),
+            range: cls.field_decl_range(x),
+        }));
+    }
+
+    fn completions_class_type(&self, cls: &ClassType, res: &mut Vec<AttrInfo>) {
+        self.completions_class(cls.class_object(), res);
+    }
+
+    fn completions_module(&self, module: &Module, res: &mut Vec<AttrInfo>) {
+        let module_name = ModuleName::from_parts(module.path());
+        if let Some(exports) = self.get_module_exports(module_name) {
+            res.extend(exports.wildcard(self.exports).iter().map(|x| AttrInfo {
+                name: x.clone(),
+                module: None,
+                range: None,
+            }))
+        }
+    }
+
     /// List all the attributes available from a type. Used to power completion.
-    pub fn lookup_all_attributes(&self, base: Type) -> Vec<AttrInfo> {
+    pub fn completions(&self, base: Type) -> Vec<AttrInfo> {
         let mut res = Vec::new();
 
-        fn add_class(cls: &Class, res: &mut Vec<AttrInfo>) {
-            res.extend(cls.fields().map(|x| AttrInfo {
-                name: x.clone(),
-                module: Some(cls.module_info().dupe()),
-                range: cls.field_decl_range(x),
-            }));
-        }
-
-        fn add_class_type(cls: &ClassType, res: &mut Vec<AttrInfo>) {
-            add_class(cls.class_object(), res);
-        }
-
         match self.as_attribute_base(base, self.stdlib) {
-            Some(AttributeBase::ClassInstance(class)) => add_class_type(&class, &mut res),
-            Some(AttributeBase::SuperInstance(class, _)) => add_class_type(&class, &mut res),
-            Some(AttributeBase::ClassObject(class)) => add_class(&class, &mut res),
+            Some(AttributeBase::ClassInstance(class)) => {
+                self.completions_class_type(&class, &mut res)
+            }
+            Some(AttributeBase::SuperInstance(class, _)) => {
+                self.completions_class_type(&class, &mut res)
+            }
+            Some(AttributeBase::ClassObject(class)) => self.completions_class(&class, &mut res),
             Some(AttributeBase::Quantified(q)) => {
-                add_class_type(&q.as_value(self.stdlib), &mut res)
+                self.completions_class_type(&q.as_value(self.stdlib), &mut res)
             }
             Some(AttributeBase::TypeAny(_)) => {
-                add_class_type(&self.stdlib.builtins_type(), &mut res)
+                self.completions_class_type(&self.stdlib.builtins_type(), &mut res)
             }
             Some(AttributeBase::Module(module)) => {
-                res.extend(self.get_module_export_names(&module))
+                self.completions_module(&module, &mut res);
             }
             Some(AttributeBase::Any(_)) => {}
             Some(AttributeBase::Never) => {}
@@ -909,21 +924,5 @@ impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
             None => {}
         }
         res
-    }
-
-    fn get_module_export_names(&self, module: &Module) -> Vec<AttrInfo> {
-        let module_name = ModuleName::from_parts(module.path());
-        match self.get_module_exports(module_name) {
-            None => Vec::new(),
-            Some(exports) => exports
-                .wildcard(self.exports)
-                .iter()
-                .map(|x| AttrInfo {
-                    name: x.clone(),
-                    module: None,
-                    range: None,
-                })
-                .collect(),
-        }
     }
 }
