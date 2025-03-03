@@ -49,14 +49,14 @@ testcase_with_bug!(
     r#"
 from typing import NewType, TypeVar, Hashable, Literal
 
-BadNewType1 = NewType("BadNewType1", int | str) # E: Second argument to NewType must be a proper class
+BadNewType1 = NewType("BadNewType1", int | str) # E: Second argument to NewType is incorrect
 
 T = TypeVar("T")
-BadNewType2 = NewType("BadNewType2", list[T])  
+BadNewType2 = NewType("BadNewType2", list[T])
 
-BadNewType3 = NewType("BadNewType3", Hashable) 
+BadNewType3 = NewType("BadNewType3", Hashable)
 
-BadNewType4 = NewType("BadNewType4", Literal[7]) # E: Second argument to NewType must be a proper class
+BadNewType4 = NewType("BadNewType4", Literal[7]) # E: Second argument to NewType is incorrect
      "#,
 );
 
@@ -67,5 +67,19 @@ from typing import NewType
 UserId = NewType("UserId", int, int) # E: Expected 2 positional arguments, got 3
 UserId = NewType("UserId") # E: Missing argument `tp`
 userId = NewType() # E: Missing argument `name` # E: Missing argument `tp`
+     "#,
+);
+
+testcase!(
+    test_new_type_not_allowed,
+    r#"
+from typing import NewType , TypedDict, Any
+
+class TD1(TypedDict):
+    a: int
+
+BadNewType1 = NewType("BadNewType1", TD1)  # E: Second argument to NewType is incorrect
+
+BadNewType2 = NewType("BadNewType2", Any)  # E: Second argument to NewType is incorrect
      "#,
 );
