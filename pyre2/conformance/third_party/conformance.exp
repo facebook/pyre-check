@@ -593,7 +593,7 @@
       "concise_description": "Object of class `str` has no attribute `__or__`",
       "description": "Object of class `str` has no attribute `__or__`",
       "line": 58,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 54,
       "stop_line": 58
     },
@@ -633,7 +633,7 @@
       "concise_description": "Object of class `str` has no attribute `__or__`",
       "description": "Object of class `str` has no attribute `__or__`",
       "line": 65,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 58,
       "stop_line": 65
     },
@@ -675,7 +675,7 @@
       "concise_description": "Object of class `TypeAliasType` has no attribute `bit_count`",
       "description": "Object of class `TypeAliasType` has no attribute `bit_count`",
       "line": 17,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 21,
       "stop_line": 17
     },
@@ -695,7 +695,7 @@
       "concise_description": "Object of class `TypeAliasType` has no attribute `other_attrib`",
       "description": "Object of class `TypeAliasType` has no attribute `other_attrib`",
       "line": 23,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 30,
       "stop_line": 23
     },
@@ -897,7 +897,7 @@
       "concise_description": "Object of class `TypeAliasType` has no attribute `other_attrib`",
       "description": "Object of class `TypeAliasType` has no attribute `other_attrib`",
       "line": 32,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 30,
       "stop_line": 32
     },
@@ -1974,7 +1974,7 @@
       "concise_description": "Object of class `Proto9` has no attribute `xxx`",
       "description": "Object of class `Proto9` has no attribute `xxx`",
       "line": 187,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 18,
       "stop_line": 187
     },
@@ -1984,7 +1984,7 @@
       "concise_description": "Object of class `Proto9` has no attribute `other_attribute2`",
       "description": "Object of class `Proto9` has no attribute `other_attribute2`",
       "line": 197,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 32,
       "stop_line": 197
     },
@@ -2418,7 +2418,7 @@
       "concise_description": "Object of class `ClassA` has no attribute `xx`",
       "description": "Object of class `ClassA` has no attribute `xx`",
       "line": 65,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 16,
       "stop_line": 65
     },
@@ -3666,7 +3666,7 @@
       "concise_description": "Instance-only attribute `final_no_default` of class `D` is not visible on the class",
       "description": "Instance-only attribute `final_no_default` of class `D` is not visible on the class",
       "line": 37,
-      "name": "unknown",
+      "name": "no-access",
       "stop_column": 19,
       "stop_line": 37
     }
@@ -3678,7 +3678,7 @@
       "concise_description": "Could not assign to read-only field `a`",
       "description": "Could not assign to read-only field `a`",
       "line": 16,
-      "name": "unknown",
+      "name": "read-only",
       "stop_column": 6,
       "stop_line": 16
     },
@@ -3688,7 +3688,7 @@
       "concise_description": "Could not assign to read-only field `b`",
       "description": "Could not assign to read-only field `b`",
       "line": 17,
-      "name": "unknown",
+      "name": "read-only",
       "stop_column": 6,
       "stop_line": 17
     }
@@ -3919,7 +3919,7 @@
       "concise_description": "Class `DC5` has no class attribute `__slots__`",
       "description": "Class `DC5` has no class attribute `__slots__`",
       "line": 56,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 14,
       "stop_line": 56
     },
@@ -3929,7 +3929,7 @@
       "concise_description": "Object of class `DC5` has no attribute `__slots__`",
       "description": "Object of class `DC5` has no attribute `__slots__`",
       "line": 57,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 17,
       "stop_line": 57
     },
@@ -3939,7 +3939,7 @@
       "concise_description": "Class `DC6` has no class attribute `__slots__`",
       "description": "Class `DC6` has no class attribute `__slots__`",
       "line": 66,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 14,
       "stop_line": 66
     },
@@ -3949,7 +3949,7 @@
       "concise_description": "Object of class `DC6` has no attribute `__slots__`",
       "description": "Object of class `DC6` has no attribute `__slots__`",
       "line": 69,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 17,
       "stop_line": 69
     }
@@ -5341,7 +5341,7 @@
       "concise_description": "Instance-only attribute `genus` of class `Pet` is not visible on the class",
       "description": "Instance-only attribute `genus` of class `Pet` is not visible on the class",
       "line": 27,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 22,
       "stop_line": 27
     },
@@ -5361,7 +5361,7 @@
       "concise_description": "Instance-only attribute `species` of class `Pet` is not visible on the class",
       "description": "Instance-only attribute `species` of class `Pet` is not visible on the class",
       "line": 28,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 24,
       "stop_line": 28
     },
@@ -5381,7 +5381,7 @@
       "concise_description": "Instance-only attribute `genus` of class `Pet2` is not visible on the class",
       "description": "Instance-only attribute `genus` of class `Pet2` is not visible on the class",
       "line": 35,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 23,
       "stop_line": 35
     },
@@ -5401,7 +5401,7 @@
       "concise_description": "Instance-only attribute `species` of class `Pet2` is not visible on the class",
       "description": "Instance-only attribute `species` of class `Pet2` is not visible on the class",
       "line": 36,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 25,
       "stop_line": 36
     },
@@ -5657,7 +5657,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access __add__)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access __add__)",
       "line": 34,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 17,
       "stop_line": 34
     },
@@ -5949,7 +5949,7 @@
       "concise_description": "Generic attribute `meth` of class `Foo7` is not visible on the class",
       "description": "Generic attribute `meth` of class `Foo7` is not visible on the class",
       "line": 166,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 22,
       "stop_line": 166
     },
@@ -5969,7 +5969,7 @@
       "concise_description": "Instance-only attribute `attr` of class `Foo7` is not visible on the class",
       "description": "Instance-only attribute `attr` of class `Foo7` is not visible on the class",
       "line": 167,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 22,
       "stop_line": 167
     }
@@ -6705,7 +6705,7 @@
       "concise_description": "Instance-only attribute `a` of class `ChildB` is not visible on the class",
       "description": "Instance-only attribute `a` of class `ChildB` is not visible on the class",
       "line": 43,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 26,
       "stop_line": 43
     },
@@ -6725,7 +6725,7 @@
       "concise_description": "Instance-only attribute `a` of class `ChildB` is not visible on the class",
       "description": "Instance-only attribute `a` of class `ChildB` is not visible on the class",
       "line": 44,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 26,
       "stop_line": 44
     },
@@ -6789,7 +6789,7 @@
       "concise_description": "Object of class `Shape` has no attribute `scale`",
       "description": "Object of class `Shape` has no attribute `scale`",
       "line": 15,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 19,
       "stop_line": 15
     },
@@ -6873,7 +6873,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)",
       "line": 60,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 31,
       "stop_line": 60
     },
@@ -6893,7 +6893,7 @@
       "concise_description": "Object of class `Foo3` has no attribute `child_value`",
       "description": "Object of class `Foo3` has no attribute `child_value`",
       "line": 93,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 22,
       "stop_line": 93
     }
@@ -6997,7 +6997,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access capitalize)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access capitalize)",
       "line": 33,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 21,
       "stop_line": 33
     },
@@ -7007,7 +7007,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access is_integer)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access is_integer)",
       "line": 34,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 21,
       "stop_line": 34
     },
@@ -7393,7 +7393,7 @@
       "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "line": 42,
-      "name": "unknown",
+      "name": "no-access",
       "stop_column": 16,
       "stop_line": 42
     },
@@ -7403,7 +7403,7 @@
       "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "line": 43,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 16,
       "stop_line": 43
     },
@@ -7413,7 +7413,7 @@
       "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "line": 44,
-      "name": "unknown",
+      "name": "no-access",
       "stop_column": 11,
       "stop_line": 44
     },
@@ -7423,7 +7423,7 @@
       "concise_description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "description": "Instance-only attribute `label` of class `Node` is not visible on the class",
       "line": 45,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 11,
       "stop_line": 45
     },
@@ -7433,7 +7433,7 @@
       "concise_description": "Object of class `type` has no attribute `label`",
       "description": "Object of class `type` has no attribute `label`",
       "line": 46,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 15,
       "stop_line": 46
     },
@@ -9142,7 +9142,7 @@
       "concise_description": "TODO: Expr::call_method attribute base undefined for type: Literal[3, 4, 5] (trying to access __iadd__)",
       "description": "TODO: Expr::call_method attribute base undefined for type: Literal[3, 4, 5] (trying to access __iadd__)",
       "line": 33,
-      "name": "unknown",
+      "name": "internal-error",
       "stop_column": 11,
       "stop_line": 33
     }
@@ -9950,7 +9950,7 @@
       "concise_description": "Object of class `Template` has no attribute `temp`",
       "description": "Object of class `Template` has no attribute `temp`",
       "line": 67,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 18,
       "stop_line": 67
     },
@@ -10204,7 +10204,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access get_parent)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access get_parent)",
       "line": 87,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 24,
       "stop_line": 87
     },
@@ -10650,7 +10650,7 @@
       "concise_description": "Object of class `ClassA` has no attribute `id3`",
       "description": "Object of class `ClassA` has no attribute `id3`",
       "line": 62,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 17,
       "stop_line": 62
     },
@@ -10660,7 +10660,7 @@
       "concise_description": "Object of class `ClassA` has no attribute `id4`",
       "description": "Object of class `ClassA` has no attribute `id4`",
       "line": 63,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 17,
       "stop_line": 63
     },
@@ -10914,7 +10914,7 @@
       "concise_description": "Object of class `ClassA` has no attribute `method2`",
       "description": "Object of class `ClassA` has no attribute `method2`",
       "line": 87,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 22,
       "stop_line": 87
     },
@@ -10924,7 +10924,7 @@
       "concise_description": "Class `ClassA` has no class attribute `method3`",
       "description": "Class `ClassA` has no class attribute `method3`",
       "line": 88,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 27,
       "stop_line": 88
     }
@@ -11030,7 +11030,7 @@
       "concise_description": "Object of class `float` has no attribute `numerator`",
       "description": "Object of class `float` has no attribute `numerator`",
       "line": 13,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 16,
       "stop_line": 13
     }
@@ -11092,7 +11092,7 @@
       "concise_description": "Object of class `type` has no attribute `unknown`",
       "description": "Object of class `type` has no attribute `unknown`",
       "line": 99,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 26,
       "stop_line": 99
     },
@@ -11102,7 +11102,7 @@
       "concise_description": "Object of class `type` has no attribute `unknown`",
       "description": "Object of class `type` has no attribute `unknown`",
       "line": 100,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 26,
       "stop_line": 100
     },
@@ -11132,7 +11132,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access __mro__)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access __mro__)",
       "line": 106,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 26,
       "stop_line": 106
     },
@@ -11142,7 +11142,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access unknown)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access unknown)",
       "line": 107,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 26,
       "stop_line": 107
     },
@@ -11152,7 +11152,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access unknown)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: Type (trying to access unknown)",
       "line": 108,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 26,
       "stop_line": 108
     },
@@ -11172,7 +11172,7 @@
       "concise_description": "Class `object` has no class attribute `unknown`",
       "description": "Class `object` has no class attribute `unknown`",
       "line": 117,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 14,
       "stop_line": 117
     },
@@ -11182,7 +11182,7 @@
       "concise_description": "Class `object` has no class attribute `unknown`",
       "description": "Class `object` has no class attribute `unknown`",
       "line": 120,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 14,
       "stop_line": 120
     },
@@ -11212,7 +11212,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: LegacyExplicitTypeAlias[TA1, type[Type]] (trying to access unknown)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: LegacyExplicitTypeAlias[TA1, type[Type]] (trying to access unknown)",
       "line": 143,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 12,
       "stop_line": 143
     },
@@ -11222,7 +11222,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: LegacyExplicitTypeAlias[TA2, type[type[Any]]] (trying to access unknown)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: LegacyExplicitTypeAlias[TA2, type[type[Any]]] (trying to access unknown)",
       "line": 144,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 12,
       "stop_line": 144
     },
@@ -11232,7 +11232,7 @@
       "concise_description": "Class `type` has no class attribute `unknown`",
       "description": "Class `type` has no class attribute `unknown`",
       "line": 145,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 12,
       "stop_line": 145
     },
@@ -11242,7 +11242,7 @@
       "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: LegacyExplicitTypeAlias[TA4, type[type[Any]]] (trying to access unknown)",
       "description": "TODO: Expr::attr_infer attribute base undefined for type: LegacyExplicitTypeAlias[TA4, type[type[Any]]] (trying to access unknown)",
       "line": 146,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 12,
       "stop_line": 146
     },
@@ -12077,7 +12077,7 @@
       "concise_description": "Object of class `Mapping` has no attribute `clear`",
       "description": "Object of class `Mapping` has no attribute `clear`",
       "line": 47,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 12,
       "stop_line": 47
     },
@@ -12107,7 +12107,7 @@
       "concise_description": "Object of class `Mapping` has no attribute `clear`",
       "description": "Object of class `Mapping` has no attribute `clear`",
       "line": 62,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 21,
       "stop_line": 62
     },
@@ -12347,7 +12347,7 @@
       "concise_description": "Object of class `Mapping` has no attribute `update`",
       "description": "Object of class `Mapping` has no attribute `update`",
       "line": 23,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 10,
       "stop_line": 23
     },
@@ -12357,7 +12357,7 @@
       "concise_description": "Object of class `Mapping` has no attribute `update`",
       "description": "Object of class `Mapping` has no attribute `update`",
       "line": 34,
-      "name": "unknown",
+      "name": "missing-attribute",
       "stop_column": 13,
       "stop_line": 34
     }
