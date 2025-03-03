@@ -571,12 +571,7 @@ impl State {
             .iter()
             .map(|x| (x.config().dupe(), x.loader().dupe()))
             .collect::<SmallSet<_>>();
-
-        for (_, loader) in configs.iter() {
-            self.loaders
-                .entry(loader.dupe())
-                .or_insert_with(|| Arc::new(LoaderFindCache::new(loader.dupe())));
-        }
+        self.compute_stdlib(configs);
 
         {
             let mut lock = self.todo.lock();
@@ -584,8 +579,6 @@ impl State {
                 lock.push_fifo(Step::first(), self.get_module(h));
             }
         }
-
-        self.compute_stdlib(configs);
 
         if self.parallel {
             rayon::scope(|s| {
@@ -596,6 +589,14 @@ impl State {
             });
         } else {
             self.work();
+        }
+    }
+
+    fn ensure_loaders(&mut self, handles: &[Handle]) {
+        for h in handles {
+            self.loaders
+                .entry(h.loader().dupe())
+                .or_insert_with(|| Arc::new(LoaderFindCache::new(h.loader().dupe())));
         }
     }
 
@@ -651,6 +652,7 @@ impl State {
         // if we end up spotting the same module changing twice, we just invalidate
         // everything in the cycle and force it to compute.
         let mut changed_twice = SmallSet::new();
+        self.ensure_loaders(handles);
         loop {
             self.run_step(handles);
             let changed = mem::take(&mut *self.changed.lock());
