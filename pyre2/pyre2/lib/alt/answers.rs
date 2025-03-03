@@ -447,7 +447,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         got: &Type,
         loc: TextRange,
         errors: &ErrorCollector,
-        check_context: &TypeCheckContext,
+        tcc: &TypeCheckContext,
     ) -> Type {
         if matches!(got, Type::Any(AnyStyle::Error)) {
             // Don't propagate errors
@@ -455,7 +455,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else if self.solver().is_subset_eq(got, want, self.type_order()) {
             got.clone()
         } else {
-            self.solver().error(want, got, errors, loc, check_context);
+            self.solver().error(want, got, errors, loc, tcc);
             want.clone()
         }
     }

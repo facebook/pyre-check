@@ -23,7 +23,6 @@ use crate::error::kind::ErrorKind;
 use crate::solver::type_order::TypeOrder;
 use crate::types::callable::Callable;
 use crate::types::callable::Params;
-use crate::types::display::TypeDisplayContext;
 use crate::types::module::Module;
 use crate::types::quantified::Quantified;
 use crate::types::quantified::QuantifiedKind;
@@ -313,18 +312,11 @@ impl Solver {
         got: &Type,
         errors: &ErrorCollector,
         loc: TextRange,
-        _check_context: &TypeCheckContext,
+        tcc: &TypeCheckContext,
     ) {
         let got = self.expand(got.clone()).deterministic_printing();
         let want = self.expand(want.clone()).deterministic_printing();
-        let mut ctx = TypeDisplayContext::new();
-        ctx.add(&got);
-        ctx.add(&want);
-        errors.add(
-            loc,
-            format!("EXPECTED {} <: {}", ctx.display(&got), ctx.display(&want)),
-            ErrorKind::Unknown,
-        );
+        errors.add(loc, tcc.format_error(&got, &want), ErrorKind::Unknown);
     }
 
     /// Union a list of types together. In the process may cause some variables to be forced.
