@@ -6,4 +6,7 @@
  */
 
 /// The context in which a got <: want type check occurs
-pub struct TypeCheckContext;
+pub enum TypeCheckContext {
+    // TODO: categorize all type checks and remove Unknown designation
+    Unknown,
+}

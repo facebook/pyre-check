@@ -408,7 +408,7 @@ impl Solver {
                 drop(lock);
                 // We got forced into choosing a type to satisfy a subset constraint, so check we are OK with that.
                 if !self.is_subset_eq(&got, &t, type_order) {
-                    self.error(&t, &got, errors, loc, &TypeCheckContext);
+                    self.error(&t, &got, errors, loc, &TypeCheckContext::Unknown);
                 }
             }
             _ => {

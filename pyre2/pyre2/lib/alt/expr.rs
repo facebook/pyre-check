@@ -110,7 +110,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match &check {
             Some((want, check_errors)) if !want.is_any() => {
                 let got = self.expr_infer_with_hint(x, Some(want), errors);
-                self.check_type(want, &got, x.range(), check_errors, &TypeCheckContext)
+                self.check_type(
+                    want,
+                    &got,
+                    x.range(),
+                    check_errors,
+                    &TypeCheckContext::Unknown,
+                )
             }
             _ => self.expr_infer(x, errors),
         }

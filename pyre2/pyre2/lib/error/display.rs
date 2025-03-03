@@ -14,6 +14,10 @@ impl TypeCheckContext {
         let mut ctx = TypeDisplayContext::new();
         ctx.add(got);
         ctx.add(want);
-        format!("EXPECTED {} <: {}", ctx.display(got), ctx.display(want))
+        match self {
+            TypeCheckContext::Unknown => {
+                format!("EXPECTED {} <: {}", ctx.display(got), ctx.display(want))
+            }
+        }
     }
 }
