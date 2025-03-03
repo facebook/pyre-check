@@ -263,6 +263,7 @@ impl InternalError {
 /// A normalized type representation which is convenient for attribute lookup,
 /// since many cases are collapsed. For example, Type::Literal is converted to
 /// it's corresponding class type.
+#[derive(Debug)]
 enum AttributeBase {
     ClassInstance(ClassType),
     ClassObject(Class),
