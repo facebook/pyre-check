@@ -22,7 +22,6 @@ use crate::error::kind::ErrorKind;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
 use crate::module::module_info::ModuleInfo;
-use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
@@ -51,7 +50,6 @@ enum LookupResult {
 /// on an attribute, each of which can be allowed with some type or disallowed.
 #[derive(Debug)]
 pub struct Attribute {
-    pub definition_range: Option<TextRangeWithModuleInfo>,
     inner: AttributeInner,
 }
 
@@ -129,50 +127,32 @@ enum InternalError {
 }
 
 impl Attribute {
-    pub fn no_access(
-        definition_range: Option<TextRangeWithModuleInfo>,
-        reason: NoAccessReason,
-    ) -> Self {
+    pub fn no_access(reason: NoAccessReason) -> Self {
         Attribute {
-            definition_range,
             inner: AttributeInner::NoAccess(reason),
         }
     }
 
-    pub fn read_write(definition_range: Option<TextRangeWithModuleInfo>, ty: Type) -> Self {
+    pub fn read_write(ty: Type) -> Self {
         Attribute {
-            definition_range,
             inner: AttributeInner::ReadWrite(ty),
         }
     }
 
-    pub fn read_only(definition_range: Option<TextRangeWithModuleInfo>, ty: Type) -> Self {
+    pub fn read_only(ty: Type) -> Self {
         Attribute {
-            definition_range,
             inner: AttributeInner::ReadOnly(ty),
         }
     }
 
-    pub fn property(
-        definition_range: Option<TextRangeWithModuleInfo>,
-        getter: Type,
-        setter: Option<Type>,
-        cls: Class,
-    ) -> Self {
+    pub fn property(getter: Type, setter: Option<Type>, cls: Class) -> Self {
         Attribute {
-            definition_range,
             inner: AttributeInner::Property(getter, setter, cls),
         }
     }
 
-    pub fn descriptor(
-        definition_range: Option<TextRangeWithModuleInfo>,
-        ty: Type,
-        base: DescriptorBase,
-        getter: Option<Type>,
-    ) -> Self {
+    pub fn descriptor(ty: Type, base: DescriptorBase, getter: Option<Type>) -> Self {
         Attribute {
-            definition_range,
             inner: AttributeInner::Descriptor(Descriptor {
                 descriptor_ty: ty,
                 base,
@@ -226,8 +206,8 @@ impl LookupResult {
     ///
     /// TODO(stroxler) The uses of this eventually need to be audited, but we
     /// need to prioiritize the class logic first.
-    fn found_type(def_range: Option<TextRangeWithModuleInfo>, ty: Type) -> Self {
-        Self::Found(Attribute::read_write(def_range, ty))
+    fn found_type(ty: Type) -> Self {
+        Self::Found(Attribute::read_write(ty))
     }
 }
 
@@ -659,14 +639,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Some(AttributeBase::Module(module)) => match self.get_module_attr(&module, attr_name) {
                 // TODO(samzhou19815): Support module attribute go-to-definition
-                Some(attr) => LookupResult::found_type(None, attr),
+                Some(attr) => LookupResult::found_type(attr),
                 None => LookupResult::NotFound(NotFound::ModuleExport(module)),
             },
             Some(AttributeBase::Quantified(q)) => {
                 if q.is_param_spec() && attr_name == "args" {
-                    LookupResult::found_type(None, Type::type_form(Type::Args(q)))
+                    LookupResult::found_type(Type::type_form(Type::Args(q)))
                 } else if q.is_param_spec() && attr_name == "kwargs" {
-                    LookupResult::found_type(None, Type::type_form(Type::Kwargs(q)))
+                    LookupResult::found_type(Type::type_form(Type::Kwargs(q)))
                 } else {
                     let class = q.as_value(self.stdlib);
                     match self.get_instance_attribute(&class, attr_name) {
@@ -678,29 +658,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(AttributeBase::TypeAny(style)) => {
                 let builtins_type_classtype = self.stdlib.builtins_type();
                 self.get_instance_attribute(&builtins_type_classtype, attr_name)
-                    .and_then(
-                        |Attribute {
-                             definition_range,
-                             inner,
-                         }| {
-                            self.resolve_as_instance_method_with_attribute_inner(inner)
-                                .map(|ty| LookupResult::found_type(definition_range, ty))
-                        },
-                    )
+                    .and_then(|Attribute { inner }| {
+                        self.resolve_as_instance_method_with_attribute_inner(inner)
+                            .map(LookupResult::found_type)
+                    })
                     .map_or_else(
-                        || LookupResult::found_type(None, style.propagate()),
+                        || LookupResult::found_type(style.propagate()),
                         |result| result,
                     )
             }
-            Some(AttributeBase::Any(style)) => LookupResult::found_type(None, style.propagate()),
-            Some(AttributeBase::Never) => LookupResult::found_type(None, Type::never()),
+            Some(AttributeBase::Any(style)) => LookupResult::found_type(style.propagate()),
+            Some(AttributeBase::Never) => LookupResult::found_type(Type::never()),
             Some(AttributeBase::Property(getter)) => {
                 // TODO(stroxler): it is probably possible to synthesize a forall type here
                 // that uses a type var to propagate the setter instead of using a `Decoration`
                 // with hardcoded support in `apply_decorator`. Investigate this option later.
                 LookupResult::found_type(
                     // TODO(samzhou19815): Support go-to-definition for @property applied symbols
-                    None,
                     Type::Decoration(Decoration::PropertySetterDecorator(Box::new(getter))),
                 )
             }

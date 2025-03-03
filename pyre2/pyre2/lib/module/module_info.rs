@@ -153,8 +153,4 @@ impl TextRangeWithModuleInfo {
     pub fn new(module_info: ModuleInfo, range: TextRange) -> Self {
         Self { module_info, range }
     }
-
-    pub fn opt_new(module_info: ModuleInfo, opt_range: Option<TextRange>) -> Option<Self> {
-        opt_range.map(|range| Self::new(module_info, range))
-    }
 }
