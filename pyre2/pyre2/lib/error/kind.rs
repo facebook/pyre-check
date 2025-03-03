@@ -17,6 +17,7 @@ pub enum ErrorKind {
     InvalidAnnotation,
     InvalidArgument,
     InvalidInheritance,
+    MissingModuleAttribute,
     ParseError,
     Unknown,
 }

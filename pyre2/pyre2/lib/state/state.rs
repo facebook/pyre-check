@@ -355,9 +355,15 @@ impl State {
         res
     }
 
-    fn add_error(&self, module_data: &Arc<ModuleData>, range: TextRange, msg: String) {
+    fn add_error(
+        &self,
+        module_data: &Arc<ModuleData>,
+        range: TextRange,
+        msg: String,
+        kind: ErrorKind,
+    ) {
         let load = module_data.state.read().steps.load.dupe().unwrap();
-        load.errors.add(range, msg, ErrorKind::Unknown);
+        load.errors.add(range, msg, kind);
     }
 
     fn lookup<'a>(&'a self, module_data: Arc<ModuleData>) -> StateHandle<'a> {
@@ -380,6 +386,7 @@ impl State {
                     "Stdlib import failure, was expecting `{}` to contain `{name}`",
                     module_data.handle.module()
                 ),
+                ErrorKind::MissingModuleAttribute,
             );
             return None;
         }
@@ -395,6 +402,7 @@ impl State {
                         "Did not expect non-class type `{ty}` for stdlib import `{}.{name}`",
                         module_data.handle.module()
                     ),
+                    ErrorKind::MissingModuleAttribute,
                 );
                 None
             }
