@@ -375,13 +375,15 @@ impl<'a> Server<'a> {
         let handle = self.make_handle(&params.text_document_position_params.text_document.uri);
         let info = state.get_module_info(&handle)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let TextRangeWithModuleInfo { module_info, range } =
-            state.goto_definition(&handle, range)?;
-        let path = to_real_path(module_info.path())?;
+        let TextRangeWithModuleInfo {
+            module_info: definition_module_info,
+            range,
+        } = state.goto_definition(&handle, range)?;
+        let path = to_real_path(definition_module_info.path())?;
         let path = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_owned());
         Some(GotoDefinitionResponse::Scalar(Location {
             uri: Url::from_file_path(path).unwrap(),
-            range: source_range_to_range(&info.source_range(range)),
+            range: source_range_to_range(&definition_module_info.source_range(range)),
         }))
     }
 
