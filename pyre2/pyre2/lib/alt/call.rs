@@ -500,4 +500,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.as_call_target_or_error(getter_method, CallStyle::FreeForm, range, errors);
         self.call_infer(call_target, &args, &[], range, errors)
     }
+
+    /// Helper function hide details of call synthesis from the attribute resolution code.
+    pub fn call_descriptor_setter(
+        &self,
+        setter_method: Type,
+        class_type: ClassType,
+        got: CallArg,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        // When a descriptor is set on an instance, it gets the instance `class_type` and the value `got` as arguments.
+        // Descriptor setters cannot be called on a class (an attempt to assign will overwrite the
+        // descriptor itself rather than call the setter).
+        let instance = Type::ClassType(class_type);
+        let args = [CallArg::Type(&instance, range), got];
+        let call_target =
+            self.as_call_target_or_error(setter_method, CallStyle::FreeForm, range, errors);
+        self.call_infer(call_target, &args, &[], range, errors)
+    }
 }

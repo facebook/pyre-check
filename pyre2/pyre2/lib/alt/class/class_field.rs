@@ -88,8 +88,10 @@ enum ClassFieldInner {
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
         readonly: bool,
-        // Descriptor getter method, if there is one. `None`` if this is not a desciptor.
+        // Descriptor getter method, if there is one. `None` indicates no getter.
         descriptor_getter: Option<Type>,
+        // Descriptor setter method, if there is one. `None` indicates no setter.
+        descriptor_setter: Option<Type>,
     },
 }
 
@@ -110,6 +112,7 @@ impl ClassField {
         initialization: ClassFieldInitialization,
         readonly: bool,
         descriptor_getter: Option<Type>,
+        descriptor_setter: Option<Type>,
     ) -> Self {
         Self(ClassFieldInner::Simple {
             ty,
@@ -117,6 +120,7 @@ impl ClassField {
             initialization,
             readonly,
             descriptor_getter,
+            descriptor_setter,
         })
     }
 
@@ -127,6 +131,7 @@ impl ClassField {
             initialization: ClassFieldInitialization::Class(None),
             readonly: false,
             descriptor_getter: None,
+            descriptor_setter: None,
         })
     }
 
@@ -137,6 +142,7 @@ impl ClassField {
             initialization: ClassFieldInitialization::recursive(),
             readonly: false,
             descriptor_getter: None,
+            descriptor_setter: None,
         })
     }
 
@@ -165,12 +171,16 @@ impl ClassField {
                 initialization,
                 readonly,
                 descriptor_getter,
+                descriptor_setter,
             } => Self(ClassFieldInner::Simple {
                 ty: cls.instantiate_member(ty.clone()),
                 annotation: annotation.clone(),
                 initialization: initialization.clone(),
                 readonly: *readonly,
                 descriptor_getter: descriptor_getter
+                    .as_ref()
+                    .map(|ty| cls.instantiate_member(ty.clone())),
+                descriptor_setter: descriptor_setter
                     .as_ref()
                     .map(|ty| cls.instantiate_member(ty.clone())),
             }),
@@ -469,22 +479,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
         // Identify whether this is a descriptor
         let __get__ = &Name::new("__get__");
-        let descriptor_getter = match ty {
+        let __set__ = &Name::new("__set__");
+        let (mut descriptor_getter, mut descriptor_setter) = (None, None);
+        match ty {
             // TODO(stroxler): This works for simple descriptors. There three known gaps, there may be others:
             // - If the field is instance-only, descriptor dispatching won't occur, an instance-only attribute
             //   that happens to be a descriptor just behaves like a normal instance-only attribute.
-            // - Gracefully handle instance-only `__get__`. Descriptors only seem to be detected
+            // - Gracefully handle instance-only `__get__`/`__set__`. Descriptors only seem to be detected
             //   when the descriptor attribute is initialized on the class body of the descriptor.
             // - Do we care about distributing descriptor behavior over unions? If so, what about the case when
             //   the raw class field is a union of a descriptor and a non-descriptor? Do we want to allow this?
-            Type::ClassType(c) if c.class_object().contains(__get__) => {
+            Type::ClassType(c) => {
                 if c.class_object().contains(__get__) {
-                    Some(self.attr_infer(ty, __get__, range, errors))
-                } else {
-                    None
+                    descriptor_getter = Some(self.attr_infer(ty, __get__, range, errors));
+                }
+                if c.class_object().contains(__set__) {
+                    descriptor_setter = Some(self.attr_infer(ty, __set__, range, errors));
                 }
             }
-            _ => None,
+            _ => {}
         };
 
         // Create the resulting field and check for override inconsistencies before returning
@@ -494,6 +507,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             initialization,
             readonly,
             descriptor_getter,
+            descriptor_setter,
         );
         self.check_class_field_for_override_mismatch(
             name,
@@ -555,11 +569,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn as_instance_attribute(&self, field: ClassField, cls: &ClassType) -> Attribute {
         match field.instantiate_for(cls).0 {
+            // TODO(stroxler): Clean up this match by making `ClassFieldInner` an
+            // enum; the match is messy
             ClassFieldInner::Simple {
                 ty,
-                descriptor_getter: Some(getter),
+                descriptor_getter,
+                descriptor_setter,
                 ..
-            } => Attribute::descriptor(ty, DescriptorBase::Instance(cls.clone()), Some(getter)),
+            } if descriptor_getter.is_some() || descriptor_setter.is_some() => {
+                Attribute::descriptor(
+                    ty,
+                    DescriptorBase::Instance(cls.clone()),
+                    descriptor_getter,
+                    descriptor_setter,
+                )
+            }
             ClassFieldInner::Simple { ty, readonly, .. } => match field.initialization() {
                 ClassFieldInitialization::Class(_) => bind_instance_attribute(cls, ty),
                 ClassFieldInitialization::Instance if readonly => Attribute::read_only(ty),
@@ -572,13 +596,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match &field.0 {
             ClassFieldInner::Simple {
                 ty,
-                descriptor_getter: Some(getter),
+                descriptor_getter,
+                descriptor_setter,
                 ..
-            } => Attribute::descriptor(
-                ty.clone(),
-                DescriptorBase::ClassDef(cls.clone()),
-                Some(getter.clone()),
-            ),
+            } if descriptor_getter.is_some() || descriptor_setter.is_some() => {
+                Attribute::descriptor(
+                    ty.clone(),
+                    DescriptorBase::ClassDef(cls.clone()),
+                    descriptor_getter.clone(),
+                    descriptor_setter.clone(),
+                )
+            }
             ClassFieldInner::Simple {
                 initialization: ClassFieldInitialization::Instance,
                 ..

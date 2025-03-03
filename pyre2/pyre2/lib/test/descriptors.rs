@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_staticmethod_with_explicit_parameter_type,
@@ -145,8 +144,7 @@ C().d = 42  # E:  Attribute `d` of class `C` is a read-only descriptor with no `
     "#,
 );
 
-testcase_with_bug!(
-    "TODO(stroxler) Support simple `__set__` descriptors",
+testcase!(
     test_simple_user_defined_set_descriptor,
     r#"
 from typing import assert_type
@@ -156,7 +154,7 @@ class C:
     d = D()
 assert_type(C.d, D)
 assert_type(C().d, D)
-C.d = 42  # E: EXPECTED Literal[42] <: D
-C().d = 42  # E:  EXPECTED Literal[42] <: D
+C.d = 42  # E: Attribute `d` of class `C` is a descriptor, which may not be overwritten
+C().d = 42
     "#,
 );

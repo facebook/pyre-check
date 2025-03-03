@@ -88,6 +88,9 @@ struct Descriptor {
     /// a user to erronously define a `__get__` with any type, including a
     /// non-callable one.
     getter: Option<Type>,
+    /// If `__set__` exists on the descriptor, this is the type of `__set__`. Similar considerations
+    /// to `getter` apply.
+    setter: Option<Type>,
 }
 
 #[derive(Clone, Debug)]
@@ -151,12 +154,18 @@ impl Attribute {
         }
     }
 
-    pub fn descriptor(ty: Type, base: DescriptorBase, getter: Option<Type>) -> Self {
+    pub fn descriptor(
+        ty: Type,
+        base: DescriptorBase,
+        getter: Option<Type>,
+        setter: Option<Type>,
+    ) -> Self {
         Attribute {
             inner: AttributeInner::Descriptor(Descriptor {
                 descriptor_ty: ty,
                 base,
                 getter,
+                setter,
             }),
         }
     }
@@ -386,20 +395,36 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     };
                     self.call_property_setter(setter, got, range, errors);
                 }
-                // TODO(stroxler) Descriptors can define setters. We don't analyze those yet, so we are
-                // currently treating all descriptors as read-only.
                 AttributeInner::Descriptor(d) => {
-                    let e = match d.base {
-                        DescriptorBase::Instance(class_type) => {
-                            NoAccessReason::SettingReadOnlyDescriptor(
-                                class_type.class_object().dupe(),
-                            )
+                    match (d.base, d.setter) {
+                        (DescriptorBase::Instance(class_type), Some(setter)) => {
+                            let got = match &got {
+                                Either::Left(got) => CallArg::Expr(got),
+                                Either::Right(got) => CallArg::Type(got, range),
+                            };
+                            self.call_descriptor_setter(setter, class_type, got, range, errors);
                         }
-                        DescriptorBase::ClassDef(class) => {
-                            NoAccessReason::SettingDescriptorOnClass(class.dupe())
+                        (DescriptorBase::Instance(class_type), None) => {
+                            let e = NoAccessReason::SettingReadOnlyDescriptor(
+                                class_type.class_object().dupe(),
+                            );
+                            self.error(
+                                errors,
+                                range,
+                                ErrorKind::Unknown,
+                                e.to_error_msg(attr_name),
+                            );
+                        }
+                        (DescriptorBase::ClassDef(class), _) => {
+                            let e = NoAccessReason::SettingDescriptorOnClass(class.dupe());
+                            self.error(
+                                errors,
+                                range,
+                                ErrorKind::Unknown,
+                                e.to_error_msg(attr_name),
+                            );
                         }
                     };
-                    self.error(errors, range, ErrorKind::Unknown, e.to_error_msg(attr_name));
                 }
             },
             LookupResult::InternalError(e) => {
