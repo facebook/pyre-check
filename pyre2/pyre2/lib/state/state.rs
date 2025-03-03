@@ -43,7 +43,6 @@ use crate::metadata::RuntimeMetadata;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
-use crate::module::module_path::ModulePathDetails;
 use crate::report::debug_info::DebugInfo;
 use crate::state::dirty::Dirty;
 use crate::state::epoch::Epoch;
@@ -807,12 +806,12 @@ impl State {
     /// Called if the `load_from_memory` portion of loading might have changed.
     /// Specify which in-memory files might have changed.
     pub fn invalidate_memory(&mut self, loader: LoaderId, files: &[PathBuf]) {
-        let files = SmallSet::from_iter(files);
+        let files = files
+            .iter()
+            .map(|x| ModulePath::memory(x.clone()))
+            .collect::<SmallSet<_>>();
         for (handle, module_data) in self.modules.iter_unordered() {
-            if handle.loader() == &loader
-                && let ModulePathDetails::Memory(x) = handle.path().details()
-                && files.contains(x)
-            {
+            if handle.loader() == &loader && files.contains(handle.path()) {
                 module_data.state.write(Step::Load).unwrap().dirty.load = true;
             }
         }
