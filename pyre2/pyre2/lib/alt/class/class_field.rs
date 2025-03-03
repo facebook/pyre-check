@@ -85,7 +85,6 @@ enum ClassFieldInner {
     // has made hacking features relatively easy, but makes the code hard to read.
     Simple {
         ty: Type,
-        range: Option<TextRange>,
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
         readonly: bool,
@@ -107,7 +106,6 @@ impl Display for ClassField {
 impl ClassField {
     fn new(
         ty: Type,
-        range: TextRange,
         annotation: Option<Annotation>,
         initialization: ClassFieldInitialization,
         readonly: bool,
@@ -115,7 +113,6 @@ impl ClassField {
     ) -> Self {
         Self(ClassFieldInner::Simple {
             ty,
-            range: Some(range),
             annotation,
             initialization,
             readonly,
@@ -126,7 +123,6 @@ impl ClassField {
     pub fn new_synthesized(ty: Type) -> Self {
         ClassField(ClassFieldInner::Simple {
             ty,
-            range: None,
             annotation: None,
             initialization: ClassFieldInitialization::Class(None),
             readonly: false,
@@ -137,7 +133,6 @@ impl ClassField {
     pub fn recursive() -> Self {
         Self(ClassFieldInner::Simple {
             ty: Type::any_implicit(),
-            range: None,
             annotation: None,
             initialization: ClassFieldInitialization::recursive(),
             readonly: false,
@@ -166,14 +161,12 @@ impl ClassField {
         match &self.0 {
             ClassFieldInner::Simple {
                 ty,
-                range,
                 annotation,
                 initialization,
                 readonly,
                 descriptor_getter,
             } => Self(ClassFieldInner::Simple {
                 ty: cls.instantiate_member(ty.clone()),
-                range: *range,
                 annotation: annotation.clone(),
                 initialization: initialization.clone(),
                 readonly: *readonly,
@@ -497,7 +490,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // Create the resulting field and check for override inconsistencies before returning
         let class_field = ClassField::new(
             ty.clone(),
-            range,
             annotation.cloned(),
             initialization,
             readonly,
