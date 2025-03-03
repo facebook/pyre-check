@@ -144,12 +144,12 @@ pub struct ComputeStep<Lookup: LookupExport + LookupAnswer>(
 );
 
 macro_rules! compute_step {
-    (<$ty:ty> $alt:ident $output:ident = $($input:ident),*) => {
+    (<$ty:ty> $alt:ident $func:ident $output:ident = $($input:ident),*) => {
         ComputeStep(Box::new(|steps: &Steps| {
             let _ = steps; // Not used if $input is empty.
             $(let $input = steps.$input.dupe().unwrap();)*
             Box::new(move |ctx: &Context<$ty>| {
-                let res = Step::$output(ctx, $($input),*);
+                let res = Step::$func(ctx, $($input),*);
                 Box::new(move |steps: &mut Steps| {
                     steps.$output = Some(res);
                     steps.last_step = Some(Step::$alt);
@@ -159,6 +159,8 @@ macro_rules! compute_step {
     };
 }
 
+// The steps within this module are all marked `inline(never)` and given
+// globally unique names, so they are much easier to find in the profile.
 impl Step {
     pub fn first() -> Self {
         Sequence::first().unwrap()
@@ -170,15 +172,20 @@ impl Step {
 
     pub fn compute<Lookup: LookupExport + LookupAnswer>(self) -> ComputeStep<Lookup> {
         match self {
-            Step::Load => compute_step!(<Lookup> Load load =),
-            Step::Ast => compute_step!(<Lookup> Ast ast = load),
-            Step::Exports => compute_step!(<Lookup> Exports exports = load, ast),
-            Step::Answers => compute_step!(<Lookup> Answers answers = load, ast, exports),
-            Step::Solutions => compute_step!(<Lookup> Solutions solutions = load, answers),
+            Step::Load => compute_step!(<Lookup> Load step_load load =),
+            Step::Ast => compute_step!(<Lookup> Ast step_ast ast = load),
+            Step::Exports => compute_step!(<Lookup> Exports step_exports exports = load, ast),
+            Step::Answers => {
+                compute_step!(<Lookup> Answers step_answers answers = load, ast, exports)
+            }
+            Step::Solutions => {
+                compute_step!(<Lookup> Solutions step_solutions solutions = load, answers)
+            }
         }
     }
 
-    fn load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
+    #[inline(never)]
+    fn step_load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
         let error_style = match ctx.loader.find(ctx.module) {
             Ok((_, s)) => s,
             Err(_) => {
@@ -197,15 +204,22 @@ impl Step {
         ))
     }
 
-    fn ast<Lookup>(_ctx: &Context<Lookup>, load: Arc<Load>) -> Arc<ModModule> {
+    #[inline(never)]
+    fn step_ast<Lookup>(_ctx: &Context<Lookup>, load: Arc<Load>) -> Arc<ModModule> {
         Arc::new(load.module_info.parse(&load.errors))
     }
 
-    fn exports<Lookup>(ctx: &Context<Lookup>, load: Arc<Load>, ast: Arc<ModModule>) -> Exports {
+    #[inline(never)]
+    fn step_exports<Lookup>(
+        ctx: &Context<Lookup>,
+        load: Arc<Load>,
+        ast: Arc<ModModule>,
+    ) -> Exports {
         Exports::new(&ast.body, &load.module_info, ctx.config)
     }
 
-    fn answers<Lookup: LookupExport>(
+    #[inline(never)]
+    fn step_answers<Lookup: LookupExport>(
         ctx: &Context<Lookup>,
         load: Arc<Load>,
         ast: Arc<ModModule>,
@@ -229,7 +243,8 @@ impl Step {
         Arc::new((bindings, Arc::new(answers)))
     }
 
-    fn solutions<Lookup: LookupExport + LookupAnswer>(
+    #[inline(never)]
+    fn step_solutions<Lookup: LookupExport + LookupAnswer>(
         ctx: &Context<Lookup>,
         load: Arc<Load>,
         answers: Arc<(Bindings, Arc<Answers>)>,
