@@ -48,6 +48,7 @@ Completion Results:
          ^
 Completion Results:
 - y
+- x
 "#
         .trim(),
         report.trim(),

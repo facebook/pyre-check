@@ -10,6 +10,7 @@ use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_text_size::TextRange;
+use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
@@ -872,11 +873,26 @@ pub struct AttrInfo {
 
 impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
     fn completions_class(&self, cls: &Class, res: &mut Vec<AttrInfo>) {
-        res.extend(cls.fields().map(|x| AttrInfo {
-            name: x.clone(),
-            module: Some(cls.module_info().dupe()),
-            range: cls.field_decl_range(x),
-        }));
+        let mut seen = SmallSet::new();
+        for c in std::iter::once(cls).chain(
+            self.get_metadata_for_class(cls)
+                .ancestors(self.stdlib)
+                .map(|x| x.class_object()),
+        ) {
+            if c == self.stdlib.object_class_type().class_object() {
+                // Don't want to suggest `__hash__`
+                break;
+            }
+            for fld in c.fields() {
+                if seen.insert(fld.clone()) {
+                    res.push(AttrInfo {
+                        name: fld.clone(),
+                        module: Some(c.module_info().dupe()),
+                        range: c.field_decl_range(fld),
+                    });
+                }
+            }
+        }
     }
 
     fn completions_class_type(&self, cls: &ClassType, res: &mut Vec<AttrInfo>) {
