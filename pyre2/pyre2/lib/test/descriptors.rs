@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_staticmethod_with_explicit_parameter_type,
@@ -172,5 +173,24 @@ assert_type(C.d, int)
 assert_type(C().d, int)
 C.d = "42"  # E: Attribute `d` of class `C` is a descriptor, which may not be overwritten
 C().d = "42"
+    "#,
+);
+
+testcase_with_bug!(
+    "TODO(stroxler): type inference causes us to complain on the decorator application",
+    test_class_property_descriptor,
+    r#"
+from typing import assert_type, Callable
+class classproperty[T, R]:
+    def __init__(self, fget: Callable[[type[T]], R]) -> None: ...
+    def __get__(self, obj: object, obj_cls_type: type[T]) -> R: ...
+class C:
+    @classproperty    # E: EXPECTED (cls: C) -> int <: (type[@_]) -> int
+    def cp(cls) -> int:
+        return 42
+assert_type(C.cp, int)
+assert_type(C().cp, int)
+C.cp = 42  # E: Attribute `cp` of class `C` is a descriptor, which may not be overwritten
+C().cp = 42  # E:  Attribute `cp` of class `C` is a read-only descriptor with no `__set__` and cannot be set
     "#,
 );
