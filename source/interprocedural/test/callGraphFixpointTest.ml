@@ -89,7 +89,6 @@ let assert_higher_order_call_graph_fixpoint
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~skip_analysis_targets
       ~definitions
-      ~decorator_resolution
       ~callables_to_definitions_map:
         (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
   in
@@ -112,8 +111,7 @@ let assert_higher_order_call_graph_fixpoint
       ~skip_analysis_targets
       ~decorator_resolution
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
-      ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+      ~callables_to_definitions_map
       ~max_iterations
   in
   List.iter expected ~f:(fun { Expected.callable; call_graph; returned_callables } ->

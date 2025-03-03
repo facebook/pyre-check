@@ -23,7 +23,7 @@ val compute
   skip_analysis_targets:Target.Set.t ->
   decorator_resolution:CallGraph.DecoratorResolution.Results.t ->
   method_kinds:CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
-  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+  callables_to_definitions_map:Target.DefinesSharedMemory.t ->
   max_iterations:int ->
   t
 

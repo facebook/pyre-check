@@ -600,13 +600,13 @@ module SharedMemoryKey = struct
 end
 
 module DefinesSharedMemory = struct
-  type qualifier_and_define = Reference.t * Define.t Node.t
+  type define = Reference.t * Define.t Node.t
 
   module T =
     Hack_parallel.Std.SharedMemory.FirstClassWithKeys.Make
       (SharedMemoryKey)
       (struct
-        type t = qualifier_and_define
+        type t = define
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -649,6 +649,9 @@ module DefinesSharedMemory = struct
         ()
     in
     T.from_add_only shared_memory_add_only
+
+
+  let add_alist_sequential = T.add_alist_sequential
 end
 
 (* Represent a hashset of targets inside the shared memory *)

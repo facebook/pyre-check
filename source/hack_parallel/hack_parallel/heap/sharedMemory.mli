@@ -381,6 +381,8 @@ module FirstClassWithKeys : sig
 
     val merge_with_alist_sequential : t -> f:(value -> value -> value) -> (key * value) list -> t
 
+    val add_alist_sequential : t -> (key * value) list -> t
+
     val fold_sequential : t -> init:'a -> f:(key:key -> value:value -> 'a -> 'a) -> 'a
 
     type map_parallel_state

@@ -849,7 +849,6 @@ let run_taint_analysis
             |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
           ~definitions
-          ~decorator_resolution
           ~callables_to_definitions_map:
             (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map))
   in
@@ -917,8 +916,7 @@ let run_taint_analysis
           ~skip_analysis_targets
           ~decorator_resolution
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
-          ~callables_to_definitions_map:
-            (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+          ~callables_to_definitions_map
           ~max_iterations:(Option.value higher_order_call_graph_max_iterations ~default:50)
       in
       let () = StepLogger.finish step_logger in

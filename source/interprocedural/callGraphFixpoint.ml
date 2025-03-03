@@ -12,7 +12,6 @@ module CallGraphAnalysis = struct
     type t = {
       pyre_api: Analysis.PyrePysaEnvironment.ReadOnly.t;
       define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
-      decorator_resolution: CallGraph.DecoratorResolution.Results.t;
       method_kinds: CallGraph.MethodKind.SharedMemory.ReadOnly.t;
       callables_to_definitions_map: Target.DefinesSharedMemory.ReadOnly.t;
     }
@@ -81,14 +80,7 @@ module CallGraphAnalysis = struct
   end
 
   let analyze_define
-      ~context:
-        {
-          Context.pyre_api;
-          define_call_graphs;
-          decorator_resolution;
-          method_kinds;
-          callables_to_definitions_map;
-        }
+      ~context:{ Context.pyre_api; define_call_graphs; method_kinds; callables_to_definitions_map }
       ~callable
       ~previous_model:{ CallGraph.HigherOrderCallGraph.call_graph = previous_call_graph; _ }
       ~get_callee_model
@@ -96,7 +88,9 @@ module CallGraphAnalysis = struct
     let qualifier, { Ast.Node.value = define; _ } =
       callable
       |> Target.strip_parameters
-      |> CallGraph.get_module_and_definition_exn ~callables_to_definitions_map ~decorator_resolution
+      |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
+      |> Option.value_exn
+           ~message:(Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable)
     in
     if Ast.Statement.Define.is_stub define then
       (* Skip analyzing stubs, which do not have initial call graphs. Otherwise we would fail to get
@@ -204,7 +198,7 @@ let compute
     ~scheduler
     ~scheduler_policy
     ~pyre_api
-    ~call_graph:{ CallGraph.SharedMemory.define_call_graphs; _ }
+    ~call_graph
     ~dependency_graph:{ DependencyGraph.dependency_graph; override_targets; _ }
     ~override_graph_shared_memory
     ~skip_analysis_targets
@@ -213,6 +207,16 @@ let compute
     ~callables_to_definitions_map
     ~max_iterations
   =
+  let { CallGraph.SharedMemory.define_call_graphs; _ } =
+    CallGraph.DecoratorResolution.Results.register_decorator_call_graphs
+      ~decorator_resolution
+      call_graph
+  in
+  let callables_to_definitions_map =
+    CallGraph.DecoratorResolution.Results.register_decorator_defines
+      ~decorator_resolution
+      callables_to_definitions_map
+  in
   let callables_with_call_graphs = CallGraph.SharedMemory.callables define_call_graphs in
   let initial_models_for_callables_with_call_graphs =
     let policy =
@@ -271,9 +275,9 @@ let compute
         {
           CallGraphAnalysis.Context.pyre_api;
           define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
-          decorator_resolution;
           method_kinds;
-          callables_to_definitions_map;
+          callables_to_definitions_map =
+            Target.DefinesSharedMemory.read_only callables_to_definitions_map;
         }
       ~callables_to_analyze:(List.rev_append override_targets callables_with_call_graphs)
         (* Build higher order call graphs only for targets that have call graphs. *)

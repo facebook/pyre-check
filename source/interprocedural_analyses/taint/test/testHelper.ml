@@ -736,7 +736,6 @@ let initialize
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~skip_analysis_targets:Target.Set.empty
       ~definitions
-      ~decorator_resolution
       ~callables_to_definitions_map:
         (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
   in
@@ -761,8 +760,7 @@ let initialize
       ~skip_analysis_targets:Target.Set.empty
       ~decorator_resolution
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
-      ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+      ~callables_to_definitions_map
       ~max_iterations:higher_order_call_graph_max_iterations
   in
   let initial_models =

@@ -1317,6 +1317,8 @@ module FirstClassWithKeys = struct
 
     val merge_with_alist_sequential : t -> f:(value -> value -> value) -> (key * value) list -> t
 
+    val add_alist_sequential : t -> (key * value) list -> t
+
     val fold_sequential : t -> init:'a -> f:(key:key -> value:value -> 'a -> 'a) -> 'a
 
     type map_parallel_state
@@ -1642,6 +1644,13 @@ module FirstClassWithKeys = struct
           failwith "invariant error: duplicate keys"
       in
       handle
+
+
+    let add_alist_sequential handle alist =
+      alist
+      |> List.fold ~init:(add_only handle) ~f:(fun handle (key, value) ->
+             AddOnly.add handle key value)
+      |> from_add_only
 
 
     (* A handle that only allows operations that preserve the set of current keys.

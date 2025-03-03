@@ -3908,201 +3908,6 @@ module CalleeVisitor = struct
       ~state:(ref { NodeVisitor.pyre_in_context; assignment_target; context; callees_at_location })
 end
 
-module DecoratorDefine = struct
-  type t = {
-    define: Define.t;
-    (* An artificial define that returns the call to the decorators. *)
-    callable: Target.t;
-    (* `Target` representation of the above define. *)
-    call_graph: DefineCallGraph.t; (* Call graph of the above define. *)
-  }
-  [@@deriving show, eq]
-end
-
-module DecoratorResolution = struct
-  type t =
-    | Decorators of DecoratorDefine.t
-    | PropertySetterUnsupported
-    | Undecorated
-      (* A callable is `Undecorated` if it does not have any decorator, or all of its decorators are
-         ignored. *)
-  [@@deriving show, eq]
-
-  (**
-   * For any target that might be decorated, return the `ResolvedExpression` for the expression that calls the decorators.
-   *
-   * For instance:
-   * ```
-   * @decorator
-   * @decorator_factory(1, 2)
-   * def foo(): pass
-   * ```
-   * would resolve into expression `decorator(decorator_factory(1, 2)(foo))`, along with its callees that are stored in `call_graph`.
-   *)
-  let resolve_exn
-      ?(debug = false)
-      ~pyre_in_context
-      ~override_graph
-      ~method_kinds
-      ~decorators:decorators_map
-      callable
-    =
-    let log format =
-      if debug then
-        Log.dump format
-      else
-        Format.ifprintf Format.err_formatter format
-    in
-    let resolve_callees ~call_graph =
-      let context =
-        {
-          NodeVisitorContext.pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context;
-          define_name = None;
-          missing_flow_type_analysis = None;
-          debug;
-          override_graph;
-          call_indexer = CallTargetIndexer.create ();
-          attribute_targets = Target.HashSet.create ();
-          method_kinds;
-        }
-      in
-      CalleeVisitor.visit_expression
-        ~pyre_in_context
-        ~assignment_target:None
-        ~context
-        ~callees_at_location:call_graph
-    in
-    let create_decorator_call previous_argument decorator =
-      Node.create
-        ~location:decorator.Node.location
-          (* Avoid later registering all callees to the same location. *)
-        (Expression.Call
-           {
-             Call.callee =
-               Ast.Expression.delocalize decorator
-               (* TODO: `decorator` might be a local variable whose definition should be included
-                  here, in order to resolve its callee. *);
-             arguments = [{ Call.Argument.name = None; value = previous_argument }];
-           })
-    in
-    match
-      ( callable |> Target.get_regular |> Target.Regular.kind,
-        CallableToDecoratorsMap.SharedMemory.ReadOnly.get decorators_map callable )
-    with
-    | None, _ -> Format.asprintf "Do not support `Override` or `Object` targets." |> failwith
-    | Some Target.PropertySetter, _ -> PropertySetterUnsupported
-    | Some Target.Decorated, _ -> failwith "unexpected"
-    | _, None -> Undecorated
-    | Some Target.Normal, Some { CallableToDecoratorsMap.decorators; define_location } ->
-        let define_name = Target.define_name_exn callable in
-        let callable_name =
-          Ast.Expression.create_name_from_reference ~location:define_location define_name
-        in
-        log "Decorators: [%s]" (decorators |> List.map ~f:Expression.show |> String.concat ~sep:";");
-        if List.is_empty decorators then
-          Undecorated
-        else
-          let expression =
-            List.fold
-              decorators
-              ~init:(Expression.Name callable_name |> Node.create ~location:define_location)
-              ~f:create_decorator_call
-          in
-          let call_graph = ref DefineCallGraph.empty in
-          resolve_callees ~call_graph expression;
-          let define =
-            {
-              Define.signature =
-                {
-                  Define.Signature.name = Reference.create ~prefix:define_name "@decorated";
-                  parameters = [];
-                  decorators = [];
-                  return_annotation = None;
-                  async = false;
-                  generator = false;
-                  parent = NestingContext.create_toplevel ();
-                  (* The class owning the method *)
-                  legacy_parent = None;
-                  type_params = [];
-                };
-              captures = [];
-              unbound_names = [];
-              body =
-                [
-                  Statement.Return { Return.is_implicit = false; expression = Some expression }
-                  |> Node.create_with_default_location;
-                ];
-            }
-          in
-          Decorators
-            {
-              define;
-              callable = CallableToDecoratorsMap.redirect_to_decorated ~callable decorators_map;
-              call_graph = DefineCallGraph.filter_empty_attribute_access !call_graph;
-            }
-
-
-  module Results = struct
-    (* A map from `kind=Decorated` targets to their defines. *)
-    type t = DecoratorDefine.t Target.Map.t
-
-    let empty = Target.Map.empty
-
-    let decorated_callables = Target.Map.keys
-
-    let resolve_batch_exn
-        ~debug
-        ~pyre_api
-        ~scheduler
-        ~scheduler_policy
-        ~override_graph
-        ~method_kinds
-        ~decorators
-        callables
-      =
-      let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
-      let resolve callable =
-        match
-          resolve_exn
-            ~debug
-            ~pyre_in_context
-            ~override_graph:(Some (OverrideGraph.SharedMemory.read_only override_graph))
-            ~method_kinds
-            ~decorators
-            callable
-        with
-        | Decorators resolved -> Some resolved
-        | PropertySetterUnsupported
-        | Undecorated ->
-            None
-      in
-      let map callables =
-        callables
-        |> List.filter_map ~f:resolve
-        |> List.map ~f:(fun ({ DecoratorDefine.callable; _ } as decorator_define) ->
-               callable, decorator_define)
-        |> Target.Map.of_alist_exn
-      in
-      Scheduler.map_reduce
-        scheduler
-        ~policy:scheduler_policy
-        ~initial:empty
-        ~map
-        ~reduce:
-          (Target.Map.union (fun callable _ _ ->
-               failwithf "Unexpected: %s" (Target.show_pretty_with_kind callable) ()))
-        ~inputs:callables
-        ()
-
-
-    let get_module_and_definition ~callable decorator_defines =
-      decorator_defines
-      |> Target.Map.find_opt callable
-      >>| fun { DecoratorDefine.define; _ } ->
-      Reference.create "artificial_decorator_defines", Node.create_with_default_location define
-  end
-end
-
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
    fixpoint (shared across the type check and additional static analysis modules). By having a
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without
@@ -4798,21 +4603,6 @@ let debug_higher_order_call_graph define =
   || Ast.Statement.Define.dump_higher_order_call_graph define
 
 
-let get_module_and_definition_exn ~callables_to_definitions_map ~decorator_resolution callable =
-  let no_definition_error_message =
-    Format.asprintf "Found no definition for `%a`" Target.pp_pretty
-  in
-  if Target.is_decorated callable then
-    decorator_resolution
-    |> DecoratorResolution.Results.get_module_and_definition ~callable
-    |> Option.value_exn ~message:(no_definition_error_message callable)
-  else
-    callable
-    |> Target.strip_parameters
-    |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
-    |> Option.value_exn ~message:(no_definition_error_message callable)
-
-
 let higher_order_call_graph_of_define
     ~define_call_graph
     ~pyre_api
@@ -5036,16 +4826,6 @@ module SharedMemory = struct
 
   let load_from_cache = T.load_from_cache
 
-  let register_decorator_defines ~decorator_resolution define_call_graphs =
-    define_call_graphs
-    |> T.add_only
-    |> Target.Map.fold
-         (fun callable { DecoratorDefine.call_graph; _ } define_call_graphs ->
-           T.AddOnly.add define_call_graphs callable call_graph)
-         decorator_resolution
-    |> T.from_add_only
-
-
   let default_scheduler_policy =
     Scheduler.Policy.fixed_chunk_size
       ~minimum_chunks_per_worker:1
@@ -5079,7 +4859,6 @@ module SharedMemory = struct
       ~method_kinds
       ~skip_analysis_targets
       ~definitions
-      ~decorator_resolution
       ~callables_to_definitions_map
     =
     let attribute_targets = attribute_targets |> Target.Set.elements |> Target.HashSet.of_list in
@@ -5207,8 +4986,214 @@ module SharedMemory = struct
             definitions
       | None -> ()
     in
-    {
-      whole_program_call_graph;
-      define_call_graphs = register_decorator_defines ~decorator_resolution define_call_graphs;
-    }
+    { whole_program_call_graph; define_call_graphs }
+end
+
+module DecoratorDefine = struct
+  type t = {
+    define: Define.t;
+    (* An artificial define that returns the call to the decorators. *)
+    callable: Target.t;
+    (* `Target` representation of the above define. *)
+    call_graph: DefineCallGraph.t; (* Call graph of the above define. *)
+  }
+  [@@deriving show, eq]
+end
+
+module DecoratorResolution = struct
+  type t =
+    | Decorators of DecoratorDefine.t
+    | PropertySetterUnsupported
+    | Undecorated
+      (* A callable is `Undecorated` if it does not have any decorator, or all of its decorators are
+         ignored. *)
+  [@@deriving show, eq]
+
+  (**
+   * For any target that might be decorated, return the `ResolvedExpression` for the expression that calls the decorators.
+   *
+   * For instance:
+   * ```
+   * @decorator
+   * @decorator_factory(1, 2)
+   * def foo(): pass
+   * ```
+   * would resolve into expression `decorator(decorator_factory(1, 2)(foo))`, along with its callees that are stored in `call_graph`.
+   *)
+  let resolve_exn
+      ?(debug = false)
+      ~pyre_in_context
+      ~override_graph
+      ~method_kinds
+      ~decorators:decorators_map
+      callable
+    =
+    let log format =
+      if debug then
+        Log.dump format
+      else
+        Format.ifprintf Format.err_formatter format
+    in
+    let resolve_callees ~call_graph =
+      let context =
+        {
+          NodeVisitorContext.pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context;
+          define_name = None;
+          missing_flow_type_analysis = None;
+          debug;
+          override_graph;
+          call_indexer = CallTargetIndexer.create ();
+          attribute_targets = Target.HashSet.create ();
+          method_kinds;
+        }
+      in
+      CalleeVisitor.visit_expression
+        ~pyre_in_context
+        ~assignment_target:None
+        ~context
+        ~callees_at_location:call_graph
+    in
+    let create_decorator_call previous_argument decorator =
+      Node.create
+        ~location:decorator.Node.location
+          (* Avoid later registering all callees to the same location. *)
+        (Expression.Call
+           {
+             Call.callee =
+               Ast.Expression.delocalize decorator
+               (* TODO: `decorator` might be a local variable whose definition should be included
+                  here, in order to resolve its callee. *);
+             arguments = [{ Call.Argument.name = None; value = previous_argument }];
+           })
+    in
+    match
+      ( callable |> Target.get_regular |> Target.Regular.kind,
+        CallableToDecoratorsMap.SharedMemory.ReadOnly.get decorators_map callable )
+    with
+    | None, _ -> Format.asprintf "Do not support `Override` or `Object` targets." |> failwith
+    | Some Target.PropertySetter, _ -> PropertySetterUnsupported
+    | Some Target.Decorated, _ -> failwith "unexpected"
+    | _, None -> Undecorated
+    | Some Target.Normal, Some { CallableToDecoratorsMap.decorators; define_location } ->
+        let define_name = Target.define_name_exn callable in
+        let callable_name =
+          Ast.Expression.create_name_from_reference ~location:define_location define_name
+        in
+        log "Decorators: [%s]" (decorators |> List.map ~f:Expression.show |> String.concat ~sep:";");
+        if List.is_empty decorators then
+          Undecorated
+        else
+          let expression =
+            List.fold
+              decorators
+              ~init:(Expression.Name callable_name |> Node.create ~location:define_location)
+              ~f:create_decorator_call
+          in
+          let call_graph = ref DefineCallGraph.empty in
+          resolve_callees ~call_graph expression;
+          let define =
+            {
+              Define.signature =
+                {
+                  Define.Signature.name = Reference.create ~prefix:define_name "@decorated";
+                  parameters = [];
+                  decorators = [];
+                  return_annotation = None;
+                  async = false;
+                  generator = false;
+                  parent = NestingContext.create_toplevel ();
+                  (* The class owning the method *)
+                  legacy_parent = None;
+                  type_params = [];
+                };
+              captures = [];
+              unbound_names = [];
+              body =
+                [
+                  Statement.Return { Return.is_implicit = false; expression = Some expression }
+                  |> Node.create_with_default_location;
+                ];
+            }
+          in
+          Decorators
+            {
+              define;
+              callable = CallableToDecoratorsMap.redirect_to_decorated ~callable decorators_map;
+              call_graph = DefineCallGraph.filter_empty_attribute_access !call_graph;
+            }
+
+
+  module Results = struct
+    (* A map from `kind=Decorated` targets to their defines. *)
+    type t = DecoratorDefine.t Target.Map.t
+
+    let empty = Target.Map.empty
+
+    let resolve_batch_exn
+        ~debug
+        ~pyre_api
+        ~scheduler
+        ~scheduler_policy
+        ~override_graph
+        ~method_kinds
+        ~decorators
+        callables
+      =
+      let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
+      let resolve callable =
+        match
+          resolve_exn
+            ~debug
+            ~pyre_in_context
+            ~override_graph:(Some (OverrideGraph.SharedMemory.read_only override_graph))
+            ~method_kinds
+            ~decorators
+            callable
+        with
+        | Decorators resolved -> Some resolved
+        | PropertySetterUnsupported
+        | Undecorated ->
+            None
+      in
+      let map callables =
+        callables
+        |> List.filter_map ~f:resolve
+        |> List.map ~f:(fun ({ DecoratorDefine.callable; _ } as decorator_define) ->
+               callable, decorator_define)
+        |> Target.Map.of_alist_exn
+      in
+      Scheduler.map_reduce
+        scheduler
+        ~policy:scheduler_policy
+        ~initial:empty
+        ~map
+        ~reduce:
+          (Target.Map.union (fun callable _ _ ->
+               failwithf "Unexpected: %s" (Target.show_pretty_with_kind callable) ()))
+        ~inputs:callables
+        ()
+
+
+    let register_decorator_defines ~decorator_resolution callables_to_definitions_map =
+      let artificial_decorator_defines = Reference.create "artificial_decorator_defines" in
+      decorator_resolution
+      |> Target.Map.to_alist
+      |> List.map ~f:(fun (callable, { DecoratorDefine.define; _ }) ->
+             callable, (artificial_decorator_defines, Node.create_with_default_location define))
+      |> Target.DefinesSharedMemory.add_alist_sequential callables_to_definitions_map
+
+
+    let register_decorator_call_graphs
+        ~decorator_resolution
+        ({ SharedMemory.define_call_graphs; _ } as call_graphs)
+      =
+      {
+        call_graphs with
+        define_call_graphs =
+          decorator_resolution
+          |> Target.Map.to_alist
+          |> List.map ~f:(fun (callable, { DecoratorDefine.call_graph; _ }) -> callable, call_graph)
+          |> SharedMemory.add_alist_sequential define_call_graphs;
+      }
+  end
 end
