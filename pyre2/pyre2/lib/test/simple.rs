@@ -869,22 +869,15 @@ def f(a: A):
 );
 
 testcase!(
-    test_function_in_type,
+    test_invalid_annotation,
     r#"
-x = 42
-def foo(y): ...
-z: foo(y=x)  # E: Expected a type form, got instance of `Never`
-"#,
-);
-
-testcase_with_bug!(
-    "We think that Type::None is a type",
-    test_function_in_type_none,
-    r#"
-x = 42
-def foo(y):
-    pass
-z: foo(y=x)  # TODO: not legal
+val = 42
+def foo(arg): ...
+a: foo(arg=val)  # E: Invalid annotation
+b: lambda: None  # E: Invalid annotation
+c: [foo(arg=val)] # E: Invalid annotation
+d: (1, 2) # E: Invalid annotation
+e: a + b  # E: Invalid annotation
 "#,
 );
 

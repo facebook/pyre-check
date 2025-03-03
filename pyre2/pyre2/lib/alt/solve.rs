@@ -192,7 +192,43 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn is_valid_annotation(x: &Expr, errors: &ErrorCollector) -> bool {
+        // Note that this function only checks for correct syntax.
+        // Semantic validation (e.g. that `typing.Self` is used in a class
+        // context, or that a string evaluates to a proper type expression) is
+        // handled elsewhere.
+        // See https://typing.readthedocs.io/en/latest/spec/annotations.html#type-and-annotation-expressions
+        let problem = match x {
+            Expr::Name(..)
+            | Expr::BinOp(ruff_python_ast::ExprBinOp {
+                op: ruff_python_ast::Operator::BitOr,
+                ..
+            })
+            | Expr::Named(..)
+            | Expr::StringLiteral(..)
+            | Expr::NoneLiteral(..)
+            | Expr::Attribute(..)
+            | Expr::Subscript(..)
+            | Expr::Starred(..) => return true,
+            Expr::Call(..) => "function call",
+            Expr::Lambda(..) => "lambda definition",
+            // There are many Expr variants. Not all of them are likely to be used
+            // in annotations, even accidentally. We can add branches for specific
+            // expression constructs if desired.
+            _ => "this expression",
+        };
+        errors.add(
+            x.range(),
+            format!("Invalid annotation: {problem} cannot be used in annotations"),
+            ErrorKind::InvalidAnnotation,
+        );
+        false
+    }
+
     fn expr_annotation(&self, x: &Expr, errors: &ErrorCollector) -> Annotation {
+        if !Self::is_valid_annotation(x, errors) {
+            return Annotation::new_type(Type::any_error());
+        }
         match x {
             _ if let Some(qualifier) = self.expr_qualifier(x, errors) => Annotation {
                 qualifiers: vec![qualifier],

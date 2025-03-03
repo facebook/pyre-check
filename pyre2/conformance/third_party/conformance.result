@@ -114,12 +114,7 @@
     "Line 23: Expected 1 errors",
     "Line 24: Expected 1 errors",
     "Line 25: Expected 1 errors",
-    "Line 41: Expected 1 errors",
-    "Line 42: Expected 1 errors",
-    "Line 46: Expected 1 errors",
     "Line 47: Expected 1 errors",
-    "Line 48: Expected 1 errors",
-    "Line 53: Expected 1 errors",
     "Line 66: Expected 1 errors",
     "Line 87: Unexpected errors ['Expected a type form, got instance of `(self: ClassD) -> None`']",
     "Line 96: Unexpected errors ['assert_type(Any, int) failed']"
@@ -135,11 +130,7 @@
     "Line 23: Unexpected errors ['Expected a callable, got type[?_TypeVar]']"
   ],
   "annotations_typeexpr.py": [
-    "Line 89: Expected 1 errors",
-    "Line 93: Expected 1 errors",
-    "Line 94: Expected 1 errors",
-    "Line 95: Expected 1 errors",
-    "Line 100: Expected 1 errors"
+    "Line 94: Expected 1 errors"
   ],
   "callables_annotation.py": [
     "Line 56: Expected 1 errors",
