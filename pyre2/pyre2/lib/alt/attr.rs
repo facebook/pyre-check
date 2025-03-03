@@ -624,18 +624,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn lookup_attr_def_range(
-        &self,
-        base: Type,
-        attr_name: &Name,
-    ) -> Option<TextRangeWithModuleInfo> {
-        match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attribute) => attribute.definition_range.clone(),
-            LookupResult::NotFound(_) => None,
-            LookupResult::InternalError(_) => None,
-        }
-    }
-
     fn lookup_attr(&self, base: Type, attr_name: &Name) -> LookupResult {
         match self.as_attribute_base(base.clone(), self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
@@ -865,9 +853,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 #[derive(Debug)]
 pub struct AttrInfo {
     pub name: Name,
-    #[expect(dead_code)]
     pub module: Option<ModuleInfo>,
-    #[expect(dead_code)]
     pub range: Option<TextRange>,
 }
 

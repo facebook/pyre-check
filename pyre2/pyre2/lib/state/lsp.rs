@@ -151,14 +151,14 @@ impl State {
             .get_answers(handle)?
             .get_type_trace(attribute.value.range())?;
         self.ad_hoc_solve(handle, |solver| {
-            let mut def_opt = None;
-            solver.distribute_over_union(&base_type, |obj| {
-                if def_opt.is_none() {
-                    def_opt = solver.lookup_attr_def_range(obj.clone(), attribute.attr.id());
+            let items = solver.completions(base_type.arc_clone());
+            items.into_iter().find_map(|x| {
+                if x.name == attribute.attr.id {
+                    Some(TextRangeWithModuleInfo::new(x.module?, x.range?))
+                } else {
+                    None
                 }
-                obj.clone()
-            });
-            def_opt
+            })
         })
         .flatten()
     }
