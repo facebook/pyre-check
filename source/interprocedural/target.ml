@@ -600,13 +600,18 @@ module SharedMemoryKey = struct
 end
 
 module DefinesSharedMemory = struct
-  type define = Reference.t * Define.t Node.t
+  module Define = struct
+    type t = {
+      qualifier: Reference.t;
+      define: Define.t Node.t;
+    }
+  end
 
   module T =
     Hack_parallel.Std.SharedMemory.FirstClassWithKeys.Make
       (SharedMemoryKey)
       (struct
-        type t = define
+        type t = Define.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -634,7 +639,8 @@ module DefinesSharedMemory = struct
     let map =
       List.fold ~init:empty_shared_memory ~f:(fun shared_memory target ->
           match get_module_and_definition ~pyre_api target with
-          | Some value -> T.AddOnly.add shared_memory target value
+          | Some (qualifier, define) ->
+              T.AddOnly.add shared_memory target { Define.qualifier; define }
           | None -> shared_memory)
     in
     let shared_memory_add_only =

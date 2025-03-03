@@ -203,14 +203,19 @@ val get_module_and_definition
   (Reference.t * Define.t Node.t) option
 
 module DefinesSharedMemory : sig
-  type define = Reference.t * Define.t Node.t
+  module Define : sig
+    type t = {
+      qualifier: Reference.t;
+      define: Define.t Node.t;
+    }
+  end
 
   type t
 
   module ReadOnly : sig
     type t
 
-    val get : t -> T.t -> define option
+    val get : t -> T.t -> Define.t option
   end
 
   val empty : unit -> t
@@ -226,7 +231,7 @@ module DefinesSharedMemory : sig
 
   val cleanup : t -> unit
 
-  val add_alist_sequential : t -> (T.t * define) list -> t
+  val add_alist_sequential : t -> (T.t * Define.t) list -> t
 end
 
 val get_callable_location

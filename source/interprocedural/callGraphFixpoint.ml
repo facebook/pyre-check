@@ -85,7 +85,7 @@ module CallGraphAnalysis = struct
       ~previous_model:{ CallGraph.HigherOrderCallGraph.call_graph = previous_call_graph; _ }
       ~get_callee_model
     =
-    let qualifier, { Ast.Node.value = define; _ } =
+    let { Target.DefinesSharedMemory.Define.qualifier; define = { Ast.Node.value = define; _ } } =
       callable
       |> Target.strip_parameters
       |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map

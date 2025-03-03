@@ -202,11 +202,14 @@ module CallableToDecoratorsMap = struct
   let collect_decorators ~callables_to_definitions_map callable =
     callable
     |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
-    >>= fun ( _,
-              {
-                Node.value = { Define.signature = { decorators; _ }; _ };
-                location = define_location;
-              } ) ->
+    >>= fun {
+              Target.DefinesSharedMemory.Define.qualifier = _;
+              define =
+                {
+                  Node.value = { Define.signature = { decorators; _ }; _ };
+                  location = define_location;
+                };
+            } ->
     let decorators = decorators |> List.filter ~f:filter_decorator |> List.rev in
     if List.is_empty decorators then
       None
@@ -306,7 +309,10 @@ module MethodKind = struct
           target
           |> Target.from_regular
           |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
-          >>| fun (_, { Node.value = define; _ }) ->
+          >>| fun {
+                    Target.DefinesSharedMemory.Define.qualifier = _;
+                    define = { Node.value = define; _ };
+                  } ->
           if List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define) then
             Class
           else if
@@ -4167,7 +4173,11 @@ module HigherOrderCallGraph = struct
           else
             target
             |> Target.DefinesSharedMemory.ReadOnly.get Context.callables_to_definitions_map
-            >>= fun (_, { Node.value = define; _ }) -> formal_arguments_from_non_stub_define define
+            >>= fun {
+                      Target.DefinesSharedMemory.Define.qualifier = _;
+                      define = { Node.value = define; _ };
+                    } ->
+            formal_arguments_from_non_stub_define define
         in
         let create_parameter_target_excluding_args_kwargs (parameter_target, (_, argument_matches)) =
           match argument_matches, parameter_target with
@@ -4742,7 +4752,7 @@ let call_graph_of_callable
   =
   match Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map callable with
   | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
-  | Some (qualifier, define) ->
+  | Some { Target.DefinesSharedMemory.Define.qualifier; define } ->
       call_graph_of_define
         ~static_analysis_configuration
         ~pyre_api
@@ -5179,7 +5189,11 @@ module DecoratorResolution = struct
       decorator_resolution
       |> Target.Map.to_alist
       |> List.map ~f:(fun (callable, { DecoratorDefine.define; _ }) ->
-             callable, (artificial_decorator_defines, Node.create_with_default_location define))
+             ( callable,
+               {
+                 Target.DefinesSharedMemory.Define.qualifier = artificial_decorator_defines;
+                 define = Node.create_with_default_location define;
+               } ))
       |> Target.DefinesSharedMemory.add_alist_sequential callables_to_definitions_map
 
 

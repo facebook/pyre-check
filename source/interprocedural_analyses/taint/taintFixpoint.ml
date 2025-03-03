@@ -224,8 +224,10 @@ module Analysis = struct
     let () =
       Log.log ~section:`Interprocedural "Analyzing %a" Interprocedural.Target.pp_pretty callable
     in
-    let ( qualifier,
-          ({ Ast.Node.value = { Ast.Statement.Define.signature = { name; _ }; _ }; _ } as define) )
+    let {
+      Interprocedural.Target.DefinesSharedMemory.Define.qualifier;
+      define = { Ast.Node.value = { Ast.Statement.Define.signature = { name; _ }; _ }; _ } as define;
+    }
       =
       callable
       |> Interprocedural.Target.strip_parameters
