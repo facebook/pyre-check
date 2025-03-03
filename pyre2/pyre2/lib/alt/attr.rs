@@ -861,7 +861,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
 impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
     pub fn lookup_all_attributes(&self, base: Type) -> Vec<Name> {
-        match self.as_attribute_base(base.clone(), self.stdlib) {
+        match self.as_attribute_base(base, self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
                 class.class_object().fields().cloned().collect()
             }
