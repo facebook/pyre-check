@@ -274,10 +274,8 @@ impl Ast {
     }
 }
 
-#[allow(dead_code)]
 pub struct AtomicTextRange(AtomicU64);
 
-#[allow(dead_code)]
 impl AtomicTextRange {
     pub fn new(range: TextRange) -> Self {
         Self(AtomicU64::new(Self::to_u64(range)))

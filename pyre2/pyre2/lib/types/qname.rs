@@ -20,6 +20,7 @@ use ruff_python_ast::Identifier;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
+use crate::ast::AtomicTextRange;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
@@ -30,7 +31,7 @@ pub struct QName {
     /// The `name` and `range` must be consistent.
     /// They always come from a single `Identifier`.
     name: Name,
-    range: TextRange,
+    range: AtomicTextRange,
     module_name: ModuleName,
     module_info: RwLock<ModuleInfo>,
 }
@@ -75,18 +76,14 @@ impl Display for QName {
 
 impl QName {
     fn key(&self) -> (&Name, TextSize, TextSize, ModuleName) {
-        (
-            &self.name,
-            self.range.start(),
-            self.range.end(),
-            self.module_name,
-        )
+        let range = self.range.get();
+        (&self.name, range.start(), range.end(), self.module_name)
     }
 
     pub fn new(name: Identifier, module: ModuleInfo) -> Self {
         Self {
             name: name.id,
-            range: name.range,
+            range: AtomicTextRange::new(name.range),
             module_name: module.name(),
             module_info: RwLock::new(module),
         }
@@ -97,11 +94,11 @@ impl QName {
     }
 
     pub fn range(&self) -> TextRange {
-        self.range
+        self.range.get()
     }
 
     pub fn short_identifier(&self) -> ShortIdentifier {
-        ShortIdentifier::new_from_decomposed_identifier(self.range)
+        ShortIdentifier::new_from_decomposed_identifier(self.range.get())
     }
 
     pub fn module_info(&self) -> ModuleInfo {
@@ -126,23 +123,21 @@ impl QName {
             "{}.{}@{}",
             self.module_name,
             self.name,
-            self.module_info.read().source_range(self.range)
+            self.module_info.read().source_range(self.range.get())
         )
     }
 
     pub fn immutable_eq(&self, other: &QName) -> bool {
-        self.name == other.name
-            && self.range == other.range
-            && self.module_name == other.module_name
+        self.name == other.name && self.module_name == other.module_name
     }
 
     pub fn immutable_hash<H: Hasher>(&self, state: &mut H) {
         self.name.hash(state);
-        self.range.hash(state);
         self.module_name.hash(state);
     }
 
     pub fn mutate(&self, x: &QName) {
         *self.module_info.write() = x.module_info().dupe();
+        self.range.set(x.range.get());
     }
 }
