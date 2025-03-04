@@ -60,6 +60,7 @@ use crate::state::subscriber::Subscriber;
 use crate::types::class::Class;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
+use crate::util::arc_id::ArcId;
 use crate::util::display::number_thousands;
 use crate::util::enum_heap::EnumHeap;
 use crate::util::lock::Mutex;
@@ -76,12 +77,12 @@ pub struct State {
     uniques: UniqueFactory,
     parallel: bool,
     stdlib: SmallMap<(RuntimeMetadata, LoaderId), Arc<Stdlib>>,
-    modules: LockedMap<Handle, Arc<ModuleData>>,
+    modules: LockedMap<Handle, ArcId<ModuleData>>,
     loaders: SmallMap<LoaderId, Arc<LoaderFindCache<LoaderId>>>,
     /// Items we still need to process. Stored in a max heap, so that
     /// the highest step (the module that is closest to being finished)
     /// gets picked first, ensuring we release its memory quickly.
-    todo: Mutex<EnumHeap<Step, Arc<ModuleData>>>,
+    todo: Mutex<EnumHeap<Step, ArcId<ModuleData>>>,
     /// Handles whose solutions changed value since the last time we recomputed
     changed: Mutex<Vec<Handle>>,
     /// The current epoch, gets incremented every time we recompute
@@ -96,11 +97,11 @@ pub struct State {
 struct ModuleData {
     handle: Handle,
     state: UpgradeLock<Step, ModuleState>,
-    deps: RwLock<HashMap<ModuleName, Arc<ModuleData>, BuildNoHash>>,
+    deps: RwLock<HashMap<ModuleName, ArcId<ModuleData>, BuildNoHash>>,
     /// The reverse dependencies of this module. This is used to invalidate on change.
     /// Note that if we are only running once, e.g. on the command line, this isn't valuable.
     /// But we create it anyway for simplicity, since it doesn't seem to add much overhead.
-    rdeps: Mutex<HashMap<Handle, Arc<ModuleData>>>,
+    rdeps: Mutex<HashMap<Handle, ArcId<ModuleData>>>,
 }
 
 struct ModuleState {
@@ -151,7 +152,7 @@ impl State {
 
     fn clean(
         &self,
-        module_data: &Arc<ModuleData>,
+        module_data: &ArcId<ModuleData>,
         exclusive: UpgradeLockExclusiveGuard<Step, ModuleState>,
     ) {
         // We need to clean up the state.
@@ -245,7 +246,7 @@ impl State {
         }
     }
 
-    fn demand(&self, module_data: &Arc<ModuleData>, step: Step) {
+    fn demand(&self, module_data: &ArcId<ModuleData>, step: Step) {
         let mut computed = false;
         loop {
             let reader = module_data.state.read();
@@ -361,13 +362,13 @@ impl State {
         }
     }
 
-    fn get_module(&self, handle: &Handle) -> Arc<ModuleData> {
+    fn get_module(&self, handle: &Handle) -> ArcId<ModuleData> {
         let mut created = false;
         let res = self
             .modules
             .ensure(handle, || {
                 created = true;
-                Arc::new(ModuleData::new(handle.dupe(), self.now))
+                ArcId::new(ModuleData::new(handle.dupe(), self.now))
             })
             .dupe();
         if created && let Some(subscriber) = &self.subscriber {
@@ -378,7 +379,7 @@ impl State {
 
     fn add_error(
         &self,
-        module_data: &Arc<ModuleData>,
+        module_data: &ArcId<ModuleData>,
         range: TextRange,
         msg: String,
         kind: ErrorKind,
@@ -387,7 +388,7 @@ impl State {
         load.errors.add(range, msg, kind, None);
     }
 
-    fn lookup<'a>(&'a self, module_data: Arc<ModuleData>) -> StateHandle<'a> {
+    fn lookup<'a>(&'a self, module_data: ArcId<ModuleData>) -> StateHandle<'a> {
         StateHandle {
             state: self,
             module_data,
@@ -430,7 +431,7 @@ impl State {
         }
     }
 
-    fn lookup_export(&self, module_data: &Arc<ModuleData>) -> Exports {
+    fn lookup_export(&self, module_data: &ArcId<ModuleData>) -> Exports {
         self.demand(module_data, Step::Exports);
         let lock = module_data.state.read();
         lock.steps.exports.dupe().unwrap()
@@ -438,7 +439,7 @@ impl State {
 
     fn lookup_answer<'b, K: Solve<StateHandle<'b>> + Keyed<EXPORTED = true>>(
         &'b self,
-        module_data: Arc<ModuleData>,
+        module_data: ArcId<ModuleData>,
         key: &K,
     ) -> Arc<<K as Keyed>::Answer>
     where
@@ -883,11 +884,11 @@ impl State {
 
 pub struct StateHandle<'a> {
     state: &'a State,
-    module_data: Arc<ModuleData>,
+    module_data: ArcId<ModuleData>,
 }
 
 impl<'a> StateHandle<'a> {
-    fn get_module(&self, module: ModuleName) -> Result<Arc<ModuleData>, FindError> {
+    fn get_module(&self, module: ModuleName) -> Result<ArcId<ModuleData>, FindError> {
         if let Some(res) = self.module_data.deps.read().get(&module) {
             return Ok(res.dupe());
         }
