@@ -32,7 +32,7 @@ struct ParamSpecInner {
 }
 
 impl ParamSpec {
-    pub fn new(name: Identifier, module: ModuleInfo) -> Self {
+    pub fn new_identity(name: Identifier, module: ModuleInfo) -> Self {
         Self(ArcId::new(ParamSpecInner {
             qname: QName::new(name, module),
         }))

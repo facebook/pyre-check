@@ -17,6 +17,7 @@ use starlark_map::small_map::SmallMap;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::id_cache::IdCache;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyClassMetadata;
@@ -51,7 +52,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let scoped_tparams = self.scoped_type_params(x.type_params.as_deref(), errors);
         let bases = bases.map(|x| self.base_class_of(x, errors));
         let tparams = self.class_tparams(&x.name, scoped_tparams, bases, legacy_tparams, errors);
-        Class::new(
+        IdCache::class(
             x.name.clone(),
             self.module_info().dupe(),
             tparams,
@@ -64,7 +65,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         name: &Identifier,
         fields: &SmallMap<Name, ClassFieldProperties>,
     ) -> Class {
-        Class::new(
+        IdCache::class(
             name.clone(),
             self.module_info().dupe(),
             TParams::default(),

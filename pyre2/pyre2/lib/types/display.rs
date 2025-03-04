@@ -374,7 +374,7 @@ mod tests {
             ModulePath::filesystem(PathBuf::from(module)),
             Arc::new("1234567890".to_owned()),
         );
-        Class::new(
+        Class::new_identity(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
             mi,
             TParams::new(tparams).unwrap(),
@@ -398,7 +398,7 @@ mod tests {
             ModulePath::filesystem(PathBuf::from(module)),
             Arc::new("1234567890".to_owned()),
         );
-        TypeVar::new(
+        TypeVar::new_identity(
             Identifier::new(Name::new(name), TextRange::empty(TextSize::new(range))),
             mi,
             Restriction::Unrestricted,

@@ -32,7 +32,7 @@ struct TypeVarTupleInner {
 }
 
 impl TypeVarTuple {
-    pub fn new(name: Identifier, module: ModuleInfo) -> Self {
+    pub fn new_identity(name: Identifier, module: ModuleInfo) -> Self {
         Self(ArcId::new(TypeVarTupleInner {
             qname: QName::new(name, module),
         }))

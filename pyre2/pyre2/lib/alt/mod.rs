@@ -11,6 +11,7 @@ pub mod call;
 pub mod callable;
 pub mod class;
 pub mod expr;
+pub mod id_cache;
 pub mod narrow;
 pub mod solve;
 pub mod special_calls;

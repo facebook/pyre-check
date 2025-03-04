@@ -50,7 +50,7 @@ struct TypeVarInner {
 }
 
 impl TypeVar {
-    pub fn new(
+    pub fn new_identity(
         name: Identifier,
         module: ModuleInfo,
         restriction: Restriction,

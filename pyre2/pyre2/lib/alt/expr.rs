@@ -28,6 +28,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::call::CallStyle;
 use crate::alt::callable::CallArg;
+use crate::alt::id_cache::IdCache;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyYield;
@@ -333,7 +334,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
         }
 
-        TypeVar::new(
+        IdCache::type_var(
             name,
             self.module_info().dupe(),
             restriction.unwrap_or(Restriction::Unrestricted),
@@ -424,7 +425,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
         }
 
-        ParamSpec::new(name, self.module_info().dupe())
+        IdCache::param_spec(name, self.module_info().dupe())
     }
 
     pub fn typevartuple_from_call(
@@ -509,7 +510,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
         }
 
-        TypeVarTuple::new(name, self.module_info().dupe())
+        IdCache::type_var_tuple(name, self.module_info().dupe())
     }
 
     pub fn expr_infer(&self, x: &Expr, errors: &ErrorCollector) -> Type {
