@@ -183,7 +183,12 @@ pub trait LookupAnswer: Sized {
 }
 
 impl Answers {
-    pub fn new(bindings: &Bindings, solver: Solver, enable_trace: bool) -> Self {
+    pub fn new(
+        bindings: &Bindings,
+        solver: Solver,
+        history: IdCacheHistory,
+        enable_trace: bool,
+    ) -> Self {
         fn presize<K: SolveRecursive>(items: &mut AnswerEntry<K>, bindings: &Bindings)
         where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -203,7 +208,7 @@ impl Answers {
         };
 
         Self {
-            id_cache: IdCache::new(),
+            id_cache: IdCache::new(history),
             solver,
             table,
             trace,

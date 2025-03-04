@@ -25,7 +25,7 @@ use crate::types::types::Type;
 use crate::util::lock::Mutex;
 
 #[expect(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Dupe, Clone)]
 enum Identifiable {
     Class(Class),
     ParamSpec(ParamSpec),
@@ -41,12 +41,13 @@ pub struct IdCache {
 }
 
 /// A history of the identifiers that were created, that can be reused.
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 #[expect(dead_code)]
 pub struct IdCacheHistory(Vec<Identifiable>);
 
 impl IdCache {
-    pub fn new() -> Self {
+    pub fn new(history: IdCacheHistory) -> Self {
+        drop(history);
         Self {
             recorded: Mutex::new(Vec::new()),
         }

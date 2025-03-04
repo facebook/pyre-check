@@ -236,7 +236,7 @@ impl Step {
             ctx.uniques,
             enable_trace,
         );
-        let answers = Answers::new(&bindings, solver, enable_trace);
+        let answers = Answers::new(&bindings, solver, IdCacheHistory::default(), enable_trace);
         Arc::new((bindings, Arc::new(answers)))
     }
 
