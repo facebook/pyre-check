@@ -10316,7 +10316,7 @@
       "concise_description": "If `Protocol` is included as a base class, all other bases must be protocols.",
       "description": "If `Protocol` is included as a base class, all other bases must be protocols.",
       "line": 67,
-      "name": "unknown",
+      "name": "invalid-inheritance",
       "stop_column": 33,
       "stop_line": 67
     },
@@ -11982,7 +11982,7 @@
       "concise_description": "Typed dictionary definitions may not specify a metaclass.",
       "description": "Typed dictionary definitions may not specify a metaclass.",
       "line": 44,
-      "name": "unknown",
+      "name": "invalid-inheritance",
       "stop_column": 20,
       "stop_line": 44
     }

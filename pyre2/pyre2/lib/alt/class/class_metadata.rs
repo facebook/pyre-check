@@ -183,7 +183,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             } else {
                                 self.error(errors,
                                     range,
-                                    ErrorKind::Unknown,
+                                    ErrorKind::InvalidInheritance,
                                     "If `Protocol` is included as a base class, all other bases must be protocols.".to_owned(),
                                 );
                             }
@@ -283,7 +283,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     cls.range(),
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidInheritance,
                     "Typed dictionary definitions may not specify a metaclass.".to_owned(),
                 );
             }
