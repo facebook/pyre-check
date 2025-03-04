@@ -88,6 +88,8 @@ pub struct State {
     todo: Mutex<EnumHeap<Step, ArcId<ModuleData>>>,
     /// Values whose solutions changed value since the last time we recomputed
     changed: Mutex<Vec<ArcId<ModuleData>>>,
+    /// Handles which are dirty
+    dirty: Mutex<SmallSet<ArcId<ModuleData>>>,
     /// The current epoch, gets incremented every time we recompute
     now: Epoch,
     /// Thing to tell about each action.
@@ -139,6 +141,7 @@ impl State {
             loaders: Default::default(),
             todo: Default::default(),
             changed: Default::default(),
+            dirty: Default::default(),
             subscriber: None,
             retain_memory: true, // Will always be overwritten by entry points
         }
@@ -242,11 +245,6 @@ impl State {
         // The module was not dirty. Make sure our dependencies aren't dirty either.
         let mut write = exclusive.write();
         finish(&mut write);
-        drop(write);
-        let mut todo = self.todo.lock();
-        for x in module_data.deps.read().values() {
-            todo.push_lifo(Step::first(), x.dupe());
-        }
     }
 
     fn demand(&self, module_data: &ArcId<ModuleData>, step: Step) {
@@ -256,6 +254,8 @@ impl State {
             if reader.epochs.checked != self.now {
                 if let Some(ex) = reader.exclusive(Step::first()) {
                     self.clean(module_data, ex);
+                    // We might have done some cleaning
+                    computed = true;
                 }
                 continue;
             }
@@ -329,6 +329,7 @@ impl State {
                 drop(to_drop);
                 if changed {
                     self.changed.lock().push(module_data.dupe());
+                    let mut dirtied = Vec::new();
                     for x in module_data.rdeps.lock().values() {
                         loop {
                             let reader = x.state.read();
@@ -340,6 +341,7 @@ impl State {
                                 if exclusive.epochs.computed == self.now || exclusive.dirty.deps {
                                     break;
                                 }
+                                dirtied.push(x.dupe());
                                 let mut writer = exclusive.write();
                                 writer.dirty.deps = true;
                                 break;
@@ -347,6 +349,7 @@ impl State {
                             // continue around the loop - failed to get the lock, but we really want it
                         }
                     }
+                    self.dirty.lock().extend(dirtied);
                 }
                 if let Some(load) = load_result
                     && let Some(subscriber) = &self.subscriber
@@ -366,6 +369,11 @@ impl State {
     }
 
     fn get_module(&self, handle: &Handle) -> ArcId<ModuleData> {
+        self.get_module_ex(handle).0
+    }
+
+    /// Return the module, plus true if the module was newly created.
+    fn get_module_ex(&self, handle: &Handle) -> (ArcId<ModuleData>, bool) {
         let mut created = false;
         let res = self
             .modules
@@ -377,7 +385,7 @@ impl State {
         if created && let Some(subscriber) = &self.subscriber {
             subscriber.start_work(handle.dupe());
         }
-        res
+        (res, created)
     }
 
     fn add_error(
@@ -606,9 +614,15 @@ impl State {
         self.compute_stdlib(configs);
 
         {
+            let dirty = mem::take(&mut *self.dirty.lock());
             let mut lock = self.todo.lock();
+            for x in dirty {
+                lock.push_fifo(Step::first(), x);
+            }
             for h in handles {
-                lock.push_fifo(Step::first(), self.get_module(h));
+                if let (m, true) = self.get_module_ex(h) {
+                    lock.push_fifo(Step::first(), m);
+                }
             }
         }
 
@@ -663,9 +677,11 @@ impl State {
             f(&mut dirty_handles, &mut stack, x);
         }
 
+        let mut dirty_set = self.dirty.lock();
         for (x, dirty) in dirty_handles {
             if dirty {
                 x.state.write(Step::Load).unwrap().dirty.deps = true;
+                dirty_set.insert(x);
             }
         }
     }
@@ -822,9 +838,11 @@ impl State {
         if let Some(cache) = self.loaders.get_mut(loader) {
             *cache = Arc::new(LoaderFindCache::new(loader.dupe()));
         }
+        let mut dirty_set = self.dirty.lock();
         for (handle, module_data) in self.modules.iter_unordered() {
             if handle.loader() == loader {
                 module_data.state.write(Step::Load).unwrap().dirty.find = true;
+                dirty_set.insert(module_data.dupe());
             }
         }
     }
@@ -836,9 +854,11 @@ impl State {
             .iter()
             .map(|x| ModulePath::memory(x.clone()))
             .collect::<SmallSet<_>>();
+        let mut dirty_set = self.dirty.lock();
         for (handle, module_data) in self.modules.iter_unordered() {
             if handle.loader() == &loader && files.contains(handle.path()) {
                 module_data.state.write(Step::Load).unwrap().dirty.load = true;
+                dirty_set.insert(module_data.dupe());
             }
         }
     }
@@ -854,9 +874,11 @@ impl State {
             .iter()
             .map(|x| ModulePath::filesystem(x.clone()))
             .collect::<SmallSet<_>>();
+        let mut dirty_set = self.dirty.lock();
         for (handle, module_data) in self.modules.iter_unordered() {
             if files.contains(handle.path()) {
                 module_data.state.write(Step::Load).unwrap().dirty.load = true;
+                dirty_set.insert(module_data.dupe());
             }
         }
     }

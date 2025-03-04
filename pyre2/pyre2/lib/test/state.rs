@@ -235,12 +235,14 @@ fn test_incremental_minimal_recompute() {
     i.set("main", "import foo; x = foo.x # still");
     i.check(&["main"], &["main"]);
 
-    // Now check that we change foo, but stop depending on it, so won't recompute.
+    // We stop depending on `foo`, so no longer have to recompute it even though it is dirty.
+    // However, our current state algorithm does so anyway as it can be cheaper to compute
+    // everything than do careful graph traversal.
     i.set("foo", "x = True");
     i.set("main", "x = 7");
-    i.check(&["main"], &["main"]);
+    i.check(&["main"], &["main", "foo"]); // `foo` is not required here
     i.set("main", "import foo; x = foo.x # still");
-    i.check(&["main"], &["main", "foo"]);
+    i.check(&["main"], &["main"]); // `foo` is required by this point
 }
 
 #[test]
