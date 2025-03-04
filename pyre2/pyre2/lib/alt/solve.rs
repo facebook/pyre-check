@@ -185,7 +185,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn expr_qualifier(&self, x: &Expr, errors: &ErrorCollector) -> Option<Qualifier> {
         let ty = match x {
-            Expr::Name(_) | Expr::Attribute(_) => Some(self.expr(x, None, errors)),
+            Expr::Name(_) | Expr::Attribute(_) => Some(self.expr_infer(x, errors)),
             _ => None,
         };
         if let Some(Type::Type(box Type::SpecialForm(special))) = ty {
@@ -303,7 +303,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         allow_none: bool,
         errors: &ErrorCollector,
     ) {
-        let actual_type = self.expr(x, None, errors);
+        let actual_type = self.expr_infer(x, errors);
         if allow_none && actual_type.is_none() {
             return;
         }
@@ -672,7 +672,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             BindingExpect::CheckAssignTypeToAttribute(box (attr, got)) => {
-                let base = self.expr(&attr.value, None, errors);
+                let base = self.expr_infer(&attr.value, errors);
                 let got = self.solve_binding(got, errors);
                 self.check_attr_set_with_type(
                     base,
@@ -684,7 +684,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
             }
             BindingExpect::CheckAssignExprToAttribute(box (attr, value)) => {
-                let base = self.expr(&attr.value, None, errors);
+                let base = self.expr_infer(&attr.value, errors);
                 self.check_attr_set_with_expr(
                     base,
                     &attr.attr.id,
@@ -914,7 +914,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
                 if let Some(expr) = &x.expr {
                     if x.is_async && x.is_generator {
-                        self.expr(expr, None, errors);
+                        self.expr_infer(expr, errors);
                         self.error(
                             errors,
                             expr.range(),
@@ -998,10 +998,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Expr::Tuple(tup) => tup
                         .elts
                         .iter()
-                        .map(|e| check_exception_type(self.expr(e, None, errors), e.range()))
+                        .map(|e| check_exception_type(self.expr_infer(e, errors), e.range()))
                         .collect(),
                     _ => {
-                        let exception_types = self.expr(ann, None, errors);
+                        let exception_types = self.expr_infer(ann, errors);
                         match exception_types {
                             Type::Tuple(Tuple::Concrete(ts)) => ts
                                 .into_iter()
@@ -1023,7 +1023,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Binding::AugAssign(x) => {
-                let base = self.expr(&x.target, None, errors);
+                let base = self.expr_infer(&x.target, errors);
                 self.call_method_or_error(
                     &base,
                     &inplace_dunder(x.op),
@@ -1049,7 +1049,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.unions(values)
             }
             Binding::ContextValue(ann, e, kind) => {
-                let context_manager = self.expr(e, None, errors);
+                let context_manager = self.expr_infer(e, errors);
                 let context_value = self.context_value(context_manager, *kind, e.range(), errors);
                 let ty = ann.map(|k| self.get_idx(k));
                 match ty.as_ref().and_then(|x| x.ty.as_ref()) {
@@ -1064,8 +1064,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Binding::SubscriptValue(box b, x) => {
-                let base = self.expr(&x.value, None, errors);
-                let slice_ty = self.expr(&x.slice, None, errors);
+                let base = self.expr_infer(&x.value, errors);
+                let slice_ty = self.expr_infer(&x.slice, errors);
                 let value_ty = self.solve_binding_inner(b, errors);
                 match (&base, &slice_ty) {
                     (Type::TypedDict(typed_dict), Type::Literal(Lit::String(field_name))) => {
@@ -1339,7 +1339,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Binding::ScopedTypeAlias(name, params, expr) => {
-                let ty = self.expr(expr, None, errors);
+                let ty = self.expr_infer(expr, errors);
                 let expr_range = expr.range();
                 let ta = self.as_type_alias(name, TypeAliasStyle::Scoped, ty, expr_range, errors);
                 match ta {
@@ -1363,7 +1363,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::PatternMatchMapping(mapping_key, binding_key) => {
                 // TODO: check that value is a mapping
                 // TODO: check against duplicate keys (optional)
-                let key_ty = self.expr(mapping_key, None, errors);
+                let key_ty = self.expr_infer(mapping_key, errors);
                 let binding_ty = self.get_idx(*binding_key).arc_clone();
                 let arg = CallArg::Type(&key_ty, mapping_key.range());
                 self.call_method_or_error(
@@ -1752,7 +1752,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Arc::new(YieldResult { yield_ty, send_ty })
                 } else {
                     let yield_ty = if let Some(expr) = x.value.as_ref() {
-                        self.expr(expr, None, errors)
+                        self.expr_infer(expr, errors)
                     } else {
                         Type::None
                     };
@@ -1762,7 +1762,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             BindingYield::Invalid(x) => {
                 if let Some(expr) = x.value.as_ref() {
-                    self.expr(expr, None, errors);
+                    self.expr_infer(expr, errors);
                 }
                 self.error(
                     errors,
@@ -1786,7 +1786,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let annot = annot.map(|k| self.get_idx(k));
                 let want = annot.as_ref().and_then(|x| x.ty.as_ref());
 
-                let mut ty = self.expr(&x.value, None, errors);
+                let mut ty = self.expr_infer(&x.value, errors);
                 let res = if let Some(generator) = self.unwrap_generator(&ty) {
                     YieldFromResult::from_generator(generator)
                 } else if let Some(yield_ty) = self.unwrap_iterable(&ty) {
@@ -1815,7 +1815,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Arc::new(res)
             }
             BindingYieldFrom::Invalid(x) => {
-                self.expr(&x.value, None, errors);
+                self.expr_infer(&x.value, errors);
                 self.error(
                     errors,
                     x.range,
@@ -1886,7 +1886,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .collect();
                 Type::ParamSpecValue(ParamList::new(elts))
             }
-            _ => self.untype(self.expr(x, None, errors), x.range(), errors),
+            _ => self.untype(self.expr_infer(x, errors), x.range(), errors),
         }
     }
 }

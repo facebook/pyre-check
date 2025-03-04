@@ -51,7 +51,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut keys: SmallSet<Name> = SmallSet::new();
         dict_items.iter().for_each(|x| match &x.key {
             Some(key) => {
-                let key_type = self.expr(key, None, errors);
+                let key_type = self.expr_infer(key, errors);
                 if let Type::Literal(Lit::String(name)) = key_type {
                     let key_name = Name::new(name.clone());
                     if let Some(field) = fields.get(&key_name) {

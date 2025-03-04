@@ -99,7 +99,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn narrow_val_infer(&self, val: &NarrowVal, errors: &ErrorCollector) -> Type {
         match val {
-            NarrowVal::Expr(e) => self.expr(e, None, errors),
+            NarrowVal::Expr(e) => self.expr_infer(e, errors),
             NarrowVal::Type(t, _) => (**t).clone(),
         }
     }

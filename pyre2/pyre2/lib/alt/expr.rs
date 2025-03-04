@@ -686,7 +686,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 for elt in x.elts.iter() {
                     match elt {
                         Expr::Starred(ExprStarred { box value, .. }) => {
-                            let ty = self.expr_infer_with_hint(value, None, errors);
+                            let ty = self.expr_infer(value, errors);
                             match ty {
                                 Type::Tuple(Tuple::Concrete(elts)) => {
                                     if unbounded.is_empty() {

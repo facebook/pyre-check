@@ -326,7 +326,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     arguments.len()
                 ),
             ),
-            SpecialForm::Annotated if arguments.len() > 1 => self.expr(&arguments[0], None, errors),
+            SpecialForm::Annotated if arguments.len() > 1 => self.expr_infer(&arguments[0], errors),
             _ => self.todo(
                 errors,
                 &format!(
