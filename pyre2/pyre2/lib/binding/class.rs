@@ -458,7 +458,7 @@ impl<'a> BindingsBuilder<'a> {
         &mut self,
         class_name: Identifier,
         members: &[Expr],
-        keywords: &[Keyword],
+        keywords: &mut [Keyword],
     ) {
         let member_definitions: Vec<(String, TextRange, Option<Expr>)> = match members {
             // namedtuple('Point', 'x y')
@@ -500,6 +500,7 @@ impl<'a> BindingsBuilder<'a> {
         let mut illegal_identifier_handling = IllegalIdentifierHandling::Error;
         let mut defaults: Vec<Option<Expr>> = vec![None; n_members];
         for kw in keywords {
+            self.ensure_expr(&mut kw.value);
             if let Some(name) = &kw.arg
                 && name.id == "rename"
                 && let Expr::BooleanLiteral(lit) = &kw.value

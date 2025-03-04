@@ -161,3 +161,12 @@ Pair(x=5)
 Pair(y="foo")  # E: Missing argument `x`
     "#,
 );
+
+testcase!(
+    test_named_tuple_default,
+    r#"
+from collections import namedtuple
+x = 2
+Tup = namedtuple("Tup", ["a", "b"], defaults=(None, x))
+"#,
+);
