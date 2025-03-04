@@ -108,15 +108,19 @@ impl ErrorCollector {
         range: TextRange,
         msg: String,
         error_kind: ErrorKind,
-        _error_context: Option<ErrorContext>,
+        error_context: Option<&ErrorContext>,
     ) {
         let source_range = self.module_info.source_range(range);
         let is_ignored = self.module_info.is_ignored(&source_range, &msg);
+        let full_msg = match error_context {
+            Some(ctx) => vec1![ctx.format(), msg],
+            None => vec1![msg],
+        };
         if self.style != ErrorStyle::Never {
             let err = Error::new(
                 self.module_info.path().dupe(),
                 source_range,
-                vec1![msg],
+                full_msg,
                 is_ignored,
                 error_kind,
             );

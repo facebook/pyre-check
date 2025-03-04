@@ -5,18 +5,28 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::error::context::TypeCheckContext;
+use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckKind;
 use crate::types::display::TypeDisplayContext;
 use crate::types::types::Type;
 
-impl TypeCheckContext {
+impl ErrorContext {
+    pub fn format(&self) -> String {
+        match self {
+            ErrorContext::BadContextManager(cm) => {
+                format!("Cannot use `{cm}` as a context manager")
+            }
+        }
+    }
+}
+
+impl TypeCheckKind {
     pub fn format_error(&self, got: &Type, want: &Type) -> String {
         let mut ctx = TypeDisplayContext::new();
         ctx.add(got);
         ctx.add(want);
-        match &self.kind {
-            TypeCheckKind::FunctionReturn(func, defining_cls) => {
+        match self {
+            Self::FunctionReturn(func, defining_cls) => {
                 let func_name = match defining_cls {
                     Some(cls) => {
                         ctx.add(cls);
@@ -31,7 +41,7 @@ impl TypeCheckContext {
                     ctx.display(got)
                 )
             }
-            TypeCheckKind::Unknown => {
+            Self::Unknown => {
                 format!("EXPECTED {} <: {}", ctx.display(got), ctx.display(want))
             }
         }

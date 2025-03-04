@@ -17,7 +17,9 @@ use crate::types::types::Type;
 /// The root cause is `C.__lt__` being called with the wrong type, but the user sees a `<`
 /// comparison. ErrorContext stores this context that the user sees, to make it easier to connect
 /// it back to the root cause.
-pub struct ErrorContext;
+pub enum ErrorContext {
+    BadContextManager(Type),
+}
 
 /// The context in which a got <: want type check occurs. This differs from ErrorContext in that
 /// TypeCheckContext applies specifically to type mismatches. For example:
@@ -28,7 +30,6 @@ pub struct ErrorContext;
 /// and an ErrorContext, recording that the type mismatch occurs in the context of a `<` comparison.
 pub struct TypeCheckContext {
     pub kind: TypeCheckKind,
-    #[expect(dead_code)]
     pub context: Option<ErrorContext>,
 }
 

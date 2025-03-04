@@ -43,10 +43,10 @@ impl Expectation {
             ))
         } else {
             for (line_no, msg) in &self.error {
-                if !errors
-                    .iter()
-                    .any(|e| e.msg().contains(msg) && e.source_range().start.row.get() == *line_no)
-                {
+                if !errors.iter().any(|e| {
+                    e.msg().replace("\n", "\\n").contains(msg)
+                        && e.source_range().start.row.get() == *line_no
+                }) {
                     return Err(anyhow::anyhow!(
                         "Expectations failed for {}: can't find error (line {line_no}): {msg}",
                         self.module.path()

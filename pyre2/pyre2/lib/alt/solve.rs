@@ -57,6 +57,7 @@ use crate::binding::binding::UnpackedPosition;
 use crate::dunder;
 use crate::dunder::inplace_dunder;
 use crate::error::collector::ErrorCollector;
+use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckContext;
 use crate::error::context::TypeCheckKind;
 use crate::error::kind::ErrorKind;
@@ -502,9 +503,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &TypeCheckContext {
                 kind: TypeCheckKind::FunctionReturn(
                     kind.as_exit_dunder(),
-                    Some(context_manager_type),
+                    Some(context_manager_type.clone()),
                 ),
-                context: None,
+                context: Some(ErrorContext::BadContextManager(context_manager_type)),
             },
         );
         // TODO: `exit_type` may also affect exceptional control flow, which is yet to be supported:
