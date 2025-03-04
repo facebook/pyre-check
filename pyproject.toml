@@ -32,7 +32,6 @@ commands =
 excludes = [
     "documentation/",
     "generate_taint_models/",
-    "scripts/",
     "source/",
     "stubs/",
     "pyre2/",

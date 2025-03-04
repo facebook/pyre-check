@@ -13,7 +13,6 @@ This script can be used to debug false positives and false negatives in the
 taint analysis. See https://pyre-check.org/docs/pysa-explore/ for the documentation.
 """
 
-
 import copy
 import io
 import json
@@ -166,8 +165,13 @@ def save_index(path: Optional[str] = None) -> None:
         path = "pysa-model-explorer-index.pickle"
 
     print(f"Saving index to `{path}`")
-    with open(path, 'wb') as f:
-        pickle.dump(AnalysisOutputDirectory(files=directory.files, handles=[], index_=directory.index_), f)
+    with open(path, "wb") as f:
+        pickle.dump(
+            AnalysisOutputDirectory(
+                files=directory.files, handles=[], index_=directory.index_
+            ),
+            f,
+        )
 
 
 def load_index(path: Optional[str] = None) -> None:
@@ -175,7 +179,7 @@ def load_index(path: Optional[str] = None) -> None:
         path = "pysa-model-explorer-index.pickle"
 
     print(f"Loading index from `{path}`")
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         directory = pickle.load(f)
 
     global __current_directory
@@ -281,7 +285,6 @@ def map_model(
     frame_map: Callable[[str, Dict[str, Any]], None] = lambda x, y: None,
     local_taint_map: Callable[[str, Dict[str, Any]], None] = lambda x, y: None,
 ) -> Dict[str, Any]:
-
     model = model.copy()
     model["sources"] = _map_taint_tree(
         model.get("sources", []), frame_map, local_taint_map
