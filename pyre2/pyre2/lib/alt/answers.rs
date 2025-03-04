@@ -487,7 +487,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         kind: ErrorKind,
         msg: String,
     ) -> Type {
-        errors.add(range, msg, kind);
+        errors.add(range, msg, kind, None);
         Type::any_error()
     }
 }

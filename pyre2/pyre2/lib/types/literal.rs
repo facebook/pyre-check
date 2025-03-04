@@ -88,6 +88,7 @@ impl Lit {
                     x.range(),
                     "Int literal exceeds range, expected to fit within 64 bits".to_owned(),
                     ErrorKind::Unknown,
+                    None,
                 );
                 Type::any_error()
             }
@@ -126,6 +127,7 @@ impl Lit {
                             maybe_enum_name.id, member_name.id
                         ),
                         ErrorKind::Unknown,
+                        None,
                     );
                     Type::any_error()
                 }
@@ -136,6 +138,7 @@ impl Lit {
                     x.range(),
                     "Invalid literal expression".to_owned(),
                     ErrorKind::Unknown,
+                    None,
                 );
                 Type::any_error()
             }
@@ -153,6 +156,7 @@ impl Lit {
                     range,
                     format!("Cannot negate type {self}"),
                     ErrorKind::Unknown,
+                    None,
                 );
                 Type::any_error()
             }
@@ -170,6 +174,7 @@ impl Lit {
                     range,
                     format!("Cannot invert type {self}"),
                     ErrorKind::Unknown,
+                    None,
                 );
                 Type::any_error()
             }

@@ -121,6 +121,7 @@ impl ModuleInfo {
                 err.location,
                 format!("Parse error: {err}"),
                 ErrorKind::ParseError,
+                None,
             );
         }
         module

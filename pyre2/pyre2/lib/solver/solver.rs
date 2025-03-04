@@ -316,7 +316,7 @@ impl Solver {
     ) {
         let got = self.expand(got.clone()).deterministic_printing();
         let want = self.expand(want.clone()).deterministic_printing();
-        errors.add(loc, tcc.format_error(&got, &want), ErrorKind::Unknown);
+        errors.add(loc, tcc.format_error(&got, &want), ErrorKind::Unknown, None);
     }
 
     /// Union a list of types together. In the process may cause some variables to be forced.

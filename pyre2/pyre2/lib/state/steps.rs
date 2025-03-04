@@ -93,6 +93,7 @@ impl Load {
                     module_info.path()
                 ),
                 ErrorKind::Unknown,
+                None,
             );
         }
         Self {

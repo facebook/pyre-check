@@ -9,7 +9,24 @@ use ruff_python_ast::name::Name;
 
 use crate::types::types::Type;
 
-/// The context in which a got <: want type check occurs
+/// General context for an error. For many errors, the root cause is some steps removed from what
+/// the user sees. For example:
+///   class C:
+///     def __lt__(self, other: C) -> bool:
+///   C() < 0  # ERROR: expected C, got 0
+/// The root cause is `C.__lt__` being called with the wrong type, but the user sees a `<`
+/// comparison. ErrorContext stores this context that the user sees, to make it easier to connect
+/// it back to the root cause.
+pub struct ErrorContext;
+
+/// The context in which a got <: want type check occurs. This differs from ErrorContext in that
+/// TypeCheckContext applies specifically to type mismatches and stores the immediate context. An
+/// error can have both ErrorContext and TypeCheckContext. For example:
+///   class C:
+///     def __lt__(self, other: C) -> bool:
+///   C() < 0  # ERROR: expected C, got 0
+/// ErrorContext stores the fact that the type mismatch occurs in the context of a `<` comparison.
+/// TypeCheckContext stores the fact that the mismatch is in the `other` parameter of `C.__lt__`.
 pub enum TypeCheckContext {
     /// Return type check on a named function. `Option<Type>` is the type that the function is
     /// defined on, if it is a method of a class.

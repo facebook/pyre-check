@@ -297,6 +297,7 @@ impl Bindings {
                 x.range,
                 "Invalid `return` outside of a function".to_owned(),
                 ErrorKind::Unknown,
+                None,
             );
         }
         let scope_trace = builder.scopes.finish();
@@ -318,6 +319,7 @@ impl Bindings {
                         static_info.loc,
                         format!("Could not find flow binding for `{k}`"),
                         ErrorKind::Unknown,
+                        None,
                     );
                     Binding::AnyType(AnyStyle::Error)
                 }
@@ -436,7 +438,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     pub fn error(&self, range: TextRange, msg: String) {
-        self.errors.add(range, msg, ErrorKind::Unknown);
+        self.errors.add(range, msg, ErrorKind::Unknown, None);
     }
 
     fn lookup_name(&mut self, name: &Name) -> Option<Idx<Key>> {

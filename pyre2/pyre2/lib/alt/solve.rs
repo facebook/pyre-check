@@ -222,6 +222,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             x.range(),
             format!("Invalid annotation: {problem} cannot be used in annotations"),
             ErrorKind::InvalidAnnotation,
+            None,
         );
         false
     }

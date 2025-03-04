@@ -363,7 +363,7 @@ impl State {
         kind: ErrorKind,
     ) {
         let load = module_data.state.read().steps.load.dupe().unwrap();
-        load.errors.add(range, msg, kind);
+        load.errors.add(range, msg, kind, None);
     }
 
     fn lookup<'a>(&'a self, module_data: Arc<ModuleData>) -> StateHandle<'a> {

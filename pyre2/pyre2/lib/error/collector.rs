@@ -16,6 +16,7 @@ use starlark_map::small_map::SmallMap;
 use tracing::error;
 use vec1::vec1;
 
+use crate::error::context::ErrorContext;
 use crate::error::error::Error;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
@@ -102,7 +103,13 @@ impl ErrorCollector {
         }
     }
 
-    pub fn add(&self, range: TextRange, msg: String, error_kind: ErrorKind) {
+    pub fn add(
+        &self,
+        range: TextRange,
+        msg: String,
+        error_kind: ErrorKind,
+        _error_context: Option<ErrorContext>,
+    ) {
         let source_range = self.module_info.source_range(range);
         let is_ignored = self.module_info.is_ignored(&source_range, &msg);
         if self.style != ErrorStyle::Never {
@@ -158,13 +165,14 @@ impl ErrorCollector {
         let s = format!("{v:?}");
         if s == format!("{:?}", v.range()) {
             // The v is just a range, so don't add the constructor
-            self.add(v.range(), format!("TODO: {msg}"), ErrorKind::Unknown);
+            self.add(v.range(), format!("TODO: {msg}"), ErrorKind::Unknown, None);
         } else {
             let prefix = s.split_once(' ').map_or(s.as_str(), |x| x.0);
             self.add(
                 v.range(),
                 format!("TODO: {prefix} - {msg}"),
                 ErrorKind::Unknown,
+                None,
             );
         }
     }
@@ -201,26 +209,31 @@ mod tests {
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "b".to_owned(),
             ErrorKind::Unknown,
+            None,
         );
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "a".to_owned(),
             ErrorKind::Unknown,
+            None,
         );
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "a".to_owned(),
             ErrorKind::Unknown,
+            None,
         );
         errors.add(
             TextRange::new(TextSize::new(2), TextSize::new(3)),
             "a".to_owned(),
             ErrorKind::Unknown,
+            None,
         );
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "b".to_owned(),
             ErrorKind::Unknown,
+            None,
         );
         assert_eq!(errors.collect().map(|x| x.msg()), vec!["a", "b", "a"]);
     }

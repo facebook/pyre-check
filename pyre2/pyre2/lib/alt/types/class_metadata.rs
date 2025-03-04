@@ -459,6 +459,7 @@ impl Linearization {
                             ClassName(base.qname()),
                         ),
                         ErrorKind::Unknown,
+                        None,
                     );
                     // Signal that we detected a cycle
                     return Linearization::Cyclic;
@@ -536,6 +537,7 @@ impl Linearization {
                         ClassName(first_candidate.qname()),
                     ),
                     ErrorKind::Unknown,
+                    None,
                 );
 
                 ancestor_chains = Vec::new()
