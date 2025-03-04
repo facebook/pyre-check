@@ -114,11 +114,14 @@ impl Hash for Identifiable {
 /// We use `immutable_hash`/`immutable_eq` to determine if we can reuse a thing.
 /// We use `mutate` to mutate the mutable fields to match our desired value.
 #[derive(Debug)]
-pub struct IdCache {
+pub struct IdCache(Mutex<IdCacheInner>);
+
+#[derive(Debug)]
+struct IdCacheInner {
     /// Things that were created last time and we can reuse.
-    reusable: Mutex<HashMap<Identifiable, Vec<Identifiable>>>,
+    reusable: HashMap<Identifiable, Vec<Identifiable>>,
     /// Things we are creating.
-    recorded: Mutex<Vec<Identifiable>>,
+    recorded: Vec<Identifiable>,
 }
 
 /// A history of the identifiers that were created, that can be reused.
@@ -132,19 +135,19 @@ impl IdCache {
         for x in history.0 {
             reusable.entry(x.dupe()).or_default().push(x);
         }
-        Self {
-            reusable: Mutex::new(reusable),
-            recorded: Mutex::new(Vec::new()),
-        }
+        Self(Mutex::new(IdCacheInner {
+            reusable,
+            recorded: Vec::new(),
+        }))
     }
 
     pub fn history(&self) -> IdCacheHistory {
-        IdCacheHistory(mem::take(&mut *self.recorded.lock()))
+        IdCacheHistory(mem::take(&mut self.0.lock().recorded))
     }
 
     fn get(&self, mut x: Identifiable) -> Identifiable {
-        let mut reusable = self.reusable.lock();
-        match reusable.entry(x.dupe()) {
+        let mut lock = self.0.lock();
+        match lock.reusable.entry(x.dupe()) {
             Entry::Occupied(mut e) => {
                 if let Some(existing) = e.get_mut().pop() {
                     if e.get().is_empty() {
@@ -156,7 +159,7 @@ impl IdCache {
             }
             Entry::Vacant(_) => {}
         };
-        self.recorded.lock().push(x.dupe());
+        lock.recorded.push(x.dupe());
         x
     }
 
