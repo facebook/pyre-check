@@ -1179,7 +1179,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     self.error(
                                         errors,
                                         x.slice.range(),
-                                        ErrorKind::Unknown,
+                                        ErrorKind::TypedDictKeyError,
                                         format!(
                                             "TypedDict `{}` does not have key `{}`",
                                             typed_dict.name(),
@@ -1191,7 +1191,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             _ => self.error(
                                 errors,
                                 x.slice.range(),
-                                ErrorKind::Unknown,
+                                ErrorKind::TypedDictKeyError,
                                 format!(
                                     "Invalid key for TypedDict `{}`, got `{}`",
                                     typed_dict.name(),

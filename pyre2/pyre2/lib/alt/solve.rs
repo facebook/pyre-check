@@ -1090,7 +1090,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 x.slice.range(),
-                                ErrorKind::MissingTypedDictKey,
+                                ErrorKind::TypedDictKeyError,
                                 format!(
                                     "TypedDict `{}` does not have key `{}`",
                                     typed_dict.name(),

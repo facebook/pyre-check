@@ -72,8 +72,9 @@ pub enum ErrorKind {
     MissingArgument,
     /// Accessing an attribute that does not exist on a module.
     MissingModuleAttribute,
-    /// Attempting to access a TypedDict with a key that does not exist.
-    MissingTypedDictKey,
+    /// An error related to TypedDict keys.
+    /// e.g. attempting to access a TypedDict with a key that does not exist.
+    TypedDictKeyError,
     /// The attribute exists but does not support this access pattern.
     NoAccess,
     /// Attempting to use something that isn't a type where a type is expected.

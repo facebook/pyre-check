@@ -12037,7 +12037,7 @@
       "concise_description": "TypedDict `Movie` does not have key `other`",
       "description": "TypedDict `Movie` does not have key `other`",
       "line": 24,
-      "name": "missing-typed-dict-key",
+      "name": "typed-dict-key-error",
       "stop_column": 14,
       "stop_line": 24
     },
@@ -12047,7 +12047,7 @@
       "concise_description": "TypedDict `Movie` does not have key `other`",
       "description": "TypedDict `Movie` does not have key `other`",
       "line": 26,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 20,
       "stop_line": 26
     },
@@ -12593,7 +12593,7 @@
       "concise_description": "TypedDict `Movie` does not have key `director`",
       "description": "TypedDict `Movie` does not have key `director`",
       "line": 23,
-      "name": "missing-typed-dict-key",
+      "name": "typed-dict-key-error",
       "stop_column": 17,
       "stop_line": 23
     },
