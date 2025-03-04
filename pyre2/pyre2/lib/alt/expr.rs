@@ -357,7 +357,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         x.range,
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidParamSpec,
                         format!(
                             "ParamSpec must be assigned to a variable named `{}`",
                             lit.value.to_str()
@@ -368,7 +368,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     arg.range(),
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidParamSpec,
                     "Expected first argument of ParamSpec to be a string literal".to_owned(),
                 );
             }
@@ -387,7 +387,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 kw.range,
-                                ErrorKind::Unknown,
+                                ErrorKind::InvalidParamSpec,
                                 "Multiple values for argument `name`".to_owned(),
                             );
                         } else {
@@ -399,7 +399,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             errors,
                             kw.range,
-                            ErrorKind::Unknown,
+                            ErrorKind::InvalidParamSpec,
                             format!("Unexpected keyword argument `{}` to ParamSpec", id.id),
                         );
                     }
@@ -408,7 +408,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         kw.range,
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidParamSpec,
                         "Cannot pass unpacked keyword arguments to ParamSpec".to_owned(),
                     );
                 }
@@ -419,7 +419,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 x.range,
-                ErrorKind::Unknown,
+                ErrorKind::InvalidParamSpec,
                 "Missing `name` argument".to_owned(),
             );
         }

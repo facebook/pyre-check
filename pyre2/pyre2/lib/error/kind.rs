@@ -25,8 +25,6 @@ pub enum ErrorKind {
     /// A function definition has some typing-related error.
     /// e.g. putting a non-default argument after a default argument.
     BadFunctionDefinition,
-    /// An error related to ParamSpec definition or usage.
-    BadParamSpec,
     /// Attempting to return a value that does not match the function's return type.
     /// Can also arise when returning values from generators.
     BadReturn,
@@ -55,6 +53,8 @@ pub enum ErrorKind {
     /// An error caused by incorrect inheritance in a class or type definition.
     /// e.g. a metaclass that is not a subclass of `type`.
     InvalidInheritance,
+    /// An error related to ParamSpec definition or usage.
+    InvalidParamSpec,
     /// Attempting to call `super()` in a way that is not allowed.
     /// e.g. calling `super(Y, x)` on an object `x` that does not match the class `Y`.
     InvalidSuperCall,

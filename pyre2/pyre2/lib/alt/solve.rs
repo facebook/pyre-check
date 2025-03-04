@@ -1629,14 +1629,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     x.def.range,
-                    ErrorKind::BadParamSpec,
+                    ErrorKind::InvalidParamSpec,
                     "ParamSpec *args and **kwargs must be used together".to_owned(),
                 );
             } else {
                 self.error(
                     errors,
                     x.def.range,
-                    ErrorKind::BadParamSpec,
+                    ErrorKind::InvalidParamSpec,
                     "*args and **kwargs must come from the same ParamSpec".to_owned(),
                 );
             }
