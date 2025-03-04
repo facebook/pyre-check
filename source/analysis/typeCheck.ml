@@ -8307,7 +8307,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             ~include_generated_attributes:true
             global_resolution
             (Reference.show (ClassSummary.name definition))
-          >>| List.filter ~f:(fun attribute -> AnnotatedAttribute.is_private attribute)
+          >>| List.filter ~f:(fun attribute ->
+                  AnnotatedAttribute.is_mangled_private_field attribute)
           >>| List.map ~f:(fun attribute ->
                   Error.create
                     ~location:(Location.with_module ~module_reference:Context.qualifier location)
@@ -8692,7 +8693,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                         | _ -> true
                       in
                       if
-                        AnnotatedAttribute.is_private overridden_attribute
+                        AnnotatedAttribute.is_mangled_private_field overridden_attribute
                         || (GlobalResolution.less_or_equal
                               global_resolution
                               ~left:actual

@@ -145,9 +145,9 @@ val property : 'a t -> bool
 
 val visibility : 'a t -> visibility
 
-val is_private : 'a t -> bool
-
 val is_private_field : 'a t -> bool
+
+val is_mangled_private_field : 'a t -> bool
 
 val public_name : 'a t -> Identifier.t
 

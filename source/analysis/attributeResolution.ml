@@ -1790,7 +1790,10 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
         let name_annotation_pairs =
           let name_annotation_pair attribute =
             let name = AnnotatedAttribute.name attribute in
-            if Expression.is_dunder_attribute name || AnnotatedAttribute.is_private attribute then
+            if
+              Expression.is_dunder_attribute name
+              || AnnotatedAttribute.is_mangled_private_field attribute
+            then
               None
             else
               let annotation =

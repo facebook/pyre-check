@@ -256,11 +256,10 @@ let undecorated_signature { undecorated_signature; _ } = undecorated_signature
 
 let problem { payload = InstantiatedAnnotation.{ problem; _ }; _ } = problem
 
-let is_private ({ name; _ } as attribute) =
-  let parent_prefix = parent_prefix attribute in
-  String.is_prefix ~prefix:(parent_prefix ^ "__") name
-
-
+(* In Python, there's a convention that any attribute starting with a single underscore is "private" name.
+ *
+ * This helper allows us to capture that convention for certain use cases, like variance inference.
+ *)
 let is_private_field { name; _ } =
   match name with
   | "" -> false
@@ -268,9 +267,20 @@ let is_private_field { name; _ } =
   | _ -> false
 
 
+(* There is a (rarely-used) runtime mechanism to mangle names of attributes that start with *two* underscores.
+ *
+ * This helper allows us to model that by allowing certain behaviors that would otherwise be
+ * unsound, as well as capturing a few edge cases (e.g. sqlalchemy constructor generation) where
+ * such private attributes are handles specially.
+ *)
+let is_mangled_private_field ({ name; _ } as attribute) =
+  let parent_prefix = parent_prefix attribute in
+  String.is_prefix ~prefix:(parent_prefix ^ "__") name
+
+
 let public_name ({ name; _ } as attribute) =
   let parent_prefix = parent_prefix attribute in
-  if is_private attribute then
+  if is_mangled_private_field attribute then
     String.drop_prefix name (String.length parent_prefix)
   else
     name
