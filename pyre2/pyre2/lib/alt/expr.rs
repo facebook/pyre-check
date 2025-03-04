@@ -115,7 +115,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     &got,
                     x.range(),
                     check_errors,
-                    &TypeCheckContext::Unknown,
+                    &TypeCheckContext::unknown(),
                 )
             }
             _ => self.expr_infer(x, errors),

@@ -20,14 +20,28 @@ use crate::types::types::Type;
 pub struct ErrorContext;
 
 /// The context in which a got <: want type check occurs. This differs from ErrorContext in that
-/// TypeCheckContext applies specifically to type mismatches and stores the immediate context. An
-/// error can have both ErrorContext and TypeCheckContext. For example:
+/// TypeCheckContext applies specifically to type mismatches. For example:
 ///   class C:
 ///     def __lt__(self, other: C) -> bool:
 ///   C() < 0  # ERROR: expected C, got 0
-/// ErrorContext stores the fact that the type mismatch occurs in the context of a `<` comparison.
-/// TypeCheckContext stores the fact that the mismatch is in the `other` parameter of `C.__lt__`.
-pub enum TypeCheckContext {
+/// The TypeCheckContext contains a TypeCheckKind, recording that the mismatch is in the `other` parameter of `C.__lt__`,
+/// and an ErrorContext, recording that the type mismatch occurs in the context of a `<` comparison.
+pub struct TypeCheckContext {
+    pub kind: TypeCheckKind,
+    #[expect(dead_code)]
+    pub context: Option<ErrorContext>,
+}
+
+impl TypeCheckContext {
+    /// Temporary helper to label errors as Unknown before we properly classify them.
+    pub fn unknown() -> Self {
+        Self {
+            kind: TypeCheckKind::Unknown,
+            context: None,
+        }
+    }
+}
+pub enum TypeCheckKind {
     /// Return type check on a named function. `Option<Type>` is the type that the function is
     /// defined on, if it is a method of a class.
     FunctionReturn(Name, Option<Type>),

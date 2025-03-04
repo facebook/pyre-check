@@ -58,6 +58,7 @@ use crate::dunder;
 use crate::dunder::inplace_dunder;
 use crate::error::collector::ErrorCollector;
 use crate::error::context::TypeCheckContext;
+use crate::error::context::TypeCheckKind;
 use crate::error::kind::ErrorKind;
 use crate::graph::index::Idx;
 use crate::module::module_path::ModuleStyle;
@@ -498,7 +499,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &exit_type,
             range,
             errors,
-            &TypeCheckContext::FunctionReturn(kind.as_exit_dunder(), Some(context_manager_type)),
+            &TypeCheckContext {
+                kind: TypeCheckKind::FunctionReturn(
+                    kind.as_exit_dunder(),
+                    Some(context_manager_type),
+                ),
+                context: None,
+            },
         );
         // TODO: `exit_type` may also affect exceptional control flow, which is yet to be supported:
         // https://typing.readthedocs.io/en/latest/spec/exceptions.html#context-managers
@@ -781,7 +788,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(k) = ann
                     && let Some(want) = &self.get_idx(*k).ty
                 {
-                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::Unknown)
+                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::unknown())
                 } else {
                     ty
                 }
@@ -792,7 +799,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(k) = ann
                     && let Some(want) = &self.get_idx(*k).ty
                 {
-                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::Unknown)
+                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::unknown())
                 } else {
                     ty
                 }
@@ -805,7 +812,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(k) = ann
                     && let Some(want) = &self.get_idx(*k).ty
                 {
-                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::Unknown)
+                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::unknown())
                 } else {
                     ty
                 }
@@ -835,7 +842,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 &implicit_return,
                                 *range,
                                 errors,
-                                &TypeCheckContext::Unknown,
+                                &TypeCheckContext::unknown(),
                             );
                         } else {
                             self.error(
@@ -851,7 +858,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &implicit_return,
                             *range,
                             errors,
-                            &TypeCheckContext::Unknown,
+                            &TypeCheckContext::unknown(),
                         );
                     }
                     ty
@@ -965,7 +972,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &exception,
                         range,
                         errors,
-                        &TypeCheckContext::Unknown,
+                        &TypeCheckContext::unknown(),
                     );
                     if let Some(base_exception_group_any_type) =
                         base_exception_group_any_type.as_ref()
@@ -1049,7 +1056,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &context_value,
                         e.range(),
                         errors,
-                        &TypeCheckContext::Unknown,
+                        &TypeCheckContext::unknown(),
                     ),
                     None => context_value,
                 }
@@ -1737,7 +1744,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &Type::None,
                             x.range,
                             errors,
-                            &TypeCheckContext::Unknown,
+                            &TypeCheckContext::unknown(),
                         )
                     };
                     Arc::new(YieldResult { yield_ty, send_ty })
@@ -1801,7 +1808,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     YieldFromResult::any_error()
                 };
                 if let Some(want) = want {
-                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::Unknown);
+                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::unknown());
                 }
                 Arc::new(res)
             }

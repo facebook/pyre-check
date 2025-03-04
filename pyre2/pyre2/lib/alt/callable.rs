@@ -136,7 +136,7 @@ impl CallArgPreEval<'_> {
         match self {
             Self::Type(ty, done) => {
                 *done = true;
-                solver.check_type(hint, ty, range, call_errors, &TypeCheckContext::Unknown);
+                solver.check_type(hint, ty, range, call_errors, &TypeCheckContext::unknown());
             }
             Self::Expr(x, done) => {
                 *done = true;
@@ -144,7 +144,7 @@ impl CallArgPreEval<'_> {
             }
             Self::Star(ty, done) => {
                 *done = vararg;
-                solver.check_type(hint, ty, range, call_errors, &TypeCheckContext::Unknown);
+                solver.check_type(hint, ty, range, call_errors, &TypeCheckContext::unknown());
             }
             Self::Fixed(tys, i) => {
                 solver.check_type(
@@ -152,7 +152,7 @@ impl CallArgPreEval<'_> {
                     &tys[*i],
                     range,
                     call_errors,
-                    &TypeCheckContext::Unknown,
+                    &TypeCheckContext::unknown(),
                 );
                 *i += 1;
             }
@@ -321,7 +321,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &unpacked_args_ty,
                 range,
                 arg_errors,
-                &TypeCheckContext::Unknown,
+                &TypeCheckContext::unknown(),
             );
         }
         if let Some(arg_range) = extra_arg_pos {
@@ -427,7 +427,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     &field.ty,
                                     kw.range,
                                     call_errors,
-                                    &TypeCheckContext::Unknown,
+                                    &TypeCheckContext::unknown(),
                                 );
                             });
                         })
@@ -445,7 +445,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                             &value,
                                             kw.range,
                                             call_errors,
-                                            &TypeCheckContext::Unknown,
+                                            &TypeCheckContext::unknown(),
                                         );
                                     });
                                     splat_kwargs.push((value, kw.range));
@@ -516,7 +516,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                 }
                 for (ty, range) in &splat_kwargs {
-                    self.check_type(want, ty, *range, call_errors, &TypeCheckContext::Unknown);
+                    self.check_type(want, ty, *range, call_errors, &TypeCheckContext::unknown());
                 }
             }
         }

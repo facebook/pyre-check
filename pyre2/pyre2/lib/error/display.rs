@@ -6,6 +6,7 @@
  */
 
 use crate::error::context::TypeCheckContext;
+use crate::error::context::TypeCheckKind;
 use crate::types::display::TypeDisplayContext;
 use crate::types::types::Type;
 
@@ -14,8 +15,8 @@ impl TypeCheckContext {
         let mut ctx = TypeDisplayContext::new();
         ctx.add(got);
         ctx.add(want);
-        match self {
-            TypeCheckContext::FunctionReturn(func, defining_cls) => {
+        match &self.kind {
+            TypeCheckKind::FunctionReturn(func, defining_cls) => {
                 let func_name = match defining_cls {
                     Some(cls) => {
                         ctx.add(cls);
@@ -30,7 +31,7 @@ impl TypeCheckContext {
                     ctx.display(got)
                 )
             }
-            TypeCheckContext::Unknown => {
+            TypeCheckKind::Unknown => {
                 format!("EXPECTED {} <: {}", ctx.display(got), ctx.display(want))
             }
         }
