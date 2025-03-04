@@ -182,7 +182,7 @@ impl Class {
         self.0.qname.module_name()
     }
 
-    pub fn module_info(&self) -> &ModuleInfo {
+    pub fn module_info(&self) -> ModuleInfo {
         self.0.qname.module_info()
     }
 

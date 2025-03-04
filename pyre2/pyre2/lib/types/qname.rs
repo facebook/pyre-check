@@ -12,6 +12,7 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 
+use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
 use ruff_text_size::TextRange;
@@ -20,6 +21,7 @@ use ruff_text_size::TextSize;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::util::lock::RwLock;
 
 /// A name, plus where it is defined.
 pub struct QName {
@@ -27,7 +29,8 @@ pub struct QName {
     /// They always come from a single `Identifier`.
     name: Name,
     range: TextRange,
-    module: ModuleInfo,
+    module_name: ModuleName,
+    module_info: RwLock<ModuleInfo>,
 }
 
 impl Debug for QName {
@@ -37,7 +40,7 @@ impl Debug for QName {
             // The full details of ModuleInfo are pretty boring in most cases,
             // and we only cache it so we can defer expanding the range.
             // Therefore, shorten the Debug output, as ModuleInfo is pretty big.
-            .field("module", &self.module.name())
+            .field("module", &self.module_name)
             .finish()
     }
 }
@@ -74,7 +77,7 @@ impl QName {
             &self.name,
             self.range.start(),
             self.range.end(),
-            self.module.name(),
+            self.module_name,
         )
     }
 
@@ -82,7 +85,8 @@ impl QName {
         Self {
             name: name.id,
             range: name.range,
-            module,
+            module_name: module.name(),
+            module_info: RwLock::new(module),
         }
     }
 
@@ -98,12 +102,12 @@ impl QName {
         ShortIdentifier::new_from_decomposed_identifier(self.range)
     }
 
-    pub fn module_info(&self) -> &ModuleInfo {
-        &self.module
+    pub fn module_info(&self) -> ModuleInfo {
+        self.module_info.read().dupe()
     }
 
     pub fn module_name(&self) -> ModuleName {
-        self.module.name()
+        self.module_name
     }
 
     pub fn fmt_name(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -111,16 +115,16 @@ impl QName {
     }
 
     pub fn fmt_with_module(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}.{}", self.module.name(), self.name)
+        write!(f, "{}.{}", self.module_name(), self.name)
     }
 
     pub fn fmt_with_location(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}.{}@{}",
-            self.module.name(),
+            self.module_name,
             self.name,
-            self.module.source_range(self.range)
+            self.module_info.read().source_range(self.range)
         )
     }
 }

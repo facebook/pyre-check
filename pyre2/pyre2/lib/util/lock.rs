@@ -35,6 +35,10 @@ impl<T> Mutex<T> {
 pub struct RwLock<T>(sync::RwLock<T>);
 
 impl<T> RwLock<T> {
+    pub fn new(t: T) -> Self {
+        Self(sync::RwLock::new(t))
+    }
+
     pub fn read(&self) -> sync::RwLockReadGuard<'_, T> {
         self.0.read().unwrap()
     }

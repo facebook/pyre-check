@@ -890,7 +890,7 @@ impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
                 if seen.insert(fld.clone()) {
                     res.push(AttrInfo {
                         name: fld.clone(),
-                        module: Some(c.module_info().dupe()),
+                        module: Some(c.module_info()),
                         range: c.field_decl_range(fld),
                     });
                 }
