@@ -145,12 +145,13 @@ pub struct ComputeStep<Lookup: LookupExport + LookupAnswer>(
 );
 
 macro_rules! compute_step {
-    (<$ty:ty> $output:ident = $($input:ident),*) => {
+    (<$ty:ty> $output:ident = $($input:ident),* $(,)? $(#$old_input:ident),*) => {
         ComputeStep(Box::new(|steps: &Steps| {
             let _ = steps; // Not used if $input is empty.
             $(let $input = steps.$input.dupe().unwrap();)*
+            $(let $old_input = steps.$old_input.dupe();)*
             Box::new(move |ctx: &Context<$ty>| {
-                let res = paste! { Step::[<step_ $output>] }(ctx, $($input),*);
+                let res = paste! { Step::[<step_ $output>] }(ctx, $($input,)* $($old_input,)* );
                 Box::new(move |steps: &mut Steps| {
                     steps.$output = Some(res);
                     steps.last_step = Some(paste! { Step::[<$output:camel>] });
@@ -176,7 +177,7 @@ impl Step {
             Step::Load => compute_step!(<Lookup> load =),
             Step::Ast => compute_step!(<Lookup> ast = load),
             Step::Exports => compute_step!(<Lookup> exports = load, ast),
-            Step::Answers => compute_step!(<Lookup> answers = load, ast, exports),
+            Step::Answers => compute_step!(<Lookup> answers = load, ast, exports, #solutions),
             Step::Solutions => compute_step!(<Lookup> solutions = load, answers),
         }
     }
@@ -221,6 +222,7 @@ impl Step {
         load: Arc<Load>,
         ast: Arc<ModModule>,
         exports: Exports,
+        previous_solutions: Option<Arc<(IdCacheHistory, Arc<Solutions>)>>,
     ) -> Arc<(Bindings, Arc<Answers>)> {
         let solver = Solver::new();
         let enable_trace = ctx.retain_memory;
@@ -236,7 +238,11 @@ impl Step {
             ctx.uniques,
             enable_trace,
         );
-        let answers = Answers::new(&bindings, solver, IdCacheHistory::default(), enable_trace);
+        let history = previous_solutions
+            .as_ref()
+            .map(|s| s.0.clone())
+            .unwrap_or_default();
+        let answers = Answers::new(&bindings, solver, history, enable_trace);
         Arc::new((bindings, Arc::new(answers)))
     }
 
