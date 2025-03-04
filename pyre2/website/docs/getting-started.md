@@ -1,9 +1,10 @@
 ---
 title: Getting Started
 slug: /getting-started
-description:
-  Never used a type system before or just new to Pyre2? Let's get you up and
-  running in a few minutes.
+
+description: Coming soon to a Python project near you.
 ---
 
 Getting started filler
+
+Pyrefly isn't ready just yet, but you can see our roadmap here: {TODO LINK}

@@ -21,7 +21,6 @@
 .tryEditorConfig {
     position: absolute;
     width: 100%;
-    height: calc(100vh - var(--ifm-navbar-height) - 40px);
     z-index: 10;
     background-color: white;
     overflow: auto;
@@ -76,14 +75,13 @@
 
 .tryEditor {
     display: flex;
-    flex: 1;
-    height: calc(100vh - var(--ifm-navbar-height));
+    flex-direction: column;
 }
 
 .code,
 .results {
-    flex: 1;
-    width: 50%;
+    width: 100%;
+    padding: 10px;
 }
 
 .code {
@@ -100,7 +98,6 @@
 .resultBody {
     display: flex;
     flex: 1;
-    height: calc(100vh - var(--ifm-navbar-height) - 40px);
     overflow: auto;
 }
 

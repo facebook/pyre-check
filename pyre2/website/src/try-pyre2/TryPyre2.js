@@ -41,16 +41,22 @@ reveal_type(test(42))
 `;
 
 const pyre2WasmUninitializedPromise =
-  typeof window !== 'undefined' ? import('./pyre2_wasm') : new Promise((_resolve) => {});
+  typeof window !== 'undefined'
+    ? import('./pyre2_wasm')
+    : new Promise(_resolve => {});
 
-const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise.then(async (mod) => {
-  await mod.default();
-  return mod;
-}).catch(e => console.log(e));
+const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
+  .then(async mod => {
+    await mod.default();
+    return mod;
+  })
+  .catch(e => console.log(e));
 
 export default component TryPyre2(
   defaultFlowVersion: string,
   flowVersions: $ReadOnlyArray<string>,
+  editorHeight: number,
+  codeSample: string,
 ) {
   const {withBaseUrl} = useBaseUrlUtils();
   const editorRef = useRef(null);
@@ -88,7 +94,7 @@ export default component TryPyre2(
     // typecheck on edit
     try {
       pyreService.updateSource(model.getValue());
-      monaco.editor.setModelMarkers(model, 'default', pyreService.getErrors())
+      monaco.editor.setModelMarkers(model, 'default', pyreService.getErrors());
       setInternalError('');
     } catch (e) {
       console.error(e);
@@ -102,15 +108,17 @@ export default component TryPyre2(
     editorRef.current = editor;
   }
 
+  const height = editorHeight || '600px';
+
   return (
     <div className={styles.tryEditor}>
       <div className={styles.code}>
         <div className={styles.editorContainer}>
           <Editor
-            defaultValue={DEFAULT_PYTHON_PROGRAM}
+            defaultValue={codeSample || DEFAULT_PYTHON_PROGRAM}
             defaultLanguage="python"
             theme="vs-light"
-            height="calc(100vh - var(--ifm-navbar-height) - 40px)"
+            height={height}
             onChange={forceRecheck}
             onMount={onMount}
             options={{

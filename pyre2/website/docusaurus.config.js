@@ -82,47 +82,23 @@ module.exports = {
       respectPrefersColorScheme: false,
     },
     navbar: {
-      logo: {
-        alt: 'My Facebook Project Logo',
-        src: 'img/logo.svg',
-      },
+      title: 'Pyrefly',
       items: [
         {
           to: 'en/docs/',
           activeBasePath: 'en/docs',
-          label: 'Docs',
-          position: 'left',
-        },
-        process.env.INTERNAL_STATIC_DOCS
-          ? {to: 'https://pyre2.org/try', label: 'Try', position: 'left'}
-          : {
-              to: 'try/',
-              activeBasePath: 'try',
-              label: 'Try',
-              position: 'left',
-            },
-        {
-          to: 'blog/',
-          label: 'Blog',
+          label: 'Learn Python Typing',
           position: 'left',
         },
         {
-          // TODO (T216437697): Update links to the new Pyre2 website
-          href: 'https://twitter.com/flowtype',
-          'aria-label': 'Twitter',
-          position: 'right',
-          className: 'navbar__icon twitter__link',
-        },
-        {
-          // TODO (T216437697): Update links to the new Pyre2 website
-          href: 'http://stackoverflow.com/questions/tagged/flowtype',
-          'aria-label': 'Stack Overflow',
-          position: 'right',
-          className: 'navbar__icon stackoverflow__link',
+          to: 'try/',
+          activeBasePath: 'try',
+          label: 'Try',
+          position: 'left',
         },
         // Please keep GitHub link to the right for consistency.
         {
-          href: 'https://github.com/facebook/flow',
+          href: 'https://github.com/facebook/pyrefly',
           'aria-label': 'GitHub',
           position: 'right',
           className: 'navbar__icon github__link',
@@ -145,14 +121,8 @@ module.exports = {
           title: 'Community',
           items: [
             {
-              label: 'Twitter',
-              // TODO (T216437697): Update links to the new Pyre2 website
-              href: 'https://twitter.com/flowtype',
-            },
-            {
               label: 'Discord',
-              // TODO (T216437697): Update links to the new Pyre2 website
-              href: 'https://discordapp.com/invite/8ezwRUK',
+              href: 'https://discord.gg/NBqFhHxX',
             },
           ],
         },
@@ -160,14 +130,8 @@ module.exports = {
           title: 'More',
           items: [
             {
-              label: 'Medium',
-              // TODO (T216437697): Update links to the new Pyre2 website
-              to: 'https://medium.com/flow-type',
-            },
-            {
-              label: 'GitHub',
-              // TODO (T216437697): Update links to the new Pyre2 website
-              href: 'https://github.com/facebook/flow',
+              label: 'Github',
+              href: 'https://github.com/facebook/pyrefly',
             },
           ],
         },
@@ -228,14 +192,7 @@ module.exports = {
             require('./src/js/flow-check-remark-plugin'),
           ],
         },
-        staticDocsProject: 'Pyre2',
-        blog: {
-          path: 'blog',
-          postsPerPage: 50,
-          showReadingTime: false,
-          blogSidebarCount: 'ALL',
-          blogSidebarTitle: 'All our posts',
-        },
+        staticDocsProject: 'Pyrefly',
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
