@@ -52,7 +52,6 @@ impl ClassFieldProperties {
     }
 }
 
-#[derive(Clone)]
 struct ClassInner {
     qname: QName,
     tparams: TParams,

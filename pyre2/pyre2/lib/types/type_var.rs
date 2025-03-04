@@ -40,7 +40,7 @@ pub enum Variance {
     Invariant,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
 struct TypeVarInner {
     qname: QName,
     restriction: Restriction,

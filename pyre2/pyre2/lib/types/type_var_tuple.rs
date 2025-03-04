@@ -26,7 +26,7 @@ impl Display for TypeVarTuple {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
 struct TypeVarTupleInner {
     qname: QName,
 }

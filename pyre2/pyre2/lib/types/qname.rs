@@ -22,7 +22,6 @@ use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 
 /// A name, plus where it is defined.
-#[derive(Clone)]
 pub struct QName {
     /// The `name` and `range` must be consistent.
     /// They always come from a single `Identifier`.

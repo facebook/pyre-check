@@ -26,7 +26,7 @@ impl Display for ParamSpec {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
 struct ParamSpecInner {
     qname: QName,
 }
