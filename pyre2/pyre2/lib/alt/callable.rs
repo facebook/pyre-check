@@ -417,7 +417,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.error(
                                     call_errors,
                                     kw.range,
-                                    ErrorKind::Unknown,
+                                    ErrorKind::UnexpectedKeyword,
                                     format!("Unexpected keyword argument `{}`", name),
                                 );
                             }
@@ -493,7 +493,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             call_errors,
                             kw.range,
-                            ErrorKind::Unknown,
+                            ErrorKind::UnexpectedKeyword,
                             format!("Unexpected keyword argument `{}`", id.id),
                         );
                     }

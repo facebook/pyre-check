@@ -74,6 +74,8 @@ pub enum ErrorKind {
     /// An error casued by unpacking.
     /// e.g. attempting to unpack an iterable into the wrong number of variables.
     BadUnpacking,
+    /// An error caused by a keyword argument used in the wrong place.
+    UnexpectedKeyword,
     /// Attempting to use a feature that is not yet supported.
     #[allow(dead_code)]
     Unsupported,
