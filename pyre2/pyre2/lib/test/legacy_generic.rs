@@ -444,3 +444,13 @@ x1: int = f(0)
 x2: str = f("hello")
 "#,
 );
+
+testcase_with_bug!(
+    "TODO: We should raise an error on list[T] because T is unbounded",
+    test_unbounded_typevar,
+    r#"
+from typing import TypeVar
+T = TypeVar("T")
+x: list[T]
+    "#,
+);
