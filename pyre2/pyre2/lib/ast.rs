@@ -274,6 +274,7 @@ impl Ast {
     }
 }
 
+#[derive(Debug)]
 pub struct AtomicTextRange(AtomicU64);
 
 impl AtomicTextRange {
