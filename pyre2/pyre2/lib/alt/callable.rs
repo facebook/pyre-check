@@ -511,7 +511,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         call_errors,
                         range,
-                        ErrorKind::Unknown,
+                        ErrorKind::MissingArgument,
                         format!("Missing argument `{}`", name),
                     );
                 }

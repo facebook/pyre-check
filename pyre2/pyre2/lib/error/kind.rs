@@ -54,6 +54,8 @@ pub enum ErrorKind {
     /// Attempting to use `yield` in a way that is not allowed.
     /// e.g. `yield from` with something that's not an iterable.
     InvalidYield,
+    /// An error caused by calling a function without all the required arguments.
+    MissingArgument,
     /// Accessing an attribute that does not exist on a module.
     MissingModuleAttribute,
     /// Attempting to access a TypedDict with a key that does not exist.
