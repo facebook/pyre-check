@@ -34,18 +34,30 @@ pub struct TypeCheckContext {
 }
 
 impl TypeCheckContext {
-    /// Temporary helper to label errors as Unknown before we properly classify them.
-    pub fn unknown() -> Self {
+    pub fn of_kind(kind: TypeCheckKind) -> Self {
         Self {
-            kind: TypeCheckKind::Unknown,
+            kind,
             context: None,
         }
+    }
+
+    /// Temporary helper to label errors as Unknown before we properly classify them.
+    pub fn unknown() -> Self {
+        Self::of_kind(TypeCheckKind::Unknown)
+    }
+
+    /// Temporary helper to label errors as Test to aid classification.
+    #[allow(dead_code)]
+    pub fn test() -> Self {
+        Self::of_kind(TypeCheckKind::Test)
     }
 }
 pub enum TypeCheckKind {
     /// Return type check on a named function. `Option<Type>` is the type that the function is
     /// defined on, if it is a method of a class.
     FunctionReturn(Name, Option<Type>),
-    // TODO: categorize all type checks and remove Unknown designation
+    // TODO: categorize all type checks and remove Unknown and Test designations
     Unknown,
+    #[allow(dead_code)]
+    Test,
 }
