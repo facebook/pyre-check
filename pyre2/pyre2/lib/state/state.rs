@@ -97,6 +97,10 @@ struct ModuleData {
     handle: Handle,
     state: UpgradeLock<Step, ModuleState>,
     deps: RwLock<HashMap<ModuleName, Arc<ModuleData>, BuildNoHash>>,
+    /// The reverse dependencies of this module. This is used to invalidate on change.
+    /// Note that if we are only running once, e.g. on the command line, this isn't valuable.
+    /// But we create it anyway for simplicity, since it doesn't seem to add much overhead.
+    rdeps: Mutex<HashMap<Handle, Arc<ModuleData>>>,
 }
 
 struct ModuleState {
@@ -115,6 +119,7 @@ impl ModuleData {
                 steps: Steps::default(),
             }),
             deps: Default::default(),
+            rdeps: Default::default(),
         }
     }
 }
@@ -175,7 +180,11 @@ impl State {
             if let Some(subscriber) = &self.subscriber {
                 subscriber.start_work(module_data.handle.dupe());
             }
-            module_data.deps.write().clear();
+            let deps = mem::take(&mut *module_data.deps.write());
+            for d in deps.values() {
+                let removed = d.rdeps.lock().remove(&module_data.handle);
+                assert!(removed.is_some());
+            }
             finish(w);
         };
 
@@ -200,6 +209,12 @@ impl State {
             // The contents are the same, so we can just reuse the old load
         }
 
+        if exclusive.dirty.deps {
+            let mut write = exclusive.write();
+            rebuild(&mut write, false);
+            return;
+        }
+
         // Validate the find flag.
         if exclusive.dirty.find {
             let loader = self.get_cached_loader(module_data.handle.loader());
@@ -218,22 +233,6 @@ impl State {
                 rebuild(&mut write, false);
                 return;
             }
-        }
-
-        // Validate the dependencies.
-        let mut is_dirty_deps = exclusive.dirty.deps;
-        if !is_dirty_deps {
-            for x in module_data.deps.read().values() {
-                if exclusive.epochs.computed < x.state.read().epochs.changed {
-                    is_dirty_deps = true;
-                    break;
-                }
-            }
-        }
-        if is_dirty_deps {
-            let mut write = exclusive.write();
-            rebuild(&mut write, false);
-            return;
         }
 
         // The module was not dirty. Make sure our dependencies aren't dirty either.
@@ -298,6 +297,7 @@ impl State {
                 lookup: &self.lookup(module_data.dupe()),
             });
             {
+                let mut changed = false;
                 let mut to_drop = None;
                 let mut writer = exclusive.write();
                 let mut load_result = None;
@@ -310,7 +310,7 @@ impl State {
                 if todo == Step::Solutions {
                     if old_solutions != writer.steps.solutions {
                         if old_solutions.is_some() {
-                            self.changed.lock().push(module_data.handle.dupe());
+                            changed = true;
                         }
                         writer.epochs.changed = self.now;
                     }
@@ -323,6 +323,27 @@ impl State {
                 drop(writer);
                 // Release the lock before dropping
                 drop(to_drop);
+                if changed {
+                    self.changed.lock().push(module_data.handle.dupe());
+                    for x in module_data.rdeps.lock().values() {
+                        loop {
+                            let reader = x.state.read();
+                            if reader.epochs.computed == self.now || reader.dirty.deps {
+                                // Either doesn't need setting, or already set
+                                break;
+                            }
+                            if let Some(exclusive) = reader.exclusive(Step::first()) {
+                                if exclusive.epochs.computed == self.now || exclusive.dirty.deps {
+                                    break;
+                                }
+                                let mut writer = exclusive.write();
+                                writer.dirty.deps = true;
+                                break;
+                            }
+                            // continue around the loop - failed to get the lock, but we really want it
+                        }
+                    }
+                }
                 if let Some(load) = load_result
                     && let Some(subscriber) = &self.subscriber
                 {
@@ -873,7 +894,17 @@ impl<'a> StateHandle<'a> {
 
         let handle = self.state.import_handle(&self.module_data.handle, module)?;
         let res = self.state.get_module(&handle);
-        self.module_data.deps.write().insert(module, res.dupe());
+        if self
+            .module_data
+            .deps
+            .write()
+            .insert(module, res.dupe())
+            .is_none()
+        {
+            res.rdeps
+                .lock()
+                .insert(self.module_data.handle.dupe(), self.module_data.dupe());
+        }
         Ok(res)
     }
 }
