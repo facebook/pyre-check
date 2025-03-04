@@ -184,9 +184,10 @@ impl<'a> BindingsBuilder<'a> {
         );
     }
 
-    fn assign_new_type(&mut self, name: &ExprName, new_type_name: &Expr, base: &Expr) {
+    fn assign_new_type(&mut self, name: &ExprName, new_type_name: &mut Expr, base: &mut Expr) {
+        self.ensure_expr(new_type_name);
         self.check_functional_definition_name(&name.id, new_type_name);
-        self.ensure_type(&mut base.clone(), &mut None);
+        self.ensure_type(base, &mut None);
         self.synthesize_typing_new_type(
             Identifier::new(name.id.clone(), name.range()),
             base.clone(),
@@ -279,9 +280,8 @@ impl<'a> BindingsBuilder<'a> {
                             }
                         }
                         SpecialExport::NewType => {
-                            let args = &call.arguments.args;
-                            if args.len() == 2 {
-                                self.assign_new_type(name, &args[0], &args[1]);
+                            if let [new_type_name, base] = &mut *call.arguments.args {
+                                self.assign_new_type(name, new_type_name, base);
                                 return;
                             }
                         }
