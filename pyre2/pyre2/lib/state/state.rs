@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+// Clippy thinks ModuleData is mutable (it is), but the ArcId makes the Hash/Eq immutable
+#![allow(clippy::mutable_key_type)]
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::mem;
@@ -83,8 +86,8 @@ pub struct State {
     /// the highest step (the module that is closest to being finished)
     /// gets picked first, ensuring we release its memory quickly.
     todo: Mutex<EnumHeap<Step, ArcId<ModuleData>>>,
-    /// Handles whose solutions changed value since the last time we recomputed
-    changed: Mutex<Vec<Handle>>,
+    /// Values whose solutions changed value since the last time we recomputed
+    changed: Mutex<Vec<ArcId<ModuleData>>>,
     /// The current epoch, gets incremented every time we recompute
     now: Epoch,
     /// Thing to tell about each action.
@@ -325,7 +328,7 @@ impl State {
                 // Release the lock before dropping
                 drop(to_drop);
                 if changed {
-                    self.changed.lock().push(module_data.handle.dupe());
+                    self.changed.lock().push(module_data.dupe());
                     for x in module_data.rdeps.lock().values() {
                         loop {
                             let reader = x.state.read();
@@ -629,24 +632,24 @@ impl State {
         }
     }
 
-    fn invalidate_rdeps(&mut self, changed: &[Handle]) {
+    fn invalidate_rdeps(&mut self, changed: &[ArcId<ModuleData>]) {
         // We need to invalidate all modules that depend on anything in changed, including transitively.
         fn f(
-            dirty_handles: &mut SmallMap<Handle, bool>,
-            stack: &mut HashSet<Handle>,
-            x: &ModuleData,
+            dirty_handles: &mut SmallMap<ArcId<ModuleData>, bool>,
+            stack: &mut HashSet<ArcId<ModuleData>>,
+            x: &ArcId<ModuleData>,
         ) -> bool {
-            if let Some(res) = dirty_handles.get(&x.handle) {
+            if let Some(res) = dirty_handles.get(x) {
                 *res
-            } else if stack.contains(&x.handle) {
+            } else if stack.contains(x) {
                 // Recursive hypothesis - do not write to dirty
                 false
             } else {
-                stack.insert(x.handle.dupe());
+                stack.insert(x.dupe());
                 let reader = x.deps.read();
                 let res = reader.values().any(|y| f(dirty_handles, stack, y));
-                stack.remove(&x.handle);
-                dirty_handles.insert(x.handle.dupe(), res);
+                stack.remove(x);
+                dirty_handles.insert(x.dupe(), res);
                 res
             }
         }
@@ -662,14 +665,7 @@ impl State {
 
         for (x, dirty) in dirty_handles {
             if dirty {
-                self.modules
-                    .get(&x)
-                    .unwrap()
-                    .state
-                    .write(Step::Load)
-                    .unwrap()
-                    .dirty
-                    .deps = true;
+                x.state.write(Step::Load).unwrap().dirty.deps = true;
             }
         }
     }
