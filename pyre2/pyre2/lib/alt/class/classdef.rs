@@ -58,7 +58,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             x.name.clone(),
             self.module_info().dupe(),
             tparams,
-            fields.clone(),
+            fields,
         )
     }
 
