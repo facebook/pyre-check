@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::mem;
+
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
@@ -38,11 +40,20 @@ pub struct IdCache {
     recorded: Mutex<Vec<Identifiable>>,
 }
 
+/// A history of the identifiers that were created, that can be reused.
+#[derive(Debug)]
+#[expect(dead_code)]
+pub struct IdCacheHistory(Vec<Identifiable>);
+
 impl IdCache {
     pub fn new() -> Self {
         Self {
             recorded: Mutex::new(Vec::new()),
         }
+    }
+
+    pub fn history(&self) -> IdCacheHistory {
+        IdCacheHistory(mem::take(&mut *self.recorded.lock()))
     }
 
     pub fn class(

@@ -18,6 +18,7 @@ use ruff_text_size::TextRange;
 use crate::alt::answers::Answers;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::Solutions;
+use crate::alt::id_cache::IdCacheHistory;
 use crate::binding::bindings::Bindings;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
@@ -112,7 +113,7 @@ pub struct Steps {
     pub ast: Option<Arc<ModModule>>,
     pub exports: Option<Exports>,
     pub answers: Option<Arc<(Bindings, Arc<Answers>)>>,
-    pub solutions: Option<Arc<Solutions>>,
+    pub solutions: Option<Arc<(IdCacheHistory, Arc<Solutions>)>>,
 }
 
 impl Steps {
@@ -244,14 +245,16 @@ impl Step {
         ctx: &Context<Lookup>,
         load: Arc<Load>,
         answers: Arc<(Bindings, Arc<Answers>)>,
-    ) -> Arc<Solutions> {
-        Arc::new(answers.1.solve(
+    ) -> Arc<(IdCacheHistory, Arc<Solutions>)> {
+        let solutions = answers.1.solve(
             ctx.lookup,
             ctx.lookup,
             &answers.0,
             &load.errors,
             ctx.stdlib,
             ctx.uniques,
-        ))
+        );
+        let history = answers.1.id_cache_history();
+        Arc::new((history, Arc::new(solutions)))
     }
 }

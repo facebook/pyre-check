@@ -312,7 +312,9 @@ impl State {
                 };
                 set(&mut writer.steps);
                 if todo == Step::Solutions {
-                    if old_solutions != writer.steps.solutions {
+                    if old_solutions.as_ref().map(|x| &x.1)
+                        != writer.steps.solutions.as_ref().map(|x| &x.1)
+                    {
                         if old_solutions.is_some() {
                             changed = true;
                         }
@@ -461,7 +463,7 @@ impl State {
         {
             // if we happen to have solutions available, use them instead
             if let Some(solutions) = &module_data.state.read().steps.solutions {
-                return solutions.get(key).unwrap().dupe();
+                return solutions.1.get(key).unwrap().dupe();
             }
         }
 
@@ -469,7 +471,7 @@ impl State {
         let (load, answers) = {
             let steps = module_data.state.read();
             if let Some(solutions) = &steps.steps.solutions {
-                return solutions.get(key).unwrap().dupe();
+                return solutions.1.get(key).unwrap().dupe();
             }
             (
                 steps.steps.load.dupe().unwrap(),
@@ -773,13 +775,8 @@ impl State {
 
     #[allow(dead_code)]
     pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<Solutions>> {
-        self.modules
-            .get(handle)?
-            .state
-            .read()
-            .steps
-            .solutions
-            .dupe()
+        let reader = self.modules.get(handle)?.state.read();
+        Some(reader.steps.solutions.as_ref()?.1.dupe())
     }
 
     pub fn ad_hoc_solve<R: Sized, F: FnOnce(AnswersSolver<StateHandle>) -> R>(
@@ -818,7 +815,7 @@ impl State {
                 steps.steps.solutions.dupe().unwrap(),
             )
         });
-        DebugInfo::new(&owned.map(|x| (&x.0.module_info, &x.0.errors, &x.1.0, &*x.2)))
+        DebugInfo::new(&owned.map(|x| (&x.0.module_info, &x.0.errors, &x.1.0, &*x.2.1)))
     }
 
     pub fn check_against_expectations(&self) -> anyhow::Result<()> {

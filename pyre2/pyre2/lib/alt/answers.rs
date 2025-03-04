@@ -15,6 +15,7 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
 use crate::alt::id_cache::IdCache;
+use crate::alt::id_cache::IdCacheHistory;
 use crate::alt::traits::Solve;
 use crate::alt::traits::SolveRecursive;
 use crate::binding::binding::Keyed;
@@ -305,6 +306,10 @@ impl Answers {
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
     {
         self.table.get::<K>().get(k)?.get()
+    }
+
+    pub fn id_cache_history(&self) -> IdCacheHistory {
+        self.id_cache.history()
     }
 
     pub fn get_type_trace(&self, range: TextRange) -> Option<Arc<Type>> {
