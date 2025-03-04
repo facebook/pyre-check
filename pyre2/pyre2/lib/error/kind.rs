@@ -10,6 +10,7 @@ use convert_case::Casing;
 use dupe::Dupe;
 use parse_display::Display;
 
+// Keep ErrorKind sorted lexographically, except for Unsupported and Unknown.
 #[derive(
     Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash, Copy, Dupe, Display
 )]
@@ -29,17 +30,28 @@ pub enum ErrorKind {
     /// Attempting to return a value that does not match the function's return type.
     /// Can also arise when returning values from generators.
     BadReturn,
+    /// Attempting to specialize a generic class with incorrect type arguments.
+    /// e.g. `type[int, str]` is an error because `type` accepts only 1 type arg.
+    BadSpecialization,
+    /// An error casued by unpacking.
+    /// e.g. attempting to unpack an iterable into the wrong number of variables.
+    BadUnpacking,
     /// An error caused by a bad match statement.
     /// e.g. Writing a Foo(x, y, z) pattern when Foo only matches on (x, y).
     MatchError,
     /// Attempting to access an attribute that does not exist.
     MissingAttribute,
+    /// Attemping to access a container with an incorrect index.
+    /// This only occurs when pyre can statically verify that the index is incorrect.
+    IndexError,
     /// Internal Pyre error.
     InternalError,
     /// Attempting to write an annotation that is invalid for some reason.
     InvalidAnnotation,
     /// Passing an argument that is invalid for reasons besides type.
     InvalidArgument,
+    /// Attempting to use a value that is not a valid kind of Literal.
+    InvalidLiteral,
     /// An error caused by incorrect inheritance in a class or type definition.
     /// e.g. a metaclass that is not a subclass of `type`.
     InvalidInheritance,
@@ -51,6 +63,8 @@ pub enum ErrorKind {
     InvalidOverload,
     /// An error caused by incorrect usage or definition of a TypeVar.
     InvalidTypeVar,
+    /// An error caused by incorrect usage or definition of a TypeVarTuple.
+    InvalidTypeVarTuple,
     /// Attempting to use `yield` in a way that is not allowed.
     /// e.g. `yield from` with something that's not an iterable.
     InvalidYield,
@@ -73,11 +87,10 @@ pub enum ErrorKind {
     ReadOnly,
     /// An error related to type alias usage or definition.
     TypeAliasError,
-    /// An error casued by unpacking.
-    /// e.g. attempting to unpack an iterable into the wrong number of variables.
-    BadUnpacking,
     /// An error caused by a keyword argument used in the wrong place.
     UnexpectedKeyword,
+    /// Attemping to apply an operator to arguments that do not support it.
+    UnsupportedOperand,
     /// Attempting to use a feature that is not yet supported.
     #[allow(dead_code)]
     Unsupported,
