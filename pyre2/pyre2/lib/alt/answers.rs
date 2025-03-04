@@ -14,6 +14,7 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
+use crate::alt::id_cache::IdCache;
 use crate::alt::traits::Solve;
 use crate::alt::traits::SolveRecursive;
 use crate::binding::binding::Keyed;
@@ -62,6 +63,7 @@ pub struct Traces {
 /// We never issue contains queries on these maps.
 #[derive(Debug)]
 pub struct Answers {
+    id_cache: IdCache,
     solver: Solver,
     table: AnswerTable,
     trace: Option<Mutex<Traces>>,
@@ -200,6 +202,7 @@ impl Answers {
         };
 
         Self {
+            id_cache: IdCache::new(),
             solver,
             table,
             trace,
@@ -332,6 +335,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             recurser,
             current,
         }
+    }
+
+    pub fn id_cache(&self) -> &IdCache {
+        &self.current.id_cache
     }
 
     pub fn bindings(&self) -> &Bindings {

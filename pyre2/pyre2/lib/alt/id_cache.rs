@@ -21,10 +21,16 @@ use crate::types::types::TParams;
 use crate::types::types::Type;
 
 /// Caching wrapper to create identifiers that are indexed by `ArcId`.
+#[derive(Debug)]
 pub struct IdCache {}
 
 impl IdCache {
+    pub fn new() -> Self {
+        Self {}
+    }
+
     pub fn class(
+        &self,
         name: Identifier,
         module_info: ModuleInfo,
         tparams: TParams,
@@ -33,15 +39,16 @@ impl IdCache {
         Class::new_identity(name, module_info, tparams, fields)
     }
 
-    pub fn param_spec(name: Identifier, module: ModuleInfo) -> ParamSpec {
+    pub fn param_spec(&self, name: Identifier, module: ModuleInfo) -> ParamSpec {
         ParamSpec::new_identity(name, module)
     }
 
-    pub fn type_var_tuple(name: Identifier, module: ModuleInfo) -> TypeVarTuple {
+    pub fn type_var_tuple(&self, name: Identifier, module: ModuleInfo) -> TypeVarTuple {
         TypeVarTuple::new_identity(name, module)
     }
 
     pub fn type_var(
+        &self,
         name: Identifier,
         module: ModuleInfo,
         restriction: Restriction,
