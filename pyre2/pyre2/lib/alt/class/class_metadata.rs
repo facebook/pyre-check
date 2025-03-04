@@ -7,6 +7,7 @@
 
 use std::ops::Deref;
 
+use dupe::Dupe;
 use itertools::Either;
 use itertools::Itertools;
 use ruff_python_ast::name::Name;
@@ -79,7 +80,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
         is_new_type: bool,
     ) {
-        match (base_type_and_range.clone(), is_new_type) {
+        match (base_type_and_range, is_new_type) {
             (Some((Type::ClassType(c), _)), false) => {
                 let base_cls = c.class_object();
                 let base_class_metadata = self.get_metadata_for_class(base_cls);
@@ -157,7 +158,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     _ => None,
                 };
-                self.check_new_type_base(&base_type_and_range.clone(), cls, errors, is_new_type);
+                self.check_new_type_base(&base_type_and_range, cls, errors, is_new_type);
                 match base_type_and_range {
                     Some((Type::ClassType(c), range)) => {
                         let base_cls = c.class_object();
@@ -179,7 +180,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                         if let Some(proto) = &mut protocol_metadata {
                             if let Some(base_proto) = base_class_metadata.protocol_metadata() {
-                                proto.members.extend(base_proto.members.clone());
+                                proto.members.extend(base_proto.members.iter().cloned());
                             } else {
                                 self.error(errors,
                                     range,
@@ -269,7 +270,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 enum_metadata = Some(EnumMetadata {
                     // A generic enum is an error, but we create Any type args anyway to handle it gracefully.
-                    cls: ClassType::new(cls.clone(), self.create_default_targs(cls, None)),
+                    cls: ClassType::new(cls.dupe(), self.create_default_targs(cls, None)),
                     is_flag: bases_with_metadata.iter().any(|(base, _)| {
                         self.solver().is_subset_eq(
                             &Type::ClassType(base.clone()),
