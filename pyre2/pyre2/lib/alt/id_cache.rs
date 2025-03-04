@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
 use starlark_map::small_map::SmallMap;
@@ -19,14 +20,29 @@ use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::TParams;
 use crate::types::types::Type;
+use crate::util::lock::Mutex;
+
+#[expect(dead_code)]
+#[derive(Debug)]
+enum Identifiable {
+    Class(Class),
+    ParamSpec(ParamSpec),
+    TypeVar(TypeVar),
+    TypeVarTuple(TypeVarTuple),
+}
 
 /// Caching wrapper to create identifiers that are indexed by `ArcId`.
 #[derive(Debug)]
-pub struct IdCache {}
+pub struct IdCache {
+    /// Things we are creating.
+    recorded: Mutex<Vec<Identifiable>>,
+}
 
 impl IdCache {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            recorded: Mutex::new(Vec::new()),
+        }
     }
 
     pub fn class(
@@ -36,15 +52,25 @@ impl IdCache {
         tparams: TParams,
         fields: SmallMap<Name, ClassFieldProperties>,
     ) -> Class {
-        Class::new_identity(name, module_info, tparams, fields)
+        let res = Class::new_identity(name, module_info, tparams, fields);
+        self.recorded.lock().push(Identifiable::Class(res.dupe()));
+        res
     }
 
     pub fn param_spec(&self, name: Identifier, module: ModuleInfo) -> ParamSpec {
-        ParamSpec::new_identity(name, module)
+        let res = ParamSpec::new_identity(name, module);
+        self.recorded
+            .lock()
+            .push(Identifiable::ParamSpec(res.dupe()));
+        res
     }
 
     pub fn type_var_tuple(&self, name: Identifier, module: ModuleInfo) -> TypeVarTuple {
-        TypeVarTuple::new_identity(name, module)
+        let res = TypeVarTuple::new_identity(name, module);
+        self.recorded
+            .lock()
+            .push(Identifiable::TypeVarTuple(res.dupe()));
+        res
     }
 
     pub fn type_var(
@@ -55,6 +81,8 @@ impl IdCache {
         default: Option<Type>,
         variance: Option<Variance>,
     ) -> TypeVar {
-        TypeVar::new_identity(name, module, restriction, default, variance)
+        let res = TypeVar::new_identity(name, module, restriction, default, variance);
+        self.recorded.lock().push(Identifiable::TypeVar(res.dupe()));
+        res
     }
 }
