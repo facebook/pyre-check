@@ -24,7 +24,10 @@ use crate::module::short_identifier::ShortIdentifier;
 /// A name, plus where it is defined.
 #[derive(Clone)]
 pub struct QName {
-    name: Identifier,
+    /// The `name` and `range` must be consistent.
+    /// They always come from a single `Identifier`.
+    name: Name,
+    range: TextRange,
     module: ModuleInfo,
 }
 
@@ -69,27 +72,31 @@ impl Display for QName {
 impl QName {
     fn key(&self) -> (&Name, TextSize, TextSize, ModuleName) {
         (
-            &self.name.id,
-            self.name.range.start(),
-            self.name.range.end(),
+            &self.name,
+            self.range.start(),
+            self.range.end(),
             self.module.name(),
         )
     }
 
     pub fn new(name: Identifier, module: ModuleInfo) -> Self {
-        Self { name, module }
+        Self {
+            name: name.id,
+            range: name.range,
+            module,
+        }
     }
 
     pub fn id(&self) -> &Name {
-        &self.name.id
+        &self.name
     }
 
     pub fn range(&self) -> TextRange {
-        self.name.range
+        self.range
     }
 
     pub fn short_identifier(&self) -> ShortIdentifier {
-        ShortIdentifier::new(&self.name)
+        ShortIdentifier::new_from_decomposed_identifier(self.range)
     }
 
     pub fn module_info(&self) -> &ModuleInfo {
@@ -113,8 +120,8 @@ impl QName {
             f,
             "{}.{}@{}",
             self.module.name(),
-            self.name.id,
-            self.module.source_range(self.name.range)
+            self.name,
+            self.module.source_range(self.range)
         )
     }
 }
