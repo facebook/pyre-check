@@ -24,12 +24,6 @@ impl ShortIdentifier {
         Self(name.range)
     }
 
-    /// Prefer calling `new` or `expr_name` instead.
-    /// Only use if you have already decomposed the `Identifier` and can't get it back.
-    pub fn new_from_decomposed_identifier(range: TextRange) -> Self {
-        Self(range)
-    }
-
     pub fn expr_name(x: &ExprName) -> Self {
         // Not represented as an Identifier, but literally in the source code in the same way
         Self(x.range)

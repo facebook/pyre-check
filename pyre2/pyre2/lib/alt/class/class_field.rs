@@ -693,8 +693,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         name: &Name,
     ) -> Option<Arc<ClassField>> {
         if cls.contains(name) {
-            let field =
-                self.get_from_class(cls, &KeyClassField(cls.short_identifier(), name.clone()));
+            let field = self.get_from_class(cls, &KeyClassField(cls.index(), name.clone()));
             Some(field)
         } else {
             None
@@ -706,7 +705,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(field)
         } else {
             let synthesized_fields =
-                self.get_from_class(cls, &KeyClassSynthesizedFields(cls.short_identifier()));
+                self.get_from_class(cls, &KeyClassSynthesizedFields(cls.index()));
             let synth = synthesized_fields.get(name);
             synth.map(|f| f.inner.dupe())
         }

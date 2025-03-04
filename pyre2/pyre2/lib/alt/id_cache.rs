@@ -19,6 +19,7 @@ use starlark_map::small_map::SmallMap;
 use crate::module::module_info::ModuleInfo;
 use crate::types::class::Class;
 use crate::types::class::ClassFieldProperties;
+use crate::types::class::ClassIndex;
 use crate::types::param_spec::ParamSpec;
 use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
@@ -161,12 +162,14 @@ impl IdCache {
 
     pub fn class(
         &self,
+        index: ClassIndex,
         name: Identifier,
         module_info: ModuleInfo,
         tparams: TParams,
         fields: SmallMap<Name, ClassFieldProperties>,
     ) -> Class {
         self.get(Identifiable::Class(Class::new_identity(
+            index,
             name,
             module_info,
             tparams,

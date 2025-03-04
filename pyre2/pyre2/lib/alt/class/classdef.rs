@@ -29,6 +29,7 @@ use crate::types::callable::ParamList;
 use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassFieldProperties;
+use crate::types::class::ClassIndex;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
 use crate::types::quantified::QuantifiedKind;
@@ -42,6 +43,7 @@ use crate::util::prelude::SliceExt;
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn class_definition(
         &self,
+        index: ClassIndex,
         x: &StmtClassDef,
         fields: SmallMap<Name, ClassFieldProperties>,
         bases: &[Expr],
@@ -52,6 +54,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let bases = bases.map(|x| self.base_class_of(x, errors));
         let tparams = self.class_tparams(&x.name, scoped_tparams, bases, legacy_tparams, errors);
         self.id_cache().class(
+            index,
             x.name.clone(),
             self.module_info().dupe(),
             tparams,
@@ -61,10 +64,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn functional_class_definition(
         &self,
+        index: ClassIndex,
         name: &Identifier,
         fields: &SmallMap<Name, ClassFieldProperties>,
     ) -> Class {
         self.id_cache().class(
+            index,
             name.clone(),
             self.module_info().dupe(),
             TParams::default(),
@@ -73,7 +78,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn get_metadata_for_class(&self, cls: &Class) -> Arc<ClassMetadata> {
-        self.get_from_class(cls, &KeyClassMetadata(cls.short_identifier()))
+        self.get_from_class(cls, &KeyClassMetadata(cls.index()))
     }
 
     fn get_enum_from_class(&self, cls: &Class) -> Option<EnumMetadata> {

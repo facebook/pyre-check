@@ -21,7 +21,6 @@ use starlark_map::small_map::SmallMap;
 
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
-use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::qname::QName;
@@ -44,6 +43,12 @@ pub struct ClassFieldProperties {
     range: TextRange,
 }
 
+/// The index of a class within the file, used as a reference to data associated with the class.
+#[derive(
+    Debug, Clone, Dupe, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Display
+)]
+pub struct ClassIndex(pub u32);
+
 impl ClassFieldProperties {
     pub fn new(is_annotated: bool, range: TextRange) -> Self {
         Self {
@@ -54,6 +59,7 @@ impl ClassFieldProperties {
 }
 
 struct ClassInner {
+    index: ClassIndex,
     qname: QName,
     tparams: TParams,
     fields: SmallMap<Name, ClassFieldProperties>,
@@ -62,6 +68,7 @@ struct ClassInner {
 impl Debug for ClassInner {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ClassInner")
+            .field("index", &self.index)
             .field("qname", &self.qname)
             .field("tparams", &self.tparams)
             // We don't print `fields` because it's way too long.
@@ -129,12 +136,14 @@ impl Display for ClassInner {
 //   well as descriptor handling (including method binding).
 impl Class {
     pub fn new_identity(
+        index: ClassIndex,
         name: Identifier,
         module_info: ModuleInfo,
         tparams: TParams,
         fields: SmallMap<Name, ClassFieldProperties>,
     ) -> Self {
         Self(ArcId::new(ClassInner {
+            index,
             qname: QName::new(name, module_info),
             tparams,
             fields,
@@ -143,10 +152,6 @@ impl Class {
 
     pub fn contains(&self, name: &Name) -> bool {
         self.0.fields.contains_key(name)
-    }
-
-    pub fn short_identifier(&self) -> ShortIdentifier {
-        self.0.qname.short_identifier()
     }
 
     pub fn range(&self) -> TextRange {
@@ -179,6 +184,10 @@ impl Class {
         Param::Pos(Name::new("self"), self.self_type(), Required::Required)
     }
 
+    pub fn index(&self) -> ClassIndex {
+        self.0.index
+    }
+
     pub fn module_name(&self) -> ModuleName {
         self.0.qname.module_name()
     }
@@ -207,12 +216,14 @@ impl Class {
     }
 
     pub fn immutable_eq(&self, other: &Class) -> bool {
-        self.0.qname.immutable_eq(&other.0.qname)
+        self.0.index == other.0.index
+            && self.0.qname.immutable_eq(&other.0.qname)
             && self.0.tparams == other.0.tparams
             && self.0.fields == other.0.fields
     }
 
     pub fn immutable_hash<H: Hasher>(&self, state: &mut H) {
+        self.0.index.hash(state);
         self.0.qname.immutable_hash(state);
         self.0.tparams.hash(state);
         for x in self.0.fields.iter() {

@@ -44,6 +44,7 @@ use crate::binding::scope::ScopeKind;
 use crate::dunder;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::class::ClassFieldProperties;
+use crate::types::class::ClassIndex;
 use crate::types::special_form::SpecialForm;
 use crate::types::types::AnyStyle;
 use crate::util::prelude::SliceExt;
@@ -55,12 +56,19 @@ enum IllegalIdentifierHandling {
 }
 
 impl<'a> BindingsBuilder<'a> {
+    pub fn class_index(&mut self) -> ClassIndex {
+        let res = ClassIndex(self.class_count);
+        self.class_count += 1;
+        res
+    }
+
     pub fn class_def(&mut self, mut x: StmtClassDef) {
         let body = mem::take(&mut x.body);
         let decorators = self.ensure_and_bind_decorators(mem::take(&mut x.decorator_list));
 
         self.scopes.push(Scope::annotation(x.range));
 
+        let class_index = self.class_index();
         let class_name = ShortIdentifier::new(&x.name);
         let class_key = KeyClass(class_name.clone());
         let definition_key = self.table.classes.0.insert(class_key);
@@ -109,7 +117,7 @@ impl<'a> BindingsBuilder<'a> {
         }
 
         self.table.insert(
-            KeyClassMetadata(class_name.clone()),
+            KeyClassMetadata(class_index),
             BindingClassMetadata {
                 def: definition_key,
                 bases: bases.clone().into_boxed_slice(),
@@ -120,14 +128,15 @@ impl<'a> BindingsBuilder<'a> {
             },
         );
         self.table.insert(
-            KeyClassSynthesizedFields(class_name.clone()),
+            KeyClassSynthesizedFields(class_index),
             BindingClassSynthesizedFields(definition_key),
         );
 
         let legacy_tparam_builder = legacy.unwrap();
         legacy_tparam_builder.add_name_definitions(self);
 
-        self.scopes.push(Scope::class_body(x.range, x.name.clone()));
+        self.scopes
+            .push(Scope::class_body(x.range, class_index, x.name.clone()));
         self.init_static_scope(&body, false);
         self.stmts(body);
 
@@ -150,7 +159,7 @@ impl<'a> BindingsBuilder<'a> {
                     ClassFieldProperties::new(stat_info.annot.is_some(), stat_info.loc),
                 );
                 self.table
-                    .insert(KeyClassField(class_name.clone(), name.clone()), binding);
+                    .insert(KeyClassField(class_index, name.clone()), binding);
             }
         }
         if let ScopeKind::ClassBody(body) = last_scope.kind {
@@ -163,7 +172,7 @@ impl<'a> BindingsBuilder<'a> {
                                 ClassFieldProperties::new(annotation.is_some(), range),
                             );
                             self.table.insert(
-                                KeyClassField(class_name.clone(), name.clone()),
+                                KeyClassField(class_index, name.clone()),
                                 BindingClassField {
                                     class: definition_key,
                                     name,
@@ -196,6 +205,7 @@ impl<'a> BindingsBuilder<'a> {
         self.table.insert_idx(
             definition_key,
             BindingClass::ClassDef(ClassBinding {
+                index: class_index,
                 def: x,
                 fields,
                 bases: bases.into_boxed_slice(),
@@ -263,11 +273,12 @@ impl<'a> BindingsBuilder<'a> {
         is_new_type: bool,
         special_base: Option<Box<BaseClass>>,
     ) {
+        let class_index = self.class_index();
         let short_class_name = ShortIdentifier::new(&class_name);
         let class_key = KeyClass(short_class_name.clone());
         let definition_key = self.table.classes.0.insert(class_key.clone());
         self.table.insert(
-            KeyClassMetadata(short_class_name.clone()),
+            KeyClassMetadata(class_index),
             BindingClassMetadata {
                 def: definition_key,
                 bases: base.into_iter().collect::<Vec<_>>().into_boxed_slice(),
@@ -278,7 +289,7 @@ impl<'a> BindingsBuilder<'a> {
             },
         );
         self.table.insert(
-            KeyClassSynthesizedFields(short_class_name.clone()),
+            KeyClassSynthesizedFields(class_index),
             BindingClassSynthesizedFields(definition_key),
         );
         let mut fields = SmallMap::new();
@@ -329,7 +340,7 @@ impl<'a> BindingsBuilder<'a> {
                 None
             };
             self.table.insert(
-                KeyClassField(short_class_name.clone(), member_name.clone()),
+                KeyClassField(class_index, member_name.clone()),
                 BindingClassField {
                     class: definition_key,
                     name: member_name,
@@ -350,7 +361,7 @@ impl<'a> BindingsBuilder<'a> {
         );
         self.table.insert(
             class_key,
-            BindingClass::FunctionalClassDef(class_name.clone(), fields),
+            BindingClass::FunctionalClassDef(class_index, class_name.clone(), fields),
         );
     }
 

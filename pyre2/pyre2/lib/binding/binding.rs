@@ -47,6 +47,7 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
 use crate::types::class::Class;
 use crate::types::class::ClassFieldProperties;
+use crate::types::class::ClassIndex;
 use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
@@ -65,9 +66,9 @@ mod check_size {
     assert_eq_size!(KeyExport, [usize; 3]);
     assert_eq_size!(KeyClass, [usize; 1]);
     assert_eq_size!(KeyClassField, [usize; 4]);
-    assert_eq_size!(KeyClassSynthesizedFields, [usize; 1]);
+    assert_eq_size!(KeyClassSynthesizedFields, [u32; 1]);
     assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
-    assert_eq_size!(KeyClassMetadata, [usize; 1]);
+    assert_eq_size!(KeyClassMetadata, [u32; 1]);
     assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
     assert_eq_size!(KeyYield, [usize; 1]);
     assert_eq_size!(KeyYieldFrom, [usize; 1]);
@@ -75,7 +76,7 @@ mod check_size {
     assert_eq_size!(Binding, [usize; 9]);
     assert_eq_size!(BindingExpect, [usize; 8]);
     assert_eq_size!(BindingAnnotation, [usize; 9]);
-    assert_eq_size!(BindingClass, [usize; 21]);
+    assert_eq_size!(BindingClass, [usize; 22]);
     assert_eq_size!(BindingClassMetadata, [usize; 8]);
     assert_eq_size!(BindingClassField, [usize; 22]);
     assert_eq_size!(BindingClassSynthesizedFields, [u8; 4]); // Equivalent to 0.5 usize
@@ -392,23 +393,17 @@ impl DisplayWith<ModuleInfo> for KeyClass {
 /// A reference to a field in a class.
 /// The range is the range of the class name, not the field name.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct KeyClassField(pub ShortIdentifier, pub Name);
+pub struct KeyClassField(pub ClassIndex, pub Name);
 
 impl Ranged for KeyClassField {
     fn range(&self) -> TextRange {
-        self.0.range()
+        TextRange::default()
     }
 }
 
 impl DisplayWith<ModuleInfo> for KeyClassField {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
-        write!(
-            f,
-            "field {} {:?} . {}",
-            ctx.display(&self.0),
-            self.0.range(),
-            self.1
-        )
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, _ctx: &ModuleInfo) -> fmt::Result {
+        write!(f, "field {} . {}", self.0, self.1)
     }
 }
 
@@ -416,22 +411,17 @@ impl DisplayWith<ModuleInfo> for KeyClassField {
 /// has to be its own key/binding type because of the dependencies between the various pieces of
 /// information about a class: ClassDef -> ClassMetadata -> ClassField -> ClassSynthesizedFields.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct KeyClassSynthesizedFields(pub ShortIdentifier);
+pub struct KeyClassSynthesizedFields(pub ClassIndex);
 
 impl Ranged for KeyClassSynthesizedFields {
     fn range(&self) -> TextRange {
-        self.0.range()
+        TextRange::default()
     }
 }
 
 impl DisplayWith<ModuleInfo> for KeyClassSynthesizedFields {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
-        write!(
-            f,
-            "synthesized fields of {} {:?}",
-            ctx.display(&self.0),
-            self.0.range(),
-        )
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, _ctx: &ModuleInfo) -> fmt::Result {
+        write!(f, "synthesized fields of {}", self.0)
     }
 }
 
@@ -469,17 +459,17 @@ impl DisplayWith<ModuleInfo> for KeyAnnotation {
 /// Keys that refer to a class's `Mro` (which tracks its ancestors, in method
 /// resolution order).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct KeyClassMetadata(pub ShortIdentifier);
+pub struct KeyClassMetadata(pub ClassIndex);
 
 impl Ranged for KeyClassMetadata {
     fn range(&self) -> TextRange {
-        self.0.range()
+        TextRange::default()
     }
 }
 
 impl DisplayWith<ModuleInfo> for KeyClassMetadata {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
-        write!(f, "mro {} {:?}", ctx.display(&self.0), self.0.range())
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, _ctx: &ModuleInfo) -> fmt::Result {
+        write!(f, "mro {}", self.0)
     }
 }
 
@@ -598,6 +588,7 @@ impl DisplayWith<Bindings> for FunctionBinding {
 #[derive(Clone, Debug)]
 pub struct ClassBinding {
     pub def: StmtClassDef,
+    pub index: ClassIndex,
     pub fields: SmallMap<Name, ClassFieldProperties>,
     pub bases: Box<[Expr]>,
     pub legacy_tparams: Box<[Idx<KeyLegacyTypeParam>]>,
@@ -956,14 +947,14 @@ impl DisplayWith<Bindings> for BindingAnnotation {
 #[derive(Clone, Debug)]
 pub enum BindingClass {
     ClassDef(ClassBinding),
-    FunctionalClassDef(Identifier, SmallMap<Name, ClassFieldProperties>),
+    FunctionalClassDef(ClassIndex, Identifier, SmallMap<Name, ClassFieldProperties>),
 }
 
 impl DisplayWith<Bindings> for BindingClass {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, _ctx: &Bindings) -> fmt::Result {
         match self {
             Self::ClassDef(c) => write!(f, "class {}", c.def.name),
-            Self::FunctionalClassDef(id, _) => write!(f, "class {}", id),
+            Self::FunctionalClassDef(_, id, _) => write!(f, "class {}", id),
         }
     }
 }

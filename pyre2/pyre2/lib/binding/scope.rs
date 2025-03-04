@@ -37,6 +37,7 @@ use crate::metadata::RuntimeMetadata;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::types::class::ClassIndex;
 
 /// Many names may map to the same TextRange (e.g. from foo import *).
 /// But no other static will point at the same TextRange.
@@ -186,6 +187,7 @@ impl FlowInfo {
 #[derive(Clone, Debug)]
 pub struct ClassBodyInner {
     name: Identifier,
+    index: ClassIndex,
     pub instance_attributes_by_method: SmallMap<Name, SmallMap<Name, InstanceAttribute>>,
 }
 
@@ -195,7 +197,7 @@ impl ClassBodyInner {
     }
 
     pub fn as_class_metadata_key(&self) -> KeyClassMetadata {
-        KeyClassMetadata(ShortIdentifier::new(&self.name))
+        KeyClassMetadata(self.index)
     }
 }
 
@@ -263,11 +265,12 @@ impl Scope {
         Self::new(range, false, ScopeKind::Annotation)
     }
 
-    pub fn class_body(range: TextRange, name: Identifier) -> Self {
+    pub fn class_body(range: TextRange, index: ClassIndex, name: Identifier) -> Self {
         Self::new(
             range,
             false,
             ScopeKind::ClassBody(ClassBodyInner {
+                index,
                 name,
                 instance_attributes_by_method: SmallMap::new(),
             }),

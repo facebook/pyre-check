@@ -23,7 +23,6 @@ use ruff_text_size::TextSize;
 use crate::ast::AtomicTextRange;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
-use crate::module::short_identifier::ShortIdentifier;
 use crate::util::lock::RwLock;
 
 /// A name, plus where it is defined.
@@ -95,10 +94,6 @@ impl QName {
 
     pub fn range(&self) -> TextRange {
         self.range.get()
-    }
-
-    pub fn short_identifier(&self) -> ShortIdentifier {
-        ShortIdentifier::new_from_decomposed_identifier(self.range.get())
     }
 
     pub fn module_info(&self) -> ModuleInfo {

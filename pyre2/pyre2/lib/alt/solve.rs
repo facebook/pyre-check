@@ -705,14 +705,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Arc<NoneIfRecursive<Class>> {
         let cls = match cls {
             BindingClass::ClassDef(x) => self.class_definition(
+                x.index,
                 &x.def,
                 x.fields.clone(),
                 &x.bases,
                 &x.legacy_tparams,
                 errors,
             ),
-            BindingClass::FunctionalClassDef(x, fields) => {
-                self.functional_class_definition(x, fields)
+            BindingClass::FunctionalClassDef(index, x, fields) => {
+                self.functional_class_definition(*index, x, fields)
             }
         };
         Arc::new(NoneIfRecursive(Some(cls)))
