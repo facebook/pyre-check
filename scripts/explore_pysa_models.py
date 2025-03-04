@@ -18,6 +18,7 @@ import copy
 import io
 import json
 import multiprocessing
+import pickle
 import re
 import subprocess
 import textwrap
@@ -156,6 +157,33 @@ def _assert_loaded() -> AnalysisOutputDirectory:
     if current_directory is None:
         raise AssertionError("call index() first")
     return current_directory
+
+
+def save_index(path: Optional[str] = None) -> None:
+    directory = _assert_loaded()
+
+    if path is None:
+        path = "pysa-model-explorer-index.pickle"
+
+    print(f"Saving index to `{path}`")
+    with open(path, 'wb') as f:
+        pickle.dump(AnalysisOutputDirectory(files=directory.files, handles=[], index_=directory.index_), f)
+
+
+def load_index(path: Optional[str] = None) -> None:
+    if path is None:
+        path = "pysa-model-explorer-index.pickle"
+
+    print(f"Loading index from `{path}`")
+    with open(path, 'rb') as f:
+        directory = pickle.load(f)
+
+    global __current_directory
+    __current_directory = AnalysisOutputDirectory(
+        files=directory.files,
+        handles=[open(path, "rb") for path in directory.files],
+        index_=directory.index_,
+    )
 
 
 def callables_containing(string: str) -> List[str]:
