@@ -147,10 +147,7 @@ impl<'a> BindingsBuilder<'a> {
                 };
                 fields.insert(
                     name.clone(),
-                    ClassFieldProperties {
-                        is_annotated: stat_info.annot.is_some(),
-                        range: stat_info.loc,
-                    },
+                    ClassFieldProperties::new(stat_info.annot.is_some(), stat_info.loc),
                 );
                 self.table
                     .insert(KeyClassField(class_name.clone(), name.clone()), binding);
@@ -163,10 +160,7 @@ impl<'a> BindingsBuilder<'a> {
                         if !fields.contains_key(&name) {
                             fields.insert(
                                 name.clone(),
-                                ClassFieldProperties {
-                                    is_annotated: annotation.is_some(),
-                                    range,
-                                },
+                                ClassFieldProperties::new(annotation.is_some(), range),
                             );
                             self.table.insert(
                                 KeyClassField(class_name.clone(), name.clone()),
@@ -309,10 +303,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             fields.insert(
                 member_name.clone(),
-                ClassFieldProperties {
-                    is_annotated: member_annotation.is_some(),
-                    range,
-                },
+                ClassFieldProperties::new(member_annotation.is_some(), range),
             );
             let initial_value = if force_class_initialization || member_value.is_some() {
                 ClassFieldInitialValue::Class(member_value.clone())

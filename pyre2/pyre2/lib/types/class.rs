@@ -39,8 +39,17 @@ pub struct Class(ArcId<ClassInner>);
 /// does not include the type of a field, which needs to be computed lazily to avoid a recursive loop.
 #[derive(Clone, Debug)]
 pub struct ClassFieldProperties {
-    pub is_annotated: bool,
-    pub range: TextRange,
+    is_annotated: bool,
+    range: TextRange,
+}
+
+impl ClassFieldProperties {
+    pub fn new(is_annotated: bool, range: TextRange) -> Self {
+        Self {
+            is_annotated,
+            range,
+        }
+    }
 }
 
 #[derive(Clone)]
