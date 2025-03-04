@@ -265,8 +265,7 @@ fn test_incremental_class() {
     i.set("foo", "class X: pass");
     i.check(&["main"], &["main", "foo"]);
     i.set("foo", "class X: pass # still");
-    // TODO: should not recompute main
-    i.check(&["main"], &["foo", "main"]);
+    i.check(&["main"], &["foo"]);
     i.set("foo", "# new range\nclass X: pass");
     // TODO: should not recompute main
     i.check(&["main"], &["foo", "main"]);

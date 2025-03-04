@@ -11,6 +11,8 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
+use std::hash::Hash;
+use std::hash::Hasher;
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
@@ -126,5 +128,21 @@ impl QName {
             self.name,
             self.module_info.read().source_range(self.range)
         )
+    }
+
+    pub fn immutable_eq(&self, other: &QName) -> bool {
+        self.name == other.name
+            && self.range == other.range
+            && self.module_name == other.module_name
+    }
+
+    pub fn immutable_hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.range.hash(state);
+        self.module_name.hash(state);
+    }
+
+    pub fn mutate(&self, x: &QName) {
+        *self.module_info.write() = x.module_info().dupe();
     }
 }

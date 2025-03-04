@@ -10,6 +10,7 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::hash::Hash;
+use std::hash::Hasher;
 
 use dupe::Dupe;
 use parse_display::Display;
@@ -37,7 +38,7 @@ pub struct Class(ArcId<ClassInner>);
 
 /// Simple properties of class fields that can be attached to the class definition. Note that this
 /// does not include the type of a field, which needs to be computed lazily to avoid a recursive loop.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ClassFieldProperties {
     is_annotated: bool,
     range: TextRange,
@@ -203,6 +204,24 @@ impl Class {
 
     pub fn has_qname(&self, module: &str, name: &str) -> bool {
         self.0.qname.module_name().as_str() == module && self.0.qname.id() == name
+    }
+
+    pub fn immutable_eq(&self, other: &Class) -> bool {
+        self.0.qname.immutable_eq(&other.0.qname)
+            && self.0.tparams == other.0.tparams
+            && self.0.fields == other.0.fields
+    }
+
+    pub fn immutable_hash<H: Hasher>(&self, state: &mut H) {
+        self.0.qname.immutable_hash(state);
+        self.0.tparams.hash(state);
+        for x in self.0.fields.iter() {
+            x.hash(state);
+        }
+    }
+
+    pub fn mutate(&self, x: &Class) {
+        self.0.qname.mutate(&x.0.qname);
     }
 }
 

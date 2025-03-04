@@ -7,6 +7,8 @@
 
 use std::fmt;
 use std::fmt::Display;
+use std::hash::Hash;
+use std::hash::Hasher;
 
 use dupe::Dupe;
 use ruff_python_ast::Identifier;
@@ -83,5 +85,23 @@ impl TypeVar {
 
     pub fn to_type(&self) -> Type {
         Type::TypeVar(self.dupe())
+    }
+
+    pub fn immutable_eq(&self, other: &TypeVar) -> bool {
+        self.0.qname.immutable_eq(&other.0.qname)
+            && self.0.restriction == other.0.restriction
+            && self.0.default == other.0.default
+            && self.0.variance == other.0.variance
+    }
+
+    pub fn immutable_hash<H: Hasher>(&self, state: &mut H) {
+        self.0.qname.immutable_hash(state);
+        self.0.restriction.hash(state);
+        self.0.default.hash(state);
+        self.0.variance.hash(state);
+    }
+
+    pub fn mutate(&self, x: &TypeVar) {
+        self.0.qname.mutate(&x.0.qname);
     }
 }

@@ -7,6 +7,7 @@
 
 use std::fmt;
 use std::fmt::Display;
+use std::hash::Hasher;
 
 use dupe::Dupe;
 use ruff_python_ast::Identifier;
@@ -44,5 +45,17 @@ impl TypeVarTuple {
 
     pub fn to_type(&self) -> Type {
         Type::TypeVarTuple(self.dupe())
+    }
+
+    pub fn immutable_eq(&self, other: &TypeVarTuple) -> bool {
+        self.0.qname.immutable_eq(&other.0.qname)
+    }
+
+    pub fn immutable_hash<H: Hasher>(&self, state: &mut H) {
+        self.0.qname.immutable_hash(state);
+    }
+
+    pub fn mutate(&self, x: &TypeVarTuple) {
+        self.0.qname.mutate(&x.0.qname);
     }
 }
