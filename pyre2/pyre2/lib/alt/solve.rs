@@ -281,7 +281,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             errors,
                             range,
-                            ErrorKind::Unknown,
+                            ErrorKind::NotIterable,
                             format!(
                                 "Type `{}` is not iterable",
                                 iterable.clone().deterministic_printing()
@@ -315,7 +315,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ) {
             self.error(errors,
                  range,
-                 ErrorKind::Unknown,
+                 ErrorKind::InvalidInheritance,
                  format!(
                      "Expression `{}` has type `{actual_type}` which does not derive from BaseException",
                      self.module_info().display(x)
@@ -383,7 +383,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::TypeAliasError,
                 format!("Expected `{name}` to be a type alias, got {ty}"),
             );
             return Type::any_error();
@@ -432,7 +432,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 None => self.error(
                     errors,
                     range,
-                    ErrorKind::Unknown,
+                    ErrorKind::AsyncError,
                     format!("Expected `{}` to be async", dunder::AENTER),
                 ),
             },
@@ -476,7 +476,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 None => self.error(
                     errors,
                     range,
-                    ErrorKind::Unknown,
+                    ErrorKind::AsyncError,
                     format!("Expected `{}` to be async", dunder::AEXIT),
                 ),
             },
@@ -559,7 +559,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     range,
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidTypeVar,
                     "A type parameter without a default cannot follow one with a default"
                         .to_owned(),
                 );
@@ -620,7 +620,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     self.error(
                                         errors,
                                         *range,
-                                        ErrorKind::Unknown,
+                                        ErrorKind::BadUnpacking,
                                         format!(
                                             "Cannot unpack {} (of size {}) into {}",
                                             iterable_ty,
@@ -652,7 +652,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         self.bindings().idx_to_key(*k1).range(),
-                        ErrorKind::Unknown,
+                        ErrorKind::AnnotationMismatch,
                         format!(
                             "Inconsistent type annotations for {}: {}, {}",
                             name,
@@ -822,7 +822,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 *range,
-                                ErrorKind::Unknown,
+                                ErrorKind::BadReturn,
                                 "Async generator function should return `AsyncGenerator`"
                                     .to_owned(),
                             );
@@ -840,7 +840,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 *range,
-                                ErrorKind::Unknown,
+                                ErrorKind::BadReturn,
                                 "Generator function should return `Generator`".to_owned(),
                             );
                         }
@@ -908,7 +908,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             errors,
                             expr.range(),
-                            ErrorKind::Unknown,
+                            ErrorKind::BadReturn,
                             "Return statement with value is not allowed in async generator"
                                 .to_owned(),
                         )
@@ -978,7 +978,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             errors,
                             range,
-                            ErrorKind::Unknown,
+                            ErrorKind::InvalidInheritance,
                             "Exception handler annotation in `except*` clause may not extend `BaseExceptionGroup`".to_owned());
                     }
                     exception
@@ -1065,7 +1065,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.error(
                                     errors,
                                     x.slice.range(),
-                                    ErrorKind::Unknown,
+                                    ErrorKind::ReadOnly,
                                     format!(
                                         "Key `{}` in TypedDict `{}` is read-only",
                                         field_name,
@@ -1080,7 +1080,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.error(
                                     errors,
                                     x.range(),
-                                    ErrorKind::Unknown,
+                                    ErrorKind::BadAssignment,
                                     format!("Expected {}, got {}", field.ty, value_ty),
                                 )
                             } else {
@@ -1090,7 +1090,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 x.slice.range(),
-                                ErrorKind::Unknown,
+                                ErrorKind::MissingTypedDictKey,
                                 format!(
                                     "TypedDict `{}` does not have key `{}`",
                                     typed_dict.name(),
@@ -1181,7 +1181,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 first.id_range,
-                                ErrorKind::Unknown,
+                                ErrorKind::InvalidOverload,
                                 "Overloaded function must have an implementation".to_owned(),
                             );
                         }
@@ -1189,7 +1189,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 first.id_range,
-                                ErrorKind::Unknown,
+                                ErrorKind::InvalidOverload,
                                 "Overloaded function needs at least two signatures".to_owned(),
                             );
                             acc.split_off_first().0
@@ -1213,7 +1213,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 first.id_range,
-                                ErrorKind::Unknown,
+                                ErrorKind::InvalidOverload,
                                 "Overloaded function needs at least two signatures".to_owned(),
                             );
                             defs.split_off_first().0
@@ -1289,7 +1289,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 *r,
-                                ErrorKind::Unknown,
+                                ErrorKind::InvalidTypeVar,
                                 format!(
                                     "Type parameter {} is not included in the type parameter list",
                                     self.module_info()
@@ -1336,7 +1336,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::Forall(..) => self.error(
                         errors,
                         expr.range(),
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidTypeVar,
                         format!("Type parameters used in `{name}` but not declared"),
                     ),
                     Type::TypeAlias(_) => {
@@ -1379,7 +1379,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.error(
                                     errors,
                                     *range,
-                                    ErrorKind::Unknown,
+                                    ErrorKind::MatchError,
                                     format!(
                                         "Expected literal string in `__match_args__`, got {}",
                                         ts[*idx]
@@ -1390,7 +1390,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 *range,
-                                ErrorKind::Unknown,
+                                ErrorKind::MatchError,
                                 format!("Index {idx} out of range for `__match_args__`"),
                             )
                         }
@@ -1399,7 +1399,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     _ => self.error(
                         errors,
                         *range,
-                        ErrorKind::Unknown,
+                        ErrorKind::MatchError,
                         format!(
                             "Expected concrete tuple for __match_args__, got {}",
                             match_args
@@ -1446,7 +1446,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                                 self.error(
                                                     errors,
                                                     *range,
-                                                    ErrorKind::Unknown,
+                                                    ErrorKind::InvalidSuperCall,
                                                     format!(
                                                         "Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`",
                                                         cls_type, obj_cls, obj_cls, cls_type
@@ -1577,7 +1577,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 param.range,
-                ErrorKind::Unknown,
+                ErrorKind::BadFunctionDefinition,
                 format!(
                     "Keyword-only parameter `{}` may not appear after ParamSpec args parameter",
                     param.parameter.name
@@ -1629,14 +1629,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     x.def.range,
-                    ErrorKind::Unknown,
+                    ErrorKind::BadParamSpec,
                     "ParamSpec *args and **kwargs must be used together".to_owned(),
                 );
             } else {
                 self.error(
                     errors,
                     x.def.range,
-                    ErrorKind::Unknown,
+                    ErrorKind::BadParamSpec,
                     "*args and **kwargs must come from the same ParamSpec".to_owned(),
                 );
             }
@@ -1757,7 +1757,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     x.range,
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidYield,
                     "Invalid `yield` outside of a function".to_owned(),
                 );
                 Arc::new(YieldResult::any_error())
@@ -1794,7 +1794,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ty = self.error(
                         errors,
                         x.range,
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidYield,
                         format!("yield from value must be iterable, got `{ty}`"),
                     );
                     YieldFromResult::any_error()
@@ -1809,7 +1809,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     x.range,
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidYield,
                     "Invalid `yield from` outside of a function".to_owned(),
                 );
                 Arc::new(YieldFromResult::any_error())
@@ -1827,7 +1827,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::NotAType,
                 format!(
                     "Expected a type form, got instance of `{}`",
                     ty.deterministic_printing()

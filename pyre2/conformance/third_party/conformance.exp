@@ -87,7 +87,7 @@
       "concise_description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
       "description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
       "line": 80,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 31,
       "stop_line": 80
     },
@@ -97,7 +97,7 @@
       "concise_description": "Expected `BadTypeAlias3` to be a type alias, got tuple[tuple[type[int], type[str]]]",
       "description": "Expected `BadTypeAlias3` to be a type alias, got tuple[tuple[type[int], type[str]]]",
       "line": 81,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 34,
       "stop_line": 81
     },
@@ -107,7 +107,7 @@
       "concise_description": "Expected `BadTypeAlias4` to be a type alias, got list[type[int]]",
       "description": "Expected `BadTypeAlias4` to be a type alias, got list[type[int]]",
       "line": 82,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 44,
       "stop_line": 82
     },
@@ -117,7 +117,7 @@
       "concise_description": "Expected `BadTypeAlias5` to be a type alias, got dict[Error, Error]",
       "description": "Expected `BadTypeAlias5` to be a type alias, got dict[Error, Error]",
       "line": 83,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 31,
       "stop_line": 83
     },
@@ -147,7 +147,7 @@
       "concise_description": "Expected `BadTypeAlias9` to be a type alias, got Literal[3]",
       "description": "Expected `BadTypeAlias9` to be a type alias, got Literal[3]",
       "line": 87,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 25,
       "stop_line": 87
     },
@@ -157,7 +157,7 @@
       "concise_description": "Expected `BadTypeAlias10` to be a type alias, got Literal[True]",
       "description": "Expected `BadTypeAlias10` to be a type alias, got Literal[True]",
       "line": 88,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 26,
       "stop_line": 88
     },
@@ -167,7 +167,7 @@
       "concise_description": "Expected `BadTypeAlias11` to be a type alias, got Literal[1]",
       "description": "Expected `BadTypeAlias11` to be a type alias, got Literal[1]",
       "line": 89,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 23,
       "stop_line": 89
     },
@@ -177,7 +177,7 @@
       "concise_description": "Expected `BadTypeAlias13` to be a type alias, got str",
       "description": "Expected `BadTypeAlias13` to be a type alias, got str",
       "line": 91,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 32,
       "stop_line": 91
     },
@@ -329,7 +329,7 @@
       "concise_description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
       "description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
       "line": 107,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 22,
       "stop_line": 107
     },
@@ -339,7 +339,7 @@
       "concise_description": "Expected a type form, got instance of `tuple[tuple[type[int], type[str]]]`",
       "description": "Expected a type form, got instance of `tuple[tuple[type[int], type[str]]]`",
       "line": 108,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 22,
       "stop_line": 108
     },
@@ -349,7 +349,7 @@
       "concise_description": "Expected a type form, got instance of `list[type[int]]`",
       "description": "Expected a type form, got instance of `list[type[int]]`",
       "line": 109,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 22,
       "stop_line": 109
     },
@@ -359,7 +359,7 @@
       "concise_description": "Expected a type form, got instance of `dict[str, str]`",
       "description": "Expected a type form, got instance of `dict[str, str]`",
       "line": 110,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 22,
       "stop_line": 110
     },
@@ -369,7 +369,7 @@
       "concise_description": "Expected a type form, got instance of `Literal[3]`",
       "description": "Expected a type form, got instance of `Literal[3]`",
       "line": 114,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 22,
       "stop_line": 114
     },
@@ -379,7 +379,7 @@
       "concise_description": "Expected a type form, got instance of `Literal[True]`",
       "description": "Expected a type form, got instance of `Literal[True]`",
       "line": 115,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 24,
       "stop_line": 115
     },
@@ -389,7 +389,7 @@
       "concise_description": "Expected a type form, got instance of `Literal[1]`",
       "description": "Expected a type form, got instance of `Literal[1]`",
       "line": 116,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 24,
       "stop_line": 116
     },
@@ -399,7 +399,7 @@
       "concise_description": "Expected a type form, got instance of `Literal['int']`",
       "description": "Expected a type form, got instance of `Literal['int']`",
       "line": 118,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 24,
       "stop_line": 118
     },
@@ -409,7 +409,7 @@
       "concise_description": "Expected a type form, got instance of `Literal['int | str']`",
       "description": "Expected a type form, got instance of `Literal['int | str']`",
       "line": 119,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 24,
       "stop_line": 119
     },
@@ -563,7 +563,7 @@
       "concise_description": "Expected a type form, got instance of `Literal['Json']`",
       "description": "Expected a type form, got instance of `Literal['Json']`",
       "line": 14,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 48,
       "stop_line": 14
     },
@@ -573,7 +573,7 @@
       "concise_description": "Expected a type form, got instance of `Literal['Json']`",
       "description": "Expected a type form, got instance of `Literal['Json']`",
       "line": 14,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 67,
       "stop_line": 14
     },
@@ -583,7 +583,7 @@
       "concise_description": "Expected a type form, got instance of `Literal['Json2']`",
       "description": "Expected a type form, got instance of `Literal['Json2']`",
       "line": 24,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 50,
       "stop_line": 24
     },
@@ -593,7 +593,7 @@
       "concise_description": "Expected a type form, got instance of `Literal['Json2']`",
       "description": "Expected a type form, got instance of `Literal['Json2']`",
       "line": 24,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 70,
       "stop_line": 24
     },
@@ -603,7 +603,7 @@
       "concise_description": "Expected a type form, got instance of `Literal['RecursiveTuple']`",
       "description": "Expected a type form, got instance of `Literal['RecursiveTuple']`",
       "line": 30,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 52,
       "stop_line": 30
     },
@@ -613,7 +613,7 @@
       "concise_description": "Expected a type form, got instance of `Literal['RecursiveMapping']`",
       "description": "Expected a type form, got instance of `Literal['RecursiveMapping']`",
       "line": 42,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 63,
       "stop_line": 42
     },
@@ -765,7 +765,7 @@
       "concise_description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
       "description": "Expected `BadTypeAlias2` to be a type alias, got list[type[int] | type[str]]",
       "line": 38,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 32,
       "stop_line": 38
     },
@@ -775,7 +775,7 @@
       "concise_description": "Expected `BadTypeAlias3` to be a type alias, got tuple[tuple[type[int], type[str]]]",
       "description": "Expected `BadTypeAlias3` to be a type alias, got tuple[tuple[type[int], type[str]]]",
       "line": 39,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 35,
       "stop_line": 39
     },
@@ -785,7 +785,7 @@
       "concise_description": "Expected `BadTypeAlias4` to be a type alias, got list[type[int]]",
       "description": "Expected `BadTypeAlias4` to be a type alias, got list[type[int]]",
       "line": 40,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 45,
       "stop_line": 40
     },
@@ -795,7 +795,7 @@
       "concise_description": "Expected `BadTypeAlias5` to be a type alias, got dict[Error, Error]",
       "description": "Expected `BadTypeAlias5` to be a type alias, got dict[Error, Error]",
       "line": 41,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 32,
       "stop_line": 41
     },
@@ -825,7 +825,7 @@
       "concise_description": "Expected `BadTypeAlias9` to be a type alias, got Literal[1]",
       "description": "Expected `BadTypeAlias9` to be a type alias, got Literal[1]",
       "line": 45,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 26,
       "stop_line": 45
     },
@@ -835,7 +835,7 @@
       "concise_description": "Expected `BadTypeAlias10` to be a type alias, got Literal[True]",
       "description": "Expected `BadTypeAlias10` to be a type alias, got Literal[True]",
       "line": 46,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 27,
       "stop_line": 46
     },
@@ -845,7 +845,7 @@
       "concise_description": "Expected `BadTypeAlias11` to be a type alias, got Literal[1]",
       "description": "Expected `BadTypeAlias11` to be a type alias, got Literal[1]",
       "line": 47,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 24,
       "stop_line": 47
     },
@@ -855,7 +855,7 @@
       "concise_description": "Expected `BadTypeAlias13` to be a type alias, got str",
       "description": "Expected `BadTypeAlias13` to be a type alias, got str",
       "line": 49,
-      "name": "unknown",
+      "name": "type-alias-error",
       "stop_column": 33,
       "stop_line": 49
     },
@@ -865,7 +865,7 @@
       "concise_description": "Type parameters used in `TA1` but not declared",
       "description": "Type parameters used in `TA1` but not declared",
       "line": 64,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 25,
       "stop_line": 64
     },
@@ -875,7 +875,7 @@
       "concise_description": "Type parameters used in `TA2` but not declared",
       "description": "Type parameters used in `TA2` but not declared",
       "line": 69,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 20,
       "stop_line": 69
     }
@@ -937,7 +937,7 @@
       "concise_description": "Expected a type form, got instance of `GenericAlias`",
       "description": "Expected a type form, got instance of `GenericAlias`",
       "line": 35,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 20,
       "stop_line": 35
     },
@@ -947,7 +947,7 @@
       "concise_description": "Expected a type form, got instance of `GenericAlias`",
       "description": "Expected a type form, got instance of `GenericAlias`",
       "line": 36,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 20,
       "stop_line": 36
     },
@@ -957,7 +957,7 @@
       "concise_description": "Expected a type form, got instance of `GenericAlias`",
       "description": "Expected a type form, got instance of `GenericAlias`",
       "line": 37,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 40,
       "stop_line": 37
     },
@@ -967,7 +967,7 @@
       "concise_description": "Expected a type form, got instance of `GenericAlias`",
       "description": "Expected a type form, got instance of `GenericAlias`",
       "line": 38,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 40,
       "stop_line": 38
     },
@@ -977,7 +977,7 @@
       "concise_description": "Expected a type form, got instance of `GenericAlias`",
       "description": "Expected a type form, got instance of `GenericAlias`",
       "line": 39,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 60,
       "stop_line": 39
     },
@@ -997,7 +997,7 @@
       "concise_description": "Expected a type form, got instance of `GenericAlias`",
       "description": "Expected a type form, got instance of `GenericAlias`",
       "line": 40,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 30,
       "stop_line": 40
     },
@@ -1122,7 +1122,7 @@
       "concise_description": "Expected a type form, got instance of `Literal[1]`",
       "description": "Expected a type form, got instance of `Literal[1]`",
       "line": 49,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 13,
       "stop_line": 49
     },
@@ -1182,7 +1182,7 @@
       "concise_description": "Expected a type form, got instance of `Module[types]`",
       "description": "Expected a type form, got instance of `Module[types]`",
       "line": 55,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 15,
       "stop_line": 55
     },
@@ -1202,7 +1202,7 @@
       "concise_description": "Expected a type form, got instance of `(self: ClassD) -> None`",
       "description": "Expected a type form, got instance of `(self: ClassD) -> None`",
       "line": 87,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 11,
       "stop_line": 87
     },
@@ -1212,7 +1212,7 @@
       "concise_description": "Expected a type form, got instance of `(self: ClassD) -> None`",
       "description": "Expected a type form, got instance of `(self: ClassD) -> None`",
       "line": 89,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 11,
       "stop_line": 89
     },
@@ -1294,7 +1294,7 @@
       "concise_description": "Generator function should return `Generator`",
       "description": "Generator function should return `Generator`",
       "line": 86,
-      "name": "unknown",
+      "name": "bad-return",
       "stop_column": 24,
       "stop_line": 86
     },
@@ -1304,7 +1304,7 @@
       "concise_description": "Async generator function should return `AsyncGenerator`",
       "description": "Async generator function should return `AsyncGenerator`",
       "line": 91,
-      "name": "unknown",
+      "name": "bad-return",
       "stop_column": 30,
       "stop_line": 91
     },
@@ -1478,7 +1478,7 @@
       "concise_description": "Expected a type form, got instance of `Literal[3]`",
       "description": "Expected a type form, got instance of `Literal[3]`",
       "line": 96,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 13,
       "stop_line": 96
     },
@@ -1538,7 +1538,7 @@
       "concise_description": "Expected a type form, got instance of `Module[types]`",
       "description": "Expected a type form, got instance of `Module[types]`",
       "line": 102,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 15,
       "stop_line": 102
     }
@@ -5093,7 +5093,7 @@
       "concise_description": "Inconsistent type annotations for b: list[str], list[int]",
       "description": "Inconsistent type annotations for b: list[str], list[int]",
       "line": 16,
-      "name": "unknown",
+      "name": "annotation-mismatch",
       "stop_column": 6,
       "stop_line": 16
     },
@@ -5212,7 +5212,7 @@
       "concise_description": "Expected a type form, got instance of `Literal['RED']`",
       "description": "Expected a type form, got instance of `Literal['RED']`",
       "line": 26,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 24,
       "stop_line": 26
     },
@@ -5779,7 +5779,7 @@
       "concise_description": "A type parameter without a default cannot follow one with a default",
       "description": "A type parameter without a default cannot follow one with a default",
       "line": 24,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 31,
       "stop_line": 24
     },
@@ -5879,7 +5879,7 @@
       "concise_description": "A type parameter without a default cannot follow one with a default",
       "description": "A type parameter without a default cannot follow one with a default",
       "line": 138,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 11,
       "stop_line": 138
     },
@@ -6103,7 +6103,7 @@
       "concise_description": "Expected a type form, got instance of `Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]`",
       "description": "Expected a type form, got instance of `Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]`",
       "line": 25,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 22,
       "stop_line": 25
     },
@@ -6167,7 +6167,7 @@
       "concise_description": "ParamSpec *args and **kwargs must be used together",
       "description": "ParamSpec *args and **kwargs must be used together",
       "line": 23,
-      "name": "unknown",
+      "name": "bad-param-spec",
       "stop_column": 13,
       "stop_line": 24
     },
@@ -6177,7 +6177,7 @@
       "concise_description": "ParamSpec *args and **kwargs must be used together",
       "description": "ParamSpec *args and **kwargs must be used together",
       "line": 26,
-      "name": "unknown",
+      "name": "bad-param-spec",
       "stop_column": 13,
       "stop_line": 27
     },
@@ -6187,7 +6187,7 @@
       "concise_description": "ParamSpec *args and **kwargs must be used together",
       "description": "ParamSpec *args and **kwargs must be used together",
       "line": 38,
-      "name": "unknown",
+      "name": "bad-param-spec",
       "stop_column": 13,
       "stop_line": 39
     },
@@ -6197,7 +6197,7 @@
       "concise_description": "ParamSpec *args and **kwargs must be used together",
       "description": "ParamSpec *args and **kwargs must be used together",
       "line": 41,
-      "name": "unknown",
+      "name": "bad-param-spec",
       "stop_column": 13,
       "stop_line": 42
     },
@@ -6227,7 +6227,7 @@
       "concise_description": "Keyword-only parameter `s` may not appear after ParamSpec args parameter",
       "description": "Keyword-only parameter `s` may not appear after ParamSpec args parameter",
       "line": 60,
-      "name": "unknown",
+      "name": "bad-function-definition",
       "stop_column": 34,
       "stop_line": 60
     },
@@ -6945,7 +6945,7 @@
       "concise_description": "Type parameter K is not included in the type parameter list",
       "description": "Type parameter K is not included in the type parameter list",
       "line": 14,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 23,
       "stop_line": 14
     },
@@ -6955,7 +6955,7 @@
       "concise_description": "Type parameter K is not included in the type parameter list",
       "description": "Type parameter K is not included in the type parameter list",
       "line": 26,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 36,
       "stop_line": 26
     },
@@ -6965,7 +6965,7 @@
       "concise_description": "Type parameter K is not included in the type parameter list",
       "description": "Type parameter K is not included in the type parameter list",
       "line": 26,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 46,
       "stop_line": 26
     }
@@ -7047,7 +7047,7 @@
       "concise_description": "Expected a type form, got instance of `tuple[type[bytes], type[str]]`",
       "description": "Expected a type form, got instance of `tuple[type[bytes], type[str]]`",
       "line": 73,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 19,
       "stop_line": 73
     },
@@ -7057,7 +7057,7 @@
       "concise_description": "Expected a type form, got instance of `Literal[3]`",
       "description": "Expected a type form, got instance of `Literal[3]`",
       "line": 77,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 19,
       "stop_line": 77
     },
@@ -7341,7 +7341,7 @@
       "concise_description": "Expected a type form, got instance of `int`",
       "description": "Expected a type form, got instance of `int`",
       "line": 18,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 27,
       "stop_line": 18
     },
@@ -7351,7 +7351,7 @@
       "concise_description": "Expected a type form, got instance of `int`",
       "description": "Expected a type form, got instance of `int`",
       "line": 44,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 18,
       "stop_line": 44
     },
@@ -7885,7 +7885,7 @@
       "concise_description": "Expected a type form, got instance of `Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, tuple[Any]]]]]`",
       "description": "Expected a type form, got instance of `Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, tuple[Any]]]]]`",
       "line": 67,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 23,
       "stop_line": 67
     },
@@ -9530,7 +9530,7 @@
       "concise_description": "Cannot unpack Point (of size 3) into 2 values",
       "description": "Cannot unpack Point (of size 3) into 2 values",
       "line": 52,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 7,
       "stop_line": 52
     },
@@ -9540,7 +9540,7 @@
       "concise_description": "Cannot unpack Point (of size 3) into 4 values",
       "description": "Cannot unpack Point (of size 3) into 4 values",
       "line": 53,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 21,
       "stop_line": 53
     }
@@ -9926,7 +9926,7 @@
       "concise_description": "Overloaded function needs at least two signatures",
       "description": "Overloaded function needs at least two signatures",
       "line": 63,
-      "name": "unknown",
+      "name": "invalid-overload",
       "stop_column": 10,
       "stop_line": 63
     },
@@ -9936,7 +9936,7 @@
       "concise_description": "Overloaded function must have an implementation",
       "description": "Overloaded function must have an implementation",
       "line": 75,
-      "name": "unknown",
+      "name": "invalid-overload",
       "stop_column": 10,
       "stop_line": 75
     }
@@ -10508,7 +10508,7 @@
       "concise_description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
       "description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
       "line": 43,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 32,
       "stop_line": 43
     },
@@ -10518,7 +10518,7 @@
       "concise_description": "Expected a type form, got instance of `tuple[tuple[type[int], type[str]]]`",
       "description": "Expected a type form, got instance of `tuple[tuple[type[int], type[str]]]`",
       "line": 44,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 35,
       "stop_line": 44
     },
@@ -10528,7 +10528,7 @@
       "concise_description": "Expected a type form, got instance of `list[type[int]]`",
       "description": "Expected a type form, got instance of `list[type[int]]`",
       "line": 45,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 45,
       "stop_line": 45
     },
@@ -10538,7 +10538,7 @@
       "concise_description": "Expected a type form, got instance of `dict[Error, Error]`",
       "description": "Expected a type form, got instance of `dict[Error, Error]`",
       "line": 46,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 32,
       "stop_line": 46
     },
@@ -10578,7 +10578,7 @@
       "concise_description": "Expected a type form, got instance of `Literal[True]`",
       "description": "Expected a type form, got instance of `Literal[True]`",
       "line": 51,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 26,
       "stop_line": 51
     },
@@ -10588,7 +10588,7 @@
       "concise_description": "Expected a type form, got instance of `Literal[1]`",
       "description": "Expected a type form, got instance of `Literal[1]`",
       "line": 52,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 24,
       "stop_line": 52
     },
@@ -10598,7 +10598,7 @@
       "concise_description": "Expected a type form, got instance of `str`",
       "description": "Expected a type form, got instance of `str`",
       "line": 54,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 33,
       "stop_line": 54
     },
@@ -11474,7 +11474,7 @@
       "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 2) into 1 value",
       "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 2) into 1 value",
       "line": 93,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 18,
       "stop_line": 93
     },
@@ -11494,7 +11494,7 @@
       "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 1) into 2 values",
       "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 1) into 2 values",
       "line": 97,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 20,
       "stop_line": 97
     },
@@ -11514,7 +11514,7 @@
       "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 1) into 3 values",
       "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 1) into 3 values",
       "line": 101,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 23,
       "stop_line": 101
     },
@@ -11524,7 +11524,7 @@
       "concise_description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 2) into 3 values",
       "description": "Cannot unpack tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int] (of size 2) into 3 values",
       "line": 101,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 23,
       "stop_line": 101
     },
@@ -12017,7 +12017,7 @@
       "concise_description": "Expected str, got Literal[1982]",
       "description": "Expected str, got Literal[1982]",
       "line": 22,
-      "name": "unknown",
+      "name": "bad-assignment",
       "stop_column": 14,
       "stop_line": 22
     },
@@ -12027,7 +12027,7 @@
       "concise_description": "Expected int, got Literal['']",
       "description": "Expected int, got Literal['']",
       "line": 23,
-      "name": "unknown",
+      "name": "bad-assignment",
       "stop_column": 14,
       "stop_line": 23
     },
@@ -12037,7 +12037,7 @@
       "concise_description": "TypedDict `Movie` does not have key `other`",
       "description": "TypedDict `Movie` does not have key `other`",
       "line": 24,
-      "name": "unknown",
+      "name": "missing-typed-dict-key",
       "stop_column": 14,
       "stop_line": 24
     },
@@ -12159,7 +12159,7 @@
       "concise_description": "Key `members` in TypedDict `Band` is read-only",
       "description": "Key `members` in TypedDict `Band` is read-only",
       "line": 24,
-      "name": "unknown",
+      "name": "read-only",
       "stop_column": 13,
       "stop_line": 24
     },
@@ -12169,7 +12169,7 @@
       "concise_description": "Key `members` in TypedDict `Band2` is read-only",
       "description": "Key `members` in TypedDict `Band2` is read-only",
       "line": 36,
-      "name": "unknown",
+      "name": "read-only",
       "stop_column": 13,
       "stop_line": 36
     },
@@ -12179,7 +12179,7 @@
       "concise_description": "Key `title` in TypedDict `Movie1` is read-only",
       "description": "Key `title` in TypedDict `Movie1` is read-only",
       "line": 50,
-      "name": "unknown",
+      "name": "read-only",
       "stop_column": 11,
       "stop_line": 50
     },
@@ -12189,7 +12189,7 @@
       "concise_description": "Key `year` in TypedDict `Movie1` is read-only",
       "description": "Key `year` in TypedDict `Movie1` is read-only",
       "line": 51,
-      "name": "unknown",
+      "name": "read-only",
       "stop_column": 10,
       "stop_line": 51
     },
@@ -12209,7 +12209,7 @@
       "concise_description": "Key `title` in TypedDict `Movie2` is read-only",
       "description": "Key `title` in TypedDict `Movie2` is read-only",
       "line": 60,
-      "name": "unknown",
+      "name": "read-only",
       "stop_column": 11,
       "stop_line": 60
     }
@@ -12283,7 +12283,7 @@
       "concise_description": "Key `name` in TypedDict `Album2` is read-only",
       "description": "Key `name` in TypedDict `Album2` is read-only",
       "line": 36,
-      "name": "unknown",
+      "name": "read-only",
       "stop_column": 10,
       "stop_line": 36
     },
@@ -12333,7 +12333,7 @@
       "concise_description": "Expected str, got Literal[3]",
       "description": "Expected str, got Literal[3]",
       "line": 82,
-      "name": "unknown",
+      "name": "bad-assignment",
       "stop_column": 11,
       "stop_line": 82
     },
@@ -12365,7 +12365,7 @@
       "concise_description": "Key `key1` in TypedDict `ReadOnlyArgs` is read-only",
       "description": "Key `key1` in TypedDict `ReadOnlyArgs` is read-only",
       "line": 33,
-      "name": "unknown",
+      "name": "read-only",
       "stop_column": 18,
       "stop_line": 33
     }
@@ -12419,7 +12419,7 @@
       "concise_description": "Expected a type form, got instance of `Literal['RecursiveMovie']`",
       "description": "Expected a type form, got instance of `Literal['RecursiveMovie']`",
       "line": 74,
-      "name": "unknown",
+      "name": "not-a-type",
       "stop_column": 91,
       "stop_line": 74
     }
@@ -12593,7 +12593,7 @@
       "concise_description": "TypedDict `Movie` does not have key `director`",
       "description": "TypedDict `Movie` does not have key `director`",
       "line": 23,
-      "name": "unknown",
+      "name": "missing-typed-dict-key",
       "stop_column": 17,
       "stop_line": 23
     },
@@ -12603,7 +12603,7 @@
       "concise_description": "Expected int, got Literal['1982']",
       "description": "Expected int, got Literal['1982']",
       "line": 24,
-      "name": "unknown",
+      "name": "bad-assignment",
       "stop_column": 14,
       "stop_line": 24
     },
