@@ -14,6 +14,7 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use tracing::error;
+use vec1::vec1;
 
 use crate::error::error::Error;
 use crate::error::kind::ErrorKind;
@@ -108,7 +109,7 @@ impl ErrorCollector {
             let err = Error::new(
                 self.module_info.path().dupe(),
                 source_range,
-                msg,
+                vec1![msg],
                 is_ignored,
                 error_kind,
             );

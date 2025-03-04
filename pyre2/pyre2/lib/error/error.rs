@@ -9,6 +9,8 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 
+use vec1::Vec1;
+
 use crate::error::kind::ErrorKind;
 use crate::module::module_info::SourceRange;
 use crate::module::module_path::ModulePath;
@@ -18,13 +20,13 @@ pub struct Error {
     path: ModulePath,
     range: SourceRange,
     error_kind: ErrorKind,
-    msg: String,
+    msg: Vec1<String>,
     is_ignored: bool,
 }
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}: {}", self.path, self.range, self.msg)
+        write!(f, "{}:{}: {}", self.path, self.range, self.msg())
     }
 }
 
@@ -32,7 +34,7 @@ impl Error {
     pub fn new(
         path: ModulePath,
         range: SourceRange,
-        msg: String,
+        msg: Vec1<String>,
         is_ignored: bool,
         error_kind: ErrorKind,
     ) -> Self {
@@ -53,8 +55,8 @@ impl Error {
         &self.path
     }
 
-    pub fn msg(&self) -> &str {
-        &self.msg
+    pub fn msg(&self) -> String {
+        self.msg.join("\n  ")
     }
 
     pub fn is_ignored(&self) -> bool {
