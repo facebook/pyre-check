@@ -20,15 +20,14 @@ def f(a: A):
     "#,
 );
 
-testcase_with_bug!(
-    "We never validate that assignments to unpacked targets are valid",
+testcase!(
     test_set_attribute_in_unpacked_assign,
     r#"
 class A:
     x: int
     y: str
 def f(a: A):
-    a.x, a.y = "x", "y"  # E: Could not assign type `Literal['x']` to attribute `x` with type `int`
+    a.x, a.y = "x", "y"  # E: `Literal['x']` is not assignable to attribute `x` with type `int`
     "#,
 );
 

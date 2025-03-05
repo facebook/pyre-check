@@ -383,20 +383,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         );
                     }
                     Either::Right(got) => {
-                        if !self.solver().is_subset_eq(got, &want, self.type_order()) {
-                            self.error(
-                                errors,
-                                range,
-                                ErrorKind::BadAssignment,
-                                None,
-                                format!(
-                                    "Could not assign type `{}` to attribute `{}` with type `{}`",
-                                    got.clone().deterministic_printing(),
-                                    attr_name,
-                                    want.deterministic_printing(),
-                                ),
-                            );
-                        }
+                        self.check_type(
+                            &want,
+                            got,
+                            range,
+                            errors,
+                            &TypeCheckContext::of_kind(TypeCheckKind::Attribute(attr_name.clone())),
+                        );
                     }
                 },
                 AttributeInner::ReadOnly(_) => {
