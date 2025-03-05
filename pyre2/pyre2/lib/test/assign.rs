@@ -495,7 +495,7 @@ x2: list[A]
 (x2 := [B()])
 
 x3: B
-(x3 := A())  # E: Expected declared type `B`, got `A`
+(x3 := A())  # E: `A` is not assignable to type `B`
     "#,
 );
 

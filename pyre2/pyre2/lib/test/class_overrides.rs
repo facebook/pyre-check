@@ -200,7 +200,7 @@ class ChildA(ParentA):
     @override
     @staticmethod
     def static_method1() -> bool: 
-        return 1 # E: Function declared to return `bool`, actually returns `Literal[1]`
+        return 1 # E: Returned type `Literal[1]` is not assignable to declared return type `bool`
     
  "#,
 );

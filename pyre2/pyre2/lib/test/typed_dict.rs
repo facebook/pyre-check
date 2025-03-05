@@ -41,11 +41,11 @@ class Coord(TypedDict):
 c1: Coord = {"x": 1, "y": 2}
 c2: Coord = {"x": 1, "y": 2, "z": 3}
 c3: Coord = {"x": 1, "y": 2, "a": 4}  # E: Key `a` is not defined in TypedDict `Coord`
-c4: Coord = {"x": 1, "y": "foo"}  # E: TypedDict key `y` declared with type `int`, cannot assign `Literal['foo']`
+c4: Coord = {"x": 1, "y": "foo"}  # E: `Literal['foo']` is not assignable to TypedDict key `y` with type `int`
 c5: Coord = {"x": 1}  # E: Missing required key `y` for TypedDict `Coord`
 c6: Coord = {"x": 1, **{"y": 2, **{"z": 3}}}
 d: dict[str, int] = {}
-c7: Coord = {"x": 1, **d}  # E: Expected declared type `TypedDict[Coord]`, got `dict[str, int]`
+c7: Coord = {"x": 1, **d}  # E: `dict[str, int]` is not assignable to type `TypedDict[Coord]`
 
 def foo(c: Coord) -> None:
     pass

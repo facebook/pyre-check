@@ -243,7 +243,7 @@ def fail() -> NoReturn:
 
 def f(b: bool) -> int:
     if b:
-        return None # E: Function declared to return `int`, actually returns `None`
+        return None # E: Returned type `None` is not assignable to declared return type `int`
     else:
         fail()
 "#,

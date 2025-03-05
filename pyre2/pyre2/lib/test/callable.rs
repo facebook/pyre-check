@@ -261,7 +261,7 @@ test(0, 1, "foo", 2) # E: Expected 3 positional arguments
 testcase!(
     test_bad_default,
     r#"
-def f(x: int = ""):  # E: Parameter `x` declared with type `int`, cannot assign default `Literal['']`
+def f(x: int = ""):  # E: Default `Literal['']` is not assignable to parameter `x` with type `int`
     pass
     "#,
 );
@@ -270,7 +270,7 @@ testcase!(
     test_default_ellipsis,
     r#"
 def stub(x: int = ...): ... # OK
-def err(x: int = ...): pass # E: Parameter `x` declared with type `int`, cannot assign default `Ellipsis`
+def err(x: int = ...): pass # E: Default `Ellipsis` is not assignable to parameter `x` with type `int`
 "#,
 );
 
@@ -437,7 +437,7 @@ def test_corountine() -> Callable[[int], Coroutine[Any, Any, int]]:
 def test_awaitable() -> Callable[[int], Awaitable[int]]:
     return f
 def test_sync() -> Callable[[int], int]:
-    return f  # E: Function declared to return `(int) -> int`, actually returns `(x: int) -> Coroutine[Unknown, Unknown, int]`
+    return f  # E: Returned type `(x: int) -> Coroutine[Unknown, Unknown, int]` is not assignable to declared return type `(int) -> int`
 "#,
 );
 

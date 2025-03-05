@@ -296,6 +296,6 @@ testcase!(
 from typing import Generator
 def f() -> Generator[None, None, int]:
     yield None
-    return "oops"  # E: Function declared to return `int`, actually returns `Literal['oops']`
+    return "oops"  # E: Returned type `Literal['oops']` is not assignable to declared return type `int`
     "#,
 );

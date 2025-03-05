@@ -149,7 +149,7 @@ class Foo:
     ) -> str:
         ...
 
-with Foo() as foo:  # E: Cannot use `Foo` as a context manager\n  Expected `Foo.__exit__` to return `bool | None`, got `str`
+with Foo() as foo:  # E: Cannot use `Foo` as a context manager\n  Return type `str` of function `Foo.__exit__` is not assignable to expected return type `bool | None`
     pass
     "#,
 );

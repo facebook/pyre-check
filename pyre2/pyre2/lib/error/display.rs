@@ -29,11 +29,11 @@ impl TypeCheckKind {
             Self::MagicMethodReturn(cls, func) => {
                 ctx.add(cls);
                 format!(
-                    "Expected `{}.{}` to return `{}`, got `{}`",
+                    "Return type `{}` of function `{}.{}` is not assignable to expected return type `{}`",
+                    ctx.display(got),
                     ctx.display(cls),
                     func,
                     ctx.display(want),
-                    ctx.display(got)
                 )
             }
             Self::ImplicitFunctionReturn(has_explicit_return) => {
@@ -50,36 +50,36 @@ impl TypeCheckKind {
                 }
             }
             Self::ExplicitFunctionReturn => format!(
-                "Function declared to return `{}`, actually returns `{}`",
+                "Returned type `{}` is not assignable to declared return type `{}`",
+                ctx.display(got),
                 ctx.display(want),
-                ctx.display(got)
             ),
             Self::TypeGuardReturn => format!(
-                "Expected type guard function to return `bool`, actually returns `{}`",
+                "Returned type `{}` is not assignable to expected return type `bool` of type guard functions",
                 ctx.display(got)
             ),
             Self::FunctionParameterDefault(param) => format!(
-                "Parameter `{}` declared with type `{}`, cannot assign default `{}`",
+                "Default `{}` is not assignable to parameter `{}` with type `{}`",
+                ctx.display(got),
                 param,
                 ctx.display(want),
-                ctx.display(got)
             ),
             Self::TypedDictKey(key) => format!(
-                "TypedDict key `{}` declared with type `{}`, cannot assign `{}`",
+                "`{}` is not assignable to TypedDict key `{}` with type `{}`",
+                ctx.display(got),
                 key,
                 ctx.display(want),
-                ctx.display(got),
             ),
             Self::Attribute(attr) => format!(
-                "Attribute `{}` has type `{}`, cannot assign `{}`",
+                "`{}` is not assignable to attribute `{}` with type `{}`",
+                ctx.display(got),
                 attr,
                 ctx.display(want),
-                ctx.display(got)
             ),
             Self::ExplicitTypeAnnotation => format!(
-                "Expected declared type `{}`, got `{}`",
+                "`{}` is not assignable to type `{}`",
+                ctx.display(got),
                 ctx.display(want),
-                ctx.display(got)
             ),
             Self::Unknown => {
                 format!("EXPECTED {} <: {}", ctx.display(got), ctx.display(want))

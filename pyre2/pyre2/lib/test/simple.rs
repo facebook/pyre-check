@@ -64,7 +64,7 @@ testcase!(
     test_error_in_function,
     r#"
 def f(x: str) -> int:
-    return x  # E: Function declared to return `int`, actually returns `str`
+    return x  # E: Returned type `str` is not assignable to declared return type `int`
 "#,
 );
 
@@ -250,7 +250,7 @@ testcase!(
     test_unordered_defs,
     r#"
 def f() -> int:
-    return g()  # E: Function declared to return `int`, actually returns `str`
+    return g()  # E: Returned type `str` is not assignable to declared return type `int`
 def g() -> str:
     return "test"
 "#,
@@ -357,7 +357,7 @@ class C:
     y: int = x # E: EXPECTED str <: int
     def m(self) -> str:
         # x refers to global x: int
-        return x # E: Function declared to return `str`, actually returns `Literal[0]`
+        return x # E: Returned type `Literal[0]` is not assignable to declared return type `str`
 "#,
 );
 

@@ -460,6 +460,6 @@ testcase!(
     r#"
 from typing import TypeVar
 T: int = 0
-T = TypeVar('T')  # E: Expected declared type `int`, got `type[TypeVar[T]]`
+T = TypeVar('T')  # E: `type[TypeVar[T]]` is not assignable to type `int`
     "#,
 );

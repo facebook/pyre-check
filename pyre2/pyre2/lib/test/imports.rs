@@ -165,7 +165,7 @@ from typing import assert_type
 from foo import *
 class Foo: ...
 def f(x: Foo) -> Foo:
-    return Foo() # E: Function declared to return `main.Foo`, actually returns `foo.Foo | main.Foo`
+    return Foo() # E: Returned type `foo.Foo | main.Foo` is not assignable to declared return type `main.Foo`
 assert_type(f(Foo()), Foo)
 "#,
 );

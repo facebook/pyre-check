@@ -16,7 +16,7 @@ class A:
     x: int
 def f(a: A):
     a.x = 1  # OK
-    a.x = "oops"  # E: Attribute `x` has type `int`, cannot assign `Literal['oops']`
+    a.x = "oops"  # E: `Literal['oops']` is not assignable to attribute `x` with type `int`
     "#,
 );
 
@@ -51,7 +51,7 @@ class A:
     def __init__(self):
         self.x = 0
     def f(self):
-        self.x = "oops"  # E: Attribute `x` has type `int`, cannot assign `Literal['oops']`
+        self.x = "oops"  # E: `Literal['oops']` is not assignable to attribute `x` with type `int`
     "#,
 );
 
@@ -61,7 +61,7 @@ testcase!(
 from typing import assert_type
 class A:
     def f(self, x: str):
-        self.x = x  # E: Attribute `x` has type `int`, cannot assign `str`
+        self.x = x  # E: `str` is not assignable to attribute `x` with type `int`
     def __init__(self, x: int):
         self.x = x
     "#,
@@ -103,7 +103,7 @@ class C3:
     def f(x: int, /) -> str:
         return ""
 def foo(x: Callable[[int], str], c: C, c2: C2, c3: C3):
-    C.f = x  # E: Attribute `f` has type `(C, int) -> str`, cannot assign `(int) -> str`
+    C.f = x  # E: `(int) -> str` is not assignable to attribute `f` with type `(C, int) -> str`
     c.f = x
     C2.f = x
     c2.f = x
@@ -143,7 +143,7 @@ from typing import assert_type
 class A:
     x: str
     def __init__(self, x: int):
-        self.x = x  # E: Attribute `x` has type `str`, cannot assign `int`
+        self.x = x  # E: `int` is not assignable to attribute `x` with type `str`
     "#,
 );
 
@@ -154,7 +154,7 @@ from typing import assert_type
 
 class A:
     def __init__(self, x: str):
-        self.x: int = x  # E: Attribute `x` has type `int`, cannot assign `str`
+        self.x: int = x  # E: `str` is not assignable to attribute `x` with type `int`
 def f(a: A):
     assert_type(a.x, int)
     "#,
@@ -220,7 +220,7 @@ from typing import assert_type
 class A:
     def __init__(self, x: str):
         self.x: int
-        self.x = x  # E: Attribute `x` has type `int`, cannot assign `str`
+        self.x = x  # E: `str` is not assignable to attribute `x` with type `int`
 def f(a: A):
     assert_type(a.x, int)
     "#,
