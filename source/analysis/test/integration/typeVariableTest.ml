@@ -29,6 +29,14 @@ let test_type_variable_scoping =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              class Test[T]:
+                  def fn(self, val: T) -> None:
+                      v: T = val
+            |}
+           ["Unbound name [10]: Name `T` is used but not defined in the current scope."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
             class A[T:int]:
                 def func(self, x: T) -> T:
                     ...
