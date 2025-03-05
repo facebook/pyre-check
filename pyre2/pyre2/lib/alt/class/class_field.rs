@@ -408,7 +408,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::BadClassDefinition,
                 None,
                 format!("TypedDict item `{}` may not be initialized.", name),
             );
@@ -447,7 +447,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         {
             if annotation.is_some() {
                 self.error(
-                    errors, range,ErrorKind::Unknown, None,
+                    errors, range,ErrorKind::InvalidAnnotation, None,
                     format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name),
                 );
             }
@@ -458,7 +458,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         .is_subset_eq(ty, &enum_value_ty, self.type_order())
                 {
                     self.error(
-                        errors, range, ErrorKind::Unknown, None,
+                        errors, range, ErrorKind::BadAssignment, None,
                         format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name), 
                     );
                 }
@@ -663,7 +663,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             errors,
                             range,
-                            ErrorKind::Unknown,
+                            ErrorKind::BadOverride,
                             None,
                             format!(
                                 "Class member `{}` overrides parent class `{}` in an inconsistent manner",
@@ -678,7 +678,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     range,
-                    ErrorKind::Unknown,
+                    ErrorKind::BadOverride,
                     None,
                     format!(
                         "Class member `{}` is marked as an override, but no parent class has a matching attribute",

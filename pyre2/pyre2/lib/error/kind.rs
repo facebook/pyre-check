@@ -38,6 +38,8 @@ pub enum ErrorKind {
     /// Attemping to call a function with an incorrect keyword argument.
     /// e.g. f(x=1, x=2), or perhaps f(y=1) (where `f` has no parameter `y`).
     BadKeywordArgument,
+    /// A subclass field or method incorrectly overrides a field/method of a parent class.
+    BadOverride,
     /// Attempting to return a value that does not match the function's return type.
     /// Can also arise when returning values from generators.
     BadReturn,
@@ -123,6 +125,7 @@ pub enum ErrorKind {
     #[allow(dead_code)]
     Unsupported,
     /// Unknown or not-yet-defined error.
+    #[allow(dead_code)]
     Unknown,
 }
 

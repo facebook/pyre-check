@@ -2480,7 +2480,7 @@
       "concise_description": "Class member `method3` is marked as an override, but no parent class has a matching attribute",
       "description": "Class member `method3` is marked as an override, but no parent class has a matching attribute",
       "line": 53,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 16,
       "stop_line": 53
     },
@@ -2490,7 +2490,7 @@
       "concise_description": "Class member `static_method1` is marked as an override, but no parent class has a matching attribute",
       "description": "Class member `static_method1` is marked as an override, but no parent class has a matching attribute",
       "line": 79,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 23,
       "stop_line": 79
     },
@@ -2500,7 +2500,7 @@
       "concise_description": "Class member `class_method1` is marked as an override, but no parent class has a matching attribute",
       "description": "Class member `class_method1` is marked as an override, but no parent class has a matching attribute",
       "line": 84,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 22,
       "stop_line": 84
     },
@@ -2510,7 +2510,7 @@
       "concise_description": "Class member `property1` is marked as an override, but no parent class has a matching attribute",
       "description": "Class member `property1` is marked as an override, but no parent class has a matching attribute",
       "line": 89,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 18,
       "stop_line": 89
     }
@@ -5329,7 +5329,7 @@
       "concise_description": "The value for enum member `GREEN` must match the annotation of the _value_ attribute.",
       "description": "The value for enum member `GREEN` must match the annotation of the _value_ attribute.",
       "line": 78,
-      "name": "unknown",
+      "name": "bad-assignment",
       "stop_column": 10,
       "stop_line": 78
     },
@@ -5441,7 +5441,7 @@
       "concise_description": "Enum member `DOG` may not be annotated directly. Instead, annotate the _value_ attribute.",
       "description": "Enum member `DOG` may not be annotated directly. Instead, annotate the _value_ attribute.",
       "line": 50,
-      "name": "unknown",
+      "name": "invalid-annotation",
       "stop_column": 8,
       "stop_line": 50
     },
@@ -10152,7 +10152,7 @@
       "concise_description": "Class member `rgb` overrides parent class `RGB` in an inconsistent manner",
       "description": "Class member `rgb` overrides parent class `RGB` in an inconsistent manner",
       "line": 56,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 17,
       "stop_line": 56
     },
@@ -10162,7 +10162,7 @@
       "concise_description": "Class member `method1` overrides parent class `Proto7` in an inconsistent manner",
       "description": "Class member `method1` overrides parent class `Proto7` in an inconsistent manner",
       "line": 157,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 16,
       "stop_line": 157
     }
@@ -10852,7 +10852,7 @@
       "concise_description": "Class member `method1` overrides parent class `Base2` in an inconsistent manner",
       "description": "Class member `method1` overrides parent class `Base2` in an inconsistent manner",
       "line": 56,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 16,
       "stop_line": 56
     },
@@ -10862,7 +10862,7 @@
       "concise_description": "Class member `method2` overrides parent class `Base2` in an inconsistent manner",
       "description": "Class member `method2` overrides parent class `Base2` in an inconsistent manner",
       "line": 60,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 16,
       "stop_line": 60
     },
@@ -10872,7 +10872,7 @@
       "concise_description": "Class member `method3` overrides parent class `Base2` in an inconsistent manner",
       "description": "Class member `method3` overrides parent class `Base2` in an inconsistent manner",
       "line": 64,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 16,
       "stop_line": 64
     },
@@ -10882,7 +10882,7 @@
       "concise_description": "Class member `method` overrides parent class `Base3` in an inconsistent manner",
       "description": "Class member `method` overrides parent class `Base3` in an inconsistent manner",
       "line": 81,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 15,
       "stop_line": 81
     },
@@ -10902,7 +10902,7 @@
       "concise_description": "Class member `method` overrides parent class `Base4` in an inconsistent manner",
       "description": "Class member `method` overrides parent class `Base4` in an inconsistent manner",
       "line": 95,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 15,
       "stop_line": 95
     },
@@ -10922,7 +10922,7 @@
       "concise_description": "Class member `method` overrides parent class `Base5_2` in an inconsistent manner",
       "description": "Class member `method` overrides parent class `Base5_2` in an inconsistent manner",
       "line": 118,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 15,
       "stop_line": 118
     },
@@ -11952,7 +11952,7 @@
       "concise_description": "TypedDict item `method1` may not be initialized.",
       "description": "TypedDict item `method1` may not be initialized.",
       "line": 29,
-      "name": "unknown",
+      "name": "bad-class-definition",
       "stop_column": 16,
       "stop_line": 29
     },
@@ -11962,7 +11962,7 @@
       "concise_description": "TypedDict item `method2` may not be initialized.",
       "description": "TypedDict item `method2` may not be initialized.",
       "line": 34,
-      "name": "unknown",
+      "name": "bad-class-definition",
       "stop_column": 16,
       "stop_line": 34
     },
@@ -11972,7 +11972,7 @@
       "concise_description": "TypedDict item `method3` may not be initialized.",
       "description": "TypedDict item `method3` may not be initialized.",
       "line": 39,
-      "name": "unknown",
+      "name": "bad-class-definition",
       "stop_column": 16,
       "stop_line": 39
     },
@@ -12005,7 +12005,7 @@
       "concise_description": "Class member `x` overrides parent class `X1` in an inconsistent manner",
       "description": "Class member `x` overrides parent class `X1` in an inconsistent manner",
       "line": 55,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 5,
       "stop_line": 55
     }
@@ -12293,7 +12293,7 @@
       "concise_description": "Class member `albums` overrides parent class `AlbumCollection` in an inconsistent manner",
       "description": "Class member `albums` overrides parent class `AlbumCollection` in an inconsistent manner",
       "line": 49,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 11,
       "stop_line": 49
     },
@@ -12303,7 +12303,7 @@
       "concise_description": "Class member `alt` overrides parent class `AlbumCollection` in an inconsistent manner",
       "description": "Class member `alt` overrides parent class `AlbumCollection` in an inconsistent manner",
       "line": 50,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 8,
       "stop_line": 50
     },
@@ -12323,7 +12323,7 @@
       "concise_description": "Class member `ident` overrides parent class `OptionalIdent` in an inconsistent manner",
       "description": "Class member `ident` overrides parent class `OptionalIdent` in an inconsistent manner",
       "line": 76,
-      "name": "unknown",
+      "name": "bad-override",
       "stop_column": 10,
       "stop_line": 76
     },
