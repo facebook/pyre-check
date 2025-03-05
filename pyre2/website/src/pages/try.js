@@ -28,10 +28,7 @@ export default component TryPyre2Page() {
       <BrowserOnly>
         {() => (
           <React.Suspense fallback={<div>Loading...</div>}>
-            <TryPyre2
-              defaultFlowVersion={siteConfig.customFields.flowVersion}
-              flowVersions={siteConfig.customFields.allFlowVersions}
-            />
+            <TryPyre2 />
           </React.Suspense>
         )}
       </BrowserOnly>

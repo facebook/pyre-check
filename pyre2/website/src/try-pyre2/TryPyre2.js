@@ -48,7 +48,10 @@ const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
   })
   .catch(e => console.log(e));
 
-export default component TryPyre2(editorHeight: number, codeSample: string) {
+export default component TryPyre2(
+  editorHeight: number = 600,
+  codeSample: string = DEFAULT_PYTHON_PROGRAM,
+) {
   const {withBaseUrl} = useBaseUrlUtils();
   const editorRef = useRef(null);
   const [internalError, setInternalError] = useState('');
@@ -99,14 +102,14 @@ export default component TryPyre2(editorHeight: number, codeSample: string) {
     editorRef.current = editor;
   }
 
-  const height = editorHeight || '600px';
+  const height = editorHeight;
 
   return (
     <div className={styles.tryEditor}>
       <div className={styles.code}>
         <div className={styles.editorContainer}>
           <Editor
-            defaultValue={codeSample || DEFAULT_PYTHON_PROGRAM}
+            defaultValue={codeSample}
             defaultLanguage="python"
             theme="vs-light"
             height={height}
