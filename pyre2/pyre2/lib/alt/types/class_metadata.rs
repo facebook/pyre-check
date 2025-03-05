@@ -458,7 +458,7 @@ impl Linearization {
                             ClassName(cls.qname()),
                             ClassName(base.qname()),
                         ),
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidInheritance,
                         None,
                     );
                     // Signal that we detected a cycle
@@ -536,7 +536,7 @@ impl Linearization {
                         ClassName(cls.qname()),
                         ClassName(first_candidate.qname()),
                     ),
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidInheritance,
                     None,
                 );
 
