@@ -320,16 +320,31 @@ let test_type_variable_scoping =
                   def x(self) -> K:
                       return self._x
 
-
               vo5_1: ShouldBeCovariant5[float] = ShouldBeCovariant5[int](1)  # OK
               vo5_2: ShouldBeCovariant5[int] = ShouldBeCovariant5[float](1.0)  # E
 
+              # TODO(stroxler)
+              # Make sure the privacy check we are using for
+              # `ShouldBeCovariant5` doesn't mistakenly consider dunder
+              # attributes to be private
+              class ShouldBeInvariant6(Generic[K]):
+                  def __init__(self, x: K) -> None:
+                      self.__x__ = x
+
+                  def x(self) -> K:
+                      return self.__x__
+
+
+              vo6_1: ShouldBeInvariant6[float] = ShouldBeInvariant6[int](1)  # OK
+              vo6_2: ShouldBeInvariant6[int] = ShouldBeInvariant6[float](1.0)  # E
             |}
            [
              "Incompatible variable type [9]: vco1_2 is declared to have type \
               `ShouldBeCovariant1[int]` but is used as type `ShouldBeCovariant1[float]`.";
              "Incompatible variable type [9]: vo5_2 is declared to have type \
               `ShouldBeCovariant5[int]` but is used as type `ShouldBeCovariant5[float]`.";
+             "Incompatible variable type [9]: vo6_2 is declared to have type \
+              `ShouldBeInvariant6[int]` but is used as type `ShouldBeInvariant6[float]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
