@@ -259,6 +259,7 @@ impl Step {
             &load.errors,
             ctx.stdlib,
             ctx.uniques,
+            ctx.retain_memory,
         );
         let history = answers.1.id_cache_history();
         Arc::new((history, Arc::new(solutions)))
