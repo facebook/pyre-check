@@ -9,7 +9,6 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::Once;
 use std::thread::sleep;
 use std::time::Duration;
 use std::time::Instant;
@@ -331,10 +330,8 @@ impl Loader for TestEnv {
     }
 }
 
-static INIT_TRACING_ONCE: Once = Once::new();
-
 pub fn test_init_tracing() {
-    INIT_TRACING_ONCE.call_once(|| init_tracing(true, true));
+    init_tracing(true, true);
 }
 
 /// Should only be used from the `testcase!` macro.
