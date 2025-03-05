@@ -621,3 +621,14 @@ def f(xs: list[int | None]):
     assert_type(ys, list[int])
 "#,
 );
+
+testcase!(
+    test_bad_typeguard_return,
+    r#"
+from typing import TypeGuard
+def f(x) -> TypeGuard[str]:
+    return "oops"  # E: Expected type guard function to return `bool`, actually returns `Literal['oops']`
+def g(x) -> TypeGuard[str]:  # E: Function declared to return `TypeGuard[str]` but is missing an explicit `return`
+    pass
+    "#,
+);

@@ -200,7 +200,7 @@ class ChildA(ParentA):
     @override
     @staticmethod
     def static_method1() -> bool: 
-        return 1 # E: EXPECTED Literal[1] <: bool
+        return 1 # E: Function declared to return `bool`, actually returns `Literal[1]`
     
  "#,
 );

@@ -947,10 +947,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.expr(expr, hint.as_ref().map(|t| (t, &tcc)), errors)
                     } else if matches!(hint, Some(Type::TypeGuard(_))) {
                         let hint = Some(Type::ClassType(self.stdlib.bool()));
-                        let tcc = TypeCheckContext::unknown();
+                        let tcc = TypeCheckContext::of_kind(TypeCheckKind::TypeGuardReturn);
                         self.expr(expr, hint.as_ref().map(|t| (t, &tcc)), errors)
                     } else {
-                        let tcc = TypeCheckContext::unknown();
+                        let tcc = TypeCheckContext::of_kind(TypeCheckKind::ExplicitFunctionReturn);
                         self.expr(expr, hint.map(|t| (t, &tcc)), errors)
                     }
                 } else {

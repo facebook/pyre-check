@@ -60,6 +60,10 @@ pub enum TypeCheckKind {
     /// Implicit return via a path with no explicit return statement. The bool indicates whether
     /// the function has *any* explicit return.
     ImplicitFunctionReturn(bool),
+    /// Explicit return statement in a function body.
+    ExplicitFunctionReturn,
+    /// Return in a type guard function.
+    TypeGuardReturn,
     // TODO: categorize all type checks and remove Unknown and Test designations
     Unknown,
     #[allow(dead_code)]

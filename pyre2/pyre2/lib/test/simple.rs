@@ -63,7 +63,7 @@ testcase!(
     test_error_in_function,
     r#"
 def f(x: str) -> int:
-    return x  # E: str <: int
+    return x  # E: Function declared to return `int`, actually returns `str`
 "#,
 );
 
@@ -249,7 +249,7 @@ testcase!(
     test_unordered_defs,
     r#"
 def f() -> int:
-    return g()  # E: str <: int
+    return g()  # E: Function declared to return `int`, actually returns `str`
 def g() -> str:
     return "test"
 "#,
@@ -356,7 +356,7 @@ class C:
     y: int = x # E: EXPECTED str <: int
     def m(self) -> str:
         # x refers to global x: int
-        return x # E: EXPECTED Literal[0] <: str
+        return x # E: Function declared to return `str`, actually returns `Literal[0]`
 "#,
 );
 

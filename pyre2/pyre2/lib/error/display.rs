@@ -49,6 +49,15 @@ impl TypeCheckKind {
                     )
                 }
             }
+            Self::ExplicitFunctionReturn => format!(
+                "Function declared to return `{}`, actually returns `{}`",
+                ctx.display(want),
+                ctx.display(got)
+            ),
+            Self::TypeGuardReturn => format!(
+                "Expected type guard function to return `bool`, actually returns `{}`",
+                ctx.display(got)
+            ),
             Self::Unknown => {
                 format!("EXPECTED {} <: {}", ctx.display(got), ctx.display(want))
             }

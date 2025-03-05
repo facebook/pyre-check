@@ -428,7 +428,7 @@ def test_corountine() -> Callable[[int], Coroutine[Any, Any, int]]:
 def test_awaitable() -> Callable[[int], Awaitable[int]]:
     return f
 def test_sync() -> Callable[[int], int]:
-    return f  # E: (x: int) -> Coroutine[Unknown, Unknown, int] <: (int) -> int
+    return f  # E: Function declared to return `(int) -> int`, actually returns `(x: int) -> Coroutine[Unknown, Unknown, int]`
 "#,
 );
 

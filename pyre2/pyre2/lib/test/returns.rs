@@ -243,7 +243,7 @@ def fail() -> NoReturn:
 
 def f(b: bool) -> int:
     if b:
-        return None # E: EXPECTED None <: int
+        return None # E: Function declared to return `int`, actually returns `None`
     else:
         fail()
 "#,
