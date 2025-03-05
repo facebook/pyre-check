@@ -17,6 +17,7 @@ import collections
 import copy
 import enum
 import io
+import itertools
 import json
 import multiprocessing
 import pickle
@@ -33,7 +34,9 @@ from typing import (
     Iterable,
     List,
     NamedTuple,
+    NotRequired,
     Optional,
+    Set,
     Tuple,
     TypedDict,
     Union,
@@ -455,8 +458,13 @@ def show_formatting() -> None:
     print(__default_formatting_options)
 
 
-def get_raw_model(callable: str) -> Dict[str, Any]:
+def get_raw_model(
+    callable: str, cache: Optional[Dict[str, Dict[str, Any]]] = None
+) -> Dict[str, Any]:
     """Get the model for the given callable."""
+    if cache is not None and callable in cache:
+        return cache[callable]
+
     directory = _assert_loaded()
 
     if callable not in directory.index_.models:
@@ -464,8 +472,12 @@ def get_raw_model(callable: str) -> Dict[str, Any]:
 
     message = json.loads(_read(directory.index_.models[callable]))
     assert message["kind"] == "model"
+    model = message["data"]
 
-    return message["data"]
+    if cache is not None:
+        cache[callable] = model
+
+    return model
 
 
 def get_model(
@@ -515,11 +527,11 @@ def print_json(data: object) -> None:
             __warned_missing_jq = True
 
 
-def green(text: str) -> str:
+def green(text: str | int) -> str:
     return f"\033[32m{text}\033[0m"
 
 
-def blue(text: str) -> str:
+def blue(text: str | int) -> str:
     return f"\033[34m{text}\033[0m"
 
 
@@ -543,7 +555,17 @@ def leaf_name_to_string(leaf: Dict[str, str]) -> str:
     return name
 
 
-def print_location(position: Dict[str, Any], prefix: str, indent: str) -> None:
+class SourceLocationWithFilename(TypedDict):
+    filename: str
+    path: NotRequired[str]
+    line: int
+    start: int
+    end: int
+
+
+def print_location(
+    position: SourceLocationWithFilename, prefix: str, indent: str
+) -> None:
     filename = position["filename"]
     if filename == "*" and "path" in position:
         filename = position["path"]
@@ -665,12 +687,20 @@ class ConditionKind(enum.Enum):
     SOURCE = 0
     SINK = 1
 
+    @staticmethod
+    def from_string(s: str) -> Optional["ConditionKind"]:
+        if s == "source":
+            return ConditionKind.SOURCE
+        elif s == "sink":
+            return ConditionKind.SINK
+        else:
+            return None
 
-class SourceLocationWithFilename(TypedDict):
-    filename: str
-    line: int
-    start: int
-    end: int
+    def model_key(self) -> str:
+        if self == ConditionKind.SOURCE:
+            return "sources"
+        else:
+            return "sinks"
 
 
 class TaintFrame(NamedTuple):
@@ -680,11 +710,24 @@ class TaintFrame(NamedTuple):
     callee: Optional[str]
     callee_port: Optional[str]
     taint_kind: str
-    distance: Optional[int]
+    distance: Optional[int]  # None for subtraces.
     location: SourceLocationWithFilename
     shared_local_features: List[Dict[str, str]]
     local_features: List[Dict[str, str]]
     type_interval: Dict[str, Any]
+
+    def key(
+        self,
+    ) -> Tuple[ConditionKind, str, str, Optional[str], Optional[str], str, str]:
+        return (
+            self.condition_kind,
+            self.caller,
+            self.caller_port,
+            self.callee,
+            self.callee_port,
+            self.taint_kind,
+            str(self.type_interval),
+        )
 
 
 def get_frames_from_extra_traces(
@@ -929,6 +972,7 @@ def print_issues(callable: str, **kwargs: Union[str, bool]) -> None:
         for issue in issues:
             print("Issue:")
             print(f'  Code: {issue["code"]}')
+            # pyre-ignore: issue contains a location
             print_location(issue, "Location: ", indent=" " * 2)
             print(f'  Message: {blue(issue["message"])}')
             print(f'  Handle: {green(issue["master_handle"])}')
@@ -960,6 +1004,160 @@ def print_call_graph(callable: str, **kwargs: Union[str, bool]) -> None:
     print_json(call_graph)
 
 
+def taint_kind_match(a: str, b: str) -> bool:
+    return len(a) == len(b) and a.replace("@", ":") == b.replace("@", ":")
+
+
+def taint_kind_next_hop(kind: str) -> str:
+    parts = kind.split("@", 1)
+    if len(parts) == 1:
+        return kind
+    else:
+        return parts[1]
+
+
+def get_closest_next_frame(
+    condition_kind: ConditionKind,
+    callee: str,
+    port: str,
+    taint_kind: str,
+    seen: Set[TaintFrame] = set(),
+) -> Optional[TaintFrame]:
+    model = get_raw_model(callee)
+
+    shortest_frame = None
+    for frame in get_frames_from_taint_conditions(
+        caller=callee,
+        condition_kind=condition_kind,
+        conditions=model.get(condition_kind.model_key(), []),
+        include_subtraces=False,
+        deduplicate=True,
+    ):
+        if frame.caller_port != port:
+            continue
+        if not taint_kind_match(frame.taint_kind, taint_kind):
+            continue
+        if frame.key() in seen:
+            continue
+        # TODO: match on type interval
+        # pyre-ignore: distance is not None
+        if shortest_frame is None or (shortest_frame.distance > frame.distance):
+            shortest_frame = frame
+
+    return shortest_frame
+
+
+def print_shortest_trace(
+    condition_kind_string: str, callee: str, port: str, taint_kind: str
+) -> None:
+    """Print the shortest trace starting from the given callable, port, kind"""
+    condition_kind = ConditionKind.from_string(condition_kind_string)
+    if condition_kind is None:
+        print(f"error: expected source or sink as condition kind")
+        return
+
+    seen = set()
+    while True:
+        frame = get_closest_next_frame(condition_kind, callee, port, taint_kind, seen)
+
+        if frame is None:
+            print(
+                f"error: could not find next frame for callee `{callee}` port `{port}` kind `{taint_kind}`"
+            )
+            return
+
+        print()
+        print(
+            f"Callee: {blue(frame.callee or '')} Port: {blue(frame.callee_port or '')} Distance: {frame.distance}"
+        )
+        print_location(frame.location, prefix="Location: ", indent="")
+
+        if frame.distance == 0:  # leaf
+            return
+
+        seen.add(frame)
+        callee = frame.callee or ""
+        port = frame.callee_port or ""
+        taint_kind = taint_kind_next_hop(frame.taint_kind)
+
+
+def print_reachable_leaves(
+    condition_kind_string: str,
+    callable: str,
+    taint_kind: str,
+    include_subtraces: bool = False,
+) -> None:
+    condition_kind = ConditionKind.from_string(condition_kind_string)
+    if condition_kind is None:
+        print(f"error: expected source or sink as condition kind")
+        return
+
+    # Find all initial frames
+    cache = {}
+    stack = []
+    model = get_raw_model(callable, cache=cache)
+
+    # we need to iterate on both sources and sinks if `include_subtraces=True`
+    for frame in itertools.chain(
+        get_frames_from_taint_conditions(
+            caller=callable,
+            condition_kind=ConditionKind.SOURCE,
+            conditions=model.get("sources", []),
+            include_subtraces=include_subtraces,
+            deduplicate=True,
+        ),
+        get_frames_from_taint_conditions(
+            caller=callable,
+            condition_kind=ConditionKind.SINK,
+            conditions=model.get("sinks", []),
+            include_subtraces=include_subtraces,
+            deduplicate=True,
+        ),
+    ):
+        if frame.condition_kind != condition_kind:
+            continue
+        if not taint_kind_match(frame.taint_kind, taint_kind):
+            continue
+        stack.append(frame)
+
+    seen = set()
+    while len(stack) > 0:
+        frame = stack.pop()
+        if frame.key() in seen:
+            continue
+        seen.add(frame.key())
+
+        if frame.distance == 0:  # leaf
+            print()
+            print(
+                f"Caller: {blue(frame.caller or '')} Port: {blue(frame.caller_port or '')}"
+            )
+            print(
+                f"Leaf: {blue(frame.callee or '')} Port: {blue(frame.callee_port or '')}"
+            )
+            print_location(frame.location, prefix="Location: ", indent="")
+            continue
+
+        model = get_raw_model(frame.callee, cache=cache)
+        for next_frame in get_frames_from_taint_conditions(
+            caller=frame.callee,
+            condition_kind=condition_kind,
+            conditions=model.get(condition_kind.model_key(), []),
+            include_subtraces=False,
+            deduplicate=True,
+        ):
+            if next_frame.caller_port != frame.callee_port:
+                continue
+            if not taint_kind_match(
+                next_frame.taint_kind, taint_kind_next_hop(frame.taint_kind)
+            ):
+                continue
+            # TODO: match on type interval
+            if next_frame.key() in seen:
+                continue
+            stack.append(next_frame)
+
+
 def print_help() -> None:
     """Print this help message."""
     print("# Pysa Model Explorer")
@@ -975,6 +1173,14 @@ def print_help() -> None:
         (get_call_graph, "get_call_graph('foo.bar')"),
         (print_call_graph, "print_call_graph('foo.bar')"),
         (print_model_size_stats, "print_model_size_stats('foo.bar')"),
+        (
+            print_shortest_trace,
+            "print_shortest_trace('source', 'foo.bar', 'result', 'UserControlled')",
+        ),
+        (
+            print_reachable_leaves,
+            "print_reachable_leaves('source', 'foo.bar', 'UserControlled')",
+        ),
         (set_formatting, "set_formatting(show_sources=False)"),
         (show_formatting, "show_formatting()"),
         (print_json, "print_json({'a': 'b'})"),
