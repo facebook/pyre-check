@@ -12064,8 +12064,8 @@
     {
       "code": -2,
       "column": 42,
-      "concise_description": "EXPECTED float <: int",
-      "description": "EXPECTED float <: int",
+      "concise_description": "TypedDict key `year` declared with type `int`, cannot assign `float`",
+      "description": "TypedDict key `year` declared with type `int`, cannot assign `float`",
       "line": 29,
       "name": "type-mismatch",
       "stop_column": 48,
@@ -12340,8 +12340,8 @@
     {
       "code": -2,
       "column": 15,
-      "concise_description": "EXPECTED Literal[3] <: str",
-      "description": "EXPECTED Literal[3] <: str",
+      "concise_description": "TypedDict key `ident` declared with type `str`, cannot assign `Literal[3]`",
+      "description": "TypedDict key `ident` declared with type `str`, cannot assign `Literal[3]`",
       "line": 83,
       "name": "type-mismatch",
       "stop_column": 16,
@@ -12568,8 +12568,8 @@
     {
       "code": -2,
       "column": 56,
-      "concise_description": "EXPECTED Literal[1] <: str",
-      "description": "EXPECTED Literal[1] <: str",
+      "concise_description": "TypedDict key `inner_key` declared with type `str`, cannot assign `Literal[1]`",
+      "description": "TypedDict key `inner_key` declared with type `str`, cannot assign `Literal[1]`",
       "line": 126,
       "name": "type-mismatch",
       "stop_column": 57,
@@ -12578,8 +12578,8 @@
     {
       "code": -2,
       "column": 29,
-      "concise_description": "EXPECTED dict[str, int] <: Literal[''] | TypedDict[Inner3]",
-      "description": "EXPECTED dict[str, int] <: Literal[''] | TypedDict[Inner3]",
+      "concise_description": "TypedDict key `z` declared with type `Literal[''] | TypedDict[Inner3]`, cannot assign `dict[str, int]`",
+      "description": "TypedDict key `z` declared with type `Literal[''] | TypedDict[Inner3]`, cannot assign `dict[str, int]`",
       "line": 151,
       "name": "type-mismatch",
       "stop_column": 37,

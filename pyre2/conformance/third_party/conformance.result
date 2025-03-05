@@ -953,7 +953,7 @@
     "Line 97: Unexpected errors ['EXPECTED object | None <: str | None']",
     "Line 103: Unexpected errors ['EXPECTED object | @_ <: int']",
     "Line 105: Unexpected errors ['EXPECTED object | @_ <: int | str']",
-    "Line 151: Unexpected errors [\"EXPECTED dict[str, int] <: Literal[''] | TypedDict[Inner3]\"]"
+    "Line 151: Unexpected errors [\"TypedDict key `z` declared with type `Literal[''] | TypedDict[Inner3]`, cannot assign `dict[str, int]`\"]"
   ],
   "typeddicts_usage.py": [
     "Line 35: Expected 1 errors",

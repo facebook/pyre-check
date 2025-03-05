@@ -24,6 +24,7 @@ use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::error::context::TypeCheckContext;
+use crate::error::context::TypeCheckKind;
 use crate::error::kind::ErrorKind;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
@@ -58,7 +59,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     if let Some(field) = fields.get(&key_name) {
                         self.expr(
                             &x.value,
-                            Some((&field.ty, &TypeCheckContext::unknown())),
+                            Some((
+                                &field.ty,
+                                &TypeCheckContext::of_kind(TypeCheckKind::TypedDictKey(
+                                    key_name.clone(),
+                                )),
+                            )),
                             errors,
                         );
                     } else {
@@ -91,7 +97,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     &x.value,
                     Some((
                         &Type::TypedDict(Box::new(typed_dict.clone())),
-                        &TypeCheckContext::unknown(),
+                        &TypeCheckContext::of_kind(TypeCheckKind::ExplicitTypeAnnotation),
                     )),
                     errors,
                 );
