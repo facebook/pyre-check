@@ -5461,7 +5461,7 @@
       "concise_description": "`Pet4.converter` is not a valid enum member",
       "description": "`Pet4.converter` is not a valid enum member",
       "line": 82,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 51,
       "stop_line": 82
     },
@@ -5481,7 +5481,7 @@
       "concise_description": "`Pet4.transform` is not a valid enum member",
       "description": "`Pet4.transform` is not a valid enum member",
       "line": 83,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 51,
       "stop_line": 83
     },
@@ -5501,7 +5501,7 @@
       "concise_description": "`Pet4.species` is not a valid enum member",
       "description": "`Pet4.species` is not a valid enum member",
       "line": 84,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 47,
       "stop_line": 84
     },
@@ -5521,7 +5521,7 @@
       "concise_description": "`Pet4.speak` is not a valid enum member",
       "description": "`Pet4.speak` is not a valid enum member",
       "line": 85,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 43,
       "stop_line": 85
     },
@@ -5551,7 +5551,7 @@
       "concise_description": "`Example.b` is not a valid enum member",
       "description": "`Example.b` is not a valid enum member",
       "line": 116,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 41,
       "stop_line": 116
     },
@@ -5591,7 +5591,7 @@
       "concise_description": "`Example2.__B` is not a valid enum member",
       "description": "`Example2.__B` is not a valid enum member",
       "line": 129,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 55,
       "stop_line": 129
     },
@@ -8748,7 +8748,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 36,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 42,
       "stop_line": 36
     },
@@ -8758,7 +8758,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 37,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 35,
       "stop_line": 37
     },
@@ -8940,7 +8940,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 33,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 32,
       "stop_line": 33
     },
@@ -8950,7 +8950,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 33,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 54,
       "stop_line": 33
     },
@@ -8960,7 +8960,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 33,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 75,
       "stop_line": 33
     },
@@ -8970,7 +8970,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 33,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 87,
       "stop_line": 33
     },
@@ -8980,7 +8980,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 35,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 49,
       "stop_line": 35
     },
@@ -8990,7 +8990,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 41,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 20,
       "stop_line": 41
     },
@@ -9000,7 +9000,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 42,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 38,
       "stop_line": 42
     },
@@ -9010,7 +9010,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 43,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 21,
       "stop_line": 43
     },
@@ -9020,7 +9020,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 44,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 17,
       "stop_line": 44
     },
@@ -9030,7 +9030,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 45,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 24,
       "stop_line": 45
     },
@@ -9040,7 +9040,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 47,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 35,
       "stop_line": 47
     },
@@ -9050,7 +9050,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 48,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 18,
       "stop_line": 48
     },
@@ -9060,7 +9060,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 49,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 23,
       "stop_line": 49
     },
@@ -9070,7 +9070,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 50,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 17,
       "stop_line": 50
     },
@@ -9080,7 +9080,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 51,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 20,
       "stop_line": 51
     },
@@ -9090,7 +9090,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 52,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 19,
       "stop_line": 52
     },
@@ -9100,7 +9100,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 53,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 19,
       "stop_line": 53
     },
@@ -9110,7 +9110,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 56,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 33,
       "stop_line": 56
     },
@@ -9120,7 +9120,7 @@
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
       "line": 61,
-      "name": "unknown",
+      "name": "invalid-literal",
       "stop_column": 23,
       "stop_line": 61
     },
