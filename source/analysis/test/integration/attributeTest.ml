@@ -2052,6 +2052,15 @@ let test_check_annotated =
       @@ assert_type_errors
            {|
               class C:
+                __a: int = 0
+              class D(C):
+                __a: str = ""
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              class C:
                 a: int = 0
               class D(C):
                 a: str = ""
@@ -2063,12 +2072,26 @@ let test_check_annotated =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+              # The `__a` name defines a mangled private attribute; we skip override consistency for these
               class C:
                 __a: int = 0
               class D(C):
                 __a: str = ""
             |}
            [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              # The __a__ name is a dunder name, it is not private and we do not skip it.
+              class C:
+                __a__: int = 0
+              class D(C):
+                __a__: str = ""
+            |}
+           [
+             "Inconsistent override [15]: `__a__` overrides attribute defined in `C` \
+              inconsistently. Type `str` is not a subtype of the overridden attribute `int`.";
+           ];
     ]
 
 
