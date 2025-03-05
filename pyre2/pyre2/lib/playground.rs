@@ -151,7 +151,7 @@ impl Default for LanguageServiceState {
         };
         let load = Load(demo_env.dupe());
         let loader = LoaderId::new(load);
-        let mut state = State::new(true);
+        let mut state = State::new();
         let handle = Handle::new(
             ModuleName::from_str("test"),
             ModulePath::memory(PathBuf::from("test.py")),
