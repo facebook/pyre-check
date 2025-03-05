@@ -132,7 +132,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::InvalidArgument,
                 None,
                 format!("Expected class object, got {}", ty),
             );
