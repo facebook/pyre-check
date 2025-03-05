@@ -93,9 +93,13 @@ pub enum ErrorKind {
     TypedDictKeyError,
     /// The attribute exists but does not support this access pattern.
     NoAccess,
+    /// Attempting to call an overloaded function, but none of the signatures match.
+    NoMatchingOverload,
     /// Attempting to use something that isn't a type where a type is expected.
     /// This is a very general error and should be used sparingly.
     NotAType,
+    /// Attempting to call a value that is not a callable.
+    NotCallable,
     /// Attempting to use a non-iterable value as an iterable.
     NotIterable,
     /// An error related to parsing or syntax.

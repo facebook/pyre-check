@@ -71,8 +71,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
         range: TextRange,
         msg: String,
+        error_kind: ErrorKind,
     ) -> (Vec<Var>, CallTarget) {
-        errors.add(range, msg, ErrorKind::Unknown, None);
+        errors.add(range, msg, error_kind, None);
         (Vec::new(), CallTarget::any(AnyStyle::Error))
     }
 
@@ -163,6 +164,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     range,
                     format!("{}, got {}", expect_message, ty.deterministic_printing()),
+                    ErrorKind::NotCallable,
                 )
             }
         }
@@ -209,6 +211,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     range,
                     format!("`{ty}` has no attribute `{method_name}`"),
+                    ErrorKind::MissingAttribute,
                 ),
                 args,
                 keywords,
@@ -435,7 +438,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 return self.error(
                     errors,
                     range,
-                    ErrorKind::Unknown,
+                    ErrorKind::NoMatchingOverload,
                     None,
                     "No matching overload found".to_owned(),
                 );
