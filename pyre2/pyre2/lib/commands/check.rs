@@ -143,6 +143,30 @@ impl OutputFormat {
     }
 }
 
+fn create_loader(
+    search_roots: Vec<PathBuf>,
+    files_with_module_name_and_metadata: &[(PathBuf, ModuleName, RuntimeMetadata)],
+    check_all: bool,
+) -> LoaderId {
+    let mut to_check = SmallMap::with_capacity(files_with_module_name_and_metadata.len());
+    for (path, module_name, _) in files_with_module_name_and_metadata {
+        to_check
+            .entry(module_name.dupe())
+            .or_insert_with(|| path.clone());
+    }
+    let error_style_for_sources = ErrorStyle::Delayed;
+    LoaderId::new(CheckLoader {
+        sources: to_check,
+        search_roots,
+        error_style_for_sources,
+        error_style_for_dependencies: if check_all {
+            error_style_for_sources
+        } else {
+            ErrorStyle::Never
+        },
+    })
+}
+
 impl Args {
     pub fn run(
         self,
@@ -188,7 +212,7 @@ impl Args {
         self,
         files_to_check: Globs,
         // TODO: use this to calculate the config for each checked file
-        _config_finder: &dyn Fn(&Path) -> ConfigFile,
+        config_finder: &dyn Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
         let args = self;
@@ -199,36 +223,58 @@ impl Args {
             return Ok(CommandExitStatus::Success);
         }
 
-        let mut to_check = SmallMap::with_capacity(expanded_file_list.len());
-        for file in &expanded_file_list {
-            let module = module_from_path(file, &include);
-            to_check.entry(module).or_insert_with(|| file.clone());
+        let files_and_configs = expanded_file_list.into_map(|path| {
+            let config = config_finder(&path);
+            (path, config)
+        });
+
+        // We want to partition the files to check by their associated search roots, so we can
+        // create a separate loader for each partition.
+        let mut partition_by_search_roots: SmallMap<Vec<PathBuf>, Vec<(PathBuf, ConfigFile)>> =
+            SmallMap::new();
+        for x in files_and_configs {
+            // TODO: Read from config file if there's no CLI override
+            let search_roots = include.clone();
+            partition_by_search_roots
+                .entry(search_roots)
+                .or_default()
+                .push(x);
         }
-        let config = match &args.python_version {
-            None => RuntimeMetadata::default(),
-            Some(version) => {
-                RuntimeMetadata::new(PythonVersion::from_str(version)?, "linux".to_owned())
-            }
+
+        let cli_python_version_override = match &args.python_version {
+            None => None,
+            Some(version) => Some(PythonVersion::from_str(version)?),
         };
-        let error_style_for_sources = ErrorStyle::Delayed;
-        let loader = LoaderId::new(CheckLoader {
-            sources: to_check.clone(),
-            search_roots: include.clone(),
-            error_style_for_sources,
-            error_style_for_dependencies: if args.check_all {
-                error_style_for_sources
-            } else {
-                ErrorStyle::Never
-            },
-        });
-        let handles = expanded_file_list.into_map(|x| {
-            Handle::new(
-                module_from_path(&x, &include),
-                ModulePath::filesystem(x),
-                config.dupe(),
-                loader.dupe(),
-            )
-        });
+        let handles: Vec<Handle> = partition_by_search_roots
+            .into_iter()
+            .flat_map(|(search_roots, files_and_configs)| {
+                let files_with_module_name_and_metadata =
+                    files_and_configs.into_map(|(path, _config)| {
+                        let module_name = module_from_path(&path, &search_roots);
+                        // TODO: Look at config file if no CLI override is provided
+                        let runtime_metadata = match cli_python_version_override {
+                            None => RuntimeMetadata::default(),
+                            Some(version) => RuntimeMetadata::new(version, "linux".to_owned()),
+                        };
+                        (path, module_name, runtime_metadata)
+                    });
+                let loader = create_loader(
+                    search_roots,
+                    &files_with_module_name_and_metadata,
+                    args.check_all,
+                );
+                files_with_module_name_and_metadata.into_map(
+                    |(path, module_name, runtime_metadata)| {
+                        Handle::new(
+                            module_name,
+                            ModulePath::filesystem(path),
+                            runtime_metadata,
+                            loader.dupe(),
+                        )
+                    },
+                )
+            })
+            .collect();
 
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
