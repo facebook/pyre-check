@@ -49,7 +49,7 @@ else:
         "main",
         "import lib; x: str = lib.value  # E: EXPECTED Literal[42] <: str",
     );
-    let mut state = State::new(true);
+    let mut state = State::new();
     let loader = LoaderId::new(test_env);
 
     let f = |name: &str, config: &RuntimeMetadata| {
@@ -106,7 +106,7 @@ fn test_multiple_path() {
 
     let loader = LoaderId::new(Load(TestEnv::new()));
 
-    let mut state = State::new(true);
+    let mut state = State::new();
     state.run(
         &FILES.map(|(name, path, _)| {
             Handle::new(
@@ -160,7 +160,7 @@ impl Incremental {
     fn new() -> Self {
         let data = IncrementalData::default();
         let loader = LoaderId::new(data.dupe());
-        let state = State::new(true);
+        let state = State::new();
         Self {
             data,
             loader,

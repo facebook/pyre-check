@@ -263,7 +263,7 @@ impl<'a> Server<'a> {
             send,
             initialize_params,
             include,
-            state: Mutex::new(State::new(true)),
+            state: Mutex::new(State::new()),
             config: RuntimeMetadata::default(),
             loader,
             open_files,

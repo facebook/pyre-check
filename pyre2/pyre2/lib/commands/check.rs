@@ -234,7 +234,8 @@ impl Args {
 
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
-        let state = State::new(args.common.parallel());
+        args.common.parallel();
+        let state = State::new();
         let mut holder = Forgetter::new(state, allow_forget);
         let state = holder.as_mut();
 

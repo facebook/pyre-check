@@ -73,7 +73,8 @@ fn compute_errors(
             loader.dupe(),
         )
     });
-    let mut state = State::new(common.parallel());
+    common.parallel();
+    let mut state = State::new();
     state.run_one_shot(&modules_to_check, None);
     state.collect_errors()
 }

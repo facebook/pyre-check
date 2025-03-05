@@ -78,7 +78,6 @@ use crate::util::upgrade_lock::UpgradeLockExclusiveGuard;
 
 pub struct State {
     uniques: UniqueFactory,
-    parallel: bool,
     stdlib: SmallMap<(RuntimeMetadata, LoaderId), Arc<Stdlib>>,
     modules: LockedMap<Handle, ArcId<ModuleData>>,
     loaders: SmallMap<LoaderId, Arc<LoaderFindCache<LoaderId>>>,
@@ -131,10 +130,9 @@ impl ModuleData {
 }
 
 impl State {
-    pub fn new(parallel: bool) -> Self {
+    pub fn new() -> Self {
         Self {
             uniques: UniqueFactory::new(),
-            parallel,
             now: Epoch::zero(),
             stdlib: Default::default(),
             modules: Default::default(),
@@ -628,13 +626,8 @@ impl State {
             }
         }
 
-        let thread_count = if self.parallel {
-            rayon::current_num_threads()
-        } else {
-            1
-        };
         rayon::scope(|s| {
-            for _ in 0..thread_count {
+            for _ in 0..rayon::current_num_threads() {
                 // Only run work on Rayon threads, as we increased their stack limit
                 s.spawn(|_| self.work());
             }
