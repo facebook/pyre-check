@@ -35,7 +35,7 @@ impl Default for PythonVersion {
     fn default() -> Self {
         Self {
             major: 3,
-            minor: 12,
+            minor: 13,
             micro: 0,
         }
     }
