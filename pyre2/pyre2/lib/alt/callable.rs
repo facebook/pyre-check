@@ -348,7 +348,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 call_errors,
                 arg_range,
-                ErrorKind::Unknown,
+                ErrorKind::BadArgumentType,
                 None,
                 format!("Expected {expected}, got {actual}"),
             );
@@ -384,7 +384,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 call_errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::BadArgumentCount,
                 None,
                 format!(
                     "Expected {}",
@@ -404,7 +404,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.error(
                                     call_errors,
                                     kw.range,
-                                    ErrorKind::Unknown,
+                                    ErrorKind::BadKeywordArgument,
                                     None,
                                     format!("Multiple values for argument `{}`", name),
                                 );
@@ -415,7 +415,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     self.error(
                                         call_errors,
                                         kw.range,
-                                        ErrorKind::Unknown,
+                                        ErrorKind::MissingArgument,
                                         None,
                                         format!("Expected key `{}` to be required", name),
                                     );
@@ -461,7 +461,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 } else {
                                     self.error(call_errors,
                                         kw.value.range(),
-                                        ErrorKind::Unknown, None,
+                                        ErrorKind::BadUnpacking,
+                                        None,
                                     format!(
                                         "Expected argument after ** to have `str` keys, got: {}",
                                         key.deterministic_printing()
@@ -473,7 +474,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.error(
                                     call_errors,
                                     kw.value.range(),
-                                    ErrorKind::Unknown,
+                                    ErrorKind::BadUnpacking,
                                     None,
                                     format!(
                                         "Expected argument after ** to be a mapping, got: {}",
@@ -490,7 +491,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             call_errors,
                             kw.range,
-                            ErrorKind::Unknown,
+                            ErrorKind::BadKeywordArgument,
                             None,
                             format!("Multiple values for argument `{}`", id.id),
                         );
@@ -597,7 +598,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         {
                             self.error(call_errors,
                                 range,
-                                ErrorKind::Unknown, None,
+                                ErrorKind::InvalidParamSpec,
+                                None,
                                 "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)".to_owned(),
                             );
                         } else {
@@ -617,7 +619,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             call_errors,
                             range,
-                            ErrorKind::Unknown,
+                            ErrorKind::InvalidParamSpec,
                             None,
                             format!("Unexpected ParamSpec type: `{p}`"),
                         );

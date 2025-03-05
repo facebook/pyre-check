@@ -541,7 +541,7 @@
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
       "line": 60,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 46,
       "stop_line": 60
     },
@@ -1550,7 +1550,7 @@
       "concise_description": "Expected 1 more positional argument",
       "description": "Expected 1 more positional argument",
       "line": 25,
-      "name": "unknown",
+      "name": "bad-argument-count",
       "stop_column": 7,
       "stop_line": 25
     },
@@ -1570,9 +1570,19 @@
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
       "line": 27,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 16,
       "stop_line": 27
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Expected 2 more positional arguments",
+      "description": "Expected 2 more positional arguments",
+      "line": 29,
+      "name": "bad-argument-count",
+      "stop_column": 11,
+      "stop_line": 29
     },
     {
       "code": -2,
@@ -1581,16 +1591,6 @@
       "description": "Unexpected keyword argument `a`",
       "line": 29,
       "name": "unexpected-keyword",
-      "stop_column": 11,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Expected 2 more positional arguments",
-      "description": "Expected 2 more positional arguments",
-      "line": 29,
-      "name": "unknown",
       "stop_column": 11,
       "stop_line": 29
     },
@@ -1610,7 +1610,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 35,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 35
     },
@@ -1852,7 +1852,7 @@
       "concise_description": "Expected 0 positional arguments, got 3",
       "description": "Expected 0 positional arguments, got 3",
       "line": 52,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 52
     },
@@ -1889,18 +1889,18 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "EXPECTED int <: Unpack[TypedDict[TD2]]",
-      "description": "EXPECTED int <: Unpack[TypedDict[TD2]]",
+      "concise_description": "Multiple values for argument `v1`",
+      "description": "Multiple values for argument `v1`",
       "line": 63,
-      "name": "unknown",
+      "name": "bad-keyword-argument",
       "stop_column": 22,
       "stop_line": 63
     },
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Multiple values for argument `v1`",
-      "description": "Multiple values for argument `v1`",
+      "concise_description": "EXPECTED int <: Unpack[TypedDict[TD2]]",
+      "description": "EXPECTED int <: Unpack[TypedDict[TD2]]",
       "line": 63,
       "name": "unknown",
       "stop_column": 22,
@@ -1922,25 +1922,25 @@
       "concise_description": "Multiple values for argument `v3`",
       "description": "Multiple values for argument `v3`",
       "line": 64,
-      "name": "unknown",
+      "name": "bad-keyword-argument",
       "stop_column": 19,
       "stop_line": 64
     },
     {
       "code": -2,
       "column": 17,
-      "concise_description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
-      "description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
+      "concise_description": "Multiple values for argument `v1`",
+      "description": "Multiple values for argument `v1`",
       "line": 65,
-      "name": "unknown",
+      "name": "bad-keyword-argument",
       "stop_column": 22,
       "stop_line": 65
     },
     {
       "code": -2,
       "column": 17,
-      "concise_description": "Multiple values for argument `v1`",
-      "description": "Multiple values for argument `v1`",
+      "concise_description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
+      "description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
       "line": 65,
       "name": "unknown",
       "stop_column": 22,
@@ -2622,7 +2622,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 130,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 10,
       "stop_line": 130
     }
@@ -2644,7 +2644,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 20,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 20
     },
@@ -2684,7 +2684,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 33,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 33
     },
@@ -2704,7 +2704,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 48,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 48
     },
@@ -2734,7 +2734,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 62,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 62
     },
@@ -2766,7 +2766,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 16,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 16
     },
@@ -2796,7 +2796,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 29,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 29
     },
@@ -2846,7 +2846,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 98,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 98
     },
@@ -2918,7 +2918,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 35,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 35
     },
@@ -2968,7 +2968,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 59,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 10,
       "stop_line": 59
     },
@@ -3090,7 +3090,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 37,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 15,
       "stop_line": 37
     },
@@ -3100,7 +3100,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 38,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 38
     },
@@ -3110,7 +3110,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 39,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 39
     },
@@ -3150,7 +3150,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 50,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 15,
       "stop_line": 50
     },
@@ -3160,7 +3160,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 51,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 51
     },
@@ -3200,7 +3200,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 64,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 15,
       "stop_line": 64
     },
@@ -3210,7 +3210,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 65,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 65
     },
@@ -3220,7 +3220,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 66,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 66
     },
@@ -3230,7 +3230,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 67,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 67
     },
@@ -3270,7 +3270,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 78,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 15,
       "stop_line": 78
     },
@@ -3280,7 +3280,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 79,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 79
     },
@@ -3290,7 +3290,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 80,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 80
     },
@@ -3310,7 +3310,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 93,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 93
     },
@@ -3350,7 +3350,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 100,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 19,
       "stop_line": 100
     },
@@ -3370,7 +3370,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 105,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 19,
       "stop_line": 105
     },
@@ -3410,7 +3410,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 126,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 15,
       "stop_line": 126
     },
@@ -3420,7 +3420,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 127,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 127
     },
@@ -3430,7 +3430,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 134,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 134
     },
@@ -3460,7 +3460,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 143,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 19,
       "stop_line": 143
     },
@@ -3470,7 +3470,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 144,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 7,
       "stop_line": 144
     },
@@ -3510,7 +3510,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 164,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 15,
       "stop_line": 164
     },
@@ -3530,7 +3530,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 165,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 15,
       "stop_line": 165
     },
@@ -3550,7 +3550,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 178,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 178
     },
@@ -3590,7 +3590,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 183,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 15,
       "stop_line": 183
     },
@@ -3600,7 +3600,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 184,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 184
     },
@@ -3640,7 +3640,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 194,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 15,
       "stop_line": 194
     },
@@ -3650,7 +3650,7 @@
       "concise_description": "Unexpected ParamSpec type: `Unknown`",
       "description": "Unexpected ParamSpec type: `Unknown`",
       "line": 195,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 195
     }
@@ -3672,7 +3672,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 22,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 22
     }
@@ -3753,7 +3753,7 @@
       "concise_description": "Expected 1 positional argument, got 2",
       "description": "Expected 1 positional argument, got 2",
       "line": 23,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 23
     },
@@ -3773,7 +3773,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 32,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 32
     },
@@ -3793,7 +3793,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 35,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 35
     },
@@ -3813,7 +3813,7 @@
       "concise_description": "Expected 0 positional arguments, got 2",
       "description": "Expected 0 positional arguments, got 2",
       "line": 38,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 38
     },
@@ -3833,7 +3833,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 47,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 47
     },
@@ -3853,7 +3853,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 50,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 50
     },
@@ -3873,7 +3873,7 @@
       "concise_description": "Expected 0 positional arguments, got 2",
       "description": "Expected 0 positional arguments, got 2",
       "line": 53,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 53
     },
@@ -3903,7 +3903,7 @@
       "concise_description": "Multiple values for argument `b`",
       "description": "Multiple values for argument `b`",
       "line": 61,
-      "name": "unknown",
+      "name": "bad-keyword-argument",
       "stop_column": 17,
       "stop_line": 61
     }
@@ -4041,7 +4041,7 @@
       "concise_description": "Expected 1 positional argument, got 2",
       "description": "Expected 1 positional argument, got 2",
       "line": 66,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 26,
       "stop_line": 66
     },
@@ -4161,7 +4161,7 @@
       "concise_description": "Expected 1 positional argument, got 2",
       "description": "Expected 1 positional argument, got 2",
       "line": 82,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 27,
       "stop_line": 82
     },
@@ -4253,7 +4253,7 @@
       "concise_description": "Expected 0 positional arguments, got 5",
       "description": "Expected 0 positional arguments, got 5",
       "line": 107,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 6,
       "stop_line": 107
     },
@@ -4263,7 +4263,7 @@
       "concise_description": "Expected 0 positional arguments, got 5",
       "description": "Expected 0 positional arguments, got 5",
       "line": 108,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 108
     },
@@ -4273,7 +4273,7 @@
       "concise_description": "Expected 0 positional arguments, got 5",
       "description": "Expected 0 positional arguments, got 5",
       "line": 109,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 109
     },
@@ -4283,7 +4283,7 @@
       "concise_description": "Expected 0 positional arguments, got 5",
       "description": "Expected 0 positional arguments, got 5",
       "line": 112,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 15,
       "stop_line": 112
     },
@@ -4333,7 +4333,7 @@
       "concise_description": "Expected 0 positional arguments, got 6",
       "description": "Expected 0 positional arguments, got 6",
       "line": 121,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 15,
       "stop_line": 121
     },
@@ -4405,7 +4405,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 75,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 17,
       "stop_line": 75
     },
@@ -4447,7 +4447,7 @@
       "concise_description": "Expected 0 positional arguments, got 2",
       "description": "Expected 0 positional arguments, got 2",
       "line": 53,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 53
     },
@@ -4527,7 +4527,7 @@
       "concise_description": "Expected 0 positional arguments, got 2",
       "description": "Expected 0 positional arguments, got 2",
       "line": 71,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 71
     },
@@ -4599,7 +4599,7 @@
       "concise_description": "Expected 0 positional arguments, got 2",
       "description": "Expected 0 positional arguments, got 2",
       "line": 66,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 66
     },
@@ -4679,7 +4679,7 @@
       "concise_description": "Expected 0 positional arguments, got 2",
       "description": "Expected 0 positional arguments, got 2",
       "line": 83,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 83
     },
@@ -4741,7 +4741,7 @@
       "concise_description": "Expected 3 positional arguments, got 4",
       "description": "Expected 3 positional arguments, got 4",
       "line": 52,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 37,
       "stop_line": 52
     },
@@ -4761,7 +4761,7 @@
       "concise_description": "Expected 1 positional argument, got 2",
       "description": "Expected 1 positional argument, got 2",
       "line": 83,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 14,
       "stop_line": 83
     },
@@ -4791,7 +4791,7 @@
       "concise_description": "Expected 1 positional argument, got 2",
       "description": "Expected 1 positional argument, got 2",
       "line": 127,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 127
     },
@@ -4811,7 +4811,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 179,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 7,
       "stop_line": 179
     },
@@ -6207,7 +6207,7 @@
       "concise_description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
       "description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
       "line": 49,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 10,
       "stop_line": 49
     },
@@ -6217,7 +6217,7 @@
       "concise_description": "Expected 0 positional arguments, got 1",
       "description": "Expected 0 positional arguments, got 1",
       "line": 51,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 51
     },
@@ -6237,7 +6237,7 @@
       "concise_description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
       "description": "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)",
       "line": 70,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 10,
       "stop_line": 70
     },
@@ -6247,9 +6247,19 @@
       "concise_description": "Expected 1 more positional argument",
       "description": "Expected 1 more positional argument",
       "line": 72,
-      "name": "unknown",
+      "name": "bad-argument-count",
       "stop_column": 10,
       "stop_line": 72
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Expected 1 more positional argument",
+      "description": "Expected 1 more positional argument",
+      "line": 83,
+      "name": "bad-argument-count",
+      "stop_column": 16,
+      "stop_line": 83
     },
     {
       "code": -2,
@@ -6258,16 +6268,6 @@
       "description": "Unexpected keyword argument `x`",
       "line": 83,
       "name": "unexpected-keyword",
-      "stop_column": 16,
-      "stop_line": 83
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Expected 1 more positional argument",
-      "description": "Expected 1 more positional argument",
-      "line": 83,
-      "name": "unknown",
       "stop_column": 16,
       "stop_line": 83
     },
@@ -6306,20 +6306,20 @@
     {
       "code": -2,
       "column": 4,
-      "concise_description": "Unexpected keyword argument `a`",
-      "description": "Unexpected keyword argument `a`",
+      "concise_description": "Expected 2 more positional arguments",
+      "description": "Expected 2 more positional arguments",
       "line": 26,
-      "name": "unexpected-keyword",
+      "name": "bad-argument-count",
       "stop_column": 9,
       "stop_line": 26
     },
     {
       "code": -2,
       "column": 4,
-      "concise_description": "Expected 2 more positional arguments",
-      "description": "Expected 2 more positional arguments",
+      "concise_description": "Unexpected keyword argument `a`",
+      "description": "Unexpected keyword argument `a`",
       "line": 26,
-      "name": "unknown",
+      "name": "unexpected-keyword",
       "stop_column": 9,
       "stop_line": 26
     },
@@ -6471,7 +6471,7 @@
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
       "line": 53,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 20,
       "stop_line": 53
     },
@@ -6501,7 +6501,7 @@
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
       "line": 54,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 21,
       "stop_line": 54
     },
@@ -6541,7 +6541,7 @@
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
       "line": 55,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 55
     },
@@ -6581,7 +6581,7 @@
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
       "line": 59,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 20,
       "stop_line": 59
     },
@@ -6611,7 +6611,7 @@
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
       "line": 60,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 21,
       "stop_line": 60
     },
@@ -6651,7 +6651,7 @@
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
       "line": 61,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 61
     }
@@ -9244,7 +9244,7 @@
       "concise_description": "Expected 3 positional arguments, got 4",
       "description": "Expected 3 positional arguments, got 4",
       "line": 48,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 24,
       "stop_line": 48
     },
@@ -9254,7 +9254,7 @@
       "concise_description": "Expected 4 positional arguments, got 5",
       "description": "Expected 4 positional arguments, got 5",
       "line": 48,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 24,
       "stop_line": 48
     },
@@ -9326,7 +9326,7 @@
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
       "line": 26,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 22,
       "stop_line": 26
     },
@@ -9336,7 +9336,7 @@
       "concise_description": "Expected 3 positional arguments, got 4",
       "description": "Expected 3 positional arguments, got 4",
       "line": 26,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 22,
       "stop_line": 26
     },
@@ -9376,7 +9376,7 @@
       "concise_description": "Expected 2 positional arguments, got 3",
       "description": "Expected 2 positional arguments, got 3",
       "line": 37,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 22,
       "stop_line": 37
     },
@@ -9386,7 +9386,7 @@
       "concise_description": "Expected 3 positional arguments, got 4",
       "description": "Expected 3 positional arguments, got 4",
       "line": 37,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 22,
       "stop_line": 37
     },

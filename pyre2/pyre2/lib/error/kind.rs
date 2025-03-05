@@ -20,11 +20,18 @@ pub enum ErrorKind {
     AnnotationMismatch,
     /// An error raised when async is not used when it should be, or perhaps used when it shouldn't be.
     AsyncError,
+    /// Attemping to call a function with the wrong number of arguments.
+    BadArgumentCount,
+    /// Attemping to call a function with an argument that does not match the parameter's type.
+    BadArgumentType,
     /// Assigning a value of the wrong type to a variable.
     BadAssignment,
     /// A function definition has some typing-related error.
     /// e.g. putting a non-default argument after a default argument.
     BadFunctionDefinition,
+    /// Attemping to call a function with an incorrect keyword argument.
+    /// e.g. f(x=1, x=2), or perhaps f(y=1) (where `f` has no parameter `y`).
+    BadKeywordArgument,
     /// Attempting to return a value that does not match the function's return type.
     /// Can also arise when returning values from generators.
     BadReturn,
