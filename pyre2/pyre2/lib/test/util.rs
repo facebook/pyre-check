@@ -35,6 +35,7 @@ use crate::state::state::State;
 use crate::state::subscriber::TestSubscriber;
 use crate::types::class::Class;
 use crate::types::types::Type;
+use crate::util::rayon::init_rayon;
 use crate::util::reduced_stdlib::lookup_stdlib;
 use crate::util::trace::init_tracing;
 
@@ -99,7 +100,7 @@ pub struct TestEnv(SmallMap<ModuleName, (ModulePath, Option<String>)>);
 impl TestEnv {
     pub fn new() -> Self {
         // We aim to init the tracing before now, but if not, better now than never
-        test_init_tracing();
+        init_test();
         Self::default()
     }
 
@@ -330,8 +331,10 @@ impl Loader for TestEnv {
     }
 }
 
-pub fn test_init_tracing() {
+pub fn init_test() {
     init_tracing(true, true);
+    // Enough threads to see parallelism bugs, but not too many to debug through.
+    init_rayon(Some(5));
 }
 
 /// Should only be used from the `testcase!` macro.
@@ -341,7 +344,7 @@ pub fn testcase_for_macro(
     file: &str,
     line: u32,
 ) -> anyhow::Result<()> {
-    test_init_tracing();
+    init_test();
     let mut start_line = line as usize + 1;
     if !env.0.is_empty() {
         start_line += 1;
