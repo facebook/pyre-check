@@ -88,7 +88,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         cls.range(),
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidInheritance,
                         None,
                         "Subclassing a NewType not allowed".to_owned(),
                     );
@@ -102,7 +102,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         cls.range(),
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidArgument,
                         None,
                         "Second argument to NewType cannot be a protocol".to_owned(),
                     );
@@ -112,7 +112,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     cls.range(),
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidArgument,
                     None,
                     "Second argument to NewType is incorrect".to_owned(),
                 );
@@ -269,7 +269,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         cls.range(),
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidInheritance,
                         None,
                         "Enums may not be generic.".to_owned(),
                     );
@@ -313,7 +313,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         {
             self.error(errors,
                 cls.range(),
-                ErrorKind::Unknown,
+                ErrorKind::InvalidInheritance,
                 None,
                 format!("`{}` is not a typed dictionary. Typed dictionary definitions may only extend other typed dictionaries.", bad.0),
             );
@@ -397,7 +397,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     name.range,
-                    ErrorKind::Unknown,
+                    ErrorKind::InvalidTypeVar,
                     None,
                     "Redundant type parameter declaration".to_owned(),
                 );
@@ -433,7 +433,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 name.range,
-                ErrorKind::Unknown,
+                ErrorKind::InvalidInheritance,
                 None,
                 format!(
                     "Class `{}` specifies type parameters in both `Generic` and `Protocol` bases",
@@ -454,7 +454,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if !implicit_tparams_okay {
                     self.error(errors,
                         name.range,
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidTypeVar,
                         None,
                         format!(
                             "Class `{}` uses type variables not specified in `Generic` or `Protocol` base",

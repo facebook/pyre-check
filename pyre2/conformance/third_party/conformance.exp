@@ -471,7 +471,7 @@
       "concise_description": "Subclassing a NewType not allowed",
       "description": "Subclassing a NewType not allowed",
       "line": 23,
-      "name": "unknown",
+      "name": "invalid-inheritance",
       "stop_column": 20,
       "stop_line": 23
     },
@@ -501,7 +501,7 @@
       "concise_description": "Second argument to NewType is incorrect",
       "description": "Second argument to NewType is incorrect",
       "line": 44,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 12,
       "stop_line": 44
     },
@@ -511,7 +511,7 @@
       "concise_description": "Second argument to NewType cannot be a protocol",
       "description": "Second argument to NewType cannot be a protocol",
       "line": 49,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 12,
       "stop_line": 49
     },
@@ -521,7 +521,7 @@
       "concise_description": "Second argument to NewType is incorrect",
       "description": "Second argument to NewType is incorrect",
       "line": 51,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 12,
       "stop_line": 51
     },
@@ -531,7 +531,7 @@
       "concise_description": "Second argument to NewType is incorrect",
       "description": "Second argument to NewType is incorrect",
       "line": 58,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 12,
       "stop_line": 58
     },
@@ -551,7 +551,7 @@
       "concise_description": "Second argument to NewType is incorrect",
       "description": "Second argument to NewType is incorrect",
       "line": 62,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 12,
       "stop_line": 62
     }
@@ -5889,7 +5889,7 @@
       "concise_description": "Class `Foo5` uses type variables not specified in `Generic` or `Protocol` base",
       "description": "Class `Foo5` uses type variables not specified in `Generic` or `Protocol` base",
       "line": 138,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 11,
       "stop_line": 138
     },
@@ -5909,7 +5909,7 @@
       "concise_description": "Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base",
       "description": "Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base",
       "line": 148,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 11,
       "stop_line": 148
     },
@@ -6673,7 +6673,7 @@
       "concise_description": "Redundant type parameter declaration",
       "description": "Redundant type parameter declaration",
       "line": 65,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 20,
       "stop_line": 65
     }
@@ -6935,7 +6935,7 @@
       "concise_description": "Class `ClassA` uses type variables not specified in `Generic` or `Protocol` base",
       "description": "Class `ClassA` uses type variables not specified in `Generic` or `Protocol` base",
       "line": 14,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 13,
       "stop_line": 14
     },
@@ -7007,7 +7007,7 @@
       "concise_description": "Redundant type parameter declaration",
       "description": "Redundant type parameter declaration",
       "line": 19,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 13,
       "stop_line": 19
     },
@@ -7017,7 +7017,7 @@
       "concise_description": "Redundant type parameter declaration",
       "description": "Redundant type parameter declaration",
       "line": 27,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 13,
       "stop_line": 27
     },
@@ -7875,7 +7875,7 @@
       "concise_description": "Class `Array2` uses type variables not specified in `Generic` or `Protocol` base",
       "description": "Class `Array2` uses type variables not specified in `Generic` or `Protocol` base",
       "line": 59,
-      "name": "unknown",
+      "name": "invalid-type-var",
       "stop_column": 13,
       "stop_line": 59
     },
@@ -10184,7 +10184,7 @@
       "concise_description": "Class `Proto2` specifies type parameters in both `Generic` and `Protocol` bases",
       "description": "Class `Proto2` specifies type parameters in both `Generic` and `Protocol` bases",
       "line": 44,
-      "name": "unknown",
+      "name": "invalid-inheritance",
       "stop_column": 13,
       "stop_line": 44
     },
@@ -11995,7 +11995,7 @@
       "concise_description": "`NonTypedDict` is not a typed dictionary. Typed dictionary definitions may only extend other typed dictionaries.",
       "description": "`NonTypedDict` is not a typed dictionary. Typed dictionary definitions may only extend other typed dictionaries.",
       "line": 44,
-      "name": "unknown",
+      "name": "invalid-inheritance",
       "stop_column": 19,
       "stop_line": 44
     },
