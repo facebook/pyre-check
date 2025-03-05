@@ -39,8 +39,8 @@
 
 .featureHero {
   padding: 7rem 0;
-  background: beige;
-  color: var(--flow-gray-darker);
+  background: var(--flow-gray-darker);
+  color: var(--off-white);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   margin-left: auto;
@@ -50,7 +50,7 @@
 
 .feature.featureHero .featureButton {
   border-color: rgba(255, 255, 255, 0.2);
-  color: var(--flow-gray-darker);
+  color: var(--off-white);
 }
 
 @media screen and (min-width: 346px) {
@@ -205,8 +205,8 @@
   margin-bottom: 1rem;
   padding: 1rem 1.25rem;
 
-  border: 4px solid transparent;
-
+  border: 2px solid transparent;
+  border-radius: 2px;
   text-align: center;
   font-size: 1.6rem;
   line-height: 1;
@@ -380,12 +380,14 @@
   padding: 4rem 3rem 3rem;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-gap: 2rem 2rem;
 }
 
 .info .photo {
   text-align: center;
   vertical-align: middle;
 }
+
 
 
 .info .quote h3 {
@@ -396,13 +398,17 @@
     margin-bottom: .8rem;
     text-rendering: optimizeLegibility;
     font-size: 2.618rem;
-    color: var( --flow-gray-darker);
+    color: var(--flow-gray-darker);
+}
+
+.info .quote {
+  align-content: center;
 }
 
 .info .quote p {
   font-family: 'Montserrat';
   font-size: 1rem;
-  color:  var(--flow-gray-darker);
+  color: var(--flow-gray-darker);
 }
 
 .title, .subtitle {
@@ -420,8 +426,128 @@
   font-weight: bold;
   font-size: 4.236rem;
   text-align: center;
+  margin-bottom: rem;
 }
 
+hr {
+  margin-left: 2rem;
+  margin-right: 2rem;
+}
 .buttonContainer {
   text-align: center;
+}
+
+/* Attempt at firefly code. */
+.firefly {
+  list-style-type: none;
+  border-radius: 50%;
+  background-color: rgb(255, 255, 73);
+  background-image:
+  radial-gradient(rgb(249, 206, 36) 5%,
+                rgb(254, 179, 4) 25%,
+                rgb(252, 191, 7) 60%);
+  box-shadow:
+      0 0 5px 2px rgb(250, 193, 93),
+      0 0 5px 2px rgb(255, 228, 140),
+      0 0 10px 2.5px rgb(255, 219, 41);
+  height: 0.2px;
+  width: 0.2px;
+  top: -20px;
+  position: absolute;
+  animation: leftright 100s infinite cubic-bezier(0.39, 0, 0.63, 1),
+    updown 25s infinite 1.25s cubic-bezier(0.39, 0, 0.63, 1),
+    blinking 3s infinite;
+}
+
+
+/* animations */
+
+/* It will create the left right movement */
+@keyframes leftright {
+
+  0%,
+  100% {
+      left: 80%;
+  }
+
+  16.666% {
+      left: 95%;
+  }
+
+  33.333% {
+      left: 10%;
+  }
+
+  50% {
+      left: 60%;
+  }
+
+  66.666% {
+      left: 70%;
+  }
+
+  83.333% {
+      left: 5%;
+  }
+}
+
+/* It will create the up down movement */
+@keyframes updown {
+
+  0%,
+  100% {
+      top: 10px;
+  }
+
+  25% {
+      top: 90%;
+  }
+
+  50% {
+      top: 50%;
+  }
+
+  75% {
+      top: 95%;
+  }
+}
+
+/* It will create the blinking effect */
+@keyframes blinking {
+  0%,
+  100% {
+      box-shadow: 0 0 2px 1px rgb(250, 193, 93),
+                    0 0 5px 2px rgb(255, 242, 63),
+                  0 0 15px 5px rgb(255, 219, 41);
+      height: 0;
+      width: 0;
+  }
+
+  50% {
+      box-shadow: 0 0 5px 2px rgb(250, 193, 93),
+                    0 0 10px 5px rgb(255, 228, 140),
+                  0 0 20px 7px rgb(255, 219, 41);
+  }
+
+  75% {
+      box-shadow: 0 0 0px 0px rgb(250, 193, 93),
+                    0 0 0px 0px rgb(255, 228, 140),
+                  0 0 0px 0px rgb(255, 219, 41);
+  }
+}
+
+li.firefly:nth-of-type(1) {
+  animation-delay: 3s;
+  animation-duration: 65s, 81s, 0.01s;
+  animation-fill-mode: backwards, backwards;
+}
+
+li.firefly:last-of-type {
+  animation-delay: 9s;
+}
+
+li.firefly:nth-of-type(2) {
+  animation-delay: 10s;
+  animation-duration: 65s, 81s, 0.01s;
+  animation-fill-mode: backwards, forwards;
 }

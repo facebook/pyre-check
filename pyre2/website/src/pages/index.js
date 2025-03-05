@@ -28,7 +28,9 @@ export default component Home() {
       description={siteConfig.description}>
       <header className={clsx(styles.feature, styles.featureHero)}>
         <div className="container">
-          <h1 className={styles.title}>pyrefly</h1>
+          <h1 className={styles.title}>
+            pyrefly<span>.</span>
+          </h1>
           <p className={styles.subtitle}>A static type checker for Python.</p>
           <section className={styles.buttonContainer}>
             <Link
@@ -48,53 +50,56 @@ export default component Home() {
               Github
             </Link>
           </section>
+          <section>
+            <li className={styles.firefly}></li>
+            <li className={styles.firefly}></li>
+            <li className={styles.firefly}></li>
+            <li className={styles.firefly}></li>
+          </section>
         </div>
       </header>
       <main>
         <section className={styles.info}>
           <div className={styles.quote}>
-            <h3>Lorem Ipsum</h3>
+            <h3>Ship Faster</h3>
             <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-              reprehenderit in voluptate velit esse cillum dolore
+              Built from the ground up to support gradual typing and deliver
+              responsive incremental checks. Performant on large codebases with
+              millions of lines of Python.
             </p>
-            <hr />
-            <p>Quote about it</p>
           </div>
-          <div className={styles.photo}>Photo or Chart</div>
-        </section>
-        <section className={styles.info}>
-          <div className={styles.photo}>Photo or Chart</div>
-          <div className={styles.quote}>
-            <h3>Lorem Ipsum</h3>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-              reprehenderit in voluptate velit esse cillum dolore
-            </p>
-            <hr />
-            <p>Quote about it</p>
+          <div className={styles.photo}>
+            <img
+              className={clsx(styles.imgFluid, 'rounded')}
+              src={useBaseUrl('img/featurette-faster.gif')}
+            />
           </div>
         </section>
         <section className={styles.info}>
-          <div className={styles.quote}>
-            <h3>Lorem Ipsum</h3>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-              reprehenderit in voluptate velit esse cillum dolore
-            </p>
-            <hr />
-            <p>Quote about it</p>
+          <div className={styles.photo}>
+            <img
+              className={clsx(styles.imgFluid, 'rounded')}
+              src={useBaseUrl('img/featurette-smarter.gif')}
+            />
           </div>
-          <div className={styles.photo}>Photo or Chart</div>
+          <div className={styles.quote}>
+            <h3>Integrated</h3>
+            <p>
+              Designed to help improve code quality and development speed by
+              flagging type errors interactively in your terminal or live in
+              your favorite editor.
+            </p>
+          </div>
+        </section>
+        <section className={styles.info}>
+          <div className={styles.quote}>
+            <h3>Fully Featured</h3>
+            <p>
+              Follows the typing standards introduced in PEPs 484, 526, 612, and
+              is being actively developed and constantly improved.
+            </p>
+          </div>
+          <div className={styles.photo}></div>
         </section>
       </main>
     </Layout>
