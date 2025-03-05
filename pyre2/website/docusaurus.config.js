@@ -85,8 +85,8 @@ module.exports = {
       title: 'Pyrefly',
       items: [
         {
-          to: 'en/docs/',
-          activeBasePath: 'en/docs',
+          to: 'en/docs/learn-python-typing/',
+          activeBasePath: 'en/docs/learn-python-typing',
           label: 'Learn Python Typing',
           position: 'left',
         },
