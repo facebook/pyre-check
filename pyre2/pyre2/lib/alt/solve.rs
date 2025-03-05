@@ -791,7 +791,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match binding {
             Binding::Expr(ann, e) => {
                 let ty = ann.map(|k| self.get_idx(k));
-                let tcc = TypeCheckContext::unknown();
+                let tcc = TypeCheckContext::of_kind(TypeCheckKind::ExplicitTypeAnnotation);
                 self.expr(
                     e,
                     ty.as_ref().and_then(|x| x.ty.as_ref().map(|t| (t, &tcc))),
@@ -803,7 +803,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(k) = ann
                     && let Some(want) = &self.get_idx(*k).ty
                 {
-                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::unknown())
+                    self.check_type(
+                        want,
+                        &ty,
+                        x.range,
+                        errors,
+                        &TypeCheckContext::of_kind(TypeCheckKind::ExplicitTypeAnnotation),
+                    )
                 } else {
                     ty
                 }
@@ -814,7 +820,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(k) = ann
                     && let Some(want) = &self.get_idx(*k).ty
                 {
-                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::unknown())
+                    self.check_type(
+                        want,
+                        &ty,
+                        x.range,
+                        errors,
+                        &TypeCheckContext::of_kind(TypeCheckKind::ExplicitTypeAnnotation),
+                    )
                 } else {
                     ty
                 }
@@ -827,7 +839,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Some(k) = ann
                     && let Some(want) = &self.get_idx(*k).ty
                 {
-                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::unknown())
+                    self.check_type(
+                        want,
+                        &ty,
+                        x.range,
+                        errors,
+                        &TypeCheckContext::of_kind(TypeCheckKind::ExplicitTypeAnnotation),
+                    )
                 } else {
                     ty
                 }

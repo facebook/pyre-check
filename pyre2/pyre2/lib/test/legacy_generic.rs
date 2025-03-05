@@ -454,3 +454,12 @@ T = TypeVar("T")
 x: list[T]
     "#,
 );
+
+testcase!(
+    test_typevar_violates_annotation,
+    r#"
+from typing import TypeVar
+T: int = 0
+T = TypeVar('T')  # E: Expected declared type `int`, got `type[TypeVar[T]]`
+    "#,
+);
