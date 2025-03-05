@@ -93,10 +93,14 @@ module CallGraphAnalysis = struct
       ~previous_model:{ CallGraph.HigherOrderCallGraph.call_graph = previous_call_graph; _ }
       ~get_callee_model
     =
-    let { Target.DefinesSharedMemory.Define.qualifier; define = { Ast.Node.value = define; _ } } =
+    let get_definition callable =
       callable
       |> Target.strip_parameters
       |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
+    in
+    let { Target.DefinesSharedMemory.Define.qualifier; define = { Ast.Node.value = define; _ } } =
+      callable
+      |> get_definition
       |> Option.value_exn
            ~message:(Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable)
     in
@@ -149,6 +153,10 @@ module CallGraphAnalysis = struct
       in
       let additional_dependencies =
         Target.Set.diff (dependencies call_graph) (dependencies previous_call_graph)
+        (* It is possible to see additional dependencies that have no definition. If not skipping
+           them, in the next iteration we would fail due to not being able to find their
+           definitions. *)
+        |> Target.Set.filter (fun callable -> callable |> get_definition |> Option.is_some)
       in
       if CallGraph.debug_higher_order_call_graph define then (
         Log.dump
