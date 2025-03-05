@@ -431,7 +431,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 range,
-                                ErrorKind::Unknown,
+                                ErrorKind::ReadOnly,
                                 None,
                                 e.to_error_msg(attr_name),
                             );
@@ -441,7 +441,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 range,
-                                ErrorKind::Unknown,
+                                ErrorKind::NoAccess,
                                 None,
                                 e.to_error_msg(attr_name),
                             );
