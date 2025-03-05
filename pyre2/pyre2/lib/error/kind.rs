@@ -18,6 +18,8 @@ pub enum ErrorKind {
     /// Attempting to annotate a name with incompatible annotations.
     /// e.g. when a name is annotated in multiple branches of an if statement
     AnnotationMismatch,
+    /// Raised when an assert_type() call fails.
+    AssertType,
     /// An error raised when async is not used when it should be, or perhaps used when it shouldn't be.
     AsyncError,
     /// Attemping to call a function with the wrong number of arguments.
@@ -83,6 +85,7 @@ pub enum ErrorKind {
     /// e.g. `yield from` with something that's not an iterable.
     InvalidYield,
     /// An error caused by calling a function without all the required arguments.
+    /// Should be used when we can name the specific arguments that are missing.
     MissingArgument,
     /// Accessing an attribute that does not exist on a module.
     MissingModuleAttribute,
@@ -106,6 +109,8 @@ pub enum ErrorKind {
     ParseError,
     /// The attribute exists but cannot be modified.
     ReadOnly,
+    /// Raised by a call to reveal_type().
+    RevealType,
     /// An error related to type alias usage or definition.
     TypeAliasError,
     /// An error raised when one type is expected but another is found instead.

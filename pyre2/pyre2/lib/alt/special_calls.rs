@@ -48,7 +48,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(
                     errors,
                     range,
-                    ErrorKind::Unknown,
+                    ErrorKind::AssertType,
                     None,
                     format!(
                         "assert_type({}, {}) failed",
@@ -61,7 +61,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::BadArgumentCount,
                 None,
                 format!(
                     "assert_type needs 2 positional arguments, got {:#?}",
@@ -72,7 +72,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for keyword in keywords {
             unexpected_keyword(
                 &|msg| {
-                    self.error(errors, range, ErrorKind::Unknown, None, msg);
+                    self.error(errors, range, ErrorKind::UnexpectedKeyword, None, msg);
                 },
                 "assert_type",
                 keyword,
@@ -93,7 +93,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::RevealType,
                 None,
                 format!("revealed type: {}", t.deterministic_printing()),
             );
@@ -101,7 +101,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::BadArgumentCount,
                 None,
                 format!(
                     "reveal_type needs 1 positional argument, got {}",
@@ -112,7 +112,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for keyword in keywords {
             unexpected_keyword(
                 &|msg| {
-                    self.error(errors, range, ErrorKind::Unknown, None, msg);
+                    self.error(errors, range, ErrorKind::UnexpectedKeyword, None, msg);
                 },
                 "reveal_type",
                 keyword,
@@ -154,7 +154,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             errors,
                             range,
-                            ErrorKind::Unknown,
+                            ErrorKind::InvalidArgument,
                             None,
                             "`typing.cast` got multiple values for argument `typ`".to_owned(),
                         );
@@ -166,7 +166,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             errors,
                             range,
-                            ErrorKind::Unknown,
+                            ErrorKind::InvalidArgument,
                             None,
                             "`typing.cast` got multiple values for argument `val`".to_owned(),
                         );
@@ -182,7 +182,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::BadArgumentCount,
                 None,
                 format!("`typing.cast` expected 2 arguments, got {}", extra + 2),
             );
@@ -193,7 +193,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 None => self.error(
                     errors,
                     range,
-                    ErrorKind::Unknown,
+                    ErrorKind::BadArgumentType,
                     None,
                     "First argument to `typing.cast` must be a type".to_owned(),
                 ),
@@ -202,7 +202,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::MissingArgument,
                 None,
                 "`typing.cast` missing required argument `typ`".to_owned(),
             )
@@ -211,7 +211,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::MissingArgument,
                 None,
                 "`typing.cast` missing required argument `val`".to_owned(),
             );

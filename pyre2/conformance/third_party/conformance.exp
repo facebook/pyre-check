@@ -17,7 +17,7 @@
       "concise_description": "assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed",
       "description": "assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed",
       "line": 53,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 49,
       "stop_line": 53
     },
@@ -27,7 +27,7 @@
       "concise_description": "assert_type(Any, tuple[int, int, int, str]) failed",
       "description": "assert_type(Any, tuple[int, int, int, str]) failed",
       "line": 54,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 47,
       "stop_line": 54
     },
@@ -37,7 +37,7 @@
       "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
       "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
       "line": 57,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 53,
       "stop_line": 57
     },
@@ -47,7 +47,7 @@
       "concise_description": "assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed",
       "description": "assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed",
       "line": 60,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 42,
       "stop_line": 60
     },
@@ -187,7 +187,7 @@
       "concise_description": "assert_type(list[Any], list[str]) failed",
       "description": "assert_type(list[Any], list[str]) failed",
       "line": 98,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 27,
       "stop_line": 98
     },
@@ -269,7 +269,7 @@
       "concise_description": "assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed",
       "description": "assert_type(list[str] | tuple[TypeVar[T], ...], list[str] | tuple[str, ...]) failed",
       "line": 64,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 49,
       "stop_line": 64
     },
@@ -279,7 +279,7 @@
       "concise_description": "assert_type(Any, tuple[int, int, int, str]) failed",
       "description": "assert_type(Any, tuple[int, int, int, str]) failed",
       "line": 65,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 47,
       "stop_line": 65
     },
@@ -289,7 +289,7 @@
       "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
       "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
       "line": 68,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 53,
       "stop_line": 68
     },
@@ -299,7 +299,7 @@
       "concise_description": "assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed",
       "description": "assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed",
       "line": 72,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 42,
       "stop_line": 72
     },
@@ -1222,7 +1222,7 @@
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 96,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 27,
       "stop_line": 96
     }
@@ -1344,7 +1344,7 @@
       "concise_description": "assert_type(() -> AsyncIterator[int], () -> Coroutine[Any, Any, AsyncIterator[int]]) failed",
       "description": "assert_type(() -> AsyncIterator[int], () -> Coroutine[Any, Any, AsyncIterator[int]]) failed",
       "line": 182,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 80,
       "stop_line": 182
     },
@@ -1386,7 +1386,7 @@
       "concise_description": "assert_type(B, A) failed",
       "description": "assert_type(B, A) failed",
       "line": 42,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 28,
       "stop_line": 42
     }
@@ -1620,7 +1620,7 @@
       "concise_description": "assert_type(int, tuple[int, ...]) failed",
       "description": "assert_type(int, tuple[int, ...]) failed",
       "line": 51,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 39,
       "stop_line": 51
     },
@@ -1630,7 +1630,7 @@
       "concise_description": "assert_type(int, dict[str, int]) failed",
       "description": "assert_type(int, dict[str, int]) failed",
       "line": 52,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 40,
       "stop_line": 52
     },
@@ -2542,7 +2542,7 @@
       "concise_description": "assert_type(Class5[list[int]], Class5[set[str]]) failed",
       "description": "assert_type(Class5[list[int]], Class5[set[str]]) failed",
       "line": 74,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 42,
       "stop_line": 74
     },
@@ -2562,7 +2562,7 @@
       "concise_description": "assert_type(Class5[list[int]], Class5[float]) failed",
       "description": "assert_type(Class5[list[int]], Class5[float]) failed",
       "line": 75,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 40,
       "stop_line": 75
     },
@@ -2582,7 +2582,7 @@
       "concise_description": "assert_type(Class6[TypeVar[V1], TypeVar[V2]], Class6[int, str]) failed",
       "description": "assert_type(Class6[TypeVar[V1], TypeVar[V2]], Class6[int, str]) failed",
       "line": 91,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 45,
       "stop_line": 91
     },
@@ -2602,7 +2602,7 @@
       "concise_description": "assert_type(Class7[TypeVar[V2], TypeVar[V1]], Class7[str, int]) failed",
       "description": "assert_type(Class7[TypeVar[V2], TypeVar[V1]], Class7[str, int]) failed",
       "line": 99,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 45,
       "stop_line": 99
     },
@@ -2654,7 +2654,7 @@
       "concise_description": "assert_type(Class1, NoReturn) failed",
       "description": "assert_type(Class1, NoReturn) failed",
       "line": 23,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 32,
       "stop_line": 23
     },
@@ -2806,7 +2806,7 @@
       "concise_description": "assert_type(Class4, Class4 | Any) failed",
       "description": "assert_type(Class4, Class4 | Any) failed",
       "line": 64,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 36,
       "stop_line": 64
     },
@@ -2826,7 +2826,7 @@
       "concise_description": "assert_type(Class5, NoReturn) failed",
       "description": "assert_type(Class5, NoReturn) failed",
       "line": 76,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 36,
       "stop_line": 76
     },
@@ -2856,7 +2856,7 @@
       "concise_description": "assert_type(object, Class7) failed",
       "description": "assert_type(object, Class7) failed",
       "line": 104,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 31,
       "stop_line": 104
     },
@@ -3070,7 +3070,7 @@
       "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 36,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 16,
       "stop_line": 36
     },
@@ -3080,7 +3080,7 @@
       "concise_description": "assert_type(Any, Class1) failed",
       "description": "assert_type(Any, Class1) failed",
       "line": 37,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 27,
       "stop_line": 37
     },
@@ -3130,7 +3130,7 @@
       "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 49,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 16,
       "stop_line": 49
     },
@@ -3140,7 +3140,7 @@
       "concise_description": "assert_type(Any, Class2) failed",
       "description": "assert_type(Any, Class2) failed",
       "line": 50,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 26,
       "stop_line": 50
     },
@@ -3180,7 +3180,7 @@
       "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 63,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 16,
       "stop_line": 63
     },
@@ -3190,7 +3190,7 @@
       "concise_description": "assert_type(Any, Class3) failed",
       "description": "assert_type(Any, Class3) failed",
       "line": 64,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 27,
       "stop_line": 64
     },
@@ -3250,7 +3250,7 @@
       "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 77,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 16,
       "stop_line": 77
     },
@@ -3260,7 +3260,7 @@
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 78,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 24,
       "stop_line": 78
     },
@@ -3330,7 +3330,7 @@
       "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 97,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 16,
       "stop_line": 97
     },
@@ -3340,7 +3340,7 @@
       "concise_description": "assert_type(Any, NoReturn) failed",
       "description": "assert_type(Any, NoReturn) failed",
       "line": 100,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 32,
       "stop_line": 100
     },
@@ -3360,7 +3360,7 @@
       "concise_description": "assert_type(Any, NoReturn) failed",
       "description": "assert_type(Any, NoReturn) failed",
       "line": 105,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 38,
       "stop_line": 105
     },
@@ -3390,7 +3390,7 @@
       "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 125,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 16,
       "stop_line": 125
     },
@@ -3400,7 +3400,7 @@
       "concise_description": "assert_type(Any, Class6Proxy) failed",
       "description": "assert_type(Any, Class6Proxy) failed",
       "line": 126,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 31,
       "stop_line": 126
     },
@@ -3450,7 +3450,7 @@
       "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 142,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 20,
       "stop_line": 142
     },
@@ -3490,7 +3490,7 @@
       "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 161,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 2,
       "stop_line": 163
     },
@@ -3500,7 +3500,7 @@
       "concise_description": "assert_type(Any, Class7[int]) failed",
       "description": "assert_type(Any, Class7[int]) failed",
       "line": 164,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 32,
       "stop_line": 164
     },
@@ -3520,7 +3520,7 @@
       "concise_description": "assert_type(Any, Class7[str]) failed",
       "description": "assert_type(Any, Class7[str]) failed",
       "line": 165,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 33,
       "stop_line": 165
     },
@@ -3570,7 +3570,7 @@
       "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 182,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 16,
       "stop_line": 182
     },
@@ -3580,7 +3580,7 @@
       "concise_description": "assert_type(Any, Class8[str]) failed",
       "description": "assert_type(Any, Class8[str]) failed",
       "line": 183,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 41,
       "stop_line": 183
     },
@@ -3620,7 +3620,7 @@
       "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 193,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 16,
       "stop_line": 193
     },
@@ -3630,7 +3630,7 @@
       "concise_description": "assert_type(Any, Class9) failed",
       "description": "assert_type(Any, Class9) failed",
       "line": 194,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 36,
       "stop_line": 194
     },
@@ -4781,7 +4781,7 @@
       "concise_description": "assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed",
       "description": "assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed",
       "line": 106,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 41,
       "stop_line": 106
     },
@@ -4833,7 +4833,7 @@
       "concise_description": "assert_type(int | str, int) failed",
       "description": "assert_type(int | str, int) failed",
       "line": 27,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 24,
       "stop_line": 27
     },
@@ -4843,7 +4843,7 @@
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 28,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 24,
       "stop_line": 28
     },
@@ -4853,7 +4853,7 @@
       "concise_description": "assert_type(Literal[4], int) failed",
       "description": "assert_type(Literal[4], int) failed",
       "line": 29,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 24,
       "stop_line": 29
     },
@@ -4863,7 +4863,7 @@
       "concise_description": "assert_type needs 2 positional arguments, got 0",
       "description": "assert_type needs 2 positional arguments, got 0",
       "line": 31,
-      "name": "unknown",
+      "name": "bad-argument-count",
       "stop_column": 18,
       "stop_line": 31
     },
@@ -4873,7 +4873,7 @@
       "concise_description": "assert_type(Literal[''], int) failed",
       "description": "assert_type(Literal[''], int) failed",
       "line": 32,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 25,
       "stop_line": 32
     },
@@ -4883,7 +4883,7 @@
       "concise_description": "assert_type needs 2 positional arguments, got 3",
       "description": "assert_type needs 2 positional arguments, got 3",
       "line": 33,
-      "name": "unknown",
+      "name": "bad-argument-count",
       "stop_column": 33,
       "stop_line": 33
     }
@@ -4895,7 +4895,7 @@
       "concise_description": "`typing.cast` missing required argument `typ`",
       "description": "`typing.cast` missing required argument `typ`",
       "line": 15,
-      "name": "unknown",
+      "name": "missing-argument",
       "stop_column": 12,
       "stop_line": 15
     },
@@ -4905,7 +4905,7 @@
       "concise_description": "`typing.cast` missing required argument `val`",
       "description": "`typing.cast` missing required argument `val`",
       "line": 15,
-      "name": "unknown",
+      "name": "missing-argument",
       "stop_column": 12,
       "stop_line": 15
     },
@@ -4915,7 +4915,7 @@
       "concise_description": "First argument to `typing.cast` must be a type",
       "description": "First argument to `typing.cast` must be a type",
       "line": 16,
-      "name": "unknown",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 16
     },
@@ -4925,7 +4925,7 @@
       "concise_description": "`typing.cast` expected 2 arguments, got 3",
       "description": "`typing.cast` expected 2 arguments, got 3",
       "line": 17,
-      "name": "unknown",
+      "name": "bad-argument-count",
       "stop_column": 12,
       "stop_line": 17
     }
@@ -5021,7 +5021,7 @@
       "concise_description": "revealed type: int | str",
       "description": "revealed type: int | str",
       "line": 14,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 19,
       "stop_line": 14
     },
@@ -5031,7 +5031,7 @@
       "concise_description": "revealed type: list[int]",
       "description": "revealed type: list[int]",
       "line": 15,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 19,
       "stop_line": 15
     },
@@ -5041,7 +5041,7 @@
       "concise_description": "revealed type: Any",
       "description": "revealed type: Any",
       "line": 16,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 19,
       "stop_line": 16
     },
@@ -5051,7 +5051,7 @@
       "concise_description": "revealed type: ForwardReference",
       "description": "revealed type: ForwardReference",
       "line": 17,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 19,
       "stop_line": 17
     },
@@ -5061,7 +5061,7 @@
       "concise_description": "reveal_type needs 1 positional argument, got 0",
       "description": "reveal_type needs 1 positional argument, got 0",
       "line": 19,
-      "name": "unknown",
+      "name": "bad-argument-count",
       "stop_column": 18,
       "stop_line": 19
     },
@@ -5071,7 +5071,7 @@
       "concise_description": "reveal_type needs 1 positional argument, got 2",
       "description": "reveal_type needs 1 positional argument, got 2",
       "line": 20,
-      "name": "unknown",
+      "name": "bad-argument-count",
       "stop_column": 22,
       "stop_line": 20
     }
@@ -5103,7 +5103,7 @@
       "concise_description": "assert_type(list[int] | list[str], list[int]) failed",
       "description": "assert_type(list[int] | list[str], list[int]) failed",
       "line": 18,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 26,
       "stop_line": 18
     }
@@ -5182,7 +5182,7 @@
       "concise_description": "assert_type(Any, Color) failed",
       "description": "assert_type(Any, Color) failed",
       "line": 20,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 20
     },
@@ -5192,7 +5192,7 @@
       "concise_description": "assert_type(type[Color], Color) failed",
       "description": "assert_type(type[Color], Color) failed",
       "line": 26,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 33,
       "stop_line": 26
     },
@@ -5222,7 +5222,7 @@
       "concise_description": "assert_type(Enum, Color) failed",
       "description": "assert_type(Enum, Color) failed",
       "line": 27,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 29,
       "stop_line": 27
     }
@@ -5235,7 +5235,7 @@
       "concise_description": "assert_type(CustomFlags, Literal[CustomFlags.FLAG3]) failed",
       "description": "assert_type(CustomFlags, Literal[CustomFlags.FLAG3]) failed",
       "line": 53,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 51,
       "stop_line": 53
     }
@@ -5247,7 +5247,7 @@
       "concise_description": "assert_type(property, Literal['BLUE', 'RED']) failed",
       "description": "assert_type(property, Literal['BLUE', 'RED']) failed",
       "line": 26,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 58,
       "stop_line": 26
     },
@@ -5257,7 +5257,7 @@
       "concise_description": "assert_type(property, Literal['BLUE', 'GREEN', 'RED']) failed",
       "description": "assert_type(property, Literal['BLUE', 'GREEN', 'RED']) failed",
       "line": 30,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 65,
       "stop_line": 30
     }
@@ -5269,7 +5269,7 @@
       "concise_description": "assert_type(int, Literal[1]) failed",
       "description": "assert_type(int, Literal[1]) failed",
       "line": 21,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 43,
       "stop_line": 21
     },
@@ -5279,7 +5279,7 @@
       "concise_description": "assert_type(int, Literal[1]) failed",
       "description": "assert_type(int, Literal[1]) failed",
       "line": 22,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 41,
       "stop_line": 22
     },
@@ -5289,7 +5289,7 @@
       "concise_description": "assert_type(property, Literal[1, 3]) failed",
       "description": "assert_type(property, Literal[1, 3]) failed",
       "line": 26,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 50,
       "stop_line": 26
     },
@@ -5299,7 +5299,7 @@
       "concise_description": "assert_type(property, Literal[1, 2, 3]) failed",
       "description": "assert_type(property, Literal[1, 2, 3]) failed",
       "line": 30,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 51,
       "stop_line": 30
     },
@@ -5309,7 +5309,7 @@
       "concise_description": "assert_type(tuple[Literal[1], float, float], Literal[1]) failed",
       "description": "assert_type(tuple[Literal[1], float, float], Literal[1]) failed",
       "line": 54,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 46,
       "stop_line": 54
     },
@@ -5319,7 +5319,7 @@
       "concise_description": "assert_type(auto, Literal[1]) failed",
       "description": "assert_type(auto, Literal[1]) failed",
       "line": 68,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 42,
       "stop_line": 68
     },
@@ -5349,7 +5349,7 @@
       "concise_description": "assert_type(Ellipsis, int) failed",
       "description": "assert_type(Ellipsis, int) failed",
       "line": 96,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 41,
       "stop_line": 96
     }
@@ -5361,7 +5361,7 @@
       "concise_description": "assert_type(Any, str) failed",
       "description": "assert_type(Any, str) failed",
       "line": 27,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 28,
       "stop_line": 27
     },
@@ -5381,7 +5381,7 @@
       "concise_description": "assert_type(Any, str) failed",
       "description": "assert_type(Any, str) failed",
       "line": 28,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 28
     },
@@ -5401,7 +5401,7 @@
       "concise_description": "assert_type(Any, str) failed",
       "description": "assert_type(Any, str) failed",
       "line": 35,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 29,
       "stop_line": 35
     },
@@ -5421,7 +5421,7 @@
       "concise_description": "assert_type(Any, str) failed",
       "description": "assert_type(Any, str) failed",
       "line": 36,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 31,
       "stop_line": 36
     },
@@ -5451,7 +5451,7 @@
       "concise_description": "assert_type((x: Any) -> str, Any) failed",
       "description": "assert_type((x: Any) -> str, Any) failed",
       "line": 82,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 53,
       "stop_line": 82
     },
@@ -5491,7 +5491,7 @@
       "concise_description": "assert_type(property[(self: Pet4) -> str], Any) failed",
       "description": "assert_type(property[(self: Pet4) -> str], Any) failed",
       "line": 84,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 49,
       "stop_line": 84
     },
@@ -5511,7 +5511,7 @@
       "concise_description": "assert_type((self: Pet4) -> None, Any) failed",
       "description": "assert_type((self: Pet4) -> None, Any) failed",
       "line": 85,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 45,
       "stop_line": 85
     },
@@ -5531,7 +5531,7 @@
       "concise_description": "assert_type(Literal[TrafficLight.AMBER], Literal[TrafficLight.YELLOW]) failed",
       "description": "assert_type(Literal[TrafficLight.AMBER], Literal[TrafficLight.YELLOW]) failed",
       "line": 100,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 62,
       "stop_line": 100
     },
@@ -5541,7 +5541,7 @@
       "concise_description": "assert_type(nonmember[int], Any) failed",
       "description": "assert_type(nonmember[int], Any) failed",
       "line": 116,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 43,
       "stop_line": 116
     },
@@ -5571,7 +5571,7 @@
       "concise_description": "revealed type: int",
       "description": "revealed type: int",
       "line": 128,
-      "name": "unknown",
+      "name": "reveal-type",
       "stop_column": 34,
       "stop_line": 128
     },
@@ -5581,7 +5581,7 @@
       "concise_description": "assert_type(int, Any) failed",
       "description": "assert_type(int, Any) failed",
       "line": 129,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 57,
       "stop_line": 129
     },
@@ -5601,7 +5601,7 @@
       "concise_description": "assert_type(Literal[Pet5.DOG], int) failed",
       "description": "assert_type(Literal[Pet5.DOG], int) failed",
       "line": 146,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 27,
       "stop_line": 146
     },
@@ -5611,7 +5611,7 @@
       "concise_description": "assert_type(Literal[Pet5.FISH], int) failed",
       "description": "assert_type(Literal[Pet5.FISH], int) failed",
       "line": 147,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 28,
       "stop_line": 147
     }
@@ -5623,7 +5623,7 @@
       "concise_description": "assert_type(str, int | str) failed",
       "description": "assert_type(str, int | str) failed",
       "line": 50,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 50
     },
@@ -5633,7 +5633,7 @@
       "concise_description": "assert_type(str, int | str) failed",
       "description": "assert_type(str, int | str) failed",
       "line": 57,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 57
     }
@@ -5717,7 +5717,7 @@
       "concise_description": "assert_type(MyStr, str) failed",
       "description": "assert_type(MyStr, str) failed",
       "line": 67,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 35,
       "stop_line": 67
     },
@@ -5727,7 +5727,7 @@
       "concise_description": "assert_type(MyStr, str) failed",
       "description": "assert_type(MyStr, str) failed",
       "line": 68,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 35,
       "stop_line": 68
     },
@@ -5789,7 +5789,7 @@
       "concise_description": "assert_type(type[AllTheDefaults[Error, Error, str, int, bool]], type[AllTheDefaults[Any, Any, str, int, bool]]) failed",
       "description": "assert_type(type[AllTheDefaults[Error, Error, str, int, bool]], type[AllTheDefaults[Any, Any, str, int, bool]]) failed",
       "line": 45,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 76,
       "stop_line": 45
     },
@@ -5819,7 +5819,7 @@
       "concise_description": "assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[(str, int)]]) failed",
       "description": "assert_type(type[Class_ParamSpec[Error]], type[Class_ParamSpec[(str, int)]]) failed",
       "line": 79,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 62,
       "stop_line": 79
     },
@@ -5829,7 +5829,7 @@
       "concise_description": "assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[(str, int)]) failed",
       "description": "assert_type(Class_ParamSpec[(*Any, **Any)], Class_ParamSpec[(str, int)]) failed",
       "line": 80,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 58,
       "stop_line": 80
     },
@@ -5849,7 +5849,7 @@
       "concise_description": "assert_type(type[Class_TypeVarTuple[Error]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
       "description": "assert_type(type[Class_TypeVarTuple[Error]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
       "line": 94,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 76,
       "stop_line": 94
     },
@@ -5859,7 +5859,7 @@
       "concise_description": "assert_type(Class_TypeVarTuple[tuple[Any, ...]], Class_TypeVarTuple[tuple[str, int]]) failed",
       "description": "assert_type(Class_TypeVarTuple[tuple[Any, ...]], Class_TypeVarTuple[tuple[str, int]]) failed",
       "line": 95,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 64,
       "stop_line": 95
     },
@@ -5869,7 +5869,7 @@
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 127,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 27,
       "stop_line": 127
     },
@@ -5919,7 +5919,7 @@
       "concise_description": "assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed",
       "description": "assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed",
       "line": 151,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 65,
       "stop_line": 151
     },
@@ -5969,7 +5969,7 @@
       "concise_description": "assert_type(Any, (Foo7[int]) -> Foo7[int]) failed",
       "description": "assert_type(Any, (Foo7[int]) -> Foo7[int]) failed",
       "line": 166,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 57,
       "stop_line": 166
     },
@@ -5989,7 +5989,7 @@
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 167,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 28,
       "stop_line": 167
     },
@@ -6011,7 +6011,7 @@
       "concise_description": "assert_type(type[slice[int, TypeVar[StartT], int | None]], type[slice[int, int, int | None]]) failed",
       "description": "assert_type(type[slice[int, TypeVar[StartT], int | None]], type[slice[int, int, int | None]]) failed",
       "line": 23,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 54,
       "stop_line": 23
     },
@@ -6021,7 +6021,7 @@
       "concise_description": "assert_type(slice[Any, Any, Any], slice[int, int, int | None]) failed",
       "description": "assert_type(slice[Any, Any, Any], slice[int, int, int | None]) failed",
       "line": 24,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 50,
       "stop_line": 24
     },
@@ -6031,7 +6031,7 @@
       "concise_description": "assert_type(slice[str, TypeVar[StartT], int | None], slice[str, str, int | None]) failed",
       "description": "assert_type(slice[str, TypeVar[StartT], int | None], slice[str, str, int | None]) failed",
       "line": 25,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 55,
       "stop_line": 25
     },
@@ -6071,7 +6071,7 @@
       "concise_description": "assert_type(type[Bar[Error, list[TypeVar[Z1]]]], type[Bar[Any, list[Any]]]) failed",
       "description": "assert_type(type[Bar[Error, list[TypeVar[Z1]]]], type[Bar[Any, list[Any]]]) failed",
       "line": 94,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 44,
       "stop_line": 94
     },
@@ -6081,7 +6081,7 @@
       "concise_description": "assert_type(type[Bar[int, list[TypeVar[Z1]]]], type[Bar[int, list[int]]]) failed",
       "description": "assert_type(type[Bar[int, list[TypeVar[Z1]]]], type[Bar[int, list[int]]]) failed",
       "line": 95,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 49,
       "stop_line": 95
     },
@@ -6091,7 +6091,7 @@
       "concise_description": "assert_type(Bar[int, list[TypeVar[Z1]]], Bar[int, list[int]]) failed",
       "description": "assert_type(Bar[int, list[TypeVar[Z1]]], Bar[int, list[int]]) failed",
       "line": 96,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 50,
       "stop_line": 96
     }
@@ -6113,7 +6113,7 @@
       "concise_description": "assert_type(Any, SomethingWithNoDefaults[int, str]) failed",
       "description": "assert_type(Any, SomethingWithNoDefaults[int, str]) failed",
       "line": 26,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 55,
       "stop_line": 26
     },
@@ -6123,7 +6123,7 @@
       "concise_description": "assert_type(Bar[Any], Bar[str]) failed",
       "description": "assert_type(Bar[Any], Bar[str]) failed",
       "line": 46,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 29,
       "stop_line": 46
     },
@@ -6685,7 +6685,7 @@
       "concise_description": "assert_type(ParentA, ChildA) failed",
       "description": "assert_type(ParentA, ChildA) failed",
       "line": 19,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 36,
       "stop_line": 19
     },
@@ -6695,7 +6695,7 @@
       "concise_description": "assert_type(ChildB, Self) failed",
       "description": "assert_type(ChildB, Self) failed",
       "line": 35,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 32,
       "stop_line": 35
     },
@@ -6705,7 +6705,7 @@
       "concise_description": "assert_type(ParentB, Self) failed",
       "description": "assert_type(ParentB, Self) failed",
       "line": 38,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 42,
       "stop_line": 38
     },
@@ -6715,7 +6715,7 @@
       "concise_description": "assert_type(type[ChildB], type[Self]) failed",
       "description": "assert_type(type[ChildB], type[Self]) failed",
       "line": 42,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 37,
       "stop_line": 42
     },
@@ -6725,7 +6725,7 @@
       "concise_description": "assert_type(Any, list[Self]) failed",
       "description": "assert_type(Any, list[Self]) failed",
       "line": 43,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 39,
       "stop_line": 43
     },
@@ -6745,7 +6745,7 @@
       "concise_description": "assert_type(Any, Self) failed",
       "description": "assert_type(Any, Self) failed",
       "line": 44,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 36,
       "stop_line": 44
     },
@@ -6765,7 +6765,7 @@
       "concise_description": "assert_type(ParentB, Self) failed",
       "description": "assert_type(ParentB, Self) failed",
       "line": 45,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 41,
       "stop_line": 45
     }
@@ -6809,7 +6809,7 @@
       "concise_description": "assert_type(Shape, Self) failed",
       "description": "assert_type(Shape, Self) failed",
       "line": 14,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 32,
       "stop_line": 14
     },
@@ -6829,7 +6829,7 @@
       "concise_description": "assert_type(type[Shape], type[Self]) failed",
       "description": "assert_type(type[Shape], type[Self]) failed",
       "line": 27,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 37,
       "stop_line": 27
     },
@@ -6839,7 +6839,7 @@
       "concise_description": "assert_type(Shape, Self) failed",
       "description": "assert_type(Shape, Self) failed",
       "line": 40,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 33,
       "stop_line": 40
     },
@@ -6849,7 +6849,7 @@
       "concise_description": "assert_type(Shape, Circle) failed",
       "description": "assert_type(Shape, Circle) failed",
       "line": 52,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 45,
       "stop_line": 52
     },
@@ -6859,7 +6859,7 @@
       "concise_description": "assert_type(Shape, Circle) failed",
       "description": "assert_type(Shape, Circle) failed",
       "line": 55,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 44,
       "stop_line": 55
     },
@@ -6977,7 +6977,7 @@
       "concise_description": "assert_type(type[?_TypeVar], TypeVar) failed",
       "description": "assert_type(type[?_TypeVar], TypeVar) failed",
       "line": 14,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 28,
       "stop_line": 14
     },
@@ -6987,7 +6987,7 @@
       "concise_description": "assert_type(type[?_TypeVarTuple], TypeVarTuple) failed",
       "description": "assert_type(type[?_TypeVarTuple], TypeVarTuple) failed",
       "line": 15,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 34,
       "stop_line": 15
     },
@@ -6997,7 +6997,7 @@
       "concise_description": "assert_type(type[?_ParamSpec], ParamSpec) failed",
       "description": "assert_type(type[?_ParamSpec], ParamSpec) failed",
       "line": 16,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 16
     },
@@ -7381,7 +7381,7 @@
       "concise_description": "assert_type(str, int) failed",
       "description": "assert_type(str, int) failed",
       "line": 67,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 32,
       "stop_line": 67
     },
@@ -7391,7 +7391,7 @@
       "concise_description": "assert_type(type[?_TypeVar], TypeVar) failed",
       "description": "assert_type(type[?_TypeVar], TypeVar) failed",
       "line": 116,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 36,
       "stop_line": 116
     }
@@ -7473,7 +7473,7 @@
       "concise_description": "assert_type(Any, bytes) failed",
       "description": "assert_type(Any, bytes) failed",
       "line": 56,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 28,
       "stop_line": 56
     }
@@ -7753,7 +7753,7 @@
       "concise_description": "assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar]]) failed",
       "description": "assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar]]) failed",
       "line": 30,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 52,
       "stop_line": 30
     },
@@ -7773,7 +7773,7 @@
       "concise_description": "assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]) failed",
       "description": "assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]) failed",
       "line": 31,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 59,
       "stop_line": 31
     },
@@ -7815,7 +7815,7 @@
       "concise_description": "assert_type(Any, tuple[int, float, bool]) failed",
       "description": "assert_type(Any, tuple[int, float, bool]) failed",
       "line": 46,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 44,
       "stop_line": 46
     },
@@ -7825,7 +7825,7 @@
       "concise_description": "assert_type(Any, tuple[str, Array[tuple[Height]]]) failed",
       "description": "assert_type(Any, tuple[str, Array[tuple[Height]]]) failed",
       "line": 47,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 46,
       "stop_line": 47
     },
@@ -7855,7 +7855,7 @@
       "concise_description": "assert_type(Any, tuple[int]) failed",
       "description": "assert_type(Any, tuple[int]) failed",
       "line": 51,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 31,
       "stop_line": 51
     },
@@ -7865,7 +7865,7 @@
       "concise_description": "assert_type(Any, tuple[str, Array[tuple[Any, ...]]]) failed",
       "description": "assert_type(Any, tuple[str, Array[tuple[Any, ...]]]) failed",
       "line": 52,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 42,
       "stop_line": 52
     },
@@ -7895,7 +7895,7 @@
       "concise_description": "assert_type(Any, Array2[Any, tuple[Any]]) failed",
       "description": "assert_type(Any, Array2[Any, tuple[Any]]) failed",
       "line": 68,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 37,
       "stop_line": 68
     },
@@ -7945,7 +7945,7 @@
       "concise_description": "assert_type(Any, tuple[str, int]) failed",
       "description": "assert_type(Any, tuple[str, int]) failed",
       "line": 93,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 36,
       "stop_line": 93
     },
@@ -7955,7 +7955,7 @@
       "concise_description": "assert_type(Any, tuple[float]) failed",
       "description": "assert_type(Any, tuple[float]) failed",
       "line": 94,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 33,
       "stop_line": 94
     },
@@ -7965,7 +7965,7 @@
       "concise_description": "assert_type(tuple[TypeVar[T], *TypeVarTuple[Ts]], tuple[Any, *tuple[Any, ...]]) failed",
       "description": "assert_type(tuple[TypeVar[T], *TypeVarTuple[Ts]], tuple[Any, *tuple[Any, ...]]) failed",
       "line": 95,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 49,
       "stop_line": 95
     },
@@ -8095,7 +8095,7 @@
       "concise_description": "assert_type(tuple[Any, Any, Any], tuple[tuple[()], str, bool]) failed",
       "description": "assert_type(tuple[Any, Any, Any], tuple[tuple[()], str, bool]) failed",
       "line": 135,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 55,
       "stop_line": 135
     },
@@ -8105,7 +8105,7 @@
       "concise_description": "assert_type(tuple[Any, Any, Any], tuple[tuple[str], bool, float]) failed",
       "description": "assert_type(tuple[Any, Any, Any], tuple[tuple[str], bool, float]) failed",
       "line": 136,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 58,
       "stop_line": 136
     },
@@ -8115,7 +8115,7 @@
       "concise_description": "assert_type(tuple[Any, Any, Any], tuple[tuple[str, bool], float, int]) failed",
       "description": "assert_type(tuple[Any, Any, Any], tuple[tuple[str, bool], float, int]) failed",
       "line": 137,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 63,
       "stop_line": 137
     },
@@ -8155,7 +8155,7 @@
       "concise_description": "assert_type(tuple[Any, Any, Any, Any], tuple[tuple[()], str, bool, float]) failed",
       "description": "assert_type(tuple[Any, Any, Any, Any], tuple[tuple[()], str, bool, float]) failed",
       "line": 148,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 62,
       "stop_line": 148
     },
@@ -8165,7 +8165,7 @@
       "concise_description": "assert_type(tuple[Any, Any, Any, Any], tuple[tuple[bool], str, float, int]) failed",
       "description": "assert_type(tuple[Any, Any, Any, Any], tuple[tuple[bool], str, float, int]) failed",
       "line": 149,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 63,
       "stop_line": 149
     },
@@ -8205,7 +8205,7 @@
       "concise_description": "assert_type(Any, tuple[*tuple[int, ...], int]) failed",
       "description": "assert_type(Any, tuple[*tuple[int, ...], int]) failed",
       "line": 157,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 49,
       "stop_line": 157
     },
@@ -8215,7 +8215,7 @@
       "concise_description": "assert_type(Any, tuple[*tuple[int, ...], str]) failed",
       "description": "assert_type(Any, tuple[*tuple[int, ...], str]) failed",
       "line": 158,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 49,
       "stop_line": 158
     },
@@ -8225,7 +8225,7 @@
       "concise_description": "assert_type(Any, tuple[*tuple[int, ...], str]) failed",
       "description": "assert_type(Any, tuple[*tuple[int, ...], str]) failed",
       "line": 159,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 49,
       "stop_line": 159
     },
@@ -8279,7 +8279,7 @@
       "concise_description": "assert_type(list[int], list[int] | set[int]) failed",
       "description": "assert_type(list[int], list[int] | set[int]) failed",
       "line": 43,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 55,
       "stop_line": 43
     },
@@ -8696,7 +8696,7 @@
       "concise_description": "assert_type(IO[str], IO[bytes]) failed",
       "description": "assert_type(IO[str], IO[bytes]) failed",
       "line": 50,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 43,
       "stop_line": 50
     },
@@ -8706,7 +8706,7 @@
       "concise_description": "assert_type(IO[str], IO[Any]) failed",
       "description": "assert_type(IO[str], IO[Any]) failed",
       "line": 51,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 44,
       "stop_line": 51
     },
@@ -8726,7 +8726,7 @@
       "concise_description": "assert_type(Matrix[Literal[2], TypeVar[C]], Matrix[Literal[2], Literal[7]]) failed",
       "description": "assert_type(Matrix[Literal[2], TypeVar[C]], Matrix[Literal[2], Literal[7]]) failed",
       "line": 72,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 51,
       "stop_line": 72
     },
@@ -8778,7 +8778,7 @@
       "concise_description": "assert_type(str, LiteralString) failed",
       "description": "assert_type(str, LiteralString) failed",
       "line": 48,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 38,
       "stop_line": 48
     },
@@ -8788,7 +8788,7 @@
       "concise_description": "assert_type(str, LiteralString) failed",
       "description": "assert_type(str, LiteralString) failed",
       "line": 52,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 49,
       "stop_line": 52
     },
@@ -8818,7 +8818,7 @@
       "concise_description": "assert_type(str, LiteralString) failed",
       "description": "assert_type(str, LiteralString) failed",
       "line": 63,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 43,
       "stop_line": 63
     },
@@ -8838,7 +8838,7 @@
       "concise_description": "assert_type(Any, str) failed",
       "description": "assert_type(Any, str) failed",
       "line": 68,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 33,
       "stop_line": 68
     },
@@ -8868,7 +8868,7 @@
       "concise_description": "assert_type(str, Literal['hello']) failed",
       "description": "assert_type(str, Literal['hello']) failed",
       "line": 111,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 37,
       "stop_line": 111
     },
@@ -8878,7 +8878,7 @@
       "concise_description": "assert_type(str, LiteralString) failed",
       "description": "assert_type(str, LiteralString) failed",
       "line": 116,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 35,
       "stop_line": 116
     },
@@ -8908,7 +8908,7 @@
       "concise_description": "assert_type(C, B) failed",
       "description": "assert_type(C, B) failed",
       "line": 166,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 29,
       "stop_line": 166
     },
@@ -8918,7 +8918,7 @@
       "concise_description": "assert_type(C, A) failed",
       "description": "assert_type(C, A) failed",
       "line": 167,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 167
     },
@@ -9552,7 +9552,7 @@
       "concise_description": "assert_type(tuple[?_TypeVar, ?_TypeVar], tuple[str, str]) failed",
       "description": "assert_type(tuple[?_TypeVar, ?_TypeVar], tuple[str, str]) failed",
       "line": 17,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 44,
       "stop_line": 17
     },
@@ -9562,7 +9562,7 @@
       "concise_description": "assert_type(set[?_TypeVar], set[int]) failed",
       "description": "assert_type(set[?_TypeVar], set[int]) failed",
       "line": 32,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 35,
       "stop_line": 32
     },
@@ -9572,7 +9572,7 @@
       "concise_description": "assert_type(A, B) failed",
       "description": "assert_type(A, B) failed",
       "line": 89,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 29,
       "stop_line": 89
     },
@@ -9582,7 +9582,7 @@
       "concise_description": "assert_type(A, B) failed",
       "description": "assert_type(A, B) failed",
       "line": 93,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 29,
       "stop_line": 93
     },
@@ -9624,7 +9624,7 @@
       "concise_description": "assert_type(tuple[str, ...], tuple[str, str]) failed",
       "description": "assert_type(tuple[str, ...], tuple[str, str]) failed",
       "line": 19,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 44,
       "stop_line": 19
     },
@@ -9654,7 +9654,7 @@
       "concise_description": "assert_type(Awaitable[int] | int, int) failed",
       "description": "assert_type(Awaitable[int] | int, int) failed",
       "line": 38,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 38
     },
@@ -9714,7 +9714,7 @@
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
       "line": 72,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 31,
       "stop_line": 72
     },
@@ -9724,7 +9724,7 @@
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
       "line": 76,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 31,
       "stop_line": 76
     },
@@ -9734,7 +9734,7 @@
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
       "line": 80,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 31,
       "stop_line": 80
     },
@@ -9744,7 +9744,7 @@
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
       "line": 84,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 31,
       "stop_line": 84
     },
@@ -9754,7 +9754,7 @@
       "concise_description": "assert_type(object, int) failed",
       "description": "assert_type(object, int) failed",
       "line": 88,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 31,
       "stop_line": 88
     },
@@ -9764,7 +9764,7 @@
       "concise_description": "assert_type(object, B) failed",
       "description": "assert_type(object, B) failed",
       "line": 92,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 29,
       "stop_line": 92
     },
@@ -9774,7 +9774,7 @@
       "concise_description": "assert_type(object, B) failed",
       "description": "assert_type(object, B) failed",
       "line": 96,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 29,
       "stop_line": 96
     },
@@ -10390,7 +10390,7 @@
       "concise_description": "assert_type(Any, list[int]) failed",
       "description": "assert_type(Any, list[int]) failed",
       "line": 81,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 27,
       "stop_line": 81
     }
@@ -11112,7 +11112,7 @@
       "concise_description": "assert_type(type, type[Any]) failed",
       "description": "assert_type(type, type[Any]) failed",
       "line": 84,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 84
     },
@@ -11142,7 +11142,7 @@
       "concise_description": "assert_type(Any, tuple[type, ...]) failed",
       "description": "assert_type(Any, tuple[type, ...]) failed",
       "line": 102,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 45,
       "stop_line": 102
     },
@@ -11152,7 +11152,7 @@
       "concise_description": "assert_type(Any, tuple[type, ...]) failed",
       "description": "assert_type(Any, tuple[type, ...]) failed",
       "line": 106,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 45,
       "stop_line": 106
     },
@@ -11192,7 +11192,7 @@
       "concise_description": "assert_type(Any, tuple[type, ...]) failed",
       "description": "assert_type(Any, tuple[type, ...]) failed",
       "line": 110,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 45,
       "stop_line": 110
     },
@@ -11222,7 +11222,7 @@
       "concise_description": "assert_type(Type, type[Any]) failed",
       "description": "assert_type(Type, type[Any]) failed",
       "line": 137,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 137
     },
@@ -11232,7 +11232,7 @@
       "concise_description": "assert_type(type, type[Any]) failed",
       "description": "assert_type(type, type[Any]) failed",
       "line": 139,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 139
     },
@@ -11302,7 +11302,7 @@
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 160,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 160
     },
@@ -11312,7 +11312,7 @@
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 161,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 30,
       "stop_line": 161
     },
@@ -11444,7 +11444,7 @@
       "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed",
       "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed",
       "line": 74,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 37,
       "stop_line": 74
     },
@@ -11454,7 +11454,7 @@
       "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, int] | tuple[str, str]) failed",
       "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, int] | tuple[str, str]) failed",
       "line": 78,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 60,
       "stop_line": 78
     },
@@ -11464,7 +11464,7 @@
       "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, str, int]) failed",
       "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, str, int]) failed",
       "line": 82,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 47,
       "stop_line": 82
     },
@@ -11484,7 +11484,7 @@
       "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed",
       "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed",
       "line": 95,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 41,
       "stop_line": 95
     },
@@ -11504,7 +11504,7 @@
       "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, int] | tuple[str, str]) failed",
       "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, int] | tuple[str, str]) failed",
       "line": 99,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 64,
       "stop_line": 99
     },
@@ -11534,7 +11534,7 @@
       "concise_description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, str, int]) failed",
       "description": "assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, str, int]) failed",
       "line": 103,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 51,
       "stop_line": 103
     },
@@ -11544,7 +11544,7 @@
       "concise_description": "assert_type(tuple[int | str, int | str], tuple[int | str, str]) failed",
       "description": "assert_type(tuple[int | str, int | str], tuple[int | str, str]) failed",
       "line": 115,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 53,
       "stop_line": 115
     },
@@ -11554,7 +11554,7 @@
       "concise_description": "assert_type(tuple[int | str, int | str], tuple[int | str, int]) failed",
       "description": "assert_type(tuple[int | str, int | str], tuple[int | str, int]) failed",
       "line": 117,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 53,
       "stop_line": 117
     },
@@ -11564,7 +11564,7 @@
       "concise_description": "assert_type(Sequence[int | tuple[str, ...]], Sequence[int | str]) failed",
       "description": "assert_type(Sequence[int | tuple[str, ...]], Sequence[int | str]) failed",
       "line": 139,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 51,
       "stop_line": 139
     },
@@ -12127,7 +12127,7 @@
       "concise_description": "assert_type(object | None, str | None) failed",
       "description": "assert_type(object | None, str | None) failed",
       "line": 60,
-      "name": "unknown",
+      "name": "assert-type",
       "stop_column": 52,
       "stop_line": 60
     },
