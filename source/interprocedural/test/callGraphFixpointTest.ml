@@ -143,7 +143,7 @@ let assert_higher_order_call_graph_fixpoint
         actual_call_graph);
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
   SharedMemory.cleanup define_call_graphs;
-  CallGraphFixpoint.cleanup fixpoint_state;
+  CallGraphFixpoint.cleanup ~keep_models:false fixpoint_state.CallGraphFixpoint.fixpoint;
   CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
   ()
 

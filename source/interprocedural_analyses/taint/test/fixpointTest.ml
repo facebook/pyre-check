@@ -112,7 +112,7 @@ let assert_fixpoint
   let () =
     List.iter ~f:(check_expectation ~pyre_api ~taint_configuration ~get_model ~get_errors) expect
   in
-  TaintFixpoint.State.cleanup fixpoint.TaintFixpoint.state;
+  TaintFixpoint.State.cleanup ~keep_models:false fixpoint.TaintFixpoint.state;
   TestEnvironment.cleanup test_environment
 
 

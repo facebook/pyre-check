@@ -236,7 +236,7 @@ module Make (Analysis : ANALYSIS) : sig
 
     (** Remove the fixpoint state from the shared memory. This must be called before computing
         another fixpoint. *)
-    val cleanup : t -> unit
+    val cleanup : keep_models:bool -> t -> unit
 
     val targets : t -> Target.t list
 

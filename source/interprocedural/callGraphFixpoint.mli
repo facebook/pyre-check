@@ -32,4 +32,4 @@ val analyzed_callables : fixpoint -> Target.t list
 
 val get_model : t -> Target.t -> CallGraph.HigherOrderCallGraph.t option
 
-val cleanup : t -> unit
+val cleanup : keep_models:bool -> fixpoint -> unit

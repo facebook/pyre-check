@@ -813,6 +813,10 @@ let run_taint_analysis
           definitions
       in
       let () = StepLogger.finish step_logger in
+      let () =
+        Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.cleanup
+          callables_to_decorators_map
+      in
       decorator_resolution
     else
       Interprocedural.CallGraph.DecoratorResolution.Results.empty
@@ -938,6 +942,7 @@ let run_taint_analysis
       in
       let () = StepLogger.finish step_logger in
       let () = Interprocedural.CallGraph.SharedMemory.cleanup original_define_call_graphs in
+      let () = Interprocedural.CallGraphFixpoint.cleanup ~keep_models:true fixpoint in
       dependency_graph, get_define_call_graph, Some fixpoint
     else
       let get_define_call_graph define_call_graphs callable =

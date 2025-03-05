@@ -192,7 +192,7 @@ let get_model { fixpoint = { state; _ }; _ } =
   Fixpoint.State.ReadOnly.get_model (Fixpoint.State.read_only state)
 
 
-let cleanup { fixpoint = { state; _ }; _ } = Fixpoint.State.cleanup state
+let cleanup ~keep_models { Fixpoint.state; _ } = Fixpoint.State.cleanup ~keep_models state
 
 let get_define_call_graph ~state callable =
   let open Option in

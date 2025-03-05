@@ -468,7 +468,7 @@ module TestEnvironment = struct
         whole_program_call_graph = _;
         define_call_graphs;
         get_define_call_graph = _;
-        call_graph_fixpoint_state;
+        call_graph_fixpoint_state = { CallGraphFixpoint.fixpoint; _ };
         override_graph_heap = _;
         override_graph_shared_memory;
         initial_callables = _;
@@ -486,7 +486,7 @@ module TestEnvironment = struct
       }
     =
     CallGraph.SharedMemory.cleanup define_call_graphs;
-    CallGraphFixpoint.cleanup call_graph_fixpoint_state;
+    CallGraphFixpoint.cleanup ~keep_models:false fixpoint;
     OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
     (* Clean up nitial_models, in case we didn't actually compute the fixpoint for that test. In
        tests where we do compute the fixpoint, it's fine to cleanup models twice. *)
@@ -1037,7 +1037,7 @@ let end_to_end_integration_test path context =
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:""
     in
-    let () = TaintFixpoint.State.cleanup fixpoint.TaintFixpoint.state in
+    let () = TaintFixpoint.State.cleanup ~keep_models:false fixpoint.TaintFixpoint.state in
     let () = TestEnvironment.cleanup test_environment in
     divergent_files, serialized_models
   in

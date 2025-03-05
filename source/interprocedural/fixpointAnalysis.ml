@@ -424,9 +424,9 @@ module Make (Analysis : ANALYSIS) = struct
 
     (** Remove the fixpoint state from the shared memory. This must be called before computing
         another fixpoint. *)
-    let cleanup ({ shared_models; shared_fixpoint; shared_results } as state) =
+    let cleanup ~keep_models ({ shared_models; shared_fixpoint; shared_results } as state) =
       let targets = state |> targets |> SharedResults.KeySet.of_list in
-      let () = SharedModels.cleanup ~clean_old:true shared_models in
+      let () = if keep_models then () else SharedModels.cleanup ~clean_old:true shared_models in
       let () = SharedResults.remove_batch shared_results targets in
       let () = SharedFixpoint.remove_batch shared_fixpoint targets in
       let () = SharedFixpoint.remove_old_batch shared_fixpoint targets in
