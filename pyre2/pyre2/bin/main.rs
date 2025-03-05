@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-mod notify_watcher;
-
 use std::backtrace::Backtrace;
 use std::env::args_os;
 use std::path::Path;
@@ -22,6 +20,7 @@ use pyre2::run::Command;
 use pyre2::run::CommandExitStatus;
 use pyre2::ConfigFile;
 use pyre2::Globs;
+use pyre2::NotifyWatcher;
 use pyre2::Watcher;
 
 #[derive(Debug, Parser)]
@@ -97,7 +96,7 @@ fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandEx
             args,
         } => {
             let watcher: Option<Box<dyn Watcher>> = if watch {
-                Some(Box::new(notify_watcher::NotifyWatcher::new()?))
+                Some(Box::new(NotifyWatcher::new()?))
             } else {
                 None
             };
