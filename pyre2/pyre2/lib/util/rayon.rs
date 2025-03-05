@@ -17,6 +17,8 @@ pub fn init_rayon(threads: Option<usize>) {
     }
     // This fails if we call it twice, but we probably called it previously with the same
     // value, so don't worry about it.
-    let _ = builder.build_global();
-    debug!("Running with `{}` threads", rayon::current_num_threads());
+    if builder.build_global().is_ok() {
+        // Only print the message once
+        debug!("Running with {} threads", rayon::current_num_threads());
+    }
 }
