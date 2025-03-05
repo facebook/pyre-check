@@ -45,7 +45,7 @@ c4: Coord = {"x": 1, "y": "foo"}  # E: `Literal['foo']` is not assignable to Typ
 c5: Coord = {"x": 1}  # E: Missing required key `y` for TypedDict `Coord`
 c6: Coord = {"x": 1, **{"y": 2, **{"z": 3}}}
 d: dict[str, int] = {}
-c7: Coord = {"x": 1, **d}  # E: EXPECTED dict[str, int] <: TypedDict[Coord]
+c7: Coord = {"x": 1, **d}  # E: `dict[str, int]` is not assignable to `TypedDict[Coord]`
 
 def foo(c: Coord) -> None:
     pass
@@ -115,7 +115,7 @@ class Coord[T](TypedDict):
     y: T
 def foo(c: Coord[int]):
     x: int = c["x"]
-    y: str = c["y"]  # E: EXPECTED int <: str
+    y: str = c["y"]  # E: `int` is not assignable to `str`
     "#,
 );
 
@@ -175,8 +175,8 @@ class Pair(TypedDict):
 
 def foo(a: Coord, b: Coord3D, c: Pair):
     coord: Coord = b
-    coord2: Coord3D = a  # E: EXPECTED TypedDict[Coord] <: TypedDict[Coord3D]
-    coord3: Coord = c  # E: TypedDict[Pair] <: TypedDict[Coord]
+    coord2: Coord3D = a  # E: `TypedDict[Coord]` is not assignable to `TypedDict[Coord3D]`
+    coord3: Coord = c  # E: `TypedDict[Pair]` is not assignable to `TypedDict[Coord]`
     coord4: Pair = a
     "#,
 );
@@ -193,8 +193,8 @@ class CoordNotRequired(TypedDict):
     y: NotRequired[int]
 
 def foo(a: Coord, b: CoordNotRequired):
-    coord: Coord = b  # E: EXPECTED TypedDict[CoordNotRequired] <: TypedDict[Coord]
-    coord2: CoordNotRequired = a  # E: EXPECTED TypedDict[Coord] <: TypedDict[CoordNotRequired]
+    coord: Coord = b  # E: `TypedDict[CoordNotRequired]` is not assignable to `TypedDict[Coord]`
+    coord2: CoordNotRequired = a  # E: `TypedDict[Coord]` is not assignable to `TypedDict[CoordNotRequired]`
     "#,
 );
 

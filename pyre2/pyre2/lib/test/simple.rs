@@ -353,8 +353,8 @@ testcase!(
     r#"
 x: int = 0
 class C:
-    x: str = x # E: EXPECTED Literal[0] <: str
-    y: int = x # E: EXPECTED str <: int
+    x: str = x # E: `Literal[0]` is not assignable to `str`
+    y: int = x # E: `str` is not assignable to `int`
     def m(self) -> str:
         # x refers to global x: int
         return x # E: Returned type `Literal[0]` is not assignable to declared return type `str`
@@ -383,7 +383,7 @@ value: """
 
 value = 1
 value = "test"
-value = None  # E: None <: int | list[int] | str
+value = None  # E: `None` is not assignable to variable `value` with type `int | list[int] | str`
 "#,
 );
 
@@ -406,7 +406,7 @@ from typing import Final, assert_type, Literal
 x: Final[int] = 1
 y: Final = "test"
 z: Final[str]
-w: Final[int] = "bad"  # E: Literal['bad'] <: int
+w: Final[int] = "bad"  # E: `Literal['bad']` is not assignable to `int`
 
 assert_type(x, Literal[1])
 assert_type(y, Literal['test'])
@@ -659,7 +659,7 @@ testcase!(
     r#"
 from typing import assert_type
 x1: dict[str, int] = {"foo": 1, **{"bar": 2}}
-x2: dict[str, int] = {"foo": 1, **{"bar": "bar"}}  # E: EXPECTED dict[str, int | str] <: dict[str, int]
+x2: dict[str, int] = {"foo": 1, **{"bar": "bar"}}  # E: `dict[str, int | str]` is not assignable to `dict[str, int]`
 assert_type({"foo": 1, **{"bar": "bar"}}, dict[str, int | str])
 {"foo": 1, **1}  # E: Expected a mapping, got Literal[1]
 "#,
@@ -671,7 +671,7 @@ testcase!(
 from typing import Mapping, assert_type
 def test(m: Mapping[str, int]) -> None:
     x1: dict[str, int] = {**m}
-    x2: dict[int, int] = {**m} # E: EXPECTED dict[str, int] <: dict[int, int]
+    x2: dict[int, int] = {**m} # E: `dict[str, int]` is not assignable to `dict[int, int]`
     assert_type({"foo": 1, **m}, dict[str, int])
 "#,
 );
@@ -683,7 +683,7 @@ from typing import assert_type
 class Counter[T](dict[T, int]): ...
 def test(c: Counter[str]) -> None:
     x1: dict[str, int] = {**c}
-    x2: dict[int, int] = {**c}  # E: EXPECTED dict[str, int] <: dict[int, int]
+    x2: dict[int, int] = {**c}  # E: `dict[str, int]` is not assignable to `dict[int, int]`
     assert_type({"foo": 1, **c}, dict[str, int])
 "#,
 );
@@ -706,7 +706,7 @@ x: int = "1"  # type: ignore
 # type: ignore
 y: int = "2"
 
-z: int = "3"  # E: Literal['3'] <: int
+z: int = "3"  # E: `Literal['3']` is not assignable to `int`
 "#,
 );
 
@@ -958,7 +958,7 @@ testcase!(
     test_reassign_parameter,
     r#"
 def foo(x: int):
-    x = "test"  # E: Literal['test'] <: int
+    x = "test"  # E: `Literal['test']` is not assignable to variable `x` with type `int`
 "#,
 );
 

@@ -132,9 +132,9 @@
     "Line 57: Expected 1 errors",
     "Line 51: Unexpected errors ['assert_type(int, tuple[int, ...]) failed']",
     "Line 52: Unexpected errors ['assert_type(int, dict[str, int]) failed']",
-    "Line 155: Unexpected errors ['EXPECTED Proto3 <: Proto4[Ellipsis]']",
-    "Line 156: Unexpected errors ['EXPECTED Proto4[Ellipsis] <: Proto3']",
-    "Line 157: Unexpected errors ['EXPECTED Proto7 <: Proto6']",
+    "Line 155: Unexpected errors ['`Proto3` is not assignable to `Proto4[Ellipsis]`']",
+    "Line 156: Unexpected errors ['`Proto4[Ellipsis]` is not assignable to `Proto3`']",
+    "Line 157: Unexpected errors ['`Proto7` is not assignable to `Proto6`']",
     "Line 171: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback1, type[(ParamSpec(ParamSpec[P])) -> str]]\"]",
     "Line 174: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback1, type[(ParamSpec(ParamSpec[P])) -> str]]\"]",
     "Line 175: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, type[(int, ParamSpec(ParamSpec[P])) -> str]]\"]",
@@ -329,9 +329,9 @@
     "Lines 58, 61: Expected error (tag 'DC1')",
     "Lines 64, 67: Expected error (tag 'DC2')",
     "Lines 70, 73: Expected error (tag 'DC3')",
-    "Line 72: Unexpected errors ['EXPECTED Literal[0] <: InitVar[int]']",
+    "Line 72: Unexpected errors ['`Literal[0]` is not assignable to `InitVar[int]`']",
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed']",
-    "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']"
+    "Line 205: Unexpected errors ['`DC15` is not assignable to `DataclassProto`']"
   ],
   "directives_assert_type.py": [],
   "directives_cast.py": [],
@@ -356,13 +356,13 @@
     "Line 17: Unexpected errors ['revealed type: ForwardReference']"
   ],
   "directives_type_checking.py": [
-    "Line 11: Unexpected errors [\"EXPECTED Literal[''] <: int\"]",
+    "Line 11: Unexpected errors [\"`Literal['']` is not assignable to `int`\"]",
     "Line 16: Unexpected errors ['Inconsistent type annotations for b: list[str], list[int]']",
     "Line 18: Unexpected errors ['assert_type(list[int] | list[str], list[int]) failed']"
   ],
   "directives_type_ignore.py": [],
   "directives_type_ignore_file1.py": [
-    "Line 16: Unexpected errors [\"EXPECTED Literal[''] <: int\"]"
+    "Line 16: Unexpected errors [\"`Literal['']` is not assignable to `int`\"]"
   ],
   "directives_type_ignore_file2.py": [],
   "directives_version_platform.py": [],
@@ -507,7 +507,7 @@
     "Line 116: Expected 1 errors",
     "Line 121: Expected 1 errors",
     "Line 125: Expected 1 errors",
-    "Line 50: Unexpected errors ['EXPECTED (self: CallableAttribute) -> int <: (Self) -> int']",
+    "Line 50: Unexpected errors ['`(self: CallableAttribute) -> int` is not assignable to `(Self) -> int`']",
     "Line 60: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)']",
     "Line 63: Unexpected errors ['EXPECTED HasNestedFunction <: Self']",
     "Line 93: Unexpected errors ['Object of class `Foo3` has no attribute `child_value`']"
@@ -524,13 +524,13 @@
     "Line 33: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access capitalize)']"
   ],
   "generics_syntax_infer_variance.py": [
-    "Line 28: Unexpected errors ['EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]']",
-    "Line 36: Unexpected errors ['EXPECTED ShouldBeCovariant2[int] <: ShouldBeCovariant2[float]']",
-    "Line 45: Unexpected errors ['EXPECTED ShouldBeCovariant3[int] <: ShouldBeCovariant3[float]']",
-    "Line 54: Unexpected errors ['EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]']",
-    "Line 67: Unexpected errors ['EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]']",
-    "Line 78: Unexpected errors ['EXPECTED ShouldBeCovariant6[int] <: ShouldBeCovariant6[float]']",
-    "Line 149: Unexpected errors ['EXPECTED ShouldBeContravariant1[float] <: ShouldBeContravariant1[int]']"
+    "Line 28: Unexpected errors ['`ShouldBeCovariant1[int]` is not assignable to `ShouldBeCovariant1[float]`']",
+    "Line 36: Unexpected errors ['`ShouldBeCovariant2[int]` is not assignable to `ShouldBeCovariant2[float]`']",
+    "Line 45: Unexpected errors ['`ShouldBeCovariant3[int]` is not assignable to `ShouldBeCovariant3[float]`']",
+    "Line 54: Unexpected errors ['`ShouldBeCovariant4[int]` is not assignable to `ShouldBeCovariant4[float]`']",
+    "Line 67: Unexpected errors ['`ShouldBeCovariant5[int]` is not assignable to `ShouldBeCovariant5[float]`']",
+    "Line 78: Unexpected errors ['`ShouldBeCovariant6[int]` is not assignable to `ShouldBeCovariant6[float]`']",
+    "Line 149: Unexpected errors ['`ShouldBeContravariant1[float]` is not assignable to `ShouldBeContravariant1[int]`']"
   ],
   "generics_syntax_scoping.py": [
     "Line 14: Expected 1 errors",
@@ -617,16 +617,16 @@
     "Lines 195, 196: Expected error (tag 'ContraToContraToContra_WithTA')"
   ],
   "generics_variance_inference.py": [
-    "Line 26: Unexpected errors ['EXPECTED ClassA[float, int, int] <: ClassA[float, int, float]']",
-    "Line 29: Unexpected errors ['EXPECTED ClassA[int, float, float] <: ClassA[int, int, float]']",
-    "Line 40: Unexpected errors ['EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]']",
-    "Line 48: Unexpected errors ['EXPECTED ShouldBeCovariant2[int] <: ShouldBeCovariant2[float]']",
-    "Line 57: Unexpected errors ['EXPECTED ShouldBeCovariant3[int] <: ShouldBeCovariant3[float]']",
-    "Line 66: Unexpected errors ['EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]']",
-    "Line 79: Unexpected errors ['EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]']",
-    "Line 150: Unexpected errors ['EXPECTED ShouldBeContravariant1[float] <: ShouldBeContravariant1[int]']",
-    "Line 182: Unexpected errors ['EXPECTED ShouldBeCovariant6[int] <: ShouldBeCovariant6[float]']",
-    "Line 193: Unexpected errors ['EXPECTED ShouldBeContravariant2[float] <: ShouldBeContravariant2[int]']"
+    "Line 26: Unexpected errors ['`ClassA[float, int, int]` is not assignable to `ClassA[float, int, float]`']",
+    "Line 29: Unexpected errors ['`ClassA[int, float, float]` is not assignable to `ClassA[int, int, float]`']",
+    "Line 40: Unexpected errors ['`ShouldBeCovariant1[int]` is not assignable to `ShouldBeCovariant1[float]`']",
+    "Line 48: Unexpected errors ['`ShouldBeCovariant2[int]` is not assignable to `ShouldBeCovariant2[float]`']",
+    "Line 57: Unexpected errors ['`ShouldBeCovariant3[int]` is not assignable to `ShouldBeCovariant3[float]`']",
+    "Line 66: Unexpected errors ['`ShouldBeCovariant4[int]` is not assignable to `ShouldBeCovariant4[float]`']",
+    "Line 79: Unexpected errors ['`ShouldBeCovariant5[int]` is not assignable to `ShouldBeCovariant5[float]`']",
+    "Line 150: Unexpected errors ['`ShouldBeContravariant1[float]` is not assignable to `ShouldBeContravariant1[int]`']",
+    "Line 182: Unexpected errors ['`ShouldBeCovariant6[int]` is not assignable to `ShouldBeCovariant6[float]`']",
+    "Line 193: Unexpected errors ['`ShouldBeContravariant2[float]` is not assignable to `ShouldBeContravariant2[int]`']"
   ],
   "historical_positional.py": [
     "Line 18: Expected 1 errors",
@@ -702,7 +702,7 @@
     "Line 157: Expected 1 errors",
     "Line 340: Expected 1 errors",
     "Line 341: Expected 1 errors",
-    "Line 281: Unexpected errors ['EXPECTED Concrete5_Good2 <: Template5']"
+    "Line 281: Unexpected errors ['`Concrete5_Good2` is not assignable to `Template5`']"
   ],
   "protocols_explicit.py": [
     "Line 27: Expected 1 errors",
@@ -715,14 +715,14 @@
   ],
   "protocols_generic.py": [
     "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access get_parent)']",
-    "Line 144: Unexpected errors ['EXPECTED ConcreteHasProperty1 <: HasPropertyProto']",
-    "Line 145: Unexpected errors ['EXPECTED ConcreteHasProperty2 <: HasPropertyProto']"
+    "Line 144: Unexpected errors ['`ConcreteHasProperty1` is not assignable to `HasPropertyProto`']",
+    "Line 145: Unexpected errors ['`ConcreteHasProperty2` is not assignable to `HasPropertyProto`']"
   ],
   "protocols_merging.py": [
     "Line 82: Expected 1 errors"
   ],
   "protocols_modules.py": [
-    "Line 25: Unexpected errors ['EXPECTED Module[_protocols_modules1] <: Options1']"
+    "Line 25: Unexpected errors ['`Module[_protocols_modules1]` is not assignable to `Options1`']"
   ],
   "protocols_recursive.py": [
     "Line 80: Unexpected errors ['EXPECTED ImplB <: ProtoA[Never, @_]']",
@@ -737,10 +737,10 @@
     "Line 96: Expected 1 errors"
   ],
   "protocols_self.py": [
-    "Line 32: Unexpected errors ['EXPECTED One <: Copyable']",
-    "Line 33: Unexpected errors ['EXPECTED Other <: Copyable']",
-    "Line 72: Unexpected errors ['EXPECTED C2[str] <: P2Parent[str]']",
-    "Line 73: Unexpected errors ['EXPECTED C2[str] <: P2Child[str]']"
+    "Line 32: Unexpected errors ['`One` is not assignable to variable `c` with type `Copyable`']",
+    "Line 33: Unexpected errors ['`Other` is not assignable to variable `c` with type `Copyable`']",
+    "Line 72: Unexpected errors ['`C2[str]` is not assignable to `P2Parent[str]`']",
+    "Line 73: Unexpected errors ['`C2[str]` is not assignable to `P2Child[str]`']"
   ],
   "protocols_subtyping.py": [
     "Line 16: Expected 1 errors"
@@ -836,14 +836,14 @@
     "Line 156: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TA8, type[type[TypeVar[T]]]]\"]",
     "Line 160: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 161: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 165: Unexpected errors ['EXPECTED type <: (...) -> Any']",
-    "Line 166: Unexpected errors ['EXPECTED type <: (int, int) -> int']",
-    "Line 169: Unexpected errors ['EXPECTED type <: type[int]']",
-    "Line 170: Unexpected errors ['EXPECTED type <: type[Any]']",
+    "Line 165: Unexpected errors ['`type` is not assignable to `(...) -> Any`']",
+    "Line 166: Unexpected errors ['`type` is not assignable to `(int, int) -> int`']",
+    "Line 169: Unexpected errors ['`type` is not assignable to `type[int]`']",
+    "Line 170: Unexpected errors ['`type` is not assignable to `type[Any]`']",
     "Line 175: Unexpected errors ['Returned type `type` is not assignable to declared return type `type[?_TypeVar]`']"
   ],
   "tuples_type_compat.py": [
-    "Line 59: Unexpected errors ['EXPECTED tuple[Any] <: tuple[int, int]']",
+    "Line 59: Unexpected errors ['`tuple[Any]` is not assignable to `tuple[int, int]`']",
     "Line 74: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed']",
     "Line 78: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, int] | tuple[str, str]) failed']",
     "Line 82: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, str, int]) failed']",
@@ -882,7 +882,7 @@
   "typeddicts_readonly_consistency.py": [
     "Line 38: Expected 1 errors",
     "Line 81: Expected 1 errors",
-    "Line 79: Unexpected errors ['EXPECTED TypedDict[C2] <: TypedDict[A2]']"
+    "Line 79: Unexpected errors ['`TypedDict[C2]` is not assignable to `TypedDict[A2]`']"
   ],
   "typeddicts_readonly_inheritance.py": [
     "Line 94: Expected 1 errors",
@@ -908,11 +908,11 @@
   ],
   "typeddicts_type_consistency.py": [
     "Line 21: Expected 1 errors",
-    "Line 91: Unexpected errors ['EXPECTED object | @_ <: str']",
-    "Line 92: Unexpected errors ['EXPECTED object | @_ <: int']",
-    "Line 97: Unexpected errors ['EXPECTED object | None <: str | None']",
-    "Line 103: Unexpected errors ['EXPECTED object | @_ <: int']",
-    "Line 105: Unexpected errors ['EXPECTED object | @_ <: int | str']",
+    "Line 91: Unexpected errors ['`object | @_` is not assignable to `str`']",
+    "Line 92: Unexpected errors ['`object | @_` is not assignable to `int`']",
+    "Line 97: Unexpected errors ['`object | None` is not assignable to `str | None`']",
+    "Line 103: Unexpected errors ['`object | @_` is not assignable to `int`']",
+    "Line 105: Unexpected errors ['`object | @_` is not assignable to `int | str`']",
     "Line 151: Unexpected errors [\"`dict[str, int]` is not assignable to TypedDict key `z` with type `Literal[''] | TypedDict[Inner3]`\"]"
   ],
   "typeddicts_usage.py": [

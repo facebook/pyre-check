@@ -49,7 +49,7 @@ testcase!(
     r#"
 from foo import x, X
 class Y: ...
-b: Y = x  # E: X <: Y
+b: Y = x  # E: `X` is not assignable to `Y`
 "#,
 );
 
@@ -103,7 +103,7 @@ testcase!(
     r#"
 from foo import X, x
 class X: ...
-y: X = x  # E: foo.X <: main.X
+y: X = x  # E: `foo.X` is not assignable to `main.X`
 "#,
 );
 

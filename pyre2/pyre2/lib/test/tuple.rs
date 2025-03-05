@@ -110,7 +110,7 @@ def test(x: tuple[int, str], y: tuple[int, ...], z: tuple[Any, ...]) -> None:
   a: tuple[int, int] = z
   b: tuple[int | str, ...] = x
   c: tuple[int | str, ...] = y
-  d: tuple[int, ...] = x  # E: EXPECTED tuple[int, str] <: tuple[int, ...]
+  d: tuple[int, ...] = x  # E: `tuple[int, str]` is not assignable to `tuple[int, ...]`
 "#,
 );
 
@@ -173,7 +173,7 @@ testcase!(
     test_unbounded_tuple_hint,
     r#"
 x1: tuple[str, ...] = ("ok",)
-x2: tuple[int, ...] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: tuple[int, ...]
+x2: tuple[int, ...] = ("err",)  # E: `tuple[Literal['err']]` is not assignable to `tuple[int, ...]`
     "#,
 );
 
@@ -184,8 +184,8 @@ from typing import Iterable, Literal
 x1: Iterable[Literal['ok']] = ("ok",)
 x2: Iterable = ("ok",)
 x3: object = ("ok",)
-x4: Iterable[int] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: Iterable[int]
-x5: list[int] = ("err",)  # E: EXPECTED tuple[Literal['err']] <: list[int]
+x4: Iterable[int] = ("err",)  # E: `tuple[Literal['err']]` is not assignable to `Iterable[int]`
+x5: list[int] = ("err",)  # E: `tuple[Literal['err']]` is not assignable to `list[int]`
     "#,
 );
 

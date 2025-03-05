@@ -18,8 +18,8 @@ f3: Callable[[int], int] = lambda x: 1
 reveal_type(f3)  # E: revealed type: (x: int) -> Literal[1]
 f4: Callable[[int], None] = lambda x: reveal_type(x)  # E: revealed type: int
 f5: Callable[[int], int] = lambda x: x
-f6: Callable[[int], int] = lambda x: "foo"  # E: EXPECTED (x: int) -> Literal['foo'] <: (int) -> int
-f7: Callable[[int, int], int] = lambda x: 1  # E: EXPECTED (x: int) -> Literal[1] <: (int, int) -> int
+f6: Callable[[int], int] = lambda x: "foo"  # E: `(x: int) -> Literal['foo']` is not assignable to `(int) -> int`
+f7: Callable[[int, int], int] = lambda x: 1  # E: `(x: int) -> Literal[1]` is not assignable to `(int, int) -> int`
 f8: Callable[[int], int] = lambda x: x + "foo" # E: EXPECTED Literal['foo'] <: int
 "#,
 );
@@ -81,10 +81,10 @@ class P7(Protocol):
 
 def test(p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7):
     x1: P2 = p1
-    x2: P1 = p2  # E: EXPECTED P2 <: P1
-    x3: P2 = p3  # E: EXPECTED P3 <: P2
+    x2: P1 = p2  # E: `P2` is not assignable to `P1`
+    x3: P2 = p3  # E: `P3` is not assignable to `P2`
     x4: P2 = p4
-    x5: P4 = p2  # E: EXPECTED P2 <: P4
+    x5: P4 = p2  # E: `P2` is not assignable to `P4`
     x6: P5 = p2
     x7: P2 = p5
     x8: P2 = p6
@@ -454,7 +454,7 @@ class P1(Protocol):
 class P2(Protocol):
     def __call__(self, **kwargs: Unpack[TD2]): ...
 def test(accept_td1: P1, accept_td2: P2):
-    a: P1 = accept_td2  # E: EXPECTED P2 <: P1
+    a: P1 = accept_td2  # E: `P2` is not assignable to `P1`
     b: P2 = accept_td1
 "#,
 );
@@ -474,9 +474,9 @@ class P3(Protocol):
     def __call__(self, string: str, number: int = ...): ...
 def test(accept_td: P1, kwonly_args: P2, regular_args: P3):
     a: P2 = accept_td
-    b: P3 = accept_td  # E: EXPECTED P1 <: P3
-    c: P1 = kwonly_args  # E: EXPECTED P2 <: P1
-    d: P1 = regular_args   # E: EXPECTED P3 <: P1
+    b: P3 = accept_td  # E: `P1` is not assignable to `P3`
+    c: P1 = kwonly_args  # E: `P2` is not assignable to `P1`
+    d: P1 = regular_args   # E: `P3` is not assignable to `P1`
 "#,
 );
 
@@ -498,7 +498,7 @@ class P4(Protocol):
 def test(unannotated: P1, unpacked: P2, annotated: P3, annotated_wrong: P4):
     a: P2 = unannotated
     b: P2 = annotated
-    c: P2 = annotated_wrong  # E: EXPECTED P4 <: P2
+    c: P2 = annotated_wrong  # E: `P4` is not assignable to `P2`
 "#,
 );
 
@@ -517,9 +517,9 @@ class P2(Protocol):
     def __call__(self, *, v1: int) -> None: ...
 class P3(Protocol):
     def __call__(self, *, v1: int, v2: str, v4: str) -> None: ...
-x: P1 = func1  # E: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P1
-y: P2 = func1  # E: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P2
-z: P3 = func1  # E: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P3
+x: P1 = func1  # E: `(**Unpack[TypedDict[TD]]) -> None` is not assignable to `P1`
+y: P2 = func1  # E: `(**Unpack[TypedDict[TD]]) -> None` is not assignable to `P2`
+z: P3 = func1  # E: `(**Unpack[TypedDict[TD]]) -> None` is not assignable to `P3`
 "#,
 );
 

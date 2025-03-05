@@ -119,13 +119,13 @@ testcase!(
     r#"
 from typing import Iterable, MutableSet, Literal
 x1: set[int] = {1}
-x2: set[int] = {'oops'}  # E: EXPECTED set[str] <: set[int]
-x3: set[Literal[1]] = {2}  # E: EXPECTED set[int] <: set[Literal[1]]
+x2: set[int] = {'oops'}  # E: `set[str]` is not assignable to `set[int]`
+x3: set[Literal[1]] = {2}  # E: `set[int]` is not assignable to `set[Literal[1]]`
 x4: MutableSet[int] = {1}
-x5: MutableSet[int] = {'oops'}  # E: EXPECTED set[str] <: MutableSet[int]
+x5: MutableSet[int] = {'oops'}  # E: `set[str]` is not assignable to `MutableSet[int]`
 x6: Iterable[int] = {1}
 x7: object = {1}
-x8: list[int] = {1}  # E: EXPECTED set[int] <: list[int]
+x8: list[int] = {1}  # E: `set[int]` is not assignable to `list[int]`
     "#,
 );
 
@@ -134,14 +134,14 @@ testcase!(
     r#"
 from typing import Iterable, MutableMapping, Literal
 x1: dict[str, int] = {"a": 1}
-x2: dict[str, int] = {"a": "oops"}  # E: EXPECTED dict[str, str] <: dict[str, int]
-x3: dict[str, Literal[1]] = {"a": 2} # E: EXPECTED dict[str, int] <: dict[str, Literal[1]]
+x2: dict[str, int] = {"a": "oops"}  # E: `dict[str, str]` is not assignable to `dict[str, int]`
+x3: dict[str, Literal[1]] = {"a": 2} # E: `dict[str, int]` is not assignable to `dict[str, Literal[1]]`
 x4: MutableMapping[str, int] = {"a": 1}
 x5: Iterable[str] = {"a": 1}
-x6: Iterable[int] = {"oops": 1}  # E: EXPECTED dict[str, int] <: Iterable[int]
+x6: Iterable[int] = {"oops": 1}  # E: `dict[str, int]` is not assignable to `Iterable[int]`
 x7: Iterable[Literal[4]] = {4: "a"}
 x8: object = {"a": 1}
-x9: list[str] = {"a": 1}  # E: EXPECTED dict[str, int] <: list[str]
+x9: list[str] = {"a": 1}  # E: `dict[str, int]` is not assignable to `list[str]`
     "#,
 );
 
@@ -182,16 +182,16 @@ from typing import Generator, Iterable
 class A: ...
 class B(A): ...
 x0 = ([B()] for _ in [0])
-x1a: Generator[list[A], None, None] = x0 # E: EXPECTED Generator[list[B], None, None] <: Generator[list[A], None, None]
+x1a: Generator[list[A], None, None] = x0 # E: `Generator[list[B], None, None]` is not assignable to `Generator[list[A], None, None]`
 x1b: Generator[list[A], None, None] = ([B()] for _ in [0])
-x2a: Iterable[list[A]] = x0 # E: EXPECTED Generator[list[B], None, None] <: Iterable[list[A]]
+x2a: Iterable[list[A]] = x0 # E: `Generator[list[B], None, None]` is not assignable to `Iterable[list[A]]`
 x2b: Iterable[list[A]] = ([B()] for _ in [0])
 
 # In theory, we should allow this, since the generator expression accepts _any_ send type,
 # but both Mypy and Pyright assume that the send type is `None`.
-x3: Generator[int, int, None] = (1 for _ in [1]) # E: Generator[Literal[1], None, None] <: Generator[int, int, None]
+x3: Generator[int, int, None] = (1 for _ in [1]) # E: `Generator[Literal[1], None, None]` is not assignable to `Generator[int, int, None]`
 
-x4: Generator[int, None, int] = (1 for _ in [1]) # E: Generator[Literal[1], None, None] <: Generator[int, None, int]
+x4: Generator[int, None, int] = (1 for _ in [1]) # E: `Generator[Literal[1], None, None]` is not assignable to `Generator[int, None, int]`
 "#,
 );
 
@@ -246,8 +246,8 @@ testcase!(
     test_context_lambda_arity,
     r#"
 from typing import Callable
-f: Callable[[int], None] = lambda x, y: None # E: EXPECTED (x: int, y: Unknown) -> None <: (int) -> None
-g: Callable[[int, int], None] = lambda x: None # E: EXPECTED (x: int) -> None <: (int, int) -> None
+f: Callable[[int], None] = lambda x, y: None # E: `(x: int, y: Unknown) -> None` is not assignable to `(int) -> None`
+g: Callable[[int, int], None] = lambda x: None # E: `(x: int) -> None` is not assignable to `(int, int) -> None`
 "#,
 );
 
@@ -284,10 +284,10 @@ class B(A): ...
 
 def f[T](x: T) -> T: ...
 
-x: list[A] = f([B()]) # TODO # E: EXPECTED list[B] <: list[A]
+x: list[A] = f([B()]) # TODO # E: `list[B]` is not assignable to `list[A]`
 
 y = f([B()])
-z: list[A] = y # E: EXPECTED list[B] <: list[A]
+z: list[A] = y # E: `list[B]` is not assignable to `list[A]`
 "#,
 );
 
@@ -301,7 +301,7 @@ class B(A): ...
 class C[T]:
     def __init__(self, x: T) -> None: ...
 
-x: C[list[A]] = C([B()]) # E: EXPECTED C[list[B]] <: C[list[A]]
+x: C[list[A]] = C([B()]) # E: `C[list[B]]` is not assignable to `C[list[A]]`
 "#,
 );
 
@@ -340,7 +340,7 @@ class Foo[T]:
     def get(self) -> T: ...
 
 # Should propagate the context to the argument 42
-x: Foo[Literal[42]] = Foo(42)  # E: EXPECTED Foo[int] <: Foo[Literal[42]]
+x: Foo[Literal[42]] = Foo(42)  # E: `Foo[int]` is not assignable to `Foo[Literal[42]]`
 assert_type(x.get(), Literal[42])
 "#,
 );

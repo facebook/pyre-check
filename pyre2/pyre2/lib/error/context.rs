@@ -76,6 +76,9 @@ pub enum TypeCheckKind {
     Attribute(Name),
     /// A check against a user-declared type annotation on a variable name.
     AnnotatedName(Name),
+    /// var: SomeType = some_value check. This is separate from AnnotatedName because we can
+    /// emit a more compact error message for this case.
+    AnnAssign,
     // TODO: categorize all type checks and remove Unknown and Test designations
     Unknown,
     #[allow(dead_code)]

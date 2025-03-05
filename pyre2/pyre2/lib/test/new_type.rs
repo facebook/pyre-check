@@ -15,7 +15,7 @@ from typing import NewType, assert_type
 
 UserId = NewType("UserId", int)
 UserId("user")  # E: EXPECTED Literal['user'] <: int
-u1: UserId = 42 # E: EXPECTED Literal[42] <: UserId
+u1: UserId = 42 # E: `Literal[42]` is not assignable to `UserId`
 u2: UserId = UserId(42)
 
 assert_type(UserId(5) + 1, int)

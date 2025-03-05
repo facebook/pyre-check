@@ -40,7 +40,7 @@ testcase!(
     r#"
 from typing import Literal
 y: int = 1
-x: Literal[-1] = +y # E: EXPECTED Literal[1] <: Literal[-1]
+x: Literal[-1] = +y # E: `Literal[1]` is not assignable to `Literal[-1]`
 "#,
 );
 
@@ -58,7 +58,7 @@ testcase!(
     r#"
 from typing import Literal
 y: int = -2
-x: Literal[0] = ~y # E: EXPECTED Literal[1] <: Literal[0]
+x: Literal[0] = ~y # E: `Literal[1]` is not assignable to `Literal[0]`
 "#,
 );
 

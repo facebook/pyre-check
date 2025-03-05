@@ -34,6 +34,7 @@ use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::alt::types::yields::YieldFromResult;
 use crate::alt::types::yields::YieldResult;
 use crate::ast::Ast;
+use crate::binding::binding::AnnotationStyle;
 use crate::binding::binding::AnnotationWithTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -1412,16 +1413,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Binding::NameAssign(name, annot_key, expr) => {
-                let annot = annot_key.as_ref().map(|(_, k)| self.get_idx(*k));
-                let tcc = TypeCheckContext::unknown();
+                let annot = annot_key.as_ref().map(|(style, k)| {
+                    let tcc = TypeCheckContext::of_kind(match style {
+                        AnnotationStyle::Direct => TypeCheckKind::AnnAssign,
+                        AnnotationStyle::Forwarded => TypeCheckKind::AnnotatedName(name.clone()),
+                    });
+                    (self.get_idx(*k), tcc)
+                });
                 let ty = self.expr(
                     expr,
-                    annot.as_ref().and_then(|x| x.ty().map(|t| (t, &tcc))),
+                    annot.as_ref().and_then(|(x, tcc)| x.ty().map(|t| (t, tcc))),
                     errors,
                 );
                 let expr_range = expr.range();
                 match (annot, &ty) {
-                    (Some(annot), _)
+                    (Some((annot, _)), _)
                         if annot.annotation.qualifiers.contains(&Qualifier::TypeAlias) =>
                     {
                         self.as_type_alias(

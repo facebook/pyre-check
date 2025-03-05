@@ -48,7 +48,7 @@ def f(x: int) -> None:
 testcase!(
     test_error_assign,
     r#"
-x: str = 1  # E: Literal[1] <: str
+x: str = 1  # E: `Literal[1]` is not assignable to `str`
 y = x
 "#,
 );
@@ -95,7 +95,7 @@ testcase!(
     test_assign_at_types,
     r#"
 a: int = 3
-a = "test"  # E: Literal['test'] <: int
+a = "test"  # E: `Literal['test']` is not assignable to variable `a` with type `int`
 "#,
 );
 
@@ -104,7 +104,7 @@ testcase!(
     r#"
 from typing import Optional
 x: Optional[int] = 42
-y: Optional[str] = 43  # E: Literal[43] <: str | None
+y: Optional[str] = 43  # E: `Literal[43]` is not assignable to `str | None`
     "#,
 );
 
@@ -116,7 +116,7 @@ from typing import assert_type
 from types import EllipsisType
 from foo import x
 assert_type(x, int)
-y: int = ...  # E: Ellipsis <: int
+y: int = ...  # E: `Ellipsis` is not assignable to `int`
 z: EllipsisType = ...
 "#,
 );
@@ -301,7 +301,7 @@ x: str = ""  # E: Inconsistent type annotations for x
 testcase!(
     test_hoist_ann,
     r#"
-x = 0 # E: Literal[0] <: str
+x = 0 # E: `Literal[0]` is not assignable to variable `x` with type `str`
 x: str = ""
     "#,
 );
@@ -314,8 +314,8 @@ x: int = 0
 lit0: Literal[0] = x
 x = 1
 lit1: Literal[1] = x
-x = "oops"  # E: Literal['oops'] <: int
-lit2: Literal["oops"] = x  # E: int <: Literal['oops']
+x = "oops"  # E: `Literal['oops']` is not assignable to variable `x` with type `int`
+lit2: Literal["oops"] = x  # E: `int` is not assignable to `Literal['oops']`
     "#,
 );
 
@@ -477,7 +477,7 @@ y2: A = (x2 := B())
 
 y3: list[A] = (x3 := [B()])
 
-y4: B = (x4 := A())  # E: EXPECTED A <: B
+y4: B = (x4 := A())  # E: `A` is not assignable to `B`
     "#,
 );
 

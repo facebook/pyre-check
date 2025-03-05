@@ -47,7 +47,7 @@ else:
     test_env.add("linux", "import lib; x: int = lib.value");
     test_env.add(
         "main",
-        "import lib; x: str = lib.value  # E: EXPECTED Literal[42] <: str",
+        "import lib; x: str = lib.value  # E: `Literal[42]` is not assignable to `str`",
     );
     let mut state = State::new();
     let loader = LoaderId::new(test_env);
@@ -72,9 +72,11 @@ else:
 #[test]
 fn test_multiple_path() {
     const LIB_PYI: &str = "x: int";
-    const LIB_PY: &str = "x: str = 1  # E: EXPECTED Literal[1] <: str";
-    const MAIN_PYI: &str = "import lib; y: list[int] = lib.x  # E: EXPECTED int <: list[int]";
-    const MAIN_PY: &str = "import lib; y: list[str] = lib.x  # E: EXPECTED int <: list[str]";
+    const LIB_PY: &str = "x: str = 1  # E: `Literal[1]` is not assignable to `str`";
+    const MAIN_PYI: &str =
+        "import lib; y: list[int] = lib.x  # E: `int` is not assignable to `list[int]`";
+    const MAIN_PY: &str =
+        "import lib; y: list[str] = lib.x  # E: `int` is not assignable to `list[str]`";
 
     const FILES: &[(&str, &str, &str)] = &[
         ("lib", "lib.pyi", LIB_PYI),

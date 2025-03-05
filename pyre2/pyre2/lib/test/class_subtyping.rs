@@ -17,7 +17,7 @@ class D: pass
 
 b: A = B()
 c: A = C()
-oops: A = D()  # E: EXPECTED D <: A
+oops: A = D()  # E: `D` is not assignable to `A`
 "#,
 );
 
@@ -41,8 +41,8 @@ class D[T]: pass
 
 b: A[int] = B[int]()
 c: A[int] = C()
-oops0: A[int] = D[int]()  # E: EXPECTED D[int] <: A[int]
-oops1: A[int] = A[str]()  # E: EXPECTED A[str] <: A[int]
+oops0: A[int] = D[int]()  # E: `D[int]` is not assignable to `A[int]`
+oops1: A[int] = A[str]()  # E: `A[str]` is not assignable to `A[int]`
 "#,
 );
 
@@ -53,7 +53,7 @@ class A: pass
 class B(A): pass
 
 a: type[A] = B
-b: type[B] = A  # E: EXPECTED type[A] <: type[B]
+b: type[B] = A  # E: `type[A]` is not assignable to `type[B]`
 "#,
 );
 
@@ -64,13 +64,13 @@ class A[T]: pass
 class B[T](A[T]): pass
 
 a0: type[A] = B
-b0: type[B] = A  # E: EXPECTED type[A] <: type[B[Error]]
+b0: type[B] = A  # E: `type[A]` is not assignable to `type[B[Error]]`
 
 a1: type[A[int]] = B
-b1: type[B[int]] = A  # E: EXPECTED type[A] <: type[B[int]]
+b1: type[B[int]] = A  # E: `type[A]` is not assignable to `type[B[int]]`
 
 a2: type[A] = B[int]
-b2: type[B] = A[int]  # E: EXPECTED type[A[int]] <: type[B[Error]]
+b2: type[B] = A[int]  # E: `type[A[int]]` is not assignable to `type[B[Error]]`
 "#,
 );
 
@@ -90,9 +90,9 @@ test1: LiteralString = l1()
 test2: str = l0()
 test3: str = l1()
 test4: str = l2()
-test5: Literal["foo"] = l2()  # E: LiteralString <: Literal['foo']
+test5: Literal["foo"] = l2()  # E: `LiteralString` is not assignable to `Literal['foo']`
 test6: str = l3()
-test7: LiteralString = l4()  # E: str <: LiteralString
+test7: LiteralString = l4()  # E: `str` is not assignable to `LiteralString`
 
 test10: object = l0()
 test11: object = l3()
@@ -112,11 +112,11 @@ def t3() -> bool: ...
 test0: Callable[[], bool] = t0
 test1: Callable[[], TypeGuard[int]] = t0
 test2: Callable[[], bool] = t1
-test3: Callable[[], TypeGuard[bool]] = t1  # E: () -> TypeGuard[int] <: () -> TypeGuard[bool]
+test3: Callable[[], TypeGuard[bool]] = t1  # E: `() -> TypeGuard[int]` is not assignable to `() -> TypeGuard[bool]`
 test4: Callable[[], bool] = t2
 test5: Callable[[], TypeGuard[int]] = t2
-test6: Callable[[], TypeGuard[bool]] = t2  # E: () -> TypeGuard[bool] | TypeGuard[int] <: () -> TypeGuard[bool]
-test7: Callable[[], TypeGuard[bool]] = t3  # E: () -> bool <: () -> TypeGuard[bool]
+test6: Callable[[], TypeGuard[bool]] = t2  # E: `() -> TypeGuard[bool] | TypeGuard[int]` is not assignable to `() -> TypeGuard[bool]
+test7: Callable[[], TypeGuard[bool]] = t3  # E: `() -> bool` is not assignable to `() -> TypeGuard[bool]`
 
 test8: Callable[[], object] = t0
 test9: Callable[[], object] = t2
@@ -134,10 +134,10 @@ def t2() -> TypeIs[bool] | TypeIs[int]: ...
 def t3() -> bool: ...
 
 test0: Callable[[], bool] = t0
-test1: Callable[[], TypeIs[int]] = t0  # E: () -> TypeIs[bool] <: () -> TypeIs[int]
+test1: Callable[[], TypeIs[int]] = t0  # E: `() -> TypeIs[bool]` is not assignable to `() -> TypeIs[int]`
 test2: Callable[[], bool] = t1
 test4: Callable[[], bool] = t2
-test5: Callable[[], TypeIs[int]] = t3  # E: () -> bool <: () -> TypeIs[int]
+test5: Callable[[], TypeIs[int]] = t3  # E: `() -> bool` is not assignable to `() -> TypeIs[int]`
 
 test6: Callable[[], object] = t0
 test7: Callable[[], object] = t2

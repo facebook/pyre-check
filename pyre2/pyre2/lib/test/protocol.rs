@@ -32,7 +32,7 @@ def g(p: P, c1: C1, c2: C2, c3: C3, c4: C4, c5: C5) -> None:
     f(c3)
     f(c4)
     f(c5)  # E: EXPECTED C5 <: P
-    c: C1 = p  # E: EXPECTED P <: C1
+    c: C1 = p  # E: `P` is not assignable to `C1`
  "#,
 );
 
@@ -62,11 +62,11 @@ def f1(x: int) -> str: ...
 def f2(x: str) -> str: ...
 
 p1: P = f1
-p2: P = f2  # E: EXPECTED (x: str) -> str <: P
+p2: P = f2  # E: `(x: str) -> str` is not assignable to `P`
 
 def g(p: P) -> None:
     c1: Callable[[int], str] = p
-    c2: Callable[[str], str] = p  # E: EXPECTED P <: (str) -> str
+    c2: Callable[[str], str] = p  # E: `P` is not assignable to `(str) -> str`
  "#,
 );
 
@@ -88,13 +88,13 @@ class P4(Protocol):
     def x(self) -> object: ...
 def f(p1: P1, p2: P2, p3: P3, p4: P4):
     # read-write attributes are invariant
-    x1: P1 = p2  # E: EXPECTED P2 <: P1
-    x2: P2 = p1  # E: EXPECTED P1 <: P2
+    x1: P1 = p2  # E: `P2` is not assignable to `P1`
+    x2: P2 = p1  # E: `P1` is not assignable to `P2`
     # properties are covariant w/ the getter/setter types
-    x3: P3 = p4  # E: EXPECTED P4 <: P3
+    x3: P3 = p4  # E: `P4` is not assignable to `P3`
     x4: P4 = p3
     x5: P3 = p1
-    x6: P3 = p2  # E: EXPECTED P2 <: P3
+    x6: P3 = p2  # E: `P2` is not assignable to `P3`
     x7: P4 = p1
     x8: P4 = p2
  "#,
@@ -142,16 +142,16 @@ class P6(Protocol):
 def f(p1: P1, p2: P2, p3: P3, p4: P4):
     x1: P1 = p2
     # read-only properties can't be used as read-write properties
-    x2: P1 = p3  # E: EXPECTED P3 <: P1
+    x2: P1 = p3  # E: `P3` is not assignable to `P1`
     # properties can't be used as regular attributes
-    x3: P2 = p1  # E: EXPECTED P1 <: P2
-    x4: P2 = p3  # E: EXPECTED P3 <: P2
+    x3: P2 = p1  # E: `P1` is not assignable to `P2`
+    x4: P2 = p3  # E: `P3` is not assignable to `P2`
     x5: P3 = p1
     x6: P3 = p2
     # setter type compatibility
     x7: P4 = p2
-    x8: P5 = p2  # E: EXPECTED P2 <: P5
-    x9: P6 = p2  # E: EXPECTED P2 <: P6
+    x8: P5 = p2  # E: `P2` is not assignable to `P5`
+    x9: P6 = p2  # E: `P2` is not assignable to `P6`
 "#,
 );
 
@@ -197,7 +197,7 @@ class C2:
     @property
     def foo(self) -> object:
         return 1 
-b: P2 = C2()  # E: EXPECTED C2 <: P2
+b: P2 = C2()  # E: `C2` is not assignable to `P2`
 
 class P3(Protocol):
     @property
@@ -213,7 +213,7 @@ class C3:
     @foo.setter
     def foo(self, val: int) -> None:
         pass
-c: P3 = C3()  # E: EXPECTED C3 <: P3
+c: P3 = C3()  # E: `C3` is not assignable to `P3`
 
 class P4(Protocol):
     @property
@@ -255,7 +255,7 @@ class C6:
     @property
     def foo(self) -> int:
         return 1
-f: P6 = C6()  # E: EXPECTED C6 <: P6
+f: P6 = C6()  # E: `C6` is not assignable to `P6`
 "#,
 );
 

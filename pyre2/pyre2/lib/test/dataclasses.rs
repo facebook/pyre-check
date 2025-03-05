@@ -403,8 +403,8 @@ C2(x=1)  # OK
 
 @dataclass
 class C3:
-    x: int = field(default="oops")  # E: EXPECTED str <: int
-    y: str = field(default_factory=factory)  # E: EXPECTED int <: str
+    x: int = field(default="oops")  # E: `str` is not assignable to `int`
+    y: str = field(default_factory=factory)  # E: `int` is not assignable to `str`
     "#,
 );
 

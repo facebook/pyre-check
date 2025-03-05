@@ -304,7 +304,7 @@ a: NoneOrInt = None
 b: IntOrNone = 1
 c: NoneOrStr = "test"
 d: StrOrNone = None
-e: NoneOrInt = "test"  # E: Literal['test'] <: int | None
+e: NoneOrInt = "test"  # E: `Literal['test']` is not assignable to `int | None`
 "#,
 );
 
