@@ -16,9 +16,11 @@ use ruff_python_ast::BoolOp;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
+use ruff_python_ast::ExprBooleanLiteral;
 use ruff_python_ast::ExprNumberLiteral;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtIf;
+use ruff_python_ast::UnaryOp;
 
 use crate::ast::Ast;
 use crate::util::prelude::SliceExt;
@@ -188,6 +190,7 @@ impl RuntimeMetadata {
             Expr::NumberLiteral(ExprNumberLiteral { value: i, .. }) => {
                 Some(Value::Int(i.as_int()?.as_i64()?))
             }
+            Expr::BooleanLiteral(ExprBooleanLiteral { value: b, .. }) => Some(Value::Bool(*b)),
             Expr::StringLiteral(x) => Some(Value::String(x.value.to_str().to_owned())),
             Expr::BoolOp(x) => match x.op {
                 BoolOp::And => {
@@ -210,6 +213,13 @@ impl RuntimeMetadata {
                     }
                     Some(last)
                 }
+            },
+            Expr::UnaryOp(x) => match x.op {
+                UnaryOp::Not => {
+                    let v = self.evaluate(&x.operand)?;
+                    Some(Value::Bool(!v.to_bool()))
+                }
+                _ => None,
             },
             _ => None,
         }

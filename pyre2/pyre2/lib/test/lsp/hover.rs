@@ -74,6 +74,17 @@ if 1 == 0:
 # ^
   f
 # ^
+if False:
+  def f():
+  #   ^
+      pass
+
+  x = 3
+# ^
+  x
+# ^
+  f
+# ^
 "#;
     let report = get_batched_lsp_operations_report(&[("main", code)], get_test_report);
     assert_eq!(
@@ -92,6 +103,22 @@ Hover Result: None
 Hover Result: None
 
 11 |   f
+       ^
+Hover Result: None
+
+14 |   def f():
+           ^
+Hover Result: None
+
+18 |   x = 3
+       ^
+Hover Result: None
+
+20 |   x
+       ^
+Hover Result: None
+
+22 |   f
        ^
 Hover Result: None
 "#

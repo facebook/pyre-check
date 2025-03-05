@@ -46,3 +46,33 @@ if sys.version_info >= (3, 0):
     assert_type(Bar().magic(), Foo)
 "#,
 );
+
+testcase!(
+    test_bool_literals,
+    r#"
+from typing import assert_type
+if True:
+    X = str
+else:
+    X = int
+assert_type(X(), str)
+
+if False:
+    Y = str
+else:
+    Y = int
+assert_type(Y(), int)
+
+if not(False):
+    X = str
+else:
+    X = int
+assert_type(X(), str)
+
+if not(True):
+    Y = str
+else:
+    Y = int
+assert_type(Y(), int)
+"#,
+);
