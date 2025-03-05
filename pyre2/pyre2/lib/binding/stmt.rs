@@ -19,6 +19,7 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
 use crate::ast::Ast;
+use crate::binding::binding::AnnotationStyle;
 use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -303,7 +304,11 @@ impl<'a> BindingsBuilder<'a> {
                 for target in &mut x.targets {
                     let make_binding = |k: Option<Idx<KeyAnnotation>>| {
                         if let Some(name) = &name {
-                            Binding::NameAssign(name.id.clone(), k, Box::new(value.clone()))
+                            Binding::NameAssign(
+                                name.id.clone(),
+                                k.map(|k| (AnnotationStyle::Forwarded, k)),
+                                Box::new(value.clone()),
+                            )
                         } else {
                             Binding::Expr(k, value.clone())
                         }
@@ -366,7 +371,11 @@ impl<'a> BindingsBuilder<'a> {
                         } else {
                             self.ensure_expr(&mut value);
                         }
-                        Binding::NameAssign(name.id.clone(), Some(ann_key), value)
+                        Binding::NameAssign(
+                            name.id.clone(),
+                            Some((AnnotationStyle::Direct, ann_key)),
+                            value,
+                        )
                     } else {
                         Binding::AnnotatedType(
                             ann_key,

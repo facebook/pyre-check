@@ -638,6 +638,14 @@ pub enum SuperStyle {
     Any,
 }
 
+#[derive(Clone, Debug, Copy, Dupe)]
+pub enum AnnotationStyle {
+    /// Annotated assignment, x: MyType = my_value
+    Direct,
+    /// Forwarded annotation, x: MyType; x = my_value
+    Forwarded,
+}
+
 #[derive(Clone, Debug)]
 pub enum Binding {
     /// An expression, optionally with a Key saying what the type must be.
@@ -709,7 +717,11 @@ pub enum Binding {
     /// function / class, and therefore the use of legacy type parameters is invalid.
     CheckLegacyTypeParam(Idx<KeyLegacyTypeParam>, Option<TextRange>),
     /// An assignment to a name.
-    NameAssign(Name, Option<Idx<KeyAnnotation>>, Box<Expr>),
+    NameAssign(
+        Name,
+        Option<(AnnotationStyle, Idx<KeyAnnotation>)>,
+        Box<Expr>,
+    ),
     /// A type alias declared with the `type` soft keyword
     ScopedTypeAlias(Name, Option<TypeParams>, Box<Expr>),
     /// An entry in a MatchMapping. The Key looks up the value being matched, the Expr is the key we're extracting.
@@ -851,7 +863,7 @@ impl DisplayWith<Bindings> for Binding {
             Self::NameAssign(name, None, expr) => {
                 write!(f, "{} = {}", name, expr.display_with(ctx.module_info()))
             }
-            Self::NameAssign(name, Some(annot), expr) => {
+            Self::NameAssign(name, Some((_, annot)), expr) => {
                 write!(
                     f,
                     "{}: {} = {}",

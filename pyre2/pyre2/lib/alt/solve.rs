@@ -1412,7 +1412,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Binding::NameAssign(name, annot_key, expr) => {
-                let annot = annot_key.map(|k| self.get_idx(k));
+                let annot = annot_key.as_ref().map(|(_, k)| self.get_idx(*k));
                 let tcc = TypeCheckContext::unknown();
                 let ty = self.expr(
                     expr,
