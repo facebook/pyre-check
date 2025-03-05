@@ -7,7 +7,6 @@
 set -e
 
 cd "$(dirname "$0")"
-export RUSTFLAGS='--cfg getrandom_backend="wasm_js"'
 wasm-pack build --out-dir target -t web --no-typescript
 cp target/pyre2_wasm.js ../website/src/try-pyre2/pyre2_wasm.js
 cp target/pyre2_wasm_bg.wasm ../website/src/try-pyre2/pyre2_wasm_bg.wasm
