@@ -491,7 +491,7 @@
       "concise_description": "Expected 0 type arguments for class `GoodNewType1`, got 1.",
       "description": "Expected 0 type arguments for class `GoodNewType1`, got 1.",
       "line": 38,
-      "name": "unknown",
+      "name": "bad-specialization",
       "stop_column": 23,
       "stop_line": 38
     },
@@ -5202,7 +5202,7 @@
       "concise_description": "Expected 0 type arguments for class `Color`, got 1.",
       "description": "Expected 0 type arguments for class `Color`, got 1.",
       "line": 26,
-      "name": "unknown",
+      "name": "bad-specialization",
       "stop_column": 25,
       "stop_line": 26
     },
@@ -5665,7 +5665,7 @@
       "concise_description": "Expected 1 type argument for class `LinkedList`, got 2.",
       "description": "Expected 1 type argument for class `LinkedList`, got 2.",
       "line": 49,
-      "name": "unknown",
+      "name": "bad-specialization",
       "stop_column": 42,
       "stop_line": 49
     },
@@ -5675,7 +5675,7 @@
       "concise_description": "Expected 1 type argument for class `MyDict`, got 2.",
       "description": "Expected 1 type argument for class `MyDict`, got 2.",
       "line": 61,
-      "name": "unknown",
+      "name": "bad-specialization",
       "stop_column": 34,
       "stop_line": 61
     }
@@ -5799,7 +5799,7 @@
       "concise_description": "Expected 5 type arguments for class `AllTheDefaults`, got 1.",
       "description": "Expected 5 type arguments for class `AllTheDefaults`, got 1.",
       "line": 50,
-      "name": "unknown",
+      "name": "bad-specialization",
       "stop_column": 20,
       "stop_line": 50
     },
@@ -5929,7 +5929,7 @@
       "concise_description": "Expected a valid ParamSpec expression",
       "description": "Expected a valid ParamSpec expression",
       "line": 151,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 27,
       "stop_line": 151
     },
@@ -5939,7 +5939,7 @@
       "concise_description": "Expected a valid ParamSpec expression",
       "description": "Expected a valid ParamSpec expression",
       "line": 151,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 63,
       "stop_line": 151
     },
@@ -5949,7 +5949,7 @@
       "concise_description": "Expected a valid ParamSpec expression",
       "description": "Expected a valid ParamSpec expression",
       "line": 152,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 36,
       "stop_line": 152
     },
@@ -5959,7 +5959,7 @@
       "concise_description": "Expected a valid ParamSpec expression",
       "description": "Expected a valid ParamSpec expression",
       "line": 152,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 66,
       "stop_line": 152
     },
@@ -6133,7 +6133,7 @@
       "concise_description": "Expected 0 type arguments for class `Foo`, got 1.",
       "description": "Expected 0 type arguments for class `Foo`, got 1.",
       "line": 55,
-      "name": "unknown",
+      "name": "bad-specialization",
       "stop_column": 9,
       "stop_line": 55
     }
@@ -6155,7 +6155,7 @@
       "concise_description": "ParamSpec cannot be used for type parameter",
       "description": "ParamSpec cannot be used for type parameter",
       "line": 31,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 21,
       "stop_line": 31
     }
@@ -6431,7 +6431,7 @@
       "concise_description": "Expected a valid ParamSpec expression",
       "description": "Expected a valid ParamSpec expression",
       "line": 44,
-      "name": "unknown",
+      "name": "invalid-param-spec",
       "stop_column": 31,
       "stop_line": 44
     },

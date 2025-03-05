@@ -133,7 +133,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.error(
                                     errors,
                                     range,
-                                    ErrorKind::Unknown,
+                                    ErrorKind::InvalidTypeVarTuple,
                                     None,
                                     "TypeVarTuple must be unpacked".to_owned(),
                                 )
@@ -196,7 +196,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         range,
-                        ErrorKind::Unknown,
+                        ErrorKind::InvalidParamSpec,
                         None,
                         "Expected a valid ParamSpec expression".to_owned(),
                     );
@@ -209,7 +209,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         checked_targs.push(self.error(
                             errors,
                             range,
-                            ErrorKind::Unknown,
+                            ErrorKind::BadUnpacking,
                             None,
                             format!(
                                 "Unpacked argument cannot be used for type parameter {}.",
@@ -222,7 +222,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 range,
-                                ErrorKind::Unknown,
+                                ErrorKind::InvalidTypeVarTuple,
                                 None,
                                 "TypeVarTuple must be unpacked".to_owned(),
                             )
@@ -230,7 +230,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             self.error(
                                 errors,
                                 range,
-                                ErrorKind::Unknown,
+                                ErrorKind::InvalidParamSpec,
                                 None,
                                 "ParamSpec cannot be used for type parameter".to_owned(),
                             )
@@ -252,7 +252,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         range,
-                        ErrorKind::Unknown,
+                        ErrorKind::BadSpecialization,
                         None,
                         format!(
                             "Expected {} for class `{}`, got {}.",
@@ -278,7 +278,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(
                 errors,
                 range,
-                ErrorKind::Unknown,
+                ErrorKind::BadSpecialization,
                 None,
                 format!(
                     "Expected {} for class `{}`, got {}.",
