@@ -263,7 +263,7 @@ let problem { payload = InstantiatedAnnotation.{ problem; _ }; _ } = problem
 let is_private_field { name; _ } =
   match name with
   | "" -> false
-  | _ when Char.equal name.[0] '_' -> true
+  | _ when Char.equal name.[0] '_' -> not (String.is_suffix ~suffix:"__" name)
   | _ -> false
 
 
