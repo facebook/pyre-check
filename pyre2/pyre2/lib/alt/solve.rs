@@ -970,7 +970,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             hint.and_then(|ty| self.decompose_generator(ty).map(|(_, _, r)| r));
                         let tcc = TypeCheckContext::of_kind(TypeCheckKind::ExplicitFunctionReturn);
                         self.expr(expr, hint.as_ref().map(|t| (t, &tcc)), errors)
-                    } else if matches!(hint, Some(Type::TypeGuard(_))) {
+                    } else if matches!(hint, Some(Type::TypeGuard(_) | Type::TypeIs(_))) {
                         let hint = Some(Type::ClassType(self.stdlib.bool()));
                         let tcc = TypeCheckContext::of_kind(TypeCheckKind::TypeGuardReturn);
                         self.expr(expr, hint.as_ref().map(|t| (t, &tcc)), errors)

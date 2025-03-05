@@ -9710,16 +9710,6 @@
   "narrowing_typeis.py": [
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[tuple[?_TypeVar, ?_TypeVar]]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[tuple[?_TypeVar, ?_TypeVar]]`",
-      "line": 15,
-      "name": "type-mismatch",
-      "stop_column": 25,
-      "stop_line": 15
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "assert_type(tuple[str, ...], tuple[str, str]) failed",
       "description": "assert_type(tuple[str, ...], tuple[str, str]) failed",
@@ -9727,16 +9717,6 @@
       "name": "assert-type",
       "stop_column": 44,
       "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[Awaitable[Any]]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[Awaitable[Any]]`",
-      "line": 28,
-      "name": "type-mismatch",
-      "stop_column": 38,
-      "stop_line": 28
     },
     {
       "code": -2,
@@ -9757,56 +9737,6 @@
       "name": "assert-type",
       "stop_column": 30,
       "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "line": 45,
-      "name": "type-mismatch",
-      "stop_column": 36,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "line": 49,
-      "name": "type-mismatch",
-      "stop_column": 36,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "line": 53,
-      "name": "type-mismatch",
-      "stop_column": 36,
-      "stop_line": 53
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[A]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[A]`",
-      "line": 56,
-      "name": "type-mismatch",
-      "stop_column": 43,
-      "stop_line": 56
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[?_TypeVar]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[?_TypeVar]`",
-      "line": 59,
-      "name": "type-mismatch",
-      "stop_column": 43,
-      "stop_line": 59
     },
     {
       "code": -2,
@@ -9880,36 +9810,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `Literal[False]` is not assignable to declared return type `TypeIs[int]`",
-      "description": "Returned type `Literal[False]` is not assignable to declared return type `TypeIs[int]`",
-      "line": 106,
-      "name": "type-mismatch",
-      "stop_column": 21,
-      "stop_line": 106
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `Literal[False]` is not assignable to declared return type `TypeIs[int]`",
-      "description": "Returned type `Literal[False]` is not assignable to declared return type `TypeIs[int]`",
-      "line": 111,
-      "name": "type-mismatch",
-      "stop_column": 21,
-      "stop_line": 111
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "line": 128,
-      "name": "type-mismatch",
-      "stop_column": 32,
-      "stop_line": 128
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "EXPECTED (val: object) -> TypeIs[int] <: (object) -> str",
       "description": "EXPECTED (val: object) -> TypeIs[int] <: (object) -> str",
@@ -9927,16 +9827,6 @@
       "name": "type-mismatch",
       "stop_column": 42,
       "stop_line": 152
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "line": 163,
-      "name": "type-mismatch",
-      "stop_column": 32,
-      "stop_line": 163
     },
     {
       "code": -2,
@@ -9960,26 +9850,6 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[int]`",
-      "line": 183,
-      "name": "type-mismatch",
-      "stop_column": 32,
-      "stop_line": 183
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[bool]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[bool]`",
-      "line": 187,
-      "name": "type-mismatch",
-      "stop_column": 33,
-      "stop_line": 187
-    },
-    {
-      "code": -2,
       "column": 18,
       "concise_description": "EXPECTED (val: object) -> TypeIs[bool] <: (object) -> TypeIs[int]",
       "description": "EXPECTED (val: object) -> TypeIs[bool] <: (object) -> TypeIs[int]",
@@ -9987,26 +9857,6 @@
       "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 191
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[str]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[str]`",
-      "line": 196,
-      "name": "type-mismatch",
-      "stop_column": 30,
-      "stop_line": 196
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Returned type `bool` is not assignable to declared return type `TypeIs[list[int]]`",
-      "description": "Returned type `bool` is not assignable to declared return type `TypeIs[list[int]]`",
-      "line": 200,
-      "name": "type-mismatch",
-      "stop_column": 46,
-      "stop_line": 200
     }
   ],
   "overloads_basic.py": [
