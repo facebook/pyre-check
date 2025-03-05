@@ -28,11 +28,8 @@ export default component Home() {
       description={siteConfig.description}>
       <header className={clsx(styles.feature, styles.featureHero)}>
         <div className="container">
-          <p className={styles.featureHeading}>
-            <span>Pyrefly is</span> <br className={styles.hiddenLargerUp} /> a
-            static type <br className={styles.hiddenLargerUp} /> checker for{' '}
-            <br className={styles.hiddenLargerUp} /> <span>Python.</span>
-          </p>
+          <h1 className={styles.title}>pyrefly</h1>
+          <p className={styles.subtitle}>a static type checker for python.</p>
           <section>
             <Link
               className={styles.featureButton}

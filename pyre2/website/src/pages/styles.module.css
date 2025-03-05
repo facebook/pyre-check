@@ -386,6 +386,29 @@
   vertical-align: middle;
 }
 
-.info .quote {
 
+.info .quote h3 {
+    font-family: "Source Serif Pro", Georgia, Times, serif;
+    font-weight: 700;
+    line-height: 1;
+    margin-top: 0;
+    margin-bottom: .8rem;
+    text-rendering: optimizeLegibility;
+    font-size: 2.618rem;
+    color: var( --flow-gray-darker);
+}
+
+.info .quote p {
+  font-family: 'Montserrat';
+  font-size: 1rem;
+  color:  var(--flow-gray-darker);
+}
+
+.title, .subtitle {
+  font-family: 'Source Serif Pro';
+}
+
+.subtitle {
+  font-weight: bold;
+  font-size: 3rem;
 }
