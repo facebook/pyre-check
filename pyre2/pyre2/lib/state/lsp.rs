@@ -54,6 +54,12 @@ impl State {
         res
     }
 
+    fn definition_at(&self, handle: &Handle, position: TextSize) -> Option<Key> {
+        self.get_bindings(handle)?
+            .definition_at_position(position)
+            .cloned()
+    }
+
     fn attribute_at(&self, handle: &Handle, position: TextSize) -> Option<ExprAttribute> {
         let mod_module = self.get_ast(handle)?;
         fn f(x: &Expr, find: TextSize, res: &mut Option<ExprAttribute>) {
@@ -71,6 +77,9 @@ impl State {
     }
 
     pub fn hover(&self, handle: &Handle, position: TextSize) -> Option<Arc<Type>> {
+        if let Some(key) = self.definition_at(handle, position) {
+            return self.get_type(handle, &key);
+        }
         if let Some(id) = self.identifier_at(handle, position) {
             if self.get_bindings(handle)?.is_valid_usage(&id) {
                 return self.get_type(handle, &Key::Usage(ShortIdentifier::new(&id)));

@@ -14,6 +14,7 @@ use ruff_python_ast::Expr;
 use ruff_python_ast::ExprName;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Stmt;
+use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 use starlark_map::small_map::SmallMap;
@@ -310,31 +311,42 @@ struct ScopeTreeNode {
 
 impl ScopeTreeNode {
     /// Return whether we hit a child scope with a barrier
-    fn collect_available_definitions(
+    fn visit_available_definitions(
         &self,
         table: &BindingTable,
         position: TextSize,
-        collector: &mut SmallSet<Idx<Key>>,
+        visitor: &mut impl FnMut(Idx<Key>),
     ) -> bool {
         if !self.scope.range.contains(position) {
             return false;
         }
         let mut barrier = false;
         for node in &self.children {
-            let hit_barrier = node.collect_available_definitions(table, position, collector);
+            let hit_barrier = node.visit_available_definitions(table, position, visitor);
             barrier = barrier || hit_barrier
         }
         if !barrier {
             for info in self.scope.flow.info.values() {
-                collector.insert(info.key);
+                visitor(info.key);
             }
         }
         for (name, info) in &self.scope.stat.0 {
             if let Some(key) = table.types.0.key_to_idx(&info.as_key(name)) {
-                collector.insert(key);
+                visitor(key);
             }
         }
         barrier || self.scope.barrier
+    }
+
+    fn collect_available_definitions(
+        &self,
+        table: &BindingTable,
+        position: TextSize,
+        collector: &mut SmallSet<Idx<Key>>,
+    ) {
+        self.visit_available_definitions(table, position, &mut |key| {
+            collector.insert(key);
+        });
     }
 }
 
@@ -450,5 +462,26 @@ impl ScopeTrace {
         self.0
             .collect_available_definitions(table, position, &mut collector);
         collector
+    }
+
+    pub fn definition_at_position<'a>(
+        &self,
+        table: &'a BindingTable,
+        position: TextSize,
+    ) -> Option<&'a Key> {
+        let mut definition = None;
+        self.0
+            .visit_available_definitions(table, position, &mut |idx| {
+                let key = table.types.0.idx_to_key(idx);
+                match key {
+                    Key::Definition(short_identifier)
+                        if short_identifier.range().contains_inclusive(position) =>
+                    {
+                        definition = Some(key);
+                    }
+                    _ => {}
+                }
+            });
+        definition
     }
 }

@@ -167,6 +167,14 @@ impl Bindings {
         }
     }
 
+    pub fn definition_at_position(&self, position: TextSize) -> Option<&Key> {
+        if let Some(trace) = &self.0.scope_trace {
+            trace.definition_at_position(&self.0.table, position)
+        } else {
+            None
+        }
+    }
+
     /// Within the LSP, check if a Usage key exists.
     /// It may not exist within `if False:` or `if sys.version == 0:` style code.
     pub fn is_valid_usage(&self, k: &Identifier) -> bool {
