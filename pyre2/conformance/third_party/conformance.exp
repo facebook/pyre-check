@@ -11910,7 +11910,7 @@
       "concise_description": "Key `name` is not defined in TypedDict `Movie2`",
       "description": "Key `name` is not defined in TypedDict `Movie2`",
       "line": 44,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 17,
       "stop_line": 44
     },
@@ -11920,7 +11920,7 @@
       "concise_description": "Key `year` is not defined in TypedDict `Movie2`",
       "description": "Key `year` is not defined in TypedDict `Movie2`",
       "line": 44,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 41,
       "stop_line": 44
     },
@@ -11930,7 +11930,7 @@
       "concise_description": "Key `name` is not defined in TypedDict `Movie2`",
       "description": "Key `name` is not defined in TypedDict `Movie2`",
       "line": 45,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 17,
       "stop_line": 45
     },
@@ -11940,7 +11940,7 @@
       "concise_description": "Key `year` is not defined in TypedDict `Movie2`",
       "description": "Key `year` is not defined in TypedDict `Movie2`",
       "line": 45,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 41,
       "stop_line": 45
     }
@@ -12057,7 +12057,7 @@
       "concise_description": "Missing required key `year` for TypedDict `Movie`",
       "description": "Missing required key `year` for TypedDict `Movie`",
       "line": 28,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 33,
       "stop_line": 28
     },
@@ -12077,7 +12077,7 @@
       "concise_description": "Key `other` is not defined in TypedDict `Movie`",
       "description": "Key `other` is not defined in TypedDict `Movie`",
       "line": 32,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 43,
       "stop_line": 32
     },
@@ -12087,7 +12087,7 @@
       "concise_description": "Missing required key `name` for TypedDict `Movie`",
       "description": "Missing required key `name` for TypedDict `Movie`",
       "line": 37,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 52,
       "stop_line": 37
     },
@@ -12097,7 +12097,7 @@
       "concise_description": "Expected string literal key, got `str`",
       "description": "Expected string literal key, got `str`",
       "line": 37,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 33,
       "stop_line": 37
     },
@@ -12313,7 +12313,7 @@
       "concise_description": "Missing required key `name` for TypedDict `RequiredName`",
       "description": "Missing required key `name` for TypedDict `RequiredName`",
       "line": 65,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 21,
       "stop_line": 65
     },
@@ -12353,7 +12353,7 @@
       "concise_description": "Missing required key `ident` for TypedDict `User`",
       "description": "Missing required key `ident` for TypedDict `User`",
       "line": 84,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 7,
       "stop_line": 84
     }
@@ -12451,7 +12451,7 @@
       "concise_description": "Key `y` is not defined in TypedDict `A3`",
       "description": "Key `y` is not defined in TypedDict `A3`",
       "line": 69,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 24,
       "stop_line": 69
     },
@@ -12613,7 +12613,7 @@
       "concise_description": "Missing required key `name` for TypedDict `Movie`",
       "description": "Missing required key `name` for TypedDict `Movie`",
       "line": 28,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 56,
       "stop_line": 28
     },
@@ -12623,7 +12623,7 @@
       "concise_description": "Key `title` is not defined in TypedDict `Movie`",
       "description": "Key `title` is not defined in TypedDict `Movie`",
       "line": 28,
-      "name": "unknown",
+      "name": "typed-dict-key-error",
       "stop_column": 25,
       "stop_line": 28
     }

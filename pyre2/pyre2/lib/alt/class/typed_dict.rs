@@ -71,7 +71,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         self.error(
                             errors,
                             key.range(),
-                            ErrorKind::Unknown,
+                            ErrorKind::TypedDictKeyError,
                             None,
                             format!(
                                 "Key `{}` is not defined in TypedDict `{}`",
@@ -85,7 +85,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         key.range(),
-                        ErrorKind::Unknown,
+                        ErrorKind::TypedDictKeyError,
                         None,
                         format!("Expected string literal key, got `{}`", key_type),
                     );
@@ -109,7 +109,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(
                         errors,
                         range,
-                        ErrorKind::Unknown,
+                        ErrorKind::TypedDictKeyError,
                         None,
                         format!(
                             "Missing required key `{}` for TypedDict `{}`",
