@@ -1640,7 +1640,7 @@
       "concise_description": "Callable requires exactly two arguments but 1 was found",
       "description": "Callable requires exactly two arguments but 1 was found",
       "line": 55,
-      "name": "unknown",
+      "name": "bad-specialization",
       "stop_column": 18,
       "stop_line": 55
     },
@@ -1650,7 +1650,7 @@
       "concise_description": "Callable requires exactly two arguments but 3 was found",
       "description": "Callable requires exactly two arguments but 3 was found",
       "line": 58,
-      "name": "unknown",
+      "name": "bad-specialization",
       "stop_column": 28,
       "stop_line": 58
     },
@@ -1660,7 +1660,7 @@
       "concise_description": "Invalid position for `...`",
       "description": "Invalid position for `...`",
       "line": 59,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 18,
       "stop_line": 59
     },
@@ -7637,7 +7637,7 @@
       "concise_description": "TypeVarTuple must be unpacked",
       "description": "TypeVarTuple must be unpacked",
       "line": 53,
-      "name": "unknown",
+      "name": "invalid-type-var-tuple",
       "stop_column": 42,
       "stop_line": 53
     },
@@ -7647,7 +7647,7 @@
       "concise_description": "TypeVarTuple must be unpacked",
       "description": "TypeVarTuple must be unpacked",
       "line": 56,
-      "name": "unknown",
+      "name": "invalid-type-var-tuple",
       "stop_column": 39,
       "stop_line": 56
     },
@@ -8025,7 +8025,7 @@
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 121,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 29,
       "stop_line": 121
     },
@@ -8035,7 +8035,7 @@
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 122,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 42,
       "stop_line": 122
     },
@@ -11726,7 +11726,7 @@
       "concise_description": "Invalid position for `...`",
       "description": "Invalid position for `...`",
       "line": 40,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 25,
       "stop_line": 40
     },
@@ -11736,7 +11736,7 @@
       "concise_description": "Invalid position for `...`",
       "description": "Invalid position for `...`",
       "line": 41,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 15,
       "stop_line": 41
     },
@@ -11746,7 +11746,7 @@
       "concise_description": "Invalid position for `...`",
       "description": "Invalid position for `...`",
       "line": 42,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 15,
       "stop_line": 42
     },
@@ -11756,7 +11756,7 @@
       "concise_description": "Invalid position for `...`",
       "description": "Invalid position for `...`",
       "line": 43,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 20,
       "stop_line": 43
     },
@@ -11766,7 +11766,7 @@
       "concise_description": "`...` cannot be used with an unpacked TypeVarTuple or tuple",
       "description": "`...` cannot be used with an unpacked TypeVarTuple or tuple",
       "line": 44,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 28,
       "stop_line": 44
     },
@@ -11776,7 +11776,7 @@
       "concise_description": "Invalid position for `...`",
       "description": "Invalid position for `...`",
       "line": 45,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 33,
       "stop_line": 45
     }
@@ -11788,7 +11788,7 @@
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 40,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 45,
       "stop_line": 40
     },
@@ -11798,7 +11798,7 @@
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 41,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 58,
       "stop_line": 41
     },
@@ -11808,7 +11808,7 @@
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 51,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 36,
       "stop_line": 51
     },
@@ -11818,7 +11818,7 @@
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 59,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 60,
       "stop_line": 59
     },
@@ -11828,7 +11828,7 @@
       "concise_description": "Only one unbounded type is allowed to be unpacked",
       "description": "Only one unbounded type is allowed to be unpacked",
       "line": 61,
-      "name": "unknown",
+      "name": "bad-unpacking",
       "stop_column": 73,
       "stop_line": 61
     }
