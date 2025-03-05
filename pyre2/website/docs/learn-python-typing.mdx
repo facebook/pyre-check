@@ -5,21 +5,19 @@ displayed_sidebar: docsSidebar
 spug: /
 ---
 
+import TryPyre2BrowserOnly from '@site/src/try-pyre2/TryPyre2BrowserOnly'
+
 # Give Pyrefly a try with some working examples
 
 Python's type system is a powerful tool that helps you write more maintainable, readable, and efficient code. With the help of type hints, you can catch errors early, improve code completion, and make your code more self-documenting.
 In this guide, we'll explore the different features of Python's type system, including generics, protocols, dataclasses, typed dictionaries, and overloads. Each section includes a brief description of the feature, along with a working example that you can try out using Pyrefly.
-
-import TryPyre2 from '@site/src/try-pyre2/TryPyre2';
 
 ## Generics
 
 Generics allow you to define reusable functions and classes that work with multiple types. This feature enables you to write more flexible and adaptable code.
 
 <pre>
-  <TryPyre2
-    defaultFlowVersion="1.0.0"
-    flowVersions={["1.0.0", "1.1.0"]}
+  <TryPyre2BrowserOnly
     editorHeight={200}
     codeSample={`# Example: Generic Classes
 
@@ -42,9 +40,7 @@ Generics allow you to define reusable functions and classes that work with multi
 Protocols enable structural typing, which allows you to define interfaces without explicit inheritance. This feature helps you write more modular and composable code.
 
 <pre>
-  <TryPyre2
-    defaultFlowVersion="1.0.0"
-    flowVersions={["1.0.0", "1.1.0"]}
+  <TryPyre2BrowserOnly
     editorHeight={200}
     codeSample={`# Example: Structural Typing with Protocols
 from typing import Iterable, Protocol
@@ -64,7 +60,7 @@ def f(writer: Writer):
 
 f(GoodWorld()) # OK
 f(BadWorld())  # ERROR!
-  `}
+    `}
   />
 </pre>
 
@@ -73,9 +69,7 @@ f(BadWorld())  # ERROR!
 Protocols enable structural typing, which allows you to define interfaces without explicit inheritance. This feature helps you write more modular and composable code.
 
 <pre>
-  <TryPyre2
-    defaultFlowVersion="1.0.0"
-    flowVersions={["1.0.0", "1.1.0"]}
+  <TryPyre2BrowserOnly
     editorHeight={200}
     codeSample={`# Example: Dataclasses
   from dataclasses import dataclass
@@ -85,7 +79,7 @@ Protocols enable structural typing, which allows you to define interfaces withou
       y: float
   Point(x=0.0, y=0.0)    # OK
   Point(x=0.0, y="oops") # ERROR!
-  `}
+    `}
   />
 </pre>
 
@@ -95,9 +89,7 @@ Protocols enable structural typing, which allows you to define interfaces withou
 Typed dictionaries enable you to define dictionaries with specific key-value types. This feature helps you write more robust and maintainable code.
 
 <pre>
-  <TryPyre2
-    defaultFlowVersion="1.0.0"
-    flowVersions={["1.0.0", "1.1.0"]}
+  <TryPyre2BrowserOnly
     editorHeight={200}
     codeSample={`# Example: TypedDict
 
@@ -109,7 +101,7 @@ class Movie(TypedDict):
 
 good_movie: Movie = {"name": "Toy Story", "year": 1995} # OK
 bad_movie: Movie = {"name": "The Room", "year": "2003"}  # ERROR!
-  `}
+    `}
   />
 </pre>
 
@@ -118,9 +110,7 @@ bad_movie: Movie = {"name": "The Room", "year": "2003"}  # ERROR!
 Overloads allow you to define multiple function signatures for a single function. This feature helps you write more flexible and adaptable code.
 
 <pre>
-  <TryPyre2
-    defaultFlowVersion="1.0.0"
-    flowVersions={["1.0.0", "1.1.0"]}
+  <TryPyre2BrowserOnly
     editorHeight={200}
     codeSample={`# Example: Overloads
 from typing import overload, reveal_type
@@ -136,6 +126,6 @@ def f(x: int | str) -> int | str:
 
 reveal_type(f(0))  # revealed type: int
 reveal_type(f("")) # revealed type: str
-  `}
+    `}
   />
 </pre>

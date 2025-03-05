@@ -20,6 +20,7 @@ import {
   setGetDefFunction,
   setHoverFunctionForMonaco,
 } from './configured-monaco';
+import BrowserOnly from '@docusaurus/BrowserOnly';
 
 const DEFAULT_PYTHON_PROGRAM = `
 # Pyre is being run in gradual typing mode: https://pyre-check.org/docs/types-in-python/#gradual-typing
