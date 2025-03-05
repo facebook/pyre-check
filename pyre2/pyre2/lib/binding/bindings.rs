@@ -167,6 +167,17 @@ impl Bindings {
         }
     }
 
+    /// Within the LSP, check if a Usage key exists.
+    /// It may not exist within `if False:` or `if sys.version == 0:` style code.
+    pub fn is_valid_usage(&self, k: &Identifier) -> bool {
+        self.0
+            .table
+            .get::<Key>()
+            .0
+            .key_to_idx(&Key::Usage(ShortIdentifier::new(k)))
+            .is_some()
+    }
+
     pub fn key_to_idx<K: Keyed>(&self, k: &K) -> Idx<K>
     where
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,

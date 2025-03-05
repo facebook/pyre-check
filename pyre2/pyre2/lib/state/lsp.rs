@@ -72,7 +72,11 @@ impl State {
 
     pub fn hover(&self, handle: &Handle, position: TextSize) -> Option<Arc<Type>> {
         if let Some(id) = self.identifier_at(handle, position) {
-            return self.get_type(handle, &Key::Usage(ShortIdentifier::new(&id)));
+            if self.get_bindings(handle)?.is_valid_usage(&id) {
+                return self.get_type(handle, &Key::Usage(ShortIdentifier::new(&id)));
+            } else {
+                return None;
+            }
         }
         let attribute = self.attribute_at(handle, position)?;
         self.get_type_from_trace(handle, attribute.range)
@@ -139,6 +143,9 @@ impl State {
         position: TextSize,
     ) -> Option<TextRangeWithModuleInfo> {
         if let Some(id) = self.identifier_at(handle, position) {
+            if !self.get_bindings(handle)?.is_valid_usage(&id) {
+                return None;
+            }
             let (handle, range) =
                 self.key_to_definition(handle, &Key::Usage(ShortIdentifier::new(&id)), 20)?;
             return Some(TextRangeWithModuleInfo::new(
