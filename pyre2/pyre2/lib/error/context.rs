@@ -18,6 +18,7 @@ use crate::types::types::Type;
 /// The root cause is `C.__lt__` being called with the wrong type, but the user sees a `<`
 /// comparison. ErrorContext stores this context that the user sees, to make it easier to connect
 /// it back to the root cause.
+#[derive(Debug)]
 pub enum ErrorContext {
     BadContextManager(Type),
 }
@@ -29,6 +30,7 @@ pub enum ErrorContext {
 ///   C() < 0  # ERROR: expected C, got 0
 /// The TypeCheckContext contains a TypeCheckKind, recording that the mismatch is in the `other` parameter of `C.__lt__`,
 /// and an ErrorContext, recording that the type mismatch occurs in the context of a `<` comparison.
+#[derive(Debug)]
 pub struct TypeCheckContext {
     pub kind: TypeCheckKind,
     pub context: Option<ErrorContext>,
@@ -54,6 +56,7 @@ impl TypeCheckContext {
     }
 }
 
+#[derive(Debug)]
 pub enum TypeCheckKind {
     /// Check on a magic method that is expected to return a particular type; e.g., a context
     /// manager's `__exit__` method must return `bool | None`.
