@@ -93,7 +93,7 @@ impl Load {
                     "Failed to load `{name}` from `{}`, got {err:#}",
                     module_info.path()
                 ),
-                ErrorKind::Unknown,
+                ErrorKind::ImportError,
                 None,
             );
         }
