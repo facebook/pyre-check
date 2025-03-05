@@ -44,7 +44,11 @@ impl Subscriber for TestSubscriber {
                 e.insert((1, None));
             }
             Entry::Occupied(mut e) => {
-                assert!(e.get().1.is_some());
+                assert!(
+                    e.get().1.is_some(),
+                    "Handle started a second time without finishing: {:?}",
+                    e.key()
+                );
                 e.get_mut().0 += 1;
                 e.get_mut().1 = None;
             }
