@@ -39,8 +39,8 @@
 
 .featureHero {
   padding: 7rem 0;
-  background: var(--flow-gray-darker);
-  color: white;
+  background: beige;
+  color: var(--flow-gray-darker);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   margin-left: auto;
@@ -50,7 +50,7 @@
 
 .feature.featureHero .featureButton {
   border-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  color: var(--flow-gray-darker);
 }
 
 @media screen and (min-width: 346px) {
@@ -208,12 +208,13 @@
   border: 4px solid transparent;
 
   text-align: center;
-  text-transform: uppercase;
   font-size: 1.6rem;
   line-height: 1;
   font-weight: 800;
   letter-spacing: 0.04em;
   vertical-align: middle;
+  font-family: 'Montserrat';
+  text-align: center;
 }
 .feature .featureButton:hover,
 .feature .featureButton:active,
@@ -408,7 +409,19 @@
   font-family: 'Source Serif Pro';
 }
 
+.title {
+  text-align: center;
+  margin-bottom: 4rem;
+  margin-top: 3rem;
+  font-size: 7rem;
+}
+
 .subtitle {
   font-weight: bold;
-  font-size: 3rem;
+  font-size: 4.236rem;
+  text-align: center;
+}
+
+.buttonContainer {
+  text-align: center;
 }

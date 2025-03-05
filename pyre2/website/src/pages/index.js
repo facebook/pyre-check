@@ -29,8 +29,8 @@ export default component Home() {
       <header className={clsx(styles.feature, styles.featureHero)}>
         <div className="container">
           <h1 className={styles.title}>pyrefly</h1>
-          <p className={styles.subtitle}>a static type checker for python.</p>
-          <section>
+          <p className={styles.subtitle}>A static type checker for Python.</p>
+          <section className={styles.buttonContainer}>
             <Link
               className={styles.featureButton}
               to={useBaseUrl('en/docs/getting-started')}>
