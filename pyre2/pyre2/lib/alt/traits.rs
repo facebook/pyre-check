@@ -8,6 +8,7 @@
 use std::sync::Arc;
 
 use dupe::Dupe;
+use ruff_python_ast::name::Name;
 use ruff_text_size::Ranged;
 
 use crate::alt::answers::AnswersSolver;
@@ -19,6 +20,8 @@ use crate::alt::types::decorated_function::DecoratedFunction;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::alt::types::yields::YieldFromResult;
 use crate::alt::types::yields::YieldResult;
+use crate::binding::binding::AnnotationTarget;
+use crate::binding::binding::AnnotationWithTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingClass;
@@ -124,10 +127,13 @@ impl SolveRecursive for KeyClassSynthesizedFields {
 }
 impl SolveRecursive for KeyAnnotation {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
-        Annotation::default()
+        AnnotationWithTarget {
+            target: AnnotationTarget::Assign(Name::default()),
+            annotation: Annotation::default(),
+        }
     }
-    fn visit_type_mut(v: &mut Annotation, f: &mut dyn FnMut(&mut Type)) {
-        v.ty.iter_mut().for_each(f);
+    fn visit_type_mut(v: &mut AnnotationWithTarget, f: &mut dyn FnMut(&mut Type)) {
+        v.annotation.ty.iter_mut().for_each(f);
     }
 }
 impl SolveRecursive for KeyClassMetadata {
@@ -296,7 +302,7 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyAnnotation {
         answers: &AnswersSolver<Ans>,
         binding: &BindingAnnotation,
         errors: &ErrorCollector,
-    ) -> Arc<Annotation> {
+    ) -> Arc<AnnotationWithTarget> {
         answers.solve_annotation(binding, errors)
     }
 

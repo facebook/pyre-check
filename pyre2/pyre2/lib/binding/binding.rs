@@ -124,7 +124,7 @@ impl Keyed for KeyFunction {
 }
 impl Keyed for KeyAnnotation {
     type Value = BindingAnnotation;
-    type Answer = Annotation;
+    type Answer = AnnotationWithTarget;
 }
 impl Keyed for KeyClassMetadata {
     const EXPORTED: bool = true;
@@ -916,20 +916,45 @@ impl DisplayWith<Bindings> for Binding {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AnnotationWithTarget {
+    pub target: AnnotationTarget,
+    pub annotation: Annotation,
+}
+
+impl AnnotationWithTarget {
+    pub fn ty(&self) -> Option<&Type> {
+        self.annotation.ty.as_ref()
+    }
+}
+
+impl Display for AnnotationWithTarget {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}: {}", self.target, self.annotation)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AnnotationTarget {
     /// A function parameter with a type annotation
-    #[expect(dead_code)]
     Param(Name),
     /// A return type annotation on a function. The name is that of the function
-    #[expect(dead_code)]
     Return(Name),
     /// An annotated assignment. For attribute assignments, the name is the attribute name ("attr" in "x.attr")
-    #[expect(dead_code)]
     Assign(Name),
     /// A member of a class
-    #[expect(dead_code)]
     ClassMember(Name),
+}
+
+impl Display for AnnotationTarget {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Param(name) => write!(f, "param {name}"),
+            Self::Return(name) => write!(f, "{name} return"),
+            Self::Assign(name) => write!(f, "var {name}"),
+            Self::ClassMember(name) => write!(f, "attr {name}"),
+        }
+    }
 }
 
 /// Values that return an annotation.
@@ -937,10 +962,8 @@ pub enum AnnotationTarget {
 pub enum BindingAnnotation {
     /// The type is annotated to be this key, will have the outer type removed.
     /// Optionally occuring within a class, in which case Self refers to this class.
-    #[expect(dead_code)]
     AnnotateExpr(AnnotationTarget, Expr, Option<Idx<Key>>),
     /// A literal type we know statically.
-    #[expect(dead_code)]
     Type(AnnotationTarget, Type),
 }
 
