@@ -52,10 +52,11 @@ impl TypeCheckContext {
         Self::of_kind(TypeCheckKind::Test)
     }
 }
+
 pub enum TypeCheckKind {
-    /// Return type check on a named function. `Option<Type>` is the type that the function is
-    /// defined on, if it is a method of a class.
-    FunctionReturn(Name, Option<Type>),
+    /// Check on a magic method that is expected to return a particular type; e.g., a context
+    /// manager's `__exit__` method must return `bool | None`.
+    MagicMethodReturn(Type, Name),
     /// Implicit return via a path with no explicit return statement. The bool indicates whether
     /// the function has *any* explicit return.
     ImplicitFunctionReturn(bool),

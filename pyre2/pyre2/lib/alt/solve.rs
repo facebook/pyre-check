@@ -506,9 +506,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             range,
             errors,
             &TypeCheckContext {
-                kind: TypeCheckKind::FunctionReturn(
+                kind: TypeCheckKind::MagicMethodReturn(
+                    context_manager_type.clone(),
                     kind.as_exit_dunder(),
-                    Some(context_manager_type.clone()),
                 ),
                 context: Some(ErrorContext::BadContextManager(context_manager_type)),
             },

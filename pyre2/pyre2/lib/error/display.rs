@@ -26,17 +26,12 @@ impl TypeCheckKind {
         ctx.add(got);
         ctx.add(want);
         match self {
-            Self::FunctionReturn(func, defining_cls) => {
-                let func_name = match defining_cls {
-                    Some(cls) => {
-                        ctx.add(cls);
-                        format!("{}.{}", ctx.display(cls), func)
-                    }
-                    None => format!("{func}"),
-                };
+            Self::MagicMethodReturn(cls, func) => {
+                ctx.add(cls);
                 format!(
-                    "For return type of function `{}`, expected `{}`, got `{}`",
-                    func_name,
+                    "Expected `{}.{}` to return `{}`, got `{}`",
+                    ctx.display(cls),
+                    func,
                     ctx.display(want),
                     ctx.display(got)
                 )
