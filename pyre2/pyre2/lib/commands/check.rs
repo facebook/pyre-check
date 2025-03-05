@@ -73,6 +73,8 @@ pub struct Args {
     debug_info: Option<PathBuf>,
     #[clap(long, env = clap_env("REPORT_BINDING_MEMORY"))]
     report_binding_memory: Option<PathBuf>,
+    #[clap(long, env = clap_env("REPORT_TRACE"))]
+    report_trace: Option<PathBuf>,
     #[clap(
         long,
         default_missing_value = "5",
@@ -234,7 +236,10 @@ impl Args {
         let mut holder = Forgetter::new(state, allow_forget);
         let state = holder.as_mut();
 
-        if args.report_binding_memory.is_none() && args.debug_info.is_none() {
+        if args.report_binding_memory.is_none()
+            && args.debug_info.is_none()
+            && args.report_trace.is_none()
+        {
             state.run_one_shot(&handles, None)
         } else {
             state.run(&handles, None)
@@ -270,6 +275,9 @@ impl Args {
                 &path,
                 report::binding_memory::binding_memory(state).as_bytes(),
             )?;
+        }
+        if let Some(path) = args.report_trace {
+            fs_anyhow::write(&path, report::trace::trace(state).as_bytes())?;
         }
         if args.expectations {
             state.check_against_expectations()?;
