@@ -133,6 +133,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 range,
                 ErrorKind::Unknown,
+                None,
                 format!("Expected class object, got {}", ty),
             );
         }

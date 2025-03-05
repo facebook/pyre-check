@@ -436,6 +436,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     range,
                     ErrorKind::Unknown,
+                    None,
                     "No matching overload found".to_owned(),
                 );
             }

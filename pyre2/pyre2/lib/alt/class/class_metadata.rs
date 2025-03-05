@@ -89,6 +89,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         cls.range(),
                         ErrorKind::Unknown,
+                        None,
                         "Subclassing a NewType not allowed".to_owned(),
                     );
                 }
@@ -102,6 +103,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         cls.range(),
                         ErrorKind::Unknown,
+                        None,
                         "Second argument to NewType cannot be a protocol".to_owned(),
                     );
                 }
@@ -111,6 +113,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     cls.range(),
                     ErrorKind::Unknown,
+                    None,
                     "Second argument to NewType is incorrect".to_owned(),
                 );
             }
@@ -185,6 +188,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.error(errors,
                                     range,
                                     ErrorKind::InvalidInheritance,
+                                    None,
                                     "If `Protocol` is included as a base class, all other bases must be protocols.".to_owned(),
                                 );
                             }
@@ -226,6 +230,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 cls.range(),
                 ErrorKind::InvalidInheritance,
+                None,
                 "Named tuples do not support multiple inheritance".to_owned(),
             );
         }
@@ -265,6 +270,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         cls.range(),
                         ErrorKind::Unknown,
+                        None,
                         "Enums may not be generic.".to_owned(),
                     );
                 }
@@ -285,6 +291,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     cls.range(),
                     ErrorKind::InvalidInheritance,
+                    None,
                     "Typed dictionary definitions may not specify a metaclass.".to_owned(),
                 );
             }
@@ -307,6 +314,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.error(errors,
                 cls.range(),
                 ErrorKind::Unknown,
+                None,
                 format!("`{}` is not a typed dictionary. Typed dictionary definitions may only extend other typed dictionaries.", bad.0),
             );
         }
@@ -390,6 +398,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     name.range,
                     ErrorKind::Unknown,
+                    None,
                     "Redundant type parameter declaration".to_owned(),
                 );
             }
@@ -425,6 +434,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 name.range,
                 ErrorKind::Unknown,
+                None,
                 format!(
                     "Class `{}` specifies type parameters in both `Generic` and `Protocol` bases",
                     name.id,
@@ -445,6 +455,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.error(errors,
                         name.range,
                         ErrorKind::Unknown,
+                        None,
                         format!(
                             "Class `{}` uses type variables not specified in `Generic` or `Protocol` base",
                             name.id,
@@ -514,6 +525,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error(errors,
                     cls.range(),
                     ErrorKind::InvalidInheritance,
+                    None,
                     format!(
                         "Class `{}` has metaclass `{}` which is not a subclass of metaclass `{}` from base class `{}`",
                         cls.name(),
@@ -545,6 +557,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         raw_metaclass.range(),
                         ErrorKind::InvalidInheritance,
+                        None,
                         format!(
                             "Metaclass of `{}` has type `{}` which is not a subclass of `type`",
                             cls.name(),
@@ -559,6 +572,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     cls.range(),
                     ErrorKind::InvalidInheritance,
+                    None,
                     format!(
                         "Metaclass of `{}` has type `{}` is not a simple class type.",
                         cls.name(),

@@ -291,7 +291,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             todo_ctx,
         ) {
             Ok(ty) => ty,
-            Err(msg) => self.error(errors, range, ErrorKind::MissingAttribute, msg),
+            Err(msg) => self.error(errors, range, ErrorKind::MissingAttribute, None, msg),
         }
     }
 
@@ -313,6 +313,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     range,
                     ErrorKind::MissingAttribute,
+                    None,
                     e.to_error_msg(attr_name),
                 )),
             },
@@ -320,6 +321,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 range,
                 ErrorKind::InternalError,
+                None,
                 e.to_error_msg(attr_name, todo_ctx),
             )),
             _ => None,
@@ -361,6 +363,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         range,
                         ErrorKind::NoAccess,
+                        None,
                         e.to_error_msg(attr_name),
                     );
                 }
@@ -374,6 +377,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 errors,
                                 range,
                                 ErrorKind::BadAssignment,
+                                None,
                                 format!(
                                     "Could not assign type `{}` to attribute `{}` with type `{}`",
                                     got.clone().deterministic_printing(),
@@ -389,6 +393,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         range,
                         ErrorKind::ReadOnly,
+                        None,
                         format!("Could not assign to read-only field `{attr_name}`"),
                     );
                 }
@@ -398,6 +403,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         range,
                         ErrorKind::ReadOnly,
+                        None,
                         e.to_error_msg(attr_name),
                     );
                 }
@@ -425,6 +431,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 errors,
                                 range,
                                 ErrorKind::Unknown,
+                                None,
                                 e.to_error_msg(attr_name),
                             );
                         }
@@ -434,6 +441,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 errors,
                                 range,
                                 ErrorKind::Unknown,
+                                None,
                                 e.to_error_msg(attr_name),
                             );
                         }
@@ -445,6 +453,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     range,
                     ErrorKind::InternalError,
+                    None,
                     e.to_error_msg(attr_name, todo_ctx),
                 );
             }
@@ -453,6 +462,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     range,
                     ErrorKind::MissingAttribute,
+                    None,
                     e.to_error_msg(attr_name),
                 );
             }

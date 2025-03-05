@@ -134,6 +134,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     errors,
                                     range,
                                     ErrorKind::Unknown,
+                                    None,
                                     "TypeVarTuple must be unpacked".to_owned(),
                                 )
                             } else {
@@ -196,6 +197,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         range,
                         ErrorKind::Unknown,
+                        None,
                         "Expected a valid ParamSpec expression".to_owned(),
                     );
                     checked_targs.push(Type::Ellipsis);
@@ -208,6 +210,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             errors,
                             range,
                             ErrorKind::Unknown,
+                            None,
                             format!(
                                 "Unpacked argument cannot be used for type parameter {}.",
                                 param.name
@@ -220,6 +223,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 errors,
                                 range,
                                 ErrorKind::Unknown,
+                                None,
                                 "TypeVarTuple must be unpacked".to_owned(),
                             )
                         } else if arg.is_kind_param_spec() {
@@ -227,6 +231,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 errors,
                                 range,
                                 ErrorKind::Unknown,
+                                None,
                                 "ParamSpec cannot be used for type parameter".to_owned(),
                             )
                         } else {
@@ -248,6 +253,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         range,
                         ErrorKind::Unknown,
+                        None,
                         format!(
                             "Expected {} for class `{}`, got {}.",
                             count(tparams.len(), "type argument"),
@@ -273,6 +279,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 range,
                 ErrorKind::Unknown,
+                None,
                 format!(
                     "Expected {} for class `{}`, got {}.",
                     count(tparams.len(), "type argument"),

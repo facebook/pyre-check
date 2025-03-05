@@ -30,6 +30,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             errors,
             range,
             ErrorKind::Unknown,
+            None,
             "Only one unbounded type is allowed to be unpacked".to_owned(),
         )
     }
@@ -57,6 +58,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             errors,
                             value.range(),
                             ErrorKind::Unknown,
+                            None,
                             "`...` cannot be used with an unpacked TypeVarTuple or tuple"
                                 .to_owned(),
                         );
@@ -69,6 +71,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         value.range(),
                         ErrorKind::Unknown,
+                        None,
                         "Invalid position for `...`".to_owned(),
                     );
                     return None;
@@ -118,6 +121,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         value.range(),
                         ErrorKind::Unknown,
+                        None,
                         format!("Expected a tuple or TypeVarTuple, got `{}`", ty),
                     );
                     return None;
@@ -127,6 +131,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         value.range(),
                         ErrorKind::Unknown,
+                        None,
                         "TypeVarTuple must be unpacked".to_owned(),
                     );
                     return None;
@@ -163,6 +168,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 range,
                 ErrorKind::Unknown,
+                None,
                 format!(
                     "Optional requires exactly one argument but {} was found",
                     arguments.len()
@@ -202,6 +208,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         range,
                         ErrorKind::Unknown,
+                        None,
                         format!(
                             "`Concatenate` must take at least two arguments, got {}",
                             arguments.len()
@@ -236,6 +243,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     errors,
                                     range,
                                     ErrorKind::Unknown,
+                                    None,
                                     "Unrecognized callable type form".to_owned(),
                                 );
                                 Type::type_form(Type::callable_ellipsis(Type::any_error()))
@@ -255,7 +263,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 Type::type_form(Type::callable_concatenate(args, *pspec, ret))
                             }
                             _ => {
-                                self.error(errors, x.range(),ErrorKind::Unknown, format!("Callable types can only have `Concatenate` in this position, got `{}`", ty.deterministic_printing()),);
+                                self.error(errors, x.range(),ErrorKind::Unknown, None, format!("Callable types can only have `Concatenate` in this position, got `{}`", ty.deterministic_printing()),);
                                 Type::type_form(Type::callable_ellipsis(Type::any_error()))
                             }
                         }
@@ -271,6 +279,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     range,
                     ErrorKind::Unknown,
+                    None,
                     format!(
                         "Callable requires exactly two arguments but {} was found",
                         arguments.len()
@@ -285,6 +294,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 range,
                 ErrorKind::Unknown,
+                None,
                 format!(
                     "TypeGuard requires exactly one argument but got {}",
                     arguments.len()
@@ -297,6 +307,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 range,
                 ErrorKind::Unknown,
+                None,
                 format!(
                     "TypeIs requires exactly one argument but got {}",
                     arguments.len()
@@ -309,6 +320,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 range,
                 ErrorKind::Unknown,
+                None,
                 format!(
                     "Unpack requires exactly one argument but got {}",
                     arguments.len()
@@ -321,6 +333,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 range,
                 ErrorKind::Unknown,
+                None,
                 format!(
                     "Type requires exactly one argument but got {}",
                     arguments.len()

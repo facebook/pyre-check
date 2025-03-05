@@ -345,6 +345,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 call_errors,
                 arg_range,
                 ErrorKind::Unknown,
+                None,
                 format!("Expected {expected}, got {actual}"),
             );
         }
@@ -380,6 +381,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 call_errors,
                 range,
                 ErrorKind::Unknown,
+                None,
                 format!(
                     "Expected {}",
                     count(need_positional, "more positional argument")
@@ -399,6 +401,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     call_errors,
                                     kw.range,
                                     ErrorKind::Unknown,
+                                    None,
                                     format!("Multiple values for argument `{}`", name),
                                 );
                                 params.items()[p_idx].visit(|ty| hint = Some(ty));
@@ -409,6 +412,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                         call_errors,
                                         kw.range,
                                         ErrorKind::Unknown,
+                                        None,
                                         format!("Expected key `{}` to be required", name),
                                     );
                                 }
@@ -418,6 +422,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     call_errors,
                                     kw.range,
                                     ErrorKind::UnexpectedKeyword,
+                                    None,
                                     format!("Unexpected keyword argument `{}`", name),
                                 );
                             }
@@ -452,7 +457,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 } else {
                                     self.error(call_errors,
                                         kw.value.range(),
-                                        ErrorKind::Unknown,
+                                        ErrorKind::Unknown, None,
                                     format!(
                                         "Expected argument after ** to have `str` keys, got: {}",
                                         key.deterministic_printing()
@@ -465,6 +470,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     call_errors,
                                     kw.value.range(),
                                     ErrorKind::Unknown,
+                                    None,
                                     format!(
                                         "Expected argument after ** to be a mapping, got: {}",
                                         ty.deterministic_printing()
@@ -481,6 +487,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             call_errors,
                             kw.range,
                             ErrorKind::Unknown,
+                            None,
                             format!("Multiple values for argument `{}`", id.id),
                         );
                         params.items()[p_idx].visit(|ty| {
@@ -494,6 +501,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             call_errors,
                             kw.range,
                             ErrorKind::UnexpectedKeyword,
+                            None,
                             format!("Unexpected keyword argument `{}`", id.id),
                         );
                     }
@@ -512,6 +520,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         call_errors,
                         range,
                         ErrorKind::MissingArgument,
+                        None,
                         format!("Missing argument `{}`", name),
                     );
                 }
@@ -583,7 +592,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         {
                             self.error(call_errors,
                                 range,
-                                ErrorKind::Unknown,
+                                ErrorKind::Unknown, None,
                                 "Expected a `*args` and `**kwargs` for `ParamSpec` (TODO: improve error message)".to_owned(),
                             );
                         } else {
@@ -604,6 +613,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             call_errors,
                             range,
                             ErrorKind::Unknown,
+                            None,
                             format!("Unexpected ParamSpec type: `{p}`"),
                         );
                     }

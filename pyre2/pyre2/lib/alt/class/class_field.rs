@@ -409,6 +409,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 range,
                 ErrorKind::Unknown,
+                None,
                 format!("TypedDict item `{}` may not be initialized.", name),
             );
         }
@@ -445,10 +446,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             && self.is_valid_enum_member(name, ty, &initialization)
         {
             if annotation.is_some() {
-                self.error(errors, range,
-                    ErrorKind::Unknown,
-                     format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name),
-                    );
+                self.error(
+                    errors, range,ErrorKind::Unknown, None,
+                    format!("Enum member `{}` may not be annotated directly. Instead, annotate the _value_ attribute.", name),
+                );
             }
             if let Some(enum_value_ty) = self.type_of_enum_value(enum_) {
                 if !matches!(ty, Type::Tuple(_))
@@ -456,11 +457,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         .solver()
                         .is_subset_eq(ty, &enum_value_ty, self.type_order())
                 {
-                    self.error(errors,
-                         range,
-                         ErrorKind::Unknown,
-                         format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name), 
-                        );
+                    self.error(
+                        errors, range, ErrorKind::Unknown, None,
+                        format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name), 
+                    );
                 }
             }
             &Type::Literal(Lit::Enum(Box::new((
@@ -664,6 +664,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             errors,
                             range,
                             ErrorKind::Unknown,
+                            None,
                             format!(
                                 "Class member `{}` overrides parent class `{}` in an inconsistent manner",
                                 name,
@@ -678,6 +679,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     range,
                     ErrorKind::Unknown,
+                    None,
                     format!(
                         "Class member `{}` is marked as an override, but no parent class has a matching attribute",
                         name,
