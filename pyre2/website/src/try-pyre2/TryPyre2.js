@@ -38,12 +38,14 @@ reveal_type(test(42))
 `;
 
 const pyre2WasmUninitializedPromise =
+  // $FlowIgnore[cannot-resolve-name]
   typeof window !== 'undefined'
     ? import('./pyre2_wasm')
     : new Promise(_resolve => {});
 
 const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
   .then(async mod => {
+    // $FlowIgnore[prop-missing]
     await mod.default();
     return mod;
   })
@@ -63,6 +65,9 @@ export default component TryPyre2(
     setLoading(true);
     pyre2WasmInitializedPromise
       .then(pyre2 => {
+        // $FlowIgnore[incompatible-use]
+        // $FlowIgnore[invalid-constructor]
+        // $FlowIgnore[prop-missing]
         setPyreService(new pyre2.State());
         setLoading(false);
         setInternalError('');
